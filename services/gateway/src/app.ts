@@ -16,6 +16,7 @@ export interface ReadinessCheck {
 export interface GatewayAppOptions {
   readonly readinessChecks?: readonly ReadinessCheck[];
   readonly now?: () => Instant;
+  readonly isDraining?: () => boolean;
 }
 
 const HealthResponseSchema = Type.Object(
@@ -99,7 +100,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       },
     },
     async (_request, reply) => {
-      const results = await Promise.all(
+      const dependencyResults = await Promise.all(
         checks.map(async (check) => {
           try {
             const result = await check.check();
@@ -117,6 +118,19 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
           }
         }),
       );
+
+      const results = [
+        ...(options.isDraining?.()
+          ? [
+              {
+                name: "lifecycle",
+                ready: false,
+                reason: "service is shutting down",
+              },
+            ]
+          : []),
+        ...dependencyResults,
+      ];
 
       const ready = results.every((result) => result.ready);
       if (!ready) {
