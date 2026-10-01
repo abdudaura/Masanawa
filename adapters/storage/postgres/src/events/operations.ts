@@ -6,7 +6,7 @@ import {
   type OperationId,
   type TenantId,
 } from "@masanawa/contracts";
-import type { OperationRecord, OperationState } from "@masanawa/events";
+import { assertOperationTransition, type OperationRecord, type OperationState } from "@masanawa/events";
 import type { PoolClient } from "pg";
 
 export interface PrepareOperationInput {
