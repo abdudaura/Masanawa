@@ -285,3 +285,14 @@ Deep behavior mining from tests remains required before Phase 0 completion.
 | B-SCH-020 | SCH-020 | Cron evaluation uses configured IANA timezone but persists next run in UTC; pause/resume/cancel are durable and one-shot tasks clear next run after completion. | A/B | scheduler implementation/tests | analysed |
 | B-TRC-020 | TRC-020 | Trace collectors unsubscribe at run completion so later events cannot contaminate another execution trace. | A | `traces/collector.py`, collector tests | analysed |
 | B-SEC-020 | SEC-021 | SSRF checks fail closed on unresolved DNS by default and normalize IPv4-mapped/compatible/disguised forms before private/metadata classification. | A | `security/ssrf.py`, SSRF/disguised tests | analysed |
+
+### Phase 0B N.E.K.O remediation invariants
+
+| ID | Feature | Required behavior | Class | Evidence | Status |
+|---|---|---|---|---|---|
+| B-PLG-020 | PLG-001/012 | Plugin replacement is transactional: invalid/preflight-broken source cannot displace a healthy running instance; hot reload rechecks running intent under the operation lock and cannot resurrect an explicitly stopped plugin. | A | plugin lifecycle/hot-reload/install transaction modules and tests | analysed |
+| B-PLG-021 | PLG-012 | Plugin calls have typed envelopes and bounded call chains; circular/deadlocked calls fail explicitly rather than blocking the host indefinitely. | A/B | plugin core/message-plane/call-chain/deadlock modules | analysed |
+| B-ASR-020 | VOI-001 | Voice endpoint/candidate callbacks are generation-scoped; a stale candidate/provider worker result cannot deliver after suppression, replacement or turn closure. | A | ASR lifecycle/candidate/worker/endpointing tests | analysed |
+| B-SPK-020 | VOI-002/VID-001 | Enrollment/activation is reversible and policy-versioned; cancellation/failure restores voice-input suppression and wipes/closes sensitive model state. | A | voice identity service/runtime tests | analysed |
+| B-CFG-020 | CFG-001 | Cloud/config restore is staged and fenced; stale, partial or legacy-migration output cannot replace a newer verified current revision. | A/B | cloudsave runtime lifecycle/startup/config tests | analysed |
+| B-ACT-020 | ACT-001 | Raw device activity may be visible/private/unavailable; private/unavailable state cannot be silently enriched into inferred user activity or proactive context. | A | activity privacy/state/gating evidence | selected |
