@@ -307,3 +307,12 @@ This inventory is intentionally incomplete. Source-specific map documents identi
 | AVT-020 | embodiment | avatar warmup, silent/idle runtime, provider catalog and offline-video orchestration | CyberVerse | C/B | GPL clean-room behavior reference | clients/embodiment + services/studio/presence | selected |
 | TSK-020 | workflows | reconnectable agent-task store/API with terminal artifact/event semantics | CyberVerse | C/B | GPL clean-room workflow reference | packages/workflows + events | selected |
 | MOD-001 | assets | embedded third-party avatar/lipsync/video model source trees require their own licenses and are not reusable through CyberVerse's GPL classification | CyberVerse | C | third-party model reference | no direct import; separate upstream evaluation | selected |
+
+### Phase 0B provider synthesis additions
+
+| ID | Domain | Feature | Source | Class | Donor role | Masanawa destination | Status |
+|---|---|---|---|---|---|---|---|
+| PRV-020 | providers | canonical provider operation registry with effect/retry/idempotency/reconciliation/readiness contracts | Masanawa synthesis + ChatWithStars/OpenJarvis/OpenClaw/AIRI | A/B | synthesized architecture | packages/providers | selected |
+| PRV-021 | providers | evidence-driven configured/ready/accepted lifecycle with dependency invalidation | ChatWithStars Flutterwave generalized | A/B | strong behavioral donor | packages/providers + apps/ops | selected |
+| PRV-022 | providers | ambiguous side-effect reconciliation before retry | ChatWithStars commerce + Telegram generalized | A | strong behavioral donor | packages/providers + workflows | selected |
+| PRV-023 | providers | normalized provider attempt/receipt/reconciliation evidence across payment/social/channel/media/model/compute | Masanawa synthesis | B | synthesized architecture | packages/providers + telemetry | selected |
