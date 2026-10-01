@@ -138,9 +138,12 @@ BEGIN
       USING ERRCODE = '23514';
   END IF;
 
-  RETURN COALESCE(NEW, OLD);
+  IF TG_OP = 'DELETE' THEN
+    RETURN OLD;
+  END IF;
+  RETURN NEW;
 END;
-$$;
+$;
 
 CREATE TRIGGER world_interaction_participants_immutable
 BEFORE INSERT OR UPDATE OR DELETE ON world.interaction_participants
