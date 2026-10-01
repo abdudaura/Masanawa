@@ -35,6 +35,6 @@ The reference vault is deliberately outside `apps/`, `services/` and `packages/`
 
 ## Status
 
-Current phase: **Phase 0A — Landscape Expansion and source forensics**.
+Current phase: **Phase 0B — Exhaustive source forensics and coverage remediation**.
 
-Do not begin platform feature implementation until the expanded donor comparison and Phase 0 completeness gates are closed.
+Phase 0A donor selection is closed. Do not begin platform feature implementation until full Phase 0 coverage and classification gates are closed.
