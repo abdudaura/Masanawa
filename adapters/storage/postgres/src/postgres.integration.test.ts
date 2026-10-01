@@ -9,15 +9,19 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Pool } from "pg";
 import {
   admitInboxEvent,
+  beginReconciliation,
   claimInboxBatch,
   claimOutboxBatch,
   createPostgresPool,
   enqueueOutbox,
+  listExternalReceiptsForOperation,
   prepareOperation,
   persistPlatformEventWithOutbox,
+  recordExternalReceipt,
   runMigrations,
   settleInboxClaim,
   settleOutboxClaim,
+  transitionReconciliationCase,
   transitionOperation,
   withTransaction,
 } from "./index.js";
@@ -58,6 +62,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
     expect(applied).toEqual([
       "events/0001_event_foundation.sql",
       "events/0002_inbox_leases.sql",
+      "events/0003_receipt_reconciliation_integrity.sql",
     ]);
   });
 
@@ -403,6 +408,259 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       lease_owner: null,
     });
     expect(persisted.rows[0]?.completed_at).toBeInstanceOf(Date);
+  });
+
+  it("keeps provider receipt observations append-only and idempotent", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const prepared = await withTransaction(pool, (client) =>
+      prepareOperation(client, {
+        tenantId,
+        kind: "payment.capture",
+        idempotencyKey: "receipt-operation",
+        authorityScopeHash: "authority-v1",
+        requestFingerprint: "receipt-request",
+        expiresAt: toInstant(new Date(Date.now() + 86_400_000)),
+      }),
+    );
+
+    const observedAt = toInstant(new Date());
+    const first = await withTransaction(pool, (client) =>
+      recordExternalReceipt(client, {
+        tenantId,
+        operationId: prepared.operation.operationId,
+        provider: "provider-x",
+        observationKey: "webhook:event-100",
+        providerReference: "txn-900",
+        normalizedStatus: "pending",
+        payloadHash: "sha256:pending",
+        payloadRef: "blob://pending",
+        observedAt,
+        verificationMethod: "signed-webhook",
+        providerVersion: "2026-10",
+      }),
+    );
+    expect(first.reused).toBe(false);
+
+    const duplicate = await withTransaction(pool, (client) =>
+      recordExternalReceipt(client, {
+        tenantId,
+        operationId: prepared.operation.operationId,
+        provider: "provider-x",
+        observationKey: "webhook:event-100",
+        providerReference: "txn-900",
+        normalizedStatus: "pending",
+        payloadHash: "sha256:pending",
+        payloadRef: "blob://pending-copy",
+        observedAt: toInstant(new Date(Date.now() + 1_000)),
+        verificationMethod: "signed-webhook",
+        providerVersion: "2026-10",
+      }),
+    );
+    expect(duplicate.reused).toBe(true);
+    expect(duplicate.receipt.externalReceiptId).toBe(
+      first.receipt.externalReceiptId,
+    );
+
+    const second = await withTransaction(pool, (client) =>
+      recordExternalReceipt(client, {
+        tenantId,
+        operationId: prepared.operation.operationId,
+        provider: "provider-x",
+        observationKey: "status-query:2",
+        providerReference: "txn-900",
+        normalizedStatus: "succeeded",
+        payloadHash: "sha256:succeeded",
+        observedAt: toInstant(new Date(Date.now() + 2_000)),
+        verificationMethod: "authenticated-status-query",
+        providerVersion: "2026-10",
+      }),
+    );
+    expect(second.reused).toBe(false);
+
+    const receipts = await withTransaction(pool, (client) =>
+      listExternalReceiptsForOperation(
+        client,
+        tenantId,
+        prepared.operation.operationId,
+      ),
+    );
+    expect(receipts).toHaveLength(2);
+    expect(receipts.map((receipt) => receipt.providerReference)).toEqual([
+      "txn-900",
+      "txn-900",
+    ]);
+    expect(receipts.map((receipt) => receipt.normalizedStatus)).toEqual([
+      "pending",
+      "succeeded",
+    ]);
+
+    await expect(
+      withTransaction(pool, (client) =>
+        recordExternalReceipt(client, {
+          tenantId,
+          operationId: prepared.operation.operationId,
+          provider: "provider-x",
+          observationKey: "webhook:event-100",
+          providerReference: "txn-900",
+          normalizedStatus: "succeeded",
+          payloadHash: "sha256:changed",
+          observedAt,
+          verificationMethod: "signed-webhook",
+          providerVersion: "2026-10",
+        }),
+      ),
+    ).rejects.toMatchObject({
+      code: "external-receipt.observation_conflict",
+      category: "conflict",
+      operationId: prepared.operation.operationId,
+    });
+
+    await expect(
+      withTransaction(pool, (client) =>
+        recordExternalReceipt(client, {
+          tenantId: createCanonicalId("tenant"),
+          operationId: prepared.operation.operationId,
+          provider: "provider-x",
+          observationKey: "cross-tenant",
+          normalizedStatus: "pending",
+          observedAt,
+          verificationMethod: "signed-webhook",
+        }),
+      ),
+    ).rejects.toMatchObject({
+      code: "operation.not_found",
+      category: "not-found",
+      operationId: prepared.operation.operationId,
+    });
+  });
+
+  it("moves ambiguous operations into one durable reconciliation case", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const prepared = await withTransaction(pool, (client) =>
+      prepareOperation(client, {
+        tenantId,
+        kind: "airtime.purchase",
+        idempotencyKey: "reconciliation-operation",
+        authorityScopeHash: "authority-v1",
+        requestFingerprint: "reconciliation-request",
+        expiresAt: toInstant(new Date(Date.now() + 86_400_000)),
+      }),
+    );
+
+    await withTransaction(pool, async (client) => {
+      await transitionOperation(client, {
+        operationId: prepared.operation.operationId,
+        from: "prepared",
+        to: "authorized",
+      });
+      await transitionOperation(client, {
+        operationId: prepared.operation.operationId,
+        from: "authorized",
+        to: "dispatching",
+      });
+      await transitionOperation(client, {
+        operationId: prepared.operation.operationId,
+        from: "dispatching",
+        to: "unknown",
+      });
+    });
+
+    const opened = await beginReconciliation(pool, {
+      tenantId,
+      operationId: prepared.operation.operationId,
+      reasonCode: "provider-timeout",
+      safeRetry: false,
+      nextAction: "query-provider",
+    });
+    expect(opened.reused).toBe(false);
+    expect(opened.reconciliationCase.status).toBe("open");
+
+    const operationState = await pool.query<{ state: string }>(
+      "SELECT state FROM events.operations WHERE operation_id = $1",
+      [prepared.operation.operationId],
+    );
+    expect(operationState.rows[0]?.state).toBe("reconciling");
+
+    const duplicate = await beginReconciliation(pool, {
+      tenantId,
+      operationId: prepared.operation.operationId,
+      reasonCode: "provider-timeout",
+      safeRetry: false,
+      nextAction: "query-provider",
+    });
+    expect(duplicate.reused).toBe(true);
+    expect(duplicate.reconciliationCase.reconciliationCaseId).toBe(
+      opened.reconciliationCase.reconciliationCaseId,
+    );
+
+    const checking = await withTransaction(pool, (client) =>
+      transitionReconciliationCase(client, {
+        tenantId,
+        reconciliationCaseId:
+          opened.reconciliationCase.reconciliationCaseId,
+        from: "open",
+        to: "checking",
+        safeRetry: false,
+        nextAction: "poll-provider-status",
+      }),
+    );
+    expect(checking.status).toBe("checking");
+
+    await expect(
+      withTransaction(pool, (client) =>
+        transitionReconciliationCase(client, {
+          tenantId,
+          reconciliationCaseId:
+            opened.reconciliationCase.reconciliationCaseId,
+          from: "open",
+          to: "resolved",
+          safeRetry: false,
+          nextAction: null,
+        }),
+      ),
+    ).rejects.toMatchObject({
+      code: "reconciliation.stale_transition",
+      category: "conflict",
+    });
+
+    const resolved = await withTransaction(pool, (client) =>
+      transitionReconciliationCase(client, {
+        tenantId,
+        reconciliationCaseId:
+          opened.reconciliationCase.reconciliationCaseId,
+        from: "checking",
+        to: "resolved",
+        safeRetry: false,
+        nextAction: null,
+      }),
+    );
+    expect(resolved.status).toBe("resolved");
+    expect(resolved.resolvedAt).not.toBeNull();
+
+    const nonAmbiguous = await withTransaction(pool, (client) =>
+      prepareOperation(client, {
+        tenantId,
+        kind: "message.send",
+        idempotencyKey: "not-ambiguous",
+        authorityScopeHash: "authority-v1",
+        requestFingerprint: "not-ambiguous",
+        expiresAt: toInstant(new Date(Date.now() + 86_400_000)),
+      }),
+    );
+
+    await expect(
+      beginReconciliation(pool, {
+        tenantId,
+        operationId: nonAmbiguous.operation.operationId,
+        reasonCode: "should-not-open",
+        safeRetry: false,
+        nextAction: null,
+      }),
+    ).rejects.toMatchObject({
+      code: "reconciliation.operation_not_ambiguous",
+      category: "conflict",
+      operationId: nonAmbiguous.operation.operationId,
+    });
   });
 
   it("preserves one operation across restart-safe idempotent admission", async () => {
