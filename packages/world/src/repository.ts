@@ -118,8 +118,6 @@ export interface GovernedWorldRepository extends WorldRepository {
     tenantId: TenantId,
     worldEventId: WorldEventId,
   ): Promise<WorldEvent | null>;
-  approveWorldEvent(input: ApproveWorldEventInput): Promise<WorldEvent>;
-  retireWorldEvent(input: RetireWorldEventInput): Promise<WorldEvent>;
 }
 
 export interface PutRoutineInput {
