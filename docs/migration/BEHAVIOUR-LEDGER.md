@@ -149,5 +149,19 @@ Features describe what exists; this ledger records observable and operational be
 | B-OC-PLG-001 | PLG-007 | A delayed plugin mutation rechecks current authority after async preparation; a stale owner boolean is not sufficient authorization. | A | OpenClaw Plugin SDK docs | analysed |
 | B-OC-GW-004 | GW-001 | Gateway-accepted user input is durably recorded before acknowledgement; reconnect may reconcile accepted input, while the in-memory run queue is not treated as durable workflow truth. | A | OpenClaw queue/session docs | analysed |
 | B-OC-SEC-002 | SEC-007 | Tool deny policy remains authoritative: session exec/elevation settings cannot make a deterministically denied tool callable, and required sandbox policy fails closed. | A | OpenClaw sandbox/tool-policy docs | analysed |
+| B-AIRI-CARD-001 | IDN-004 | Imported character packages are validated before activation; invalid format/missing required assets do not become an active Character presentation. | A/B | AIRI card import docs/store | analysed |
+| B-AIRI-CARD-002 | IDN-004 | A card override does not permanently replace inherited/global client defaults; switching to an inheriting card restores the true defaults. | B | AIRI airi-card inheritance tests | analysed |
+| B-AIRI-CARD-003 | IDN-004 | Changing a provider cannot silently retain a model belonging to the previous/different provider. | A/B | AIRI airi-card inheritance tests/store | analysed |
+| B-AIRI-AVT-001 | AVT-005 | Renderer/model-driver stop or dispose explicitly releases the target; generator replacement need not tear down the target. | B | AIRI MAGIC Live2D driver | analysed |
+| B-AIRI-PLG-001 | PLG-009 | A wildcard permission request narrowed by host policy is stored/enforced as the concrete approved key, never widened back to the wildcard. | A | AIRI plugin permission tests | analysed |
+| B-AIRI-PLG-002 | PLG-009 | Runtime-declared permissions extend the requested set but receive no authority until explicitly granted. | A | AIRI plugin permission tests | analysed |
+| B-AIRI-PLG-003 | PLG-009 | A child module's effective grant cannot exceed the parent extension's permission ceiling. | A | AIRI plugin permission tests | analysed |
+| B-AIRI-PLG-004 | PLG-010 | Unloading an extension retains session ownership until runtime and asset cleanup independently succeed; retry does not repeat already-completed cleanup. | A | AIRI ManagedExtensionSessions | analysed |
+| B-AIRI-PLG-005 | PLG-010 | Owned asset creation requires the exact active extension ID + session ID, not either identifier alone. | A | AIRI managed-session test | analysed |
+| B-AIRI-VOICE-001 | RTC-013 | A new voice-input start waits for an in-progress stop; an old teardown cannot close newly created microphone consumers. | A | AIRI voice-input lifecycle tests/ADR | analysed |
+| B-AIRI-VOICE-002 | RTC-013 | Microphone startup errors propagate to the caller while partial resources remain cleanable; UI must not falsely remain enabled. | A | AIRI voice-input lifecycle tests | analysed |
+| B-AIRI-VOICE-003 | RTC-013 | Replacing a stream/provider creates a fresh binding and an aborted prior binding cannot deliver late transcript callbacks into the replacement. | A | AIRI voice-input ADR | analysed |
+| B-AIRI-CUA-001 | PER-004 | Browser DOM, terminal/tool and raw desktop control are distinct execution lanes; deterministic structured execution is preferred before blind coordinate action. | B | AIRI computer-use-mcp README | analysed |
+| B-AIRI-CUA-002 | PER-004 | Computer-use actions retain approval, trace/audit and run evidence; approval alone is not treated as Masanawa's complete isolation policy. | A/B | AIRI computer-use-mcp + Masanawa security decision | analysed |
 
 Deep behavior mining from tests remains required before Phase 0 completion.
