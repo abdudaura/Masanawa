@@ -53,7 +53,7 @@ The 381 Supabase migrations are not treated as one undifferentiated root. The fo
 - civic: claim/leadership/relationship lifecycle, refresh/election/pulse;
 - skills: versioned skill contracts, bindings, certification/rehearsal.
 
-Remaining migration-by-migration enumeration is still required before ChatWithStars can be marked fully covered. In particular, migration names that do not fall into these families must be explicitly classified or excluded after inspection.
+Migration-by-migration accounting is now materialized in `chatwithstars-migration-manifest.json`: all 381 pinned migration filenames resolve to at least one canonical family/classification. The previously missed 85 files are dispositioned in `CHATWITHSTARS-MIGRATIONS.md`.
 
 ## Integration proof
 
@@ -67,7 +67,7 @@ Each retained integration still requires a provider-specific auth/retry/idempote
 
 The runtime/domain families above are now descendant-traced, but two closure tasks remain:
 
-1. classify all remaining Supabase migrations that are not yet represented by a durable-state family or explicit C exclusion;
-2. produce a provider behavior matrix for every external integration, including auth material, retry rules, idempotency key/receipt behavior, ambiguous-outcome reconciliation and secret handling.
+1. close or explicitly retire the remaining provider gaps in `CHATWITHSTARS-INTEGRATIONS.md`;
+2. verify generated migration manifest coverage against the pinned 381-file tree whenever the source pin changes.
 
-Only after those two tasks pass may ChatWithStars move back to `covered`.
+The migration accounting gap is closed at the current pin; provider behavior closure is still open. Only after those provider gaps pass may ChatWithStars move back to `covered`.
