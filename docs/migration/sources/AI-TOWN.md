@@ -2,7 +2,7 @@
 
 Pinned revision: `8e05997f2409275669c8344b84a51692e83f3f33`.
 
-Status: Phase 0A world-simulation comparison complete.
+Status: Phase 0B exhaustive coverage complete at the pinned revision. See `docs/migration/coverage/AI-TOWN.md`.
 
 AI Town is the strongest pinned donor for continuous shared-world simulation mechanics, but it is not Masanawa's canonical world/domain model. Its Convex/game-shaped state is adapted behind `packages/world`; ChatWithStars remains the stronger donor for governed fictional canon and life-state semantics.
 
@@ -140,3 +140,14 @@ The canonical model separates at least:
 World events may produce memory candidates, but `packages/memory` remains the only memory authority. Workflows/tasks may react to world events, but `packages/workflows` remains workflow authority. Identity versions constrain world evolution, but `packages/identity` remains Character identity authority.
 
 See ADR-0009 and `docs/migration/WORLD-SIMULATION-ADOPTION-BOUNDARY.md`.
+
+
+## Phase 0B closure
+
+The corrected descendant-level remediation pass is complete. Exact implementation/test/state/integration evidence, security gaps, canonical ownership and acceptance gates are recorded in `docs/migration/coverage/AI-TOWN.md`.
+
+The pass explicitly covers engine/input ordering, monotonic time, generation conflict rejection, transactional world commit, liveness/recovery, autonomous actor operations, conversation state, spatial/pathfinding behavior, historical interpolation, archival history, memory/reference boundaries, LLM providers, Replicate callbacks, optional/commented auth, client projection behavior and deployment/runtime infrastructure.
+
+Important production boundary findings: AI Town's public world mutations have authentication checks disabled/commented out at the pin, and its Replicate webhook lacks signature verification/durable request correlation. Neither behavior is adoptable by Masanawa.
+
+Unresolved authority conflicts: **0**. The Phase 0A donor decision is unchanged.
