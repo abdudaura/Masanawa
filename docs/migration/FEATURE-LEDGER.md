@@ -279,3 +279,20 @@ This inventory is intentionally incomplete. Source-specific map documents identi
 | CLI-001 | operations | CLI/daemon/server/SDK/operator surfaces over one canonical runtime | OpenJarvis | B | operator/DX donor | apps/ops + SDK/CLI adapters | analysed |
 | RCP-001 | workflows | recipes/templates/examples as declarative composition/reference, not parallel domain runtimes | OpenJarvis | C/B | authoring/reference donor | developer tooling + workflow templates | selected |
 | RST-001 | runtime | duplicate Rust/Python implementations are implementation alternatives, not two Masanawa authorities | OpenJarvis | C/B | implementation reference | canonical TypeScript contracts; optional native acceleration only behind adapters | selected |
+
+### Phase 0B N.E.K.O coverage additions
+
+| ID | Domain | Feature | Source | Class | Donor role | Masanawa destination | Status |
+|---|---|---|---|---|---|---|---|
+| VOI-001 | presence | provider-neutral ASR lifecycle with endpointing/VAD, candidate control, warmup, delivery status and worker-failure handling | N.E.K.O | B | realtime input donor | services/presence + providers/media | analysed |
+| VOI-002 | identity/presence | optional speaker/voice identity evidence separated from canonical user/Character identity | N.E.K.O | B | secondary identity-signal donor | services/presence + packages/identity | analysed |
+| ACT-001 | perception | local activity/focus/system-signal state machine feeding bounded proactive decisions | N.E.K.O | B | selected perception donor | packages/perception + proactivity | analysed |
+| CFG-001 | configuration | versioned local configuration/storage migration and staged cloud-save snapshots | N.E.K.O | B | configuration lifecycle donor | packages/config + storage adapters | analysed |
+| PLG-011 | plugins | plugin developer CLI/market install-build-validate-release lifecycle with dependency/source inspection | N.E.K.O | B | plugin DX/distribution donor | packages/plugins + developer tooling | analysed |
+| PLG-012 | plugins | process/message-plane plugin communication with validated RPC/pubsub/events and deadlock/lifecycle controls | N.E.K.O | A/B | plugin isolation donor | packages/plugins runtime adapters | analysed |
+| EXT-001 | extensions | mini-game/watch-together/music/game routes as optional Character experience extensions, not core world/runtime truth | N.E.K.O | C/B | extension reference donor | optional apps/extensions via skills/plugins | selected |
+| OBS-002 | telemetry | privacy-bounded local telemetry/survey collection as optional operator/product feedback | N.E.K.O | C/B | telemetry reference | telemetry/feedback with explicit consent | selected |
+| AST-001 | assets | vendored OCR, speech/embedding models, corpora and binary wheels require independent artifact/license provenance | N.E.K.O | C/B | artifact reference | provider/model registry only after separate license review | selected |
+| AVT-010 | embodiment | Live2D/MMD/PNGTuber import/control and avatar interaction surfaces remain client embodiment adapters | N.E.K.O | B | secondary embodiment donor | clients/embodiment + packages/identity imports | analysed |
+| MED-001 | media | provider-neutral TTS/image-generation/media utilities behind canonical provider registry | N.E.K.O | B | provider adapter reference | packages/providers/media | analysed |
+| CHN-010 | channels | QQ/OneBot/community connection adapters separated from canonical conversation/Character state | N.E.K.O | B | channel adapter reference | gateway/channel adapters | analysed |
