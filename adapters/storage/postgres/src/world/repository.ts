@@ -761,17 +761,31 @@ export async function appendWorldEvent(
     throw new TypeError("effectiveEnd must not precede effectiveStart");
   }
 
-  if (
-    input.admission === "automatic-approved" &&
-    input.characterId !== null &&
-    input.characterVersionId !== null
-  ) {
-    await assertActiveCharacterVersion(
-      client,
-      input.tenantId,
-      input.characterId,
-      input.characterVersionId,
-    );
+  if (input.admission === "automatic-approved") {
+    const world = await loadWorld(client, input.tenantId, input.worldId, false);
+    if (!world) {
+      throw notFound();
+    }
+    if (!world.policy.automaticCanonEnabled) {
+      throw conflict(
+        "world.automatic_canon_disabled",
+        "World policy does not permit automatic canon admission",
+      );
+    }
+    if (input.provenance !== "engine") {
+      throw conflict(
+        "world.automatic_canon_provenance_forbidden",
+        "Only engine-produced evidence may use automatic canon admission",
+      );
+    }
+    if (input.characterId !== null && input.characterVersionId !== null) {
+      await assertActiveCharacterVersion(
+        client,
+        input.tenantId,
+        input.characterId,
+        input.characterVersionId,
+      );
+    }
   }
 
   const canonState =
