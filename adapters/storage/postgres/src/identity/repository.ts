@@ -482,16 +482,25 @@ export async function getOrCreateRelationship(
 export function createPostgresIdentityRepository(
   client: PoolClient,
 ): IdentityRepository {
-  return Object.freeze({
-    createTenant: (input) => createTenant(client, input),
-    createUser: (input) => createUser(client, input),
-    linkExternalUserIdentity: (input) => linkExternalUserIdentity(client, input),
-    resolveUserByExternalIdentity: (tenantId, subject) =>
-      resolveUserByExternalIdentity(client, tenantId, subject),
-    createCharacter: (input) => createCharacter(client, input),
-    createCharacterVersion: (input) => createCharacterVersion(client, input),
-    publishCharacterVersion: (input) => publishCharacterVersion(client, input),
-    activateCharacterVersion: (input) => activateCharacterVersion(client, input),
-    getOrCreateRelationship: (input) => getOrCreateRelationship(client, input),
-  });
+  const repository: IdentityRepository = {
+    createTenant: (input: CreateTenantInput) => createTenant(client, input),
+    createUser: (input: CreateUserInput) => createUser(client, input),
+    linkExternalUserIdentity: (input: LinkExternalUserIdentityInput) =>
+      linkExternalUserIdentity(client, input),
+    resolveUserByExternalIdentity: (
+      tenantId: TenantId,
+      subject: ExternalSubjectRef,
+    ) => resolveUserByExternalIdentity(client, tenantId, subject),
+    createCharacter: (input: CreateCharacterInput) =>
+      createCharacter(client, input),
+    createCharacterVersion: (input: CreateCharacterVersionInput) =>
+      createCharacterVersion(client, input),
+    publishCharacterVersion: (input: PublishCharacterVersionInput) =>
+      publishCharacterVersion(client, input),
+    activateCharacterVersion: (input: ActivateCharacterVersionInput) =>
+      activateCharacterVersion(client, input),
+    getOrCreateRelationship: (input: GetOrCreateRelationshipInput) =>
+      getOrCreateRelationship(client, input),
+  };
+  return Object.freeze(repository);
 }
