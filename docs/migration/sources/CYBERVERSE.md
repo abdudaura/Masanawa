@@ -2,9 +2,9 @@
 
 Pinned revision: `13a6a95b47e5e6f0809683458767746ad54d7d7f` (`main`)
 
-License: GPLv3. Architecture/behavior reference by default; no direct Masanawa-core copying without explicit review.
+Provenance note: upstream terms affect implementation reuse, not feature selection. Useful CyberVerse capabilities remain eligible for A/B preservation in Masanawa.
 
-Status: Phase 0A donor-selection coverage complete. CyberVerse remains GPL-clean behavior reference; exhaustive A/B/C coverage continues in Phase 0B.
+Status: Phase 0A donor-selection coverage complete. CyberVerse remains independent-rewrite behavior reference; exhaustive A/B/C coverage continues in Phase 0B.
 
 ## Scale and shape
 
@@ -122,8 +122,7 @@ Masanawa adopts none of these language/storage choices by default. WebRTC/media 
 
 ## License caution
 
-GPLv3 is materially different from the Apache donors. Default migration method:
-behavior/architecture ledger -> independent Masanawa contract -> clean implementation -> parity test.
+Migration method for selected capabilities: behavior/architecture ledger -> Masanawa-owned contract -> implementation -> parity test. Provenance is tracked separately from feature selection.
 
 ## Deep-mined behavior added in Pass 2
 
