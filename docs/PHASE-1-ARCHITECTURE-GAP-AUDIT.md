@@ -2,7 +2,7 @@
 
 Date: 2026-10-01
 
-Status: ACTIVE
+Status: CLOSED — all listed gaps are resolved by the Phase 1 specification set and `docs/PHASE-1-CLOSURE-AUDIT.md`.
 
 Phase 0 is closed by `docs/migration/PHASE-0B-CLOSURE-AUDIT.md`. This audit identifies what the current architecture already settles and what must still become implementation-ready before Phase 2.
 
