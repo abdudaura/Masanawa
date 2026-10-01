@@ -83,3 +83,14 @@ Auth, retry, idempotency and reconciliation fields still require source-by-sourc
 | I-SKL-001 | Agent Skills / MCP skill sources | OpenJarvis/MAF/OpenClaw | import/progressive disclosure/interoperability | source/resource reads | untrusted code/content | packages/skills source adapters with quarantine/certification | selected boundary |
 | I-WFL-001 | Microsoft Agent Framework | Microsoft AF | workflow/checkpoint/HITL semantics | workflow/model/tool calls | private/business state | architecture/reference; reimplement TS/PostgreSQL | selected boundary |
 | I-PLG-001 | elizaOS plugin ecosystem | elizaOS | component/plugin interoperability reference | extension-defined | varies/high | optional import/compatibility adapters only | selected boundary |
+
+### Phase 0B ChatWithStars integration additions
+
+| ID | Provider/system | Source repo | Purpose/capabilities | Side effects | Data sensitivity | Masanawa adapter | Status |
+|---|---|---|---|---|---|---|---|
+| I-PAY-003 | NOWPayments | ChatWithStars | crypto payment/funding webhook path | financial/crypto | payment refs, wallet/account metadata | commerce provider adapter | discovered |
+| I-TEL-001 | Telnyx | ChatWithStars legacy web | number search/purchase, callbacks, WebRTC token/webhooks | telephony purchase/call | phone/audio/call metadata | future telephony provider only if independently selected | discovered |
+| I-SOC-004 | YouTube Data/ingestion | ChatWithStars automation | social/video discovery and historical backfill | external reads, scheduling | channel/video metadata | social ingestion provider | analysed |
+| I-SOC-005 | TikTok | ChatWithStars automation | publishing/provider integration | public posting | tokens/content | social provider adapter | discovered |
+| I-AUTH-001 | Google OAuth | ChatWithStars admin | connected-account authorization | OAuth grants | user/provider tokens | auth/integration adapter | discovered |
+| I-WA-001 | WhatsApp Web runtime | ChatWithStars calls/runtime | message/call transport on linked account | messaging/calls/device session | highly sensitive | gateway/channel/presence adapter; not domain authority | analysed |
