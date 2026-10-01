@@ -11,5 +11,8 @@
   },
   "dependencies": {
     "uuid": "14.0.2"
+  },
+  "devDependencies": {
+    "vitest": "5.0.3"
   }
 }
