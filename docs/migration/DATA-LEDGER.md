@@ -193,3 +193,17 @@ Phase 0 must continue mapping donor-specific stores/tables/files into these cano
 | D-PVD-006 | ProviderReceipt | ChatWithStars commerce/social/studio/channel | provider operation | append/unique | varies | providers + owning domain | canonical | definitive external evidence; never replaces domain truth |
 | D-PVD-007 | ProviderReconciliation | ChatWithStars Flutterwave + synthesis | ambiguous provider attempt | pending->resolved/needs_attention | sensitive/internal | providers/workflows | canonical | lookup/webhook/poll/operator outcome before retry |
 | D-PVD-008 | ProviderAcceptanceEvidence | ChatWithStars Ops | provider+capability+environment | append/expiry | internal | ops/providers | canonical | current end-to-end production journey distinct from config/readiness |
+
+### Phase 0B OpenJarvis remediation data concepts
+
+| ID | Canonical concept | Source | Scope | Lifecycle | Sensitivity | Destination | Treatment | Notes |
+|---|---|---|---|---|---|---|---|---|
+| D-CON-001 | ConnectorSyncCheckpoint | OpenJarvis | tenant+connector source binding | durable mutable | private/internal | connectors/workflows | redesign | cursor, items, last-success watermark, error; source swap resets checkpoint |
+| D-CON-002 | IngestedDocumentProvenance | OpenJarvis | tenant+connector document/chunk | append/versioned projection | source-dependent | knowledge | redesign | source/doc/chunk/hash/timestamp/embedding version; canonical source evidence retained |
+| D-LRN-001 | LearningSession | OpenJarvis | optimization run | durable lifecycle | internal | telemetry/learning | redesign | trigger, diagnosis/plan, benchmark before/after, cost, autonomy mode, status |
+| D-LRN-002 | LearningEditCandidate | OpenJarvis | learning session | proposed->review/staged->accepted/rejected/rolled_back | internal/security-sensitive | learning/skills/ops | redesign | risk tier, target, benchmark delta, approval evidence |
+| D-LRN-003 | LearningCheckpoint | OpenJarvis | staged config/skill/tool revision | immutable lineage | internal | learning/versioning | redesign | pre/post revision, session/edit/risk metadata, rollback lineage |
+| D-APR-020 | PendingToolAction | OpenJarvis | principal+tool action | pending->approved/denied/expired/executed | sensitive | workflows/security | redesign | donor SQLite status semantics; Masanawa authority/current-policy revalidation still required |
+| D-SES-020 | RuntimeSession | OpenJarvis | channel/runtime principal | durable session + bounded history | private | agents/gateway | redesign | never canonical Character/user/relationship identity |
+| D-SCH-020 | ScheduledTrigger | OpenJarvis | tenant/workflow | active/paused/cancelled/completed | private/internal | workflows/proactivity | redesign | once/interval/cron + timezone + next run |
+| D-SCH-021 | ScheduledRunEvidence | OpenJarvis | scheduled trigger | append | internal | workflows/telemetry | redesign | result/error/start/end evidence |
