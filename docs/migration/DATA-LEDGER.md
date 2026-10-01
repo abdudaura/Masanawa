@@ -280,3 +280,16 @@ Phase 0 must continue mapping donor-specific stores/tables/files into these cano
 | D-RTC-081 | SpeculativeTurn | Pipecat | user turn generation | proposed->confirmed/cancelled | private/session | presence | redesign | provisional inference/output cannot commit history until confirmation |
 | D-RTC-082 | ProcessorPauseLease | Pipecat | processor/pipeline | active->released/expired | runtime | presence | redesign | bounded readiness/pause state with timeout/liveness protection |
 | D-RTC-083 | TurnBoundaryEvidence | Pipecat | PresenceSession turn | append/ephemeral | private/telemetry | presence/telemetry | redesign | VAD/transcription/external/analyzer signals used by turn policy |
+
+### Phase 0B Letta Code memory data concepts
+
+| ID | Canonical concept | Source | Scope | Lifecycle | Sensitivity | Destination | Treatment | Notes |
+|---|---|---|---|---|---|---|---|---|
+| D-MEM-020 | MemoryMutationLease | Letta Code | memory scope/partition | claimed->released/expired-dead-owner | private/internal | memory/workflows | redesign | serializes canonical mutations; not filesystem lock-specific |
+| D-MEM-021 | MemoryRepairAttempt | Letta Code | memory revision/conflict signature | claimed->in_progress->attempted/cleared | private/internal | memory/workflows | redesign | token/CAS prevents stale worker from touching newer claim |
+| D-MEM-022 | MemoryRevision | Letta Code | memory scope | immutable revision lineage | private/shared | memory | redesign | Git commit is donor implementation; canonical Masanawa revision model is storage-neutral |
+| D-MEM-023 | AttachedMemoryScope | Letta Code | agent/character/relationship + repository/source | attached/detached with permission | private/shared | memory | redesign | explicit read/read_write and scope authority |
+| D-MEM-024 | MemoryConstraintPolicy | Letta Code | memory scope/type | versioned | internal | memory/ops | redesign | size/depth/layout limits + approval requirement |
+| D-MEM-025 | MemorySyncReceipt | Letta Code | mutation/revision | pending->succeeded/failed | private/internal | memory/events | redesign | client notification follows receipt state |
+| D-CTX-001 | WorkingContextProjection | Letta Code | live agent/session | ephemeral/rebuildable | private | agents/context | redesign | compacted/bounded view over durable memory/conversation evidence |
+| D-ATT-001 | AttachmentAdmission | Letta Code | channel message/recipient | proposed->allowed/denied->ingested/sent | sensitive | gateway/knowledge/security | redesign | MIME/path/recipient policy evidence |
