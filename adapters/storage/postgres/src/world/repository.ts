@@ -33,6 +33,9 @@ import {
   type CreateWorldInput,
   type GovernedWorldRepository,
   type NarrativeWorldRepository,
+  type PauseWorldInput,
+  type RecoverPausedWorldInput,
+  type RecoverPausedWorldResult,
   type PutCharacterLifeStateInput,
   type PutRoutineInput,
   type PutStoryArcInput,
@@ -58,6 +61,8 @@ interface WorldRow {
   current_generation_id: WorldGenerationId;
   current_generation_number: string;
   simulation_time: Date;
+  paused_at: Date | null;
+  recovery_target_time: Date | null;
   revision: string;
   created_at: Date;
   updated_at: Date;
@@ -194,6 +199,10 @@ function asWorld(row: WorldRow): World {
       "generation number",
     ),
     simulationTime: toInstant(row.simulation_time),
+    pausedAt: row.paused_at ? toInstant(row.paused_at) : null,
+    recoveryTargetTime: row.recovery_target_time
+      ? toInstant(row.recovery_target_time)
+      : null,
     revision: integer(row.revision, "world revision"),
     createdAt: toInstant(row.created_at),
     updatedAt: toInstant(row.updated_at),
@@ -357,6 +366,8 @@ async function loadWorld(
             current_generation_id,
             current_generation_number,
             simulation_time,
+            paused_at,
+            recovery_target_time,
             revision,
             created_at,
             updated_at
@@ -397,6 +408,8 @@ export async function createWorld(
                current_generation_id,
                current_generation_number,
                simulation_time,
+               paused_at,
+               recovery_target_time,
                revision,
                created_at,
                updated_at`,
@@ -513,6 +526,12 @@ export async function commitWorldGeneration(
   );
   if (!current) {
     throw notFound();
+  }
+  if (current.status !== "active") {
+    throw conflict(
+      "world.not_active",
+      "Only an active World may commit a simulation generation",
+    );
   }
   if (current.currentGenerationNumber !== input.expectedGenerationNumber) {
     throw conflict(
@@ -647,6 +666,8 @@ export async function commitWorldGeneration(
                 current_generation_id,
                 current_generation_number,
                 simulation_time,
+                paused_at,
+                recovery_target_time,
                 revision,
                 created_at,
                 updated_at`,
