@@ -1,0 +1,6259 @@
+{
+  "source": "livekit/agents-js@df97b867b3b16efbd348584c818cefc5536ef21a",
+  "count": 1042,
+  "unresolved": 0,
+  "entries": [
+    {
+      "path": ".changeset/catch-avatar-clear-buffer-rpc.md",
+      "family": "repo-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": ".changeset/config.json",
+      "family": "repo-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": ".cursor/rules/agent-core.mdc",
+      "family": "repo-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": ".eslintrc.cjs",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": ".gitattributes",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": ".github/CODEOWNERS",
+      "family": "repo-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/bug.yaml",
+      "family": "repo-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/config.yml",
+      "family": "repo-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/question.yaml",
+      "family": "repo-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": ".github/banner_dark.png",
+      "family": "repo-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": ".github/banner_light.png",
+      "family": "repo-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": ".github/pull_request_template.md",
+      "family": "repo-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": ".github/workflows/build.yml",
+      "family": "repo-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": ".github/workflows/release-gate.yml",
+      "family": "repo-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": ".github/workflows/release.yml",
+      "family": "repo-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": ".github/workflows/test.yml",
+      "family": "repo-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": ".gitignore",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": ".prettierignore",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": ".prettierrc",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "CLAUDE.md",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "CODE_OF_CONDUCT.md",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "LICENSE",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "LICENSES/Apache-2.0.txt",
+      "family": "third-party-notice",
+      "classification": "C",
+      "destination": "compliance"
+    },
+    {
+      "path": "LICENSES/CC-BY-NC-SA-4.0.txt",
+      "family": "third-party-notice",
+      "classification": "C",
+      "destination": "compliance"
+    },
+    {
+      "path": "MODEL_LICENSE",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "NOTICE",
+      "family": "third-party-notice",
+      "classification": "C",
+      "destination": "compliance"
+    },
+    {
+      "path": "README.md",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "REUSE.toml",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "REVIEW.md",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "agents/CHANGELOG.md",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/README.md",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/api-extractor.json",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/etc/agents.api.md",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/package.json",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/resources/NOTICE",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/resources/hold_music.ogg",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/resources/keyboard-typing.ogg",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/resources/keyboard-typing2.ogg",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/resources/office-ambience.ogg",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/_exceptions.test.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/_exceptions.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/audio.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/beta/index.ts",
+      "family": "beta-reference",
+      "classification": "C",
+      "destination": "reference"
+    },
+    {
+      "path": "agents/src/beta/tools/end_call.ts",
+      "family": "beta-reference",
+      "classification": "C",
+      "destination": "reference"
+    },
+    {
+      "path": "agents/src/beta/tools/index.ts",
+      "family": "beta-reference",
+      "classification": "C",
+      "destination": "reference"
+    },
+    {
+      "path": "agents/src/beta/tools/send_dtmf.test.ts",
+      "family": "beta-reference",
+      "classification": "C",
+      "destination": "reference"
+    },
+    {
+      "path": "agents/src/beta/tools/send_dtmf.ts",
+      "family": "beta-reference",
+      "classification": "C",
+      "destination": "reference"
+    },
+    {
+      "path": "agents/src/beta/workflows/index.ts",
+      "family": "beta-reference",
+      "classification": "C",
+      "destination": "reference"
+    },
+    {
+      "path": "agents/src/bin/livekit-agents.ts",
+      "family": "cli-entry",
+      "classification": "C",
+      "destination": "developer tooling"
+    },
+    {
+      "path": "agents/src/cli.test.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/cli.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/cli_client.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/connection_pool.test.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/connection_pool.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/console.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/constants.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/cpu.test.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/cpu.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/download.test.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/download.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/ffmpeg.test.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/ffmpeg.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/generator.test.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/generator.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/http_server.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/index.test.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/index.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/inference/_warmup.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/api_protos.test.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/api_protos.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/avatar.test.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/avatar.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/eot/base.test.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/eot/base.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/eot/detector.test.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/eot/detector.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/eot/index.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/eot/languages.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/eot/runner.test.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/eot/runner.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/eot/transports.test.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/eot/transports.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/index.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/interruption/_mock_ws.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/interruption/defaults.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/interruption/errors.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/interruption/interruption_cache_entry.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/interruption/interruption_detector.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/interruption/interruption_failover.test.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/interruption/interruption_session_create.test.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/interruption/interruption_speech_boundary.test.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/interruption/interruption_stream.test.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/interruption/interruption_stream.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/interruption/types.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/interruption/utils.test.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/interruption/utils.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/interruption/ws_transport.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/llm.test.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/llm.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/stt.test.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/stt.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/test_utils.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/tts.test.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/tts.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/tts_alignment.test.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/utils.test.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/utils.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/vad.test.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference/vad.ts",
+      "family": "inference-runtime",
+      "classification": "B",
+      "destination": "packages/providers"
+    },
+    {
+      "path": "agents/src/inference_runner.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/ipc/_preload.ts",
+      "family": "worker-ipc",
+      "classification": "B/C",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "agents/src/ipc/index.ts",
+      "family": "worker-ipc",
+      "classification": "B/C",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "agents/src/ipc/inference_executor.ts",
+      "family": "worker-ipc",
+      "classification": "B/C",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "agents/src/ipc/inference_proc_executor.ts",
+      "family": "worker-ipc",
+      "classification": "B/C",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "agents/src/ipc/inference_proc_lazy_main.ts",
+      "family": "worker-ipc",
+      "classification": "B/C",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "agents/src/ipc/job_executor.ts",
+      "family": "worker-ipc",
+      "classification": "B/C",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "agents/src/ipc/job_proc_executor.ts",
+      "family": "worker-ipc",
+      "classification": "B/C",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "agents/src/ipc/job_proc_lazy_main.ts",
+      "family": "worker-ipc",
+      "classification": "B/C",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "agents/src/ipc/job_trace.test.ts",
+      "family": "worker-ipc",
+      "classification": "B/C",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "agents/src/ipc/job_trace.ts",
+      "family": "worker-ipc",
+      "classification": "B/C",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "agents/src/ipc/message.ts",
+      "family": "worker-ipc",
+      "classification": "B/C",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "agents/src/ipc/proc_pool.test.ts",
+      "family": "worker-ipc",
+      "classification": "B/C",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "agents/src/ipc/proc_pool.ts",
+      "family": "worker-ipc",
+      "classification": "B/C",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "agents/src/ipc/supervised_proc.test.ts",
+      "family": "worker-ipc",
+      "classification": "B/C",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "agents/src/ipc/supervised_proc.ts",
+      "family": "worker-ipc",
+      "classification": "B/C",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "agents/src/job.test.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/job.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/job_lifecycle.test.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/job_lifecycle.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/language.test.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/language.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/llm/__snapshots__/chat_context.test.ts.snap",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/__snapshots__/tool_context.test.ts.snap",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/__snapshots__/zod-utils.test.ts.snap",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/async_toolset.test.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/async_toolset.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/chat_context.test.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/chat_context.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/duplex.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/duplex.type.test.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/duplex_adapter.test.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/duplex_adapter.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/fallback_adapter.test.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/fallback_adapter.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/index.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/llm.test.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/llm.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/provider_format/google.test.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/provider_format/google.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/provider_format/index.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/provider_format/mistralai.test.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/provider_format/mistralai.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/provider_format/openai.test.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/provider_format/openai.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/provider_format/utils.test.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/provider_format/utils.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/realtime.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/realtime.type.test.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/remote_chat_context.test.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/remote_chat_context.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/tool_context.test.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/tool_context.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/tool_context.type.test.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/utils.test.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/utils.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/zod-utils.test.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/llm/zod-utils.ts",
+      "family": "llm-runtime",
+      "classification": "B",
+      "destination": "packages/providers/agents"
+    },
+    {
+      "path": "agents/src/log.test.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/log.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/log_core.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/metrics/base.ts",
+      "family": "metrics",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/metrics/index.ts",
+      "family": "metrics",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/metrics/model_usage.test.ts",
+      "family": "metrics",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/metrics/model_usage.ts",
+      "family": "metrics",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/metrics/usage_collector.ts",
+      "family": "metrics",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/metrics/utils.ts",
+      "family": "metrics",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/plugin.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/proto.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/simulation.test.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/simulation.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/stream/deferred_stream.test.ts",
+      "family": "stream-primitives",
+      "classification": "B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/stream/deferred_stream.ts",
+      "family": "stream-primitives",
+      "classification": "B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/stream/identity_transform.test.ts",
+      "family": "stream-primitives",
+      "classification": "B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/stream/identity_transform.ts",
+      "family": "stream-primitives",
+      "classification": "B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/stream/index.ts",
+      "family": "stream-primitives",
+      "classification": "B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/stream/merge_readable_streams.ts",
+      "family": "stream-primitives",
+      "classification": "B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/stream/multi_input_stream.test.ts",
+      "family": "stream-primitives",
+      "classification": "B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/stream/multi_input_stream.ts",
+      "family": "stream-primitives",
+      "classification": "B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/stream/stream_channel.test.ts",
+      "family": "stream-primitives",
+      "classification": "B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/stream/stream_channel.ts",
+      "family": "stream-primitives",
+      "classification": "B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/stt/fallback_adapter.test.ts",
+      "family": "stt-runtime",
+      "classification": "B",
+      "destination": "packages/providers/presence"
+    },
+    {
+      "path": "agents/src/stt/fallback_adapter.ts",
+      "family": "stt-runtime",
+      "classification": "B",
+      "destination": "packages/providers/presence"
+    },
+    {
+      "path": "agents/src/stt/fallback_adapter_lifecycle.test.ts",
+      "family": "stt-runtime",
+      "classification": "B",
+      "destination": "packages/providers/presence"
+    },
+    {
+      "path": "agents/src/stt/index.ts",
+      "family": "stt-runtime",
+      "classification": "B",
+      "destination": "packages/providers/presence"
+    },
+    {
+      "path": "agents/src/stt/stream_adapter.test.ts",
+      "family": "stt-runtime",
+      "classification": "B",
+      "destination": "packages/providers/presence"
+    },
+    {
+      "path": "agents/src/stt/stream_adapter.ts",
+      "family": "stt-runtime",
+      "classification": "B",
+      "destination": "packages/providers/presence"
+    },
+    {
+      "path": "agents/src/stt/stt.test.ts",
+      "family": "stt-runtime",
+      "classification": "B",
+      "destination": "packages/providers/presence"
+    },
+    {
+      "path": "agents/src/stt/stt.ts",
+      "family": "stt-runtime",
+      "classification": "B",
+      "destination": "packages/providers/presence"
+    },
+    {
+      "path": "agents/src/stt/testing/fake_stt.ts",
+      "family": "stt-runtime",
+      "classification": "B",
+      "destination": "packages/providers/presence"
+    },
+    {
+      "path": "agents/src/stt/testing/index.ts",
+      "family": "stt-runtime",
+      "classification": "B",
+      "destination": "packages/providers/presence"
+    },
+    {
+      "path": "agents/src/telemetry/blocked_span_tracker.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/gen_ai.test.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/gen_ai.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/index.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/logging.test.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/logging.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/loop_monitor.test.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/loop_monitor.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/loop_monitor_stacks.test.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/loop_stack_sampler.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/observability_endpoint.test.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/observability_endpoint.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/observability_endpoint.type.test.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/otel_http_exporter.test.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/otel_http_exporter.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/otel_metrics.test.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/otel_metrics.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/pii.test.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/pii.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/pino_otel_transport.test.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/pino_otel_transport.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/prepared_tracer.test.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/rate_limiter.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/recording_disabled.test.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/recording_upload.test.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/recording_upload.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/redaction.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/rpc.test.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/rpc.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/session_context.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/span_gate.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/startup_spans.test.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/testing/trace_schema.test.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/testing/trace_schema.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/trace_types.test.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/trace_types.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/traces.otel2.type.test.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/traces.test.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/traces.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/upload_gate.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/utils.test.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/telemetry/utils.ts",
+      "family": "telemetry",
+      "classification": "B",
+      "destination": "packages/telemetry"
+    },
+    {
+      "path": "agents/src/tokenize/basic/basic.ts",
+      "family": "tokenization",
+      "classification": "C/B",
+      "destination": "agents/context"
+    },
+    {
+      "path": "agents/src/tokenize/basic/hyphenator.ts",
+      "family": "tokenization",
+      "classification": "C/B",
+      "destination": "agents/context"
+    },
+    {
+      "path": "agents/src/tokenize/basic/index.ts",
+      "family": "tokenization",
+      "classification": "C/B",
+      "destination": "agents/context"
+    },
+    {
+      "path": "agents/src/tokenize/basic/paragraph.ts",
+      "family": "tokenization",
+      "classification": "C/B",
+      "destination": "agents/context"
+    },
+    {
+      "path": "agents/src/tokenize/basic/sentence.ts",
+      "family": "tokenization",
+      "classification": "C/B",
+      "destination": "agents/context"
+    },
+    {
+      "path": "agents/src/tokenize/basic/word.ts",
+      "family": "tokenization",
+      "classification": "C/B",
+      "destination": "agents/context"
+    },
+    {
+      "path": "agents/src/tokenize/index.ts",
+      "family": "tokenization",
+      "classification": "C/B",
+      "destination": "agents/context"
+    },
+    {
+      "path": "agents/src/tokenize/token_stream.ts",
+      "family": "tokenization",
+      "classification": "C/B",
+      "destination": "agents/context"
+    },
+    {
+      "path": "agents/src/tokenize/tokenizer.test.ts",
+      "family": "tokenization",
+      "classification": "C/B",
+      "destination": "agents/context"
+    },
+    {
+      "path": "agents/src/tokenize/tokenizer.ts",
+      "family": "tokenization",
+      "classification": "C/B",
+      "destination": "agents/context"
+    },
+    {
+      "path": "agents/src/tokenize/xml_markup.test.ts",
+      "family": "tokenization",
+      "classification": "C/B",
+      "destination": "agents/context"
+    },
+    {
+      "path": "agents/src/transcription.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/tts/fallback_adapter.test.ts",
+      "family": "tts-runtime",
+      "classification": "B",
+      "destination": "packages/providers/presence"
+    },
+    {
+      "path": "agents/src/tts/fallback_adapter.ts",
+      "family": "tts-runtime",
+      "classification": "B",
+      "destination": "packages/providers/presence"
+    },
+    {
+      "path": "agents/src/tts/index.ts",
+      "family": "tts-runtime",
+      "classification": "B",
+      "destination": "packages/providers/presence"
+    },
+    {
+      "path": "agents/src/tts/markup_utils.ts",
+      "family": "tts-runtime",
+      "classification": "B",
+      "destination": "packages/providers/presence"
+    },
+    {
+      "path": "agents/src/tts/mood.ts",
+      "family": "tts-runtime",
+      "classification": "B",
+      "destination": "packages/providers/presence"
+    },
+    {
+      "path": "agents/src/tts/mood_data.ts",
+      "family": "tts-runtime",
+      "classification": "B",
+      "destination": "packages/providers/presence"
+    },
+    {
+      "path": "agents/src/tts/provider_format.test.ts",
+      "family": "tts-runtime",
+      "classification": "B",
+      "destination": "packages/providers/presence"
+    },
+    {
+      "path": "agents/src/tts/provider_format.ts",
+      "family": "tts-runtime",
+      "classification": "B",
+      "destination": "packages/providers/presence"
+    },
+    {
+      "path": "agents/src/tts/stream_adapter.ts",
+      "family": "tts-runtime",
+      "classification": "B",
+      "destination": "packages/providers/presence"
+    },
+    {
+      "path": "agents/src/tts/tts.test.ts",
+      "family": "tts-runtime",
+      "classification": "B",
+      "destination": "packages/providers/presence"
+    },
+    {
+      "path": "agents/src/tts/tts.ts",
+      "family": "tts-runtime",
+      "classification": "B",
+      "destination": "packages/providers/presence"
+    },
+    {
+      "path": "agents/src/types.test.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/types.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/utils.test.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/utils.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/utils_env.test.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/vad.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/version.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/voice/__snapshots__/report.test.ts.snap",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent.type.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent_activity.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent_activity.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent_activity_close_commit.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent_activity_handoff.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent_activity_interrupt.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent_activity_interrupted_commit.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent_activity_preemptive_pause_deadlock.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent_activity_prewarm.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent_activity_speech_lifecycle.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent_activity_speech_ownership.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent_activity_speech_task_abort.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent_activity_tool_output_commit.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent_activity_tts_release.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent_ignore_on_enter.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent_session.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent_session.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent_session_close_user_turn.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent_session_default_vad.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent_session_endpointing.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent_session_handoff.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent_session_text_only.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent_session_transcription_timeout.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent_session_update_agent_long_on_enter.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent_task_close.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent_task_handoff_drain.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent_task_handoff_eou.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent_task_prerun_handoff.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent_task_say_during_pause.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent_turn_span.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent_update_options.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/agent_v2.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/amd.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/amd.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/amd_session_close.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/audio_recognition.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/audio_recognition_backchannel.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/audio_recognition_close.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/audio_recognition_duplicate_commit.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/audio_recognition_endpointing.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/audio_recognition_eou.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/audio_recognition_handoff.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/audio_recognition_interruption.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/audio_recognition_push_audio.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/audio_recognition_span.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/audio_recognition_stt_recovery.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/audio_recognition_transcription_delay_anchor.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/audio_recognition_transcription_timeout.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/audio_recognition_turn_detection.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/audio_recognition_vad_reset.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/avatar/avatar_session.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/avatar/avatar_session.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/avatar/datastream_io.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/avatar/datastream_io.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/avatar/index.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/avatar/playback_payload.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/avatar/playback_payload.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/avatar/queue_io.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/background_audio.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/chat_item_proto_coverage.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/console_io.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/console_io.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/coverage_spans.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/eou_wait_span.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/events.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/expressive.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/expressive_toggle.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/generation.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/generation_interrupt_before_first_frame.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/generation_telemetry.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/generation_tools.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/generation_tts_timeout.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/index.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/interrupt_before_playout_deadlock.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/interruption_detection.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/io.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/io.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/keyterm_detection.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/keyterm_detection.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/keyterm_detection_span.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/model_refs.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/playout_launch_pause.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/realtime_adaptive_interruption.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/realtime_message_metrics.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/realtime_overlapping_speech.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/realtime_tool_output_commit.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/recorder_io/index.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/recorder_io/recorder_io.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/recorder_io/recorder_io.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/recorder_io/recorder_session_interrupt.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/remote_session.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/remote_session.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/report.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/report.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/room_io/_input.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/room_io/_input.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/room_io/_output.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/room_io/_output.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/room_io/index.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/room_io/room_io.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/room_io/room_io.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/run_context.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/run_context.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/running_tool_placeholders.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/session_lifecycle_span.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/speech_handle.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/speech_handle.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/testing/fake_llm.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/testing/index.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/testing/run_output_retry.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/testing/run_result.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/testing/run_result.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/testing/types.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/tool_executor.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/tool_executor.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/transcription/_utils.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/transcription/index.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/transcription/synchronizer.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/transcription/synchronizer.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/transcription/text_transforms.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/transcription/text_transforms.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/turn_config/endpointing.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/turn_config/endpointing.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/turn_config/interruption.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/turn_config/preemptive_generation.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/turn_config/turn_handling.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/turn_config/user_turn_limit.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/turn_config/utils.test.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/turn_config/utils.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/voice/utils.ts",
+      "family": "voice-session-runtime",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "agents/src/worker.test.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/worker.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/src/workflows/index.ts",
+      "family": "call-transfer-workflows",
+      "classification": "B/C",
+      "destination": "packages/workflows/presence"
+    },
+    {
+      "path": "agents/src/workflows/task_group.ts",
+      "family": "call-transfer-workflows",
+      "classification": "B/C",
+      "destination": "packages/workflows/presence"
+    },
+    {
+      "path": "agents/src/workflows/twilio_connector_warm_transfer.test.ts",
+      "family": "call-transfer-workflows",
+      "classification": "B/C",
+      "destination": "packages/workflows/presence"
+    },
+    {
+      "path": "agents/src/workflows/twilio_connector_warm_transfer_lifecycle.test.ts",
+      "family": "call-transfer-workflows",
+      "classification": "B/C",
+      "destination": "packages/workflows/presence"
+    },
+    {
+      "path": "agents/src/workflows/utils.ts",
+      "family": "call-transfer-workflows",
+      "classification": "B/C",
+      "destination": "packages/workflows/presence"
+    },
+    {
+      "path": "agents/src/workflows/warm_transfer.test.ts",
+      "family": "call-transfer-workflows",
+      "classification": "B/C",
+      "destination": "packages/workflows/presence"
+    },
+    {
+      "path": "agents/src/workflows/warm_transfer.ts",
+      "family": "call-transfer-workflows",
+      "classification": "B/C",
+      "destination": "packages/workflows/presence"
+    },
+    {
+      "path": "agents/tsconfig.json",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/tsconfig.typecheck.json",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "agents/tsup.config.ts",
+      "family": "agents-root",
+      "classification": "C/B",
+      "destination": "presence/runtime"
+    },
+    {
+      "path": "api-extractor-shared.json",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "examples/CHANGELOG.md",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/assets/walking-dogs.png",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/package.json",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/Dockerfile-example",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/anam_realtime_agent.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/async_tool_agent.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/background_audio.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/basic_agent.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/basic_agent_task.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/basic_eou.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/basic_task_group.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/basic_tool_call_agent.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/basic_toolsets.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/bey_avatar.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/cartesia.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/comprehensive_test.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/connectors/README.md",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/connectors/connectors.test.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/connectors/twilio_connector.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/connectors/whatsapp_connector.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/custom_text_handler.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/did_avatar.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/drive-thru/README.md",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/drive-thru/database.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/drive-thru/drivethru_agent.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/drive-thru/order.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/drive-thru/test_agent.test.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/elevenlabs_scribe_v2.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/expressive-agent/README.md",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/expressive-agent/expressive_agent.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/expressive-agent/prompt.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/frontdesk/README.md",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/frontdesk/calendar_api.test.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/frontdesk/calendar_api.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/frontdesk/calendar_integration.test.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/frontdesk/frontdesk_agent.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/frontdesk/test_agent.test.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/gemini_realtime_agent.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/google_gemini_tts.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/gpt_live/README.md",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/gpt_live/client_delegation.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/gpt_live/gpt_live_agent.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/hotel-receptionist/README.md",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/hotel-receptionist/hotel_db.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/hotel-receptionist/hotel_receptionist.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/hotel-receptionist/policies.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/hume_tts.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/idle_user_timeout_example.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/inference_avatar.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/instructions_per_modality.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/inworld_tts.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/lemonslice_realtime_avatar.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/lemonslice_realtime_avatar_meeting.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/liveavatar_avatar.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/llm_fallback_adapter.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/manual_shutdown.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/multi_agent.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/otel_trace.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/phonic_realtime_agent.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/play_local_audio_file.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/protoface_avatar.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/push_to_talk.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/raw_function_description.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/realtime_agent.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/realtime_streaming_transcript.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/realtime_turn_detector.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/realtime_with_tts.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/restaurant_agent.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/runway_avatar.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/survey/README.md",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/survey_agent.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/telephony_amd.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/testing/agent_task.test.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/testing/basic_task_group.test.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/testing/run_result.test.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/testing/survey_agent.test.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/testing/task_group.test.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/tool_call_disfluency.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/trugen_avatar.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/twilio_connector_warm_transfer.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/warm_transfer.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/src/xai-realtime.ts",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "examples/tsconfig.json",
+      "family": "examples",
+      "classification": "C",
+      "destination": "reference/fixtures"
+    },
+    {
+      "path": "globals.d.ts",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "package.json",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "patches/@changesets__assemble-release-plan.patch",
+      "family": "build-tooling",
+      "classification": "C/B",
+      "destination": "developer tooling"
+    },
+    {
+      "path": "plugins/anam/CHANGELOG.md",
+      "family": "provider-plugin-anam",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/anam/README.md",
+      "family": "provider-plugin-anam",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/anam/api-extractor.json",
+      "family": "provider-plugin-anam",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/anam/etc/agents-plugin-anam.api.md",
+      "family": "provider-plugin-anam",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/anam/package.json",
+      "family": "provider-plugin-anam",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/anam/src/api.ts",
+      "family": "provider-plugin-anam",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/anam/src/avatar.test.ts",
+      "family": "provider-plugin-anam",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/anam/src/avatar.ts",
+      "family": "provider-plugin-anam",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/anam/src/index.ts",
+      "family": "provider-plugin-anam",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/anam/src/types.ts",
+      "family": "provider-plugin-anam",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/anam/tsconfig.json",
+      "family": "provider-plugin-anam",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/anam/tsup.config.ts",
+      "family": "provider-plugin-anam",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/anthropic/CHANGELOG.md",
+      "family": "provider-plugin-anthropic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/anthropic/README.md",
+      "family": "provider-plugin-anthropic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/anthropic/api-extractor.json",
+      "family": "provider-plugin-anthropic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/anthropic/etc/agents-plugin-anthropic.api.md",
+      "family": "provider-plugin-anthropic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/anthropic/package.json",
+      "family": "provider-plugin-anthropic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/anthropic/src/index.ts",
+      "family": "provider-plugin-anthropic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/anthropic/src/llm.test.ts",
+      "family": "provider-plugin-anthropic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/anthropic/src/llm.ts",
+      "family": "provider-plugin-anthropic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/anthropic/src/models.ts",
+      "family": "provider-plugin-anthropic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/anthropic/tsconfig.json",
+      "family": "provider-plugin-anthropic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/anthropic/tsup.config.ts",
+      "family": "provider-plugin-anthropic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/assemblyai/CHANGELOG.md",
+      "family": "provider-plugin-assemblyai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/assemblyai/README.md",
+      "family": "provider-plugin-assemblyai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/assemblyai/api-extractor.json",
+      "family": "provider-plugin-assemblyai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/assemblyai/etc/agents-plugin-assemblyai.api.md",
+      "family": "provider-plugin-assemblyai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/assemblyai/package.json",
+      "family": "provider-plugin-assemblyai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/assemblyai/src/index.ts",
+      "family": "provider-plugin-assemblyai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/assemblyai/src/models.ts",
+      "family": "provider-plugin-assemblyai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/assemblyai/src/stt-metadata.test.ts",
+      "family": "provider-plugin-assemblyai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/assemblyai/src/stt-options.test.ts",
+      "family": "provider-plugin-assemblyai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/assemblyai/src/stt.test.ts",
+      "family": "provider-plugin-assemblyai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/assemblyai/src/stt.ts",
+      "family": "provider-plugin-assemblyai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/assemblyai/tsconfig.json",
+      "family": "provider-plugin-assemblyai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/assemblyai/tsup.config.ts",
+      "family": "provider-plugin-assemblyai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/azure/CHANGELOG.md",
+      "family": "provider-plugin-azure",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/azure/README.md",
+      "family": "provider-plugin-azure",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/azure/api-extractor.json",
+      "family": "provider-plugin-azure",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/azure/etc/agents-plugin-azure.api.md",
+      "family": "provider-plugin-azure",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/azure/package.json",
+      "family": "provider-plugin-azure",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/azure/src/index.ts",
+      "family": "provider-plugin-azure",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/azure/src/stt.test.ts",
+      "family": "provider-plugin-azure",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/azure/src/stt.ts",
+      "family": "provider-plugin-azure",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/azure/tsconfig.json",
+      "family": "provider-plugin-azure",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/azure/tsup.config.ts",
+      "family": "provider-plugin-azure",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/baseten/CHANGELOG.md",
+      "family": "provider-plugin-baseten",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/baseten/README.md",
+      "family": "provider-plugin-baseten",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/baseten/api-extractor.json",
+      "family": "provider-plugin-baseten",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/baseten/etc/agents-plugin-baseten.api.md",
+      "family": "provider-plugin-baseten",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/baseten/package.json",
+      "family": "provider-plugin-baseten",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/baseten/src/index.ts",
+      "family": "provider-plugin-baseten",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/baseten/src/llm.test.ts",
+      "family": "provider-plugin-baseten",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/baseten/src/llm.ts",
+      "family": "provider-plugin-baseten",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/baseten/src/stt.test.ts",
+      "family": "provider-plugin-baseten",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/baseten/src/stt.ts",
+      "family": "provider-plugin-baseten",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/baseten/src/tts.test.ts",
+      "family": "provider-plugin-baseten",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/baseten/src/tts.ts",
+      "family": "provider-plugin-baseten",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/baseten/src/types.ts",
+      "family": "provider-plugin-baseten",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/baseten/tsconfig.json",
+      "family": "provider-plugin-baseten",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/baseten/tsup.config.ts",
+      "family": "provider-plugin-baseten",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/bey/CHANGELOG.md",
+      "family": "provider-plugin-bey",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/bey/README.md",
+      "family": "provider-plugin-bey",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/bey/api-extractor.json",
+      "family": "provider-plugin-bey",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/bey/etc/agents-plugin-bey.api.md",
+      "family": "provider-plugin-bey",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/bey/package.json",
+      "family": "provider-plugin-bey",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/bey/src/avatar.test.ts",
+      "family": "provider-plugin-bey",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/bey/src/avatar.ts",
+      "family": "provider-plugin-bey",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/bey/src/index.ts",
+      "family": "provider-plugin-bey",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/bey/src/log.ts",
+      "family": "provider-plugin-bey",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/bey/tsconfig.json",
+      "family": "provider-plugin-bey",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/bey/tsup.config.ts",
+      "family": "provider-plugin-bey",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/cartesia/CHANGELOG.md",
+      "family": "provider-plugin-cartesia",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/cartesia/README.md",
+      "family": "provider-plugin-cartesia",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/cartesia/api-extractor.json",
+      "family": "provider-plugin-cartesia",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/cartesia/etc/agents-plugin-cartesia.api.md",
+      "family": "provider-plugin-cartesia",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/cartesia/package.json",
+      "family": "provider-plugin-cartesia",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/cartesia/src/index.ts",
+      "family": "provider-plugin-cartesia",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/cartesia/src/models.ts",
+      "family": "provider-plugin-cartesia",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/cartesia/src/stt.test.ts",
+      "family": "provider-plugin-cartesia",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/cartesia/src/stt.ts",
+      "family": "provider-plugin-cartesia",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/cartesia/src/tts.test.ts",
+      "family": "provider-plugin-cartesia",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/cartesia/src/tts.ts",
+      "family": "provider-plugin-cartesia",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/cartesia/src/types.ts",
+      "family": "provider-plugin-cartesia",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/cartesia/tsconfig.json",
+      "family": "provider-plugin-cartesia",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/cartesia/tsup.config.ts",
+      "family": "provider-plugin-cartesia",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/cerebras/CHANGELOG.md",
+      "family": "provider-plugin-cerebras",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/cerebras/README.md",
+      "family": "provider-plugin-cerebras",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/cerebras/api-extractor.json",
+      "family": "provider-plugin-cerebras",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/cerebras/etc/agents-plugin-cerebras.api.md",
+      "family": "provider-plugin-cerebras",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/cerebras/package.json",
+      "family": "provider-plugin-cerebras",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/cerebras/src/index.ts",
+      "family": "provider-plugin-cerebras",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/cerebras/src/llm.test.ts",
+      "family": "provider-plugin-cerebras",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/cerebras/src/llm.ts",
+      "family": "provider-plugin-cerebras",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/cerebras/src/models.ts",
+      "family": "provider-plugin-cerebras",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/cerebras/tsconfig.json",
+      "family": "provider-plugin-cerebras",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/cerebras/tsup.config.ts",
+      "family": "provider-plugin-cerebras",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/deepgram/CHANGELOG.md",
+      "family": "provider-plugin-deepgram",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/deepgram/README.md",
+      "family": "provider-plugin-deepgram",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/deepgram/api-extractor.json",
+      "family": "provider-plugin-deepgram",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/deepgram/etc/agents-plugin-deepgram.api.md",
+      "family": "provider-plugin-deepgram",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/deepgram/package.json",
+      "family": "provider-plugin-deepgram",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/deepgram/src/_utils.test.ts",
+      "family": "provider-plugin-deepgram",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/deepgram/src/_utils.ts",
+      "family": "provider-plugin-deepgram",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/deepgram/src/index.ts",
+      "family": "provider-plugin-deepgram",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/deepgram/src/models.ts",
+      "family": "provider-plugin-deepgram",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/deepgram/src/stt.test.ts",
+      "family": "provider-plugin-deepgram",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/deepgram/src/stt.ts",
+      "family": "provider-plugin-deepgram",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/deepgram/src/stt_logging.test.ts",
+      "family": "provider-plugin-deepgram",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/deepgram/src/stt_v2.test.ts",
+      "family": "provider-plugin-deepgram",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/deepgram/src/stt_v2.ts",
+      "family": "provider-plugin-deepgram",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/deepgram/src/tts.test.ts",
+      "family": "provider-plugin-deepgram",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/deepgram/src/tts.ts",
+      "family": "provider-plugin-deepgram",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/deepgram/src/tts_v2.test.ts",
+      "family": "provider-plugin-deepgram",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/deepgram/src/tts_v2.ts",
+      "family": "provider-plugin-deepgram",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/deepgram/tsconfig.json",
+      "family": "provider-plugin-deepgram",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/deepgram/tsup.config.ts",
+      "family": "provider-plugin-deepgram",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/did/CHANGELOG.md",
+      "family": "provider-plugin-did",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/did/README.md",
+      "family": "provider-plugin-did",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/did/api-extractor.json",
+      "family": "provider-plugin-did",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/did/etc/agents-plugin-did.api.md",
+      "family": "provider-plugin-did",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/did/package.json",
+      "family": "provider-plugin-did",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/did/src/api.ts",
+      "family": "provider-plugin-did",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/did/src/avatar.test.ts",
+      "family": "provider-plugin-did",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/did/src/avatar.ts",
+      "family": "provider-plugin-did",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/did/src/index.ts",
+      "family": "provider-plugin-did",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/did/src/log.ts",
+      "family": "provider-plugin-did",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/did/src/types.ts",
+      "family": "provider-plugin-did",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/did/tsconfig.json",
+      "family": "provider-plugin-did",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/did/tsup.config.ts",
+      "family": "provider-plugin-did",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/elevenlabs/CHANGELOG.md",
+      "family": "provider-plugin-elevenlabs",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/elevenlabs/README.md",
+      "family": "provider-plugin-elevenlabs",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/elevenlabs/api-extractor.json",
+      "family": "provider-plugin-elevenlabs",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/elevenlabs/etc/agents-plugin-elevenlabs.api.md",
+      "family": "provider-plugin-elevenlabs",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/elevenlabs/package.json",
+      "family": "provider-plugin-elevenlabs",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/elevenlabs/src/_utils.ts",
+      "family": "provider-plugin-elevenlabs",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/elevenlabs/src/index.ts",
+      "family": "provider-plugin-elevenlabs",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/elevenlabs/src/models.ts",
+      "family": "provider-plugin-elevenlabs",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/elevenlabs/src/stt.test.ts",
+      "family": "provider-plugin-elevenlabs",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/elevenlabs/src/stt.ts",
+      "family": "provider-plugin-elevenlabs",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/elevenlabs/src/tts.test.ts",
+      "family": "provider-plugin-elevenlabs",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/elevenlabs/src/tts.ts",
+      "family": "provider-plugin-elevenlabs",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/elevenlabs/tsconfig.json",
+      "family": "provider-plugin-elevenlabs",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/elevenlabs/tsup.config.ts",
+      "family": "provider-plugin-elevenlabs",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/fishaudio/CHANGELOG.md",
+      "family": "provider-plugin-fishaudio",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/fishaudio/README.md",
+      "family": "provider-plugin-fishaudio",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/fishaudio/api-extractor.json",
+      "family": "provider-plugin-fishaudio",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/fishaudio/etc/agents-plugin-fishaudio.api.md",
+      "family": "provider-plugin-fishaudio",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/fishaudio/package.json",
+      "family": "provider-plugin-fishaudio",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/fishaudio/src/index.ts",
+      "family": "provider-plugin-fishaudio",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/fishaudio/src/models.ts",
+      "family": "provider-plugin-fishaudio",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/fishaudio/src/tts.test.ts",
+      "family": "provider-plugin-fishaudio",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/fishaudio/src/tts.ts",
+      "family": "provider-plugin-fishaudio",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/fishaudio/tsconfig.json",
+      "family": "provider-plugin-fishaudio",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/fishaudio/tsup.config.ts",
+      "family": "provider-plugin-fishaudio",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/google/CHANGELOG.md",
+      "family": "provider-plugin-google",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/google/README.md",
+      "family": "provider-plugin-google",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/google/api-extractor.json",
+      "family": "provider-plugin-google",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/google/etc/agents-plugin-google.api.md",
+      "family": "provider-plugin-google",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/google/package.json",
+      "family": "provider-plugin-google",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/google/src/aiplatform_llm.ts",
+      "family": "provider-plugin-google",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/google/src/beta/gemini_stt.test.ts",
+      "family": "provider-plugin-google",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/google/src/beta/gemini_stt.ts",
+      "family": "provider-plugin-google",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/google/src/beta/gemini_tts.test.ts",
+      "family": "provider-plugin-google",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/google/src/beta/gemini_tts.ts",
+      "family": "provider-plugin-google",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/google/src/beta/index.ts",
+      "family": "provider-plugin-google",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/google/src/index.ts",
+      "family": "provider-plugin-google",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/google/src/llm.test.ts",
+      "family": "provider-plugin-google",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/google/src/llm.ts",
+      "family": "provider-plugin-google",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/google/src/llm_prewarm.test.ts",
+      "family": "provider-plugin-google",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/google/src/llm_request.test.ts",
+      "family": "provider-plugin-google",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/google/src/models.ts",
+      "family": "provider-plugin-google",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/google/src/realtime/api_proto.ts",
+      "family": "provider-plugin-google",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/google/src/realtime/index.ts",
+      "family": "provider-plugin-google",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/google/src/realtime/realtime_api.test.ts",
+      "family": "provider-plugin-google",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/google/src/realtime/realtime_api.ts",
+      "family": "provider-plugin-google",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/google/src/realtime/realtime_transcript.test.ts",
+      "family": "provider-plugin-google",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/google/src/tools.ts",
+      "family": "provider-plugin-google",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/google/src/utils.test.ts",
+      "family": "provider-plugin-google",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/google/src/utils.ts",
+      "family": "provider-plugin-google",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/google/tsconfig.json",
+      "family": "provider-plugin-google",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/google/tsup.config.ts",
+      "family": "provider-plugin-google",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/hume/CHANGELOG.md",
+      "family": "provider-plugin-hume",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/hume/api-extractor.json",
+      "family": "provider-plugin-hume",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/hume/etc/agents-plugin-hume.api.md",
+      "family": "provider-plugin-hume",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/hume/package.json",
+      "family": "provider-plugin-hume",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/hume/src/index.ts",
+      "family": "provider-plugin-hume",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/hume/src/models.ts",
+      "family": "provider-plugin-hume",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/hume/src/tts.test.ts",
+      "family": "provider-plugin-hume",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/hume/src/tts.ts",
+      "family": "provider-plugin-hume",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/hume/tsconfig.json",
+      "family": "provider-plugin-hume",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/hume/tsup.config.ts",
+      "family": "provider-plugin-hume",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/inworld/CHANGELOG.md",
+      "family": "provider-plugin-inworld",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/inworld/api-extractor.json",
+      "family": "provider-plugin-inworld",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/inworld/etc/agents-plugin-inworld.api.md",
+      "family": "provider-plugin-inworld",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/inworld/package.json",
+      "family": "provider-plugin-inworld",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/inworld/src/index.ts",
+      "family": "provider-plugin-inworld",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/inworld/src/stt.ts",
+      "family": "provider-plugin-inworld",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/inworld/src/tts.test.ts",
+      "family": "provider-plugin-inworld",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/inworld/src/tts.ts",
+      "family": "provider-plugin-inworld",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/inworld/tsconfig.json",
+      "family": "provider-plugin-inworld",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/inworld/tsup.config.ts",
+      "family": "provider-plugin-inworld",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/krisp/CHANGELOG.md",
+      "family": "provider-plugin-krisp",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/krisp/README.md",
+      "family": "provider-plugin-krisp",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/krisp/api-extractor.json",
+      "family": "provider-plugin-krisp",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/krisp/etc/agents-plugin-krisp.api.md",
+      "family": "provider-plugin-krisp",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/krisp/package.json",
+      "family": "provider-plugin-krisp",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/krisp/src/_frame_identity.test.ts",
+      "family": "provider-plugin-krisp",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/krisp/src/_frame_identity.ts",
+      "family": "provider-plugin-krisp",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/krisp/src/_krisp.ts",
+      "family": "provider-plugin-krisp",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/krisp/src/_krisp_sdk.d.ts",
+      "family": "provider-plugin-krisp",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/krisp/src/auth.ts",
+      "family": "provider-plugin-krisp",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/krisp/src/index.ts",
+      "family": "provider-plugin-krisp",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/krisp/src/log.ts",
+      "family": "provider-plugin-krisp",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/krisp/src/viva_filter.ts",
+      "family": "provider-plugin-krisp",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/krisp/tsconfig.json",
+      "family": "provider-plugin-krisp",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/krisp/tsup.config.ts",
+      "family": "provider-plugin-krisp",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/lemonslice/CHANGELOG.md",
+      "family": "provider-plugin-lemonslice",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/lemonslice/README.md",
+      "family": "provider-plugin-lemonslice",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/lemonslice/api-extractor.json",
+      "family": "provider-plugin-lemonslice",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/lemonslice/etc/agents-plugin-lemonslice.api.md",
+      "family": "provider-plugin-lemonslice",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/lemonslice/package.json",
+      "family": "provider-plugin-lemonslice",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/lemonslice/src/avatar.test.ts",
+      "family": "provider-plugin-lemonslice",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/lemonslice/src/avatar.ts",
+      "family": "provider-plugin-lemonslice",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/lemonslice/src/index.ts",
+      "family": "provider-plugin-lemonslice",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/lemonslice/src/log.ts",
+      "family": "provider-plugin-lemonslice",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/lemonslice/src/meeting/audio.test.ts",
+      "family": "provider-plugin-lemonslice",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/lemonslice/src/meeting/audio.ts",
+      "family": "provider-plugin-lemonslice",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/lemonslice/src/meeting/chat.ts",
+      "family": "provider-plugin-lemonslice",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/lemonslice/src/meeting/codec.ts",
+      "family": "provider-plugin-lemonslice",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/lemonslice/src/meeting/room.ts",
+      "family": "provider-plugin-lemonslice",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/lemonslice/tsconfig.json",
+      "family": "provider-plugin-lemonslice",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/lemonslice/tsup.config.ts",
+      "family": "provider-plugin-lemonslice",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/liveavatar/CHANGELOG.md",
+      "family": "provider-plugin-liveavatar",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/liveavatar/README.md",
+      "family": "provider-plugin-liveavatar",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/liveavatar/api-extractor.json",
+      "family": "provider-plugin-liveavatar",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/liveavatar/etc/agents-plugin-liveavatar.api.md",
+      "family": "provider-plugin-liveavatar",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/liveavatar/package.json",
+      "family": "provider-plugin-liveavatar",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/liveavatar/src/api.ts",
+      "family": "provider-plugin-liveavatar",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/liveavatar/src/avatar.ts",
+      "family": "provider-plugin-liveavatar",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/liveavatar/src/index.ts",
+      "family": "provider-plugin-liveavatar",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/liveavatar/src/log.ts",
+      "family": "provider-plugin-liveavatar",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/liveavatar/tsconfig.json",
+      "family": "provider-plugin-liveavatar",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/liveavatar/tsup.config.ts",
+      "family": "provider-plugin-liveavatar",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/livekit/.gitattributes",
+      "family": "provider-plugin-livekit",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/livekit/CHANGELOG.md",
+      "family": "provider-plugin-livekit",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/livekit/README.md",
+      "family": "provider-plugin-livekit",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/livekit/api-extractor.json",
+      "family": "provider-plugin-livekit",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/livekit/etc/agents-plugin-livekit.api.md",
+      "family": "provider-plugin-livekit",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/livekit/package.json",
+      "family": "provider-plugin-livekit",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/livekit/src/hf_utils.test.ts",
+      "family": "provider-plugin-livekit",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/livekit/src/hf_utils.ts",
+      "family": "provider-plugin-livekit",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/livekit/src/index.ts",
+      "family": "provider-plugin-livekit",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/livekit/src/onnxruntime.d.ts",
+      "family": "provider-plugin-livekit",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/livekit/src/turn_detector/base.ts",
+      "family": "provider-plugin-livekit",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/livekit/src/turn_detector/constants.ts",
+      "family": "provider-plugin-livekit",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/livekit/src/turn_detector/english.ts",
+      "family": "provider-plugin-livekit",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/livekit/src/turn_detector/index.ts",
+      "family": "provider-plugin-livekit",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/livekit/src/turn_detector/multilingual.ts",
+      "family": "provider-plugin-livekit",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/livekit/src/turn_detector/utils.test.ts",
+      "family": "provider-plugin-livekit",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/livekit/src/turn_detector/utils.ts",
+      "family": "provider-plugin-livekit",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/livekit/tsconfig.json",
+      "family": "provider-plugin-livekit",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/livekit/tsup.config.ts",
+      "family": "provider-plugin-livekit",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/meta/CHANGELOG.md",
+      "family": "provider-plugin-meta",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/meta/README.md",
+      "family": "provider-plugin-meta",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/meta/api-extractor.json",
+      "family": "provider-plugin-meta",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/meta/etc/agents-plugin-meta.api.md",
+      "family": "provider-plugin-meta",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/meta/package.json",
+      "family": "provider-plugin-meta",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/meta/src/index.ts",
+      "family": "provider-plugin-meta",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/meta/src/log.ts",
+      "family": "provider-plugin-meta",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/meta/src/stt.test.ts",
+      "family": "provider-plugin-meta",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/meta/src/stt.ts",
+      "family": "provider-plugin-meta",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/meta/tsconfig.json",
+      "family": "provider-plugin-meta",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/meta/tsup.config.ts",
+      "family": "provider-plugin-meta",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/minimax/CHANGELOG.md",
+      "family": "provider-plugin-minimax",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/minimax/README.md",
+      "family": "provider-plugin-minimax",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/minimax/api-extractor.json",
+      "family": "provider-plugin-minimax",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/minimax/etc/agents-plugin-minimax.api.md",
+      "family": "provider-plugin-minimax",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/minimax/package.json",
+      "family": "provider-plugin-minimax",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/minimax/src/index.ts",
+      "family": "provider-plugin-minimax",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/minimax/src/models.ts",
+      "family": "provider-plugin-minimax",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/minimax/src/tts.test.ts",
+      "family": "provider-plugin-minimax",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/minimax/src/tts.ts",
+      "family": "provider-plugin-minimax",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/minimax/tsconfig.json",
+      "family": "provider-plugin-minimax",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/minimax/tsup.config.ts",
+      "family": "provider-plugin-minimax",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/mistral/CHANGELOG.md",
+      "family": "provider-plugin-mistral",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/mistral/README.md",
+      "family": "provider-plugin-mistral",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/mistral/api-extractor.json",
+      "family": "provider-plugin-mistral",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/mistral/etc/agents-plugin-mistral.api.md",
+      "family": "provider-plugin-mistral",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/mistral/package.json",
+      "family": "provider-plugin-mistral",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/mistral/src/index.ts",
+      "family": "provider-plugin-mistral",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/mistral/tsconfig.json",
+      "family": "provider-plugin-mistral",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/mistral/tsup.config.ts",
+      "family": "provider-plugin-mistral",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/mistralai/CHANGELOG.md",
+      "family": "provider-plugin-mistralai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/mistralai/README.md",
+      "family": "provider-plugin-mistralai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/mistralai/api-extractor.json",
+      "family": "provider-plugin-mistralai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/mistralai/etc/agents-plugin-mistralai.api.md",
+      "family": "provider-plugin-mistralai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/mistralai/package.json",
+      "family": "provider-plugin-mistralai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/mistralai/src/index.ts",
+      "family": "provider-plugin-mistralai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/mistralai/src/llm.test.ts",
+      "family": "provider-plugin-mistralai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/mistralai/src/llm.ts",
+      "family": "provider-plugin-mistralai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/mistralai/src/models.ts",
+      "family": "provider-plugin-mistralai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/mistralai/src/stt.test.ts",
+      "family": "provider-plugin-mistralai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/mistralai/src/stt.ts",
+      "family": "provider-plugin-mistralai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/mistralai/src/tts.test.ts",
+      "family": "provider-plugin-mistralai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/mistralai/src/tts.ts",
+      "family": "provider-plugin-mistralai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/mistralai/tsconfig.json",
+      "family": "provider-plugin-mistralai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/mistralai/tsup.config.ts",
+      "family": "provider-plugin-mistralai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/neuphonic/CHANGELOG.md",
+      "family": "provider-plugin-neuphonic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/neuphonic/README.md",
+      "family": "provider-plugin-neuphonic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/neuphonic/api-extractor.json",
+      "family": "provider-plugin-neuphonic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/neuphonic/etc/agents-plugin-neuphonic.api.md",
+      "family": "provider-plugin-neuphonic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/neuphonic/package.json",
+      "family": "provider-plugin-neuphonic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/neuphonic/src/index.ts",
+      "family": "provider-plugin-neuphonic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/neuphonic/src/models.ts",
+      "family": "provider-plugin-neuphonic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/neuphonic/src/tts.test.ts",
+      "family": "provider-plugin-neuphonic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/neuphonic/src/tts.ts",
+      "family": "provider-plugin-neuphonic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/neuphonic/tsconfig.json",
+      "family": "provider-plugin-neuphonic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/neuphonic/tsup.config.ts",
+      "family": "provider-plugin-neuphonic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/CHANGELOG.md",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/README.md",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/api-extractor.json",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/etc/agents-plugin-openai.api.md",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/package.json",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/src/index.ts",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/src/llm.test.ts",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/src/llm.ts",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/src/models.ts",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/src/realtime/api_proto.ts",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/src/realtime/gpt_live_model.test.ts",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/src/realtime/gpt_live_model.ts",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/src/realtime/gpt_live_types.ts",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/src/realtime/index.ts",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/src/realtime/realtime_model.test.ts",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/src/realtime/realtime_model.ts",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/src/responses/index.ts",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/src/responses/llm.test.ts",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/src/responses/llm.ts",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/src/stt.test.ts",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/src/stt.ts",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/src/tool_utils.test.ts",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/src/tool_utils.ts",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/src/tools.ts",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/src/tts.test.ts",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/src/tts.ts",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/src/ws/index.ts",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/src/ws/llm.test.ts",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/src/ws/llm.ts",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/src/ws/types.ts",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/tsconfig.json",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/openai/tsup.config.ts",
+      "family": "provider-plugin-openai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/perplexity/CHANGELOG.md",
+      "family": "provider-plugin-perplexity",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/perplexity/README.md",
+      "family": "provider-plugin-perplexity",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/perplexity/api-extractor.json",
+      "family": "provider-plugin-perplexity",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/perplexity/etc/agents-plugin-perplexity.api.md",
+      "family": "provider-plugin-perplexity",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/perplexity/package.json",
+      "family": "provider-plugin-perplexity",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/perplexity/src/index.ts",
+      "family": "provider-plugin-perplexity",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/perplexity/src/llm.test.ts",
+      "family": "provider-plugin-perplexity",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/perplexity/src/llm.ts",
+      "family": "provider-plugin-perplexity",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/perplexity/src/models.ts",
+      "family": "provider-plugin-perplexity",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/perplexity/src/responses/index.ts",
+      "family": "provider-plugin-perplexity",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/perplexity/src/responses/llm.test.ts",
+      "family": "provider-plugin-perplexity",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/perplexity/src/responses/llm.ts",
+      "family": "provider-plugin-perplexity",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/perplexity/tsconfig.json",
+      "family": "provider-plugin-perplexity",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/perplexity/tsup.config.ts",
+      "family": "provider-plugin-perplexity",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/phonic/CHANGELOG.md",
+      "family": "provider-plugin-phonic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/phonic/README.md",
+      "family": "provider-plugin-phonic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/phonic/api-extractor.json",
+      "family": "provider-plugin-phonic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/phonic/etc/agents-plugin-phonic.api.md",
+      "family": "provider-plugin-phonic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/phonic/package.json",
+      "family": "provider-plugin-phonic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/phonic/src/index.ts",
+      "family": "provider-plugin-phonic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/phonic/src/realtime/api_proto.ts",
+      "family": "provider-plugin-phonic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/phonic/src/realtime/index.ts",
+      "family": "provider-plugin-phonic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/phonic/src/realtime/realtime_model.ts",
+      "family": "provider-plugin-phonic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/phonic/src/realtime/tool_definitions.test.ts",
+      "family": "provider-plugin-phonic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/phonic/tsconfig.json",
+      "family": "provider-plugin-phonic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/phonic/tsup.config.ts",
+      "family": "provider-plugin-phonic",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/protoface/CHANGELOG.md",
+      "family": "provider-plugin-protoface",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/protoface/README.md",
+      "family": "provider-plugin-protoface",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/protoface/api-extractor.json",
+      "family": "provider-plugin-protoface",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/protoface/etc/agents-plugin-protoface.api.md",
+      "family": "provider-plugin-protoface",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/protoface/package.json",
+      "family": "provider-plugin-protoface",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/protoface/src/api.test.ts",
+      "family": "provider-plugin-protoface",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/protoface/src/api.ts",
+      "family": "provider-plugin-protoface",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/protoface/src/avatar.test.ts",
+      "family": "provider-plugin-protoface",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/protoface/src/avatar.ts",
+      "family": "provider-plugin-protoface",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/protoface/src/index.ts",
+      "family": "provider-plugin-protoface",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/protoface/src/log.ts",
+      "family": "provider-plugin-protoface",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/protoface/tsconfig.json",
+      "family": "provider-plugin-protoface",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/protoface/tsup.config.ts",
+      "family": "provider-plugin-protoface",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/resemble/CHANGELOG.md",
+      "family": "provider-plugin-resemble",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/resemble/README.md",
+      "family": "provider-plugin-resemble",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/resemble/api-extractor.json",
+      "family": "provider-plugin-resemble",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/resemble/etc/agents-plugin-resemble.api.md",
+      "family": "provider-plugin-resemble",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/resemble/package.json",
+      "family": "provider-plugin-resemble",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/resemble/src/index.ts",
+      "family": "provider-plugin-resemble",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/resemble/src/models.ts",
+      "family": "provider-plugin-resemble",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/resemble/src/tts.test.ts",
+      "family": "provider-plugin-resemble",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/resemble/src/tts.ts",
+      "family": "provider-plugin-resemble",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/resemble/tsconfig.json",
+      "family": "provider-plugin-resemble",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/resemble/tsup.config.ts",
+      "family": "provider-plugin-resemble",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/rime/CHANGELOG.md",
+      "family": "provider-plugin-rime",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/rime/README.md",
+      "family": "provider-plugin-rime",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/rime/api-extractor.json",
+      "family": "provider-plugin-rime",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/rime/etc/agents-plugin-rime.api.md",
+      "family": "provider-plugin-rime",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/rime/package.json",
+      "family": "provider-plugin-rime",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/rime/src/audio.ts",
+      "family": "provider-plugin-rime",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/rime/src/connection.ts",
+      "family": "provider-plugin-rime",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/rime/src/index.ts",
+      "family": "provider-plugin-rime",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/rime/src/legacy.test.ts",
+      "family": "provider-plugin-rime",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/rime/src/models.ts",
+      "family": "provider-plugin-rime",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/rime/src/options.test.ts",
+      "family": "provider-plugin-rime",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/rime/src/options.ts",
+      "family": "provider-plugin-rime",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/rime/src/stream.ts",
+      "family": "provider-plugin-rime",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/rime/src/stream_tts.ts",
+      "family": "provider-plugin-rime",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/rime/src/tts.test.ts",
+      "family": "provider-plugin-rime",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/rime/src/tts.ts",
+      "family": "provider-plugin-rime",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/rime/src/websocket.test.ts",
+      "family": "provider-plugin-rime",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/rime/tsconfig.json",
+      "family": "provider-plugin-rime",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/rime/tsup.config.ts",
+      "family": "provider-plugin-rime",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/runway/CHANGELOG.md",
+      "family": "provider-plugin-runway",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/runway/README.md",
+      "family": "provider-plugin-runway",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/runway/api-extractor.json",
+      "family": "provider-plugin-runway",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/runway/etc/agents-plugin-runway.api.md",
+      "family": "provider-plugin-runway",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/runway/package.json",
+      "family": "provider-plugin-runway",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/runway/src/avatar.ts",
+      "family": "provider-plugin-runway",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/runway/src/index.ts",
+      "family": "provider-plugin-runway",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/runway/src/log.ts",
+      "family": "provider-plugin-runway",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/runway/tsconfig.json",
+      "family": "provider-plugin-runway",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/runway/tsup.config.ts",
+      "family": "provider-plugin-runway",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/sarvam/CHANGELOG.md",
+      "family": "provider-plugin-sarvam",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/sarvam/README.md",
+      "family": "provider-plugin-sarvam",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/sarvam/api-extractor.json",
+      "family": "provider-plugin-sarvam",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/sarvam/etc/agents-plugin-sarvam.api.md",
+      "family": "provider-plugin-sarvam",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/sarvam/package.json",
+      "family": "provider-plugin-sarvam",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/sarvam/src/index.ts",
+      "family": "provider-plugin-sarvam",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/sarvam/src/models.ts",
+      "family": "provider-plugin-sarvam",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/sarvam/src/stt.test.ts",
+      "family": "provider-plugin-sarvam",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/sarvam/src/stt.ts",
+      "family": "provider-plugin-sarvam",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/sarvam/src/stt_streaming.test.ts",
+      "family": "provider-plugin-sarvam",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/sarvam/src/tts.test.ts",
+      "family": "provider-plugin-sarvam",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/sarvam/src/tts.ts",
+      "family": "provider-plugin-sarvam",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/sarvam/tsconfig.json",
+      "family": "provider-plugin-sarvam",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/sarvam/tsup.config.ts",
+      "family": "provider-plugin-sarvam",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/silero/.gitattributes",
+      "family": "provider-plugin-silero",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/silero/CHANGELOG.md",
+      "family": "provider-plugin-silero",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/silero/README.md",
+      "family": "provider-plugin-silero",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/silero/api-extractor.json",
+      "family": "provider-plugin-silero",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/silero/etc/agents-plugin-silero.api.md",
+      "family": "provider-plugin-silero",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/silero/package.json",
+      "family": "provider-plugin-silero",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/silero/src/index.ts",
+      "family": "provider-plugin-silero",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/silero/src/onnx_model.ts",
+      "family": "provider-plugin-silero",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/silero/src/onnxruntime.d.ts",
+      "family": "provider-plugin-silero",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/silero/src/silero_vad.onnx",
+      "family": "provider-plugin-silero",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/silero/src/vad.test.ts",
+      "family": "provider-plugin-silero",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/silero/src/vad.ts",
+      "family": "provider-plugin-silero",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/silero/tsconfig.json",
+      "family": "provider-plugin-silero",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/silero/tsup.config.ts",
+      "family": "provider-plugin-silero",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/soniox/CHANGELOG.md",
+      "family": "provider-plugin-soniox",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/soniox/README.md",
+      "family": "provider-plugin-soniox",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/soniox/api-extractor.json",
+      "family": "provider-plugin-soniox",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/soniox/etc/agents-plugin-soniox.api.md",
+      "family": "provider-plugin-soniox",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/soniox/package.json",
+      "family": "provider-plugin-soniox",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/soniox/src/_internal.ts",
+      "family": "provider-plugin-soniox",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/soniox/src/index.ts",
+      "family": "provider-plugin-soniox",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/soniox/src/stt.test.ts",
+      "family": "provider-plugin-soniox",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/soniox/src/stt.ts",
+      "family": "provider-plugin-soniox",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/soniox/src/tts.test.ts",
+      "family": "provider-plugin-soniox",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/soniox/src/tts.ts",
+      "family": "provider-plugin-soniox",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/soniox/tsconfig.json",
+      "family": "provider-plugin-soniox",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/soniox/tsup.config.ts",
+      "family": "provider-plugin-soniox",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/tavus/CHANGELOG.md",
+      "family": "provider-plugin-tavus",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/tavus/README.md",
+      "family": "provider-plugin-tavus",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/tavus/api-extractor.json",
+      "family": "provider-plugin-tavus",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/tavus/etc/agents-plugin-tavus.api.md",
+      "family": "provider-plugin-tavus",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/tavus/package.json",
+      "family": "provider-plugin-tavus",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/tavus/src/api.test.ts",
+      "family": "provider-plugin-tavus",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/tavus/src/api.ts",
+      "family": "provider-plugin-tavus",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/tavus/src/avatar.test.ts",
+      "family": "provider-plugin-tavus",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/tavus/src/avatar.ts",
+      "family": "provider-plugin-tavus",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/tavus/src/index.ts",
+      "family": "provider-plugin-tavus",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/tavus/src/log.ts",
+      "family": "provider-plugin-tavus",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/tavus/tsconfig.json",
+      "family": "provider-plugin-tavus",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/tavus/tsup.config.ts",
+      "family": "provider-plugin-tavus",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/test/.gitattributes",
+      "family": "provider-plugin-test",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/test/CHANGELOG.md",
+      "family": "provider-plugin-test",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/test/README.md",
+      "family": "provider-plugin-test",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/test/package.json",
+      "family": "provider-plugin-test",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/test/src/index.ts",
+      "family": "provider-plugin-test",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/test/src/llm.ts",
+      "family": "provider-plugin-test",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/test/src/long.wav",
+      "family": "provider-plugin-test",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/test/src/stt.ts",
+      "family": "provider-plugin-test",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/test/src/tts.ts",
+      "family": "provider-plugin-test",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/test/tsconfig.json",
+      "family": "provider-plugin-test",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/test/tsup.config.ts",
+      "family": "provider-plugin-test",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/trugen/CHANGELOG.md",
+      "family": "provider-plugin-trugen",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/trugen/README.md",
+      "family": "provider-plugin-trugen",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/trugen/api-extractor.json",
+      "family": "provider-plugin-trugen",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/trugen/etc/agents-plugin-trugen.api.md",
+      "family": "provider-plugin-trugen",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/trugen/package.json",
+      "family": "provider-plugin-trugen",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/trugen/src/avatar.test.ts",
+      "family": "provider-plugin-trugen",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/trugen/src/avatar.ts",
+      "family": "provider-plugin-trugen",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/trugen/src/index.ts",
+      "family": "provider-plugin-trugen",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/trugen/src/log.ts",
+      "family": "provider-plugin-trugen",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/trugen/tsconfig.json",
+      "family": "provider-plugin-trugen",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/trugen/tsup.config.ts",
+      "family": "provider-plugin-trugen",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/xai/CHANGELOG.md",
+      "family": "provider-plugin-xai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/xai/README.md",
+      "family": "provider-plugin-xai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/xai/api-extractor.json",
+      "family": "provider-plugin-xai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/xai/etc/agents-plugin-xai.api.md",
+      "family": "provider-plugin-xai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/xai/package.json",
+      "family": "provider-plugin-xai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/xai/src/_utils.ts",
+      "family": "provider-plugin-xai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/xai/src/index.ts",
+      "family": "provider-plugin-xai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/xai/src/realtime/index.ts",
+      "family": "provider-plugin-xai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/xai/src/realtime/realtime_model.test.ts",
+      "family": "provider-plugin-xai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/xai/src/realtime/realtime_model.ts",
+      "family": "provider-plugin-xai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/xai/src/stt.test.ts",
+      "family": "provider-plugin-xai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/xai/src/stt.ts",
+      "family": "provider-plugin-xai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/xai/src/tts.test.ts",
+      "family": "provider-plugin-xai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/xai/src/tts.ts",
+      "family": "provider-plugin-xai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/xai/tsconfig.json",
+      "family": "provider-plugin-xai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "plugins/xai/tsup.config.ts",
+      "family": "provider-plugin-xai",
+      "classification": "C/B",
+      "destination": "provider/avatar adapters"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "renovate.json",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "scripts/copyDeclarationOutput.js",
+      "family": "build-tooling",
+      "classification": "C/B",
+      "destination": "developer tooling"
+    },
+    {
+      "path": "tests/e2e/Dockerfile",
+      "family": "e2e-tests",
+      "classification": "evidence",
+      "destination": "acceptance"
+    },
+    {
+      "path": "tests/e2e/docker-compose.yml",
+      "family": "e2e-tests",
+      "classification": "evidence",
+      "destination": "acceptance"
+    },
+    {
+      "path": "tests/e2e/run.sh",
+      "family": "e2e-tests",
+      "classification": "evidence",
+      "destination": "acceptance"
+    },
+    {
+      "path": "tests/e2e/test_agent.mjs",
+      "family": "e2e-tests",
+      "classification": "evidence",
+      "destination": "acceptance"
+    },
+    {
+      "path": "tests/e2e/test_cpu_monitor.mjs",
+      "family": "e2e-tests",
+      "classification": "evidence",
+      "destination": "acceptance"
+    },
+    {
+      "path": "tsconfig.eslint.json",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "tsconfig.json",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "tsup.config.ts",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "turbo.json",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "vitest.config.ts",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "vitest.setup.ts",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    }
+  ]
+}
