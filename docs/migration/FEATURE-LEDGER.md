@@ -140,6 +140,16 @@ foundation, identity, relationships, memory, world, decisions, agents, skills, t
 | AGT-008 | agents | role-isolated background worker context with allowlisted tools/skills/packages/env | CyberVerse | A/B | primary background-worker pattern | packages/agents + workers | analysed |
 | AGT-009 | agents | immediate foreground acknowledgment before background task execution | CyberVerse | B | primary UX | packages/agents + runtime | analysed |
 | AVT-004 | avatar | renderer warmup policy including distributed capability/timeout | CyberVerse | B | primary generated-human | services/presence + providers | analysed |
-| OPS-002 | operations | trace/evaluation visibility | OpenJarvis + ChatWithStars | B | combined | apps/ops + telemetry | discovered |
+| SOC-003 | social | tenant-scoped durable ingestion/publish queue with redeploy dedupe | ChatWithStars | A | primary | services/social + workflows | analysed |
+| SOC-004 | social | manual review/approve/reject workflow with cross-tenant isolation | ChatWithStars | A | primary | services/social + apps/ops | analysed |
+| SOC-005 | social | cadence/quiet-window/destination-specific scheduling policy | ChatWithStars | B | primary | services/social + proactivity | analysed |
+| STD-004 | studio | idempotent render queue with bounded regeneration and human review | ChatWithStars | A | primary | services/studio + workflows | analysed |
+| STD-005 | studio | continuity state derived from actual rendered output and prior-frame references | ChatWithStars | A/B | primary | services/studio + identity/world | analysed |
+| STD-006 | studio | explicit audio/voice/lipsync fit plan with provider-neutral backend stages | ChatWithStars | B | primary | services/studio + providers | analysed |
+| OPS-003 | operations | production acceptance-evidence state distinct from configuration/readiness | ChatWithStars | A | primary | apps/ops + telemetry | analysed |
+| OPS-004 | operations | privacy-safe operational incidents and JEV aggregate evidence | ChatWithStars | A | primary | apps/ops + telemetry | analysed |
+| OPS-005 | operations | durable emergency kill switches independent of browser state | ChatWithStars | A | primary | apps/ops + security | analysed |
+| OPS-006 | operations | audited bounded financial adjustments | ChatWithStars | A | primary | apps/ops + commerce | analysed |
+| OPS-002 | operations | trace/evaluation visibility | OpenJarvis + ChatWithStars | B | combined | apps/ops + telemetry | analysed |
 
 This inventory is intentionally incomplete. Source-specific map documents identify the next deep-mining areas.
