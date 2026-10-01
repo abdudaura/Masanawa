@@ -59,7 +59,7 @@ Rules used for this inventory:
 | B-OCL-041 | `src/skills/runtime/remote-skills.test.ts` | remote skill metadata cannot directly dispatch a tool around canonical node/tool policy |
 | B-OCL-042 | `src/plugin-sdk/channel-lifecycle.test.ts`; `extensions/telegram/src/channel.gateway.test.ts`; `extensions/matrix/src/matrix/monitor/sync-lifecycle.test.ts`; `extensions/imessage/src/monitor.watch-subscribe-retry.test.ts` | account startup/drain exposes typed active/recoverable/terminal/intentional-stop lifecycle |
 | B-OCL-043 | `src/channels/typing-lifecycle.test.ts`; `src/infra/heartbeat-runner.typing.test.ts` | typing keepalive has one owner and clears once across success/failure/restart |
-| B-OCL-044 | `extensions/whatsapp/src/channel.status.test.ts`; `src/plugin-sdk/channel-outbound.reply-pipeline.test.ts` | media roots and physical sends are host-derived/current-owner checked at I/O |
+| B-OCL-044 | `extensions/whatsapp/src/channel.status.test.ts`; `extensions/telegram/src/outbound-adapter.telegram-http.test.ts` | media roots and physical sends are host-derived/current-owner checked at I/O |
 | B-OCL-045 | `extensions/whatsapp/src/inbound/durable-receive.test.ts` | WhatsApp keeps durable constituent claims through debounce/adoption and same-chat ordering |
 | B-OCL-046 | `extensions/telegram/src/channel.gateway.test.ts`; `extensions/telegram/src/telegram-ingress-drain.test.ts` | Telegram blocks bad credentials/ambiguous ownership and keeps retry classes distinct |
 | B-OCL-047 | `extensions/discord/src/monitor/message-handler.ingress-recovery.test.ts`; `extensions/discord/src/monitor/thread-bindings.authority.test.ts` | Discord replacement/cancellation retains retry facts and thread mutation is owner-fenced |
