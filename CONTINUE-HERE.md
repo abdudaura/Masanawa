@@ -134,9 +134,9 @@ Donor Agent/runtime/checkpoint objects never become Character, memory or busines
 
 Phase 0A is complete. Do not reopen donor selection without contradictory evidence and an explicit ownership/ADR update.
 
-1. **Next:** build the Phase 0B source-coverage matrix across all 17 pinned repositories.
-2. Enumerate each source's meaningful top-level modules/packages and map each to existing ledger IDs or create explicit A/B/C rows.
-3. Work source-by-source across the complete vault; do not return to a four-donor-only deep-mine.
+1. Phase 0B source-coverage matrix created at `docs/migration/PHASE-0B-SOURCE-COVERAGE.md` with actual pinned top-level roots for all 17 repositories.
+2. **Next:** begin the exhaustive ChatWithStars root/module sweep (`apps`, `data`, `deploy`, `infra`, `packages`, `public`, `scripts`, `services`, `src`, `supabase`), mapping meaningful descendants to existing ledger IDs or explicit new A/B/C rows.
+3. Then continue source-by-source in the fixed 17-source sweep order; do not return to a four-donor-only deep-mine.
 4. For every retained capability, attach one canonical Masanawa destination and an acceptance/parity strategy.
 5. Track direct-adaptation provenance and path-specific license/NOTICE requirements before copying code.
 6. Phase 0 closes only when no meaningful pinned capability is unclassified.
