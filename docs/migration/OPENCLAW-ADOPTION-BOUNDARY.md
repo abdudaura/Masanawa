@@ -16,6 +16,11 @@ Its biggest mismatch is security/domain ownership: OpenClaw documents one trust 
 
 ### Conditional public packages
 
+`@openclaw/ai`
+- published MIT package for reusable provider adapters, streaming, tool-call normalization and diagnostics;
+- candidate only behind Masanawa `IntelligenceProvider` / provider adapters;
+- OpenClaw model/provider types must not become canonical Masanawa contracts.
+
 `@openclaw/gateway-protocol`
 - typed TypeBox schemas/validators for OpenClaw's WebSocket protocol;
 - suitable only for an OpenClaw bridge/client adapter.
@@ -25,6 +30,14 @@ Its biggest mismatch is security/domain ownership: OpenClaw documents one trust 
 - suitable for a Masanawa `OpenClawBridgeAdapter`.
 
 Do not make these Masanawa's canonical public API/protocol.
+
+### Additional Gateway/runtime behavior verified
+
+- ordinary user input accepted by the Gateway is stored before acknowledgement;
+- a reconnect can reconcile accepted input even when it missed final events;
+- the in-memory execution queue is not itself a durable workflow guarantee;
+- sandbox location, tool allow/deny policy, and elevated execution are three separate gates;
+- deny policy wins and session-level exec/elevation cannot grant a tool that deterministic policy removed.
 
 ### Private workspace packages
 
