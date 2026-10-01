@@ -1,6 +1,10 @@
 import { fileURLToPath } from "node:url";
 import type { Pool } from "pg";
 import {
+  createPostgresPool,
+  type PostgresPoolOptions,
+} from "./pool.js";
+import {
   readMigrationManifest,
   type MigrationFingerprint,
   type MigrationRoot,
@@ -140,5 +144,26 @@ export function createPostgresReadinessCheck(
         ? Object.freeze({ ready: true })
         : Object.freeze({ ready: false, reason: result.reason });
     },
+  });
+}
+
+
+export interface PostgresServiceDependency {
+  readonly pool: Pool;
+  readonly readinessCheck: ReturnType<typeof createPostgresReadinessCheck>;
+  close(): Promise<void>;
+}
+
+export function createPostgresServiceDependency(
+  options: PostgresPoolOptions & {
+    readonly migrationRoots?: readonly MigrationRoot[];
+  },
+): PostgresServiceDependency {
+  const pool = createPostgresPool(options);
+  const roots = options.migrationRoots ?? foundationMigrationRoots();
+  return Object.freeze({
+    pool,
+    readinessCheck: createPostgresReadinessCheck(pool, roots),
+    close: () => pool.end(),
   });
 }
