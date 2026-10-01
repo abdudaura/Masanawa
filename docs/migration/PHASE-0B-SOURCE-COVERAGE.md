@@ -20,7 +20,7 @@ Generated/dependency/build metadata roots may be excluded after inspection, but 
 
 | Source | Pinned meaningful roots/modules | Existing Phase 0 evidence | Phase 0B state |
 |---|---|---|---|
-| ChatWithStars | apps, data, deploy, infra, packages, public, scripts, services, src, supabase | descendant evidence now tracked in `coverage/CHATWITHSTARS.md`; provider/migration closure still open | partial (remediation) |
+| ChatWithStars | apps, data, deploy, infra, packages, public, scripts, services, src, supabase | descendant evidence + 381-migration manifest + provider reconciliation boundary complete | covered |
 | OpenJarvis | configs, deploy, desktop, examples, frontend, rust, src, tests | earlier root-only sweep invalidated pending descendant remediation | partial (remediation) |
 | N.E.K.O | app, brain, config, deps, frontend, knowledge, launcher_core, local_server, main_logic, main_routers, memory, plugin, specs, tests, utils | earlier root-only sweep invalidated pending descendant remediation | partial (remediation) |
 | CyberVerse | frontend, inference, infra, models, proto, server, tests | earlier root-only sweep invalidated pending descendant remediation; GPL clean-room remains mandatory | partial (remediation); GPL clean-room |
