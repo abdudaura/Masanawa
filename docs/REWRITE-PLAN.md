@@ -2,24 +2,38 @@
 
 ## Completion philosophy
 
-No source feature is considered migrated because a source file was copied or a similar feature exists. It is complete only when represented in the ledgers, designed in Masanawa terms, implemented in the canonical subsystem and verified through the appropriate parity/acceptance gates.
+No source feature is migrated because a directory was copied or a similar feature exists. A capability is complete only when represented in the ledgers, designed in Masanawa terms, implemented in the canonical subsystem and verified through parity/acceptance gates.
 
 ## Classification
 
-Every discovered source capability receives:
-- A — preserve behavior: critical/core behavior requiring parity evidence;
-- B — preserve capability, redesign implementation: behavior goal retained but implementation intentionally differs;
-- C — explicit reference/retirement: not part of target product; reason recorded.
+- A — preserve behavior: critical behavior requiring parity evidence.
+- B — preserve capability, redesign implementation.
+- C — explicit reference/retirement with rationale.
 
-## Ledger status lifecycle
+Lifecycle:
+`discovered -> analysed -> designed -> contracted -> implemented -> unit-tested -> parity-tested -> integrated -> production-verified -> complete`.
 
-discovered -> analysed -> designed -> contracted -> implemented -> unit-tested -> parity-tested -> integrated -> production-verified -> complete
+## Phase 0A — Landscape expansion and donor selection
 
-Retirement is an explicit terminal state with rationale.
+Current active phase.
 
-## Phase 0 — Source forensics
+Inputs: all pinned submodules in `references/sources/` and `migration/SOURCE-LOCK.md`.
 
-Inputs: the four pinned repositories in SOURCE-LOCK.
+Tasks:
+- build source maps for the expanded donor set;
+- mine implementation/tests, not README claims only;
+- seed Feature/Behaviour/Data/Integration ledgers;
+- compare overlapping candidate architectures;
+- verify license/provenance constraints;
+- select provisional structural donors per subsystem.
+
+Mandatory comparisons are documented in `migration/LANDSCAPE-EXPANSION.md`.
+
+Gate: foundation subsystems have evidence-backed donor decisions rather than assumptions.
+
+## Phase 0B — Exhaustive source forensics
+
+Continue deep mining across selected and secondary donors.
 
 Outputs:
 - FEATURE-LEDGER;
@@ -27,201 +41,100 @@ Outputs:
 - DATA-LEDGER;
 - INTEGRATION-LEDGER;
 - LICENSE-LEDGER;
-- donor decisions for every overlapping subsystem.
+- explicit donor decisions for every overlap.
 
 Method:
-- analyse each source using the same domain taxonomy;
-- inspect docs and implementation, not README only;
-- include hidden operational behavior, failure handling, tests and configuration;
-- trace database/state concepts;
-- trace external providers;
-- identify source security assumptions;
-- identify user-visible behavior;
-- deduplicate after source-specific inventories are complete.
+- inspect architecture docs, source, tests, migrations/config and deployment;
+- include hidden failure/recovery behavior;
+- trace state concepts and provider assumptions;
+- deduplicate only after source-specific extraction;
+- classify every meaningful capability A/B/C.
 
-Gate: every meaningful source subsystem is classified A/B/C and assigned a Masanawa destination or explicit retirement.
+Gate: every meaningful reference capability is assigned a Masanawa destination or explicit retirement and repository-wide coverage proof finds no unexplained production subsystem.
 
 ## Phase 1 — Architecture specification
 
-Finalize:
-- domain model;
-- package boundaries;
-- event model;
-- data/security model;
-- service contracts;
-- ADRs for unresolved donor conflicts;
-- initial golden journeys.
-
-No production feature porting yet.
+Finalize domain model, package boundaries, events, data/security, service contracts, ADRs and golden journeys. No production feature porting until Phase 0 is closed.
 
 ## Phase 2 — Foundation
 
-Implement:
-- pnpm monorepo;
-- strict TypeScript configuration;
-- shared contracts;
-- branded IDs;
-- structured errors;
-- configuration;
-- event primitives;
-- Fastify service bootstrap;
-- Next.js app shells;
-- PostgreSQL migration system;
-- auth/service-auth foundation;
-- structured logging/OpenTelemetry;
-- Vitest/Playwright/pytest harness;
-- architecture-boundary checks;
-- CI.
+Implement pnpm monorepo, strict TypeScript, contracts, IDs/errors/config, events, Fastify service bootstrap, Next.js shells, PostgreSQL migrations, auth/service auth, OpenTelemetry, test harnesses, architecture-boundary CI.
 
 ## Phase 3 — Identity and world
 
-Implement:
-- character;
-- identity versions/Constitution;
-- voice/appearance refs;
-- expertise metadata;
-- character relationships;
-- life state;
-- world events/routines;
-- context compiler base.
+Implement canonical Character, versioned Constitution, voice/appearance refs, expertise metadata, relationships, life state, world events/routines and context compiler.
 
-Gate with ChatWithStars parity fixtures.
+Gate against CWS + selected world-simulation donor behaviors.
 
 ## Phase 4 — Memory
 
-Implement type+scope memory, lifecycle, retrieval, compaction/reflection, correction/supersession and privacy isolation.
+Implement type+scope memory, lifecycle, retrieval, evidence/reflection, correction/supersession, compaction, privacy isolation and liveness/dead-letter behavior.
 
-Gate with CWS fan-isolation and N.E.K.O cognitive-memory behaviors.
+Gate against CWS privacy plus selected N.E.K.O/Letta/Mem0/OpenClaw behaviors.
 
 ## Phase 5 — Tools and providers
 
-Implement:
-- capability registry;
-- Tool contract/executor;
-- provider registry;
-- credentials/vault references;
-- readiness/health;
-- idempotency/retry/reconciliation metadata.
-
-No skill may bypass the Tool boundary for external side effects.
+Implement capability registry, Tool contract/executor, provider registry, credentials, readiness/health, idempotency/retry/reconciliation and execution security.
 
 ## Phase 6 — Skills
 
-Implement OpenJarvis-inspired structure:
-- SkillManifest/SkillContract;
-- manager;
-- parser/import format;
-- resolver;
-- dependency graph;
-- executor;
-- SkillTool adapter;
-- source importers;
-- governance/certification/readiness;
-- trace metadata.
-
-Gate against OpenJarvis structural behaviors and CWS governance behaviors.
+Implement the selected unified skill architecture after OpenJarvis/OpenClaw/MAF comparison: manifest/contract, manager, parser/import, dependencies, execution/SkillTool, provenance/trust, governance/certification/readiness and trace metadata.
 
 ## Phase 7 — Agent runtime
 
-Implement:
-- AgentStrategy;
-- AgentContext/Result;
-- inference provider abstraction;
-- simple/tool-orchestrator/research strategies;
-- task supervisor/background execution;
-- character-aware context integration.
+Implement AgentStrategy, AgentContext/Result, provider abstraction, orchestration/research/background strategies, budgets/guards and character-aware context.
 
 ## Phase 8 — Decisions and workflows
 
-Rebuild:
-- typed JEV decision fabric;
-- shadow/replay/evaluation;
-- workflow state machine framework;
-- approvals;
-- idempotency;
-- outbox;
-- reconciliation.
+Rebuild JEV plus deterministic workflow framework, approvals, checkpoint/restart, idempotency, outbox, human-in-loop and reconciliation.
 
-## Phase 9 — Channels
+## Phase 9 — Gateway and channels
 
-Implement canonical adapters:
-- web;
-- WhatsApp;
-- Telegram.
-
-All use one runtime/memory/identity/task system.
-
-Cross-channel continuation becomes a golden journey gate.
+Implement canonical gateway/channel routing using the selected OpenClaw/eliza/CWS patterns. Web, WhatsApp, Telegram and later device/channel adapters all resolve into one identity/runtime/memory/task system.
 
 ## Phase 10 — Proactivity and perception
 
-Implement:
-- schedules/routines/promises;
-- trigger engine;
-- contact permission/frequency/quiet-hour gates;
-- PerceptionEvent;
-- screen/image/document/vision adapters with consent.
+Implement schedules/routines/promises/intents, trigger engine, quiet-hours/frequency/privacy gates and permissioned multimodal PerceptionEvents/device-node inputs.
 
-## Phase 11 — Realtime presence
+## Phase 11 — Realtime presence and embodiment
 
-Implement CyberVerse-inspired clean architecture:
-- WebRTC;
-- full-duplex audio;
-- barge-in;
-- realtime model adapter;
-- ASR/TTS adapters;
-- avatar provider;
-- foreground persona/background work.
-
-Do not copy GPL code into core by default.
+Implement selected LiveKit/Pipecat/CyberVerse/AIRI architecture: WebRTC, full-duplex audio/video, turn detection/barge-in, realtime model/STT/TTS adapters, avatar provider and foreground persona/background work.
 
 ## Phase 12 — Commerce, social and studio
 
-Rebuild CWS production domains:
-- commerce/payments/ledger/reconciliation/receipts;
-- social accounts/outbox/moderation/publish receipts;
-- media studio identity locks, script/storyboard/render/voice/lipsync/assembly/provenance.
+Rebuild CWS production domains: financial ledger/reconciliation/receipts, social outbox/publishing and identity-consistent media production.
 
 ## Phase 13 — Learning and plugins
 
-Implement:
-- execution traces;
-- skill/decision evaluation;
-- candidate optimization overlays;
-- rehearsal/certification promotion;
-- plugin manifest/SDK;
-- external skill import pipeline.
-
-Production never self-mutates directly.
+Implement trace/evaluation, candidate optimization, rehearsal/certification, plugin SDK and external skill/plugin ecosystem. Production never self-mutates directly.
 
 ## Phase 14 — Full parity and cutover
 
 Requirements:
 - 100% ledger resolution;
-- all A items parity verified;
-- all B items have accepted replacement evidence;
-- all C items explicitly retired;
-- golden journeys passing;
-- security/load/recovery gates passing;
-- production pilot passing;
+- all A parity verified;
+- all B accepted replacements;
+- all C explicit retirements;
+- golden journeys, security/load/recovery and production pilot passing;
 - rollback proven.
 
-Only then archive/retire ChatWithStars as an active platform repository.
+Only then retire ChatWithStars as an active platform implementation.
 
 ## Golden journeys
 
-At minimum:
-1. meet character -> converse -> remember -> return -> appropriate proactive follow-up;
-2. research request -> route -> tools -> sourced result -> memory;
-3. live call -> character responds -> user interrupts -> state continues;
-4. commerce request -> quote -> payment -> execute -> reconcile -> receipt;
-5. world event -> shared state -> consistent references across users without privacy leakage;
-6. web conversation -> WhatsApp continuation -> call -> same relationship/task state;
-7. long task -> foreground character remains responsive -> background work returns result;
-8. cross-character handoff -> bounded context -> completion -> optional return;
-9. social content -> approval -> publish -> receipt/retry;
-10. studio content -> identity-consistent asset -> review -> publish.
+1. Meet character -> converse -> remember -> return -> appropriate proactive follow-up.
+2. Research -> route -> tools -> sourced result -> memory.
+3. Live call -> speech/avatar -> interruption -> continuation.
+4. Commerce -> quote -> payment -> execute -> reconcile -> receipt.
+5. World event -> consistent shared state without relationship-memory leakage.
+6. Web -> WhatsApp -> call with same relationship/task continuity.
+7. Long task -> foreground stays responsive -> background result returns.
+8. Cross-character handoff -> bounded context -> completion/return.
+9. Social draft -> approval -> publish -> receipt/retry.
+10. Studio project -> identity-consistent media -> review -> publish.
+11. Device/node perception -> explicit permission -> bounded observation -> safe action.
+12. Agent/workflow crash/restart -> durable recovery without duplicate side effects.
 
-## Rule for source repositories
+## Reference rule
 
-After Phase 0 begins, donor repositories are reference sources. Major new platform architecture should be implemented only in Masanawa. Critical production bug fixes in old systems are allowed until cutover but must be reflected in the behavior ledger if they change required parity.
+Donor code lives under `references/sources/` only as pinned Git submodules. It is reference material, never a hidden Masanawa dependency.

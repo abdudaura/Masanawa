@@ -6,78 +6,99 @@ Masanawa is an AI character operating platform.
 
 It supports persistent AI beings that can maintain identity and relationships, perceive and communicate through multiple modalities, act through skills and tools, perform useful work, participate in a shared world, maintain social identities, conduct approved commerce and appear in both realtime and produced media.
 
-ChatWithStars is a product/world that can run on Masanawa; it is not the architecture boundary of Masanawa itself.
+ChatWithStars is one product/world that can run on Masanawa; it is not the platform boundary.
 
 ## Complete target capability
 
-Masanawa combines four capability families:
+The target is defined by capabilities, not by donor repositories.
 
-### Persistent world and commercial platform
-From ChatWithStars:
-- versioned fictional character identity;
-- fan/user relationship isolation;
+Masanawa must provide:
+
+### Persistent character and world
+- versioned fictional identity, appearance and voice;
+- private user-character relationships;
 - shared character/world state;
 - character-to-character relationships;
-- multilingual routing and bounded JEV decisions;
-- cross-character handoffs;
-- durable task workflows;
-- approvals, payments, ledgers, reconciliation and receipts;
-- social identities and publishing;
-- studio/content production;
-- company Ops, audit and governance.
+- routines, locations, goals, story arcs and commitments;
+- governed autonomous life/proactivity;
+- consistent cross-channel/cross-device continuity.
 
-### Professional agent/capability runtime
-From OpenJarvis:
+### Professional agent and capability runtime
 - pluggable agent strategies;
-- model/inference abstraction;
-- skills as first-class reusable artifacts;
-- SkillManager/discovery/parsing/dependency graph/execution;
-- skills callable as tools;
-- standardized tool execution;
-- source skill importers;
-- event/trace architecture;
-- scheduled and continuous agents;
-- local/cloud model routing;
-- execution trace learning and candidate optimization.
+- provider-neutral inference;
+- reusable skills and atomic tools;
+- dependency/capability graphs;
+- background/scheduled/continuous work;
+- durable workflows and human approvals;
+- safe browser/computer/device actions;
+- trace/evaluation/learning with promotion gates.
 
-### Persistent companion cognition and embodiment
-From N.E.K.O:
-- layered memory concepts;
-- proactive interaction;
-- time awareness;
-- perception of user/environment with permission;
-- realtime voice and visual understanding concepts;
-- same-character continuity across surfaces/devices;
-- Live2D/VRM/MMD/PNG-style avatar abstractions;
-- plugin/community extensibility concepts;
-- browser/computer-use capability patterns.
+### Memory and cognition
+- bounded working/recent context;
+- episodic/semantic/factual memory;
+- evidence/reflections and corrections;
+- relationship/persona/world/task memory scopes;
+- temporal/entity/hybrid retrieval;
+- memory compaction/consolidation/dreaming;
+- liveness/dead-letter handling;
+- explicit privacy and authority boundaries.
+
+### Gateway, channels and devices
+- one control plane for web, messaging, voice and future channels;
+- account/channel routing to the correct character;
+- device nodes for microphone/camera/screen/local actions;
+- local-first or cloud-connected operation;
+- cross-channel task/session continuity;
+- strong permission/sandbox boundaries.
 
 ### Realtime digital-human presence
-From CyberVerse:
-- WebRTC-first live presence;
+- production WebRTC;
 - full-duplex audio/video;
-- barge-in/interruption;
-- foreground persona with background specialist work;
-- ASR/LLM/TTS/avatar service abstraction;
-- realtime generated digital-human rendering;
-- plugin/registry patterns for media inference.
+- semantic turn detection and barge-in;
+- realtime model or STT/LLM/TTS pipelines;
+- foreground character with background specialist work;
+- static/Live2D/VRM/MMD/generated-human/avatar providers;
+- same identity across live and non-live surfaces.
+
+### World, social, commerce and studio
+- scalable world simulation;
+- social identity/publishing;
+- deterministic quote/payment/ledger/reconciliation;
+- operator approvals and audits;
+- script/storyboard/render/voice/lipsync/media production;
+- identity/provenance consistency across generated media.
+
+### Extensible platform
+- plugins that register canonical skills/tools/providers/events/UI;
+- skill/plugin provenance and trust;
+- MCP/A2A/external protocol bridges where useful;
+- observability, recovery and Ops;
+- provider/compute portability.
+
+## Reference landscape
+
+Phase 0 studies multiple mature donors rather than treating any framework as the platform:
+ChatWithStars, OpenJarvis, N.E.K.O, CyberVerse, AIRI, LiveKit, Pipecat, Letta, Mem0, AI Town, elizaOS, Microsoft Agent Framework and OpenClaw.
+
+Their exact roles remain provisional until the Landscape Expansion comparison closes. See `SOURCE-OWNERSHIP.md`.
 
 ## Experience goal
 
-A person should be able to meet a character on the web, continue on WhatsApp, call the same character later, interact with an avatar, ask it to perform useful work, receive results and return days later without the character losing its identity, relationship, commitments or relevant world context.
+A person can meet a character on the web, continue on WhatsApp, call the same character later, interact through an avatar/device, ask it to perform useful work, receive results and return days later without losing identity, relationship, commitments or relevant world context.
 
-While the person is offline, the character may continue its permitted fictional life, social schedule, tasks and media career. This persistence must be governed and auditable, not improvised independently in each conversation.
+While the person is offline, the character may continue its permitted fictional life, tasks, social schedule and media career. This persistence is governed and auditable rather than independently improvised by each conversation.
 
 ## Platform principles
 
 - Identity is durable and versioned.
-- A character is more than a prompt.
+- Character != prompt != agent strategy.
 - Relationships are private by default.
-- World truth is separate from private relationship truth.
-- Skills are reusable capabilities, not duplicated persona instructions.
-- Tools are atomic provider-independent contracts.
+- World truth is separate from relationship truth.
+- Skills are reusable capabilities, not persona prompt duplication.
+- Tools are provider-independent side-effect contracts.
 - Workflows own durable business state.
-- Models interpret and reason; deterministic systems own permissions and financial truth.
-- Realtime presence and produced media share identity but are separate execution paths.
-- Learning creates candidates; it does not silently mutate production.
-- Every important side effect can be traced, reconciled and operated.
+- Models reason; deterministic systems own permissions, money and execution truth.
+- Channels/device nodes are adapters, not alternate brains.
+- Realtime presence and produced media share identity but remain separate execution paths.
+- Learning creates candidates and never silently mutates production.
+- Every consequential side effect is traceable, idempotent/reconcilable and operable.
