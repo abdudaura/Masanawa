@@ -88,6 +88,19 @@ Inventory semantic state concepts before designing tables. Do not mirror donor s
 | D-IDN-005 | VoiceEnrollment/CloneSource | N.E.K.O/CWS | character | versioned | biometric/sensitive | identity/security | redesign | consent/rights/provider-independent reference |
 | D-RTC-006 | PresenceRecording | CyberVerse | presence session | append artifact | highly sensitive | presence/storage | redesign | explicit policy/retention/provenance |
 | D-RGT-001 | AssetRightsProvenance | ChatWithStars | identity/studio/UGC asset | append/versioned | legal/internal/public projection | identity/studio/audit | preserve | source, rights basis, owner, restrictions |
+| D-USR-001 | PlatformUser | CWS | global platform subject | lifecycle | private/internal | identity | preserve+generalize | separate from tenant relationship state |
+| D-USR-002 | ChannelIdentityAlias | CWS | platform user/contact+channel | append/merge lifecycle | private/sensitive | identity | preserve | verified/observed alias, never infer opaque IDs as phone numbers |
+| D-USR-003 | IdentityMerge | CWS | tenant/platform user/contact | audited transaction | sensitive | identity | preserve concept | winner/loser/repoint/dedup evidence |
+| D-ENT-001 | EntitlementPolicy/Trial | CWS | platform user | versioned/lifecycle | private | commerce | preserve | allowance, expiry, issued terms |
+| D-ENT-002 | UsageReservation | CWS | platform user+source message | durable lifecycle | private/internal | commerce/workflows | preserve | reserved/delivered/released/blocked |
+| D-ENT-003 | Subscription | CWS | platform user | durable lifecycle | financial/private | commerce | preserve | plan/price/status/period |
+| D-ENT-004 | SubscriptionPayment | CWS | platform user/provider | append | financial | commerce | preserve | unique provider payment identity |
+| D-ENT-005 | CommunityEntitlement/MembershipFulfilment | CWS | user/contact+community | durable lifecycle | private | commerce/workflows | preserve concept | active/grace/expired/revoked/manual-required |
+| D-AUT-001 | AutonomyPolicy | CWS | tenant/character/runtime | versioned mutable | sensitive | security/workflows | preserve concept | mode, per-action/daily spend, owner notification |
+| D-AUT-002 | AutonomyDecisionEvent | CWS | action/task | append | sensitive | audit/security | preserve | executed/blocked/escalated/failed |
+| D-OUT-001 | OutreachDeliveryEvent | CWS | campaign/recipient | append | private | proactivity/events | preserve concept | initial/followup evidence |
+| D-OUT-002 | FollowupSuppression | CWS | relationship/recipient | durable mutable | private | proactivity | preserve | DNC/suppression reason/time |
+| D-TPL-001 | AgentRoleTemplateVersion | CWS | platform | immutable/versioned | internal | agents | redesign | validated capability/skill policy starter configuration |
 | D-AUD-001 | AuditEvent | CWS/OpenJarvis/N.E.K.O | org | append-only | sensitive | events/security | preserve concept | immutable actor/action trail |
 
 Phase 0 must continue mapping donor-specific stores/tables/files into these canonical concepts or explicit retirement.
