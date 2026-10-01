@@ -381,3 +381,11 @@ Phase 0 must continue mapping donor-specific stores/tables/files into these cano
 | D-OCL-006 | OperatorApprovalRecord | OpenClaw approval store | approval request | pending->allowed/denied/expired->consumed/history | highly sensitive | security/workflows | preserve semantics | durable terminal truth/current authority |
 | D-OCL-007 | ManagedSkillRevision | OpenClaw skill library | skill stable ID | drafted->published->pinned/disabled/retained | executable/content | packages/skills | preserve concept | content-derived immutable revision |
 | D-OCL-008 | SessionSkillSelection | OpenClaw session | session | selected->explicitly refreshed | private/runtime | packages/skills + agents | redesign | exact skill IDs/revisions |
+
+
+| D-OCL-009 | ProviderRouteIntent | OpenClaw provider runtime | model turn | prepared->resolved/failed | secret-adjacent | packages/providers | redesign | route/auth intent remains secret-free |
+| D-OCL-010 | SecretEgressGrant | OpenClaw model egress | command/provider call | granted->revoked | secret/highly sensitive | packages/security | preserve semantics | destination/operation-bound sentinel |
+| D-OCL-011 | MemoryProvenance | OpenClaw memory | fact/evidence | observed->staged->promoted/superseded/forgotten | private | packages/memory | preserve invariant | origin, session kind, observedAt, supersession |
+| D-OCL-012 | ScheduledOccurrenceReservation | OpenClaw cron | job occurrence | reserved->admitted->settled/retried | business/operational | packages/workflows | redesign | lifecycle generation + run receipt |
+| D-OCL-013 | NetworkEgressPolicy | OpenClaw SSRF | tool/provider request | prepared->resolved->allowed/blocked | security | packages/security | preserve concept | host/origin/IP/DNS/redirect-aware |
+| D-OCL-014 | DiagnosticContentConsent | OpenClaw telemetry | telemetry/export | disabled->explicitly enabled/revoked | highly sensitive | telemetry/security | redesign | raw content capture default off |
