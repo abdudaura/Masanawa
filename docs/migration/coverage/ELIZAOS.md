@@ -229,3 +229,136 @@ The following must still be swept before elizaOS can be marked covered:
 11. direct test/acceptance coverage for the consequential invariants above.
 
 Do not advance the handoff to the next donor until these are dispositioned or explicitly proven irrelevant.
+
+
+## 9. Model registry, dispatch and fallback
+
+Implementation evidence:
+- `packages/core/src/types/model.ts` — model-neutral type registry spanning text, embeddings, tokenization, image, transcription, TTS, audio/video and research; model/tool call shapes and per-call configuration.
+- `packages/core/src/runtime/model-dispatch/dispatcher.ts` — registered-handler selection, admission, failover, streaming and trajectory/inference timing hooks.
+- `packages/core/src/runtime/__tests__/use-model-provider-fallback.test.ts` — provider fallback behavior at the pinned tree.
+
+Relevant behavior:
+- model types are capabilities, not provider identities;
+- multiple handlers may compete by registration metadata/priority;
+- dispatch/failover sits below the runtime;
+- inference timing/provider identity are observable;
+- structured tool definitions and model calls remain provider-neutral.
+
+Masanawa destination:
+- `packages/providers` for canonical model/provider capability registry;
+- `packages/telemetry` for inference timing/trace metadata.
+
+Disposition: **B — preserve capability/dispatch structure, not eliza runtime ownership**.
+
+Acceptance gate:
+- model/provider failure can fail over only according to explicit policy;
+- fallback cannot cross privacy/region/cost/capability constraints;
+- provider selection is observable;
+- model response never becomes authoritative side-effect truth without tool/workflow validation.
+
+## 10. Evaluator / response-handler isolation
+
+Implementation evidence:
+- `packages/core/src/types/evaluator.ts`;
+- `packages/core/src/runtime/response-handler-evaluators.ts`;
+- response field/evaluator infrastructure under `packages/core/src/runtime/`.
+
+Pinned behavior:
+- evaluators are independent response-stage enrichers;
+- each evaluator has its own `shouldRun` and evaluate path;
+- failures are collected/reported while remaining evaluators continue;
+- patches are applied through a bounded response-handler surface rather than arbitrary runtime mutation;
+- deterministic-tool-call admission is checked before evaluator-produced effects are accepted.
+
+Masanawa destination:
+- bounded `packages/decisions` / response-posture/evaluation seams;
+- consequential actions still belong to tools/workflows.
+
+Disposition: **A/B — preserve failure isolation and bounded patch semantics**.
+
+Acceptance gate:
+- one evaluator failure cannot suppress unrelated evaluators;
+- evaluator output cannot bypass action/tool authorization;
+- applied patches are traceable to evaluator/version;
+- evaluator errors remain observable without corrupting the turn.
+
+## 11. Connector source registry and channel metadata boundary
+
+Implementation evidence:
+- `packages/core/src/connectors.ts`;
+- connector registration through plugin contracts/runtime.
+
+Pinned behavior:
+- connector sources canonicalize aliases;
+- metadata is owner-scoped so plugin contributions can be removed without clobbering other owners;
+- active/passive source classification is explicit;
+- identity-field projection and world-id metadata keys are declared by connector metadata instead of hard-coded channel branches;
+- owner contributions can be unregistered wholesale.
+
+Masanawa destination:
+- gateway/channel adapter registry;
+- canonical identity resolution remains in `packages/identity` / security.
+
+Disposition: **A/B — preserve declarative connector metadata and owner-scoped registration; reject connector-owned identity truth**.
+
+Acceptance gate:
+- channel adapters declare identity projection instead of embedding channel-specific branches in core;
+- connector metadata cannot manufacture canonical account ownership;
+- unloading a connector removes only its aliases/metadata;
+- passive/active source semantics are explicit and testable.
+
+## 12. Unified action access gate
+
+Implementation evidence:
+- `packages/core/src/runtime/action-gate.ts`;
+- plugin lifecycle role-context derivation in `packages/core/src/plugin-lifecycle.ts`.
+
+Pinned behavior:
+- one gate is intended to govern both planner exposure and execution;
+- gate composes private/autonomy-only policy, non-overridable disclosure/destination checks, operator role policy, context gates and role gates;
+- execution cannot use `skipPrivateGate`;
+- runtime-registered contexts participate in access decisions.
+
+Masanawa destination:
+- `packages/security` + canonical tools/skills admission.
+
+Disposition: **A — preserve one exposure/execution gate invariant; B — translate roles/contexts to Masanawa policy model**.
+
+Acceptance gate:
+- planner-visible does not imply executable unless the same current-authority gate passes;
+- forced/hallucinated calls cannot bypass private/action role policy;
+- disclosure/destination constraints are non-overridable by model output;
+- policy revalidates at execution time.
+
+## 13. Cloud runtime proxy — alternate execution location, not authority
+
+Implementation evidence:
+- `plugins/plugin-elizacloud/src/cloud/cloud-proxy.ts`.
+
+Pinned behavior:
+- a lightweight proxy can route chat/status calls to a remote sandbox instead of a local runtime.
+
+Masanawa disposition: **C as canonical runtime boundary; B as remote-execution adapter pattern**.
+
+Reason:
+Masanawa must not create local and cloud brains with divergent identity/memory/workflow truth. Remote compute is an execution location behind the same canonical contracts.
+
+Acceptance gate:
+- local/cloud execution resolves the same Character, relationship, memory scope and workflow IDs;
+- proxy loss does not lose canonical task/business state;
+- remote runtime status is health metadata, not domain truth.
+
+## Updated unresolved descendant families
+
+Still required before closure:
+1. host-side plugin install/staging/resolution and failure/rollback behavior;
+2. SQL schema/RLS/migration descendant families and authority disposition;
+3. principal/membership/auth/disclosure implementation beyond action gate;
+4. app/view/widget capability brokerage and sandbox/authority controls;
+5. local/native device bridges and computer-use capability boundaries;
+6. representative bundled plugins/integrations and their side-effect semantics;
+7. deployment/cloud services that may own durable state or credentials;
+8. exact direct-test inventory for the retained consequential behaviors.
+
+The core model/evaluator/connector/access families are no longer unresolved.
