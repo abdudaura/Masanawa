@@ -192,3 +192,22 @@ Deep behavior mining from tests remains required before Phase 0 completion.
 | B-MEM-016 | MEM-020 | Expiration hides ordinary recall without physical deletion; tombstone and physical purge remain separate policy-governed states. | B | Mem0 expiration/decay + Masanawa retention policy | selected |
 | B-MEM-017 | MEM-024 | Vector/lexical/entity/temporal indexes can be deleted and rebuilt from canonical records without changing authorized semantic truth. | A | ADR-0007 | selected |
 | B-MEM-018 | MEM-016 | Memory evaluation reports privacy leakage, retrieval accuracy, provenance correctness, context tokens, latency/cost and liveness under fixed retrieval budgets. | B | Mem0 evaluation methodology + Masanawa privacy requirements | selected |
+
+
+### Phase 0A runtime/skills/plugins/workflow additions
+
+| ID | Feature | Required behavior | Class | Evidence | Status |
+|---|---|---|---|---|---|
+| B-AGT-003 | AGT-014 | Repeated identical tool calls, polling loops and budget overruns terminate with typed evidence rather than running indefinitely. | A | OpenJarvis agent guards | selected |
+| B-AGT-004 | AGT-014 | Explicit provider/engine selection is authoritative; fallback is allowed only for default/auto policy and must satisfy requested model capability. | A | OpenJarvis engine discovery | selected |
+| B-AGT-005 | AGT-015 | Model output proposes execution but cannot manufacture access/disclosure/tool authority not present in the compiled run envelope. | A | elizaOS gates + Masanawa security invariant | selected |
+| B-SKL-009 | SKL-009 | Invalid/cyclic skills are isolated without discarding healthy siblings, and model-hidden skills never enter the model-facing catalog. | A/B | OpenJarvis SkillManager | selected |
+| B-SKL-010 | SKL-010 | File skill resources/scripts reject traversal and symlink escape at use time, not only at discovery. | A | Microsoft AF Agent Skills | selected |
+| B-SKL-011 | SKL-009 | Learned/optimized skill output remains a candidate until certification publishes an immutable production version. | A | OpenJarvis overlays + CWS certification | selected |
+| B-PLG-008 | PLG-012 | Core runtime never implicitly installs/imports unresolved package names; missing resolver or invalid dependency graph fails closed before activation. | A | elizaOS plugin loader | selected |
+| B-PLG-009 | PLG-011 | Service shutdown rejects new admission before draining already-admitted work; stop/cleanup is idempotent. | A/B | elizaOS Service lifecycle + AIRI cleanup invariant | selected |
+| B-WFL-001 | WFL-002 | Checkpoint restore requires a compatible versioned graph signature and follows checkpoint lineage rather than assuming iteration number identifies latest state. | A | Microsoft AF WorkflowCheckpoint | selected |
+| B-WFL-002 | WFL-002 | Checkpoints preserve committed executor state, edge/fan-in delivery state and pending human/request events across pause/restart. | A | Microsoft AF checkpoint tests/contracts | selected |
+| B-WFL-003 | WFL-003 | Resume never treats captured authorization as permanently valid; current authority is revalidated immediately before consequential mutation. | A | OpenClaw current-authority + MAF restore + CWS side-effect policy | selected |
+| B-WFL-004 | WFL-003 | A restored or retried workflow checks durable side-effect receipts/reconciliation before reissuing a consequential provider call. | A | CWS idempotency/reconciliation + MAF checkpointing | selected |
+| B-WFL-005 | AGT-012 | Steering/cancellation may prevent unstarted work but cannot undo, duplicate or blindly replay a side effect already admitted or executed. | A | OpenClaw steering + Masanawa workflow boundary | selected |
