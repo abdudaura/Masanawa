@@ -229,27 +229,17 @@ Acceptance gate:
 
 ## Current unresolved descendant families
 
-Before OpenClaw can be marked covered:
-1. exhaustive workspace/package/extension inventory at the pinned revision;
-2. Gateway protocol/client and server RPC authority boundaries;
-3. channel framework: admission, bindings, outbound delivery, media, typing/status, account lifecycle and major channel-specific deltas;
-4. device/node pairing, invoke, offline work, capability publication and credential recovery descendant proof;
-5. exec/operator approvals, current-authority mutation and recovery direct-test inventory;
-6. session creation/catalog/visibility/search/bindings/transcripts/attachments and subagent/ACP lifecycle;
-7. steering/queue-steer/collect/follow-up/interrupt semantics and restart recovery;
-8. plugin SDK/plugin lifecycle/install/update/idle/drain and state ownership;
-9. tool policy/sandbox/elevated/browser/computer-use/file/shell authority;
-10. provider/model/retry/streaming/auth catalog families;
-11. memory-host/memory-core/compaction/recall/dreaming/provenance authority map;
-12. skill import/library/workshop/ClawHub/custodian/node-hosted descendants and direct tests;
-13. cron/scheduler/heartbeat/proactivity classification versus canonical workflows;
-14. local state SQLite schema/migrations/workers/backup/recovery and canonical-authority map;
-15. native desktop/mobile/node-host/platform app families;
-16. telemetry/privacy/security audit/secret/log sanitization/SSRF/network policy;
-17. exact direct-test inventory for every retained consequential invariant;
-18. repository-wide descendant proof with zero unresolved production families.
+Before OpenClaw can be marked covered, the remaining gaps are now limited to:
 
-Do not advance to OpenClaw Agent Skills until these are closed.
+1. channel-specific descendant deltas beyond the generic ingress/outbound framework: typing/status/media/thread/account lifecycle behavior and direct tests for the major bundled channel families;
+2. native desktop/mobile/node-host descendant proof, especially device capability publication/offline behavior and app-local state boundaries;
+3. Skill Workshop/Custodian direct descendant/test proof (managed revisions, ClawHub/source installs and node-hosted skills are now covered below);
+4. exact direct-test inventory proving every retained consequential invariant has pinned implementation/test evidence;
+5. repository-wide descendant proof with zero unexplained production families after the above closures.
+
+The repository/package/plugin enumeration gap is closed by `OPENCLAW-INVENTORY.md` (18/18 maintained packages; 163/163 generated plugin inventory entries; zero enumeration ambiguity). Gateway RPC, approvals, steering/restart, provider, memory, scheduler, SSRF/privacy, session lineage, outbound delivery, session catalog/import/attachment handling, and broad skill-source/node-host behavior are covered in the sections below.
+
+Do not advance to OpenClaw Agent Skills until these remaining gaps are closed.
 
 
 ## 10. Tool policy, sandbox and elevated execution
@@ -678,3 +668,85 @@ Acceptance gate:
 - partial/queued/unknown/confirmed-rejected outcomes remain distinct;
 - current authorization is rechecked immediately before delivery;
 - provider acceptance/receipt survives local settlement failure so recovery can settle without duplicate visible delivery.
+
+
+## 24. Session catalogs, imports and attachment custody
+
+Implementation/docs evidence:
+- `docs/nodes/session-catalogs.md`;
+- `src/gateway/server-methods/session-catalog-list.ts`;
+- `src/gateway/server-methods/session-catalog-list-admission.test.ts`;
+- `src/gateway/server-methods/session-catalog-provider-access.test.ts`;
+- `src/gateway/server-methods/session-catalog-list-lifetime.test.ts`;
+- `src/gateway/server-methods/chat-send-attachments.ts`;
+- `src/gateway/server-methods/chat-send-attachments.owner.test.ts`;
+- `src/gateway/server-methods/chat-send-attachments.cancel.test.ts`;
+- managed attachment authority/custody tests under `src/gateway/managed-image-attachments*.test.ts`.
+
+Pinned behavior:
+- catalog providers are independently budgeted; one slow/failed provider may return bounded pending/stale cached projection while other providers remain usable;
+- catalog delivery rechecks current config, caller visibility and current local-session identity after asynchronous provider work rather than trusting the provider's planning snapshot;
+- catalog read/list requires read authority; continue/import/archive requires write authority, with multi-user visibility scoped to the authenticated actor;
+- imported transcripts are bounded projected copies with explicit source provenance and an untrusted-reference notice; re-import of the same source identity updates the same imported session and appends only unseen projected items;
+- revocation stops future copying but does not erase already committed imported content;
+- native catalog/session IDs remain external references and do not become canonical Character/relationship identity;
+- attachment preparation is owner/workspace isolated, rechecks admission/current authority around async staging, and transfers custody only to a persisted transcript or pending input;
+- cancellation/failure cleanup keeps admitted write custody until temporary inbound media is actually discarded, preventing a late abort/retry from reusing abandoned media;
+- managed-PDF cancellation cannot silently fall back to a host path; ordinary non-cancellation failure preserves its typed attachment failure classification.
+
+Masanawa destination:
+- gateway external-session catalog/projection adapter;
+- `packages/agents` execution-session references only;
+- gateway/perception attachment staging + canonical transcript/workflow custody.
+
+Disposition: **A/B**.
+
+Acceptance gate:
+- external/native session discovery is caller-authorized on every delivery and cannot become identity authority;
+- slow/failed catalog providers degrade independently without exposing stale rows to a caller who no longer has visibility;
+- import is bounded, provenance-carrying and idempotent for the same external source identity;
+- imported content is explicitly non-authoritative until promoted by canonical Masanawa memory/world rules;
+- attachment bytes are isolated by canonical owner/workspace and every staged artifact has exactly one terminal custody path: persisted/adopted or deleted;
+- cancellation/timeout cannot turn an uncommitted attachment into a replayable or host-path side effect.
+
+## 25. Skill source installs, ClawHub trust and node-hosted projections
+
+Implementation/docs evidence:
+- `docs/tools/skills.md`;
+- `docs/nodes/mcp-and-skills.md`;
+- `src/skills/lifecycle/source-install.test.ts`;
+- `src/gateway/server-methods/skills.clawhub.test.ts`;
+- `src/infra/clawhub-skill-security.test.ts`;
+- `src/skills/runtime/remote-skills.ts`;
+- `src/skills/runtime/remote-skills.test.ts`;
+- `src/skills/runtime/remote-reconciliation.test.ts`;
+- node-host runtime/inventory tests under `src/node-host/*.test.ts`.
+
+Pinned behavior:
+- local/git/registry skill installation validates the actual `SKILL.md` before publication, enforces byte/path/link constraints, records resolved git commit provenance and strips repository metadata from installed content;
+- git source execution is isolated from inherited Git hook/config state and rejects clone-option injection;
+- ClawHub security results are correlated by exact slug + publisher owner + version; owner/version mismatches fail closed even when a registry reports a superficially clean result;
+- concurrent identical ClawHub install requests dedupe to one underlying install operation across reconnect/retry;
+- trust-blocked ClawHub installs return typed trust details rather than silently forcing installation;
+- node-hosted skills are ephemeral projections: present only while the publishing node is current/connected, hidden when the node/session cannot execute there, and removed on disconnect/generation mismatch;
+- local skill names win collisions; remote collisions receive deterministic node-prefixed names;
+- remote skill content is parsed/validated, content-hashed and locator-bound; malformed frontmatter is dropped;
+- node-hosted skill frontmatter cannot directly dispatch a tool to bypass canonical execution policy.
+
+Masanawa destination:
+- `packages/skills` source/import/provenance adapters;
+- `packages/security` skill trust/admission;
+- device-node skill projection behind canonical tool/exec authority.
+
+Disposition: **A/B**.
+
+Acceptance gate:
+- every external skill import records immutable source provenance (registry/publisher/version or git URL/ref/resolved commit) before certification;
+- identity/version/security-verdict mismatch fails closed;
+- retries/reconnects cannot create duplicate installs for the same idempotent install operation;
+- imported executable resources are revalidated at certification/use time and do not inherit ambient host Git/shell authority;
+- node-hosted skills are derived availability projections, never durable certified-skill truth;
+- disconnect, pairing-generation change or loss of exec-node authority removes remote skill availability immediately;
+- skill visibility/source trust never grants tool, credential, filesystem or node execution authority.
+
+The remaining skill-specific Phase 0B gap is direct Workshop/Custodian descendant/test closure; managed revision/session pinning, generic source installs, ClawHub trust behavior and node-hosted skills are now evidenced.
