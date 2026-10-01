@@ -157,14 +157,14 @@ foundation, identity, relationships, memory, world, decisions, agents, skills, t
 | SKL-008 | skills | scoped skill roots/precedence/gating/install/update/verify/workshop distribution | OpenClaw | B | primary distribution donor | packages/skills | analysed |
 | MEM-013 | memory | action-sensitive memory + compaction flush + background dreaming | OpenClaw | B | secondary donor | packages/memory | analysed |
 | MEM-014 | memory | pluggable memory engines and provenance-rich memory wiki | OpenClaw | B | secondary donor | packages/memory + plugins | analysed |
-| AGT-008 | agents | active-run steer/followup/collect/interrupt queue semantics | OpenClaw | B | secondary runtime donor | packages/agents + runtime | analysed |
+| AGT-012 | agents | active-run steer/followup/collect/interrupt queue semantics | OpenClaw | B | secondary runtime donor | packages/agents + runtime | analysed |
 | SEC-005 | security | workspace attestation and fail-safe missing-workspace handling | OpenClaw | A/B | secondary security donor | packages/security + runtime | analysed |
 | DLF-001 | avatar | persistent digital-life client across web/desktop/avatar/game contexts | AIRI | B | selected architectural donor | apps/clients + avatar | analysed |
 | DLF-002 | avatar | Live2D/VRM embodied character runtime | AIRI | B | primary embodiment donor | avatar providers/clients | analysed |
-| RTC-009 | presence | AgentSession/Worker/job abstraction over production WebRTC | LiveKit Agents | B | major candidate | services/presence | discovered |
+| RTC-014 | presence | AgentSession/Worker/job abstraction over production WebRTC | LiveKit Agents | B | selected session donor | services/presence | analysed |
 | RTC-010 | presence | semantic turn detection and multi-provider STT/LLM/TTS/realtime/avatar plugins | LiveKit Agents | B | major candidate | presence + providers | discovered |
 | RTC-011 | presence | composable frame/pipeline processors for voice/video/control | Pipecat | B | major candidate | services/presence | discovered |
-| AGT-009 | agents | multi-agent handoff/fan-out/sidecar/shared-bus realtime composition | Pipecat | B | candidate | agents + presence | discovered |
+| AGT-013 | agents | multi-agent handoff/fan-out/sidecar/shared-bus realtime composition | Pipecat | B | secondary presence donor | agents + presence | analysed |
 | MEM-015 | memory | persistent agent identity/experience across conversations + shared memory | Letta | B | major candidate | packages/memory + identity | discovered |
 | MEM-016 | memory | temporal/entity-aware multi-signal retrieval and memory evaluation | Mem0 | B | major candidate | packages/memory + telemetry | discovered |
 | WLD-004 | world | transactional shared-state simulation engine for autonomous characters | AI Town | B | major candidate | packages/world + workers | discovered |
@@ -192,6 +192,6 @@ foundation, identity, relationships, memory, world, decisions, agents, skills, t
 | PLG-010 | plugins | extension session cleanup ownership with independent runtime/asset debt | AIRI | A/B | strong lifecycle donor | plugin runtime | analysed |
 | RTC-013 | presence | serialized microphone/ASR binding lifecycle with stale-callback isolation | AIRI | A | primary client-lifecycle donor | clients + services/presence | analysed |
 | PER-004 | perception | deterministic/browser-DOM/desktop computer-use lane separation with approval/audit | AIRI | B | secondary execution donor | tools + perception | analysed |
-| PRV-005 | infrastructure | runtime-neutral client inference/provider definitions | AIRI | B | secondary provider donor | packages/providers | analysed |
+| PRV-006 | infrastructure | runtime-neutral client inference/provider definitions | AIRI | B | secondary provider donor | packages/providers | analysed |
 
 This inventory is intentionally incomplete. Source-specific map documents identify the next deep-mining areas.
