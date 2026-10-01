@@ -586,3 +586,45 @@ Still required before closure:
 3. cloud/deployment credential and durable-state ownership/recovery;
 4. remaining SQL schema family classification so eliza identity/memory/world/task tables are explicitly C/B mapped rather than generically rejected;
 5. repository-wide descendant/file-family proof sufficient to show no meaningful production subsystem remains unexplained.
+
+
+## 22. Outbound delivery acceptance and retry semantics
+
+Implementation evidence:
+- `plugins/plugin-scheduling/src/scheduled-task/connector-dispatch.ts`;
+- `plugins/plugin-assistant/src/services/message.deliver-then-persist.test.ts`;
+- connector send-handler integration through `runtime.sendMessageToTarget`.
+
+Pinned behavior:
+- scheduled connector dispatch carries a durable idempotency key derived from persisted dispatch metadata or task+fire time;
+- send-handler results are normalized into explicit dispositions: delivered, partially delivered, in-flight, not delivered, unknown;
+- provider acceptance is authoritative for user-visible delivery;
+- if provider acceptance succeeded but local receipt persistence is partial/failed, the runtime reports degraded evidence but **must not retry solely because local persistence failed**, avoiding duplicate visible delivery;
+- partially delivered/in-flight/unknown outcomes are represented as acceptance unknown rather than pretending not-sent;
+- unknown acceptance must not be blindly retried on a non-idempotent transport;
+- explicit not-delivered failures are classified into rate-limit/auth/recipient/disconnected/transport categories for downstream retry/escalation policy;
+- transport exceptions are translated to typed unknown-acceptance failures and reported;
+- fast-path visible reply delivery and reply persistence may run concurrently, but both settle before the message boundary resolves; same-room follow-up composition is held until reply persistence, while unrelated rooms remain unblocked.
+
+Masanawa destination:
+- gateway/outbox + `packages/workflows` delivery/reconciliation contract.
+
+Disposition: **A — preserve acceptance-state/idempotency/reconciliation semantics**.
+
+Acceptance gate:
+- provider-accepted delivery is never duplicated because local evidence write failed;
+- unknown acceptance enters reconciliation/needs-attention rather than blind resend;
+- retry only occurs when transport/provider semantics make it safe or idempotency is proven;
+- durable provider message ID/receipt/idempotency key are retained when available;
+- same-conversation follow-up cannot compose from a reply that has not yet reached canonical persistence;
+- independent conversations remain concurrency-isolated.
+
+## Updated unresolved descendant families
+
+Still required before closure:
+1. additional native/device action families beyond view brokerage, including computer-use/terminal/browser bridges;
+2. cloud/deployment credential and durable-state ownership/recovery;
+3. remaining SQL schema family classification so eliza identity/memory/world/task tables are explicitly C/B mapped rather than generically rejected;
+4. repository-wide descendant/file-family proof sufficient to show no meaningful production subsystem remains unexplained.
+
+Outbound connector acceptance/idempotency semantics are no longer unresolved.
