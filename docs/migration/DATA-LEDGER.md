@@ -252,3 +252,13 @@ Phase 0 must continue mapping donor-specific stores/tables/files into these cano
 | D-RTC-052 | TransportMigrationBuffer | LiveKit Server | participant transport move | bounded ephemeral | media/private | presence | implementation detail | size/time bounded continuity buffer |
 | D-RTC-053 | TransportQualitySample | LiveKit Server | track/participant transport | append/rolling | telemetry | presence/telemetry | projection | packet loss/jitter/RTT/quality evidence only |
 | D-RTC-054 | TransportRoomPlacement | LiveKit Server | room infrastructure | mutable/reassignable | internal | presence infra | projection | node/region placement not domain session identity |
+
+### Phase 0B LiveKit Agents TypeScript data concepts
+
+| ID | Canonical concept | Source | Scope | Lifecycle | Sensitivity | Destination | Treatment | Notes |
+|---|---|---|---|---|---|---|---|---|
+| D-RTC-060 | LiveTurnGeneration | LiveKit Agents TS | PresenceSession turn | preparing->generating->playing/paused/interrupted->committed/aborted | private/session | presence | redesign | separates generation from playout and commit |
+| D-RTC-061 | ReusableMediaResourceLease | LiveKit Agents TS | activity handoff | owned->detached->transferred/released | private/runtime | presence | redesign | STT/realtime pipelines transfer exactly once |
+| D-RTC-062 | PlaybackCommitEvidence | LiveKit Agents TS | speech/turn | pending->first_frame->completed/interrupted | private/telemetry | presence | redesign | prevents transcript/history commit from relying on generation completion alone |
+| D-PVD-020 | ProviderAvailabilityState | LiveKit Agents TS | provider instance/operation | healthy->unavailable->recovering->healthy | internal | providers | redesign | runtime availability only; provider registry remains canonical elsewhere |
+| D-AVT-040 | AvatarOutputSession | LiveKit Agents TS | PresenceSession | provisioning->ready->closing/absent | private/runtime | presence/embodiment | redesign | optional output projection only |
