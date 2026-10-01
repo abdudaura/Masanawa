@@ -18,7 +18,7 @@ import {
 } from "./index.js";
 
 const connectionString = process.env.MASANAWA_TEST_DATABASE_URL;
-const describePostgres = connectionString ? describe.sequential : describe.skip;
+const describePostgres = connectionString ? describe : describe.skip;
 const eventMigrationDirectory = fileURLToPath(
   new URL("../../../../packages/events/migrations", import.meta.url),
 );
