@@ -362,3 +362,13 @@ This inventory is intentionally incomplete. Source-specific map documents identi
 | RTC-063 | presence | audio/transcription synchronization tied to actual playback rather than generation completion | LiveKit Agents TS | A/B | primary playout synchronization donor | services/presence | analysed |
 | PVD-020 | providers | LLM/STT/TTS fallback adapters with health/recovery state and explicit mid-stream fallback policy | LiveKit Agents TS | B | provider resilience donor | packages/providers | analysed |
 | AVT-040 | embodiment | remote avatar session as replaceable output capability with lifecycle/rollback semantics | LiveKit Agents TS | B | presence-avatar bridge donor | presence + clients/embodiment | analysed |
+
+### Phase 0B LiveKit Agents Python parity/delta additions
+
+| ID | Domain | Feature | Source | Class | Donor role | Masanawa destination | Status |
+|---|---|---|---|---|---|---|---|
+| RTC-070 | presence | realtime-model failover that preserves active chat/instructions/tools, requires hard-capability compatibility, and can regenerate interrupted output | LiveKit Agents Python | A/B | parity/delta donor | services/presence + packages/providers | analysed |
+| SPK-030 | perception | diarization-aware primary/background speaker adaptation with optional suppression that does not double-count usage telemetry | LiveKit Agents Python | B | unique parity/delta donor | packages/perception + presence/providers | analysed |
+| EVL-030 | evaluation | post-session judge groups for task completion, handoff continuity, accuracy, tool use, safety, relevance/coherence and concision | LiveKit Agents Python | B | evaluation donor | packages/telemetry/evaluation + certification | analysed |
+| OBS-030 | telemetry/privacy | PII-aware trace/log export filtering with project-level redaction policy and exporter-specific allow rules | LiveKit Agents Python | A/B | observability privacy donor | packages/telemetry + privacy/security | analysed |
+| EXP-001 | workflows/runtime | serializable live Python coroutine/generator experiment for resumable function execution | LiveKit durable plugin | C/B | research donor only | workflow research; Microsoft AF remains durable workflow authority | selected |
