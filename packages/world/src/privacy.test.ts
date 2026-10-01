@@ -51,9 +51,19 @@ describe("World shared-state privacy", () => {
   });
 
   it("rejects private IDs from shared textual World projections", () => {
+    const userId = createCanonicalId("user");
     expect(() =>
       assertWorldTextsHaveNoPrivateReferences({
-        activeGoal: createCanonicalId("user"),
+        activeGoal: userId,
+        storyArc: null,
+      }),
+    ).toThrowError(
+      expect.objectContaining({ code: "world.private_reference_forbidden" }),
+    );
+
+    expect(() =>
+      assertWorldTextsHaveNoPrivateReferences({
+        activeGoal: `Discuss private user ${userId} later`,
         storyArc: null,
       }),
     ).toThrowError(
