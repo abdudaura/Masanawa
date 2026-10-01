@@ -117,9 +117,16 @@ export async function claimOutboxBatch(
          SELECT outbox_event_id
            FROM events.outbox
           WHERE destination = $1
-            AND state IN ('pending', 'retry-scheduled')
-            AND available_at <= clock_timestamp()
-            AND (lease_expires_at IS NULL OR lease_expires_at <= clock_timestamp())
+            AND (
+              (
+                state IN ('pending', 'retry-scheduled')
+                AND available_at <= clock_timestamp()
+              )
+              OR (
+                state = 'claimed'
+                AND lease_expires_at <= clock_timestamp()
+              )
+            )
           ORDER BY available_at, created_at, outbox_event_id
           FOR UPDATE SKIP LOCKED
           LIMIT $2
@@ -159,6 +166,51 @@ export async function claimOutboxBatch(
       })),
     );
   });
+}
+
+export async function renewOutboxClaim(
+  client: PoolClient,
+  input: {
+    readonly outboxEventId: OutboxEventId;
+    readonly workerId: string;
+    readonly fence: number;
+    readonly leaseMs: number;
+  },
+): Promise<void> {
+  if (!input.workerId.trim()) {
+    throw new TypeError("workerId is required");
+  }
+  if (!Number.isInteger(input.leaseMs) || input.leaseMs <= 0) {
+    throw new RangeError("leaseMs must be a positive integer");
+  }
+
+  const result = await client.query(
+    `UPDATE events.outbox
+        SET lease_expires_at =
+              clock_timestamp() + ($4::bigint * interval '1 millisecond'),
+            updated_at = clock_timestamp()
+      WHERE outbox_event_id = $1
+        AND state = 'claimed'
+        AND lease_owner = $2
+        AND fence = $3
+        AND lease_expires_at > clock_timestamp()
+        AND lease_expires_at > clock_timestamp()`,
+    [
+      input.outboxEventId,
+      input.workerId,
+      input.fence,
+      input.leaseMs,
+    ],
+  );
+
+  if (result.rowCount !== 1) {
+    throw new PlatformError({
+      code: "outbox.stale_claim",
+      category: "conflict",
+      message: "Outbox claim is no longer current",
+      retryable: false,
+    });
+  }
 }
 
 export async function settleOutboxClaim(
