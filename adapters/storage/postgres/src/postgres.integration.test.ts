@@ -14,6 +14,10 @@ import {
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Pool } from "pg";
 import {
+  createFaultInjector,
+  InjectedCrash,
+} from "../../../../test/support/fault-injection.js";
+import {
   admitInboxEvent,
   beginReconciliation,
   checkPostgresReadiness,
@@ -31,6 +35,7 @@ import {
   prepareOperation,
   persistPlatformEventWithOutbox,
   recordExternalReceipt,
+  renewOutboxClaim,
   runMigrations,
   settleInboxClaim,
   settleOutboxClaim,
@@ -85,6 +90,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       "events/0001_event_foundation.sql",
       "events/0002_inbox_leases.sql",
       "events/0003_receipt_reconciliation_integrity.sql",
+      "events/0004_outbox_recovery.sql",
       "security/0001_security_foundation.sql",
       "security/0002_approval_operation_integrity.sql",
     ]);
@@ -483,6 +489,179 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       lease_owner: null,
     });
     expect(persisted.rows[0]?.completed_at).toBeInstanceOf(Date);
+  });
+
+  it("recovers outbox work after an injected worker crash and fences the stale worker", async () => {
+    const occurredAt = toInstant(new Date());
+    const event: PlatformEvent<{ message: string }> = {
+      eventId: createCanonicalId("event"),
+      eventType: "message.requested",
+      schemaVersion: 1,
+      tenantId: createCanonicalId("tenant"),
+      aggregate: {
+        type: "operation",
+        id: createCanonicalId("operation"),
+        revision: 1,
+      },
+      occurredAt,
+      recordedAt: occurredAt,
+      actor: null,
+      authorityRef: null,
+      correlationId: createCanonicalId("correlation"),
+      causationId: null,
+      requestId: null,
+      workflowRunId: null,
+      characterSessionId: null,
+      provenance: { source: "fault-injection-integration" },
+      sensitivity: "internal",
+      payload: { message: "recover-me" },
+    };
+
+    const outboxEventId = await persistPlatformEventWithOutbox(pool, {
+      event,
+      outbox: {
+        destination: "restart-test",
+        availableAt: occurredAt,
+        payload: { eventId: event.eventId, message: "recover-me" },
+      },
+    });
+
+    const [firstClaim] = await claimOutboxBatch(pool, {
+      workerId: "worker-before-crash",
+      destination: "restart-test",
+      limit: 1,
+      leaseMs: 60_000,
+    });
+    expect(firstClaim).toMatchObject({
+      outboxEventId,
+      state: "claimed",
+      attempt: 1,
+      fence: 1,
+    });
+
+    const faults = createFaultInjector({
+      "after-outbox-claim": 1,
+    });
+    expect(() => faults.checkpoint("after-outbox-claim")).toThrowError(
+      InjectedCrash,
+    );
+    expect(faults.hits("after-outbox-claim")).toBe(1);
+    expect(faults.remaining("after-outbox-claim")).toBe(0);
+
+    await pool.query(
+      `UPDATE events.outbox
+          SET lease_expires_at = clock_timestamp() - interval '1 second'
+        WHERE outbox_event_id = $1`,
+      [outboxEventId],
+    );
+
+    await expect(
+      withTransaction(pool, (client) =>
+        renewOutboxClaim(client, {
+          outboxEventId,
+          workerId: "worker-before-crash",
+          fence: firstClaim!.fence,
+          leaseMs: 60_000,
+        }),
+      ),
+    ).rejects.toMatchObject({
+      code: "outbox.stale_claim",
+      category: "conflict",
+    });
+
+    await expect(
+      withTransaction(pool, (client) =>
+        settleOutboxClaim(client, {
+          outboxEventId,
+          workerId: "worker-before-crash",
+          fence: firstClaim!.fence,
+          state: "acknowledged",
+          terminalReceiptRef: "should-not-win",
+        }),
+      ),
+    ).rejects.toMatchObject({
+      code: "outbox.stale_claim",
+      category: "conflict",
+    });
+
+    const [reclaimed] = await claimOutboxBatch(pool, {
+      workerId: "worker-after-restart",
+      destination: "restart-test",
+      limit: 1,
+      leaseMs: 60_000,
+    });
+    expect(reclaimed).toMatchObject({
+      outboxEventId,
+      state: "claimed",
+      attempt: 2,
+      fence: 2,
+    });
+
+    await withTransaction(pool, (client) =>
+      renewOutboxClaim(client, {
+        outboxEventId,
+        workerId: "worker-after-restart",
+        fence: reclaimed!.fence,
+        leaseMs: 60_000,
+      }),
+    );
+
+    await expect(
+      withTransaction(pool, (client) =>
+        settleOutboxClaim(client, {
+          outboxEventId,
+          workerId: "worker-before-crash",
+          fence: firstClaim!.fence,
+          state: "acknowledged",
+          terminalReceiptRef: "stale-receipt",
+        }),
+      ),
+    ).rejects.toMatchObject({
+      code: "outbox.stale_claim",
+      category: "conflict",
+    });
+
+    await withTransaction(pool, (client) =>
+      settleOutboxClaim(client, {
+        outboxEventId,
+        workerId: "worker-after-restart",
+        fence: reclaimed!.fence,
+        state: "acknowledged",
+        terminalReceiptRef: "provider-receipt-42",
+      }),
+    );
+
+    const afterSettlement = await claimOutboxBatch(pool, {
+      workerId: "worker-third",
+      destination: "restart-test",
+      limit: 1,
+      leaseMs: 60_000,
+    });
+    expect(afterSettlement).toEqual([]);
+
+    const persisted = await pool.query<{
+      state: string;
+      attempt: number;
+      fence: string;
+      lease_owner: string | null;
+      terminal_receipt_ref: string | null;
+    }>(
+      `SELECT state,
+              attempt,
+              fence::text,
+              lease_owner,
+              terminal_receipt_ref
+         FROM events.outbox
+        WHERE outbox_event_id = $1`,
+      [outboxEventId],
+    );
+    expect(persisted.rows[0]).toEqual({
+      state: "acknowledged",
+      attempt: 2,
+      fence: "2",
+      lease_owner: null,
+      terminal_receipt_ref: "provider-receipt-42",
+    });
   });
 
   it("keeps provider receipt observations append-only and idempotent", async () => {
