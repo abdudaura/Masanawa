@@ -200,6 +200,9 @@ importers:
       '@masanawa/security':
         specifier: workspace:*
         version: link:../../../packages/security
+      '@masanawa/world':
+        specifier: workspace:*
+        version: link:../../../packages/world
       pg:
         specifier: 8.23.0
         version: 8.23.0
