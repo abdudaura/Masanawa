@@ -1,9 +1,7 @@
 {
   "extends": "./tsconfig.base.json",
-  "files": [],
-  "references": [
-    { "path": "./packages/contracts" },
-    { "path": "./packages/events" },
-    { "path": "./packages/security" }
+  "include": [
+    "vitest.config.ts",
+    "test/**/*.ts"
   ]
 }
