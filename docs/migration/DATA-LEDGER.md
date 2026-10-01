@@ -207,3 +207,17 @@ Phase 0 must continue mapping donor-specific stores/tables/files into these cano
 | D-SES-020 | RuntimeSession | OpenJarvis | channel/runtime principal | durable session + bounded history | private | agents/gateway | redesign | never canonical Character/user/relationship identity |
 | D-SCH-020 | ScheduledTrigger | OpenJarvis | tenant/workflow | active/paused/cancelled/completed | private/internal | workflows/proactivity | redesign | once/interval/cron + timezone + next run |
 | D-SCH-021 | ScheduledRunEvidence | OpenJarvis | scheduled trigger | append | internal | workflows/telemetry | redesign | result/error/start/end evidence |
+
+### Phase 0B N.E.K.O remediation data concepts
+
+| ID | Canonical concept | Source | Scope | Lifecycle | Sensitivity | Destination | Treatment | Notes |
+|---|---|---|---|---|---|---|---|---|
+| D-ASR-001 | VoiceTurnCandidate | N.E.K.O | presence session + input generation | ephemeral lifecycle + trace | voice/private | presence | redesign | candidate generation, suppression, provider route, delivery state; stale generation cannot commit |
+| D-ASR-002 | EndpointingEvidence | N.E.K.O | voice turn | ephemeral/trace | voice-derived | presence/telemetry | redesign | VAD/smart-turn/activity evidence and reason; model artifacts are provider assets, not domain truth |
+| D-SPK-001 | SpeakerRecognitionProfile | N.E.K.O | user/device/security profile | durable versioned | biometric/highly sensitive | security/presence | redesign | optional enrollment/profile refs; never sole authentication or Character identity |
+| D-SPK-002 | SpeakerRecognitionAttempt | N.E.K.O | presence turn | append/ephemeral trace | biometric/highly sensitive | security/telemetry | redesign | score/profile/policy revision/result; stale activation cannot overwrite current policy |
+| D-ACT-001 | DeviceActivitySnapshot | N.E.K.O | device/session | ephemeral/short retention | highly sensitive | perception | redesign | focus/system signals + privacy state; only admitted projection can reach proactivity |
+| D-CFG-001 | ConfigurationRevision | N.E.K.O | user/device/client config | immutable revision + current pointer | private/internal | config/storage | redesign | schema/version/source/migration lineage; files are not canonical identity/world truth |
+| D-CFG-002 | CloudSaveSnapshot | N.E.K.O | user/device config bundle | staged->verified->current/superseded | private/internal | config/storage | redesign | fencing/staging prevents stale/partial snapshot replacing newer healthy config |
+| D-PLG-020 | PluginInstallationTransaction | N.E.K.O | tenant/plugin installation | preparing->validated->replacing->committed/rolled_back | security-sensitive | plugins/workflows | redesign | source ownership, preflight, operation lock, previous healthy version, rollback evidence |
+| D-PLG-021 | PluginMessageEnvelope | N.E.K.O | plugin runtime call/event | ephemeral + trace | varies | plugins/events | redesign | typed RPC/pubsub/event, call chain/deadlock metadata; never domain truth |
