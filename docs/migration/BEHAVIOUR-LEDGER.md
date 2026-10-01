@@ -323,3 +323,14 @@ Deep behavior mining from tests remains required before Phase 0 completion.
 | B-CUA-030 | CUA-030 | Desktop tool input is restricted to an allowlisted command grammar; host-owned routing/storage flags cannot be overridden; screenshot reads resolve real paths and stay inside the artifact store. | A | AIRI computer-use runtime/tests | analysed |
 | B-CUA-031 | CUA-030 | Desktop commands are serialized; a failed command cannot poison the queue; disposal rejects queued/future work and tears down private daemon/socket state. | A | AIRI computer-use runtime/tests | analysed |
 | B-MOB-001 | MOB-001 | Native-host WebSocket bridge distinguishes close-before-open from post-open close and removes closed session mappings so stale native events cannot target a new logical connection. | A/B | Stage Pocket bridge implementation/tests | analysed |
+
+### Phase 0B LiveKit Server transport invariants
+
+| ID | Feature | Required behavior | Class | Evidence | Status |
+|---|---|---|---|---|---|
+| B-RTC-050 | RTC-050 | Room admission enforces configured participant limits; track publication is checked against participant publish/source permissions before media becomes visible. | A | room/participant tests | analysed |
+| B-RTC-051 | RTC-050 | Participant state/track updates are versioned/ordered so stale or out-of-order updates cannot silently replace newer participant state. | A/B | participant/room update tests | analysed |
+| B-RTC-052 | RTC-051 | Migration continuity buffers are size/time bounded; overflow/timeout degrades explicitly rather than growing unbounded. | A | migration data cache tests | analysed |
+| B-RTC-053 | RTC-052 | RTP accounting distinguishes loss, out-of-order, duplicate and restart conditions; old/pre-start packets do not rewrite current stream baseline. | A/B | RTP stats tests | analysed |
+| B-RTC-054 | RTC-052 | Connection-quality scoring is transport telemetry only; muted/no-packet states are interpreted explicitly and never become Character/user quality truth. | B | connection quality tests | selected |
+| B-RTC-055 | RTC-053 | Node/room routing may relocate transport, but Masanawa PresenceSession/CharacterSession identity survives infrastructure placement changes. | A/B | routing/migration architecture + ADR-0006 | selected |
