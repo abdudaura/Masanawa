@@ -231,3 +231,14 @@ Phase 0 must continue mapping donor-specific stores/tables/files into these cano
 | D-TSK-030 | WorkflowTaskEventCursor | CyberVerse clean-room | workflow task | monotonic sequence | internal/private | workflows/events | clean reimplementation | reconnect cursor; not donor schema |
 | D-TSK-031 | WorkflowArtifact | CyberVerse clean-room | workflow task | append then immutable after terminal | private/content-dependent | workflows/storage | clean reimplementation | external ID/path-safe storage semantics; content store implementation independent |
 | D-RAG-030 | KnowledgeSourceProjection | CyberVerse clean-room | tenant/character/source | replaceable derived projection | source-dependent | knowledge | clean reimplementation | source ID, chunk IDs, backend projection and provenance; vector index rebuildable |
+
+### Phase 0B AIRI descendant data concepts
+
+| ID | Canonical concept | Source | Scope | Lifecycle | Sensitivity | Destination | Treatment | Notes |
+|---|---|---|---|---|---|---|---|---|
+| D-PLG-030 | ExtensionActivationPlan | AIRI | host/plugin configuration | ephemeral proposal -> applied/diagnostic | internal | plugins | redesign | deterministic dependency/provider/load/unload plan; no side effects during planning |
+| D-PLG-031 | EffectivePermissionGrant | AIRI | extension/module session | revisioned runtime grant | security-sensitive | plugins/security | redesign | exact intersection of requested and host-approved scopes/actions |
+| D-RTC-040 | VoiceInputBindingRevision | AIRI | client/presence surface | monotonic ephemeral revision | voice/private | clients/presence | redesign | suppresses stale queued binding work during toggle/device replacement |
+| D-AVT-030 | RendererTargetLease | AIRI | embodiment client | acquired->replaced->released | internal/runtime | clients/embodiment | redesign | one driver owns a renderer target until explicit release |
+| D-CUA-030 | ComputerUseRuntimeLease | AIRI | device/client | active->disposing->closed | highly sensitive | tools/perception/security | redesign | private daemon, serialized operations, host-owned store/routing |
+| D-MOB-001 | NativeBridgeSession | AIRI | mobile client connection | connecting->open->closed/error | private/session | clients/mobile/gateway | redesign | native transport handle, not canonical Conversation/Identity |
