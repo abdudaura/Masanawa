@@ -551,6 +551,7 @@ async function appendWorldEvent(
   client: PoolClient,
   world: World,
   generationNumber: number,
+  simulationTime: ReturnType<typeof toInstant>,
   committedAt: ReturnType<typeof toInstant>,
   draft: WorldEventDraft,
 ): Promise<WorldEvent> {
@@ -559,7 +560,7 @@ async function appendWorldEvent(
   if (occurrenceKey !== null && occurrenceKey.length > 256) {
     throw new TypeError("World event occurrenceKey is invalid");
   }
-  if (draft.validFrom > world.simulationTime) {
+  if (draft.validFrom > simulationTime) {
     throw conflict(
       "world.event_from_future",
       "World event cannot begin after the committed simulation time",
