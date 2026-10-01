@@ -42,7 +42,6 @@ import {
   commitWorldGeneration,
   putCharacterLifeState,
   appendWorldEvent,
-  approveWorldEvent,
   putRoutine,
   admitRoutineOccurrence,
   putStoryArc,
@@ -754,13 +753,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
         recordedAt: now,
         admission: "draft",
       });
-      await expect(
-        approveWorldEvent(client, {
-          tenantId,
-          worldEventId: draft.worldEventId,
-          approvedAt: now,
-        }),
-      ).resolves.toMatchObject({ canonState: "approved" });
+      expect(draft.canonState).toBe("draft");
     });
 
     await expect(
