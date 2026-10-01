@@ -9,6 +9,7 @@ import {
   type WorldId,
   type WorldInteractionId,
 } from "@masanawa/contracts";
+import { fingerprintCanonicalJson } from "@masanawa/security";
 import {
   assertRoutineScheduledTime,
   assertSimulationTimeDoesNotMoveBackward,
@@ -1100,6 +1101,343 @@ export async function retireWorldEvent(
     );
   }
   return asWorldEvent(result.rows[0]);
+}
+
+function normalizeInteractionParticipants(
+  participants: readonly WorldInteractionParticipant[],
+): readonly WorldInteractionParticipant[] {
+  if (participants.length < 2 || participants.length > 64) {
+    throw new TypeError("WorldInteraction requires between 2 and 64 participants");
+  }
+
+  const seen = new Set<string>();
+  const normalized = participants.map((participant) => {
+    if (seen.has(participant.characterId)) {
+      throw new TypeError("WorldInteraction participants must be unique Characters");
+    }
+    seen.add(participant.characterId);
+    return Object.freeze({
+      characterId: participant.characterId,
+      characterVersionId: participant.characterVersionId,
+      role: boundedText(participant.role, "interaction participant role", 128),
+    });
+  });
+
+  normalized.sort((left, right) => {
+    const characterOrder = left.characterId.localeCompare(right.characterId);
+    return characterOrder !== 0
+      ? characterOrder
+      : left.role.localeCompare(right.role);
+  });
+  return Object.freeze(normalized);
+}
+
+function interactionContentFingerprint(input: {
+  readonly interactionKind: string;
+  readonly participants: readonly WorldInteractionParticipant[];
+  readonly payload: WorldInteraction["payload"];
+  readonly provenance: WorldInteraction["provenance"];
+  readonly visibility: WorldInteraction["visibility"];
+  readonly canonState: WorldInteraction["canonState"];
+  readonly effectiveStart: Instant;
+  readonly effectiveEnd: Instant | null;
+}): string {
+  return fingerprintCanonicalJson({
+    interactionKind: input.interactionKind,
+    participants: input.participants,
+    payload: input.payload,
+    provenance: input.provenance,
+    visibility: input.visibility,
+    canonState: input.canonState,
+    effectiveStart: input.effectiveStart,
+    effectiveEnd: input.effectiveEnd,
+  });
+}
+
+async function loadWorldInteraction(
+  client: PoolClient,
+  tenantId: TenantId,
+  worldInteractionId: WorldInteractionId,
+  forUpdate: boolean,
+): Promise<WorldInteraction | null> {
+  const result = await client.query<WorldInteractionRow>(
+    `SELECT *
+       FROM world.interactions
+      WHERE tenant_id = $1
+        AND world_interaction_id = $2
+      ${forUpdate ? "FOR UPDATE" : ""}`,
+    [tenantId, worldInteractionId],
+  );
+  const row = result.rows[0];
+  if (!row) {
+    return null;
+  }
+
+  const participantResult = await client.query<WorldInteractionParticipantRow>(
+    `SELECT character_id,
+            character_version_id,
+            role,
+            ordinal
+       FROM world.interaction_participants
+      WHERE tenant_id = $1
+        AND world_interaction_id = $2
+      ORDER BY ordinal`,
+    [tenantId, worldInteractionId],
+  );
+  const participants = participantResult.rows.map((participant) =>
+    Object.freeze({
+      characterId: participant.character_id,
+      characterVersionId: participant.character_version_id,
+      role: participant.role,
+    }),
+  );
+  return asWorldInteraction(row, participants);
+}
+
+async function loadWorldInteractionByOccurrence(
+  client: PoolClient,
+  tenantId: TenantId,
+  worldId: WorldId,
+  occurrenceKey: string,
+): Promise<WorldInteraction | null> {
+  const result = await client.query<{ world_interaction_id: WorldInteractionId }>(
+    `SELECT world_interaction_id
+       FROM world.interactions
+      WHERE tenant_id = $1
+        AND world_id = $2
+        AND occurrence_key = $3`,
+    [tenantId, worldId, occurrenceKey],
+  );
+  const interactionId = result.rows[0]?.world_interaction_id;
+  return interactionId
+    ? loadWorldInteraction(client, tenantId, interactionId, false)
+    : null;
+}
+
+export async function getWorldInteraction(
+  client: PoolClient,
+  tenantId: TenantId,
+  worldInteractionId: WorldInteractionId,
+): Promise<WorldInteraction | null> {
+  return loadWorldInteraction(client, tenantId, worldInteractionId, false);
+}
+
+export async function appendWorldInteraction(
+  client: PoolClient,
+  input: AppendWorldInteractionInput,
+): Promise<WorldInteraction> {
+  const interactionKind = boundedText(
+    input.interactionKind,
+    "interactionKind",
+    128,
+  );
+  const occurrenceKey =
+    input.occurrenceKey === null
+      ? null
+      : boundedText(input.occurrenceKey, "occurrenceKey", 256);
+  const participants = normalizeInteractionParticipants(input.participants);
+
+  if (
+    input.effectiveEnd !== null &&
+    input.effectiveEnd < input.effectiveStart
+  ) {
+    throw new TypeError("effectiveEnd must not precede effectiveStart");
+  }
+
+  const desiredCanonState =
+    input.admission === "automatic-approved" ? "approved" : "draft";
+
+  if (input.admission === "automatic-approved") {
+    const world = await loadWorld(client, input.tenantId, input.worldId, false);
+    if (!world) {
+      throw notFound();
+    }
+    if (!world.policy.automaticCanonEnabled) {
+      throw conflict(
+        "world.automatic_canon_disabled",
+        "World policy does not permit automatic canon admission",
+      );
+    }
+    if (input.provenance !== "engine") {
+      throw conflict(
+        "world.automatic_canon_provenance_forbidden",
+        "Only engine-produced evidence may use automatic canon admission",
+      );
+    }
+    for (const participant of participants) {
+      await assertActiveCharacterVersion(
+        client,
+        input.tenantId,
+        participant.characterId,
+        participant.characterVersionId,
+      );
+    }
+  }
+
+  if (occurrenceKey !== null) {
+    const existing = await loadWorldInteractionByOccurrence(
+      client,
+      input.tenantId,
+      input.worldId,
+      occurrenceKey,
+    );
+    if (existing) {
+      const expectedFingerprint = interactionContentFingerprint({
+        interactionKind,
+        participants,
+        payload: input.payload,
+        provenance: input.provenance,
+        visibility: input.visibility,
+        canonState: desiredCanonState,
+        effectiveStart: input.effectiveStart,
+        effectiveEnd: input.effectiveEnd,
+      });
+      const existingFingerprint = interactionContentFingerprint({
+        interactionKind: existing.interactionKind,
+        participants: existing.participants,
+        payload: existing.payload,
+        provenance: existing.provenance,
+        visibility: existing.visibility,
+        canonState: existing.canonState,
+        effectiveStart: existing.effectiveStart,
+        effectiveEnd: existing.effectiveEnd,
+      });
+      if (expectedFingerprint !== existingFingerprint) {
+        throw conflict(
+          "world.interaction_occurrence_conflict",
+          "World interaction occurrence key was reused with different content",
+        );
+      }
+      return existing;
+    }
+  }
+
+  const inserted = await client.query<WorldInteractionRow>(
+    `INSERT INTO world.interactions (
+       tenant_id,
+       world_interaction_id,
+       world_id,
+       interaction_kind,
+       payload,
+       provenance,
+       visibility,
+       canon_state,
+       occurrence_key,
+       effective_start,
+       effective_end,
+       recorded_at,
+       approved_at,
+       retired_at
+     )
+     VALUES ($1,$2,$3,$4,$5::jsonb,$6,$7,'draft',$8,$9,$10,$11,NULL,NULL)
+     ${occurrenceKey === null
+       ? ""
+       : "ON CONFLICT (tenant_id, world_id, occurrence_key) WHERE occurrence_key IS NOT NULL DO NOTHING"}
+     RETURNING *`,
+    [
+      input.tenantId,
+      input.worldInteractionId,
+      input.worldId,
+      interactionKind,
+      JSON.stringify(input.payload),
+      input.provenance,
+      input.visibility,
+      occurrenceKey,
+      input.effectiveStart,
+      input.effectiveEnd,
+      input.recordedAt,
+    ],
+  );
+
+  if (!inserted.rows[0]) {
+    const raced =
+      occurrenceKey === null
+        ? null
+        : await loadWorldInteractionByOccurrence(
+            client,
+            input.tenantId,
+            input.worldId,
+            occurrenceKey,
+          );
+    if (!raced) {
+      throw conflict(
+        "world.interaction_insert_conflict",
+        "World interaction could not be admitted",
+      );
+    }
+    const expectedFingerprint = interactionContentFingerprint({
+      interactionKind,
+      participants,
+      payload: input.payload,
+      provenance: input.provenance,
+      visibility: input.visibility,
+      canonState: desiredCanonState,
+      effectiveStart: input.effectiveStart,
+      effectiveEnd: input.effectiveEnd,
+    });
+    const racedFingerprint = interactionContentFingerprint({
+      interactionKind: raced.interactionKind,
+      participants: raced.participants,
+      payload: raced.payload,
+      provenance: raced.provenance,
+      visibility: raced.visibility,
+      canonState: raced.canonState,
+      effectiveStart: raced.effectiveStart,
+      effectiveEnd: raced.effectiveEnd,
+    });
+    if (expectedFingerprint !== racedFingerprint) {
+      throw conflict(
+        "world.interaction_occurrence_conflict",
+        "World interaction occurrence key was reused with different content",
+      );
+    }
+    return raced;
+  }
+
+  for (const [ordinal, participant] of participants.entries()) {
+    await client.query(
+      `INSERT INTO world.interaction_participants (
+         tenant_id,
+         world_interaction_id,
+         ordinal,
+         character_id,
+         character_version_id,
+         role
+       )
+       VALUES ($1,$2,$3,$4,$5,$6)`,
+      [
+        input.tenantId,
+        input.worldInteractionId,
+        ordinal,
+        participant.characterId,
+        participant.characterVersionId,
+        participant.role,
+      ],
+    );
+  }
+
+  if (desiredCanonState === "approved") {
+    await client.query(
+      `UPDATE world.interactions
+          SET canon_state = 'approved',
+              approved_at = $3
+        WHERE tenant_id = $1
+          AND world_interaction_id = $2
+          AND canon_state = 'draft'`,
+      [input.tenantId, input.worldInteractionId, input.recordedAt],
+    );
+  }
+
+  const stored = await loadWorldInteraction(
+    client,
+    input.tenantId,
+    input.worldInteractionId,
+    false,
+  );
+  if (!stored) {
+    throw new Error("World interaction disappeared after admission");
+  }
+  return stored;
 }
 
 async function loadRoutine(
