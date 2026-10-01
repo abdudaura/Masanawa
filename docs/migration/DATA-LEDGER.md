@@ -94,5 +94,12 @@ Inventory semantic state concepts before designing tables. Do not mirror donor s
 | D-WLD-005 | SimulationTick/WorldTransaction | AI Town/CWS | world | append/transactional | shared/internal | world | redesign | deterministic shared-state mutation |
 | D-WF-005 | WorkflowCheckpoint | Microsoft Agent Framework | workflow | append/versioned | internal/private | workflows | redesign | restart/time-travel/human-in-loop state |
 | D-PLG-004 | PluginComponentRegistration | elizaOS/OpenClaw/N.E.K.O | plugin+tenant | versioned | internal | plugin system | redesign | canonical registered skills/tools/providers/events/views |
+| D-GW-001 | ExternalGatewayBridge | OpenClaw | tenant/trust-boundary | durable config + ephemeral health | sensitive | gateway | redesign | optional bridge only; not canonical runtime |
+| D-DEV-002 | DevicePairingSetup | OpenClaw | user/org/device | durable lifecycle | sensitive | gateway/security | redesign | setup id, expiry, completion vs delivery-uncertain |
+| D-DEV-003 | DeviceToken | OpenClaw | device | rotatable/revocable | secret | security | redesign | scoped role/access bounds |
+| D-SKL-006 | ManagedSkillRevision | OpenClaw | skill | immutable revision | internal | skills | redesign | content hash + support files + executable bits |
+| D-SKL-007 | SessionSkillSelection | OpenClaw | runtime session | durable/session-scoped | internal | skills/runtime | redesign | selected skill IDs/revisions pinned per session |
+| D-APR-001 | ApprovalRecord | OpenClaw/CWS | action/workflow | pending->terminal | sensitive | workflows/security | preserve+redesign | first-answer-wins canonical result |
+| D-AUT-001 | CurrentAuthorityAssertion | OpenClaw | mutation execution | ephemeral/derived | sensitive | security | redesign | revalidation immediately before delayed mutation |
 
 Phase 0 must continue mapping donor-specific stores/tables/files into these canonical concepts or explicit retirement.

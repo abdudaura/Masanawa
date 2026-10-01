@@ -44,6 +44,7 @@ The earlier four-donor assumption has been intentionally reopened before archite
 - N.E.K.O deep pass: memory lifecycle/liveness/dead-letter, foreground persistence, automatic-vs-explicit recall, process-isolated plugin lifecycle/hot reload, proactive-state persistence/repetition control, restricted computer use, optional speaker identity and embodied-interaction memory.
 - CyberVerse deep pass: playback epochs/stale-feedback rejection, RTP/AV sync, audio-only mode, avatar idle/speech synchronization, pipeline-generation races, terminal task/event/artifact semantics, reconnectable task events, foreground ACK/background-worker UX, worker allowlists/cancellation/timeouts and avatar warmup policy. CyberVerse remains GPL-clean behavior reference only.
 - Remaining ChatWithStars deep pass: tenant-safe social automation/review/cadence/redeploy dedupe, media-studio continuity/render/quality/lipsync, Ops acceptance evidence, privacy-safe observability, emergency kill switches and audited financial adjustments.
+- OpenClaw Phase 0A adoption pass complete: Gateway/channel/device-node architecture, one-trust-domain security mismatch, device pairing/reconciliation, durable approvals/current-authority checks, skill distribution/revision/session pinning, session/subagent behavior, steering, tool/plugin policy and memory-authority rules. ADR-0004 records that OpenClaw is the primary Gateway architectural donor but not Masanawa's kernel or public multi-tenant security boundary.
 
 ### Reference source vault added
 
@@ -69,9 +70,9 @@ Masanawa now pins **17 reference repositories** as Git submodules under `referen
 
 Exact paths, branches, SHAs and licenses are in `docs/migration/SOURCE-LOCK.md` and `docs/migration/LICENSE-LEDGER.md`.
 
-## OpenClaw is a major donor
+## OpenClaw decision (completed)
 
-Do not treat OpenClaw as only a skill source. It must be deep-mined for:
+OpenClaw has been deep-mined sufficiently for its adoption-boundary decision. See `docs/adr/0004-openclaw-adoption-boundary.md` and `docs/migration/OPENCLAW-ADOPTION-BOUNDARY.md`. The key areas assessed were:
 
 - Gateway/control-plane architecture;
 - 20+ channel adapters and account bindings;
@@ -92,14 +93,13 @@ Its Markdown/SQLite personal-assistant storage model is **not** Masanawa's canon
 
 Do not return to the old four-source coverage-proof plan yet.
 
-1. Deep-mine OpenClaw and update all affected ledgers.
-2. Deep-mine AIRI for digital-life/embodiment/client architecture.
-3. Compare LiveKit Server/Agents + Pipecat + CyberVerse + AIRI for realtime presence/embodiment.
-4. Compare Letta + Mem0 + N.E.K.O + OpenClaw for memory architecture.
-5. Compare OpenJarvis + elizaOS + Microsoft Agent Framework + OpenClaw for agent runtime, skills, plugins and workflows.
-6. Compare AI Town + ChatWithStars for world simulation.
-7. Produce explicit donor decisions/ADRs and freeze provisional subsystem ownership.
-8. Only then continue Phase 0B exhaustive source coverage and A/B/C classification across the complete reference vault.
+1. Deep-mine AIRI for digital-life/embodiment/client architecture.
+2. Compare LiveKit Server/Agents + Pipecat + CyberVerse + AIRI for realtime presence/embodiment.
+3. Compare Letta + Mem0 + N.E.K.O + OpenClaw for memory architecture.
+4. Compare OpenJarvis + elizaOS + Microsoft Agent Framework + OpenClaw for agent runtime, skills, plugins and workflows.
+5. Compare AI Town + ChatWithStars for world simulation.
+6. Produce explicit donor decisions/ADRs and freeze provisional subsystem ownership.
+7. Only then continue Phase 0B exhaustive source coverage and A/B/C classification across the complete reference vault.
 
 ## Non-negotiable rules
 

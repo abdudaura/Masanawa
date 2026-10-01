@@ -24,7 +24,7 @@ Masanawa owns the resulting architecture. Every repository under `references/sou
 | Durable workflows | ChatWithStars, Microsoft Agent Framework | Pipecat Flows, CyberVerse tasks | deterministic business state + restartability |
 | Proactivity | N.E.K.O | OpenClaw, Letta, ChatWithStars world | permission/frequency/privacy/quiet-hours |
 | Perception | N.E.K.O, OpenClaw device nodes | AIRI, elizaOS, CyberVerse | canonical PerceptionEvent + permissions |
-| Gateway/channels | OpenClaw | elizaOS, OpenJarvis channels | canonical channel/device routing into one runtime |
+| Gateway/channels | **OpenClaw (selected architectural donor)** | elizaOS, OpenJarvis channels | Masanawa-native multi-tenant Gateway; optional OpenClaw bridge |
 | Realtime transport | LiveKit | CyberVerse | production WebRTC/session infrastructure |
 | Realtime agent session | LiveKit Agents TS | Pipecat, CyberVerse | Masanawa CharacterSession bridge |
 | Realtime pipeline/turn-taking | Pipecat, LiveKit Agents | CyberVerse | interruption, frames, multimodal composition |
@@ -52,10 +52,32 @@ OpenClaw must now be compared before we freeze the subsystem because it adds:
 
 ChatWithStars remains the governance donor for certification, readiness, risk, approval, pricing, idempotency and expertise.
 
-### Gateway, channels and devices
-OpenClaw is now a major donor. It provides an integrated Gateway/control plane with many channels, per-agent workspace/session isolation, channel-account bindings, companion/device nodes, local-first credentials/state, steering queues and operator tooling.
+### Gateway, channels and devices — decision recorded
 
-Masanawa should not copy OpenClaw's personal-assistant storage model, but its control-plane and routing architecture may be substantially more mature than our original channel plan.
+OpenClaw is selected as the primary **architectural donor** for Gateway/channel/device-node behavior.
+
+It is explicitly **not** selected as Masanawa's kernel or public multi-tenant security boundary. OpenClaw documents one trusted boundary per Gateway, while Masanawa must isolate untrusted users/relationships/tenants on shared infrastructure.
+
+Adopt:
+- admission-before-routing;
+- deterministic bindings;
+- channel health/lifecycle;
+- node/device pairing and capability publication;
+- steering/queue semantics;
+- current-authority revalidation;
+- skill distribution/revision semantics.
+
+Reimplement behind Masanawa contracts:
+- public Gateway ingress and RBAC;
+- user/tenant/relationship resolution;
+- device registry;
+- approvals;
+- runtime sessions/workspaces;
+- skill registry.
+
+Conditional direct reuse of `@openclaw/gateway-protocol` and `@openclaw/gateway-client` is allowed only inside an OpenClaw compatibility bridge.
+
+See ADR-0004.
 
 ### Memory
 No single donor owns Masanawa memory.
