@@ -80,7 +80,7 @@ Masanawa must provide:
 Phase 0 studies multiple mature donors rather than treating any framework as the platform:
 ChatWithStars, OpenJarvis, N.E.K.O, CyberVerse, AIRI, LiveKit, Pipecat, Letta, Mem0, AI Town, elizaOS, Microsoft Agent Framework and OpenClaw.
 
-Their exact roles remain provisional until the Landscape Expansion comparison closes. See `SOURCE-OWNERSHIP.md`.
+Their roles are frozen at the pinned Phase 0 baseline; later changes require evidence-backed ADR/ownership updates. See `SOURCE-OWNERSHIP.md`, `migration/PHASE-0A-CLOSURE-AUDIT.md`, and `migration/PHASE-0B-CLOSURE-AUDIT.md`.
 
 ## Experience goal
 
