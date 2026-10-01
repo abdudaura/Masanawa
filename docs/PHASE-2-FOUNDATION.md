@@ -212,13 +212,26 @@ PostgreSQL 18 integration proves concurrent allow-once consumption has exactly o
 
 Validated on 2026-10-01 by Foundation CI run 85-equivalent latest green run at commit `7fd3ac3971073f28aaad56bb6c4af22c0975db82` (15 test files / 44 tests).
 
+### OpenTelemetry correlation foundation
+
+`packages/telemetry` now owns the privacy-safe correlation contract used at service boundaries:
+- W3C `traceparent` parsing, validation, continuation and injection;
+- fresh canonical RequestId/CorrelationId admission by default;
+- explicit opt-in before trusted internal boundaries may reuse caller-supplied canonical IDs;
+- optional OperationId/TaskId/WorkflowRunId/CharacterSessionId linkage;
+- OpenTelemetry-compatible `trace_id`, `span_id` and `trace_flags` log fields;
+- a strict default attribute allowlist that excludes raw prompts, messages, memory, tool output, credentials/tokens and arbitrary caller metadata.
+
+Gateway, Worker and Ops ingress now normalize and return correlation headers. Gateway integration coverage proves public callers cannot spoof canonical request/correlation IDs while a valid remote W3C trace is continued with a new span.
+
+Implementation through commit `9be50cbdb25c426b3cfaaa33e288b6fab41ad34e`; latest Foundation CI validation for this slice was not observable through the current GitHub connector at handoff time.
+
 ## Active foundation gaps
 
-1. add OpenTelemetry correlation foundation;
-2. add service main/config/shutdown lifecycle;
-3. add DB/schema readiness probes;
-4. add fault-injection/restart test utilities;
-5. close Phase 2 shared-foundation gate before identity/memory/world/product migrations.
+1. add service main/config/shutdown lifecycle;
+2. add DB/schema readiness probes;
+3. add fault-injection/restart test utilities;
+4. close Phase 2 shared-foundation gate before identity/memory/world/product migrations.
 
 ## Foundation rules
 
