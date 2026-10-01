@@ -5,6 +5,12 @@ import {
   type OperationId,
 } from "@masanawa/contracts";
 import type { PlatformEvent } from "@masanawa/events";
+import {
+  assertCurrentAuthority,
+  createAuthorityContext,
+  createPendingApproval,
+  type ApprovalBinding,
+} from "@masanawa/security";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Pool } from "pg";
 import {
@@ -13,6 +19,12 @@ import {
   claimInboxBatch,
   claimOutboxBatch,
   createPostgresPool,
+  settlePendingApproval,
+  setPolicyRevision,
+  revokeAuthorityContext,
+  persistPendingApproval,
+  createPostgresCurrentAuthoritySource,
+  consumeOnceApproval,
   enqueueOutbox,
   listExternalReceiptsForOperation,
   prepareOperation,
@@ -30,6 +42,9 @@ const connectionString = process.env.MASANAWA_TEST_DATABASE_URL;
 const describePostgres = connectionString ? describe : describe.skip;
 const eventMigrationDirectory = fileURLToPath(
   new URL("../../../../packages/events/migrations", import.meta.url),
+);
+const securityMigrationDirectory = fileURLToPath(
+  new URL("../../../../packages/security/migrations", import.meta.url),
 );
 
 describePostgres("PostgreSQL 18 foundation integration", () => {
@@ -51,6 +66,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
   });
 
   beforeEach(async () => {
+    await pool.query("DROP SCHEMA IF EXISTS security CASCADE");
     await pool.query("DROP SCHEMA IF EXISTS events CASCADE");
     await pool.query(
       "DROP TABLE IF EXISTS public.masanawa_schema_migrations CASCADE",
@@ -58,11 +74,13 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
 
     const applied = await runMigrations(pool, [
       { owner: "events", directory: eventMigrationDirectory },
+      { owner: "security", directory: securityMigrationDirectory },
     ]);
     expect(applied).toEqual([
       "events/0001_event_foundation.sql",
       "events/0002_inbox_leases.sql",
       "events/0003_receipt_reconciliation_integrity.sql",
+      "security/0001_security_foundation.sql",
     ]);
   });
 
@@ -73,6 +91,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
   it("replays package-owned migrations idempotently", async () => {
     const appliedAgain = await runMigrations(pool, [
       { owner: "events", directory: eventMigrationDirectory },
+      { owner: "security", directory: securityMigrationDirectory },
     ]);
 
     expect(appliedAgain).toEqual([]);
@@ -660,6 +679,126 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       code: "reconciliation.operation_not_ambiguous",
       category: "conflict",
       operationId: nonAmbiguous.operation.operationId,
+    });
+  });
+
+  it("atomically consumes an allow-once approval and rejects stale policy", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const prepared = await withTransaction(pool, (client) =>
+      prepareOperation(client, {
+        tenantId,
+        kind: "tool.execute",
+        idempotencyKey: "approval-once",
+        authorityScopeHash: "scope-v1",
+        requestFingerprint: "request-v1",
+        expiresAt: toInstant(new Date(Date.now() + 86_400_000)),
+      }),
+    );
+
+    await withTransaction(pool, (client) =>
+      setPolicyRevision(client, tenantId, "policy-1"),
+    );
+
+    const binding: ApprovalBinding = {
+      operationId: prepared.operation.operationId,
+      tenantId,
+      principalKey: "system:integration-test",
+      action: "tool.execute",
+      actionVersion: "1",
+      resourceKey: "resource:test",
+      argumentsFingerprint: "sha256:args-v1",
+      riskClass: "consequential",
+    };
+    const requestedAt = toInstant(new Date(Date.now() - 1_000));
+    const expiresAt = toInstant(new Date(Date.now() + 60_000));
+    const pending = createPendingApproval({
+      kind: "once",
+      binding,
+      policyRevision: "policy-1",
+      requestedAt,
+      expiresAt,
+    });
+
+    await withTransaction(pool, (client) =>
+      persistPendingApproval(client, pending),
+    );
+    const approved = await withTransaction(pool, (client) =>
+      settlePendingApproval(client, {
+        tenantId,
+        approvalId: pending.approvalId,
+        decision: "approved",
+        approverKey: "operator:test",
+        decidedAt: toInstant(new Date()),
+      }),
+    );
+    expect(approved.state).toBe("approved");
+
+    const consumeAt = toInstant(new Date());
+    const attempts = await Promise.allSettled([
+      withTransaction(pool, (client) =>
+        consumeOnceApproval(client, {
+          tenantId,
+          approvalId: pending.approvalId,
+          binding,
+          currentPolicyRevision: "policy-1",
+          consumedAt: consumeAt,
+        }),
+      ),
+      withTransaction(pool, (client) =>
+        consumeOnceApproval(client, {
+          tenantId,
+          approvalId: pending.approvalId,
+          binding,
+          currentPolicyRevision: "policy-1",
+          consumedAt: consumeAt,
+        }),
+      ),
+    ]);
+    expect(attempts.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+    expect(attempts.filter((result) => result.status === "rejected")).toHaveLength(1);
+
+    const context = createAuthorityContext({
+      tenantId,
+      principal: { kind: "system", systemKind: "integration-test" },
+      scopes: [],
+      capabilities: ["tool.execute"],
+      resourceScope: {},
+      policyRevision: "policy-1",
+      approvalIds: [pending.approvalId],
+      delegationChain: [],
+      expiresAt,
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+    });
+
+    await withTransaction(pool, async (client) => {
+      await assertCurrentAuthority(
+        context,
+        createPostgresCurrentAuthoritySource(client),
+      );
+      await revokeAuthorityContext(client, {
+        tenantId,
+        authorityContextId: context.authorityContextId,
+        reasonCode: "test-revocation",
+      });
+      await expect(
+        assertCurrentAuthority(
+          context,
+          createPostgresCurrentAuthoritySource(client),
+        ),
+      ).rejects.toMatchObject({ code: "authority.revoked" });
+    });
+
+    await withTransaction(pool, (client) =>
+      setPolicyRevision(client, tenantId, "policy-2"),
+    );
+    await withTransaction(pool, async (client) => {
+      await expect(
+        assertCurrentAuthority(
+          context,
+          createPostgresCurrentAuthoritySource(client),
+        ),
+      ).rejects.toMatchObject({ code: "authority.stale_policy" });
     });
   });
 
