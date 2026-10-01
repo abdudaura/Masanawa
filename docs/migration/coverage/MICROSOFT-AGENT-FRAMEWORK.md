@@ -2,7 +2,7 @@
 
 Pinned revision: `microsoft/agent-framework@e15c6dce2d10196a61c851a56ef3d839ff3c3ea7`.
 
-Status: **ACTIVE / PARTIAL**.
+Status: **COVERED at the pinned revision**. Repository-family closure proof: `docs/migration/coverage/MICROSOFT-AGENT-FRAMEWORK-INVENTORY.md`.
 
 Canonical boundary: Microsoft Agent Framework (MAF) is Masanawa's primary durable workflow/orchestration donor. It does not own Character identity, memory, provider choice, business truth or Masanawa persistence. Workflow semantics are adapted into TypeScript/PostgreSQL behind `packages/workflows`.
 
@@ -157,27 +157,18 @@ Phase 0A selected MAF as secondary donor for:
 
 Canonical Masanawa owner remains `packages/skills`.
 
-## Current unresolved descendant families
+## Phase 0B closure
 
-Before MAF can be marked covered:
-1. full Python workspace/package inventory and dispositions;
-2. full .NET project inventory and parity/delta map;
-3. graph builder validation, edge groups, fan-in/fan-out/conditional routing;
-4. checkpoint file/storage implementations, restore validation and cross-process durability limits;
-5. HITL/request-response lifecycle and approval/tool-approval semantics;
-6. handoff/group-chat/magentic/sequential/concurrent orchestrations;
-7. agent middleware/interceptors and failure semantics;
-8. provider/client adapters and fallback/retry boundaries;
-9. A2A and MCP hosting/client semantics;
-10. durable storage packages (Postgres/SQL Server/Cosmos/Redis/Mongo/Qdrant/etc.) and authority classification;
-11. agent skills source/resource/script/path-safety semantics;
-12. OpenTelemetry/observability privacy and error propagation;
-13. declarative workflows/agents and versioning;
-14. exact direct-test inventory for retained consequential behavior;
-15. repository-wide descendant proof with zero unresolved production families.
+All previously unresolved descendant families are now closed at the pinned revision:
+- maintained Python workspace inventory: 40 / 40 packages;
+- .NET source inventory: 35 / 35 projects;
+- .NET test inventory recognized: 48 projects;
+- graph/edge/checkpoint/HITL/approval/orchestration/middleware/provider/A2A/MCP/storage/skills/telemetry/declarative families have exact implementation/test evidence and Masanawa destinations;
+- experimental Python lab is explicitly C/reference unless separately adopted;
+- unresolved meaningful production families: 0;
+- unresolved canonical-authority conflicts: 0.
 
-Do not advance to OpenClaw until these are closed.
-
+Microsoft Agent Framework is therefore **covered** under the corrected Phase 0B standard. It remains an architectural/behavior donor only; Masanawa implements one TypeScript/PostgreSQL canonical workflow engine.
 
 ## 8. Graph construction and validation
 
