@@ -1,7 +1,10 @@
 import {
   PlatformError,
   toInstant,
+  type CharacterId,
+  type CharacterVersionId,
   type TenantId,
+  type WorldEventId,
   type WorldGenerationId,
   type WorldId,
 } from "@masanawa/contracts";
@@ -11,11 +14,17 @@ import {
   normalizeSimulationInputKind,
   normalizeWorldPolicy,
   type AdmitSimulationInput,
+  type AppendWorldEventInput,
+  type ApproveWorldEventInput,
+  type CharacterLifeState,
   type CommitWorldGenerationInput,
   type CommitWorldGenerationResult,
   type CreateWorldInput,
+  type GovernedWorldRepository,
+  type PutCharacterLifeStateInput,
   type SimulationInput,
   type World,
+  type WorldEvent,
   type WorldGeneration,
   type WorldRepository,
 } from "@masanawa/world";
@@ -56,6 +65,39 @@ interface InputRow {
   received_at: Date;
   effective_at: Date;
   completed_generation_number: string | null;
+}
+
+interface LifeStateRow {
+  tenant_id: TenantId;
+  world_id: WorldId;
+  character_id: CharacterId;
+  availability: string | null;
+  narrative_state: string | null;
+  active_goal: string | null;
+  story_arc: string | null;
+  coarse_location: string | null;
+  revision: string;
+  effective_at: Date;
+  updated_at: Date;
+}
+
+interface WorldEventRow {
+  tenant_id: TenantId;
+  world_event_id: WorldEventId;
+  world_id: WorldId;
+  character_id: CharacterId | null;
+  character_version_id: CharacterVersionId | null;
+  event_kind: string;
+  payload: WorldEvent["payload"];
+  provenance: WorldEvent["provenance"];
+  visibility: WorldEvent["visibility"];
+  canon_state: WorldEvent["canonState"];
+  occurrence_key: string | null;
+  effective_start: Date;
+  effective_end: Date | null;
+  recorded_at: Date;
+  approved_at: Date | null;
+  retired_at: Date | null;
 }
 
 function integer(value: string, name: string): number {
@@ -112,6 +154,43 @@ function asInput(row: InputRow): SimulationInput {
       row.completed_generation_number === null
         ? null
         : integer(row.completed_generation_number, "completed generation number"),
+  });
+}
+
+function asLifeState(row: LifeStateRow): CharacterLifeState {
+  return Object.freeze({
+    tenantId: row.tenant_id,
+    worldId: row.world_id,
+    characterId: row.character_id,
+    availability: row.availability,
+    narrativeState: row.narrative_state,
+    activeGoal: row.active_goal,
+    storyArc: row.story_arc,
+    coarseLocation: row.coarse_location,
+    revision: integer(row.revision, "life-state revision"),
+    effectiveAt: toInstant(row.effective_at),
+    updatedAt: toInstant(row.updated_at),
+  });
+}
+
+function asWorldEvent(row: WorldEventRow): WorldEvent {
+  return Object.freeze({
+    tenantId: row.tenant_id,
+    worldEventId: row.world_event_id,
+    worldId: row.world_id,
+    characterId: row.character_id,
+    characterVersionId: row.character_version_id,
+    eventKind: row.event_kind,
+    payload: Object.freeze({ ...row.payload }),
+    provenance: row.provenance,
+    visibility: row.visibility,
+    canonState: row.canon_state,
+    occurrenceKey: row.occurrence_key,
+    effectiveStart: toInstant(row.effective_start),
+    effectiveEnd: row.effective_end ? toInstant(row.effective_end) : null,
+    recordedAt: toInstant(row.recorded_at),
+    approvedAt: row.approved_at ? toInstant(row.approved_at) : null,
+    retiredAt: row.retired_at ? toInstant(row.retired_at) : null,
   });
 }
 
