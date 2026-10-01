@@ -161,6 +161,44 @@ function asInput(row: InputRow): SimulationInput {
   });
 }
 
+function asLifeState(row: LifeStateRow): CharacterLifeState {
+  return Object.freeze({
+    tenantId: row.tenant_id,
+    worldId: row.world_id,
+    characterId: row.character_id,
+    availability: row.availability,
+    narrativeState: row.narrative_state,
+    activeGoal: row.active_goal,
+    storyArc: row.story_arc,
+    coarseLocation: row.coarse_location,
+    revision: integer(row.revision, "life-state revision"),
+    effectiveAt: toInstant(row.effective_at),
+    updatedAt: toInstant(row.updated_at),
+  });
+}
+
+function asWorldEvent(row: WorldEventRow): WorldEvent {
+  return Object.freeze({
+    tenantId: row.tenant_id,
+    worldId: row.world_id,
+    worldEventId: row.world_event_id,
+    generationNumber: integer(row.generation_number, "event generation number"),
+    characterId: row.character_id,
+    sourceCharacterVersionId: row.source_character_version_id,
+    kind: row.kind,
+    payload: Object.freeze({ ...row.payload }),
+    provenance: row.provenance,
+    visibility: row.visibility,
+    canonState: row.canon_state,
+    occurrenceKey: row.occurrence_key,
+    validFrom: toInstant(row.valid_from),
+    validUntil: row.valid_until ? toInstant(row.valid_until) : null,
+    recordedAt: toInstant(row.recorded_at),
+    approvedAt: row.approved_at ? toInstant(row.approved_at) : null,
+    retiredAt: row.retired_at ? toInstant(row.retired_at) : null,
+  });
+}
+
 function conflict(code: string, message: string): PlatformError {
   return new PlatformError({
     code,
