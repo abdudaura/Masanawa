@@ -148,7 +148,8 @@ Phase 0A is complete. Phase 0B is in remediation because the first root-level sw
 8. LiveKit Agents TypeScript exhaustive descendant coverage is complete: 1,042-file manifest, 522 plugin dispositions, live-session state concepts and turn/interruption/handoff invariants are under `docs/migration/coverage/`.
 9. LiveKit Agents Python parity/delta coverage is complete: 1,472-file manifest, 750 plugin dispositions, realtime failover, diarization, evaluation and telemetry privacy deltas are recorded without creating a second runtime.
 10. Pipecat exhaustive descendant coverage is complete: 1,820-file manifest, 275 integration dispositions, speculative-turn, interruptibility, context-commit and pause/resume liveness invariants are recorded.
-11. **Next:** verify the Letta landing repository is reference-only, then sweep Letta Code exhaustively as the implementation donor.
+11. Letta landing repository is verified reference-only (12 non-runtime files). Letta Code exhaustive coverage is complete: 2,429-file manifest, 739 integration dispositions, memory revision/conflict/shared-memory/context-compaction authority map and ledger invariants are recorded.
+12. **Next:** sweep Mem0 exhaustively for extraction, hybrid retrieval, entity/temporal memory, evaluation and provider/storage adapters.
 6. No source may be marked `covered` from root names, filename counts or generic family assertions alone.
 7. Every retained capability must have exact implementation/test evidence, durable-state mapping, integration failure semantics, one canonical owner and an observable acceptance/parity gate.
 
