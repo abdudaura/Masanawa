@@ -142,7 +142,8 @@ Phase 0A is complete. Phase 0B is in remediation because the first root-level sw
 3. OpenJarvis remediation is complete at its pinned revision: descendant evidence, exhaustive Python/Rust manifests, integration dispositions and native parity boundary are under `docs/migration/coverage/`.
 4. N.E.K.O remediation is complete at its pinned revision: descendant evidence, exhaustive file manifest, integration dispositions and plugin-authority map are under `docs/migration/coverage/`.
 5. CyberVerse remediation is complete at its pinned revision under strict GPL clean-room rules; coverage, manifests, model provenance and clean-room acceptance specs are under `docs/migration/coverage/`.
-6. **Next:** begin AIRI exhaustive descendant coverage, then continue through LiveKit Server, LiveKit Agents TS/Python, Pipecat, Letta Code, Mem0, AI Town, elizaOS, Microsoft Agent Framework, OpenClaw and OpenClaw Agent Skills.
+6. AIRI exhaustive descendant coverage is complete at its pinned revision: 5,697-file manifest, 483 integration dispositions, client-state authority map and descendant behavior matrix are under `docs/migration/coverage/`.
+7. **Next:** sweep LiveKit Server exhaustively, then LiveKit Agents TS/Python and Pipecat before continuing the remaining donors.
 6. No source may be marked `covered` from root names, filename counts or generic family assertions alone.
 7. Every retained capability must have exact implementation/test evidence, durable-state mapping, integration failure semantics, one canonical owner and an observable acceptance/parity gate.
 
