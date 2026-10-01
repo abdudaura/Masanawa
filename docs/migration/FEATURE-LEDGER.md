@@ -330,3 +330,14 @@ This inventory is intentionally incomplete. Source-specific map documents identi
 | SEC-020 | security | dangerous-tool confirmation fails closed when interactivity/approval callback is unavailable | OpenJarvis | A | strong tool-safety behavior donor | packages/tools + security/workflows | analysed |
 | SEC-021 | security | SSRF guard blocks metadata/private/disguised IPs and fails closed on DNS resolution failure | OpenJarvis | A | strong network-tool safety donor | packages/security | analysed |
 | TRC-020 | telemetry | per-run event subscription trace collection with guaranteed unsubscribe and skill/tool metadata | OpenJarvis | A/B | primary trace donor | packages/telemetry | analysed |
+
+### Phase 0B AIRI descendant additions
+
+| ID | Domain | Feature | Source | Class | Donor role | Masanawa destination | Status |
+|---|---|---|---|---|---|---|---|
+| PLG-030 | plugins | deterministic extension activation planning with dependency/version/runtime validation and provider-first load / consumer-first unload order | AIRI | A/B | strong plugin-lifecycle donor | packages/plugins | analysed |
+| PLG-031 | plugins/security | least-privilege permission intersection with parent-extension ceiling for child modules | AIRI | A | strong permission donor | packages/plugins + security | analysed |
+| RTC-040 | presence/client | serialized microphone/voice binding replacement with stale-request suppression and cleanup after failed start | AIRI | A | strong client-lifecycle donor | services/presence + clients | analysed |
+| AVT-030 | embodiment | renderer/model-driver target ownership with replace-without-release and explicit stop/dispose release | AIRI | A/B | strong embodiment lifecycle donor | clients/embodiment | analysed |
+| CUA-030 | computer use | private serialized desktop daemon with route/storage ownership, bounded command grammar and artifact-path validation | AIRI | A/B | strong desktop execution donor | packages/tools + perception/security | analysed |
+| MOB-001 | clients | native mobile host WebSocket bridge preserving connection lifecycle independently of web app implementation | AIRI | B | mobile bridge donor | clients/mobile + gateway | analysed |
