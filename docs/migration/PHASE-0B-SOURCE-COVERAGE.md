@@ -25,12 +25,12 @@ Generated/dependency/build metadata roots may be excluded after inspection, but 
 | N.E.K.O | app, brain, config, deps, frontend, knowledge, launcher_core, local_server, main_logic, main_routers, memory, plugin, specs, tests, utils | descendant matrix + 4,947-file manifest + 121 integration dispositions + plugin authority map | covered |
 | CyberVerse | frontend, inference, infra, models, proto, server, tests | descendant clean-room matrix + 532-file manifest + integration dispositions + model provenance + independent acceptance spec | covered |
 | AIRI | apps, bucket, engines, integrations, packages, plugins, server, services | descendant matrix + 5,697-file manifest + 483 integration dispositions + client-authority map | covered |
-| LiveKit Server | cmd, deploy, pkg, test | RTC transport/session integration + ADR-0006 | partial |
-| LiveKit Agents TS | agents, examples, plugins, tests | RTC session/turn/avatar rows + ADR-0006 | partial |
+| LiveKit Server | cmd, deploy, pkg, test | descendant matrix + 429-file manifest + 26 transport integration dispositions + transport invariants | covered |
+| LiveKit Agents TS | agents, examples, plugins, tests | descendant matrix + 1,042-file manifest + 522 plugin dispositions + live-session invariants | covered |
 | LiveKit Agents Python | livekit-agents, livekit-plugins, examples, tests | parity/delta matrix + 1,472-file manifest + 750 plugin dispositions; no second runtime | covered |
 | Pipecat | evals, examples, src, tests | descendant matrix + 1,820-file manifest + 275 integration dispositions + processor/turn invariants | covered |
 | Letta | .github + root landing metadata only | historical/landing provenance in LETTA map | reference-only |
-| Letta Code | bin, hooks, python, src, vendor | MEM working-context/revision/conflict/shared attachment rows | partial |
+| Letta Code | bin, hooks, python, src, vendor | descendant matrix + 2,429-file manifest + 739 integration dispositions + memory authority boundary | covered |
 | Mem0 | cli, integrations, mem0-ts, mem0, server, skills, tests | MEM extraction/retrieval/entity/temporal/evaluation rows | partial |
 | AI Town | convex, data, src | WLD simulation/generation/spatial/interaction rows + ADR-0009 | partial |
 | elizaOS | packages, plugins | AGT/PLG component/service/model/provider rows + ADR-0008 | partial |
