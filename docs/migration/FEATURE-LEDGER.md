@@ -458,3 +458,10 @@ This inventory is intentionally incomplete. Source-specific map documents identi
 | DEV-020 | perception | portable native/device bridge capability packaging | elizaOS | B | secondary device | device-node adapters + tools | analysed |
 | INF-020 | infrastructure | plugin SQL PostgreSQL/PGlite adapter/migration/RLS mechanics | elizaOS | B/C | reference | canonical DB foundation only | analysed |
 | INF-021 | infrastructure | eliza domain SQL schema as platform truth | elizaOS | C | reference | none | analysed |
+
+
+| BROWSER-ELZ-001 | tools | pluggable browser/computer-use target dispatch with no post-dispatch replay | elizaOS | A/B | secondary computer-use | packages/tools + security | analysed |
+| SEC-022 | security | fail-closed browser domain/effect policy and confirmation-gated upload | elizaOS | A | secondary security | packages/security + tools | analysed |
+| SEC-023 | security | durable encrypted connector credential vault with opaque refs | elizaOS | A/B | secondary security | packages/security | analysed |
+| INF-022 | infrastructure | process-local cloud secret scrubbing from environment | elizaOS | B | defense-in-depth | security/runtime host | analysed |
+| SEC-024 | security | transactional compare-and-swap authority writes with atomic audit evidence | elizaOS | A/B | secondary concurrency | security + canonical domains | analysed |
