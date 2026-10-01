@@ -2,7 +2,7 @@
 
 Pinned source: `openclaw/openclaw@83e4755b55e8864e48348f3eb2364ee3e5f0fb54`.
 
-Status: **ACTIVE / PARTIAL**. This inventory is the repository-family closure proof companion to `docs/migration/coverage/OPENCLAW.md`. Do not mark OpenClaw covered until the unresolved list in that file reaches zero.
+Status: **COMPLETE at the pinned revision**. This is the repository-family closure proof companion to `docs/migration/coverage/OPENCLAW.md`.
 
 ## Reproducible inventory sources
 
@@ -168,4 +168,4 @@ Generated plugin inventory entries classified by canonical family: **163 / 163**
 
 Unresolved package/plugin enumeration ambiguity: **0**.
 
-OpenClaw is **not yet marked covered** because direct descendant/test closure is still required for the remaining runtime families listed in `OPENCLAW.md`, especially channel-specific deltas, session/catalog/transcript/attachment details, native app/device descendants and exact consequential-test proof.
+OpenClaw is **covered** at the pinned revision. Direct consequential-test anchors and the final closure matrix are recorded in `OPENCLAW.md`; unresolved meaningful production families and canonical-owner conflicts are zero.
