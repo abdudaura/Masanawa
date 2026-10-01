@@ -144,11 +144,13 @@ async function loadOperationState(
   client: PoolClient,
   tenantId: TenantId,
   operationId: OperationId,
+  forUpdate = false,
 ): Promise<OperationState> {
   const result = await client.query<{ state: OperationState }>(
     `SELECT state
        FROM events.operations
-      WHERE tenant_id = $1 AND operation_id = $2`,
+      WHERE tenant_id = $1 AND operation_id = $2
+      ${forUpdate ? "FOR UPDATE" : ""}`,
     [tenantId, operationId],
   );
   const row = result.rows[0];
@@ -430,7 +432,12 @@ export async function beginReconciliation(
   },
 ): Promise<OpenedReconciliationCase> {
   return withTransaction(pool, async (client) => {
-    const state = await loadOperationState(client, input.tenantId, input.operationId);
+    const state = await loadOperationState(
+      client,
+      input.tenantId,
+      input.operationId,
+      true,
+    );
     if (state === "partial" || state === "unknown") {
       await transitionOperation(client, {
         operationId: input.operationId,
