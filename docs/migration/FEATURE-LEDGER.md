@@ -488,3 +488,20 @@ This inventory is intentionally incomplete. Source-specific map documents identi
 | OBS-030 | observability | OpenTelemetry spans for agent/chat/tool/workflow with sensitive content opt-in | Microsoft Agent Framework | A/B | telemetry donor | packages/telemetry | analysed |
 | INF-030 | infrastructure | pluggable checkpoint storage with Cosmos/Foundry durable adapter evidence | Microsoft Agent Framework | A/B | persistence donor | packages/workflows persistence | analysed |
 | INF-031 | infrastructure | arbitrary Python pickle checkpoint encoding as canonical persistence | Microsoft Agent Framework | C | reject | none | analysed |
+
+
+### Phase 0B OpenClaw feature additions
+
+| ID | Domain | Feature | Source | Class | Donor role | Masanawa destination | Status |
+|---|---|---|---|---|---|---|---|
+| GTW-030 | gateway | append-before-ack durable channel ingress with replay tombstones | OpenClaw | A/B | primary Gateway donor | gateway + events | analysed |
+| GTW-031 | gateway | stable ingress effect-once claims for non-idempotent crash-replay windows | OpenClaw | A | primary reliability donor | gateway + workflows | analysed |
+| GTW-032 | gateway | account-scoped ingress restart/recovery with transactional identity purge | OpenClaw | A/B | primary channel lifecycle donor | gateway | analysed |
+| SEC-040 | security | dynamic policy snapshot plus pre-commit current-authority assertion | OpenClaw | A | primary current-authority donor | packages/security | analysed |
+| DEV-030 | devices | device bootstrap setup reconciliation with explicit delivery-uncertain terminal state | OpenClaw | A/B | primary device donor | device-node + security | analysed |
+| DEV-031 | devices | explicit token rotation/revoke/scope-upgrade protocol with delivery facts | OpenClaw | A/B | primary device donor | device-node + security | analysed |
+| DEV-032 | devices | narrow pre-execution node invoke retry boundary | OpenClaw | A | primary device reliability donor | tools/device-node + workflows | analysed |
+| SEC-041 | security | durable operator/exec approval lifecycle with current-authority storage commit checks | OpenClaw | A | primary approval donor | packages/security + workflows | analysed |
+| SEC-042 | security | shared-Gateway trust-domain model explicitly unsuitable as hostile multi-tenant isolation | OpenClaw | C/B | boundary reference | gateway bridge only | analysed |
+| SKL-040 | skills | immutable content-derived skill revisions with stale-write conflict and session pinning | OpenClaw | A/B | primary revision/distribution donor | packages/skills | analysed |
+| SKL-041 | skills | source precedence separate from agent visibility/tool authority | OpenClaw | A | primary skill policy donor | packages/skills + security | analysed |
