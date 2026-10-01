@@ -113,6 +113,13 @@ foundation, identity, relationships, memory, world, decisions, agents, skills, t
 | CALL-004 | presence | reconnect preserves login while relink intentionally clears dedicated call profile | ChatWithStars | A | secondary operations | services/presence | analysed |
 | CALL-005 | presence | outbound timeout preserves provider/renderer diagnostics | ChatWithStars | B | secondary observability | services/presence + telemetry | analysed |
 | CALL-006 | presence | live audio normalization/peak limiting and graceful hangup tool | ChatWithStars | B | secondary UX | services/presence | analysed |
+| SEC-003 | security | imported-skill trust tiers, script opt-in and symlink rejection | OpenJarvis | A/B | secondary | packages/security + skills | analysed |
+| SEC-004 | security | SSRF private/metadata/DNS-failure fail-closed validation | OpenJarvis | A | secondary | packages/security | analysed |
+| AGT-006 | agents | loop guards for repeated calls/poll budgets/context growth | OpenJarvis | A/B | primary execution | packages/agents | analysed |
+| AGT-007 | agents | cost/token execution budgets | OpenJarvis | B | primary execution | packages/agents + telemetry | analysed |
+| PRV-004 | infrastructure | explicit engine selection never silently substitutes; default fallback health/model-aware | OpenJarvis | A | primary | packages/providers | analysed |
+| LRN-004 | learning/evaluation | minimum-evidence optimization and non-mutating overlay output | OpenJarvis | A/B | primary | skills + telemetry | analysed |
+| SCH-001 | proactivity | once/interval/timezone-aware cron scheduled execution lifecycle | OpenJarvis | B | secondary | packages/proactivity + workflows | analysed |
 | OPS-002 | operations | trace/evaluation visibility | OpenJarvis + ChatWithStars | B | combined | apps/ops + telemetry | discovered |
 
 This inventory is intentionally incomplete. Source-specific map documents identify the next deep-mining areas.
