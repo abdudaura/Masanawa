@@ -39,25 +39,29 @@ The active implementation line remains `phase2-closure` until PR #16 is merged. 
 
 ## Immediate next work
 
-Phase 3 implementation is active on `phase3-identity-world`. Live checklist: `docs/PHASE-3-IDENTITY-WORLD.md`.
+Phase 3 is active. Canonical identity was merged to `main` in PR #17 at merge commit `75549800445842f8ff1db54e06529c075ed34ea4` after the full CI check passed.
 
-Completed on the active branch:
-- `packages/identity` is now a real canonical package rather than a placeholder;
-- Tenant/User/Character/CharacterVersion/Relationship contracts are defined;
-- Character Constitution is versioned and normalized independently of CharacterId;
-- external provider/channel subjects require explicit linked/strong evidence before canonical User resolution;
-- identity owns a package migration for Tenant/User/external identity link/Character/version/Relationship state;
-- CharacterVersion authored content is database-immutable;
-- PostgreSQL identity repository supports explicit publish→activate, Character revision CAS, tenant-scoped external-subject resolution and stable User↔Character relationship creation;
-- PostgreSQL 18 integration coverage has been added for those invariants.
+Current implementation branch: `phase3-world-foundation`.
+
+Completed on the current branch:
+- `@masanawa/world` is active as the sole canonical world/life-state package;
+- World, WorldPolicy, WorldGeneration, SimulationInput and CharacterLifeState contracts are defined;
+- simulation time regression is rejected;
+- catch-up policy is explicit rather than inferred from wall-clock gaps;
+- package-owned world migration adds tenant-owned worlds, append-only generations, ordered/idempotent simulation inputs and Character life-state projection storage;
+- PostgreSQL world repository admits idempotent inputs and rejects same-key/different-content conflicts;
+- generation commits lock the current World, compare expected generation, reject stale writers, settle admitted inputs in the same transaction, append the next generation and advance the World projection;
+- integration coverage includes a two-worker race proving only one expected-generation writer may commit, tenant-scoped reads, backward-time rejection and atomic input settlement.
 
 Immediate work:
-1. run the complete CI gate for the Phase 3 identity slice and fix all real failures;
-2. once green, keep identity as the sole owner and begin `packages/world` with World/WorldPolicy/WorldGeneration/CharacterLifeState and generation-CAS foundations;
-3. world may reference Character identifiers through `packages/identity` only; it must never recreate Character/User/Relationship truth;
-4. add package-owned world migrations and PostgreSQL tests for stale-generation rejection, monotonic simulation time and tenant isolation before adding routines/story arcs.
+1. run PR/CI for `phase3-world-foundation` against PostgreSQL 18 and fix all real failures;
+2. after green CI, merge the world foundation;
+3. continue Phase 3 with governed CharacterLifeState writes plus WorldEvent/WorldInteraction evidence and Constitution-gated canon admission;
+4. only after those invariants are durable, add routines/story arcs and optional spatial simulation.
 
-The post-freeze MemPalace/Paperclip assessment remains in `docs/migration/POST-FREEZE-SUPPLEMENTAL-DONORS.md`. Neither is a Phase 3 runtime dependency. Paperclip should receive a bounded delta pass before deep workflow/agent/Ops implementation; MemPalace before deep memory implementation.
+Do not create another world engine, relationship store, or Character identity. World consumes canonical CharacterId; private Relationship data must never become shared World state implicitly.
+
+The post-freeze MemPalace/Paperclip assessment remains in `docs/migration/POST-FREEZE-SUPPLEMENTAL-DONORS.md`. Neither is a Phase 3 runtime dependency.
 
 ## World simulation comparison — completed
 
