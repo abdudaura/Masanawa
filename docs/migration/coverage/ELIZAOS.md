@@ -362,3 +362,116 @@ Still required before closure:
 8. exact direct-test inventory for the retained consequential behaviors.
 
 The core model/evaluator/connector/access families are no longer unresolved.
+
+
+## 14. Host-side plugin resolution and staging
+
+Implementation evidence:
+- `packages/agent/src/runtime/plugin-resolver.ts`.
+
+Pinned behavior:
+- app manifests can restrict candidate plugin sets and supply defaults without silently overriding explicit user config;
+- auto-enable decisions come from plugin/app manifests rather than a central hard-coded enable map;
+- required manifest-evaluation failure aborts boot instead of silently producing an incomplete plugin plan;
+- load reasons and failed-plugin details are retained for diagnostics;
+- optional missing-plugin failures are distinguished from required failures;
+- staged package loading copies/links dependencies into a controlled staging tree and tracks dependency graphs/cycles;
+- filesystem/user paths are redacted in diagnostics;
+- source-staged workspace dependencies are explicit exceptions rather than general arbitrary source execution.
+
+Masanawa destination:
+- operator/plugin host and package quarantine/certification layer, never the domain kernel.
+
+Disposition: **A/B — preserve explicit provenance, failure classification and staged-resolution safety; redesign host mechanics around Masanawa packaging**.
+
+Acceptance gate:
+- plugin discovery/enablement has an auditable reason;
+- required plugin-plan evaluation fails closed;
+- optional missing plugins degrade explicitly without being mistaken for healthy activation;
+- package staging cannot escape the controlled root through symlinks;
+- install/resolve remains an operator-authorized action, never an implicit model side effect.
+
+## 15. SQL migrations and RLS mechanics
+
+Implementation evidence:
+- `plugins/plugin-sql/src/migration-service.ts`;
+- `plugins/plugin-sql/src/rls.ts`;
+- plugin SQL schema/runtime migrator families.
+
+Pinned behavior:
+- schema registration is plugin-scoped;
+- migration service runs plugin schemas independently, records successes/failures and aggregates errors rather than pretending an all-success result;
+- post-schema guards are installed;
+- RLS can be re-applied after migration when data isolation is enabled;
+- migration backend differences (PostgreSQL/PGlite) are explicit.
+
+Masanawa boundary:
+- useful migration/RLS failure handling is secondary evidence;
+- eliza plugin-owned schemas must not define Masanawa identity/memory/world/workflow authority.
+
+Disposition: **B for migration/RLS mechanics; C for domain schema ownership**.
+
+Acceptance gate:
+- canonical migrations are ordered/versioned and fail visibly;
+- partial migration outcome cannot be reported as full success;
+- RLS/policy re-application is verified after schema change where applicable;
+- domain ownership is defined by Masanawa package migrations, not plugin presence.
+
+## 16. View capability broker and human-only controls
+
+Implementation evidence:
+- `packages/core/src/types/plugin.ts` `ViewCapability` authority field;
+- `packages/ui/src/components/views/view-capability-broker.ts`;
+- `plugins/plugin-native-phone/src/view-capabilities.ts`.
+
+Pinned behavior:
+- view capabilities explicitly distinguish `agent` versus `human` authority;
+- human-only capability declaration overrides generic grants;
+- unknown/mutating capabilities fail closed unless the surface grants agent interaction;
+- denial throws before the semantic handler/DOM operation and remains observable rather than becoming a silent no-op;
+- Phone surface explicitly permits read-only `phone-state` to the agent while call placement, dialer opening and transcript persistence are human-only.
+
+Masanawa destination:
+- client/view capability policy in `packages/security` + perception/tools UI bridge.
+
+Disposition: **A — preserve fail-closed human-vs-agent authority semantics**.
+
+Acceptance gate:
+- human-only UI actions cannot be driven by planner/tool calls;
+- new mutating capabilities default denied;
+- denied writes are surfaced as denied, never fabricated success;
+- a client capability grant is still subordinate to canonical server authorization for consequential external actions.
+
+## 17. Native/device bridge boundary
+
+Implementation evidence:
+- native plugin families such as `plugins/plugin-native-location/src/index.ts`;
+- native phone capability declarations above;
+- plugin/native bridge registrations across platform packages.
+
+Pinned behavior:
+- device functions are packaged as platform bridges and can expose web/native implementations behind a shared capability surface.
+
+Masanawa boundary:
+- native/device bridge is an adapter lane only;
+- device state or bridge registration cannot become Character, memory, workflow or authorization truth.
+
+Disposition: **B — preserve portable bridge pattern, rebind to Masanawa device-node/perception/tool permissions**.
+
+Acceptance gate:
+- device permissions are explicit and revocable;
+- bridge absence/degradation is health state, not domain corruption;
+- consequential device actions require current authorization and audit;
+- local/native capability cannot bypass server-side policy just because the platform API exists.
+
+## Updated unresolved descendant families
+
+Still required before closure:
+1. principal/membership/auth/disclosure implementation beyond the action gate;
+2. representative SQL schema families and exact authority mapping;
+3. bundled provider plugins and local/native inference fallback/readiness behavior;
+4. bundled connector/channel plugins and outbound-delivery failure/idempotency behavior;
+5. additional native/device actions beyond the view layer, especially computer use;
+6. cloud/deployment credential/state ownership and recovery;
+7. direct-test inventory for the consequential retained behaviors;
+8. repository-wide descendant/file-family proof sufficient to show no production subsystem remains unexplained.
