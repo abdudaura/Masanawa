@@ -1132,10 +1132,155 @@ export async function admitRoutineOccurrence(
   });
 }
 
+function storyArcTransitionAllowed(
+  current: StoryArc["state"],
+  next: StoryArc["state"],
+): boolean {
+  if (current === next) return true;
+  if (current === "planned") return next === "active" || next === "retired";
+  if (current === "active") return next === "completed" || next === "retired";
+  if (current === "completed") return next === "retired";
+  return false;
+}
+
+async function loadStoryArc(
+  client: PoolClient,
+  tenantId: TenantId,
+  worldId: WorldId,
+  storyArcKey: string,
+): Promise<StoryArc | null> {
+  const result = await client.query<StoryArcRow>(
+    `SELECT *
+       FROM world.story_arcs
+      WHERE tenant_id = $1
+        AND world_id = $2
+        AND story_arc_key = $3
+      FOR UPDATE`,
+    [tenantId, worldId, storyArcKey],
+  );
+  return result.rows[0] ? asStoryArc(result.rows[0]) : null;
+}
+
+export async function putStoryArc(
+  client: PoolClient,
+  input: PutStoryArcInput,
+): Promise<StoryArc> {
+  const storyArcKey = boundedText(input.storyArcKey, "storyArcKey", 128);
+  const title = boundedText(input.title, "title", 500);
+  const summary = input.summary.trim();
+  if (summary.length > 10_000) {
+    throw new TypeError("summary is too long");
+  }
+
+  await assertActiveCharacterVersion(
+    client,
+    input.tenantId,
+    input.characterId,
+    input.characterVersionId,
+  );
+
+  if (input.expectedRevision === null) {
+    const created = await client.query<StoryArcRow>(
+      `INSERT INTO world.story_arcs (
+         tenant_id,
+         world_id,
+         story_arc_key,
+         character_id,
+         character_version_id,
+         state,
+         title,
+         summary,
+         revision,
+         created_at,
+         updated_at
+       )
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,1,$9,$9)
+       ON CONFLICT (tenant_id, world_id, story_arc_key) DO NOTHING
+       RETURNING *`,
+      [
+        input.tenantId,
+        input.worldId,
+        storyArcKey,
+        input.characterId,
+        input.characterVersionId,
+        input.state,
+        title,
+        summary,
+        input.updatedAt,
+      ],
+    );
+    if (!created.rows[0]) {
+      throw conflict(
+        "world.story_arc_revision_conflict",
+        "Story arc already exists",
+      );
+    }
+    return asStoryArc(created.rows[0]);
+  }
+
+  const current = await loadStoryArc(
+    client,
+    input.tenantId,
+    input.worldId,
+    storyArcKey,
+  );
+  if (
+    !current ||
+    current.characterId !== input.characterId ||
+    current.revision !== input.expectedRevision
+  ) {
+    throw conflict(
+      "world.story_arc_revision_conflict",
+      "Story arc revision is stale",
+    );
+  }
+  if (!storyArcTransitionAllowed(current.state, input.state)) {
+    throw conflict(
+      "world.story_arc_transition_invalid",
+      "Story arc lifecycle cannot move backward",
+    );
+  }
+
+  const updated = await client.query<StoryArcRow>(
+    `UPDATE world.story_arcs
+        SET character_version_id = $4,
+            state = $5,
+            title = $6,
+            summary = $7,
+            revision = revision + 1,
+            updated_at = $8
+      WHERE tenant_id = $1
+        AND world_id = $2
+        AND story_arc_key = $3
+        AND character_id = $9
+        AND revision = $10
+      RETURNING *`,
+    [
+      input.tenantId,
+      input.worldId,
+      storyArcKey,
+      input.characterVersionId,
+      input.state,
+      title,
+      summary,
+      input.updatedAt,
+      input.characterId,
+      input.expectedRevision,
+    ],
+  );
+  if (!updated.rows[0]) {
+    throw conflict(
+      "world.story_arc_revision_conflict",
+      "Story arc revision is stale",
+    );
+  }
+  return asStoryArc(updated.rows[0]);
+}
+
 export function createPostgresWorldRepository(
   client: PoolClient,
-): GovernedWorldRepository {
-  const repository: GovernedWorldRepository = {
+): NarrativeWorldRepository {
+  const repository: NarrativeWorldRepository = {
     createWorld: (input: CreateWorldInput) => createWorld(client, input),
     getWorld: (tenantId: TenantId, worldId: WorldId) =>
       getWorld(client, tenantId, worldId),
@@ -1149,6 +1294,10 @@ export function createPostgresWorldRepository(
       appendWorldEvent(client, input),
     approveWorldEvent: (input: ApproveWorldEventInput) =>
       approveWorldEvent(client, input),
+    putRoutine: (input: PutRoutineInput) => putRoutine(client, input),
+    admitRoutineOccurrence: (input: AdmitRoutineOccurrenceInput) =>
+      admitRoutineOccurrence(client, input),
+    putStoryArc: (input: PutStoryArcInput) => putStoryArc(client, input),
   };
   return Object.freeze(repository);
 }
