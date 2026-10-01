@@ -15,7 +15,7 @@ All donors are mounted as **reference-only Git submodules** under `references/so
 | `presence/livekit-agents-ts` | livekit/agents-js | main | `df97b867b3b16efbd348584c818cefc5536ef21a` | TypeScript realtime agent sessions/providers/jobs |
 | `presence/livekit-agents-py` | livekit/agents | main | `d251b89e61fe5f8ba78e0b39b501d91b0856a2d0` | mature Python realtime agent/provider reference |
 | `presence/pipecat` | pipecat-ai/pipecat | main | `6396f9771e4d7870b3d538fda38a4241caf6c642` | frame/pipeline realtime multimodal architecture |
-| `memory/letta-server` | letta-ai/letta | main | `5bcdd177d70fa2b31a754cfcd801e77b2e1ab16a` | stateful-agent/memory server architecture |
+| `memory/letta-server` | letta-ai/letta | main | `5bcdd177d70fa2b31a754cfcd801e77b2e1ab16a` | landing/historical pointer; active implementation moved to Letta Code |
 | `memory/letta-code` | letta-ai/letta-code | main | `3687ea51f6d11eabc4ad7a7b163c649d023801ba` | persistent agent identity/experience/skills/shared memory |
 | `memory/mem0` | mem0ai/mem0 | main | `94c3fe9f238f3dbf29c9ce98643bd71eb13077cd` | production memory extraction, temporal/entity retrieval, evaluation |
 | `world/ai-town` | a16z-infra/ai-town | main | `8e05997f2409275669c8344b84a51692e83f3f33` | shared-world simulation and autonomous character interactions |
