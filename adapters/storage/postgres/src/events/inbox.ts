@@ -136,7 +136,7 @@ export async function admitInboxEvent(
        tombstone_until
      )
      VALUES ($1, $2, $3, $4, $5, $6, $7, 'admitted', $8)
-     ON CONFLICT (namespace, event_id)
+     ON CONFLICT (tenant_id, namespace, event_id)
      DO NOTHING
      RETURNING tenant_id,
                namespace,
@@ -247,7 +247,8 @@ export async function claimInboxBatch(
               safe_error_code = NULL,
               updated_at = clock_timestamp()
          FROM candidates
-        WHERE i.namespace = candidates.namespace
+        WHERE i.tenant_id = candidates.tenant_id
+          AND i.namespace = candidates.namespace
           AND i.event_id = candidates.event_id
        RETURNING i.tenant_id,
                  i.namespace,
@@ -364,7 +365,8 @@ export async function settleInboxClaim(
         AND event_id = $3
         AND state = 'processing'
         AND lease_owner = $4
-        AND fence = $5`,
+        AND fence = $5
+        AND lease_expires_at > clock_timestamp()`,
     [
       input.tenantId,
       input.namespace,
