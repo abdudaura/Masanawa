@@ -200,6 +200,9 @@ importers:
       '@masanawa/security':
         specifier: workspace:*
         version: link:../../../packages/security
+      '@masanawa/world':
+        specifier: workspace:*
+        version: link:../../../packages/world
       pg:
         specifier: 8.23.0
         version: 8.23.0
@@ -282,6 +285,16 @@ importers:
         version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
 
   packages/identity:
+    dependencies:
+      '@masanawa/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+    devDependencies:
+      vitest:
+        specifier: 5.0.3
+        version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
+
+  packages/world:
     dependencies:
       '@masanawa/contracts':
         specifier: workspace:*

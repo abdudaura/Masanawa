@@ -36,6 +36,10 @@ import {
   publishCharacterVersion,
   activateCharacterVersion,
   getOrCreateRelationship,
+  createWorld,
+  getWorld,
+  admitSimulationInput,
+  commitWorldGeneration,
   putServiceVerificationKey,
   deactivateServiceVerificationKey,
   createPostgresServiceCredentialKeySource,
@@ -70,10 +74,14 @@ const securityMigrationDirectory = fileURLToPath(
 const identityMigrationDirectory = fileURLToPath(
   new URL("../../../../packages/identity/migrations", import.meta.url),
 );
+const worldMigrationDirectory = fileURLToPath(
+  new URL("../../../../packages/world/migrations", import.meta.url),
+);
 const foundationMigrationRootsForTest = [
   { owner: "events", directory: eventMigrationDirectory },
   { owner: "identity", directory: identityMigrationDirectory },
   { owner: "security", directory: securityMigrationDirectory },
+  { owner: "world", directory: worldMigrationDirectory },
 ] as const;
 
 describePostgres("PostgreSQL 18 foundation integration", () => {
@@ -95,6 +103,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
   });
 
   beforeEach(async () => {
+    await pool.query("DROP SCHEMA IF EXISTS world CASCADE");
     await pool.query("DROP SCHEMA IF EXISTS identity CASCADE");
     await pool.query("DROP SCHEMA IF EXISTS security CASCADE");
     await pool.query("DROP SCHEMA IF EXISTS events CASCADE");
@@ -106,6 +115,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       { owner: "events", directory: eventMigrationDirectory },
       { owner: "identity", directory: identityMigrationDirectory },
       { owner: "security", directory: securityMigrationDirectory },
+      { owner: "world", directory: worldMigrationDirectory },
     ]);
     expect(applied).toEqual([
       "events/0001_event_foundation.sql",
@@ -116,6 +126,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       "security/0001_security_foundation.sql",
       "security/0002_approval_operation_integrity.sql",
       "security/0003_service_credentials.sql",
+      "world/0001_world_foundation.sql",
     ]);
   });
 
@@ -273,6 +284,169 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
         [tenantId, characterVersionId],
       ),
     ).rejects.toThrow(/immutable/u);
+  });
+
+  it("admits simulation input idempotently and settles it with one generation commit", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const worldId = createCanonicalId("world");
+    const initialGenerationId = createCanonicalId("world-generation");
+    const nextGenerationId = createCanonicalId("world-generation");
+    const now = toInstant("2026-10-01T10:00:00Z");
+    const nextTime = toInstant("2026-10-01T10:05:00Z");
+
+    await withTransaction(pool, async (client) => {
+      await createTenant(client, { tenantId, createdAt: now });
+      const world = await createWorld(client, {
+        tenantId,
+        worldId,
+        initialGenerationId,
+        policy: {
+          schemaVersion: 1,
+          catchUpMode: "bounded",
+          maxCatchUpSteps: 12,
+          spatialEnabled: false,
+          automaticCanonEnabled: true,
+        },
+        simulationTime: now,
+        createdAt: now,
+      });
+      expect(world.currentGenerationNumber).toBe(0);
+
+      const first = await admitSimulationInput(client, {
+        tenantId,
+        worldId,
+        idempotencyKey: "routine:morning:2026-10-01",
+        kind: "routine.due",
+        payload: { routineId: "morning" },
+        receivedAt: now,
+        effectiveAt: nextTime,
+      });
+      const replay = await admitSimulationInput(client, {
+        tenantId,
+        worldId,
+        idempotencyKey: "routine:morning:2026-10-01",
+        kind: "routine.due",
+        payload: { routineId: "morning" },
+        receivedAt: nextTime,
+        effectiveAt: nextTime,
+      });
+      expect(replay.sequence).toBe(first.sequence);
+
+      await expect(
+        admitSimulationInput(client, {
+          tenantId,
+          worldId,
+          idempotencyKey: "routine:morning:2026-10-01",
+          kind: "routine.due",
+          payload: { routineId: "different" },
+          receivedAt: nextTime,
+          effectiveAt: nextTime,
+        }),
+      ).rejects.toMatchObject({
+        code: "world.simulation_input_conflict",
+      });
+
+      const committed = await commitWorldGeneration(client, {
+        tenantId,
+        worldId,
+        expectedGenerationNumber: 0,
+        nextGenerationId,
+        simulationTime: nextTime,
+        committedAt: nextTime,
+        completedInputSequences: [first.sequence],
+      });
+
+      expect(committed.world.currentGenerationNumber).toBe(1);
+      expect(committed.world.currentGenerationId).toBe(nextGenerationId);
+      expect(committed.generation.previousGenerationId).toBe(
+        initialGenerationId,
+      );
+      expect(committed.completedInputs).toHaveLength(1);
+      expect(committed.completedInputs[0]?.state).toBe("completed");
+      expect(committed.completedInputs[0]?.completedGenerationNumber).toBe(1);
+    });
+  });
+
+  it("rejects stale competing world generations and backward simulation time", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const otherTenantId = createCanonicalId("tenant");
+    const worldId = createCanonicalId("world");
+    const initialGenerationId = createCanonicalId("world-generation");
+    const now = toInstant("2026-10-01T11:00:00Z");
+    const nextTime = toInstant("2026-10-01T11:01:00Z");
+
+    await withTransaction(pool, async (client) => {
+      await createTenant(client, { tenantId, createdAt: now });
+      await createTenant(client, { tenantId: otherTenantId, createdAt: now });
+      await createWorld(client, {
+        tenantId,
+        worldId,
+        initialGenerationId,
+        policy: {
+          schemaVersion: 1,
+          catchUpMode: "skip",
+          maxCatchUpSteps: 0,
+          spatialEnabled: false,
+          automaticCanonEnabled: false,
+        },
+        simulationTime: now,
+        createdAt: now,
+      });
+    });
+
+    const competing = await Promise.allSettled([
+      withTransaction(pool, (client) =>
+        commitWorldGeneration(client, {
+          tenantId,
+          worldId,
+          expectedGenerationNumber: 0,
+          nextGenerationId: createCanonicalId("world-generation"),
+          simulationTime: nextTime,
+          committedAt: nextTime,
+          completedInputSequences: [],
+        }),
+      ),
+      withTransaction(pool, (client) =>
+        commitWorldGeneration(client, {
+          tenantId,
+          worldId,
+          expectedGenerationNumber: 0,
+          nextGenerationId: createCanonicalId("world-generation"),
+          simulationTime: nextTime,
+          committedAt: nextTime,
+          completedInputSequences: [],
+        }),
+      ),
+    ]);
+
+    expect(competing.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+    expect(competing.filter((result) => result.status === "rejected")).toHaveLength(1);
+    const rejected = competing.find((result) => result.status === "rejected");
+    expect(rejected).toMatchObject({
+      reason: expect.objectContaining({ code: "world.generation_conflict" }),
+    });
+
+    await withTransaction(pool, async (client) => {
+      const current = await getWorld(client, tenantId, worldId);
+      expect(current?.currentGenerationNumber).toBe(1);
+      await expect(
+        getWorld(client, otherTenantId, worldId),
+      ).resolves.toBeNull();
+
+      await expect(
+        commitWorldGeneration(client, {
+          tenantId,
+          worldId,
+          expectedGenerationNumber: 1,
+          nextGenerationId: createCanonicalId("world-generation"),
+          simulationTime: toInstant("2026-10-01T10:59:59Z"),
+          committedAt: nextTime,
+          completedInputSequences: [],
+        }),
+      ).rejects.toMatchObject({
+        code: "world.simulation_time_regression",
+      });
+    });
   });
 
   it("reports schema-aware database readiness", async () => {

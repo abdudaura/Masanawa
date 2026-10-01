@@ -32,9 +32,9 @@ Forbidden collapses remain:
 - CharacterSession ≠ Relationship;
 - relationship-private state ≠ shared Character/world canon.
 
-## Identity slice — implemented, awaiting CI
+## Identity slice — merged and validated
 
-Implemented through commit `414132b29db8d7262b9237c3729f5e801af30220`:
+Implemented, validated by the full CI gate, and merged in PR #17 at `75549800445842f8ff1db54e06529c075ed34ea4`:
 
 - real `@masanawa/identity` package and production build;
 - Tenant/User/Character/CharacterVersion/Relationship domain contracts;
@@ -50,30 +50,33 @@ Implemented through commit `414132b29db8d7262b9237c3729f5e801af30220`:
 - at-most-one stable relationship for one tenant/user/character tuple;
 - PostgreSQL integration tests for all of the above.
 
-## Identity acceptance gate
+## Identity acceptance gate — PASS
 
-Before this slice is considered closed:
-- frozen install must remain reproducible;
-- strict TypeScript must pass;
-- architecture guards must accept the new canonical package and no forbidden dependency;
-- unit tests must pass;
-- PostgreSQL 18 migration/integration tests must pass;
-- production build must include `@masanawa/identity`.
+The identity slice passed frozen install, strict TypeScript, architecture guards, unit/integration tests, PostgreSQL 18 migration tests and production builds before merge.
 
-## World slice — next
+## World foundation — implemented, awaiting CI
 
-After identity CI is green:
+Current branch: `phase3-world-foundation`.
 
-1. create `@masanawa/world` with public contracts depending only on permitted foundation/identity surfaces;
-2. add World/WorldPolicy and monotonic WorldGeneration first;
-3. implement durable compare-and-set generation commits;
-4. preserve simulation time separately from wall-clock/recorded time;
-5. add CharacterLifeState as a world projection keyed by CharacterId, never identity duplication;
-6. introduce typed SimulationInput and terminal input outcomes before autonomous routines;
-7. prove two workers cannot commit the same expected generation;
-8. prove simulation time never moves backward;
-9. prove duplicate input/idempotency does not duplicate canonical events;
-10. only then add routines/story arcs/canon admission and optional spatial mechanics.
+Implemented:
+1. real `@masanawa/world` package and production build wiring;
+2. World/WorldPolicy plus explicit catch-up mode;
+3. append-only WorldGeneration history and current generation projection;
+4. simulation time kept distinct and prevented from moving backward;
+5. CharacterLifeState modeled as a CharacterId-keyed world projection, not Character identity;
+6. typed ordered SimulationInput with per-world idempotency key;
+7. PostgreSQL generation commit serialized under World row lock;
+8. expected-generation conflict rejects overlapping stale workers;
+9. input settlement occurs in the same transaction as generation append/current projection advance;
+10. PostgreSQL integration test launches two competing transactions and requires exactly one winner;
+11. tenant-scoped reads and duplicate-input content conflicts are tested.
+
+Next after green CI:
+- governed CharacterLifeState mutation;
+- append-only WorldEvent/WorldInteraction evidence;
+- Constitution-gated canon admission with provenance/visibility;
+- routines/story arcs;
+- optional spatial mechanics only after non-spatial life semantics are complete.
 
 ## Donor boundary
 
