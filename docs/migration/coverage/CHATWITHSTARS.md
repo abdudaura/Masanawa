@@ -59,15 +59,17 @@ Migration-by-migration accounting is now materialized in `chatwithstars-migratio
 
 Confirmed integration families now represented in the Integration Ledger include PostgreSQL/Supabase, Flutterwave, NOWPayments, legacy VTPass, Telegram, WhatsApp Web runtime, Facebook, YouTube ingestion, TikTok, Telnyx, Google OAuth, Modal, RunPod, ComfyUI, external video providers, ffmpeg and JEV.
 
-Each retained integration still requires a provider-specific auth/retry/idempotency/reconciliation matrix before final source closure.
+Provider-specific auth/retry/idempotency/reconciliation treatment is now completed in `CHATWITHSTARS-INTEGRATIONS.md` and normalized by ADR-0010.
 
 ## Current closure status
 
-**PARTIAL, not covered.**
+**COVERED at pinned revision.**
 
-The runtime/domain families above are now descendant-traced, but two closure tasks remain:
+Closure evidence:
+- descendant runtime/domain families traced to implementation, tests, state, canonical owner and parity gate;
+- all 381 pinned migration filenames accounted for with zero unresolved entries in `chatwithstars-migration-manifest.json`;
+- previously orphaned migration families explicitly classified in `CHATWITHSTARS-MIGRATIONS.md`;
+- provider integrations normalized to the canonical execution/reconciliation boundary in ADR-0010 and `CHATWITHSTARS-INTEGRATIONS.md`;
+- legacy surfaces, deployment wrappers and generated/project data have explicit B/C treatment rather than implicit adoption.
 
-1. close or explicitly retire the remaining provider gaps in `CHATWITHSTARS-INTEGRATIONS.md`;
-2. verify generated migration manifest coverage against the pinned 381-file tree whenever the source pin changes.
-
-The migration accounting gap is closed at the current pin; provider behavior closure is still open. Only after those provider gaps pass may ChatWithStars move back to `covered`.
+This closure is revision-specific. Changing the ChatWithStars pin reopens migration/provider verification.
