@@ -121,3 +121,9 @@ Auth, retry, idempotency and reconciliation fields still require source-by-sourc
 | I-ELZ-004 | eliza connector ecosystem | elizaOS | inbound/outbound channel adapters | messaging/external actions | channel IDs/content | gateway/channel adapters | partial; connector metadata boundary analysed, delivery semantics still pending |
 | I-ELZ-005 | eliza cloud runtime proxy | elizaOS | remote sandbox chat/status execution | remote RPC | prompt/session/runtime metadata | optional compute/runtime adapter only | analysed; cannot own identity/memory/workflow truth |
 | I-ELZ-006 | native platform bridges | elizaOS | location/phone/device capabilities | device reads/actions | highly sensitive | device-node/perception/tools adapters | partial; authority broker analysed, native action families still pending |
+
+
+| I-ELZ-007 | Discord connector | elizaOS | inbound/outbound messaging | external messages | message content, account/room/user IDs | gateway/channel adapter | analysed for durable inbound idempotency/provenance; outbound ambiguity still pending |
+| I-ELZ-008 | Telegram connector | elizaOS | inbound/outbound messaging/forum topics | external messages | message/account/chat IDs | gateway/channel adapter | partial; service lifecycle located, delivery ambiguity still pending |
+| I-ELZ-009 | OpenAI-compatible provider plugin | elizaOS | text/embedding/media capabilities | model/media calls | prompt/media/private context | packages/providers | analysed; capability registration and fallback constraints recorded |
+| I-ELZ-010 | local inference router | elizaOS | on-device inference with optional cloud fallback | local/cloud compute | private prompts/media | packages/providers/local | analysed; explicit recoverable-failure classification and TTS fail-closed |
