@@ -450,6 +450,308 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
     });
   });
 
+  it("gates life state and automatic canon on an active published Constitution", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const characterId = createCanonicalId("character");
+    const versionId = createCanonicalId("character-version");
+    const worldId = createCanonicalId("world");
+    const now = toInstant("2026-10-01T12:00:00Z");
+    const nextTime = toInstant("2026-10-01T12:05:00Z");
+
+    await withTransaction(pool, async (client) => {
+      await createTenant(client, { tenantId, createdAt: now });
+      const character = await createCharacter(client, {
+        tenantId,
+        characterId,
+        createdAt: now,
+      });
+      await createCharacterVersion(client, {
+        tenantId,
+        characterVersionId: versionId,
+        characterId,
+        versionNumber: 1,
+        constitution: {
+          schemaVersion: 1,
+          displayName: "Amina Bello",
+          biography: "",
+          personality: ["warm"],
+          boundaries: ["Keep private relationship state private."],
+          disclosurePolicy: { aiNature: "disclose" },
+          languages: ["ha"],
+          voiceReferences: [],
+          appearanceReferences: [],
+          expertise: [],
+        },
+        createdAt: now,
+      });
+      await publishCharacterVersion(client, {
+        tenantId,
+        characterVersionId: versionId,
+        publishedAt: now,
+      });
+      await activateCharacterVersion(client, {
+        tenantId,
+        characterId,
+        characterVersionId: versionId,
+        expectedCharacterRevision: character.revision,
+        activatedAt: now,
+      });
+      await createWorld(client, {
+        tenantId,
+        worldId,
+        initialGenerationId: createCanonicalId("world-generation"),
+        policy: {
+          schemaVersion: 1,
+          catchUpMode: "skip",
+          maxCatchUpSteps: 0,
+          spatialEnabled: false,
+          automaticCanonEnabled: true,
+        },
+        simulationTime: now,
+        createdAt: now,
+      });
+    });
+
+    const eventId = createCanonicalId("world-event");
+    const committed = await withTransaction(pool, (client) =>
+      commitWorldGeneration(client, {
+        tenantId,
+        worldId,
+        expectedGenerationNumber: 0,
+        nextGenerationId: createCanonicalId("world-generation"),
+        simulationTime: nextTime,
+        committedAt: nextTime,
+        completedInputSequences: [],
+        lifeStateChanges: [
+          {
+            characterId,
+            expectedRevision: null,
+            availability: "available",
+            narrativeState: "planning",
+            activeGoal: "prepare a lesson",
+            storyArc: "teaching-day",
+            coarseLocation: "home",
+            effectiveAt: nextTime,
+          },
+        ],
+        events: [
+          {
+            worldEventId: eventId,
+            characterId,
+            kind: "life.goal.started",
+            payload: { goal: "prepare a lesson" },
+            provenance: "engine",
+            visibility: "public",
+            occurrenceKey: "goal:prepare-lesson:2026-10-01",
+            validFrom: nextTime,
+            requestAutoApproval: true,
+          },
+        ],
+      }),
+    );
+
+    expect(committed.lifeStateChanges).toHaveLength(1);
+    expect(committed.lifeStateChanges[0]).toMatchObject({
+      characterId,
+      revision: 1,
+      activeGoal: "prepare a lesson",
+    });
+    expect(committed.events).toHaveLength(1);
+    expect(committed.events[0]).toMatchObject({
+      worldEventId: eventId,
+      sourceCharacterVersionId: versionId,
+      canonState: "approved",
+      provenance: "engine",
+    });
+
+    await expect(
+      withTransaction(pool, (client) =>
+        commitWorldGeneration(client, {
+          tenantId,
+          worldId,
+          expectedGenerationNumber: 1,
+          nextGenerationId: createCanonicalId("world-generation"),
+          simulationTime: toInstant("2026-10-01T12:10:00Z"),
+          committedAt: toInstant("2026-10-01T12:10:00Z"),
+          completedInputSequences: [],
+          events: [
+            {
+              worldEventId: createCanonicalId("world-event"),
+              characterId,
+              kind: "life.goal.started",
+              payload: { goal: "prepare a lesson" },
+              provenance: "engine",
+              visibility: "public",
+              occurrenceKey: "goal:prepare-lesson:2026-10-01",
+              validFrom: nextTime,
+              requestAutoApproval: true,
+            },
+          ],
+        }),
+      ),
+    ).rejects.toMatchObject({ code: "world.event_occurrence_conflict" });
+
+    await expect(
+      pool.query(
+        `UPDATE world.events
+            SET payload = '{"goal":"changed"}'::jsonb
+          WHERE tenant_id = $1 AND world_event_id = $2`,
+        [tenantId, eventId],
+      ),
+    ).rejects.toThrow(/immutable/u);
+  });
+
+  it("rejects stale life-state revisions and forbidden automatic canon", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const characterId = createCanonicalId("character");
+    const versionId = createCanonicalId("character-version");
+    const worldId = createCanonicalId("world");
+    const now = toInstant("2026-10-01T13:00:00Z");
+    const nextTime = toInstant("2026-10-01T13:01:00Z");
+
+    await withTransaction(pool, async (client) => {
+      await createTenant(client, { tenantId, createdAt: now });
+      const character = await createCharacter(client, {
+        tenantId,
+        characterId,
+        createdAt: now,
+      });
+      await createCharacterVersion(client, {
+        tenantId,
+        characterVersionId: versionId,
+        characterId,
+        versionNumber: 1,
+        constitution: {
+          schemaVersion: 1,
+          displayName: "Amina",
+          biography: "",
+          personality: [],
+          boundaries: [],
+          disclosurePolicy: {},
+          languages: ["ha"],
+          voiceReferences: [],
+          appearanceReferences: [],
+          expertise: [],
+        },
+        createdAt: now,
+      });
+      await publishCharacterVersion(client, {
+        tenantId,
+        characterVersionId: versionId,
+        publishedAt: now,
+      });
+      await activateCharacterVersion(client, {
+        tenantId,
+        characterId,
+        characterVersionId: versionId,
+        expectedCharacterRevision: character.revision,
+        activatedAt: now,
+      });
+      await createWorld(client, {
+        tenantId,
+        worldId,
+        initialGenerationId: createCanonicalId("world-generation"),
+        policy: {
+          schemaVersion: 1,
+          catchUpMode: "skip",
+          maxCatchUpSteps: 0,
+          spatialEnabled: false,
+          automaticCanonEnabled: false,
+        },
+        simulationTime: now,
+        createdAt: now,
+      });
+    });
+
+    await expect(
+      withTransaction(pool, (client) =>
+        commitWorldGeneration(client, {
+          tenantId,
+          worldId,
+          expectedGenerationNumber: 0,
+          nextGenerationId: createCanonicalId("world-generation"),
+          simulationTime: nextTime,
+          committedAt: nextTime,
+          completedInputSequences: [],
+          events: [
+            {
+              worldEventId: createCanonicalId("world-event"),
+              characterId,
+              kind: "life.note",
+              payload: { note: "draft me" },
+              provenance: "authored",
+              visibility: "internal",
+              validFrom: nextTime,
+              requestAutoApproval: true,
+            },
+          ],
+        }),
+      ),
+    ).rejects.toMatchObject({ code: "world.event_auto_approval_forbidden" });
+
+    const first = await withTransaction(pool, (client) =>
+      commitWorldGeneration(client, {
+        tenantId,
+        worldId,
+        expectedGenerationNumber: 0,
+        nextGenerationId: createCanonicalId("world-generation"),
+        simulationTime: nextTime,
+        committedAt: nextTime,
+        completedInputSequences: [],
+        lifeStateChanges: [
+          {
+            characterId,
+            expectedRevision: null,
+            availability: null,
+            narrativeState: "idle",
+            activeGoal: null,
+            storyArc: null,
+            coarseLocation: null,
+            effectiveAt: nextTime,
+          },
+        ],
+        events: [
+          {
+            worldEventId: createCanonicalId("world-event"),
+            characterId,
+            kind: "life.note",
+            payload: { note: "operator draft" },
+            provenance: "authored",
+            visibility: "internal",
+            validFrom: nextTime,
+          },
+        ],
+      }),
+    );
+    expect(first.events[0]?.canonState).toBe("draft");
+
+    await expect(
+      withTransaction(pool, (client) =>
+        commitWorldGeneration(client, {
+          tenantId,
+          worldId,
+          expectedGenerationNumber: 1,
+          nextGenerationId: createCanonicalId("world-generation"),
+          simulationTime: toInstant("2026-10-01T13:02:00Z"),
+          committedAt: toInstant("2026-10-01T13:02:00Z"),
+          completedInputSequences: [],
+          lifeStateChanges: [
+            {
+              characterId,
+              expectedRevision: 0,
+              availability: null,
+              narrativeState: "changed",
+              activeGoal: null,
+              storyArc: null,
+              coarseLocation: null,
+              effectiveAt: toInstant("2026-10-01T13:02:00Z"),
+            },
+          ],
+        }),
+      ),
+    ).rejects.toMatchObject({ code: "world.life_state_revision_conflict" });
+  });
+
   it("reports schema-aware database readiness", async () => {
     await expect(
       checkPostgresReadiness(pool, foundationMigrationRootsForTest),
