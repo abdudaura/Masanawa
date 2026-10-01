@@ -20,6 +20,7 @@ describe("OpenTelemetry-compatible correlation", () => {
       "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01";
 
     const admitted = admitTelemetryCorrelation({
+      acceptInboundCanonicalIds: true,
       carrier: {
         traceparent: parent,
         "x-request-id": requestId,
@@ -35,6 +36,20 @@ describe("OpenTelemetry-compatible correlation", () => {
     expect(admitted.requestId).toBe(requestId);
     expect(admitted.correlationId).toBe(correlationId);
     expect(parseTraceparent(formatTraceparent(admitted.trace))).not.toBeNull();
+  });
+
+  it("does not trust caller-supplied canonical IDs by default", () => {
+    const suppliedRequestId = createCanonicalId("request");
+    const suppliedCorrelationId = createCanonicalId("correlation");
+    const admitted = admitTelemetryCorrelation({
+      carrier: {
+        "x-request-id": suppliedRequestId,
+        "x-correlation-id": suppliedCorrelationId,
+      },
+    });
+
+    expect(admitted.requestId).not.toBe(suppliedRequestId);
+    expect(admitted.correlationId).not.toBe(suppliedCorrelationId);
   });
 
   it("fails closed on invalid inbound correlation identifiers", () => {
