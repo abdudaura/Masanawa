@@ -36,6 +36,10 @@ import {
   publishCharacterVersion,
   activateCharacterVersion,
   getOrCreateRelationship,
+  createWorld,
+  getWorld,
+  admitSimulationInput,
+  commitWorldGeneration,
   putServiceVerificationKey,
   deactivateServiceVerificationKey,
   createPostgresServiceCredentialKeySource,
@@ -70,10 +74,14 @@ const securityMigrationDirectory = fileURLToPath(
 const identityMigrationDirectory = fileURLToPath(
   new URL("../../../../packages/identity/migrations", import.meta.url),
 );
+const worldMigrationDirectory = fileURLToPath(
+  new URL("../../../../packages/world/migrations", import.meta.url),
+);
 const foundationMigrationRootsForTest = [
   { owner: "events", directory: eventMigrationDirectory },
   { owner: "identity", directory: identityMigrationDirectory },
   { owner: "security", directory: securityMigrationDirectory },
+  { owner: "world", directory: worldMigrationDirectory },
 ] as const;
 
 describePostgres("PostgreSQL 18 foundation integration", () => {
@@ -95,6 +103,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
   });
 
   beforeEach(async () => {
+    await pool.query("DROP SCHEMA IF EXISTS world CASCADE");
     await pool.query("DROP SCHEMA IF EXISTS identity CASCADE");
     await pool.query("DROP SCHEMA IF EXISTS security CASCADE");
     await pool.query("DROP SCHEMA IF EXISTS events CASCADE");
@@ -106,6 +115,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       { owner: "events", directory: eventMigrationDirectory },
       { owner: "identity", directory: identityMigrationDirectory },
       { owner: "security", directory: securityMigrationDirectory },
+      { owner: "world", directory: worldMigrationDirectory },
     ]);
     expect(applied).toEqual([
       "events/0001_event_foundation.sql",
@@ -116,6 +126,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       "security/0001_security_foundation.sql",
       "security/0002_approval_operation_integrity.sql",
       "security/0003_service_credentials.sql",
+      "world/0001_world_foundation.sql",
     ]);
   });
 
