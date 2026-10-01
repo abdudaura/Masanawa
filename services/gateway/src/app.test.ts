@@ -64,6 +64,9 @@ describe("gateway service bootstrap", () => {
     expect(typeof requestId).toBe("string");
     expect(typeof correlationId).toBe("string");
     expect(typeof traceparent).toBe("string");
+    if (typeof traceparent !== "string") {
+      throw new TypeError("expected traceparent response header");
+    }
     expect(isCanonicalId("request", requestId)).toBe(true);
     expect(isCanonicalId("correlation", correlationId)).toBe(true);
     expect(requestId).not.toBe(suppliedRequestId);
