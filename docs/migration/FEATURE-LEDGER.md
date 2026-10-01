@@ -151,14 +151,14 @@ foundation, identity, relationships, memory, world, decisions, agents, skills, t
 | OPS-005 | operations | durable emergency kill switches independent of browser state | ChatWithStars | A | primary | apps/ops + security | analysed |
 | OPS-006 | operations | audited bounded financial adjustments | ChatWithStars | A | primary | apps/ops + commerce | analysed |
 | OPS-002 | operations | trace/evaluation visibility | OpenJarvis + ChatWithStars | B | combined | apps/ops + telemetry | analysed |
-| GW-001 | channels | unified local-first Gateway/control plane for sessions/tools/events/channels | OpenClaw | B | major candidate | services/gateway | discovered |
-| CHN-003 | channels | per-agent channel/account bindings and isolated workspaces/session stores | OpenClaw | B | major candidate | gateway + identity/runtime | discovered |
-| DEV-001 | perception | device nodes for voice/camera/screen/device-local actions | OpenClaw | B | major candidate | gateway + perception + tools | discovered |
-| SKL-008 | skills | scoped skill roots/precedence/gating/install/update/verify/workshop distribution | OpenClaw | B | major candidate | packages/skills | discovered |
-| MEM-013 | memory | action-sensitive memory + compaction flush + background dreaming | OpenClaw | B | secondary candidate | packages/memory | discovered |
-| MEM-014 | memory | pluggable memory engines and provenance-rich memory wiki | OpenClaw | B | secondary candidate | packages/memory + plugins | discovered |
-| AGT-008 | agents | active-run steer/followup/collect/interrupt queue semantics | OpenClaw | B | candidate | packages/agents + runtime | discovered |
-| SEC-005 | security | workspace attestation and fail-safe missing-workspace handling | OpenClaw | A/B | candidate | packages/security + runtime | discovered |
+| GW-001 | channels | unified local-first Gateway/control plane for sessions/tools/events/channels | OpenClaw | B | selected architectural donor | services/gateway | analysed |
+| CHN-003 | channels | per-agent channel/account bindings and isolated workspaces/session stores | OpenClaw | B | primary routing donor | gateway + identity/runtime | analysed |
+| DEV-001 | perception | device nodes for voice/camera/screen/device-local actions | OpenClaw | B | primary device-node donor | gateway + perception + tools | analysed |
+| SKL-008 | skills | scoped skill roots/precedence/gating/install/update/verify/workshop distribution | OpenClaw | B | primary distribution donor | packages/skills | analysed |
+| MEM-013 | memory | action-sensitive memory + compaction flush + background dreaming | OpenClaw | B | secondary donor | packages/memory | analysed |
+| MEM-014 | memory | pluggable memory engines and provenance-rich memory wiki | OpenClaw | B | secondary donor | packages/memory + plugins | analysed |
+| AGT-008 | agents | active-run steer/followup/collect/interrupt queue semantics | OpenClaw | B | secondary runtime donor | packages/agents + runtime | analysed |
+| SEC-005 | security | workspace attestation and fail-safe missing-workspace handling | OpenClaw | A/B | secondary security donor | packages/security + runtime | analysed |
 | DLF-001 | avatar | persistent digital-life client across web/desktop/avatar/game contexts | AIRI | B | major candidate | apps/clients + avatar | discovered |
 | DLF-002 | avatar | Live2D/VRM embodied character runtime | AIRI | B | major candidate | avatar providers/clients | discovered |
 | RTC-009 | presence | AgentSession/Worker/job abstraction over production WebRTC | LiveKit Agents | B | major candidate | services/presence | discovered |
@@ -174,5 +174,13 @@ foundation, identity, relationships, memory, world, decisions, agents, skills, t
 | WF-006 | workflows | durable graph workflows with checkpoint/restart/time-travel/HITL | Microsoft Agent Framework | B | major candidate | packages/workflows | discovered |
 | AGT-011 | agents | sequential/concurrent/handoff/group multi-agent orchestration | Microsoft Agent Framework | B | candidate | packages/agents + workflows | discovered |
 | INT-001 | agents | A2A/MCP interoperability patterns | Microsoft Agent Framework + LiveKit/OpenClaw | B | reference | gateway + providers | discovered |
+| GW-002 | channels | channel admission/access gates separated from destination binding | OpenClaw | A | primary behavior donor | services/gateway + security | analysed |
+| DEV-003 | perception | durable device pairing/token lifecycle with uncertain-delivery reconciliation | OpenClaw | A | primary device donor | gateway + security | analysed |
+| DEV-004 | perception | remote node invoke with pre-execution-only retry semantics | OpenClaw | A | primary device donor | gateway + tools | analysed |
+| APR-001 | security | durable first-answer-wins approval registry with current-authority revalidation | OpenClaw | A | secondary approval donor | workflows + security | analysed |
+| SKL-009 | skills | immutable managed skill revisions with optimistic edit conflict and session pinning | OpenClaw | A/B | primary distribution donor | packages/skills | analysed |
+| SEC-006 | security | one-trust-domain Gateway model unsuitable as public multi-tenant boundary | OpenClaw | C/A | explicit non-adoption constraint | services/gateway + security | analysed |
+| PLG-007 | plugins | managed-operation cancellation/current-authority/node-idleness lifecycle | OpenClaw | B | candidate | plugin runtime + security | analysed |
+| MEM-017 | memory | active recall clamped by parent effective tool authority and fail-soft on recall failure | OpenClaw | A | secondary memory donor | packages/memory + tools | analysed |
 
 This inventory is intentionally incomplete. Source-specific map documents identify the next deep-mining areas.
