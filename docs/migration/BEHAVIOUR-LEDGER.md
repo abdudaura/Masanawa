@@ -92,6 +92,13 @@ Features describe what exists; this ledger records observable and operational be
 | B-NEKO-PRO-002 | PRO-004 | If durable proactive-history state cannot be loaded, do not overwrite it with partial/empty in-memory history and silently truncate prior state. | A | N.E.K.O source-history load-failure design/tests | analysed |
 | B-NEKO-PRO-003 | PRO-004 | An atomic persistence operation already offloaded to a worker must complete before cancellation releases the logical write lock. | A | N.E.K.O proactive persistence design | analysed |
 | B-NEKO-PER-001 | PER-002 | Activity/perception APIs explicitly distinguish visible, private and unavailable states and do not leak detailed foreground signals when privacy state is unavailable/private. | A/B | N.E.K.O plugin SDK runtime tests | analysed |
+| B-NEKO-CUA-001 | PER-003 | Model-generated desktop actions cannot escape the approved action surface through reflection, arbitrary imports, unpacking or hidden backend access. | A | N.E.K.O computer-use hardening tests | analysed |
+| B-NEKO-CUA-002 | PER-003 | Computer-use sessions hold an exclusive desktop lease until the synchronous worker exits and input-state cleanup has completed. | A | N.E.K.O computer-use hardening tests | analysed |
+| B-NEKO-CUA-003 | PER-003 | Failed key/button releases remain tracked for retry and safety/failsafe state is restored after cleanup attempts. | A | N.E.K.O computer-use hardening tests | analysed |
+| B-NEKO-VID-001 | VID-001 | Speaker-verification activation has explicit ready/degraded/unsupported-route states; an incompatible route must degrade rather than silently bypass enforcement. | A | N.E.K.O voice identity runtime tests | analysed |
+| B-NEKO-VID-002 | VID-001 | Enrollment/suppression state is restored on unregister/cancel/failure, and sensitive computed embeddings are wiped on cancelled work. | A | N.E.K.O voice identity tests | analysed |
+| B-NEKO-EMB-001 | EMB-001 | Embodied interaction memory is deduplicated by event key/rank, allowing a stronger summary to replace a weaker repetition without logging every physical interaction. | B | N.E.K.O avatar memory contract tests | analysed |
+| B-NEKO-EMB-002 | EMB-001 | Missing/unsupported physical interaction details are not invented and free-form compatibility context cannot leak into the factual memory event. | A | N.E.K.O avatar memory contract tests | analysed |
 | B-LRN-001 | LRN-003 | Learned/optimized skill changes are candidates and require evaluation/certification before consequential production promotion. | A | Masanawa decision from CWS+OpenJarvis | designed |
 
 Deep behavior mining from tests remains required before Phase 0 completion.
