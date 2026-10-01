@@ -6,6 +6,7 @@ import type {
   WorldEventId,
   WorldGenerationId,
   WorldId,
+  WorldInteractionId,
 } from "@masanawa/contracts";
 import type {
   CharacterLifeState,
@@ -18,6 +19,8 @@ import type {
   WorldEventProvenance,
   WorldEventVisibility,
   WorldGeneration,
+  WorldInteraction,
+  WorldInteractionParticipant,
   WorldPolicy,
 } from "./model.js";
 
@@ -118,6 +121,29 @@ export interface GovernedWorldRepository extends WorldRepository {
     tenantId: TenantId,
     worldEventId: WorldEventId,
   ): Promise<WorldEvent | null>;
+  appendWorldInteraction(
+    input: AppendWorldInteractionInput,
+  ): Promise<WorldInteraction>;
+  getWorldInteraction(
+    tenantId: TenantId,
+    worldInteractionId: WorldInteractionId,
+  ): Promise<WorldInteraction | null>;
+}
+
+export interface AppendWorldInteractionInput {
+  readonly tenantId: TenantId;
+  readonly worldId: WorldId;
+  readonly worldInteractionId: WorldInteractionId;
+  readonly interactionKind: string;
+  readonly participants: readonly WorldInteractionParticipant[];
+  readonly payload: JsonObject;
+  readonly provenance: WorldEventProvenance;
+  readonly visibility: WorldEventVisibility;
+  readonly occurrenceKey: string | null;
+  readonly effectiveStart: Instant;
+  readonly effectiveEnd: Instant | null;
+  readonly recordedAt: Instant;
+  readonly admission: "draft" | "automatic-approved";
 }
 
 export interface PutRoutineInput {

@@ -42,6 +42,8 @@ import {
   commitWorldGeneration,
   putCharacterLifeState,
   appendWorldEvent,
+  appendWorldInteraction,
+  getWorldInteraction,
   putRoutine,
   admitRoutineOccurrence,
   putStoryArc,
@@ -161,6 +163,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       "world/0001_world_foundation.sql",
       "world/0002_world_canon.sql",
       "world/0003_world_routines_story_arcs.sql",
+      "world/0004_world_interactions.sql",
     ]);
   });
 
@@ -762,6 +765,247 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
             SET payload = '{"activity":"rewritten"}'::jsonb
           WHERE tenant_id = $1 AND world_event_id = $2`,
         [tenantId, approvedEventId],
+      ),
+    ).rejects.toThrow(/immutable/u);
+  });
+
+  it("persists version-bound WorldInteraction evidence with replay-safe canon admission", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const otherTenantId = createCanonicalId("tenant");
+    const worldId = createCanonicalId("world");
+    const manualWorldId = createCanonicalId("world");
+    const characterA = createCanonicalId("character");
+    const characterB = createCanonicalId("character");
+    const versionA = createCanonicalId("character-version");
+    const versionB = createCanonicalId("character-version");
+    const approvedInteractionId = createCanonicalId("world-interaction");
+    const now = toInstant("2026-10-01T14:30:00Z");
+
+    await withTransaction(pool, async (client) => {
+      await createTenant(client, { tenantId, createdAt: now });
+      await createTenant(client, { tenantId: otherTenantId, createdAt: now });
+      await createWorld(client, {
+        tenantId,
+        worldId,
+        initialGenerationId: createCanonicalId("world-generation"),
+        policy: testWorldPolicy(),
+        simulationTime: now,
+        createdAt: now,
+      });
+      await createWorld(client, {
+        tenantId,
+        worldId: manualWorldId,
+        initialGenerationId: createCanonicalId("world-generation"),
+        policy: { ...testWorldPolicy(), automaticCanonEnabled: false },
+        simulationTime: now,
+        createdAt: now,
+      });
+
+      const a = await createCharacter(client, {
+        tenantId,
+        characterId: characterA,
+        createdAt: now,
+      });
+      const b = await createCharacter(client, {
+        tenantId,
+        characterId: characterB,
+        createdAt: now,
+      });
+      await createCharacterVersion(client, {
+        tenantId,
+        characterVersionId: versionA,
+        characterId: characterA,
+        versionNumber: 1,
+        constitution: testCharacterConstitution(),
+        createdAt: now,
+      });
+      await createCharacterVersion(client, {
+        tenantId,
+        characterVersionId: versionB,
+        characterId: characterB,
+        versionNumber: 1,
+        constitution: testCharacterConstitution(),
+        createdAt: now,
+      });
+
+      const automatic = (
+        worldInteractionId: typeof approvedInteractionId,
+        payload: { topic: string },
+      ) =>
+        appendWorldInteraction(client, {
+          tenantId,
+          worldId,
+          worldInteractionId,
+          interactionKind: "conversation",
+          participants: [
+            {
+              characterId: characterB,
+              characterVersionId: versionB,
+              role: "listener",
+            },
+            {
+              characterId: characterA,
+              characterVersionId: versionA,
+              role: "speaker",
+            },
+          ],
+          payload,
+          provenance: "engine",
+          visibility: "shared",
+          occurrenceKey: "interaction:lesson:2026-10-01",
+          effectiveStart: now,
+          effectiveEnd: null,
+          recordedAt: now,
+          admission: "automatic-approved",
+        });
+
+      await expect(
+        automatic(approvedInteractionId, { topic: "lesson" }),
+      ).rejects.toMatchObject({ code: "world.character_version_not_active" });
+
+      for (const [characterId, characterVersionId, revision] of [
+        [characterA, versionA, a.revision],
+        [characterB, versionB, b.revision],
+      ] as const) {
+        await publishCharacterVersion(client, {
+          tenantId,
+          characterVersionId,
+          publishedAt: now,
+        });
+        await activateCharacterVersion(client, {
+          tenantId,
+          characterId,
+          characterVersionId,
+          expectedCharacterRevision: revision,
+          activatedAt: now,
+        });
+      }
+
+      const approved = await automatic(approvedInteractionId, { topic: "lesson" });
+      expect(approved.canonState).toBe("approved");
+      expect(approved.participants.map((participant) => participant.characterId)).toEqual(
+        [characterA, characterB].sort(),
+      );
+
+      const replay = await automatic(
+        createCanonicalId("world-interaction"),
+        { topic: "lesson" },
+      );
+      expect(replay.worldInteractionId).toBe(approvedInteractionId);
+
+      await expect(
+        automatic(createCanonicalId("world-interaction"), {
+          topic: "different lesson",
+        }),
+      ).rejects.toMatchObject({ code: "world.interaction_occurrence_conflict" });
+
+      await expect(
+        appendWorldInteraction(client, {
+          tenantId,
+          worldId,
+          worldInteractionId: createCanonicalId("world-interaction"),
+          interactionKind: "conversation",
+          participants: [
+            {
+              characterId: characterA,
+              characterVersionId: versionA,
+              role: "speaker",
+            },
+            {
+              characterId: characterB,
+              characterVersionId: versionB,
+              role: "listener",
+            },
+          ],
+          payload: { topic: "model proposal" },
+          provenance: "model",
+          visibility: "internal",
+          occurrenceKey: null,
+          effectiveStart: now,
+          effectiveEnd: null,
+          recordedAt: now,
+          admission: "automatic-approved",
+        }),
+      ).rejects.toMatchObject({
+        code: "world.automatic_canon_provenance_forbidden",
+      });
+
+      await expect(
+        appendWorldInteraction(client, {
+          tenantId,
+          worldId: manualWorldId,
+          worldInteractionId: createCanonicalId("world-interaction"),
+          interactionKind: "conversation",
+          participants: [
+            {
+              characterId: characterA,
+              characterVersionId: versionA,
+              role: "speaker",
+            },
+            {
+              characterId: characterB,
+              characterVersionId: versionB,
+              role: "listener",
+            },
+          ],
+          payload: { topic: "manual world" },
+          provenance: "engine",
+          visibility: "shared",
+          occurrenceKey: null,
+          effectiveStart: now,
+          effectiveEnd: null,
+          recordedAt: now,
+          admission: "automatic-approved",
+        }),
+      ).rejects.toMatchObject({ code: "world.automatic_canon_disabled" });
+
+      const draft = await appendWorldInteraction(client, {
+        tenantId,
+        worldId,
+        worldInteractionId: createCanonicalId("world-interaction"),
+        interactionKind: "authored-meeting",
+        participants: [
+          {
+            characterId: characterA,
+            characterVersionId: versionA,
+            role: "host",
+          },
+          {
+            characterId: characterB,
+            characterVersionId: versionB,
+            role: "guest",
+          },
+        ],
+        payload: { note: "operator-authored" },
+        provenance: "authored",
+        visibility: "shared",
+        occurrenceKey: null,
+        effectiveStart: now,
+        effectiveEnd: null,
+        recordedAt: now,
+        admission: "draft",
+      });
+      expect(draft.canonState).toBe("draft");
+
+      await expect(
+        getWorldInteraction(client, otherTenantId, approvedInteractionId),
+      ).resolves.toBeNull();
+    });
+
+    await expect(
+      pool.query(
+        `UPDATE world.interactions
+            SET payload = '{"topic":"rewritten"}'::jsonb
+          WHERE tenant_id = $1 AND world_interaction_id = $2`,
+        [tenantId, approvedInteractionId],
+      ),
+    ).rejects.toThrow(/immutable/u);
+
+    await expect(
+      pool.query(
+        `DELETE FROM world.interaction_participants
+          WHERE tenant_id = $1 AND world_interaction_id = $2 AND ordinal = 0`,
+        [tenantId, approvedInteractionId],
       ),
     ).rejects.toThrow(/immutable/u);
   });

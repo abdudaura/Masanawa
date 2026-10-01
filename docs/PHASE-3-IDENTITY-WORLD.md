@@ -143,9 +143,9 @@ Next after green CI:
 - optional spatial mechanics only after non-spatial recovery is proven.
 
 
-## Authority-bound canon governance — implemented, awaiting CI
+## Authority-bound canon governance — merged and validated
 
-Current branch: `phase3-world-authority-governance`.
+Merged through PR #24 at `9f2574b9d3932079a834c5c2976ee89e2fdcf2cc` after the complete PostgreSQL 18 CI gate passed.
 
 Implemented:
 - explicit approve/retire world-canon capabilities;
@@ -165,3 +165,26 @@ Next:
 - executable pause/restart/catch-up with bounded routine recovery;
 - restart/catch-up duplicate-prevention tests;
 - optional spatial mechanics only after recovery semantics pass.
+
+
+## WorldInteraction evidence — implemented, awaiting CI
+
+Current branch: `phase3-world-interactions`.
+
+Implemented:
+- canonical WorldInteraction identity and typed structured evidence;
+- participant records bind canonical CharacterId to exact CharacterVersionId and require at least two unique Characters;
+- deterministic participant normalization;
+- provenance, visibility, effective validity, occurrence idempotency and canon lifecycle aligned with WorldEvent;
+- automatic interaction canon is engine-only, WorldPolicy-gated and requires every participant's active published CharacterVersion;
+- authored/model/imported evidence stays draft rather than bypassing governance;
+- occurrence replay is content-exact; changed content under one occurrence key conflicts;
+- approved/retired interaction content and participant membership are database-immutable;
+- participant rows are normalized relational evidence rather than private Relationship state;
+- PostgreSQL tests cover stale CharacterVersion failure, policy/provenance gates, replay, changed-content conflict, draft state, tenant isolation and immutability.
+
+Next after green CI:
+- merge WorldInteraction evidence;
+- implement executable pause/restart/catch-up policy;
+- prove bounded recovery cannot duplicate routine inputs/events/interactions;
+- only then add optional spatial mechanics.

@@ -10,6 +10,7 @@ export const canonicalIdKinds = [
   "world-generation",
   "world-actor",
   "world-event",
+  "world-interaction",
   "character-session",
   "channel-session",
   "presence-session",
@@ -114,6 +115,7 @@ export type WorldId = CanonicalId<"world">;
 export type WorldGenerationId = CanonicalId<"world-generation">;
 export type WorldActorId = CanonicalId<"world-actor">;
 export type WorldEventId = CanonicalId<"world-event">;
+export type WorldInteractionId = CanonicalId<"world-interaction">;
 export type CharacterSessionId = CanonicalId<"character-session">;
 export type ChannelSessionId = CanonicalId<"channel-session">;
 export type PresenceSessionId = CanonicalId<"presence-session">;
