@@ -1,63 +1,59 @@
-# License and Provenance Ledger
+# Third-Party Provenance Ledger
 
-This is an engineering record, not legal advice.
+This file is compliance metadata only. It does **not** decide which Masanawa features survive.
 
-## Baseline source licenses
+## Architectural rule
 
-| Source | License at pinned baseline | Default Masanawa policy |
+A/B/C classification is based only on product and architecture value:
+- **A** — preserve required behavior;
+- **B** — preserve capability but redesign implementation;
+- **C** — retire/reference because Masanawa does not need the capability.
+
+A restrictive donor license never converts a useful A/B capability into C. When direct implementation reuse is unsuitable, Masanawa independently reimplements the same required capability behind its own canonical contracts.
+
+## Pinned reference sources
+
+| Source | Provenance note | Masanawa treatment |
 |---|---|---|
-| ChatWithStars | privately owned by repository owner | reuse/redesign permitted; still track migration provenance |
-| OpenJarvis | Apache-2.0 | study freely; direct adaptation only with attribution/provenance |
-| N.E.K.O | Apache-2.0 | study freely; direct adaptation only with attribution/provenance |
-| CyberVerse | GPLv3 | reference/clean implementation by default; no direct core copy without licensing ADR/review |
-| AIRI | MIT | architecture/design/code may be adapted with required copyright/license notice |
-| LiveKit server | Apache-2.0 | study/adapt with Apache notice/provenance obligations |
-| LiveKit Agents TypeScript | Apache-2.0 | study/adapt with Apache notice/provenance obligations |
-| LiveKit Agents Python | Apache-2.0 | study/adapt with Apache notice/provenance obligations |
-| Pipecat | BSD-2-Clause | study/adapt with copyright/license notice |
-| Letta server | Apache-2.0 | study/adapt with Apache notice/provenance obligations |
-| Letta Code | Apache-2.0 | study/adapt with Apache notice/provenance obligations |
-| Mem0 | Apache-2.0 | study/adapt with Apache notice/provenance obligations |
-| AI Town | MIT | study/adapt with copyright/license notice |
-| elizaOS | MIT | study/adapt with copyright/license notice |
-| Microsoft Agent Framework | MIT | study/adapt with copyright/license notice |
-| OpenClaw | MIT | study/adapt with copyright/license notice and preserve applicable third-party notices |
-| OpenClaw Agent Skills | MIT | study/adapt with copyright/license notice |
+| ChatWithStars | privately owned by repository owner | architecture/behavior/code may be migrated according to project ownership; still record source provenance |
+| OpenJarvis | Apache-2.0 upstream | feature decisions independent of license; direct reused portions retain required notices |
+| N.E.K.O | Apache-2.0 upstream | feature decisions independent of license; direct reused portions retain required notices |
+| CyberVerse | GPLv3 upstream | useful capabilities remain A/B; implementation is independently rewritten unless a separately compatible reuse decision is made |
+| AIRI | MIT upstream | feature decisions independent of license; reused portions retain required notices |
+| LiveKit Server | Apache-2.0 upstream | selected transport infrastructure; required notices retained where distributed |
+| LiveKit Agents TypeScript | Apache-2.0 upstream | selected realtime-session donor; required notices retained where distributed |
+| LiveKit Agents Python | Apache-2.0 upstream | parity/reference donor; required notices retained where distributed |
+| Pipecat | BSD-2-Clause upstream | pipeline behavior donor; required notices retained where distributed |
+| Letta / Letta Code | Apache-2.0 upstream | memory/context donor; required notices retained where distributed |
+| Mem0 | Apache-2.0 upstream | memory retrieval/extraction donor; required notices retained where distributed |
+| AI Town | MIT upstream | simulation behavior donor; required notices retained where distributed |
+| elizaOS | MIT upstream | plugin/component donor; required notices retained where distributed |
+| Microsoft Agent Framework | MIT upstream | durable workflow donor; required notices retained where distributed |
+| OpenClaw | MIT upstream | Gateway/device/runtime donor; required notices retained where distributed |
+| OpenClaw Agent Skills | MIT upstream | skill-format/distribution reference; required notices retained where distributed |
 
-Submodules preserve upstream source and licenses independently. Their presence in this repository does **not** change Masanawa's own license and does not authorize copying code without complying with the corresponding source license.
+## Reference vault
 
-## Direct adaptation record template
+Submodules under `references/sources/` preserve upstream snapshots and their own notices. Those files are not Masanawa's root license and do not create donor architectural boundaries.
 
-For every directly adapted external code section record:
-- Masanawa destination;
-- source repository;
-- source path;
-- source commit;
-- original license;
+## Direct adaptation record
+
+When canonical Masanawa source contains direct third-party code, record:
+- destination path;
+- donor repository/path/revision;
 - whether modified;
-- required attribution/NOTICE;
-- reviewer;
-- date.
+- required notice/attribution;
+- reviewer/date.
 
-## Concept-only reference
+## Independent rewrite record
 
-Architectural ideas and externally observable behavior may be reimplemented independently. Record the donor/behavior in the migration ledger even when no code is copied, because provenance helps later maintenance and avoids unknowingly creating two implementations.
+When a donor capability is reimplemented:
+- keep the feature/behavior ledger entry;
+- define the Masanawa-owned contract;
+- write new implementation against that contract;
+- retain behavior/parity evidence;
+- do not downgrade the capability merely because implementation reuse was unsuitable.
 
-## GPL-sensitive clean implementation
+## Third-party assets/models
 
-For CyberVerse by default:
-1. record behavior/architecture in ledgers;
-2. define Masanawa contract independently;
-3. implement against the Masanawa contract without copying source code/text;
-4. validate via behavior-oriented fixtures;
-5. keep provenance identifying CyberVerse as a reference.
-
-Any future decision to distribute or run GPL-derived code as a deliberately separated component requires a licensing ADR before implementation.
-
-## Apache/NOTICE caution
-
-For Apache-2.0 donors, inspect both LICENSE and any NOTICE/third-party notice files before direct code adaptation. Preserve required notices and record modifications where required.
-
-## Third-party code inside donors
-
-A donor's top-level license does not guarantee every bundled model, asset, generated file, plugin or third-party directory has the same license. Direct adaptation must inspect the specific source path and its notices.
+Models, weights, fonts, images, binary assets and vendored subprojects require their own provenance checks when shipped. That affects packaging/distribution, not whether the product capability remains in scope.
