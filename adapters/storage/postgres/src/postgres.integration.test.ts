@@ -248,15 +248,6 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
         code: "identity.character_revision_conflict",
       });
 
-      await expect(
-        client.query(
-          `UPDATE identity.character_versions
-              SET constitution = '{"schemaVersion":1}'::jsonb
-            WHERE tenant_id = $1 AND character_version_id = $2`,
-          [tenantId, characterVersionId],
-        ),
-      ).rejects.toThrow(/immutable/u);
-
       const relationship = await getOrCreateRelationship(client, {
         tenantId,
         relationshipId,
@@ -273,6 +264,15 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       });
       expect(replay.relationshipId).toBe(relationship.relationshipId);
     });
+
+    await expect(
+      pool.query(
+        `UPDATE identity.character_versions
+            SET constitution = '{"schemaVersion":1}'::jsonb
+          WHERE tenant_id = $1 AND character_version_id = $2`,
+        [tenantId, characterVersionId],
+      ),
+    ).rejects.toThrow(/immutable/u);
   });
 
   it("reports schema-aware database readiness", async () => {
