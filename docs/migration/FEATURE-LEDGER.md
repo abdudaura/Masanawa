@@ -172,6 +172,15 @@ foundation, identity, relationships, memory, world, decisions, agents, skills, t
 | COMU-001 | channels | group/community interaction model and durable global kill switch | ChatWithStars | B | secondary | gateway + workflows + ops | analysed |
 | TPL-001 | agents | versioned validated reusable agent/role templates and starter packs | ChatWithStars | B | secondary | packages/agents + skills | analysed |
 | PKG-001 | skills | reusable domain packs (assistant, teaching, support, commerce, community, news, civic etc.) | ChatWithStars | B | secondary product packs | packages/skills | analysed |
+| EXP-001 | plugins | generic character-aware mini-game SDK/runtime with avatar/voice/vision/context bridges | N.E.K.O | B | secondary experience | plugin SDK + future clients | analysed |
+| EXP-002 | plugins | watch-together shared-media companion experience | N.E.K.O | B | secondary experience | plugin/experience module | analysed |
+| EXP-003 | plugins | music playback/request/recommendation provider experience | N.E.K.O | B | secondary experience | plugin/experience module + proactivity | analysed |
+| EXP-004 | proactivity | focus-state assistance and break reminders | N.E.K.O | B | secondary experience | packages/proactivity | analysed |
+| EXP-005 | identity | new-user icebreaker/onboarding experience with localized state | N.E.K.O | B | secondary UX | apps/clients + runtime | analysed |
+| EXP-006 | avatar | emotion/expression mapping from conversational state to avatar renderer | N.E.K.O | B | secondary embodiment | avatar providers + runtime | analysed |
+| EXP-007 | plugins | application/game assistant bridges such as visual-novel/galgame workflows | N.E.K.O | B | reference experience | plugin SDK/tools | analysed |
+| VID-002 | presence | local wake-word activation/evaluation runtime | N.E.K.O | B | secondary | services/presence + providers | analysed |
+| AVT-007 | avatar | motion capture/full-screen tracking/avatar interaction host | N.E.K.O | B | secondary embodiment | client/avatar providers | analysed |
 | OPS-002 | operations | trace/evaluation visibility | OpenJarvis + ChatWithStars | B | combined | apps/ops + telemetry | analysed |
 
 This inventory is intentionally incomplete. Source-specific map documents identify the next deep-mining areas.
