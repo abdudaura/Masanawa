@@ -260,3 +260,15 @@ Deep behavior mining from tests remains required before Phase 0 completion.
 | B-PLG-012 | PLG-012 | Plugin communication is schema/permission validated and lifecycle bounded; plugin deadlock/crash/reload cannot become canonical domain truth or stall the host indefinitely. | A | plugin message plane, host, deadlock detector and tests | analysed |
 | B-AST-001 | AST-001 | Bundled models/corpora/binaries are never inherited under the repository license by assumption; each artifact requires its own provenance/license record before redistribution. | A | third-party notices, corpus license files, vendored deps | selected |
 | B-EXT-001 | EXT-001 | Optional games/watch/music extensions consume Character/session contracts without becoming alternate memory, identity or world authorities. | B/C | game/watch/music routers and SDK | selected |
+
+### Phase 0B provider synthesis invariants
+
+| ID | Feature | Required behavior | Class | Evidence | Status |
+|---|---|---|---|---|---|
+| B-PRV-001 | provider execution | A provider adapter cannot directly commit canonical business/domain success; only the owning domain/workflow may transition after validated provider evidence. | A | cross-donor synthesis; commerce/social/studio/channel evidence | selected |
+| B-PRV-002 | provider retries | Generic middleware must never blindly retry consequential writes after timeout/network ambiguity. Retry class is declared per operation. | A | Flutterwave side-effect flag, Telegram document no-auto-retry, workflow idempotency evidence | selected |
+| B-PRV-003 | provider reconciliation | Ambiguous consequential outcomes create reconciliation work and must be resolved before repeat execution unless the provider offers documented replay-safe idempotency. | A | Flutterwave pending/uncertain lookup + provider inbox; Telegram ambiguity | selected |
+| B-PRV-004 | readiness | Configured, ready and accepted are distinct states; stale credential/egress/webhook/provider evidence invalidates dependent readiness/acceptance. | A | Flutterwave cutover fingerprint/expiry invalidation | selected |
+| B-PRV-005 | provider credentials | Raw provider credentials never enter domain records, model context, audit logs or traces; execution resolves scoped vault refs only at the edge. | A | ChatWithStars vault/encryption patterns + Masanawa security boundary | selected |
+| B-PRV-006 | provider idempotency | Canonical workflow idempotency remains authoritative even when the provider supplies its own idempotency/reference key; provider receipts are deduplicated before domain application. | A | Flutterwave/NOWPayments/Telegram/workflow evidence | selected |
+| B-PRV-007 | model providers | Model retries may repeat inference because model output is only a proposal, but every attempt still counts for cost/rate-limit evidence and cannot itself commit business truth. | A/B | Gemini routing/quota evidence + decision fabric boundary | selected |
