@@ -1,8 +1,8 @@
 CREATE SCHEMA IF NOT EXISTS events;
 
 CREATE TABLE events.platform_events (
-  event_id text PRIMARY KEY CHECK (event_id LIKE 'event_%'),
-  tenant_id text NOT NULL CHECK (tenant_id LIKE 'tenant_%'),
+  event_id text PRIMARY KEY CHECK (event_id ~ '^event_'),
+  tenant_id text NOT NULL CHECK (tenant_id ~ '^tenant_'),
   event_type text NOT NULL,
   schema_version integer NOT NULL CHECK (schema_version > 0),
   aggregate_type text NOT NULL,
@@ -12,14 +12,14 @@ CREATE TABLE events.platform_events (
   recorded_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   actor jsonb,
   authority_ref text,
-  correlation_id text NOT NULL CHECK (correlation_id LIKE 'correlation_%'),
-  causation_id text CHECK (causation_id IS NULL OR causation_id LIKE 'event_%'),
-  request_id text CHECK (request_id IS NULL OR request_id LIKE 'request_%'),
+  correlation_id text NOT NULL CHECK (correlation_id ~ '^correlation_'),
+  causation_id text CHECK (causation_id IS NULL OR causation_id ~ '^event_'),
+  request_id text CHECK (request_id IS NULL OR request_id ~ '^request_'),
   workflow_run_id text CHECK (
-    workflow_run_id IS NULL OR workflow_run_id LIKE 'workflow-run_%'
+    workflow_run_id IS NULL OR workflow_run_id ~ '^workflow-run_'
   ),
   character_session_id text CHECK (
-    character_session_id IS NULL OR character_session_id LIKE 'character-session_%'
+    character_session_id IS NULL OR character_session_id ~ '^character-session_'
   ),
   provenance jsonb NOT NULL,
   sensitivity text NOT NULL CHECK (
@@ -35,8 +35,8 @@ CREATE INDEX platform_events_correlation_idx
   ON events.platform_events (tenant_id, correlation_id, recorded_at);
 
 CREATE TABLE events.audit_events (
-  audit_event_id text PRIMARY KEY CHECK (audit_event_id LIKE 'audit-event_%'),
-  tenant_id text NOT NULL CHECK (tenant_id LIKE 'tenant_%'),
+  audit_event_id text PRIMARY KEY CHECK (audit_event_id ~ '^audit-event_'),
+  tenant_id text NOT NULL CHECK (tenant_id ~ '^tenant_'),
   event_type text NOT NULL,
   schema_version integer NOT NULL CHECK (schema_version > 0),
   aggregate_type text NOT NULL,
@@ -45,9 +45,9 @@ CREATE TABLE events.audit_events (
   recorded_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   actor jsonb,
   authority_ref text,
-  correlation_id text NOT NULL CHECK (correlation_id LIKE 'correlation_%'),
+  correlation_id text NOT NULL CHECK (correlation_id ~ '^correlation_'),
   causation_event_id text CHECK (
-    causation_event_id IS NULL OR causation_event_id LIKE 'event_%'
+    causation_event_id IS NULL OR causation_event_id ~ '^event_'
   ),
   sensitivity text NOT NULL CHECK (
     sensitivity IN ('public', 'internal', 'private', 'sensitive', 'restricted')
@@ -59,8 +59,8 @@ CREATE INDEX audit_events_aggregate_idx
   ON events.audit_events (tenant_id, aggregate_type, aggregate_id, recorded_at);
 
 CREATE TABLE events.operations (
-  operation_id text PRIMARY KEY CHECK (operation_id LIKE 'operation_%'),
-  tenant_id text NOT NULL CHECK (tenant_id LIKE 'tenant_%'),
+  operation_id text PRIMARY KEY CHECK (operation_id ~ '^operation_'),
+  tenant_id text NOT NULL CHECK (tenant_id ~ '^tenant_'),
   kind text NOT NULL,
   idempotency_key text NOT NULL,
   authority_scope_hash text NOT NULL,
@@ -94,7 +94,7 @@ CREATE INDEX operations_state_idx
   ON events.operations (tenant_id, state, updated_at);
 
 CREATE TABLE events.idempotency_records (
-  tenant_id text NOT NULL CHECK (tenant_id LIKE 'tenant_%'),
+  tenant_id text NOT NULL CHECK (tenant_id ~ '^tenant_'),
   operation_kind text NOT NULL,
   idempotency_key text NOT NULL,
   authority_scope_hash text NOT NULL,
@@ -111,10 +111,10 @@ CREATE INDEX idempotency_expiry_idx
 
 CREATE TABLE events.external_receipts (
   external_receipt_id text PRIMARY KEY CHECK (
-    external_receipt_id LIKE 'external-receipt_%'
+    external_receipt_id ~ '^external-receipt_'
   ),
   operation_id text NOT NULL REFERENCES events.operations(operation_id),
-  tenant_id text NOT NULL CHECK (tenant_id LIKE 'tenant_%'),
+  tenant_id text NOT NULL CHECK (tenant_id ~ '^tenant_'),
   provider text NOT NULL,
   provider_reference text,
   normalized_status text NOT NULL,
@@ -132,10 +132,10 @@ CREATE UNIQUE INDEX external_receipts_provider_ref_idx
 
 CREATE TABLE events.reconciliation_cases (
   reconciliation_case_id text PRIMARY KEY CHECK (
-    reconciliation_case_id LIKE 'reconciliation-case_%'
+    reconciliation_case_id ~ '^reconciliation-case_'
   ),
   operation_id text NOT NULL REFERENCES events.operations(operation_id),
-  tenant_id text NOT NULL CHECK (tenant_id LIKE 'tenant_%'),
+  tenant_id text NOT NULL CHECK (tenant_id ~ '^tenant_'),
   status text NOT NULL CHECK (
     status IN ('open', 'checking', 'resolved', 'needs-attention')
   ),
@@ -152,15 +152,15 @@ CREATE UNIQUE INDEX reconciliation_active_operation_idx
   WHERE status IN ('open', 'checking', 'needs-attention');
 
 CREATE TABLE events.outbox (
-  outbox_event_id text PRIMARY KEY CHECK (outbox_event_id LIKE 'outbox-event_%'),
-  tenant_id text NOT NULL CHECK (tenant_id LIKE 'tenant_%'),
-  event_id text NOT NULL CHECK (event_id LIKE 'event_%'),
+  outbox_event_id text PRIMARY KEY CHECK (outbox_event_id ~ '^outbox-event_'),
+  tenant_id text NOT NULL CHECK (tenant_id ~ '^tenant_'),
+  event_id text NOT NULL CHECK (event_id ~ '^event_'),
   event_type text NOT NULL,
   schema_version integer NOT NULL CHECK (schema_version > 0),
   aggregate_type text NOT NULL,
   aggregate_id text NOT NULL,
-  correlation_id text NOT NULL CHECK (correlation_id LIKE 'correlation_%'),
-  causation_id text CHECK (causation_id IS NULL OR causation_id LIKE 'event_%'),
+  correlation_id text NOT NULL CHECK (correlation_id ~ '^correlation_'),
+  causation_id text CHECK (causation_id IS NULL OR causation_id ~ '^event_'),
   destination text NOT NULL,
   state text NOT NULL CHECK (
     state IN (
@@ -192,7 +192,7 @@ CREATE INDEX outbox_claim_idx
 CREATE TABLE events.inbox (
   namespace text NOT NULL,
   event_id text NOT NULL,
-  tenant_id text NOT NULL CHECK (tenant_id LIKE 'tenant_%'),
+  tenant_id text NOT NULL CHECK (tenant_id ~ '^tenant_'),
   provider text NOT NULL,
   account_ref text NOT NULL,
   payload_hash text NOT NULL,
