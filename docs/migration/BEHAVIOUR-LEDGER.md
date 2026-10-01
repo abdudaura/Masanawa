@@ -68,6 +68,18 @@ Features describe what exists; this ledger records observable and operational be
 | B-CHN-001 | CHN-001 | Web, WhatsApp and Telegram persist learned character turns through shared character-scoped continuity. | A | CWS cross-channel continuity test | analysed |
 | B-DEC-001 | DEC-001 | Low-confidence/model decision never authorizes paid/destructive execution. | A | CWS PLATFORM-FOCUS/JEV | analysed |
 | B-PLG-001 | PLG-001 | Extension failure must be isolated from the host process as far as plugin architecture permits. | B | N.E.K.O plugin process model | discovered |
+| B-OJ-SKL-001 | SKL-005 | External executable scripts are not imported by default; executable content requires explicit opt-in and provenance. | A | OpenJarvis importer + tests | analysed |
+| B-OJ-SKL-002 | SKL-005 | Symlinked imported resources are rejected before replacing an existing install, preventing traversal/out-of-package reads. | A | OpenJarvis importer + tests | analysed |
+| B-OJ-SKL-003 | SKL-005 | Unknown vendor metadata is preserved for provenance/compatibility rather than silently discarded. | B | OpenJarvis parser + tests | analysed |
+| B-OJ-SKL-004 | SKL-004 | Dependency cycles/depth excess are rejected and a bad cyclic cluster must not cause all healthy skills to disappear. | A | OpenJarvis dependency + manager | analysed |
+| B-OJ-SEC-001 | SEC-003 | Unreviewed imported skills requesting dangerous capabilities are blocked before installation unless explicitly reviewed/confirmed; Masanawa adds certification before production use. | A | OpenJarvis importer/security | analysed |
+| B-OJ-SEC-002 | SEC-004 | SSRF validation blocks private, loopback, link-local, metadata, mapped/disguised addresses and fails closed on DNS failure by default. | A | OpenJarvis SSRF tests | analysed |
+| B-OJ-PRV-001 | PRV-004 | Explicitly requested provider/engine is authoritative and never silently substituted if unavailable. | A | OpenJarvis engine discovery | analysed |
+| B-OJ-PRV-002 | PRV-004 | Default provider fallback considers health, model compatibility and local/cloud class rather than picking an arbitrary provider. | B | OpenJarvis engine discovery | analysed |
+| B-OJ-AGT-001 | AGT-006 | Repeated identical tool calls and runaway poll loops can be blocked with an observable guard event. | A | OpenJarvis loop guard tests | analysed |
+| B-OJ-AGT-002 | AGT-007 | Cost/token budget excess is represented as an execution state rather than silently continuing. | B | OpenJarvis budget tests | analysed |
+| B-OJ-LRN-001 | LRN-004 | Optimization requires a minimum trace count and writes a separate candidate overlay instead of mutating the base skill. | A | OpenJarvis skill optimizer tests | analysed |
+| B-OJ-TRC-001 | LRN-001 | Trace listeners unsubscribe at end of execution so later stray events cannot contaminate subsequent traces. | B | OpenJarvis trace collector tests | analysed |
 | B-LRN-001 | LRN-003 | Learned/optimized skill changes are candidates and require evaluation/certification before consequential production promotion. | A | Masanawa decision from CWS+OpenJarvis | designed |
 
 Deep behavior mining from tests remains required before Phase 0 completion.
