@@ -2,7 +2,7 @@
 
 Pinned revision: `cda43c762c605b69e4fcb9a791092508814bf6c4` (`develop` at source lock).
 
-Status: **ACTIVE / PARTIAL**. Core runtime, plugin, service, task-scheduler and SQL authority families are covered below. Do not mark elizaOS complete until provider/model, connector/channel, host/plugin-loading, security/access, database-schema, app/UI extension and remaining plugin families have descendant-level disposition.
+Status: **COVERED at the pinned revision**. Core/runtime/plugin/service/task/provider/connector/security/database/client/device/cloud families are dispositioned below. Repository-family closure proof: `docs/migration/coverage/ELIZAOS-INVENTORY.md`.
 
 Canonical boundary: elizaOS is a primary TypeScript component/plugin runtime donor. It is not Masanawa's Character identity, memory, workflow, provider, task or business-truth authority.
 
@@ -820,3 +820,15 @@ Acceptance gate:
 ## Remaining closure requirement
 
 Cloud/deployment ownership is now classified. The only remaining Phase 0B elizaOS blocker is a repository-wide descendant/file-family proof demonstrating that every meaningful production subtree at the pinned revision maps to one of the covered families or an explicit C/reference disposition.
+
+
+## Phase 0B closure
+
+Repository-family proof is complete in `ELIZAOS-INVENTORY.md`:
+- 77 pinned package-qualified Turbo workspaces mapped;
+- additional pinned local plugin/bridge packages discovered outside those task keys mapped;
+- runtime references to non-local packages separated from source-owned descendants;
+- unresolved canonical-authority conflicts: 0;
+- unresolved meaningful production families: 0.
+
+elizaOS is therefore **covered** under the corrected Phase 0B standard. This status means its relevant capabilities have A/B/C dispositions and canonical Masanawa owners; it does not make elizaOS a production dependency or domain authority.
