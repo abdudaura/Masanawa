@@ -2,7 +2,7 @@
 
 Pinned revision: `open-jarvis/OpenJarvis@c4da16e1ca3d21f4cc1905d4200063e564104f0f`
 
-Status: ACTIVE REMEDIATION
+Status: COVERED AT PINNED REVISION
 
 OpenJarvis is a structural donor, not a Masanawa runtime dependency. This file replaces the invalid earlier root-only coverage claim.
 
