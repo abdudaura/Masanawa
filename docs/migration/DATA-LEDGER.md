@@ -328,3 +328,16 @@ Phase 0 must continue mapping donor-specific stores/tables/files into these cano
 | D-AIT-007 | WorldRuntimeStatus | AI Town worldStatus/engine running | world | running/inactive/stopped/dead-recovery | operational | packages/world + ops | redesign | operator stop distinct from inactivity |
 | D-AIT-008 | DonorMemory | AI Town memories/reflections | player | created->retrieved/vacuumed | private | none as authority | C/reference | must route through packages/memory if behavior reused |
 | D-AIT-009 | ProviderRequestReceipt | absent/incomplete for Replicate callback | integration | requested->callback->reconciled | provider metadata | providers/workflows | Masanawa addition | required to close donor callback ambiguity |
+
+
+### Phase 0B elizaOS data concepts
+
+| ID | Canonical concept | Source | Scope | Lifecycle | Sensitivity | Destination | Treatment | Notes |
+|---|---|---|---|---|---|---|---|---|
+| D-ELZ-001 | PluginRegistrationOwnership | elizaOS plugin lifecycle | runtime/plugin | registering->active->unloading/reloaded/failed | internal | packages/plugins | preserve concept | reverse index of exact contributed refs |
+| D-ELZ-002 | PluginLoadDiagnostic | elizaOS host resolver | host/plugin | planned->loaded/failed/skipped | operational | ops/plugin host | redesign | includes load reason and redacted failure evidence |
+| D-ELZ-003 | ServiceRegistration | elizaOS service lifecycle | runtime | pending->starting->running/failed->draining->stopped | internal | runtime supervisor | redesign | explicit service type/multi-implementation |
+| D-ELZ-004 | SchedulerRegistrationFence | elizaOS task scheduler | worker runtime | registered->replaced/unregistered | internal | packages/workflows | preserve invariant | generation + registration ID |
+| D-ELZ-005 | ConnectorSourceMetadata | elizaOS connectors | channel adapter | registered->merged->unregistered | identity-adjacent | gateway registry | redesign | aliases, active/passive, projection metadata only |
+| D-ELZ-006 | ViewCapabilityGrant | elizaOS view broker | client/view | declared->resolved->allowed/denied | device-sensitive | security/client policy | redesign | human vs agent authority |
+| D-ELZ-007 | ElizaDomainDatabaseSchema | plugin-sql | runtime/domain | migrated | highly sensitive | none as authority | C/reference | must not become second canonical data model |
