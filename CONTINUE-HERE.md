@@ -31,126 +31,32 @@ Do not recreate donor project boundaries. Do not begin application feature imple
 
 ## Current phase
 
-**Phase 2 — Foundation.**
+**Phase 3 — Identity and world.**
 
-Phase 0A donor selection and Phase 0B exhaustive source forensics are closed at the revisions pinned in `docs/migration/SOURCE-LOCK.md`. See `docs/migration/PHASE-0A-CLOSURE-AUDIT.md` and `docs/migration/PHASE-0B-CLOSURE-AUDIT.md`.
+Phase 0A/0B, Phase 1 and Phase 2 are closed. Phase 2 closure evidence is in `docs/PHASE-2-CLOSURE-AUDIT.md`; Foundation CI run 213 passed the complete `pnpm check` gate on PostgreSQL 18 with 22 test files / 80 tests and production builds.
 
-Architecture is now being converted from donor evidence into implementation-ready Masanawa contracts.
-
-### Completed before landscape expansion
-
-- Foundation architecture and technology decisions.
-- Exact pinned revisions for the original donors.
-- Phase 0 forensic method and normalized migration ledgers.
-- ChatWithStars deep pass: character ownership/handoffs, cross-channel continuity, life engine, memory policy, Skill Contract v2, provider/commerce recovery, durable delivery idempotency and call-runtime readiness/race/recovery.
-- OpenJarvis deep pass: skill parser/import/dependency/manager, SkillTool adapter, engine discovery/fallback, tool confirmation, SSRF/security, agent loop/budget guards, traces/learning overlays and scheduler semantics.
-- N.E.K.O deep pass: memory lifecycle/liveness/dead-letter, foreground persistence, automatic-vs-explicit recall, process-isolated plugin lifecycle/hot reload, proactive-state persistence/repetition control, restricted computer use, optional speaker identity and embodied-interaction memory.
-- CyberVerse deep pass: playback epochs/stale-feedback rejection, RTP/AV sync, audio-only mode, avatar idle/speech synchronization, pipeline-generation races, terminal task/event/artifact semantics, reconnectable task events, foreground ACK/background-worker UX, worker allowlists/cancellation/timeouts and avatar warmup policy. CyberVerse remains GPL-clean behavior reference only.
-- Remaining ChatWithStars deep pass: tenant-safe social automation/review/cadence/redeploy dedupe, media-studio continuity/render/quality/lipsync, Ops acceptance evidence, privacy-safe observability, emergency kill switches and audited financial adjustments.
-- OpenClaw Phase 0A adoption pass complete: Gateway/channel/device-node architecture, one-trust-domain security mismatch, device pairing/reconciliation, durable approvals/current-authority checks, skill distribution/revision/session pinning, session/subagent behavior, steering, tool/plugin policy and memory-authority rules. ADR-0004 records that OpenClaw is the primary Gateway architectural donor but not Masanawa's kernel or public multi-tenant security boundary.
-- AIRI Phase 0A adoption pass complete: selected as primary digital-life/embodiment client donor. Captured Stage abstraction, Live2D/VRM/multi-renderer model-driver lifecycle, CCv3/AIRI package import boundary, plugin capability/permission/cleanup semantics, serialized voice-input lifecycle and computer-use lane separation. ADR-0005 explicitly keeps canonical identity/memory/provider/business truth outside AIRI client state.
-- Realtime presence Phase 0A comparison complete: LiveKit Server selected for production WebRTC transport, LiveKit Agents TypeScript selected as the primary realtime-session donor, Pipecat retained as a secondary frame/pipeline donor, AIRI retained for embodiment clients, and CyberVerse retained as GPL-clean behavior reference for synchronization/race/audio-only/task UX. ADR-0006 fixes the boundary.
-- Memory Phase 0A comparison complete: `packages/memory` selected as sole canonical memory authority; N.E.K.O selected for cognitive lifecycle, Mem0 for extraction/retrieval/evaluation, Letta Code for bounded working context + revision/conflict semantics, and OpenClaw for action-sensitive/compaction/provenance behavior. Canonical PostgreSQL records precede rebuildable vector/lexical/entity/temporal projections. ADR-0007 fixes the boundary. The pinned `letta-ai/letta` repo is a landing/historical pointer; implementation evidence comes from Letta Code.
-- Agent runtime/skills/plugins/workflows Phase 0A comparison complete: OpenJarvis selected as structural agent/skills/tools donor, elizaOS as TypeScript component/plugin donor, Microsoft Agent Framework as durable graph/checkpoint/HITL workflow donor, OpenClaw for steering/revision/current-authority semantics, and ChatWithStars for certification plus deterministic business side-effect truth. ADR-0008 fixes canonical ownership in `packages/agents`, `packages/skills`, `packages/plugins`, `packages/tools` and `packages/workflows`.
-- AI Town + ChatWithStars world simulation comparison complete: AI Town selected as primary simulation-mechanics donor (ordered inputs, monotonic tick/step time, generation conflict rejection, transactional commits, autonomous/spatial mechanics, liveness); ChatWithStars selected as primary life/canon/governance donor (Constitution gating, routines/story arcs, provenance/visibility, immutable approved canon, tenant/privacy separation). `packages/world` is sole canonical world/life authority. ADR-0009 fixes the boundary.
-
-### Reference source vault added
-
-Masanawa now pins **17 reference repositories** as Git submodules under `references/sources/`:
-
-- ChatWithStars
-- OpenJarvis
-- N.E.K.O
-- CyberVerse
-- AIRI
-- LiveKit Server
-- LiveKit Agents TypeScript
-- LiveKit Agents Python
-- Pipecat
-- Letta Server
-- Letta Code
-- Mem0
-- AI Town
-- elizaOS
-- Microsoft Agent Framework
-- OpenClaw
-- OpenClaw Agent Skills
-
-Exact paths, branches, SHAs and licenses are in `docs/migration/SOURCE-LOCK.md` and `docs/migration/LICENSE-LEDGER.md`.
-
-## Completed adoption decisions
-
-### OpenClaw
-
-See `docs/adr/0004-openclaw-adoption-boundary.md` and `docs/migration/OPENCLAW-ADOPTION-BOUNDARY.md`.
-
-Selected as primary Gateway/channel/device-node architectural donor, not Masanawa kernel or public multi-tenant security boundary.
-
-### AIRI
-
-See `docs/adr/0005-airi-digital-life-adoption-boundary.md` and `docs/migration/AIRI-ADOPTION-BOUNDARY.md`.
-
-Selected as primary architectural donor for digital-life clients/embodiment. It does not own canonical Character identity, memory, world/task truth or realtime transport.
-
-### Realtime presence
-
-See `docs/adr/0006-realtime-presence-adoption-boundary.md` and `docs/migration/PRESENCE-ADOPTION-BOUNDARY.md`.
-
-Selected composition:
-- LiveKit Server — WebRTC/media transport;
-- LiveKit Agents TypeScript — primary live agent-session/turn runtime;
-- Pipecat — secondary frame/pipeline processor donor;
-- AIRI — client Stage/embodiment;
-- CyberVerse — clean-room synchronization/race/audio-only/background-task behavior.
-
-Stable boundary is Masanawa `PresenceSession` + CharacterSession bridge, not donor object models.
-
-### Memory
-
-See `docs/adr/0007-memory-architecture-adoption-boundary.md` and `docs/migration/MEMORY-ADOPTION-BOUNDARY.md`.
-
-Selected composition:
-- `packages/memory` — sole canonical authority;
-- N.E.K.O — cognitive lifecycle/liveness/reflection donor;
-- Mem0 — extraction/hybrid retrieval/entity-temporal/evaluation donor;
-- Letta Code — working-context/revision/conflict/shared-attachment donor;
-- OpenClaw — action-sensitive/compaction/provenance donor.
-
-No donor memory store or agent/workspace object owns canonical truth.
-
-### Agent runtime, skills, plugins and workflows
-
-See `docs/adr/0008-agent-runtime-skills-plugins-workflows.md` and `docs/migration/RUNTIME-SKILLS-WORKFLOW-ADOPTION-BOUNDARY.md`.
-
-Selected composition:
-- OpenJarvis — agent strategy/guards, tools and structural SkillManager/executor;
-- elizaOS — TypeScript component/plugin runtime;
-- Microsoft Agent Framework — durable graph/checkpoint/HITL workflow semantics;
-- OpenClaw — steering/subagent/session policy, skill revision pinning and current-authority checks;
-- ChatWithStars — skill governance and deterministic business side-effect/reconciliation rules.
-
-Donor Agent/runtime/checkpoint objects never become Character, memory or business truth.
+The active implementation line remains `phase2-closure` until PR #16 is merged. Do not recreate foundation lifecycle/readiness/authentication/recovery work.
 
 ## Immediate next work
 
-Phase 2 Foundation is active. Read `docs/PHASE-2-FOUNDATION.md` first; it is the live implementation checklist.
+Begin Phase 3 from the canonical domain model, not from donor object models.
 
-Current code already contains root workspace/tooling, contracts/events/security primitives, the PostgreSQL adapter/event migrations, architecture guards, and Gateway/Worker/Ops health/readiness bootstraps.
+Required first read for Phase 3:
 
-Foundation CI now uses the committed pnpm lockfile with frozen installs and a real PostgreSQL 18 service. The PostgreSQL integration suite covers migration replay, durable idempotency conflict handling, stale Operation transitions, outbox fencing, and transactionally atomic PlatformEvent + outbox persistence including rollback on partial failure.
+1. `docs/PHASE-2-CLOSURE-AUDIT.md`;
+2. `docs/DOMAIN-MODEL.md`;
+3. `docs/DATA-ARCHITECTURE.md`;
+4. `docs/PRIVACY-SCOPES.md`;
+5. `docs/SOURCE-OWNERSHIP.md`;
+6. ADR-0009;
+7. `docs/migration/WORLD-SIMULATION-ADOPTION-BOUNDARY.md`;
+8. relevant ChatWithStars and AI Town source maps/ledger rows.
 
-Inbox admission/replay recovery and external receipt/reconciliation persistence are now implemented and PostgreSQL-18 verified. Durable replay identity is tenant-scoped; inbox work uses lease/fence reclaim; external receipt observations are append-only/idempotent; ambiguous Operations enter one durable reconciliation case under row-lock serialization.
+Start with canonical identity ownership and persistence needed by Phase 3: Tenant/User external identity links, Character + immutable/versioned Constitution state, and User↔Character Relationship. Then layer world/life state on those canonical IDs. Keep provider/channel subjects as external evidence/links, not UserIds.
 
-Security/approval PostgreSQL persistence is now implemented and PostgreSQL-18 verified: current policy revision/revocations are durable, exact Approval bindings are tenant/Operation-bound, and allow-once consumption is serialized so concurrent consumers cannot both succeed.
+Every Phase 3 write must use package-owned migrations/repositories and preserve tenant scope, revisions/CAS, audit/event/outbox rules, current authority and privacy boundaries.
 
-The OpenTelemetry correlation foundation is now implemented: `packages/telemetry` owns W3C trace propagation, canonical request/correlation linkage, OpenTelemetry log correlation fields and a strict privacy-safe attribute allowlist; Gateway/Worker/Ops ingress normalize correlation without trusting public caller-supplied canonical IDs.
-
-The active implementation branch is `phase2-closure`. Production service lifecycle and PostgreSQL/schema readiness are already implemented; do not recreate them. The branch also contains provider-neutral authentication evidence in `packages/security` and deterministic fault/restart test support in `test/support/fault-injection.ts`.
-
-Immediate work: validate `phase2-closure` through the full Foundation CI gate, fix any real failures, then perform the Phase 2 shared-foundation closure audit. Do not begin identity/memory/world/product migrations until that audit proves the shared gate is closed.
-
-Two post-freeze donor candidates were evaluated at pinned public revisions without reopening Phase 0: MemPalace and Paperclip. See `docs/migration/POST-FREEZE-SUPPLEMENTAL-DONORS.md`. They are bounded donors only: MemPalace can strengthen memory evidence/retrieval/index safety behind `packages/memory`; Paperclip can strengthen workflow/agent/Ops governance, budgets, approvals, recovery, artifacts, secrets and sandbox operations behind existing Masanawa authorities. Neither may become a second canonical runtime or source of truth.
-
+The post-freeze MemPalace/Paperclip assessment is recorded in `docs/migration/POST-FREEZE-SUPPLEMENTAL-DONORS.md`. Neither is a Phase 3 runtime dependency. Paperclip should receive a bounded delta pass before deep workflow/agent/Ops implementation; MemPalace before deep memory implementation.
 
 ## World simulation comparison — completed
 

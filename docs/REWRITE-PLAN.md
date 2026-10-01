@@ -15,7 +15,7 @@ Lifecycle:
 
 ## Phase 0A — Landscape expansion and donor selection
 
-Status: complete. Phase 0B is also closed; current active work is Phase 1 architecture specification.
+Status: complete. Phase 0B, Phase 1 and Phase 2 are also closed; current active work is Phase 3 identity and world.
 
 Inputs: all pinned submodules in `references/sources/` and `migration/SOURCE-LOCK.md`.
 
@@ -62,11 +62,13 @@ Finalize domain model, package boundaries, events, data/security, service contra
 
 ## Phase 2 — Foundation
 
-Status: active.
+Status: complete. Closure audit: `PHASE-2-CLOSURE-AUDIT.md`.
 
 Implement pnpm monorepo, strict TypeScript, contracts, IDs/errors/config, events, Fastify service bootstrap, Next.js shells, PostgreSQL migrations, auth/service auth, OpenTelemetry, test harnesses, architecture-boundary CI.
 
 ## Phase 3 — Identity and world
+
+Status: active.
 
 Implement canonical Character, versioned Constitution, voice/appearance refs, expertise metadata, relationships, life state, world events/routines and context compiler.
 
