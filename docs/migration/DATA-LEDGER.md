@@ -82,6 +82,12 @@ Inventory semantic state concepts before designing tables. Do not mirror donor s
 | D-OPS-003 | OperationalIncident | CWS | tenant+domain resource | durable lifecycle | internal | ops | redesign | stale/failure/needs-attention with safe action |
 | D-OPS-004 | KillSwitch | CWS | organization/feature scope | durable mutable | sensitive | ops/security | preserve concept | global emergency pause preserving lower-scope settings |
 | D-OPS-005 | FinancialAdjustment | CWS | financial account/contact | append-only request/evidence | financial | ops/commerce | preserve | direction, amount, reason, reference, actor |
+| D-KNO-001 | KnowledgeDocument | CyberVerse/OpenJarvis | character/task/organization | versioned | private/internal/public by source | tools/memory | redesign | source/provenance, chunk/index references |
+| D-KNO-002 | KnowledgeIndex | CyberVerse/OpenJarvis | derived from documents | rebuildable | mirrors source sensitivity | providers/memory | redesign | vector/lexical indexes never primary truth |
+| D-UGC-001 | ExtensionAssetPackage | N.E.K.O | platform/tenant/user | versioned | varies | plugin/asset marketplace | redesign | character/model/voice pack provenance/compatibility |
+| D-IDN-005 | VoiceEnrollment/CloneSource | N.E.K.O/CWS | character | versioned | biometric/sensitive | identity/security | redesign | consent/rights/provider-independent reference |
+| D-RTC-006 | PresenceRecording | CyberVerse | presence session | append artifact | highly sensitive | presence/storage | redesign | explicit policy/retention/provenance |
+| D-RGT-001 | AssetRightsProvenance | ChatWithStars | identity/studio/UGC asset | append/versioned | legal/internal/public projection | identity/studio/audit | preserve | source, rights basis, owner, restrictions |
 | D-AUD-001 | AuditEvent | CWS/OpenJarvis/N.E.K.O | org | append-only | sensitive | events/security | preserve concept | immutable actor/action trail |
 
 Phase 0 must continue mapping donor-specific stores/tables/files into these canonical concepts or explicit retirement.
