@@ -99,6 +99,13 @@ Features describe what exists; this ledger records observable and operational be
 | B-NEKO-VID-002 | VID-001 | Enrollment/suppression state is restored on unregister/cancel/failure, and sensitive computed embeddings are wiped on cancelled work. | A | N.E.K.O voice identity tests | analysed |
 | B-NEKO-EMB-001 | EMB-001 | Embodied interaction memory is deduplicated by event key/rank, allowing a stronger summary to replace a weaker repetition without logging every physical interaction. | B | N.E.K.O avatar memory contract tests | analysed |
 | B-NEKO-EMB-002 | EMB-001 | Missing/unsupported physical interaction details are not invented and free-form compatibility context cannot leak into the factual memory event. | A | N.E.K.O avatar memory contract tests | analysed |
+| B-OC-CHN-001 | CHN-003 | Each configured agent has an isolated workspace/session store and explicit channel/account routing; a channel binding must not silently collapse agent identities. | B | OpenClaw agent + multi-agent docs | discovered |
+| B-OC-AGT-001 | AGT-008 | Mid-run steering is checked before unstarted tool launches/next model call; a running tool is not retroactively cancelled unless explicit interrupt semantics apply. | B | OpenClaw agent runtime docs | discovered |
+| B-OC-AGT-002 | AGT-008 | Sequential tool calls skipped because of a steer receive paired synthetic results so the model's tool-call protocol remains consistent. | B | OpenClaw agent runtime docs | discovered |
+| B-OC-SKL-001 | SKL-008 | Skill precedence is deterministic across scopes and invalid skills are skipped without preventing valid siblings from loading. | B | OpenClaw skills docs | discovered |
+| B-OC-SEC-001 | SEC-005 | A previously attested workspace that disappears is not silently reseeded as a fresh identity/workspace. | A | OpenClaw agent runtime docs | discovered |
+| B-OC-MEM-001 | MEM-013 | Pre-compaction memory flush uses private housekeeping context and must not leak housekeeping messages into later user turns. | A/B | OpenClaw memory docs | discovered |
+| B-OC-MEM-002 | MEM-013 | Memory maintenance requiring write access is skipped when sandbox/workspace policy is read-only rather than bypassing sandbox restrictions. | A | OpenClaw memory docs | discovered |
 | B-LRN-001 | LRN-003 | Learned/optimized skill changes are candidates and require evaluation/certification before consequential production promotion. | A | Masanawa decision from CWS+OpenJarvis | designed |
 
 Deep behavior mining from tests remains required before Phase 0 completion.
