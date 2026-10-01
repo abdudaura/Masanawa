@@ -141,7 +141,9 @@ Foundation CI now uses the committed pnpm lockfile with frozen installs and a re
 
 Inbox admission/replay recovery and external receipt/reconciliation persistence are now implemented and PostgreSQL-18 verified. Durable replay identity is tenant-scoped; inbox work uses lease/fence reclaim; external receipt observations are append-only/idempotent; ambiguous Operations enter one durable reconciliation case under row-lock serialization.
 
-The immediate unresolved foundation gap is security/approval PostgreSQL persistence and concurrency testing. Persist current policy revision/revocation evidence and exact Approval bindings, then prove stale policy/revocation rejection and one-time approval consumption remains single-use under concurrent transactions. Continue `docs/PHASE-2-FOUNDATION.md` in order and do not begin product-domain migrations yet.
+Security/approval PostgreSQL persistence is now implemented and PostgreSQL-18 verified: current policy revision/revocations are durable, exact Approval bindings are tenant/Operation-bound, and allow-once consumption is serialized so concurrent consumers cannot both succeed.
+
+The immediate unresolved foundation gap is the OpenTelemetry correlation foundation. Add privacy-minimized trace/log correlation around canonical request/correlation/operation identities without making telemetry authoritative or exporting raw private content by default. Then continue `docs/PHASE-2-FOUNDATION.md` in order and do not begin product-domain migrations yet.
 
 
 ## World simulation comparison — completed
