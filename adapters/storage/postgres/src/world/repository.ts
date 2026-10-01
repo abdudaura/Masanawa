@@ -713,6 +713,34 @@ export async function commitWorldGeneration(
   }
 
   let inputs: InputRow[] = [];
+  const lifeStates: CharacterLifeState[] = [];
+  for (const change of lifeStateChanges) {
+    lifeStates.push(
+      await applyLifeStateChange(
+        client,
+        input.tenantId,
+        input.worldId,
+        input.simulationTime,
+        input.committedAt,
+        change,
+      ),
+    );
+  }
+
+  const worldEvents: WorldEvent[] = [];
+  for (const event of eventDrafts) {
+    worldEvents.push(
+      await appendWorldEvent(
+        client,
+        current,
+        nextGenerationNumber,
+        input.simulationTime,
+        input.committedAt,
+        event,
+      ),
+    );
+  }
+
   if (sequences.length > 0) {
     const claimed = await client.query<InputRow>(
       `SELECT tenant_id,
@@ -746,6 +774,24 @@ export async function commitWorldGeneration(
   }
 
   const nextGenerationNumber = input.expectedGenerationNumber + 1;
+
+  const lifeStateChanges = input.lifeStateChanges ?? [];
+  const seenLifeStateCharacters = new Set<string>();
+  for (const change of lifeStateChanges) {
+    if (seenLifeStateCharacters.has(change.characterId)) {
+      throw new TypeError("A generation cannot update one Character life state twice");
+    }
+    seenLifeStateCharacters.add(change.characterId);
+  }
+
+  const eventDrafts = input.events ?? [];
+  const seenEventIds = new Set<string>();
+  for (const event of eventDrafts) {
+    if (seenEventIds.has(event.worldEventId)) {
+      throw new TypeError("A generation cannot admit one WorldEvent twice");
+    }
+    seenEventIds.add(event.worldEventId);
+  }
 
   const generationResult = await client.query<GenerationRow>(
     `INSERT INTO world.generations (
@@ -848,6 +894,8 @@ export async function commitWorldGeneration(
     world: asWorld(worldResult.rows[0]),
     generation: asGeneration(generationResult.rows[0]!),
     completedInputs: Object.freeze(inputs.map(asInput)),
+    events: Object.freeze(worldEvents),
+    lifeStateChanges: Object.freeze(lifeStates),
   });
 }
 
