@@ -382,3 +382,20 @@ Deep behavior mining from tests remains required before Phase 0 completion.
 | B-MEM-026 | MEM-024 | A background memory worker may make a local committed change even if remote sync fails, but failure is surfaced through task status rather than falsely reporting remote success. | A/B | turn-cleanup memory worker e2e | analysed |
 | B-CTX-001 | CTX-001 | Context compaction responds to bounded context pressure and produces working-context projections without deleting or rewriting durable canonical memory. | A | compaction/context-pressure evidence + ADR-0007 | selected |
 | B-ATT-001 | ATT-001 | Attachment send/ingestion policy checks recipient, MIME and realpath-bounded source directories; symlink/path escape fails closed. | A/B | WhatsApp/Slack attachment policy/tests | analysed |
+
+### Phase 0B Mem0 memory invariants
+
+| ID | Feature | Required behavior | Class | Evidence | Status |
+|---|---|---|---|---|---|
+| B-MEM-030 | MEM-030 | Memory scope identifiers come from typed authorization/scope inputs only; arbitrary metadata cannot create, overwrite or move a memory into another identity scope. | A | Python/TS identity-key stripping and scope tests | analysed |
+| B-MEM-031 | MEM-030 | Composite session/scope keys are collision-safe even when identifiers contain delimiter characters. | A | session-scope tests | analysed |
+| B-MEM-032 | MEM-031 | Provider extraction failure is distinguishable from successful extraction of zero memories; a failed provider call cannot masquerade as “nothing worth remembering.” | A | extraction pipeline LLMError behavior | analysed |
+| B-MEM-033 | MEM-031 | Only memories confirmed persisted by canonical storage may be returned as ADD success or linked into history/entity projections. | A | phased persist/history/entity pipeline | analysed |
+| B-MEM-034 | MEM-031 | Exact duplicate facts within existing scope or the same batch are suppressed before canonical insertion; dedup is an ingestion aid, not cross-scope merging. | A/B | hash dedup pipeline | analysed |
+| B-MEM-035 | MEM-032 | Every vector backend exposed to retrieval normalizes its score contract so larger means more relevant before thresholds/ranking are applied. | A | score-normalization tests | analysed |
+| B-MEM-036 | MEM-032 | Hybrid ranking combines semantic, lexical and entity evidence only within already-authorized memory scope; entity/index failures degrade retrieval rather than widening scope. | A | hybrid search/entity boost pipeline | analysed |
+| B-MEM-037 | MEM-033 | Reranker failure leaves original candidate objects unchanged and fallback still honors configured/per-call top-k. | A/B | reranker fallback tests | analysed |
+| B-MEM-038 | MEM-034 | Entity indexes are rebuildable projections; entity insert/update/cleanup failure cannot invalidate an already persisted canonical memory. | A/B | entity-link pipeline | analysed |
+| B-MEM-039 | MEM-035 | Update/delete history is recorded only after storage mutation succeeds; identity scope remains immutable through updates. | A | update/delete pipeline | analysed |
+| B-MEM-040 | MEM-036 | Expiration uses a validated calendar date and hides expired records by default, while explicit historical/include-expired queries may request them under normal authorization. | B | expiration utility + search/get filtering | analysed |
+| B-MEM-041 | MEM-036 | Do not attribute full temporal reference-date semantics to Mem0 OSS at this pin; unsupported timestamp/reference_date inputs fail explicitly rather than silently approximating temporal search. | A | main.py temporal guards | analysed |
