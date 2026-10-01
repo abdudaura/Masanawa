@@ -56,7 +56,7 @@ describe("world canon governance", () => {
       resourceKey: worldEventResourceKey(worldId, eventId),
       riskClass: "consequential",
     });
-    expect(binding.argumentsFingerprint).toMatch(/^sha256:/u);
+    expect(binding.argumentsFingerprint).toMatch(/^[0-9a-f]{64}$/u);
   });
 
   it("rejects missing capability, wrong World scope and unadmitted approval", () => {
