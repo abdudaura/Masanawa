@@ -149,9 +149,10 @@ Phase 0A is complete. Phase 0B is in remediation because the first root-level sw
 9. LiveKit Agents Python parity/delta coverage is complete: 1,472-file manifest, 750 plugin dispositions, realtime failover, diarization, evaluation and telemetry privacy deltas are recorded without creating a second runtime.
 10. Pipecat exhaustive descendant coverage is complete: 1,820-file manifest, 275 integration dispositions, speculative-turn, interruptibility, context-commit and pause/resume liveness invariants are recorded.
 11. Letta landing repository is verified reference-only (12 non-runtime files). Letta Code exhaustive coverage is complete: 2,429-file manifest, 739 integration dispositions, memory revision/conflict/shared-memory/context-compaction authority map and ledger invariants are recorded.
-12. **Next:** sweep Mem0 exhaustively for extraction, hybrid retrieval, entity/temporal memory, evaluation and provider/storage adapters.
-13. No source may be marked `covered` from root names, filename counts or generic family assertions alone.
-14. Every retained capability must have exact implementation/test evidence, durable-state mapping, integration failure semantics, one canonical owner and an observable acceptance/parity gate.
+12. Mem0 exhaustive descendant coverage is complete at its pinned revision: 1,835-file manifest, 772 integration/provider/server dispositions, scope hardening, extraction outcome semantics, hybrid semantic/BM25/entity retrieval, reranker fallback, entity projection, mutation history and expiration are recorded. The pinned OSS source is explicitly **not** credited with a full reference-date temporal retrieval engine.
+13. **Next:** sweep AI Town exhaustively for ordered inputs, simulation tick/step time, transactional world commits, generation/conflict rejection, liveness, autonomous-character mechanics, conversations and spatial simulation while preserving `packages/world` as sole canonical world/life authority.
+14. No source may be marked `covered` from root names, filename counts or generic family assertions alone.
+15. Every retained capability must have exact implementation/test evidence, durable-state mapping, integration failure semantics, one canonical owner and an observable acceptance/parity gate.
 
 ## World simulation comparison — completed
 
