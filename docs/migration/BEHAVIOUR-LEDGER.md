@@ -494,3 +494,24 @@ Deep behavior mining from tests remains required before Phase 0 completion.
 | B-MAF-020 | persistence | hosted checkpoint index updates use bounded optimistic concurrency and retain active sibling branches | .NET FoundryJsonCheckpointStore | concurrent writers cannot lose checkpoints; retention is branch-aware |
 | B-MAF-021 | providers | generic provider abstraction does not imply universal retry safety; streaming retry is deliberately separate | BaseChatClient + auto-retry sample | retry policy is provider/error/operation specific |
 | B-MAF-022 | declarative | workflow expression environment exposes only caller config by default; ambient env fallback is reference-allowlisted | declarative workflow state | declarative definitions cannot enumerate/inherit arbitrary process secrets |
+
+
+### Phase 0B OpenClaw behavior invariants
+
+| ID | Domain | Invariant / behavior | Source evidence | Masanawa requirement |
+|---|---|---|---|---|
+| B-OCL-001 | channels | transport ack/cursor advancement happens only after durable ingress append where provider retry is available | durable-ingress guide | ack-after-admission |
+| B-OCL-002 | channels | completed ingress rows tombstone rather than delete, so late redelivery is durably rejected | durable-ingress guide | restart-safe replay dedupe |
+| B-OCL-003 | channels | restart reopens the same account queue; reload does not run a second replay mechanism | durable-ingress guide | one canonical restart recovery path |
+| B-OCL-004 | side-effects | ingress-triggered non-idempotent effects require separate stable effect claims; success-before-claim-commit remains an explicit ambiguity window | durable-ingress guide | no blind retry after possible external success |
+| B-OCL-005 | security | asynchronously prepared policy must be rechecked for current revision immediately before consequential action | durable-ingress dynamic policy | stale policy cannot commit |
+| B-OCL-006 | devices | consumed bootstrap bearer with unconfirmed response delivery becomes deliveryUncertain, not success/expired guess | device protocol schema | reconcile uncertain credential handoff by opaque setup ID |
+| B-OCL-007 | devices | cross-device token rotation withholds replacement bearer and reports delivery mode | device protocol schema | token delivery facts are explicit and scoped |
+| B-OCL-008 | devices | node command retry is only safe for proven pre-execution readiness failure; ambiguous post-dispatch outcomes are not generic retry candidates | node invoke test family | device effects reconcile after ambiguity |
+| B-OCL-009 | approvals | approval observers/managers do not own durable decision truth; durable store settlement is canonical | exec approval lifecycle | process retirement/observer loss cannot invent verdict |
+| B-OCL-010 | approvals | storage mutation captures authority, waits for FIFO, then reasserts current authority before commit | operator approval store | no stale async approval mutation |
+| B-OCL-011 | approvals | native commit receipt can be observed even when command reply is lost | operator approval store | committed decision cannot be repeated because response was lost |
+| B-OCL-012 | security | DM/session/context visibility is not hostile multi-tenant host isolation | gateway access-control docs | public tenancy re-authenticates outside OpenClaw |
+| B-OCL-013 | skills | skill revision includes supporting files and executable bits; identical save no-ops and stale edit conflicts | skills docs | immutable content-addressed skill versions |
+| B-OCL-014 | skills | existing session keeps exact skill IDs/revisions when new revision is published/disabled/removed | skills docs | session reproducibility and revision pinning |
+| B-OCL-015 | skills | skill source precedence/visibility does not grant tools, credentials, host rights or authorization | skills docs | capability authority remains separate |
