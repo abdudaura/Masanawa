@@ -2,7 +2,7 @@
 
 Pinned revision: `edf1e2f436fa2a5375c98052180a090a57223f9e`.
 
-Status: Phase 0A source-map and adoption pass complete.
+Status: Phase 0B exhaustive skill/workflow coverage **COMPLETE** at the pinned revision. Exact closure: `docs/migration/coverage/OPENCLAW-AGENT-SKILLS.md`.
 
 License: MIT at the pinned baseline.
 
@@ -64,12 +64,14 @@ Use as:
 
 If individual scripts are directly adapted later, record their exact path/commit/license in the direct-adaptation provenance record.
 
-## Phase 0B follow-up
+## Phase 0B closure
 
-Classify each reusable workflow/skill as:
+All 8 pinned skills are classified:
 - platform developer tooling;
 - acceptance/parity tooling;
 - optional imported operational skill;
 - or reference-only.
 
-Do not install this repository wholesale into production agents.
+Installer, validator and repository check orchestration are covered. No production skill runtime exists in this donor, and unresolved canonical-authority conflicts are zero.
+
+Do not install this repository wholesale into production agents. Import individual skills only through Masanawa `packages/skills` certification/provenance rules.
