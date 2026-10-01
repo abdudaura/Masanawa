@@ -25,8 +25,9 @@ Do not recreate donor project boundaries. Do not begin application feature imple
 13. `docs/migration/BEHAVIOUR-LEDGER.md`
 14. `docs/migration/DATA-LEDGER.md`
 15. `docs/migration/INTEGRATION-LEDGER.md`
-16. `docs/migration/LICENSE-LEDGER.md`
-17. relevant files under `docs/migration/sources/`.
+16. relevant files under `docs/migration/sources/`.
+
+`docs/migration/LICENSE-LEDGER.md` is compliance/provenance metadata and is **not** part of architectural feature selection.
 
 ## Current phase
 
@@ -195,7 +196,7 @@ Decision: `packages/memory` owns canonical scoped PostgreSQL records, provenance
 - Private relationship memory never silently becomes shared character/world truth.
 - Reference submodules are never production imports.
 - No donor repository becomes a hidden runtime boundary.
-- CyberVerse GPL code is reference-only by default.
+- Licensing/provenance never decides feature survival. Useful donor capabilities remain A/B and are independently rewritten when direct reuse is unsuitable.
 - Nothing is migrated without ledger evidence.
 
 ## Definition of done for Phase 0A — achieved 2026-10-01
