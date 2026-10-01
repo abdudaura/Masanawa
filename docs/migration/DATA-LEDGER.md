@@ -313,3 +313,18 @@ Phase 0 must continue mapping donor-specific stores/tables/files into these cano
 | D-PIP-002 | SpeculativeTurn | Pipecat | user turn | proposed->held->confirmed/cancelled | private/session | presence | redesign | provisional transcript/context + held output references |
 | D-PIP-003 | AudioOutputContext | Pipecat | generated speech | started->audio->stopped/interrupted | private/runtime | presence | redesign | provider-independent ordering/pause evidence |
 | D-PIP-004 | TurnInferenceTrigger | Pipecat | user turn | emitted->confirmed/stale | private/session | presence/telemetry | redesign | distinct from final semantic turn stop |
+
+
+### Phase 0B AI Town data concepts
+
+| ID | Canonical concept | Source | Scope | Lifecycle | Sensitivity | Destination | Treatment | Notes |
+|---|---|---|---|---|---|---|---|---|
+| D-AIT-001 | SimulationInput | AI Town `inputs` | world | admitted->processing->succeeded/failed | tenant/world command data | packages/world | redesign | ordered number, received/effective time, idempotency and terminal outcome |
+| D-AIT-002 | WorldGeneration | AI Town `engines.generationNumber` | world | monotonic | internal | packages/world | preserve invariant | CAS boundary for competing workers |
+| D-AIT-003 | SimulationStep | AI Town engine progress | world | started->committed/rejected | internal | packages/world | redesign | effective time, prior/new generation, processed input range |
+| D-AIT-004 | WorldActorState | AI Town player/agent hot state | world actor | active->archived | potentially private/shared | packages/world | redesign | never canonical Character identity |
+| D-AIT-005 | WorldInteraction | AI Town conversation + participatedTogether | world | invited->active->ended->archived | shared/private by policy | packages/world + events | redesign | generalized beyond two-person conversations |
+| D-AIT-006 | SpatialStateHistory | AI Town historicalLocations | world actor | sampled->projected/expired | location-sensitive | packages/world projections | redesign | optional, rebuildable/policy-retained |
+| D-AIT-007 | WorldRuntimeStatus | AI Town worldStatus/engine running | world | running/inactive/stopped/dead-recovery | operational | packages/world + ops | redesign | operator stop distinct from inactivity |
+| D-AIT-008 | DonorMemory | AI Town memories/reflections | player | created->retrieved/vacuumed | private | none as authority | C/reference | must route through packages/memory if behavior reused |
+| D-AIT-009 | ProviderRequestReceipt | absent/incomplete for Replicate callback | integration | requested->callback->reconciled | provider metadata | providers/workflows | Masanawa addition | required to close donor callback ambiguity |
