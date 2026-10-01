@@ -177,3 +177,13 @@ Auth, retry, idempotency and reconciliation fields still require source-by-sourc
 | I-OCL-017 | major bundled channel adapters (WhatsApp/Telegram/Discord/Slack/Signal/Matrix/LINE/iMessage) | OpenClaw | inbound/outbound messaging, status, typing, media and account lifecycle | external messages/media/provider acks | private content/account/conversation IDs | gateway channel adapters | analysed; carrier deltas normalized behind canonical admission/idempotency/current-authority contract |
 | I-OCL-018 | OpenClaw Android/iOS/macOS/headless node hosts | OpenClaw | paired device capabilities, native UI, camera/location/data, desktop/worker invocation | device reads/actions/notifications/host execution | highly sensitive device data + credentials | device-node/native client adapters | analysed; server pairing/policy/generation authority retained, local stores are caches only |
 | I-OCL-019 | OpenClaw Skill Workshop/Custodian automation | OpenClaw | proposal authoring/revision/apply, scheduled review, system-agent playbook discovery | filesystem skill writes + scheduled agent runs | executable content/private review context | packages/skills + workflows adapters | analysed; canonical skill authority/recovery stays in packages/skills |
+
+
+### Phase 0B OpenClaw Agent Skills integration additions
+
+| ID | Provider/system | Source repo | Purpose/capabilities | Side effects | Data sensitivity | Masanawa adapter | Status |
+|---|---|---|---|---|---|---|---|
+| I-OAS-001 | local skill filesystem/install targets | OpenClaw Agent Skills | authoring/install/copy/symlink | filesystem mutation | executable/content | developer skill importer | analysed; never canonical persistence |
+| I-OAS-002 | Codex/Claude/Pi/OpenClaw local session logs | OpenClaw Agent Skills | transcript/viewer/review provenance | local reads/export | highly sensitive | developer/support tools | analysed; redaction/publication boundary required |
+| I-OAS-003 | Beam receiver | OpenClaw Agent Skills | read-only session sharing | HTTPS upload | private developer transcript projection | optional developer adapter | analysed |
+| I-OAS-004 | Crabbox/Testbox/AWS/SSH/container proof backends | OpenClaw Agent Skills | clean/cross-OS/live validation | remote compute/network | source/credentials/test data | CI/developer proof adapters | analysed; source-trust isolation required |
