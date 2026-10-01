@@ -1,95 +1,101 @@
 # Continue Here
 
-This is the mandatory handoff entry point for every new Masanawa implementation session.
+Mandatory handoff entry point for every new Masanawa session.
 
-## Current mission
+## Mission
 
-Build Masanawa from the ground up as one clean platform that delivers the validated union of:
-1. `Baatiku/chatwithstars`
-2. `open-jarvis/OpenJarvis`
-3. `Project-N-E-K-O/N.E.K.O`
-4. `Lynpoint/CyberVerse`
+Build one clean Masanawa platform from the strongest validated capabilities found across the pinned reference source vault.
 
-Do **not** merge those repositories into this repository. They are source references and architecture donors.
+Do not recreate donor project boundaries. Do not begin application feature implementation while Phase 0 remains open.
 
 ## Mandatory read order
 
-Before changing code:
 1. `README.md`
 2. `docs/VISION.md`
 3. `docs/ARCHITECTURE.md`
 4. `docs/TECHNOLOGY.md`
 5. `docs/SOURCE-OWNERSHIP.md`
 6. `docs/REWRITE-PLAN.md`
-7. `docs/migration/SOURCE-LOCK.md`
-8. `docs/migration/FORENSICS-METHOD.md`
-9. `docs/migration/FEATURE-LEDGER.md`
-10. `docs/migration/BEHAVIOUR-LEDGER.md`
-11. `docs/migration/DATA-LEDGER.md`
-12. `docs/migration/INTEGRATION-LEDGER.md`
-13. `docs/migration/LICENSE-LEDGER.md`
-14. all four files under `docs/migration/sources/`.
+7. `docs/migration/LANDSCAPE-EXPANSION.md`
+8. `docs/migration/SOURCE-LOCK.md`
+9. `references/README.md`
+10. `references/SOURCES.md`
+11. `docs/migration/FORENSICS-METHOD.md`
+12. Feature/Behaviour/Data/Integration/License ledgers
+13. relevant source-map files in `docs/migration/sources/`.
 
 ## Current phase
 
-**Phase 0 — Source forensics and completeness inventory.**
+**Phase 0A — Landscape Expansion and donor selection.**
 
-### Completed
-- Foundation architecture and technology decisions.
-- Exact pinned donor revisions.
-- Phase 0 forensic method.
-- Pass 1 repository source maps for all four donors.
-- First normalized expansion of feature, behavior, data and integration ledgers.
-- ChatWithStars deep pass: character ownership/handoffs, cross-channel continuity, life engine, memory policy, Skill Contract v2, provider/commerce recovery, durable delivery idempotency and call-runtime race/recovery/readiness behavior.
-- OpenJarvis deep pass: skill parser/import/dependency/manager, skill-as-tool adapter, engine discovery/fallback, tool confirmation, SSRF/security references, agent loop/budget guards, traces/learning overlays and scheduler semantics.
-- N.E.K.O deep pass: memory lifecycle/liveness/dead-letter behavior, foreground persistence, explicit-vs-automatic recall, process-isolated plugin lifecycle/hot reload, proactive state persistence/repetition controls, restricted computer use, optional speaker identity, and embodied-interaction memory semantics.
+### Completed before expansion
+- foundation architecture/technology docs;
+- original four source maps;
+- substantial ChatWithStars deep mining;
+- substantial OpenJarvis deep mining;
+- N.E.K.O memory/plugin/proactivity deep mining begun;
+- normalized feature/behavior/data/integration ledgers.
 
-### Not yet complete
-The ledgers are NOT exhaustive. Do not begin Masanawa application feature implementation yet.
+### Reference vault now added
+17 pinned submodules under `references/sources/`, covering:
+- ChatWithStars, OpenJarvis, N.E.K.O, CyberVerse;
+- AIRI;
+- LiveKit server + Agents TS + Agents Python;
+- Pipecat;
+- Letta server + Letta Code;
+- Mem0;
+- AI Town;
+- elizaOS;
+- Microsoft Agent Framework;
+- OpenClaw + OpenClaw Agent Skills.
+
+### Why OpenClaw is a major donor
+Do not treat OpenClaw as merely a skill source. Deep-mine:
+- Gateway/control plane;
+- 20+ channel architecture and account bindings;
+- per-agent workspaces/session isolation;
+- device nodes/platform apps;
+- model/tool/plugin swapping;
+- skills precedence/install/update/verify/workshop/ClawHub;
+- steering/interrupt/follow-up queues;
+- local-first credentials/state;
+- memory search, compaction flush, dreaming, action-sensitive memory and memory-wiki;
+- sandbox/security/approval/operator flows.
 
 ## Immediate next work
 
-Continue Phase 0 Passes 2–6, source by source, using the source-map follow-up sections.
+Do **not** resume CyberVerse first.
 
-Recommended order:
-1. CyberVerse deep mine: WebRTC/media tests, Persona/SubAgent, task store/recovery, avatar sync, visual input.
-2. Return to remaining ChatWithStars areas: deeper migrations, automation, media-studio and Ops.
-3. Resolve donor overlaps/conflicts exposed by N.E.K.O/CyberVerse, especially realtime voice, avatar, memory and background-task boundaries.
-4. Perform repository-wide coverage proof before ending Phase 0.
-
-For each pass, update all affected ledgers and source-map coverage notes in the same PR.
+1. Complete initial source maps for every expanded donor.
+2. Deep-mine OpenClaw because it materially overlaps gateway/channels/skills/memory/device execution.
+3. Deep-mine AIRI for digital-life/embodiment/client architecture.
+4. Compare LiveKit Agents/Server + Pipecat + CyberVerse for presence.
+5. Compare Letta + Mem0 + N.E.K.O + OpenClaw for memory.
+6. Compare OpenJarvis + elizaOS + Microsoft Agent Framework + OpenClaw for agent/runtime/workflow/plugins.
+7. Compare AI Town + CWS for world simulation.
+8. Update donor decisions and ledgers.
+9. Only after Phase 0A freeze, resume remaining Phase 0B exhaustive mining.
 
 ## Non-negotiable rules
 
-- One identity system.
-- One memory system.
-- One skill system.
-- One tool registry.
-- One agent execution framework.
-- One provider registry.
-- One event model.
-- One task/workflow engine.
-- One world model.
-- Channels are adapters, not alternate brains.
-- Characters are domain entities, not prompts or agent classes.
-- Providers never own domain truth.
-- UI never owns business truth.
-- Consequential side effects require deterministic validation, authorization, idempotency and auditability.
-- Private relationship memory never becomes shared character/world truth accidentally.
-- No legacy directory may be copied wholesale.
-- No temporary second runtime is allowed.
-- CyberVerse GPL code must not be copied into Masanawa core without an explicit licensing ADR and review.
-- Nothing is considered migrated without a ledger row and parity/acceptance evidence.
-
-## Definition of done for Phase 0
-
-Phase 0 finishes only when every meaningful subsystem/feature in the four pinned sources is represented in the ledgers and classified:
-- **A — preserve behaviour**
-- **B — preserve capability, redesign implementation**
-- **C — reference/retire explicitly**
-
-Every overlap must have a donor decision and a Masanawa destination.
+- one identity system;
+- one memory system;
+- one skill system;
+- one tool registry;
+- one agent execution framework;
+- one provider registry;
+- one event model;
+- one workflow engine;
+- one world model;
+- channels/device nodes are adapters;
+- characters are domain entities, not prompts;
+- providers/UIs/models never own business truth;
+- consequential side effects require deterministic auth/idempotency/reconciliation/audit;
+- private relationship memory never silently becomes shared world truth;
+- reference submodules are never production imports;
+- CyberVerse GPL code is reference-only by default;
+- no capability is migrated without ledger evidence.
 
 ## If context is missing
 
-Do not ask the user to repeat prior conversations. The repository is the source of truth. Read these docs, inspect the pinned source revisions and continue from the active phase.
+Do not ask the user to repeat previous discussions. The repository and pinned reference vault are the source of truth.
