@@ -177,3 +177,18 @@ Features describe what exists; this ledger records observable and operational be
 | B-PRS-ARCH-001 | RTC-014 | LiveKit worker/job/session state is realtime infrastructure state and cannot become the durable Masanawa Task or Character identity record. | A | ADR-0006 | designed |
 
 Deep behavior mining from tests remains required before Phase 0 completion.
+
+
+### Phase 0A memory comparison additions
+
+| ID | Feature | Required behavior | Class | Evidence | Status |
+|---|---|---|---|---|---|
+| B-MEM-010 | MEM-023 | Resolve tenant, character, relationship and visibility authorization before candidate lookup; retrieval scoring can never widen scope. | A | CWS privacy invariant + Mem0 explicit scope pinning | selected |
+| B-MEM-011 | MEM-018 | Extraction runs asynchronously/idempotently after foreground persistence; failure or poison input cannot block conversation or later memory work. | A/B | Mem0 extraction architecture + N.E.K.O liveness | selected |
+| B-MEM-012 | MEM-018 | Contradictory/new facts append with provenance and validity/supersession state instead of silently destroying historical evidence. | A/B | Mem0 ADD-only extraction + N.E.K.O archival | selected |
+| B-MEM-013 | MEM-019 | Hybrid retrieval may combine semantic, lexical, entity and temporal signals only after scope filtering and must return provenance with compiled context. | A/B | Mem0 retrieval + Masanawa privacy boundary | selected |
+| B-MEM-014 | MEM-021 | Always-visible working blocks are bounded compiled views; editing/projecting a block cannot mutate authored Character identity implicitly. | A/B | Letta Code memory blocks + Masanawa identity invariant | selected |
+| B-MEM-015 | MEM-022 | Concurrent/stale memory workers cannot overwrite a newer revision; repair/retry transitions are token/version guarded and idempotent. | A | Letta Code memory operation/conflict repair | selected |
+| B-MEM-016 | MEM-020 | Expiration hides ordinary recall without physical deletion; tombstone and physical purge remain separate policy-governed states. | B | Mem0 expiration/decay + Masanawa retention policy | selected |
+| B-MEM-017 | MEM-024 | Vector/lexical/entity/temporal indexes can be deleted and rebuilt from canonical records without changing authorized semantic truth. | A | ADR-0007 | selected |
+| B-MEM-018 | MEM-016 | Memory evaluation reports privacy leakage, retrieval accuracy, provenance correctness, context tokens, latency/cost and liveness under fixed retrieval budgets. | B | Mem0 evaluation methodology + Masanawa privacy requirements | selected |

@@ -117,3 +117,17 @@ Inventory semantic state concepts before designing tables. Do not mirror donor s
 | D-PRS-005 | PresenceRecordingPolicy | LiveKit + Masanawa | tenant/user/session | durable policy + runtime projection | highly sensitive | security/presence | redesign | consent/redaction categories compile to framework recording options |
 
 Phase 0 must continue mapping donor-specific stores/tables/files into these canonical concepts or explicit retirement.
+
+
+### Phase 0A memory comparison additions
+
+| ID | Canonical concept | Source | Scope | Lifecycle | Sensitivity | Destination | Treatment | Notes |
+|---|---|---|---|---|---|---|---|---|
+| D-MEM-014 | MemoryRecord | Masanawa synthesis/N.E.K.O/Mem0 | explicit tenant+character+relationship/shared/world | append+versioned lifecycle | mirrors source; often private | memory | canonical | typed content, provenance, confidence, event/validity time, lifecycle |
+| D-MEM-015 | MemoryScope | CWS + Mem0 scope discipline | tenant/character/relationship/shared/world/task | durable/versioned policy | security-sensitive | memory/security | canonical | authorization input, never inferred from embedding similarity |
+| D-MEM-016 | MemoryRevision | Letta Code + N.E.K.O | memory record | append-only revision chain | mirrors record | memory | redesign | optimistic/version guarded; stale workers cannot overwrite newer state |
+| D-MEM-017 | MemoryTemporalProjection | Mem0 | memory record | rebuildable | mirrors record | memory | redesign | event time/type/precision/validity for temporal retrieval |
+| D-MEM-018 | MemoryEntityProjection | Mem0 | authorized memory record | rebuildable | mirrors record | memory | redesign | entity links/boosts; graph is not canonical truth |
+| D-MEM-019 | WorkingMemoryBlock | Letta Code | character+relationship/session purpose | ephemeral/compiled | private/internal | memory/runtime | redesign | bounded always-visible projection, not identity or durable truth |
+| D-MEM-020 | MemoryTombstone | Masanawa synthesis | memory record | durable logical deletion | sensitive/audit | memory | canonical | separate from expiry and physical purge |
+| D-MEM-021 | MemoryRetrievalEvidence | Mem0/OpenClaw | query/session | append telemetry | private/internal | memory/telemetry | redesign | query, eligible scopes, signals, selected record IDs, provenance/cost |

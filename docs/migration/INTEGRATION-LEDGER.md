@@ -54,8 +54,8 @@ Every external dependency must enter Masanawa through a canonical capability/pro
 | I-PRS-006 | LiveKit Agents TypeScript | LiveKit | AgentSession/Worker/STT/LLM/TTS/realtime/avatar integrations | model/media/tool calls | prompt/audio/video | selected services/presence session runtime | analysed |
 | I-PRS-007 | Pipecat | Pipecat | frame/pipeline realtime multimodal processing | model/media/network | prompt/audio/video | secondary architecture / optional specialized worker | analysed |
 | I-AVT-003 | LiveKit avatar plugin ecosystem | LiveKit Agents | realtime remote/generated avatar providers | external/GPU media | character image/audio | selected remote AvatarSession provider boundary | analysed |
-| I-MEM-001 | Letta APIs/runtime | Letta | persistent stateful-agent memory/server | memory/state operations | private memory | memory donor/provider only if adopted | discovered |
-| I-MEM-002 | Mem0 | Mem0 | extraction/retrieval/entity/temporal memory | memory/vector operations | private memory | memory specialist provider/reference | discovered |
+| I-MEM-001 | Letta Code memory/runtime | Letta Code | working blocks, revisioned memory filesystem, recall/conflict semantics | memory/state operations | private memory | architecture/reference; optional compatibility adapter only | analysed |
+| I-MEM-002 | Mem0 OSS/components | Mem0 | extraction/retrieval/entity/temporal memory and evaluation | memory/vector operations | private memory | specialist component/provider behind packages/memory; never authority | analysed |
 | I-GW-001 | OpenClaw channel/device ecosystem | OpenClaw | WhatsApp/Telegram/Slack/Discord/Teams/iMessage/device nodes | messages/device actions | highly sensitive | optional bridge + architecture donor | analysed |
 | I-INT-001 | MCP | LiveKit/OpenClaw/MAF/elizaOS ecosystem | external tools/context protocol | external tool calls | varies | gateway/tools interoperability | discovered |
 | I-INT-002 | A2A | Microsoft Agent Framework ecosystem | cross-agent protocol | inter-agent calls | bounded task/context | gateway/agent interoperability | discovered |
@@ -76,3 +76,5 @@ Every external dependency must enter Masanawa through a canonical capability/pro
 | I-PRS-009 | LiveKit SIP/telephony ecosystem | LiveKit | phone call ingress/egress into realtime rooms | telephony side effects | phone/audio/call metadata | future telephony presence adapter | analysed |
 
 Auth, retry, idempotency and reconciliation fields still require source-by-source deep extraction.
+
+| I-MEM-003 | PostgreSQL/pgvector memory projections | Masanawa | canonical memory records + initial vector/search projections | DB/index writes | private/shared memory by scope | packages/memory persistence/retrieval | selected architecture; implementation deferred until Phase 0 closes |
