@@ -1,4 +1,5 @@
 import { pathToFileURL } from "node:url";
+import { readRequiredEnv } from "@masanawa/contracts";
 import {
   createDrainState,
   readNodeServiceRuntimeConfig,
@@ -8,9 +9,11 @@ import {
   type NodeSignalSource,
   type ServiceLifecycleLogger,
 } from "@masanawa/node-runtime";
+import { createPostgresServiceDependency } from "@masanawa/postgres";
 import {
   createWorkerApp,
   type WorkerAppOptions,
+  type ReadinessCheck,
 } from "./app.js";
 
 export type ServiceSignal = "SIGINT" | "SIGTERM";
@@ -20,12 +23,22 @@ export interface ServiceProcess extends NodeSignalSource {
   exit(code: number): never;
 }
 
+export interface ServiceDatabaseDependency {
+  readonly readinessCheck: ReadinessCheck;
+  close(): Promise<void>;
+}
+
+export type ServiceDatabaseFactory = (
+  env: Readonly<Record<string, string | undefined>>,
+) => ServiceDatabaseDependency;
+
 export type WorkerServiceConfig = NodeServiceRuntimeConfig;
 
 export interface StartWorkerServiceOptions {
   readonly env?: Readonly<Record<string, string | undefined>>;
   readonly processRef?: ServiceProcess;
   readonly logger?: ServiceLifecycleLogger;
+  readonly databaseFactory?: ServiceDatabaseFactory;
   readonly appFactory?: (options: WorkerAppOptions) => ManagedNodeServer;
   readonly appOptions?: Omit<WorkerAppOptions, "isDraining">;
 }
@@ -56,17 +69,48 @@ export function parseWorkerServiceConfig(
   );
 }
 
+function createDefaultDatabaseDependency(
+  env: Readonly<Record<string, string | undefined>>,
+): ServiceDatabaseDependency {
+  const connectionString = readRequiredEnv(
+    {
+      DATABASE_URL: env.MASANAWA_DATABASE_URL ?? env.DATABASE_URL,
+    },
+    "DATABASE_URL",
+  );
+
+  return createPostgresServiceDependency({
+    connectionString,
+    applicationName: "masanawa-worker",
+  });
+}
+
 export async function startWorkerService(
   options: StartWorkerServiceOptions = {},
 ): Promise<WorkerServiceRuntime> {
-  const config = parseWorkerServiceConfig(options.env);
+  const env = options.env ?? process.env;
+  const config = parseWorkerServiceConfig(env);
   const processRef = options.processRef ?? (process as ServiceProcess);
   const drain = createDrainState();
+  const databaseFactory =
+    options.databaseFactory ?? createDefaultDatabaseDependency;
+  const database = databaseFactory(env);
   const appFactory = options.appFactory ?? createWorkerApp;
-  const app = appFactory({
-    ...(options.appOptions ?? {}),
-    isDraining: drain.isDraining,
-  });
+
+  let app: ManagedNodeServer;
+  try {
+    app = appFactory({
+      ...(options.appOptions ?? {}),
+      readinessChecks: [
+        ...(options.appOptions?.readinessChecks ?? []),
+        database.readinessCheck,
+      ],
+      isDraining: drain.isDraining,
+    });
+  } catch (error) {
+    await database.close().catch(() => undefined);
+    throw error;
+  }
 
   const lifecycle = await startNodeService({
     serviceName: "worker",
@@ -75,6 +119,7 @@ export async function startWorkerService(
     signals: processRef,
     ...(options.logger ? { logger: options.logger } : {}),
     onDraining: drain.beginDraining,
+    onAfterClose: database.close,
     onFatalShutdown: () => {
       processRef.exitCode = 1;
     },
