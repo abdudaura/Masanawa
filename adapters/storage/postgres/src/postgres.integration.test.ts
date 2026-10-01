@@ -775,6 +775,175 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
     });
   });
 
+  it("rejects private relationship, user, and memory references at shared World ingress", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const worldId = createCanonicalId("world");
+    const characterId = createCanonicalId("character");
+    const versionId = createCanonicalId("character-version");
+    const relationshipId = createCanonicalId("relationship");
+    const userId = createCanonicalId("user");
+    const memoryId = createCanonicalId("memory-record");
+    const now = toInstant("2026-10-01T11:30:00Z");
+
+    await withTransaction(pool, async (client) => {
+      await createTenant(client, { tenantId, createdAt: now });
+      await createWorld(client, {
+        tenantId,
+        worldId,
+        initialGenerationId: createCanonicalId("world-generation"),
+        policy: testWorldPolicy(),
+        simulationTime: now,
+        createdAt: now,
+      });
+      const character = await createCharacter(client, {
+        tenantId,
+        characterId,
+        createdAt: now,
+      });
+      await createCharacterVersion(client, {
+        tenantId,
+        characterVersionId: versionId,
+        characterId,
+        versionNumber: 1,
+        constitution: testCharacterConstitution(),
+        createdAt: now,
+      });
+      await publishCharacterVersion(client, {
+        tenantId,
+        characterVersionId: versionId,
+        publishedAt: now,
+      });
+      await activateCharacterVersion(client, {
+        tenantId,
+        characterId,
+        characterVersionId: versionId,
+        expectedCharacterRevision: character.revision,
+        activatedAt: now,
+      });
+
+      await expect(
+        admitSimulationInput(client, {
+          tenantId,
+          worldId,
+          idempotencyKey: "private-leak-input",
+          kind: "external.command",
+          payload: {
+            nested: {
+              source: relationshipId,
+            },
+          },
+          receivedAt: now,
+          effectiveAt: now,
+        }),
+      ).rejects.toMatchObject({ code: "world.private_reference_forbidden" });
+
+      await expect(
+        appendWorldEvent(client, {
+          tenantId,
+          worldId,
+          worldEventId: createCanonicalId("world-event"),
+          characterId,
+          characterVersionId: versionId,
+          eventKind: "life.note",
+          payload: {
+            note: `Do not expose memory ${memoryId}`,
+          },
+          provenance: "authored",
+          visibility: "shared",
+          occurrenceKey: null,
+          effectiveStart: now,
+          effectiveEnd: null,
+          recordedAt: now,
+          admission: "draft",
+        }),
+      ).rejects.toMatchObject({ code: "world.private_reference_forbidden" });
+
+      await expect(
+        putRoutine(client, {
+          tenantId,
+          worldId,
+          routineKey: "private-routine",
+          characterId,
+          characterVersionId: versionId,
+          expectedRevision: null,
+          timezone: "Africa/Lagos",
+          localTime: "12:30",
+          enabled: true,
+          inputKind: "routine.private",
+          inputPayload: {
+            memoryRecordId: memoryId,
+          },
+          updatedAt: now,
+        }),
+      ).rejects.toMatchObject({ code: "world.private_reference_forbidden" });
+
+      await expect(
+        putCharacterLifeState(client, {
+          tenantId,
+          worldId,
+          characterId,
+          characterVersionId: versionId,
+          expectedRevision: null,
+          availability: "available",
+          narrativeState: null,
+          activeGoal: `Serve private user ${userId}`,
+          storyArc: null,
+          coarseLocation: "Kano",
+          effectiveAt: now,
+          updatedAt: now,
+        }),
+      ).rejects.toMatchObject({ code: "world.private_reference_forbidden" });
+
+      await expect(
+        putStoryArc(client, {
+          tenantId,
+          worldId,
+          storyArcKey: "private-arc",
+          characterId,
+          characterVersionId: versionId,
+          expectedRevision: null,
+          state: "planned",
+          title: "Private arc",
+          summary: `Derived from ${relationshipId}`,
+          updatedAt: now,
+        }),
+      ).rejects.toMatchObject({ code: "world.private_reference_forbidden" });
+
+      const counts = await client.query<{
+        inputs: string;
+        events: string;
+        routines: string;
+        life_states: string;
+        story_arcs: string;
+      }>(
+        `SELECT
+           (SELECT count(*)::text
+              FROM world.simulation_inputs
+             WHERE tenant_id = $1 AND world_id = $2) AS inputs,
+           (SELECT count(*)::text
+              FROM world.events
+             WHERE tenant_id = $1 AND world_id = $2) AS events,
+           (SELECT count(*)::text
+              FROM world.routines
+             WHERE tenant_id = $1 AND world_id = $2) AS routines,
+           (SELECT count(*)::text
+              FROM world.character_life_state
+             WHERE tenant_id = $1 AND world_id = $2) AS life_states,
+           (SELECT count(*)::text
+              FROM world.story_arcs
+             WHERE tenant_id = $1 AND world_id = $2) AS story_arcs`,
+        [tenantId, worldId],
+      );
+      expect(counts.rows[0]).toEqual({
+        inputs: "0",
+        events: "0",
+        routines: "0",
+        life_states: "0",
+        story_arcs: "0",
+      });
+    });
+  });
+
   it("gates Character life state on active published identity and revision CAS", async () => {
     const tenantId = createCanonicalId("tenant");
     const worldId = createCanonicalId("world");
