@@ -1,73 +1,43 @@
 import { describe, expect, it } from "vitest";
 import {
-  FaultInjectionError,
+  InjectedCrash,
   createFaultInjector,
   runRestartScenario,
 } from "./fault-injection.js";
 
 describe("deterministic fault injection", () => {
-  it("fires exactly on configured occurrences and consumes each fault once", () => {
-    const injector = createFaultInjector([
-      { checkpoint: "after-commit", occurrences: [2, 4] },
-    ]);
+  it("preserves the established count-based checkpoint contract", () => {
+    const faults = createFaultInjector({
+      "after-commit": 2,
+      "before-ack": 1,
+    });
 
-    injector.hit("after-commit");
+    expect(() => faults.checkpoint("after-commit")).toThrowError(InjectedCrash);
+    expect(() => faults.checkpoint("after-commit")).toThrowError(InjectedCrash);
+    faults.checkpoint("after-commit");
 
-    expect(() => injector.hit("after-commit")).toThrowError(
-      new FaultInjectionError("after-commit", 2),
-    );
-    expect(injector.count("after-commit")).toBe(2);
-    expect(injector.remaining("after-commit")).toEqual([4]);
+    expect(faults.hits("after-commit")).toBe(3);
+    expect(faults.remaining("after-commit")).toBe(0);
 
-    injector.hit("after-commit");
-
-    expect(() => injector.hit("after-commit")).toThrowError(
-      new FaultInjectionError("after-commit", 4),
-    );
-    expect(injector.remaining("after-commit")).toEqual([]);
-
-    injector.hit("after-commit");
-    expect(injector.count("after-commit")).toBe(5);
+    expect(() => faults.checkpoint("before-ack")).toThrowError(InjectedCrash);
+    expect(faults.hits("before-ack")).toBe(1);
   });
 
-  it("keeps independent occurrence counters per checkpoint", () => {
-    const injector = createFaultInjector([
-      { checkpoint: "after-write", occurrences: [1] },
-      { checkpoint: "before-ack", occurrences: [2] },
-    ]);
-
-    expect(() => injector.hit("after-write")).toThrow(FaultInjectionError);
-    injector.hit("before-ack");
-    expect(() => injector.hit("before-ack")).toThrow(FaultInjectionError);
-
-    expect(injector.count("after-write")).toBe(1);
-    expect(injector.count("before-ack")).toBe(2);
-  });
-
-  it("rejects ambiguous or invalid fault plans", () => {
+  it("rejects invalid and normalized-duplicate plans", () => {
+    expect(() => createFaultInjector({ "": 1 })).toThrow(/required/u);
+    expect(() => createFaultInjector({ crash: -1 })).toThrow(
+      /non-negative safe integer/u,
+    );
     expect(() =>
-      createFaultInjector([
-        { checkpoint: "write", occurrences: [1] },
-        { checkpoint: " write ", occurrences: [2] },
-      ]),
-    ).toThrow(/duplicated/u);
-
-    expect(() =>
-      createFaultInjector([{ checkpoint: "write", occurrences: [0] }]),
-    ).toThrow(/positive safe integer/u);
-
-    expect(() =>
-      createFaultInjector([{ checkpoint: "write", occurrences: [1, 1] }]),
+      createFaultInjector({ crash: 1, " crash ": 1 }),
     ).toThrow(/duplicated/u);
   });
 });
 
 describe("restart scenarios", () => {
-  it("recreates only ephemeral runtime while durable state survives an injected crash", async () => {
-    const injector = createFaultInjector([
-      { checkpoint: "after-durable-write", occurrences: [1] },
-    ]);
-    const durableState = { writes: 0 };
+  it("recreates ephemeral runtime while caller-owned durable state survives", async () => {
+    const faults = createFaultInjector({ "after-durable-write": 1 });
+    const durable = { writes: 0 };
     const created: number[] = [];
     const disposed: number[] = [];
 
@@ -78,12 +48,9 @@ describe("restart scenarios", () => {
         return { generation };
       },
       run(runtime) {
-        durableState.writes += 1;
-        injector.hit("after-durable-write");
-        return {
-          generation: runtime.generation,
-          writes: durableState.writes,
-        };
+        durable.writes += 1;
+        faults.checkpoint("after-durable-write");
+        return { generation: runtime.generation, writes: durable.writes };
       },
       dispose(runtime) {
         disposed.push(runtime.generation);
@@ -91,12 +58,12 @@ describe("restart scenarios", () => {
     });
 
     expect(result).toEqual({ generation: 1, writes: 2 });
-    expect(durableState.writes).toBe(2);
     expect(created).toEqual([0, 1]);
     expect(disposed).toEqual([0, 1]);
+    expect(durable.writes).toBe(2);
   });
 
-  it("does not restart failures that are not explicitly restartable", async () => {
+  it("does not restart ordinary permanent failures", async () => {
     let starts = 0;
 
     await expect(
@@ -116,10 +83,8 @@ describe("restart scenarios", () => {
     expect(starts).toBe(1);
   });
 
-  it("bounds restart attempts even when injected faults continue", async () => {
-    const injector = createFaultInjector([
-      { checkpoint: "crash-loop", occurrences: [1, 2, 3] },
-    ]);
+  it("bounds an injected crash loop", async () => {
+    const faults = createFaultInjector({ crash: 3 });
     const generations: number[] = [];
 
     await expect(
@@ -127,26 +92,26 @@ describe("restart scenarios", () => {
         maxRestarts: 1,
         createRuntime(generation) {
           generations.push(generation);
-          return { generation };
+          return {};
         },
         run() {
-          injector.hit("crash-loop");
+          faults.checkpoint("crash");
           return "unreachable";
         },
         dispose() {},
       }),
     ).rejects.toMatchObject({
-      name: "FaultInjectionError",
-      checkpoint: "crash-loop",
-      occurrence: 2,
+      name: "InjectedCrash",
+      faultPoint: "crash",
     });
 
     expect(generations).toEqual([0, 1]);
-    expect(injector.remaining("crash-loop")).toEqual([3]);
+    expect(faults.hits("crash")).toBe(2);
+    expect(faults.remaining("crash")).toBe(1);
   });
 
   it("preserves both runtime and cleanup failures", async () => {
-    const failure = new FaultInjectionError("after-write", 1);
+    const failure = new InjectedCrash("after-write");
     const cleanupFailure = new Error("cleanup failed");
 
     await expect(

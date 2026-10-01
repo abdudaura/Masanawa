@@ -1,101 +1,60 @@
-export class FaultInjectionError extends Error {
-  readonly checkpoint: string;
-  readonly occurrence: number;
+export class InjectedCrash extends Error {
+  readonly faultPoint: string;
 
-  constructor(checkpoint: string, occurrence: number) {
-    super(`Injected fault at ${checkpoint} occurrence ${occurrence}`);
-    this.name = "FaultInjectionError";
-    this.checkpoint = checkpoint;
-    this.occurrence = occurrence;
+  constructor(faultPoint: string) {
+    super(`Injected crash at ${faultPoint}`);
+    this.name = "InjectedCrash";
+    this.faultPoint = faultPoint;
   }
-}
-
-export interface FaultRule {
-  readonly checkpoint: string;
-  readonly occurrences: readonly number[];
 }
 
 export interface FaultInjector {
-  hit(checkpoint: string): void;
-  count(checkpoint: string): number;
-  remaining(checkpoint: string): readonly number[];
-}
-
-function normalizeCheckpoint(checkpoint: string): string {
-  const normalized = checkpoint.trim();
-  if (!normalized) {
-    throw new TypeError("fault checkpoint is required");
-  }
-  return normalized;
-}
-
-function normalizeOccurrences(
-  checkpoint: string,
-  occurrences: readonly number[],
-): readonly number[] {
-  const seen = new Set<number>();
-  const normalized: number[] = [];
-
-  for (const occurrence of occurrences) {
-    if (!Number.isSafeInteger(occurrence) || occurrence < 1) {
-      throw new TypeError(
-        `fault occurrence for ${checkpoint} must be a positive safe integer`,
-      );
-    }
-    if (seen.has(occurrence)) {
-      throw new TypeError(
-        `fault occurrence ${occurrence} for ${checkpoint} is duplicated`,
-      );
-    }
-    seen.add(occurrence);
-    normalized.push(occurrence);
-  }
-
-  normalized.sort((left, right) => left - right);
-  return Object.freeze(normalized);
+  checkpoint(point: string): void;
+  hits(point: string): number;
+  remaining(point: string): number;
 }
 
 export function createFaultInjector(
-  rules: readonly FaultRule[],
+  plan: Readonly<Record<string, number>>,
 ): FaultInjector {
-  const remainingByCheckpoint = new Map<string, Set<number>>();
-  const counts = new Map<string, number>();
+  const remaining = new Map<string, number>();
+  const hits = new Map<string, number>();
 
-  for (const rule of rules) {
-    const checkpoint = normalizeCheckpoint(rule.checkpoint);
-    if (remainingByCheckpoint.has(checkpoint)) {
-      throw new TypeError(`fault checkpoint ${checkpoint} is duplicated`);
+  for (const [point, count] of Object.entries(plan)) {
+    const normalized = point.trim();
+    if (!normalized) {
+      throw new TypeError("fault point is required");
     }
-
-    remainingByCheckpoint.set(
-      checkpoint,
-      new Set(normalizeOccurrences(checkpoint, rule.occurrences)),
-    );
+    if (!Number.isSafeInteger(count) || count < 0) {
+      throw new RangeError(
+        `fault count for ${point} must be a non-negative safe integer`,
+      );
+    }
+    if (remaining.has(normalized)) {
+      throw new TypeError(`fault point ${normalized} is duplicated`);
+    }
+    remaining.set(normalized, count);
   }
 
   return Object.freeze({
-    hit(checkpointInput: string): void {
-      const checkpoint = normalizeCheckpoint(checkpointInput);
-      const occurrence = (counts.get(checkpoint) ?? 0) + 1;
-      counts.set(checkpoint, occurrence);
-
-      const configured = remainingByCheckpoint.get(checkpoint);
-      if (configured?.delete(occurrence)) {
-        throw new FaultInjectionError(checkpoint, occurrence);
+    checkpoint(point: string): void {
+      const normalized = point.trim();
+      if (!normalized) {
+        throw new TypeError("fault point is required");
       }
+      hits.set(normalized, (hits.get(normalized) ?? 0) + 1);
+      const count = remaining.get(normalized) ?? 0;
+      if (count <= 0) {
+        return;
+      }
+      remaining.set(normalized, count - 1);
+      throw new InjectedCrash(normalized);
     },
-
-    count(checkpointInput: string): number {
-      return counts.get(normalizeCheckpoint(checkpointInput)) ?? 0;
+    hits(point: string): number {
+      return hits.get(point.trim()) ?? 0;
     },
-
-    remaining(checkpointInput: string): readonly number[] {
-      const checkpoint = normalizeCheckpoint(checkpointInput);
-      return Object.freeze(
-        [...(remainingByCheckpoint.get(checkpoint) ?? [])].sort(
-          (left, right) => left - right,
-        ),
-      );
+    remaining(point: string): number {
+      return remaining.get(point.trim()) ?? 0;
     },
   });
 }
@@ -136,7 +95,7 @@ export async function runRestartScenario<Runtime, Result>(
 
   const shouldRestart =
     scenario.shouldRestart ??
-    ((error: unknown) => error instanceof FaultInjectionError);
+    ((error: unknown) => error instanceof InjectedCrash);
 
   let generation = 0;
 
