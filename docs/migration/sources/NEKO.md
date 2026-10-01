@@ -2,7 +2,7 @@
 
 Pinned revision: `48ac9243a9d8e75a37d7598548c29017df1c6d2e` (`main`)
 
-Status: Phase 0 Pass 1 source map complete; this is the largest donor and requires extensive deeper mining.
+Status: Phase 0A donor-selection coverage complete. N.E.K.O's major memory/proactivity/plugin/perception behaviors are ledgered; exhaustive source mining continues in Phase 0B.
 
 ## Scale and shape
 
