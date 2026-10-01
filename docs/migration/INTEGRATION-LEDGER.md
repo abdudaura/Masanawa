@@ -132,3 +132,19 @@ Auth, retry, idempotency and reconciliation fields still require source-by-sourc
 | I-ELZ-011 | Browser workspace/native Chromium/Stagehand targets | elizaOS | browser/computer use | web navigation/forms/clicks/uploads | credentials/page/device data | packages/tools browser adapters | analysed; no post-dispatch replay, domain policy and confirmation requirements recorded |
 | I-ELZ-012 | connector credential vault | elizaOS | OAuth/provider secret persistence | encrypted secret read/write/reveal | highly sensitive | packages/security vault | analysed; durable restart test and fail-closed key behavior recorded |
 | I-ELZ-013 | cloud environment secret cache | elizaOS | reduce process.env secret exposure | in-process secret read/clear | highly sensitive | host defense-in-depth only | analysed; non-durable, never canonical |
+
+
+### Phase 0B Microsoft Agent Framework integration additions
+
+| ID | Provider/system | Source repo | Purpose/capabilities | Side effects | Data sensitivity | Masanawa adapter | Status |
+|---|---|---|---|---|---|---|---|
+| I-MAF-001 | Microsoft Agent Framework workflow runtime | Microsoft Agent Framework | graph/checkpoint/HITL/orchestration semantics | workflow/tool/model execution | private/business | architecture donor only; reimplement packages/workflows in TS/Postgres | analysed |
+| I-MAF-002 | A2A | Microsoft Agent Framework | remote agent/workflow protocol | remote calls/messages | prompts/session/task IDs | protocol adapter | analysed; adapter cannot own auth/HITL/workflow truth |
+| I-MAF-003 | MCP | Microsoft Agent Framework | tools/resources/agent/workflow exposure | external tool calls | tool args/session/provider data | tools/protocol adapter | analysed; auth/session/server lifecycle app-owned |
+| I-MAF-004 | OpenAI/Anthropic/Bedrock/Gemini/Mistral/Ollama/Foundry/Copilot providers | Microsoft Agent Framework | model/chat/agent integrations | model calls/remote state | private prompts/media | packages/providers | analysed; retry/fallback remains Masanawa policy |
+| I-MAF-005 | Azure Cosmos workflow checkpoint store | Microsoft Agent Framework | durable workflow checkpoints | database reads/writes | private/business workflow state | workflow persistence reference | analysed; donor store not canonical |
+| I-MAF-006 | Foundry hosted checkpoint/state store | Microsoft Agent Framework | hosted workflow/session durability | remote state reads/writes | private/business workflow state | deployment/workflow adapter reference | analysed; optimistic concurrency/branch retention retained |
+| I-MAF-007 | Postgres/SQL Server/Redis/Mongo/Qdrant/DuckDB/Azure search stores | Microsoft Agent Framework | data/vector/search/session integrations | database/index operations | memory/search/session data | provider/index adapters | analysed; never alternate domain authority |
+| I-MAF-008 | Mem0/Valkey/Cosmos memory adapters | Microsoft Agent Framework | memory provider integrations | external memory reads/writes | private memory | packages/memory provider adapters only | analysed; canonical memory remains packages/memory |
+| I-MAF-009 | Hyperlight/Monty/LocalCodeAct/Shell | Microsoft Agent Framework | code/shell execution | arbitrary compute/filesystem/process | highly sensitive | packages/tools sandbox adapters | analysed; canonical authorization/approval required |
+| I-MAF-010 | OpenTelemetry exporters | Microsoft Agent Framework | traces/metrics/logs | telemetry export | operational; optionally private content | packages/telemetry | analysed; sensitive content disabled by default |
