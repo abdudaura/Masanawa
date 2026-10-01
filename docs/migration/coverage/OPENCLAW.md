@@ -284,4 +284,4 @@ Canonical result:
 - reject OpenClaw's personal-assistant/shared-Gateway trust assumptions as Masanawa public tenancy;
 - reject OpenClaw session, SQLite, memory and agent identity as Masanawa domain authority.
 
-The next source is the separately pinned **OpenClaw Agent Skills** donor.
+The separately pinned **OpenClaw Agent Skills** donor is now also covered under Phase 0B.
