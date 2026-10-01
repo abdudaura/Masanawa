@@ -9,10 +9,17 @@ import {
   type WorldId,
 } from "@masanawa/contracts";
 import {
+  assertRoutineScheduledTime,
   assertSimulationTimeDoesNotMoveBackward,
+  assertStoryArcTransition,
+  normalizeIanaTimezone,
+  normalizeLocalTime,
+  normalizeRoutineKey,
   normalizeSimulationInputKey,
   normalizeSimulationInputKind,
   normalizeWorldPolicy,
+  routineOccurrenceKey,
+  type AdmitRoutineOccurrenceInput,
   type AdmitSimulationInput,
   type AppendWorldEventInput,
   type ApproveWorldEventInput,
@@ -21,8 +28,13 @@ import {
   type CommitWorldGenerationResult,
   type CreateWorldInput,
   type GovernedWorldRepository,
+  type NarrativeWorldRepository,
   type PutCharacterLifeStateInput,
+  type PutRoutineInput,
+  type PutStoryArcInput,
+  type Routine,
   type SimulationInput,
+  type StoryArc,
   type World,
   type WorldEvent,
   type WorldGeneration,
@@ -98,6 +110,36 @@ interface WorldEventRow {
   recorded_at: Date;
   approved_at: Date | null;
   retired_at: Date | null;
+}
+
+interface RoutineRow {
+  tenant_id: TenantId;
+  world_id: WorldId;
+  routine_key: string;
+  character_id: CharacterId;
+  character_version_id: CharacterVersionId;
+  timezone: string;
+  local_time: string;
+  enabled: boolean;
+  input_kind: string;
+  input_payload: Routine["inputPayload"];
+  revision: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+interface StoryArcRow {
+  tenant_id: TenantId;
+  world_id: WorldId;
+  story_arc_key: string;
+  character_id: CharacterId;
+  character_version_id: CharacterVersionId;
+  state: StoryArc["state"];
+  title: string;
+  summary: string;
+  revision: string;
+  created_at: Date;
+  updated_at: Date;
 }
 
 function integer(value: string, name: string): number {
@@ -191,6 +233,40 @@ function asWorldEvent(row: WorldEventRow): WorldEvent {
     recordedAt: toInstant(row.recorded_at),
     approvedAt: row.approved_at ? toInstant(row.approved_at) : null,
     retiredAt: row.retired_at ? toInstant(row.retired_at) : null,
+  });
+}
+
+function asRoutine(row: RoutineRow): Routine {
+  return Object.freeze({
+    tenantId: row.tenant_id,
+    worldId: row.world_id,
+    routineKey: row.routine_key,
+    characterId: row.character_id,
+    characterVersionId: row.character_version_id,
+    timezone: row.timezone,
+    localTime: row.local_time.slice(0, 5),
+    enabled: row.enabled,
+    inputKind: row.input_kind,
+    inputPayload: Object.freeze({ ...row.input_payload }),
+    revision: integer(row.revision, "routine revision"),
+    createdAt: toInstant(row.created_at),
+    updatedAt: toInstant(row.updated_at),
+  });
+}
+
+function asStoryArc(row: StoryArcRow): StoryArc {
+  return Object.freeze({
+    tenantId: row.tenant_id,
+    worldId: row.world_id,
+    storyArcKey: row.story_arc_key,
+    characterId: row.character_id,
+    characterVersionId: row.character_version_id,
+    state: row.state,
+    title: row.title,
+    summary: row.summary,
+    revision: integer(row.revision, "story-arc revision"),
+    createdAt: toInstant(row.created_at),
+    updatedAt: toInstant(row.updated_at),
   });
 }
 
@@ -919,10 +995,328 @@ export async function approveWorldEvent(
   return asWorldEvent(result.rows[0]);
 }
 
+async function loadRoutine(
+  client: PoolClient,
+  tenantId: TenantId,
+  worldId: WorldId,
+  routineKeyInput: string,
+  forUpdate: boolean,
+): Promise<Routine | null> {
+  const routineKey = normalizeRoutineKey(routineKeyInput);
+  const result = await client.query<RoutineRow>(
+    `SELECT *
+       FROM world.routines
+      WHERE tenant_id = $1
+        AND world_id = $2
+        AND routine_key = $3
+      ${forUpdate ? "FOR UPDATE" : ""}`,
+    [tenantId, worldId, routineKey],
+  );
+  return result.rows[0] ? asRoutine(result.rows[0]) : null;
+}
+
+export async function putRoutine(
+  client: PoolClient,
+  input: PutRoutineInput,
+): Promise<Routine> {
+  const routineKey = normalizeRoutineKey(input.routineKey);
+  const timezone = normalizeIanaTimezone(input.timezone);
+  const localTime = normalizeLocalTime(input.localTime);
+  const inputKind = normalizeSimulationInputKind(input.inputKind);
+
+  await assertActiveCharacterVersion(
+    client,
+    input.tenantId,
+    input.characterId,
+    input.characterVersionId,
+  );
+
+  if (input.expectedRevision === null) {
+    const created = await client.query<RoutineRow>(
+      `INSERT INTO world.routines (
+         tenant_id,
+         world_id,
+         routine_key,
+         character_id,
+         character_version_id,
+         timezone,
+         local_time,
+         enabled,
+         input_kind,
+         input_payload,
+         revision,
+         created_at,
+         updated_at
+       )
+       VALUES ($1,$2,$3,$4,$5,$6,$7::time,$8,$9,$10::jsonb,1,$11,$11)
+       ON CONFLICT (tenant_id, world_id, routine_key) DO NOTHING
+       RETURNING *`,
+      [
+        input.tenantId,
+        input.worldId,
+        routineKey,
+        input.characterId,
+        input.characterVersionId,
+        timezone,
+        localTime,
+        input.enabled,
+        inputKind,
+        JSON.stringify(input.inputPayload),
+        input.updatedAt,
+      ],
+    );
+    if (!created.rows[0]) {
+      throw conflict("world.routine_revision_conflict", "Routine already exists");
+    }
+    return asRoutine(created.rows[0]);
+  }
+
+  const current = await loadRoutine(
+    client,
+    input.tenantId,
+    input.worldId,
+    routineKey,
+    true,
+  );
+  if (
+    !current ||
+    current.characterId !== input.characterId ||
+    current.revision !== input.expectedRevision
+  ) {
+    throw conflict(
+      "world.routine_revision_conflict",
+      "Routine revision is stale",
+    );
+  }
+
+  const updated = await client.query<RoutineRow>(
+    `UPDATE world.routines
+        SET character_version_id = $4,
+            timezone = $5,
+            local_time = $6::time,
+            enabled = $7,
+            input_kind = $8,
+            input_payload = $9::jsonb,
+            revision = revision + 1,
+            updated_at = $10
+      WHERE tenant_id = $1
+        AND world_id = $2
+        AND routine_key = $3
+        AND character_id = $11
+        AND revision = $12
+      RETURNING *`,
+    [
+      input.tenantId,
+      input.worldId,
+      routineKey,
+      input.characterVersionId,
+      timezone,
+      localTime,
+      input.enabled,
+      inputKind,
+      JSON.stringify(input.inputPayload),
+      input.updatedAt,
+      input.characterId,
+      input.expectedRevision,
+    ],
+  );
+  if (!updated.rows[0]) {
+    throw conflict(
+      "world.routine_revision_conflict",
+      "Routine revision is stale",
+    );
+  }
+  return asRoutine(updated.rows[0]);
+}
+
+export async function admitRoutineOccurrence(
+  client: PoolClient,
+  input: AdmitRoutineOccurrenceInput,
+): Promise<SimulationInput> {
+  const routine = await loadRoutine(
+    client,
+    input.tenantId,
+    input.worldId,
+    input.routineKey,
+    false,
+  );
+  if (!routine || !routine.enabled) {
+    throw conflict(
+      "world.routine_unavailable",
+      "Routine is missing or disabled",
+    );
+  }
+
+  await assertActiveCharacterVersion(
+    client,
+    routine.tenantId,
+    routine.characterId,
+    routine.characterVersionId,
+  );
+
+  const occurrence = assertRoutineScheduledTime(
+    input.scheduledFor,
+    routine.timezone,
+    routine.localTime,
+  );
+  const idempotencyKey = routineOccurrenceKey(
+    routine.characterId,
+    routine.routineKey,
+    occurrence.localDate,
+  );
+
+  return admitSimulationInput(client, {
+    tenantId: routine.tenantId,
+    worldId: routine.worldId,
+    idempotencyKey,
+    kind: routine.inputKind,
+    payload: {
+      routine: {
+        key: routine.routineKey,
+        characterId: routine.characterId,
+        characterVersionId: routine.characterVersionId,
+        localDate: occurrence.localDate,
+      },
+      payload: routine.inputPayload,
+    },
+    receivedAt: input.receivedAt,
+    effectiveAt: input.scheduledFor,
+  });
+}
+
+async function loadStoryArc(
+  client: PoolClient,
+  tenantId: TenantId,
+  worldId: WorldId,
+  storyArcKey: string,
+): Promise<StoryArc | null> {
+  const result = await client.query<StoryArcRow>(
+    `SELECT *
+       FROM world.story_arcs
+      WHERE tenant_id = $1
+        AND world_id = $2
+        AND story_arc_key = $3
+      FOR UPDATE`,
+    [tenantId, worldId, storyArcKey],
+  );
+  return result.rows[0] ? asStoryArc(result.rows[0]) : null;
+}
+
+export async function putStoryArc(
+  client: PoolClient,
+  input: PutStoryArcInput,
+): Promise<StoryArc> {
+  const storyArcKey = boundedText(input.storyArcKey, "storyArcKey", 128);
+  const title = boundedText(input.title, "title", 500);
+  const summary = input.summary.trim();
+  if (summary.length > 10_000) {
+    throw new TypeError("summary is too long");
+  }
+
+  await assertActiveCharacterVersion(
+    client,
+    input.tenantId,
+    input.characterId,
+    input.characterVersionId,
+  );
+
+  if (input.expectedRevision === null) {
+    const created = await client.query<StoryArcRow>(
+      `INSERT INTO world.story_arcs (
+         tenant_id,
+         world_id,
+         story_arc_key,
+         character_id,
+         character_version_id,
+         state,
+         title,
+         summary,
+         revision,
+         created_at,
+         updated_at
+       )
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,1,$9,$9)
+       ON CONFLICT (tenant_id, world_id, story_arc_key) DO NOTHING
+       RETURNING *`,
+      [
+        input.tenantId,
+        input.worldId,
+        storyArcKey,
+        input.characterId,
+        input.characterVersionId,
+        input.state,
+        title,
+        summary,
+        input.updatedAt,
+      ],
+    );
+    if (!created.rows[0]) {
+      throw conflict(
+        "world.story_arc_revision_conflict",
+        "Story arc already exists",
+      );
+    }
+    return asStoryArc(created.rows[0]);
+  }
+
+  const current = await loadStoryArc(
+    client,
+    input.tenantId,
+    input.worldId,
+    storyArcKey,
+  );
+  if (
+    !current ||
+    current.characterId !== input.characterId ||
+    current.revision !== input.expectedRevision
+  ) {
+    throw conflict(
+      "world.story_arc_revision_conflict",
+      "Story arc revision is stale",
+    );
+  }
+  assertStoryArcTransition(current.state, input.state);
+
+  const updated = await client.query<StoryArcRow>(
+    `UPDATE world.story_arcs
+        SET character_version_id = $4,
+            state = $5,
+            title = $6,
+            summary = $7,
+            revision = revision + 1,
+            updated_at = $8
+      WHERE tenant_id = $1
+        AND world_id = $2
+        AND story_arc_key = $3
+        AND character_id = $9
+        AND revision = $10
+      RETURNING *`,
+    [
+      input.tenantId,
+      input.worldId,
+      storyArcKey,
+      input.characterVersionId,
+      input.state,
+      title,
+      summary,
+      input.updatedAt,
+      input.characterId,
+      input.expectedRevision,
+    ],
+  );
+  if (!updated.rows[0]) {
+    throw conflict(
+      "world.story_arc_revision_conflict",
+      "Story arc revision is stale",
+    );
+  }
+  return asStoryArc(updated.rows[0]);
+}
+
 export function createPostgresWorldRepository(
   client: PoolClient,
-): GovernedWorldRepository {
-  const repository: GovernedWorldRepository = {
+): NarrativeWorldRepository {
+  const repository: NarrativeWorldRepository = {
     createWorld: (input: CreateWorldInput) => createWorld(client, input),
     getWorld: (tenantId: TenantId, worldId: WorldId) =>
       getWorld(client, tenantId, worldId),
@@ -936,6 +1330,10 @@ export function createPostgresWorldRepository(
       appendWorldEvent(client, input),
     approveWorldEvent: (input: ApproveWorldEventInput) =>
       approveWorldEvent(client, input),
+    putRoutine: (input: PutRoutineInput) => putRoutine(client, input),
+    admitRoutineOccurrence: (input: AdmitRoutineOccurrenceInput) =>
+      admitRoutineOccurrence(client, input),
+    putStoryArc: (input: PutStoryArcInput) => putStoryArc(client, input),
   };
   return Object.freeze(repository);
 }

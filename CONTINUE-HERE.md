@@ -41,28 +41,37 @@ The active implementation line remains `phase2-closure` until PR #16 is merged. 
 
 Phase 3 is active.
 
-Merged foundation:
+Merged Phase 3 slices:
 - canonical identity: PR #17, merge `75549800445842f8ff1db54e06529c075ed34ea4`;
 - world generation/input foundation: PR #18, merge `871022d03f4b3fb2a81af5c6253dd38bd5b7a27f`;
-- governed life/canon layer: PR #19, merge `729ab3e64eb0539ea249ceb6a39cf79afab20cb2`, validated by Foundation CI run 225.
+- governed CharacterLifeState + canon events: PR #19, merge `729ab3e64eb0539ea249ceb6a39cf79afab20cb2`;
+- canon policy/time hardening: PR #21, merge `ce89ce091e05508dd4d0614a9127a2256bda13e4`.
 
-Current branch: `phase3-world-canon-hardening`.
+PR #20 was closed as a duplicate of PR #19. Original routines PR #22 was built from pre-hardening main and became conflicting after PR #21; its validated behavior is being reconciled rather than merged over hardened code.
 
-Current branch fixes concrete gaps found after PR #19:
-- CharacterLifeState effective time may not move backward;
-- CharacterLifeState may not become effective after the World's current simulation time;
-- automatic-approved canon now requires WorldPolicy.automaticCanonEnabled;
-- only engine provenance may use automatic-approved canon; model/authored/imported evidence remains draft/governed;
-- PostgreSQL 18 tests cover policy-disabled auto-canon, model-provenance rejection, future life-state rejection and life-state time regression.
+Current implementation branch: `phase3-world-routines-reconciled`.
+
+Current branch preserves PR #21 hardening and adds:
+- durable CharacterVersion-bound Routine and StoryArc records;
+- IANA timezone validation plus exact local HH:MM routine slots;
+- deterministic routine occurrence identity from Character + routine key + local date;
+- routine occurrences admitted through the canonical SimulationInput/idempotency path rather than a parallel scheduler;
+- stale CharacterVersion routine bindings fail closed until explicit revision/rebind;
+- Routine revision/CAS;
+- StoryArc revision/CAS and forward-only lifecycle;
+- one canonical StoryArc transition implementation in `packages/world` consumed by the PostgreSQL adapter;
+- package-owned migration and PostgreSQL integration coverage for timezone occurrence replay, rebinding and story-arc lifecycle;
+- existing automatic-canon policy/provenance gates and monotonic life-state time checks retained from PR #21.
 
 Immediate work:
-1. run the full CI gate for `phase3-world-canon-hardening` and fix every real failure;
-2. merge when green;
-3. add authority-bearing world canon governance by composing `AuthorityContext`, current-policy checks and persistent allow-once ApprovalBinding consumption with draft approval/retirement;
-4. then implement routines/story arcs as typed, idempotent SimulationInputs producing life-state/event transitions;
-5. add pause/restart/catch-up acceptance tests before optional spatial mechanics.
+1. run the complete PostgreSQL 18 CI gate on the reconciled branch and fix all failures;
+2. close/supersede PR #22 and merge only the reconciled PR after green CI;
+3. add authority-bearing canon approval/retirement using current AuthorityContext, persistent policy revision and exact allow-once ApprovalBinding consumption;
+4. implement WorldInteraction evidence plus executable pause/restart/catch-up behavior;
+5. prove bounded catch-up cannot duplicate routine SimulationInputs or canon after restart;
+6. only then consider optional spatial mechanics.
 
-PR #20 was closed as a duplicate after PR #19 merged; do not revive its parallel implementation.
+Keep private Relationship data outside shared World inputs. Routines/story arcs are World records keyed by canonical Character identity; they never become Character identity themselves.
 
 The post-freeze MemPalace/Paperclip assessment remains in `docs/migration/POST-FREEZE-SUPPLEMENTAL-DONORS.md`. Neither is a Phase 3 runtime dependency.
 
