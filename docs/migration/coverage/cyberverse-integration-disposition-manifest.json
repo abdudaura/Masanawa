@@ -1,0 +1,502 @@
+{
+  "source": "Lynpoint/CyberVerse@13a6a95b47e5e6f0809683458767746ad54d7d7f",
+  "count": 62,
+  "entries": [
+    {
+      "path": "inference/plugins/asr/__init__.py",
+      "kind": "provider-adapter",
+      "classification": "C/B",
+      "disposition": "clean-room contract/behavior reference",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/asr/base.py",
+      "kind": "provider-adapter",
+      "classification": "C/B",
+      "disposition": "clean-room contract/behavior reference",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/asr/qwen_asr_plugin.py",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/asr/whisper_plugin.py",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/llm/__init__.py",
+      "kind": "provider-adapter",
+      "classification": "C/B",
+      "disposition": "clean-room contract/behavior reference",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/llm/base.py",
+      "kind": "provider-adapter",
+      "classification": "C/B",
+      "disposition": "clean-room contract/behavior reference",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/llm/litellm_plugin.py",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/llm/openai_plugin.py",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/llm/qwen_plugin.py",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/tts/__init__.py",
+      "kind": "provider-adapter",
+      "classification": "C/B",
+      "disposition": "clean-room contract/behavior reference",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/tts/base.py",
+      "kind": "provider-adapter",
+      "classification": "C/B",
+      "disposition": "clean-room contract/behavior reference",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/tts/doubao_tts_plugin.py",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/tts/openai_tts_plugin.py",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/tts/qwen_tts_plugin.py",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/voice_llm/__init__.py",
+      "kind": "provider-adapter",
+      "classification": "C/B",
+      "disposition": "clean-room contract/behavior reference",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/voice_llm/base.py",
+      "kind": "provider-adapter",
+      "classification": "C/B",
+      "disposition": "clean-room contract/behavior reference",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/voice_llm/doubao_config.py",
+      "kind": "provider-adapter",
+      "classification": "C/B",
+      "disposition": "clean-room contract/behavior reference",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/voice_llm/doubao_protocol.py",
+      "kind": "provider-adapter",
+      "classification": "C/B",
+      "disposition": "clean-room contract/behavior reference",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/voice_llm/doubao_realtime.py",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/voice_llm/gemini_live.py",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/voice_llm/openai_realtime_compatible.py",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/voice_llm/persona/__init__.py",
+      "kind": "provider-adapter",
+      "classification": "C/B",
+      "disposition": "clean-room contract/behavior reference",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/voice_llm/persona/i18n.py",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/voice_llm/persona/runtime.py",
+      "kind": "provider-adapter",
+      "classification": "C/B",
+      "disposition": "clean-room contract/behavior reference",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/voice_llm/persona/schemas.py",
+      "kind": "provider-adapter",
+      "classification": "C/B",
+      "disposition": "clean-room contract/behavior reference",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/voice_llm/persona/subagents/__init__.py",
+      "kind": "provider-adapter",
+      "classification": "C/B",
+      "disposition": "clean-room contract/behavior reference",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/voice_llm/persona/subagents/runner.py",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/voice_llm/persona/supervisor.py",
+      "kind": "provider-adapter",
+      "classification": "C/B",
+      "disposition": "clean-room contract/behavior reference",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/voice_llm/persona_agent.py",
+      "kind": "provider-adapter",
+      "classification": "C/B",
+      "disposition": "clean-room contract/behavior reference",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/voice_llm/qwen_omni_realtime.py",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/avatar/__init__.py",
+      "kind": "provider-adapter",
+      "classification": "C/B",
+      "disposition": "clean-room contract/behavior reference",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/avatar/base.py",
+      "kind": "provider-adapter",
+      "classification": "C/B",
+      "disposition": "clean-room contract/behavior reference",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/avatar/flash_head_plugin.py",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/avatar/live_act_plugin.py",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/plugins/avatar/warmup.py",
+      "kind": "provider-adapter",
+      "classification": "C/B",
+      "disposition": "clean-room contract/behavior reference",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "server/internal/livekit/bot.go",
+      "kind": "presence-adapter",
+      "classification": "C/B",
+      "disposition": "behavior-reference; LiveKit adopted independently from upstream",
+      "canonical_destination": "services/presence",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "server/internal/livekit/room_manager.go",
+      "kind": "presence-adapter",
+      "classification": "C/B",
+      "disposition": "behavior-reference; LiveKit adopted independently from upstream",
+      "canonical_destination": "services/presence",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "server/internal/livekit/token.go",
+      "kind": "presence-adapter",
+      "classification": "C/B",
+      "disposition": "behavior-reference; LiveKit adopted independently from upstream",
+      "canonical_destination": "services/presence",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "server/internal/livekit/token_test.go",
+      "kind": "presence-adapter",
+      "classification": "C/B",
+      "disposition": "behavior-reference; LiveKit adopted independently from upstream",
+      "canonical_destination": "services/presence",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "server/internal/livekit/vp8_chunk.go",
+      "kind": "presence-adapter",
+      "classification": "C/B",
+      "disposition": "behavior-reference; LiveKit adopted independently from upstream",
+      "canonical_destination": "services/presence",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "server/internal/livekit/vp8_chunk_test.go",
+      "kind": "presence-adapter",
+      "classification": "C/B",
+      "disposition": "behavior-reference; LiveKit adopted independently from upstream",
+      "canonical_destination": "services/presence",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "server/internal/vidus1/client.go",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "server/internal/vidus1/client_test.go",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "server/internal/xunfeiavatar/client.go",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "server/internal/xunfeiavatar/client_test.go",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "server/internal/api/baidu_xiling.go",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "server/internal/api/baidu_xiling_test.go",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "server/internal/api/baidu_xiling_video.go",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "server/internal/api/vidu_s1.go",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "server/internal/api/vidu_s1_test.go",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "server/internal/api/xunfei_avatar.go",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "server/internal/api/xunfei_avatar_catalog.go",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "server/internal/api/xunfei_avatar_catalog.json",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "server/internal/api/xunfei_avatar_catalog_embed.go",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "server/internal/api/xunfei_avatar_catalog_test.go",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "server/internal/api/xunfei_avatar_test.go",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "server/internal/api/xunfei_stream.go",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "server/internal/api/xunfei_stream_test.go",
+      "kind": "provider-adapter",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "packages/providers",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/pi_bridge/package-lock.json",
+      "kind": "agent-bridge",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "gateway/agents",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/pi_bridge/package.json",
+      "kind": "agent-bridge",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "gateway/agents",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/pi_bridge/src/bridge.mjs",
+      "kind": "agent-bridge",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "gateway/agents",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    },
+    {
+      "path": "inference/pi_bridge/test/bridge.test.mjs",
+      "kind": "agent-bridge",
+      "classification": "C",
+      "disposition": "reference-only",
+      "canonical_destination": "gateway/agents",
+      "rule": "No CyberVerse implementation copied. Recreate only from observable behavior and Masanawa contracts; concrete provider activation requires independent upstream/provider review and ADR-0010 certification."
+    }
+  ]
+}
