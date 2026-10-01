@@ -399,3 +399,14 @@ Deep behavior mining from tests remains required before Phase 0 completion.
 | B-MEM-039 | MEM-035 | Update/delete history is recorded only after storage mutation succeeds; identity scope remains immutable through updates. | A | update/delete pipeline | analysed |
 | B-MEM-040 | MEM-036 | Expiration uses a validated calendar date and hides expired records by default, while explicit historical/include-expired queries may request them under normal authorization. | B | expiration utility + search/get filtering | analysed |
 | B-MEM-041 | MEM-036 | Do not attribute full temporal reference-date semantics to Mem0 OSS at this pin; unsupported timestamp/reference_date inputs fail explicitly rather than silently approximating temporal search. | A | main.py temporal guards | analysed |
+
+### Phase 0B Pipecat invariants
+
+| ID | Feature | Required behavior | Class | Evidence | Status |
+|---|---|---|---|---|---|
+| B-PIP-001 | PIP-001 | Start/system frames outrank queued data/control frames while preserving arrival order within each priority tier; interruption may drop only interruptible work. | A | frame_processor queue + frame contracts | analysed |
+| B-PIP-002 | PIP-002 | Speculative responses remain isolated from canonical context/output until the user turn is confirmed; mismatch, resumed speech or interruption discards held output while uninterruptible/tool-result/shutdown frames still progress. | A | speculation gate + eager-turn tests | analysed |
+| B-PIP-003 | PIP-003 | TTS ordering preserves text/start/audio/stop boundaries across synchronous and asynchronous providers; pipeline pause on async audio always resumes, including zero-audio completion and interruption paths. | A | TTS ordering/interruption tests | analysed |
+| B-PIP-004 | PIP-004 | Context/history commit follows actual user/assistant/tool lifecycle; provisional/eager transcript does not mutate committed context until turn confirmation. | A | universal aggregators + eager-turn tests | analysed |
+| B-PIP-005 | PIP-005 | Turn-inference trigger may precede semantic turn finalization; a completion that arrives while the user is speaking is stale and must not finalize the turn. | A | user turn controller tests | analysed |
+| B-PIP-006 | PIP-001/003 | Per-frame interruptibility survives output chunking/buffering so protected audio/control segments cannot accidentally become interruptible downstream. | A | base output transport + frame ordering tests | analysed |
