@@ -1,89 +1,70 @@
 # Source Map — Microsoft Agent Framework
 
-Pinned: `e15c6dce2d10196a61c851a56ef3d839ff3c3ea7`.
+Pinned revision: `e15c6dce2d10196a61c851a56ef3d839ff3c3ea7` (`main`).
 
-Status: Phase 0A workflow/orchestration deep pass complete.
+Status: Phase 0B exhaustive descendant-family coverage **COMPLETE** at the pinned revision. See:
+- `docs/migration/coverage/MICROSOFT-AGENT-FRAMEWORK.md`;
+- `docs/migration/coverage/MICROSOFT-AGENT-FRAMEWORK-INVENTORY.md`.
 
 ## Executive result
 
-Microsoft Agent Framework is selected as the primary **durable graph-workflow semantics donor** and a secondary middleware/skills/interoperability donor.
+Microsoft Agent Framework is Masanawa's primary durable workflow/orchestration donor, not Masanawa's runtime kernel.
 
-Masanawa will adapt its workflow semantics behind a TypeScript/PostgreSQL `packages/workflows` implementation rather than introduce a second canonical Python runtime.
+Selected strengths:
+- immutable graph construction and validation;
+- conditional, fan-out, fan-in and switch routing;
+- durable checkpoint lineage and restore compatibility;
+- checkpointed pending HITL/external requests;
+- handoff/group-chat/Magentic/sequential/concurrent orchestration patterns;
+- exact argument-bound tool approvals;
+- middleware/interceptor seams;
+- progressive-disclosure Agent Skills safety;
+- A2A and MCP adapter boundaries;
+- declarative workflow authoring;
+- OpenTelemetry workflow/agent/tool instrumentation;
+- durable checkpoint backend/concurrency patterns.
 
-## Workflow graph
+## Canonical Masanawa boundary
 
-The pinned workflow builder supports typed executors/agents and graph edges including sequential, conditional, fan-out/fan-in/switch patterns. Build validates the graph and applies max-iteration convergence limits.
+Masanawa implements one TypeScript/PostgreSQL workflow engine in `packages/workflows`.
 
-Useful Masanawa concepts:
-- immutable/versioned workflow definition;
-- explicit start executor;
-- typed input/output;
-- graph validation before activation;
-- deterministic edge delivery state;
-- selected/intermediate output semantics;
-- subworkflow composition.
+The donor's Python and .NET implementations are evidence surfaces only:
+- no Python/.NET object is canonical workflow state;
+- no provider thread/session is Character identity;
+- no donor memory/vector store replaces `packages/memory`;
+- no protocol session key authorizes itself;
+- no donor storage backend changes canonical ownership.
 
-## Checkpointing and recovery
+## Strong invariants retained
 
-`WorkflowCheckpoint` captures:
-- workflow name;
-- graph signature hash;
-- checkpoint ID + previous checkpoint lineage;
-- messages;
-- committed workflow state;
-- executor state;
-- edge-runner/fan-in state;
-- pending request-info events;
-- iteration/superstep metadata;
-- timestamp/version/metadata.
+- workflow publication validates graph shape/types/connectivity;
+- restore requires workflow-version/graph compatibility;
+- checkpoint lineage is explicit and not inferred from iteration count;
+- fan-in partial state and pending external requests survive restart;
+- non-converging loops are bounded;
+- cancellation does not pretend already-started side effects were rolled back;
+- approval binds to exact immutable prepared tool arguments;
+- changed arguments invalidate approval;
+- handoff targets are explicit workflow participants;
+- manager-selected participants are validated;
+- orchestration round/stall/reset budgets are bounded;
+- skill resources/scripts revalidate path/symlink safety at use time;
+- A2A/MCP adapters do not collapse HITL into false success;
+- sensitive telemetry content is opt-in;
+- canonical checkpoints use explicit versioned schemas rather than Python pickle.
 
-Important invariant: checkpoint ordering is lineage-based, not simply iteration number, because human-in-loop response-entry checkpoints can share the same iteration boundary.
+## Repository closure
 
-Checkpoint storage is abstracted. File storage includes careful serialization/atomic-replace behavior, but Masanawa will use canonical PostgreSQL persistence and DB concurrency.
+Pinned maintained Python workspace packages mapped: **40 / 40**.
 
-Masanawa adds current authorization/approval revalidation and side-effect receipts to restore semantics.
+Pinned .NET source projects mapped: **35 / 35**.
 
-## Human-in-loop
+Pinned .NET test projects recognized: **48**.
 
-Pending request-info events survive checkpoint/restore. This is the strongest donor pattern for pause/resume around approvals, clarification and human intervention.
+Experimental Python lab is explicitly reference-only unless separately adopted.
 
-A restored request is durable workflow state, but an old authorization snapshot is never current authority.
+Unresolved meaningful production families: **0**.
 
-## Middleware and observability
+Unresolved canonical-authority conflicts: **0**.
 
-Agent/function middleware receives explicit invocation context and can inspect/modify metadata, tools/options and result around `call_next`. Workflow code includes OpenTelemetry spans/feature instrumentation.
-
-Use as a donor for framework-neutral execution middleware and trace correlation.
-
-## Agent Skills
-
-The pinned skills implementation supports:
-- progressive disclosure (advertise -> load -> resource read);
-- file, inline, class and custom sources;
-- aggregating/filtering/deduplicating/caching sources;
-- resources distinct from scripts;
-- script runners;
-- XML escaping;
-- traversal/symlink escape defenses;
-- MCP interoperability.
-
-OpenJarvis remains Masanawa's primary structural SkillManager/executor donor; MAF contributes disclosure/source/security/interoperability behavior.
-
-## Adoption role
-
-Primary donor:
-- durable workflow graph/checkpoint/HITL/restart semantics.
-
-Secondary donor:
-- middleware;
-- OpenTelemetry;
-- Agent Skills progressive disclosure;
-- A2A/MCP interoperability;
-- agent-as-workflow-executor adapters.
-
-Rejected:
-- Python workflow objects/checkpoint files as canonical persistence;
-- framework Agent identity as Character identity;
-- framework session state as Masanawa memory/business truth.
-
-See ADR-0008 and `docs/migration/RUNTIME-SKILLS-WORKFLOW-ADOPTION-BOUNDARY.md`.
+See ADR-0008 and `docs/migration/RUNTIME-SKILLS-WORKFLOW-ADOPTION-BOUNDARY.md` for the cross-donor workflow/runtime decision.
