@@ -713,34 +713,6 @@ export async function commitWorldGeneration(
   }
 
   let inputs: InputRow[] = [];
-  const lifeStates: CharacterLifeState[] = [];
-  for (const change of lifeStateChanges) {
-    lifeStates.push(
-      await applyLifeStateChange(
-        client,
-        input.tenantId,
-        input.worldId,
-        input.simulationTime,
-        input.committedAt,
-        change,
-      ),
-    );
-  }
-
-  const worldEvents: WorldEvent[] = [];
-  for (const event of eventDrafts) {
-    worldEvents.push(
-      await appendWorldEvent(
-        client,
-        current,
-        nextGenerationNumber,
-        input.simulationTime,
-        input.committedAt,
-        event,
-      ),
-    );
-  }
-
   if (sequences.length > 0) {
     const claimed = await client.query<InputRow>(
       `SELECT tenant_id,
@@ -821,6 +793,34 @@ export async function commitWorldGeneration(
       input.committedAt,
     ],
   );
+
+  const lifeStates: CharacterLifeState[] = [];
+  for (const change of lifeStateChanges) {
+    lifeStates.push(
+      await applyLifeStateChange(
+        client,
+        input.tenantId,
+        input.worldId,
+        input.simulationTime,
+        input.committedAt,
+        change,
+      ),
+    );
+  }
+
+  const worldEvents: WorldEvent[] = [];
+  for (const event of eventDrafts) {
+    worldEvents.push(
+      await appendWorldEvent(
+        client,
+        current,
+        nextGenerationNumber,
+        input.simulationTime,
+        input.committedAt,
+        event,
+      ),
+    );
+  }
 
   if (sequences.length > 0) {
     const completed = await client.query<InputRow>(
