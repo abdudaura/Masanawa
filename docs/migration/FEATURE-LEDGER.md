@@ -162,8 +162,8 @@ foundation, identity, relationships, memory, world, decisions, agents, skills, t
 | DLF-001 | avatar | persistent digital-life client across web/desktop/avatar/game contexts | AIRI | B | selected architectural donor | apps/clients + avatar | analysed |
 | DLF-002 | avatar | Live2D/VRM embodied character runtime | AIRI | B | primary embodiment donor | avatar providers/clients | analysed |
 | RTC-014 | presence | AgentSession/Worker/job abstraction over production WebRTC | LiveKit Agents | B | selected session donor | services/presence | analysed |
-| RTC-010 | presence | semantic turn detection and multi-provider STT/LLM/TTS/realtime/avatar plugins | LiveKit Agents | B | major candidate | presence + providers | discovered |
-| RTC-011 | presence | composable frame/pipeline processors for voice/video/control | Pipecat | B | major candidate | services/presence | discovered |
+| RTC-010 | presence | semantic turn detection and multi-provider STT/LLM/TTS/realtime/avatar plugins | LiveKit Agents | B | selected realtime session donor | presence + providers | analysed |
+| RTC-011 | presence | composable frame/pipeline processors for voice/video/control | Pipecat | B | secondary policy/pipeline donor | services/presence | analysed |
 | AGT-013 | agents | multi-agent handoff/fan-out/sidecar/shared-bus realtime composition | Pipecat | B | secondary presence donor | agents + presence | analysed |
 | MEM-015 | memory | persistent agent identity/experience across conversations + shared memory | Letta | B | major candidate | packages/memory + identity | discovered |
 | MEM-016 | memory | temporal/entity-aware multi-signal retrieval and memory evaluation | Mem0 | B | major candidate | packages/memory + telemetry | discovered |
@@ -193,5 +193,10 @@ foundation, identity, relationships, memory, world, decisions, agents, skills, t
 | RTC-013 | presence | serialized microphone/ASR binding lifecycle with stale-callback isolation | AIRI | A | primary client-lifecycle donor | clients + services/presence | analysed |
 | PER-004 | perception | deterministic/browser-DOM/desktop computer-use lane separation with approval/audit | AIRI | B | secondary execution donor | tools + perception | analysed |
 | PRV-006 | infrastructure | runtime-neutral client inference/provider definitions | AIRI | B | secondary provider donor | packages/providers | analysed |
+| RTC-015 | presence | distributed rooms/participants/tracks/TURN/SIP WebRTC transport | LiveKit Server | B | selected transport donor | services/presence | analysed |
+| RTC-016 | presence | detector-aware endpointing/interruption policy with handoff-stable overrides | LiveKit Agents | A/B | selected session donor | services/presence | analysed |
+| RTC-017 | avatar | remote/generated avatar participant lifecycle and join/playback metrics | LiveKit Agents | B | selected remote-avatar donor | services/presence + providers | analysed |
+| RTC-018 | presence | explicit interruptible media/control frames and deterministic TTS ordering | Pipecat | A/B | secondary behavior donor | services/presence | analysed |
+| RTC-019 | presence | decomposed turn-start/turn-stop/speculative-finalization strategies | Pipecat | B | secondary turn-policy donor | services/presence | analysed |
 
 This inventory is intentionally incomplete. Source-specific map documents identify the next deep-mining areas.
