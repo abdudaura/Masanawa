@@ -505,3 +505,12 @@ This inventory is intentionally incomplete. Source-specific map documents identi
 | SEC-042 | security | shared-Gateway trust-domain model explicitly unsuitable as hostile multi-tenant isolation | OpenClaw | C/B | boundary reference | gateway bridge only | analysed |
 | SKL-040 | skills | immutable content-derived skill revisions with stale-write conflict and session pinning | OpenClaw | A/B | primary revision/distribution donor | packages/skills | analysed |
 | SKL-041 | skills | source precedence separate from agent visibility/tool authority | OpenClaw | A | primary skill policy donor | packages/skills + security | analysed |
+
+
+| PRV-040 | providers | secret-free model route intent with separated route/auth precedence and host-owned retry budgeting | OpenClaw | A/B | provider runtime donor | packages/providers | analysed |
+| SEC-043 | security | destination-bound command/model secret egress with cancellation revocation | OpenClaw | A | security donor | packages/security + providers | analysed |
+| MEM-040 | memory | write-time provenance, structural anti-recall-loop gating and bounded dreaming promotion | OpenClaw | A/B | secondary memory donor | packages/memory | analysed |
+| WFL-040 | workflows | restart-bounded cron scheduling with lifecycle generation, durable run reservations and settlement fences | OpenClaw | A/B | secondary scheduler donor | packages/workflows | analysed |
+| WFL-041 | workflows | heartbeat/proactivity as typed wake/trigger with admitted-occurrence preservation | OpenClaw | B | secondary proactive donor | packages/workflows triggers | analysed |
+| SEC-044 | security | DNS/IP/redirect-aware SSRF network policy | OpenClaw | A/B | security donor | packages/security | analysed |
+| OBS-040 | observability | privacy-safe diagnostics/OTel with explicit content capture and non-authoritative trace context | OpenClaw | A/B | telemetry donor | packages/telemetry | analysed |
