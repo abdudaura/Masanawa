@@ -264,3 +264,18 @@ This inventory is intentionally incomplete. Source-specific map documents identi
 | LEG-001 | legacy | old Astro fan/creator/admin surface and compatibility contracts retained only as behavior/data migration evidence | ChatWithStars | C | historical reference | no runtime destination; extract parity fixtures only | selected |
 | DEP-001 | deployment | donor-specific Railway/Cloudflare/Modal/RunPod wrappers are deployment evidence, not canonical architecture | ChatWithStars | C/B | operations reference | deploy + provider adapters only where selected | selected |
 | DAT-001 | fixtures | checked-in star/profile/media/project data are fixtures/reference assets, not canonical runtime state | ChatWithStars | C/B | fixture/reference | seed/test fixtures after provenance/privacy review | selected |
+
+### Phase 0B OpenJarvis coverage additions
+
+| ID | Domain | Feature | Source | Class | Donor role | Masanawa destination | Status |
+|---|---|---|---|---|---|---|---|
+| PRV-002 | providers | engine/provider discovery, hardware-aware local inference and bounded fallback/routing | OpenJarvis | B | selected runtime/provider donor | packages/providers + packages/agents | analysed |
+| INT-001 | interoperability | MCP and A2A protocol adapters separated from canonical agent/tool identity | OpenJarvis | B | interoperability donor | gateway/interoperability + packages/tools | analysed |
+| CON-001 | connectors | external source/connectors with explicit security, ingestion and normalization boundaries | OpenJarvis | B | connector architecture donor | packages/connectors + knowledge | analysed |
+| SBX-001 | security | sandbox/execution boundary distinct from tool allow/deny and consequential-action approval | OpenJarvis | A/B | security architecture donor | security + packages/tools | analysed |
+| OBS-001 | telemetry | traces, analytics, benchmarks, evals, energy/cost/latency evidence with redaction | OpenJarvis | B | observability/evaluation donor | telemetry + testing/evaluation | analysed |
+| SES-001 | runtime | explicit runtime sessions/continuation/persistence that do not become Character identity or durable workflow truth | OpenJarvis | B | runtime behavior donor | packages/agents + gateway | analysed |
+| SPH-001 | media | speech input/output provider abstraction and client playback controls | OpenJarvis | B | secondary media donor | packages/providers/media + clients | analysed |
+| CLI-001 | operations | CLI/daemon/server/SDK/operator surfaces over one canonical runtime | OpenJarvis | B | operator/DX donor | apps/ops + SDK/CLI adapters | analysed |
+| RCP-001 | workflows | recipes/templates/examples as declarative composition/reference, not parallel domain runtimes | OpenJarvis | C/B | authoring/reference donor | developer tooling + workflow templates | selected |
+| RST-001 | runtime | duplicate Rust/Python implementations are implementation alternatives, not two Masanawa authorities | OpenJarvis | C/B | implementation reference | canonical TypeScript contracts; optional native acceleration only behind adapters | selected |
