@@ -33,6 +33,9 @@ import {
   type CreateWorldInput,
   type GovernedWorldRepository,
   type NarrativeWorldRepository,
+  type PauseWorldInput,
+  type RecoverPausedWorldInput,
+  type RecoverPausedWorldResult,
   type PutCharacterLifeStateInput,
   type PutRoutineInput,
   type PutStoryArcInput,
@@ -58,6 +61,8 @@ interface WorldRow {
   current_generation_id: WorldGenerationId;
   current_generation_number: string;
   simulation_time: Date;
+  paused_at: Date | null;
+  recovery_target_time: Date | null;
   revision: string;
   created_at: Date;
   updated_at: Date;
@@ -194,6 +199,10 @@ function asWorld(row: WorldRow): World {
       "generation number",
     ),
     simulationTime: toInstant(row.simulation_time),
+    pausedAt: row.paused_at ? toInstant(row.paused_at) : null,
+    recoveryTargetTime: row.recovery_target_time
+      ? toInstant(row.recovery_target_time)
+      : null,
     revision: integer(row.revision, "world revision"),
     createdAt: toInstant(row.created_at),
     updatedAt: toInstant(row.updated_at),
@@ -357,6 +366,8 @@ async function loadWorld(
             current_generation_id,
             current_generation_number,
             simulation_time,
+            paused_at,
+            recovery_target_time,
             revision,
             created_at,
             updated_at
@@ -397,6 +408,8 @@ export async function createWorld(
                current_generation_id,
                current_generation_number,
                simulation_time,
+               paused_at,
+               recovery_target_time,
                revision,
                created_at,
                updated_at`,
@@ -513,6 +526,12 @@ export async function commitWorldGeneration(
   );
   if (!current) {
     throw notFound();
+  }
+  if (current.status !== "active") {
+    throw conflict(
+      "world.not_active",
+      "Only an active World may commit a simulation generation",
+    );
   }
   if (current.currentGenerationNumber !== input.expectedGenerationNumber) {
     throw conflict(
@@ -647,6 +666,8 @@ export async function commitWorldGeneration(
                 current_generation_id,
                 current_generation_number,
                 simulation_time,
+                paused_at,
+                recovery_target_time,
                 revision,
                 created_at,
                 updated_at`,
@@ -672,6 +693,347 @@ export async function commitWorldGeneration(
     world: asWorld(worldResult.rows[0]),
     generation: asGeneration(generationResult.rows[0]!),
     completedInputs: Object.freeze(inputs.map(asInput)),
+  });
+}
+
+function assertExpectedWorldRevision(value: number): void {
+  if (!Number.isSafeInteger(value) || value < 1) {
+    throw new RangeError("expectedRevision must be a positive safe integer");
+  }
+}
+
+export async function pauseWorld(
+  client: PoolClient,
+  input: PauseWorldInput,
+): Promise<World> {
+  assertExpectedWorldRevision(input.expectedRevision);
+  const current = await loadWorld(
+    client,
+    input.tenantId,
+    input.worldId,
+    true,
+  );
+  if (!current) {
+    throw notFound();
+  }
+  if (current.revision !== input.expectedRevision) {
+    throw conflict(
+      "world.revision_conflict",
+      "World revision was changed by another writer",
+    );
+  }
+  if (current.status !== "active") {
+    throw conflict(
+      "world.pause_invalid_state",
+      "Only an active World may be paused",
+    );
+  }
+
+  const result = await client.query<WorldRow>(
+    `UPDATE world.worlds
+        SET status = 'paused',
+            paused_at = $4,
+            recovery_target_time = NULL,
+            revision = revision + 1,
+            updated_at = $4
+      WHERE tenant_id = $1
+        AND world_id = $2
+        AND revision = $3
+        AND status = 'active'
+      RETURNING tenant_id,
+                world_id,
+                status,
+                policy,
+                policy_revision,
+                current_generation_id,
+                current_generation_number,
+                simulation_time,
+                paused_at,
+                recovery_target_time,
+                revision,
+                created_at,
+                updated_at`,
+    [
+      input.tenantId,
+      input.worldId,
+      input.expectedRevision,
+      input.pausedAt,
+    ],
+  );
+  if (!result.rows[0]) {
+    throw conflict(
+      "world.revision_conflict",
+      "World pause raced with another writer",
+    );
+  }
+  return asWorld(result.rows[0]);
+}
+
+interface DueRoutineOccurrenceRow {
+  routine_key: string;
+  scheduled_for: Date;
+}
+
+async function dueRoutineOccurrences(
+  client: PoolClient,
+  tenantId: TenantId,
+  worldId: WorldId,
+  after: Instant,
+  through: Instant,
+  maxSteps: number,
+): Promise<{
+  readonly rows: readonly DueRoutineOccurrenceRow[];
+  readonly stepTimes: readonly Instant[];
+  readonly hasMore: boolean;
+}> {
+  const result = await client.query<DueRoutineOccurrenceRow>(
+    `WITH candidates AS (
+       SELECT r.routine_key,
+              ((day.local_date::date + r.local_time)
+                AT TIME ZONE r.timezone) AS scheduled_for
+         FROM world.routines AS r
+         CROSS JOIN LATERAL generate_series(
+           ($3::timestamptz AT TIME ZONE r.timezone)::date,
+           ($4::timestamptz AT TIME ZONE r.timezone)::date,
+           interval '1 day'
+         ) AS day(local_date)
+        WHERE r.tenant_id = $1
+          AND r.world_id = $2
+          AND r.enabled = true
+     ),
+     valid_candidates AS (
+       SELECT c.routine_key, c.scheduled_for
+         FROM candidates AS c
+         JOIN world.routines AS r
+           ON r.tenant_id = $1
+          AND r.world_id = $2
+          AND r.routine_key = c.routine_key
+        WHERE c.scheduled_for > $3::timestamptz
+          AND c.scheduled_for <= $4::timestamptz
+          AND (c.scheduled_for AT TIME ZONE r.timezone)::time = r.local_time
+     ),
+     selected_steps AS (
+       SELECT DISTINCT scheduled_for
+         FROM valid_candidates
+        ORDER BY scheduled_for
+        LIMIT $5
+     )
+     SELECT c.routine_key, c.scheduled_for
+       FROM valid_candidates AS c
+       JOIN selected_steps AS s USING (scheduled_for)
+      ORDER BY c.scheduled_for, c.routine_key`,
+    [tenantId, worldId, after, through, maxSteps + 1],
+  );
+
+  const allSteps = [
+    ...new Set(result.rows.map((row) => row.scheduled_for.toISOString())),
+  ];
+  const hasMore = allSteps.length > maxSteps;
+  const selectedSteps = allSteps.slice(0, maxSteps);
+  const selected = new Set(selectedSteps);
+  return Object.freeze({
+    rows: Object.freeze(
+      result.rows.filter((row) => selected.has(row.scheduled_for.toISOString())),
+    ),
+    stepTimes: Object.freeze(
+      selectedSteps.map((value) => toInstant(value)),
+    ),
+    hasMore,
+  });
+}
+
+async function appendRecoveryGeneration(
+  client: PoolClient,
+  input: RecoverPausedWorldInput,
+  current: World,
+  simulationTime: Instant,
+  status: "active" | "paused",
+  recoveryTargetTime: Instant | null,
+): Promise<{ readonly world: World; readonly generation: WorldGeneration }> {
+  const nextGenerationNumber = current.currentGenerationNumber + 1;
+  const generationResult = await client.query<GenerationRow>(
+    `INSERT INTO world.generations (
+       tenant_id,
+       world_id,
+       world_generation_id,
+       generation_number,
+       previous_generation_id,
+       simulation_time,
+       committed_at
+     )
+     VALUES ($1,$2,$3,$4,$5,$6,$7)
+     RETURNING tenant_id,
+               world_id,
+               world_generation_id,
+               generation_number,
+               previous_generation_id,
+               simulation_time,
+               committed_at`,
+    [
+      input.tenantId,
+      input.worldId,
+      input.nextGenerationId,
+      nextGenerationNumber,
+      current.currentGenerationId,
+      simulationTime,
+      input.requestedAt,
+    ],
+  );
+
+  const worldResult = await client.query<WorldRow>(
+    `UPDATE world.worlds
+        SET status = $4,
+            current_generation_id = $5,
+            current_generation_number = $6,
+            simulation_time = $7,
+            paused_at = CASE WHEN $4 = 'paused' THEN paused_at ELSE NULL END,
+            recovery_target_time = $8,
+            revision = revision + 1,
+            updated_at = $9
+      WHERE tenant_id = $1
+        AND world_id = $2
+        AND revision = $3
+        AND status = 'paused'
+      RETURNING tenant_id,
+                world_id,
+                status,
+                policy,
+                policy_revision,
+                current_generation_id,
+                current_generation_number,
+                simulation_time,
+                paused_at,
+                recovery_target_time,
+                revision,
+                created_at,
+                updated_at`,
+    [
+      input.tenantId,
+      input.worldId,
+      input.expectedRevision,
+      status,
+      input.nextGenerationId,
+      nextGenerationNumber,
+      simulationTime,
+      recoveryTargetTime,
+      input.requestedAt,
+    ],
+  );
+  if (!worldResult.rows[0]) {
+    throw conflict(
+      "world.revision_conflict",
+      "World recovery raced with another writer",
+    );
+  }
+
+  return Object.freeze({
+    world: asWorld(worldResult.rows[0]),
+    generation: asGeneration(generationResult.rows[0]!),
+  });
+}
+
+export async function recoverPausedWorld(
+  client: PoolClient,
+  input: RecoverPausedWorldInput,
+): Promise<RecoverPausedWorldResult> {
+  assertExpectedWorldRevision(input.expectedRevision);
+  const current = await loadWorld(
+    client,
+    input.tenantId,
+    input.worldId,
+    true,
+  );
+  if (!current) {
+    throw notFound();
+  }
+  if (current.revision !== input.expectedRevision) {
+    throw conflict(
+      "world.revision_conflict",
+      "World revision was changed by another writer",
+    );
+  }
+  if (current.status !== "paused") {
+    throw conflict(
+      "world.recovery_invalid_state",
+      "Only a paused World may be recovered",
+    );
+  }
+  assertSimulationTimeDoesNotMoveBackward(
+    current.simulationTime,
+    input.resumeTo,
+  );
+  if (
+    current.recoveryTargetTime !== null &&
+    current.recoveryTargetTime !== input.resumeTo
+  ) {
+    throw conflict(
+      "world.recovery_target_conflict",
+      "A bounded recovery is already targeting a different simulation time",
+    );
+  }
+
+  if (current.policy.catchUpMode === "manual") {
+    throw conflict(
+      "world.manual_recovery_required",
+      "World policy requires operator reconciliation before restart",
+    );
+  }
+
+  if (current.policy.catchUpMode === "skip") {
+    const recovered = await appendRecoveryGeneration(
+      client,
+      input,
+      current,
+      input.resumeTo,
+      "active",
+      null,
+    );
+    return Object.freeze({
+      ...recovered,
+      admittedInputs: Object.freeze([]),
+      complete: true,
+    });
+  }
+
+  const due = await dueRoutineOccurrences(
+    client,
+    input.tenantId,
+    input.worldId,
+    current.simulationTime,
+    input.resumeTo,
+    current.policy.maxCatchUpSteps,
+  );
+  const admittedInputs: SimulationInput[] = [];
+  for (const occurrence of due.rows) {
+    admittedInputs.push(
+      await admitRoutineOccurrence(client, {
+        tenantId: input.tenantId,
+        worldId: input.worldId,
+        routineKey: occurrence.routine_key,
+        scheduledFor: toInstant(occurrence.scheduled_for),
+        receivedAt: input.requestedAt,
+      }),
+    );
+  }
+
+  const lastStep = due.stepTimes.at(-1);
+  const complete = !due.hasMore;
+  const nextSimulationTime = complete
+    ? input.resumeTo
+    : (lastStep ?? current.simulationTime);
+  const recovered = await appendRecoveryGeneration(
+    client,
+    input,
+    current,
+    nextSimulationTime,
+    complete ? "active" : "paused",
+    complete ? null : input.resumeTo,
+  );
+
+  return Object.freeze({
+    ...recovered,
+    admittedInputs: Object.freeze(admittedInputs),
+    complete,
   });
 }
 
@@ -1770,6 +2132,9 @@ export function createPostgresWorldRepository(
       admitSimulationInput(client, input),
     commitGeneration: (input: CommitWorldGenerationInput) =>
       commitWorldGeneration(client, input),
+    pauseWorld: (input: PauseWorldInput) => pauseWorld(client, input),
+    recoverPausedWorld: (input: RecoverPausedWorldInput) =>
+      recoverPausedWorld(client, input),
     putCharacterLifeState: (input: PutCharacterLifeStateInput) =>
       putCharacterLifeState(client, input),
     appendWorldEvent: (input: AppendWorldEventInput) =>

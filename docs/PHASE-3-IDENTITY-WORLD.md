@@ -167,9 +167,9 @@ Next:
 - optional spatial mechanics only after recovery semantics pass.
 
 
-## WorldInteraction evidence — implemented, awaiting CI
+## WorldInteraction evidence — merged and validated
 
-Current branch: `phase3-world-interactions`.
+Merged through PR #25 at `ed186608248659654cdcf23ab8b793dd426fa7ef` after the complete PostgreSQL 18 CI gate passed.
 
 Implemented:
 - canonical WorldInteraction identity and typed structured evidence;
@@ -188,3 +188,28 @@ Next after green CI:
 - implement executable pause/restart/catch-up policy;
 - prove bounded recovery cannot duplicate routine inputs/events/interactions;
 - only then add optional spatial mechanics.
+
+
+## World pause/restart/catch-up — implemented, awaiting CI
+
+Current branch: `phase3-world-recovery-policy`.
+
+Implemented:
+- durable pause and in-progress recovery metadata on canonical World;
+- revision-CAS pause transition;
+- paused/stopped Worlds cannot commit ordinary simulation generations;
+- recovery advances are first-class WorldGenerations;
+- skip recovery advances the simulation clock without replaying missed routines while preserving admitted external inputs;
+- bounded recovery queries timezone-aware routine slots between current simulation time and one persisted recovery target;
+- maxCatchUpSteps bounds distinct scheduled time-steps, not routine count, preserving simultaneous occurrences;
+- bounded recovery stays paused across incomplete batches and becomes active only on the final batch;
+- routine catch-up reuses deterministic occurrence keys, so repeated/restarted recovery cannot duplicate SimulationInputs;
+- stale CharacterVersion-bound routines still fail closed through existing routine admission checks;
+- manual recovery remains paused and requires explicit operator reconciliation;
+- PostgreSQL tests cover paused worker rejection, multi-batch bounded catch-up, no duplicate routine inputs, skip queued-input preservation and manual refusal.
+
+Next after green CI:
+- merge recovery policy;
+- add any missing explicit memory/workflow integration ports for World evidence;
+- close remaining non-spatial Phase 3 acceptance gaps;
+- optional spatial mechanics only after those gates pass.

@@ -3,6 +3,8 @@ export {
   getWorld,
   admitSimulationInput,
   commitWorldGeneration,
+  pauseWorld,
+  recoverPausedWorld,
   putCharacterLifeState,
   appendWorldEvent,
   getWorldEvent,
