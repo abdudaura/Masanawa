@@ -135,8 +135,9 @@ Donor Agent/runtime/checkpoint objects never become Character, memory or busines
 Phase 0A is complete. Do not reopen donor selection without contradictory evidence and an explicit ownership/ADR update.
 
 1. Phase 0B source-coverage matrix created at `docs/migration/PHASE-0B-SOURCE-COVERAGE.md` with actual pinned top-level roots for all 17 repositories.
-2. **Next:** begin the exhaustive ChatWithStars root/module sweep (`apps`, `data`, `deploy`, `infra`, `packages`, `public`, `scripts`, `services`, `src`, `supabase`), mapping meaningful descendants to existing ledger IDs or explicit new A/B/C rows.
-3. Then continue source-by-source in the fixed 17-source sweep order; do not return to a four-donor-only deep-mine.
+2. ChatWithStars root/module sweep complete: all meaningful roots classified; added SUB/PRV/KNO/GRP/MSN/CRT/TEL/CVI plus explicit legacy/deployment/fixture dispositions.
+3. OpenJarvis root/module sweep complete: all meaningful module families classified; added provider/interoperability/connectors/sandbox/observability/session/speech/operator/template/native-duplication dispositions.
+4. **Next:** sweep N.E.K.O exhaustively across `app`, `brain`, `config`, `deps`, `frontend`, `knowledge`, `launcher_core`, `local_server`, `main_logic`, `main_routers`, `memory`, `plugin`, `specs`, `tests`, `utils`, then continue in the fixed 17-source order.
 4. For every retained capability, attach one canonical Masanawa destination and an acceptance/parity strategy.
 5. Track direct-adaptation provenance and path-specific license/NOTICE requirements before copying code.
 6. Phase 0 closes only when no meaningful pinned capability is unclassified.
