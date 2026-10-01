@@ -25,11 +25,11 @@ Masanawa owns the resulting architecture. Every repository under `references/sou
 | Proactivity | N.E.K.O | OpenClaw, Letta, ChatWithStars world | permission/frequency/privacy/quiet-hours |
 | Perception | N.E.K.O, OpenClaw device nodes | AIRI, elizaOS, CyberVerse | canonical PerceptionEvent + permissions |
 | Gateway/channels | **OpenClaw (selected architectural donor)** | elizaOS, OpenJarvis channels | Masanawa-native multi-tenant Gateway; optional OpenClaw bridge |
-| Realtime transport | LiveKit | CyberVerse | production WebRTC/session infrastructure |
-| Realtime agent session | LiveKit Agents TS | Pipecat, CyberVerse | Masanawa CharacterSession bridge |
-| Realtime pipeline/turn-taking | Pipecat, LiveKit Agents | CyberVerse | interruption, frames, multimodal composition |
+| Realtime transport | **LiveKit Server (selected)** | CyberVerse behavior | production WebRTC rooms/media infrastructure |
+| Realtime agent session | **LiveKit Agents TS (selected)** | Agents Python parity, CyberVerse behavior | Masanawa PresenceSession wrapper |
+| Realtime pipeline/turn-taking | **LiveKit Agents TS execution** | Pipecat policy/frame concepts, CyberVerse race behavior | Masanawa TurnPolicy/media-event contracts |
 | Digital-life/embodiment | **AIRI (selected architectural donor)** | N.E.K.O | Masanawa-owned Character contracts across web/desktop/mobile/avatar contexts |
-| Avatars | **AIRI renderer architecture** + LiveKit avatar ecosystem | CyberVerse, N.E.K.O | one renderer-neutral AvatarProvider tied to canonical identity |
+| Avatars | **AIRI local renderer + LiveKit remote AvatarSession (selected split)** | CyberVerse sync/warmup behavior, N.E.K.O | one canonical Character presentation identity |
 | Social | ChatWithStars | OpenClaw/eliza channel patterns | durable outbox/publish state |
 | Commerce | ChatWithStars | eliza approval patterns | deterministic ledger/reconciliation |
 | Studio | ChatWithStars | AIRI/CyberVerse media concepts | produced-media pipeline separate from live presence |
@@ -115,17 +115,28 @@ Relevant AIRI packages are mostly private and/or Vue-specific, so architecture/s
 
 See ADR-0005.
 
-### Presence
-CyberVerse is no longer the presumptive structural skeleton.
+### Presence — decision recorded
 
-Compare:
-- LiveKit server: production WebRTC/media infrastructure;
-- LiveKit Agents TS: TypeScript AgentSession, job/worker and STT/LLM/TTS/realtime/avatar ecosystem;
-- Pipecat: frame/pipeline architecture, structured conversation flows and multi-agent handoff/fan-out/shared-bus patterns;
-- CyberVerse: digital-human synchronization and foreground persona/background specialist UX;
-- AIRI: embodied character client/desktop/avatar experience.
+The realtime stack is deliberately layered rather than owned by one donor.
 
-CyberVerse remains GPLv3 reference-only by default.
+Selected:
+- **LiveKit Server** for production WebRTC rooms/media transport;
+- **LiveKit Agents TypeScript** for the primary server-side realtime AgentSession/worker substrate;
+- **AIRI** for local/client embodiment and Stage/renderers;
+- **LiveKit AvatarSession** for remote/generated avatar participants.
+
+Secondary design/behavior donors:
+- **Pipecat** for explicit frame/pipeline flow, interruptibility, turn-start/stop strategies, speculative turn handling and multi-worker patterns;
+- **CyberVerse** for stale playback epochs, A/V synchronization, renderer race protection, warmup and foreground-persona/background-task UX.
+
+Critical boundaries:
+- LiveKit Room/Participant/Job/AgentSession are presence infrastructure, not canonical User/Character/Task/Memory;
+- Pipecat is not a second canonical Python voice brain;
+- CharacterHandoff remains a Masanawa domain workflow, distinct from realtime activity/resource handoff;
+- recording/consent policy is Masanawa-owned;
+- provider fallback never changes Character identity or bypasses policy.
+
+See ADR-0006 and `docs/migration/PRESENCE-DONOR-COMPARISON.md`.
 
 ### Agent runtime
 OpenJarvis remains a strong skill/tool/strategy donor, but compare directly with:
