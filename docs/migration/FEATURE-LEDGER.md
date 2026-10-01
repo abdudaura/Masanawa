@@ -150,6 +150,18 @@ foundation, identity, relationships, memory, world, decisions, agents, skills, t
 | OPS-004 | operations | privacy-safe operational incidents and JEV aggregate evidence | ChatWithStars | A | primary | apps/ops + telemetry | analysed |
 | OPS-005 | operations | durable emergency kill switches independent of browser state | ChatWithStars | A | primary | apps/ops + security | analysed |
 | OPS-006 | operations | audited bounded financial adjustments | ChatWithStars | A | primary | apps/ops + commerce | analysed |
+| KNO-001 | tools | character knowledge-base/document RAG import and retrieval | CyberVerse | B | secondary | packages/tools + memory/providers | analysed |
+| KNO-002 | tools | multi-hop cited research across web/local docs | OpenJarvis | B | primary research strategy | packages/agents + skills/tools | analysed |
+| ECO-001 | learning/evaluation | evaluation across accuracy, energy, FLOPs, latency and monetary cost | OpenJarvis | B | primary evaluation | packages/telemetry/testing | analysed |
+| UGC-001 | plugins | user-created character/model/voice-pack distribution marketplace | N.E.K.O | B | secondary/future | plugin/asset marketplace | analysed |
+| VOC-001 | identity | custom voice cloning/enrollment for character output voice | N.E.K.O | B | secondary | packages/identity + providers | analysed |
+| AVT-005 | avatar | Live2D/VRM/MMD/PNGTuber/desktop-pet embodiment formats | N.E.K.O | B | primary breadth | client/avatar providers | analysed |
+| CHN-003 | channels | desktop/local client packaging and same-character multi-device surface | N.E.K.O/OpenJarvis | B | secondary | future clients + gateway | analysed |
+| RTC-010 | presence | live-session recording as optional governed artifact | CyberVerse | B | secondary | services/presence + storage | analysed |
+| AVT-006 | avatar | cloud digital-human provider adapters | CyberVerse | B | secondary | providers/avatar | analysed |
+| SAF-001 | security | explicit fictional/AI disclosure on public character surfaces | ChatWithStars | A | primary | identity + apps/social | analysed |
+| SAF-002 | security | explicit age/content classification and channel policy | ChatWithStars | A | primary | security + identity/social | analysed |
+| SAF-003 | security | face/voice/media rights and provenance tracking | ChatWithStars | A | primary | identity + studio + audit | analysed |
 | OPS-002 | operations | trace/evaluation visibility | OpenJarvis + ChatWithStars | B | combined | apps/ops + telemetry | analysed |
 
 This inventory is intentionally incomplete. Source-specific map documents identify the next deep-mining areas.
