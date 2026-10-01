@@ -116,6 +116,17 @@ Features describe what exists; this ledger records observable and operational be
 | B-CV-AGT-004 | AGT-008 | Background cancellation sends an explicit cancel signal; timeout force-terminates the stuck child; child failure is reaped before surfacing structured error. | A | CyberVerse subagent runner tests | analysed |
 | B-CV-AGT-005 | AGT-008 | Background artifact size is bounded before it enters the canonical task/artifact system. | A | CyberVerse subagent runner tests | analysed |
 | B-CV-AVT-001 | AVT-004 | Multi-GPU/distributed avatar warmup occurs only when both global and distributed warmup policies permit it and remains timeout-bounded. | B | CyberVerse avatar warmup tests | analysed |
+| B-CWS-SOC-001 | SOC-003 | Restart/redeploy against the same durable queue must not re-enqueue or re-publish media already known or posted. | A | CWS posting cadence tests | analysed |
+| B-CWS-SOC-002 | SOC-004 | Review approval transitions only review-state work to pending; rejection is terminal and cross-tenant rows are not disclosed. | A | CWS review queue tests | analysed |
+| B-CWS-SOC-003 | SOC-005 | Destination cadence overrides global cadence, and quiet windows handle same-day/wrap-around/equal-start-end semantics deterministically in configured timezone. | B | CWS cadence/sleep tests | analysed |
+| B-CWS-STD-001 | STD-004 | A completed render job is idempotently skipped unless an explicit force/revision requests regeneration. | A | CWS render_queue.py | analysed |
+| B-CWS-STD-002 | STD-004 | Failed quality gates retry only within a bounded budget; exhaustion becomes needs-review rather than an infinite render loop. | A | CWS quality_gate.py/render_queue.py | analysed |
+| B-CWS-STD-003 | STD-005 | Continuity references are updated from actual accepted render outputs/end frames rather than plan-time assumptions. | A/B | CWS render_queue/continuity tracker | analysed |
+| B-CWS-STD-004 | STD-006 | Lip-sync/audio stages fit durations explicitly and may pause in an awaiting-backend state instead of pretending GPU work completed. | A/B | CWS lipsync.py | analysed |
+| B-CWS-OPS-001 | OPS-003 | Configured/ready is not equivalent to production-proven: live acceptance evidence can be missing/stale without inventing synthetic customer/provider transactions. | A | CWS acceptance-health/operations | analysed |
+| B-CWS-OPS-002 | OPS-004 | Operator/JEV telemetry exposes privacy-safe aggregate evidence, not raw private semantic packets, secrets or hidden reasoning. | A | CWS operations-observability tests | analysed |
+| B-CWS-OPS-003 | OPS-005 | Emergency global pause/resume is a durable service-side operation and must not silently destroy individual per-group/user modes. | A | CWS group-kill-switch tests | analysed |
+| B-CWS-OPS-004 | OPS-006 | Manual financial adjustment requires allowed direction, bounded amount, reason and evidence/reference. | A | CWS financial-adjustments tests | analysed |
 | B-LRN-001 | LRN-003 | Learned/optimized skill changes are candidates and require evaluation/certification before consequential production promotion. | A | Masanawa decision from CWS+OpenJarvis | designed |
 
 Deep behavior mining from tests remains required before Phase 0 completion.
