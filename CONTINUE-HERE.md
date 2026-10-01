@@ -41,29 +41,31 @@ The active implementation line remains `phase2-closure` until PR #16 is merged. 
 
 Phase 3 is active.
 
-Merged foundation:
+Merged Phase 3 slices:
 - canonical identity: PR #17, merge `75549800445842f8ff1db54e06529c075ed34ea4`;
-- world generation/input foundation: PR #18, merge `871022d03f4b3fb2a81af5c6253dd38bd5b7a27f`.
+- world generation/input foundation: PR #18, merge `871022d03f4b3fb2a81af5c6253dd38bd5b7a27f`;
+- governed CharacterLifeState + canon events: PR #19, merge `729ab3e64eb0539ea249ceb6a39cf79afab20cb2`.
 
-Current implementation branch: `phase3-world-canon`.
+Current implementation branch: `phase3-world-routines`.
 
 Current branch adds:
-- active-published CharacterVersion gating for CharacterLifeState writes;
-- revision/CAS protection for evolving life state;
-- governed WorldEvent persistence with provenance, visibility, effective time and occurrence identity;
-- draft/approved/retired canon lifecycle;
-- automatic-approved event admission only under the Character's current active published version;
-- idempotent occurrence replay with changed-content conflict;
-- explicit approval for authored drafts;
-- database immutability for approved canon;
-- PostgreSQL integration tests proving these invariants.
+- durable version-bound Routine and StoryArc records;
+- timezone validation through IANA zones and exact local HH:MM slots;
+- deterministic occurrence identity: Character + routine key + local date;
+- routine occurrence admission through the existing idempotent SimulationInput repository;
+- stale CharacterVersion bindings fail closed after a new CharacterVersion becomes active until the routine is explicitly revised/rebound;
+- Routine revision/CAS;
+- StoryArc revision/CAS and forward-only lifecycle;
+- package-owned migration and PostgreSQL integration tests for occurrence replay, timezone slots, version rebinding and story-arc lifecycle.
 
 Immediate work:
-1. run PR #19 through the full PostgreSQL 18 CI gate and fix every concrete failure;
+1. run this branch through full PostgreSQL 18 CI and fix every real failure;
 2. merge when green;
-3. continue Phase 3 with routines/story arcs and governed world interactions built on the existing generation/event contracts;
-4. preserve non-spatial life semantics first; add optional spatial mechanics only after routine/canon recovery semantics are durable;
-5. keep private User↔Character Relationship state outside World write inputs and event payloads unless an explicit authorized promotion workflow is designed later.
+3. continue Phase 3 with WorldInteraction evidence plus pause/restart/catch-up policy execution;
+4. ensure routine catch-up is bounded by WorldPolicy and never creates duplicate occurrence/canon events after restart;
+5. only then add optional spatial mechanics.
+
+Keep private Relationship data outside shared World inputs. Routines/story arcs are World records keyed by canonical Character identity; they never become Character identity themselves.
 
 The post-freeze MemPalace/Paperclip assessment remains in `docs/migration/POST-FREEZE-SUPPLEMENTAL-DONORS.md`. Neither is a Phase 3 runtime dependency.
 
