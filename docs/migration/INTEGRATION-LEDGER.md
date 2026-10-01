@@ -44,6 +44,10 @@ Every external dependency must enter Masanawa through a canonical capability/pro
 | I-EMB-001 | local ONNX embeddings | N.E.K.O | memory similarity | local compute | memory text | retrieval provider | analysed |
 | I-IPC-001 | ZeroMQ | N.E.K.O | plugin process IPC | local IPC | plugin data | plugin runtime option | discovered |
 | I-IPC-002 | gRPC/protobuf | CyberVerse | Go/Python inference boundary | internal RPC | media/control | presence internal contract reference | analysed |
+| I-MED-001 | ComfyUI | ChatWithStars | studio image/video/lipsync render workflows | GPU/media jobs | character/media assets | studio render provider | analysed |
+| I-MED-002 | Kling/Hailuo/Runway/Veo | ChatWithStars | external video render providers | media jobs | prompts/assets | studio render providers | analysed |
+| I-MED-003 | ffmpeg | ChatWithStars | deterministic media probing/fitting/mux/assembly | local media processing | media files | studio media tool | analysed |
+| I-SEC-001 | token vault/encryption layer | ChatWithStars automation | social/provider credential protection | credential read/write | secrets | security/vault abstraction | analysed |
 | I-PRS-004 | RTP/RTCP transport feedback | CyberVerse | realtime A/V pacing, bitrate and sync feedback | media transport control | session/network metadata | presence transport abstraction | analysed |
 | I-WRK-001 | isolated subagent bridge process | CyberVerse | background specialist execution | child-process work/artifacts | task context + selected credentials | worker execution adapter | analysed |
 

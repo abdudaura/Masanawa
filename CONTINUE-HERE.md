@@ -44,6 +44,7 @@ Before changing code:
 - OpenJarvis deep pass: skill parser/import/dependency/manager, skill-as-tool adapter, engine discovery/fallback, tool confirmation, SSRF/security references, agent loop/budget guards, traces/learning overlays and scheduler semantics.
 - N.E.K.O deep pass: memory lifecycle/liveness/dead-letter behavior, foreground persistence, explicit-vs-automatic recall, process-isolated plugin lifecycle/hot reload, proactive state persistence/repetition controls, restricted computer use, optional speaker identity, and embodied-interaction memory semantics.
 - CyberVerse deep pass: playback epochs and stale-feedback rejection, RTP/AV sync, audio-only mode, idle/speech avatar synchronization, pipeline generation races, terminal task/event/artifact semantics, reconnectable task events, foreground ACK/background worker UX, role-isolated worker allowlists/cancellation/timeouts, and avatar warmup policy. CyberVerse remains a GPL-clean behavior reference only.
+- Remaining ChatWithStars deep pass: tenant-safe social automation/review/cadence/redeploy dedupe, media-studio continuity/render/quality/lipsync workflow, Ops acceptance evidence, privacy-safe observability, emergency kill switches and audited financial adjustments.
 
 ### Not yet complete
 The ledgers are NOT exhaustive. Do not begin Masanawa application feature implementation yet.
@@ -53,10 +54,10 @@ The ledgers are NOT exhaustive. Do not begin Masanawa application feature implem
 Continue Phase 0 Passes 2–6, source by source, using the source-map follow-up sections.
 
 Recommended order:
-1. Return to remaining ChatWithStars areas: deeper migrations, automation, media-studio and Ops.
-2. Resolve donor overlaps/conflicts, especially realtime voice/presence, avatar, background-task, memory and extension boundaries.
-3. Perform repository-wide coverage proof across all four pinned trees, configs, schemas and tests.
-4. Only after Phase 0 coverage is proven, finalize Phase 1 architecture specifications/ADRs.
+1. Resolve donor overlaps/conflicts and record explicit Donor Decisions/ADRs, especially realtime voice/presence, avatar, background-task, memory, skills/plugins and scheduling/proactivity boundaries.
+2. Perform repository-wide coverage proof across all four pinned trees, configs, schemas and tests.
+3. Classify any remaining discovered items A/B/C and assign Masanawa destination or explicit retirement.
+4. Update Phase 0 completion report. Only then move to Phase 1 architecture specification.
 
 For each pass, update all affected ledgers and source-map coverage notes in the same PR.
 

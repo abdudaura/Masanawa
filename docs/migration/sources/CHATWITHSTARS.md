@@ -175,16 +175,22 @@ The migration history also shows provider quote freshness, liquidity health, cat
 ### Social automation
 Evidence:
 - `services/automation`;
-- tests for cadence, review queues, destinations, auth and publishing;
-- social integration environment configuration.
+- posting cadence/review queue/tenancy/token-vault/sleep-window tests;
+- destination/source/publisher code.
 
-Important capabilities:
-- scheduled/continuous ingestion and posting;
-- destination abstraction;
-- review queues;
-- token vault/security;
-- retry/error surfacing;
-- multi-tenant automation concepts.
+Deep pass findings:
+- queue/source/destination/posted state is tenant-scoped and the same external source/destination IDs may coexist across tenants;
+- review mode is explicit: `review -> pending` on approval, `review -> rejected` on rejection; rejected/other terminal states cannot be re-approved accidentally;
+- cross-tenant approval behaves as not-found rather than revealing another tenant's queue row;
+- manual caption override is persisted at approval;
+- publish candidates exclude review/rejected states;
+- cadence can be global or destination-specific;
+- queue ordering is newest-published-first with unknown dates last;
+- a fresh process on the same database must neither re-enqueue nor re-post already known/published media;
+- equal sleep-window start/end means no quiet window; wrap-around windows are timezone-aware;
+- token vault encryption/decryption is idempotent and credentials are not treated as plain destination data.
+
+Masanawa should generalize these into SocialPlan/PublishAttempt/ReviewDecision/ChannelCredentialRef with database-backed idempotency and tenant isolation.
 
 ### Calls/voice
 Evidence:
@@ -212,19 +218,42 @@ Still deep-mine call session state machine, Gemini Live orchestration, audio bri
 ### Studio/media
 Evidence:
 - `services/media-studio`;
-- engines for story, scene planning, continuity, character reference, render queue, voice, dubbing, lipsync, export and quality gates;
+- render queue, continuity, quality gate, voice/dubbing/lipsync/export engines;
 - provider interface plus Comfy/Kling/Hailuo/Runway/Veo references.
 
-Still requires dedicated behavior-mining pass.
+Deep pass findings:
+- render queue is durable/idempotent by episode+turn key; completed jobs are not silently re-rendered unless force is explicit;
+- worker claims queued work, records running/done/needs_review/requeued/failed and attempt/error metadata;
+- rendered output, not plan-time guesses, becomes continuity evidence;
+- previous rendered end frame may become the next turn's reference input;
+- every clip is quality-gated before acceptance;
+- deterministic checks include duration/frozen-video-style validation, with optional VLM judgment;
+- model/VLM grading failure can degrade rather than permanently block every render;
+- render/gate retries are bounded; exhaustion moves work to human review rather than infinite regeneration;
+- continuity state tracks character clothing/physical mutations, props, locations and prior shot history;
+- continuity state is persisted in both human-readable/project state and production DB in the legacy implementation;
+- lipsync/audio fit is planned explicitly before execution and supports provider-neutral backends; GPU-dependent stages can stop in an `awaiting_backend` state;
+- audio dubbing produces timed subtitle/voice manifests.
+
+Masanawa should keep one canonical StudioProject/Shot/RenderJob/ContinuityState/QualityReview model in PostgreSQL/object storage; legacy per-project JSON/SQLite files are not canonical.
 
 ### Ops and acceptance
 Evidence:
 - `apps/admin`;
-- provider acceptance/cutover routes;
-- reconciliation/financial adjustment tests;
-- skill/agent management.
+- acceptance health/operations, financial adjustment, observability and kill-switch tests;
+- provider cutover/reconciliation/skill certification routes.
 
-Masanawa should preserve evidence-driven production readiness and operator-visible capability health.
+Deep pass findings:
+- readiness distinguishes `live_journey_observed`, `ready_unexercised`, `dependency_unconfigured` and `live_consequential_acceptance_required`;
+- missing/stale acceptance evidence for an otherwise ready capability becomes an operator warning, while an unconfigured optional dependency or a consequential journey awaiting approved exercise is guidance rather than a false incident;
+- acceptance guidance explicitly says not to manufacture real customer/provider transactions merely to satisfy evidence;
+- Ops surfaces active handoffs, skill dependency/action failures, stale provider/order/refund/provisioning states and privacy-safe JEV aggregate evidence;
+- JEV Ops intentionally exposes aggregate disagreement/calibration/latency, not raw private state packets or hidden reasoning;
+- audited financial adjustments require bounded amount, allowed direction, reason and external/case reference;
+- emergency group/global stop uses a durable service-side transactional RPC and does not rewrite individual modes in the browser;
+- versioned policy changes preserve already-issued user terms rather than retroactively mutating them.
+
+Masanawa should make AcceptanceEvidence, Incident, OperatorAction and KillSwitch first-class Ops concepts.
 
 ## Schema-history signals requiring deeper mapping
 
