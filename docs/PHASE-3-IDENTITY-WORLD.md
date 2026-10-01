@@ -54,9 +54,9 @@ Implemented, validated by the full CI gate, and merged in PR #17 at `75549800445
 
 The identity slice passed frozen install, strict TypeScript, architecture guards, unit/integration tests, PostgreSQL 18 migration tests and production builds before merge.
 
-## World foundation — implemented, awaiting CI
+## World foundation — merged and validated
 
-Current branch: `phase3-world-foundation`.
+World foundation merged in PR #18 at `871022d03f4b3fb2a81af5c6253dd38bd5b7a27f`.
 
 Implemented:
 1. real `@masanawa/world` package and production build wiring;
@@ -71,12 +71,29 @@ Implemented:
 10. PostgreSQL integration test launches two competing transactions and requires exactly one winner;
 11. tenant-scoped reads and duplicate-input content conflicts are tested.
 
+The world foundation passed the full CI gate before merge.
+
+## Governed life/canon slice — implemented, awaiting CI
+
+Current branch: `phase3-world-canon`; PR #19.
+
+Implemented:
+- CharacterLifeState writes require the referenced CharacterVersion to remain the Character's active published version;
+- life-state writes use explicit expected revision/CAS;
+- WorldEvent records carry provenance, visibility, effective time, optional deterministic occurrence key and canon lifecycle;
+- automatic-approved Character events fail closed when identity version authority is stale;
+- authored events enter draft and require explicit approval;
+- deterministic occurrence replay reuses the original event only when canon content matches;
+- same occurrence identity with different content conflicts;
+- approved/retired canon content is protected by a database trigger from silent rewrite;
+- world write contracts accept no Relationship/private-memory input.
+
 Next after green CI:
-- governed CharacterLifeState mutation;
-- append-only WorldEvent/WorldInteraction evidence;
-- Constitution-gated canon admission with provenance/visibility;
-- routines/story arcs;
-- optional spatial mechanics only after non-spatial life semantics are complete.
+- merge PR #19;
+- add routines/story arcs as governed simulation inputs that produce life-state/event transitions through the existing generation boundary;
+- add WorldInteraction evidence;
+- define pause/restart/catch-up acceptance tests;
+- add optional spatial mechanics only after non-spatial life semantics and recovery are complete.
 
 ## Donor boundary
 
