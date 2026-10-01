@@ -135,6 +135,16 @@ Features describe what exists; this ledger records observable and operational be
 | B-SAF-001 | SAF-001 | Public character/profile/social surfaces disclose AI/fictional status according to product policy. | A | CWS PLATFORM-FOCUS | analysed |
 | B-SAF-002 | SAF-002 | Adult/sensitive content mode is never inferred from conversational tone; age/content/channel rules require explicit product policy and gating. | A | CWS PLATFORM-FOCUS | analysed |
 | B-SAF-003 | SAF-003 | Production face/voice/media references retain source/provenance and documented usage rights/authorization. | A | CWS PLATFORM-FOCUS | analysed |
+| B-USR-001 | USR-001 | Platform entitlement/user identity remains separate from tenant-private relationship/conversation memory. | A | CWS consumer trial foundation | analysed |
+| B-USR-002 | USR-002 | Opaque channel aliases are not assumed to be phone numbers; canonical identity linking is explicit and tenant-scoped. | A | CWS contact identity graph | analysed |
+| B-USR-003 | USR-002 | Identity merge repoints/deduplicates dependent state atomically and preserves restrictive privacy/outreach choices rather than loosening them. | A | CWS contact identity merge | analysed |
+| B-ENT-001 | ENT-001 | Entitlement reservation is idempotent per source message and concurrent usage is serialized so the same response cannot consume allowance twice. | A | CWS consumer trial/subscription migrations | analysed |
+| B-ENT-002 | ENT-001 | Reserved entitlement can be released/rolled back when delivery fails, rather than permanently consuming usage for an undelivered response. | A | CWS subscription entitlement gate | analysed |
+| B-ENT-003 | ENT-002 | Subscription activity expires deterministically at period end; a blocked platform user remains blocked even if trial/subscription data exists. | A | CWS subscription entitlement gate | analysed |
+| B-ENT-004 | ENT-003 | Paid community access is derived from paid entitlement state; ambiguous/missing channel/contact fulfilment becomes manual-required instead of fabricated success. | A | CWS paid community entitlement lifecycle | analysed |
+| B-AUT-001 | AUT-001 | Agent autonomy/spend policy is explicit and auditable; model intent cannot exceed configured action/daily spend limits. | A | CWS autonomous multichannel core + spend cap | analysed |
+| B-OUT-001 | OUT-001 | Follow-up suppression/Do-Not-Contact state survives automation restarts and is checked before proactive outreach. | A | CWS outreach/followup migrations | analysed |
+| B-TPL-001 | TPL-001 | Only schema-valid template versions with published capability dependencies can be activated/published. | A/B | CWS agent template lifecycle | analysed |
 | B-LRN-001 | LRN-003 | Learned/optimized skill changes are candidates and require evaluation/certification before consequential production promotion. | A | Masanawa decision from CWS+OpenJarvis | designed |
 
 Deep behavior mining from tests remains required before Phase 0 completion.
