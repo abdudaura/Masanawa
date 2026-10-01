@@ -162,16 +162,44 @@ PostgreSQL 18 integration proves both successful joint commit and rollback of an
 
 Validated on 2026-10-01 by Foundation CI run 63 at commit `7d36285b55120776fe659e71457a323c158e8cf6`.
 
+### Inbox admission/replay recovery
+
+`packages/events/migrations/0002_inbox_leases.sql` and the Postgres inbox repository now provide:
+- tenant-scoped durable replay identity;
+- same-identity payload-hash conflict detection;
+- durable processing lease owner/expiry;
+- attempt/fence increments on claim and reclaim;
+- expired-lease rejection at settlement;
+- SKIP LOCKED batch claims;
+- completed tombstones that remain deduplicated after restart.
+
+Integration coverage proves the same provider event ID can exist independently in two tenants, duplicate evidence is reused, changed evidence conflicts, an expired worker loses settlement authority, another worker can reclaim with a new fence, and completed work is not reclaimed.
+
+Validated on 2026-10-01 by Foundation CI run 73 at commit `807a5853f352864f7daab8ef7ae701c619df5090`.
+
+### External receipts and reconciliation
+
+The event contract now defines the reconciliation lifecycle. `packages/events/migrations/0003_receipt_reconciliation_integrity.sql` and the Postgres repositories add:
+- stable observation-key idempotency for immutable external receipt observations;
+- multiple observations for one provider transaction/reference;
+- database-enforced tenant/OperationId integrity for idempotency, receipts and reconciliation;
+- receipt evidence conflict detection;
+- one active reconciliation case per Operation;
+- atomic `unknown|partial -> reconciling` admission under an Operation row lock;
+- canonical reconciliation state transitions and stale-transition rejection.
+
+Integration coverage proves observation reuse/conflict, append-only status observations, cross-tenant rejection, active-case reuse, Operation reconciliation custody and resolved timestamps.
+
+Validated on 2026-10-01 by Foundation CI run 81 at commit `354aaed14f24884138f0eee45ce421907e2c7757`.
+
 ## Active foundation gaps
 
-1. add inbox admission/replay repository;
-2. add reconciliation/external-receipt repository;
-3. add security/approval PostgreSQL persistence and concurrency tests;
-4. add OpenTelemetry correlation foundation;
-5. add service main/config/shutdown lifecycle;
-6. add DB/schema readiness probes;
-7. add fault-injection/restart test utilities;
-8. close Phase 2 shared-foundation gate before identity/memory/world/product migrations.
+1. add security/approval PostgreSQL persistence and concurrency tests;
+2. add OpenTelemetry correlation foundation;
+3. add service main/config/shutdown lifecycle;
+4. add DB/schema readiness probes;
+5. add fault-injection/restart test utilities;
+6. close Phase 2 shared-foundation gate before identity/memory/world/product migrations.
 
 ## Foundation rules
 
