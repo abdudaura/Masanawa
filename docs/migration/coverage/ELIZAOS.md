@@ -775,3 +775,48 @@ Still required before closure:
 2. repository-wide descendant/file-family proof sufficient to show no meaningful production subsystem remains unexplained.
 
 Browser/device side-effect policy, credential durability, SQL schema authority and CAS behavior are no longer unresolved.
+
+
+## 28. Cloud/deployment durable state and recovery
+
+Implementation evidence:
+- `packages/cloud/shared/src/lib/services/docker-sandbox-provider.ts`;
+- `packages/cloud/shared/src/lib/services/provisioning-jobs.ts`;
+- `packages/agent/src/services/agent-backup.ts`;
+- `packages/agent/src/runtime/host-bridge.ts`;
+- backup/catalog/container support families under `packages/cloud/shared`.
+
+Pinned behavior:
+- container compute is explicitly disposable while state is mounted outside the container (`ELIZA_STATE_DIR` / per-agent volume);
+- replacement/restore paths carry durable attempt identifiers and exact cleanup locators so ambiguous create/enrichment failures can be reconciled instead of deleting arbitrary replacement candidates;
+- exact restore first materializes a stopped, network-isolated, no-restart quarantine candidate and verifies container/image/platform/entrypoint/port evidence before normal cutover;
+- secret environment material is transported separately and temporary buffers/files are deliberately cleared;
+- vault passphrase is persisted outside replaceable containers so encrypted credentials survive container replacement;
+- provisioning is represented as durable jobs with execution leases/generations, typed rejection/failure paths, retry/recovery sweeps and explicit stale-job handling;
+- scheduled backup health distinguishes local-state agents whose entire PGlite/media/vault state lives on one node and treats stale/missing off-box backup as an RPO incident rather than cosmetic telemetry;
+- backup captures database, media, vault, runtime character/config and state files into content-hashed manifests; local envelopes are KMS AES-256-GCM encrypted;
+- restore verifies component hashes, refuses tampered bytes, uses staged/journaled swap for streamed backups and returns `requiresRestart` after destructive restore;
+- capture has source-side byte/file budgets so oversized snapshots fail deterministically before exhausting the process rather than masquerading as transient network failure;
+- host-owned capabilities are injected downward through `AgentHostBridge`; a hostless bridge is explicitly non-durable/no-op, and callers such as credential storage must detect that rather than silently losing state.
+
+Masanawa destination:
+- deployment/compute adapters for container lifecycle;
+- `packages/workflows` for durable provisioning/backup/restore jobs;
+- `packages/security` for vault/KMS/secret transport;
+- canonical PostgreSQL/domain storage remains outside compute sandboxes.
+
+Disposition: **A/B — preserve durable-job, lease, quarantine-restore, integrity, externalized-state and secret-handling invariants; C for eliza cloud control-plane/domain schema as Masanawa authority**.
+
+Acceptance gate:
+- replacing compute cannot erase canonical state or credentials;
+- ambiguous provision/replace outcomes retain exact reconciliation locators and cannot trigger broad cleanup;
+- restore candidate is isolated and integrity/platform-proven before cutover;
+- backup manifests are integrity-verified and encrypted where they contain sensitive state;
+- backup freshness/RPO is measurable and alertable;
+- deterministic snapshot-size refusal is distinguished from retryable infrastructure failure;
+- job retries are lease/generation fenced so stale workers cannot settle current jobs;
+- host capability absence degrades explicitly and never creates pretend durable storage.
+
+## Remaining closure requirement
+
+Cloud/deployment ownership is now classified. The only remaining Phase 0B elizaOS blocker is a repository-wide descendant/file-family proof demonstrating that every meaningful production subtree at the pinned revision maps to one of the covered families or an explicit C/reference disposition.
