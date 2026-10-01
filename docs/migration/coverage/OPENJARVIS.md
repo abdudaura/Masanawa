@@ -109,10 +109,13 @@ OpenJarvis local SQLite/file/Git stores are implementation evidence, not canonic
 
 OpenJarvis is Apache-2.0 at the pinned revision. Direct code adaptation still requires path-level provenance/NOTICE tracking. Bundled examples, external skill sources, downloaded models and third-party provider SDK/assets do not automatically inherit reusable rights from the repository license.
 
-## Current unresolved items
+## Closure evidence
 
-1. Produce an explicit integration disposition manifest covering every concrete `connectors/**` and `channels/**` adapter, marking each as retained adapter candidate or C/reference.
-2. Produce a file-family manifest proving all 950 `src/openjarvis` files and 143 Rust crate files map to a family above or explicit non-capability/build metadata exclusion.
-3. Verify Python/Rust overlap for security/loop-guard/tool execution so any future direct native reuse has an explicit parity test boundary.
+**COVERED at pinned revision.**
 
-Until those three items are closed, OpenJarvis remains `partial (remediation)`.
+- `openjarvis-file-family-manifest.json` accounts for all 950 `src/openjarvis` files and all 143 Rust crate files with zero unclassified paths.
+- `openjarvis-integration-disposition-manifest.json` explicitly dispositions every connector/channel/speech/engine adapter file. Concrete external adapters remain C/B references unless separately selected and certified under ADR-0010/OpenClaw Gateway rules.
+- `OPENJARVIS-NATIVE-PARITY.md` closes the Python/Rust dual-authority risk and forbids direct native adoption without a future parity/performance ADR.
+- capability families above attach implementation paths, representative tests, state treatment, integration treatment, A/B/C class, canonical destination and observable parity gates.
+
+This closure is revision-specific. Changing the OpenJarvis pin reopens the manifests and parity verification.
