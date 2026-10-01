@@ -419,3 +419,18 @@ Never create:
 - separate agent dispatchers.
 
 Adapters translate to canonical Masanawa contracts.
+
+
+## 28. Phase 1 implementation specifications
+
+The following documents refine this architecture into implementation-ready contracts and are canonical together under ADR-0011:
+- `DOMAIN-MODEL.md`;
+- `PACKAGE-BOUNDARIES.md`;
+- `EVENT-CONTRACTS.md`;
+- `SECURITY-AUTHORITY.md`;
+- `DATA-ARCHITECTURE.md`;
+- `PRIVACY-SCOPES.md`;
+- `SERVICE-CONTRACTS.md`;
+- `GOLDEN-JOURNEYS.md`.
+
+If a Phase 2 implementation choice conflicts with these boundaries, update the architecture/ADR first rather than introducing an implicit exception.
