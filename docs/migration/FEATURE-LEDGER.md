@@ -174,5 +174,7 @@ foundation, identity, relationships, memory, world, decisions, agents, skills, t
 | WF-006 | workflows | durable graph workflows with checkpoint/restart/time-travel/HITL | Microsoft Agent Framework | B | major candidate | packages/workflows | discovered |
 | AGT-011 | agents | sequential/concurrent/handoff/group multi-agent orchestration | Microsoft Agent Framework | B | candidate | packages/agents + workflows | discovered |
 | INT-001 | agents | A2A/MCP interoperability patterns | Microsoft Agent Framework + LiveKit/OpenClaw | B | reference | gateway + providers | discovered |
+| PRV-005 | infrastructure | optional @openclaw/ai provider adapter behind Masanawa IntelligenceProvider | OpenClaw | B | direct-dependency candidate | packages/providers | analysed |
+| GW-002 | channels | optional OpenClaw Gateway compatibility adapter using published protocol/client packages | OpenClaw | C/B optional | interoperability only | services/gateway/adapters | analysed |
 
 This inventory is intentionally incomplete. Source-specific map documents identify the next deep-mining areas.
