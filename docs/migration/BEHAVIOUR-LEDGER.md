@@ -368,3 +368,17 @@ Deep behavior mining from tests remains required before Phase 0 completion.
 | B-RTC-084 | RTC-084 | User-turn stop can wait for transcription after VAD stop and uses explicit aggregation timeout; strategy state resets cleanly between turns. | A/B | user-turn stop strategy tests | analysed |
 | B-RTC-085 | RTC-082 | Function-call result/end/control frames that must survive ordinary barge-in are explicitly non-interruptible; ordinary generated media/text remains interruptible. | A | frame interruptibility semantics + function-call frame definitions | analysed |
 | B-OBS-040 | OBS-040 | Processor observers receive derived telemetry only and cannot mutate canonical turn/session/workflow truth. | B | observer subsystem | selected |
+
+### Phase 0B Letta Code memory invariants
+
+| ID | Feature | Required behavior | Class | Evidence | Status |
+|---|---|---|---|---|---|
+| B-MEM-020 | MEM-020 | Concurrent harness-owned memory writers serialize through a current-owner lease; a stale repair worker may update/clear only the repair token it originally claimed. | A | memory-operation + memory-conflict-repair | analysed |
+| B-MEM-021 | MEM-020 | The same unresolved conflict/invalid history is not retried every turn after one completed automatic attempt; a crashed-before-run attempt may be retried. | A/B | conflict repair state machine | analysed |
+| B-MEM-022 | MEM-021 | Automatic memory workers fail closed when confinement cannot be established; writes must remain inside the current subject's allowed memory roots after symlink/realpath resolution. | A | memory confinement + write allowance | analysed |
+| B-MEM-023 | MEM-023 | Memory-size/layout constraints are validated before commit; policy files/limits cannot be silently relaxed by an autonomous worker without explicit approval. | A/B | memory constraints/pre-commit validator | analysed |
+| B-MEM-024 | MEM-022 | Attached/shared memory permissions remain distinct from primary/private memory; syncing one cannot implicitly widen the other's scope. | A | shared-memory runtime/e2e tests | analysed |
+| B-MEM-025 | MEM-024 | A completed turn announces a memory update only after the canonical sync/push succeeds; an unfinished turn neither pushes nor emits success notification. | A | turn-cleanup memory e2e | analysed |
+| B-MEM-026 | MEM-024 | A background memory worker may make a local committed change even if remote sync fails, but failure is surfaced through task status rather than falsely reporting remote success. | A/B | turn-cleanup memory worker e2e | analysed |
+| B-CTX-001 | CTX-001 | Context compaction responds to bounded context pressure and produces working-context projections without deleting or rewriting durable canonical memory. | A | compaction/context-pressure evidence + ADR-0007 | selected |
+| B-ATT-001 | ATT-001 | Attachment send/ingestion policy checks recipient, MIME and realpath-bounded source directories; symlink/path escape fails closed. | A/B | WhatsApp/Slack attachment policy/tests | analysed |
