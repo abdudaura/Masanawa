@@ -271,3 +271,12 @@ Phase 0 must continue mapping donor-specific stores/tables/files into these cano
 | D-SPK-030 | SpeakerRoleEvidence | LiveKit Agents Python | voice turn | ephemeral/trace | biometric/voice-derived | perception/security | redesign | primary/background classification only, not authentication |
 | D-EVL-030 | SessionEvaluationResult | LiveKit Agents Python | completed session/run | append | private/internal | telemetry/evaluation | redesign | per-judge verdict/reasoning/error + aggregate; never activation authority |
 | D-OBS-030 | TelemetryRedactionPolicy | LiveKit Agents Python | tenant/provider/exporter | versioned | security/privacy | telemetry/privacy | redesign | field/event filtering and exception-message policy |
+
+### Phase 0B Pipecat pipeline data concepts
+
+| ID | Canonical concept | Source | Scope | Lifecycle | Sensitivity | Destination | Treatment | Notes |
+|---|---|---|---|---|---|---|---|---|
+| D-RTC-080 | PresenceFrameEnvelope | Pipecat | PresenceSession processor chain | ephemeral ordered | private/session | presence | redesign | kind/direction/priority/interruptible/correlation/PTS; not donor frame class hierarchy |
+| D-RTC-081 | SpeculativeTurn | Pipecat | user turn generation | proposed->confirmed/cancelled | private/session | presence | redesign | provisional inference/output cannot commit history until confirmation |
+| D-RTC-082 | ProcessorPauseLease | Pipecat | processor/pipeline | active->released/expired | runtime | presence | redesign | bounded readiness/pause state with timeout/liveness protection |
+| D-RTC-083 | TurnBoundaryEvidence | Pipecat | PresenceSession turn | append/ephemeral | private/telemetry | presence/telemetry | redesign | VAD/transcription/external/analyzer signals used by turn policy |
