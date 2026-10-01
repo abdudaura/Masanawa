@@ -23,7 +23,7 @@ Generated/dependency/build metadata roots may be excluded after inspection, but 
 | ChatWithStars | apps, data, deploy, infra, packages, public, scripts, services, src, supabase | IDN/REL/HND/WLD/DEC/SKL/TOL/LRN/SEC/TSK/COM/SOC/STD/CHN/OPS/CALL + SUB/PRV/KNO/GRP/MSN/CRT/TEL/CVI/LEG/DEP/DAT | covered |
 | OpenJarvis | configs, deploy, desktop, examples, frontend, rust, src, tests | AGT/SKL/TOL/SCH/LRN + PRV/INT/CON/SBX/OBS/SES/SPH/CLI/RCP/RST | covered |
 | N.E.K.O | app, brain, config, deps, frontend, knowledge, launcher_core, local_server, main_logic, main_routers, memory, plugin, specs, tests, utils | MEM/PLG/PRO/PER/CUA + VOI/ACT/CFG/EXT/OBS/AST/AVT/MED/CHN | covered |
-| CyberVerse | frontend, inference, infra, models, proto, server, tests | RTC/AVT/TSK/WRK behavior/data/integration rows | partial; GPL clean-room |
+| CyberVerse | frontend, inference, infra, models, proto, server, tests | RTC/AVT/TSK/WRK + INF/RAG/MOD clean-room classifications | covered; GPL clean-room |
 | AIRI | apps, bucket, engines, integrations, packages, plugins, server, services | DLF/AVT/PLG/RTC/CUA + integration rows | partial |
 | LiveKit Server | cmd, deploy, pkg, test | RTC transport/session integration + ADR-0006 | partial |
 | LiveKit Agents TS | agents, examples, plugins, tests | RTC session/turn/avatar rows + ADR-0006 | partial |
@@ -191,3 +191,28 @@ Pinned revision: `48ac9243a9d8e75a37d7598548c29017df1c6d2e`.
 ### N.E.K.O sweep result
 
 All top-level roots and major descendant families have an explicit disposition. The sweep adds voice-turn endpointing, speaker-evidence boundaries, activity sensing, config/cloud-save migration, plugin distribution/message-plane mechanics, optional experience extensions, telemetry feedback, embodiment/provider adapters and explicit third-party artifact licensing.
+
+## CyberVerse root sweep
+
+Pinned revision: `13a6a95b47e5e6f0809683458767746ad54d7d7f`.
+
+License boundary: GPLv3 repository. Masanawa uses clean-room behavior/specification evidence only unless a separately licensed upstream component is independently adopted.
+
+| Root/module family | Classification / ledger coverage | Canonical treatment | State |
+|---|---|---|---|
+| `frontend` | RTC/AVT/TSK + RAG-001 | UI/interaction behavior reference only; Vue stores never own Masanawa truth | covered |
+| `inference/core`, `services`, `plugins` | INF-001 + provider/media rows | clean-room typed provider boundary reference | covered |
+| `inference/rag` | RAG-001 | knowledge/provider behavior reference | covered |
+| `inference/pi_bridge` | agent interoperability reference | no direct import; behavior only if still useful | covered |
+| `infra` | provider/model/deployment configuration evidence | no architecture ownership; recreate selected adapters independently | covered |
+| `models/MuseTalk`, `SoulX-LiveAct`, `flash_head` | MOD-001 | separate upstream/license evaluation; never inherit CyberVerse licensing assumptions | covered |
+| `proto` | INF-001 | protocol semantics may inform independent Masanawa contracts; no copied GPL schema by default | covered |
+| `server/internal/direct` | RTC-020 | clean-room RTP/WebRTC parity tests | covered |
+| `server/internal/livekit`, `mediapeer`, `orchestrator` | existing RTC/AVT synchronization rows | behavior evidence for canonical presence boundary | covered |
+| `server/internal/agenttask`, task APIs | TSK-020 | workflow/event behavior evidence | covered |
+| character/conversation/knowledge/settings APIs | identity/session/RAG reference | no donor domain authority | covered |
+| `tests` | behavior evidence for all retained clean-room requirements | translate observable behavior into independent acceptance tests | covered |
+
+### CyberVerse sweep result
+
+All roots are classified without adopting a GPL runtime boundary. The retained value is behavioral: synchronization, races, direct-media pacing, avatar warmup/idle/audio-only behavior, typed inference separation, RAG boundaries and reconnectable task semantics. Embedded model trees are explicitly excluded from license inheritance.
