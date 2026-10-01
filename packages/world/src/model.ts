@@ -157,4 +157,6 @@ export interface WorldInteraction {
   readonly effectiveStart: Instant;
   readonly effectiveEnd: Instant | null;
   readonly recordedAt: Instant;
+  readonly approvedAt: Instant | null;
+  readonly retiredAt: Instant | null;
 }
