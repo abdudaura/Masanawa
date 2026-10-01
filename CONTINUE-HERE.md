@@ -30,7 +30,9 @@ Do not recreate donor project boundaries. Do not begin application feature imple
 
 ## Current phase
 
-**Phase 0A — Landscape Expansion and donor selection.**
+**Phase 0B — Exhaustive source coverage and A/B/C classification.**
+
+Phase 0A donor selection is closed at the revisions pinned in `docs/migration/SOURCE-LOCK.md`. See `docs/migration/PHASE-0A-CLOSURE-AUDIT.md`.
 
 The earlier four-donor assumption has been intentionally reopened before architecture freeze because broader 2026 open-source projects may provide stronger subsystem skeletons.
 
@@ -130,12 +132,14 @@ Donor Agent/runtime/checkpoint objects never become Character, memory or busines
 
 ## Immediate next work
 
-Do not return to the old four-source coverage-proof plan yet.
+Phase 0A is complete. Do not reopen donor selection without contradictory evidence and an explicit ownership/ADR update.
 
-1. **Next:** run the Phase 0A definition-of-done audit across all 17 pinned sources: source-map completeness, license/provenance, major ledger coverage and unresolved primary-candidate conflicts.
-2. Produce any remaining explicit donor decisions/ADRs discovered by that audit and freeze provisional subsystem ownership.
-3. Verify `docs/SOURCE-OWNERSHIP.md` has no unresolved foundation primary-candidate conflicts.
-4. Only then continue Phase 0B exhaustive source coverage and A/B/C classification across the complete reference vault.
+1. **Next:** build the Phase 0B source-coverage matrix across all 17 pinned repositories.
+2. Enumerate each source's meaningful top-level modules/packages and map each to existing ledger IDs or create explicit A/B/C rows.
+3. Work source-by-source across the complete vault; do not return to a four-donor-only deep-mine.
+4. For every retained capability, attach one canonical Masanawa destination and an acceptance/parity strategy.
+5. Track direct-adaptation provenance and path-specific license/NOTICE requirements before copying code.
+6. Phase 0 closes only when no meaningful pinned capability is unclassified.
 
 ## World simulation comparison — completed
 
@@ -188,9 +192,11 @@ Decision: `packages/memory` owns canonical scoped PostgreSQL records, provenance
 - CyberVerse GPL code is reference-only by default.
 - Nothing is migrated without ledger evidence.
 
-## Definition of done for Phase 0A
+## Definition of done for Phase 0A — achieved 2026-10-01
 
-Phase 0A finishes only when:
+Closure evidence: `docs/migration/PHASE-0A-CLOSURE-AUDIT.md`.
+
+Phase 0A finished because:
 - every expanded donor has a source map;
 - its major relevant capabilities are represented in the ledgers;
 - licenses/provenance are verified;
