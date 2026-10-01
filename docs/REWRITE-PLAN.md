@@ -15,7 +15,7 @@ Lifecycle:
 
 ## Phase 0A — Landscape expansion and donor selection
 
-Current active phase.
+Status: complete. Current active work is Phase 0B exhaustive source forensics and corrected descendant-level coverage.
 
 Inputs: all pinned submodules in `references/sources/` and `migration/SOURCE-LOCK.md`.
 
