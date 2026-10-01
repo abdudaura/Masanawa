@@ -242,3 +242,13 @@ Phase 0 must continue mapping donor-specific stores/tables/files into these cano
 | D-AVT-030 | RendererTargetLease | AIRI | embodiment client | acquired->replaced->released | internal/runtime | clients/embodiment | redesign | one driver owns a renderer target until explicit release |
 | D-CUA-030 | ComputerUseRuntimeLease | AIRI | device/client | active->disposing->closed | highly sensitive | tools/perception/security | redesign | private daemon, serialized operations, host-owned store/routing |
 | D-MOB-001 | NativeBridgeSession | AIRI | mobile client connection | connecting->open->closed/error | private/session | clients/mobile/gateway | redesign | native transport handle, not canonical Conversation/Identity |
+
+### Phase 0B LiveKit Server transport data concepts
+
+| ID | Canonical concept | Source | Scope | Lifecycle | Sensitivity | Destination | Treatment | Notes |
+|---|---|---|---|---|---|---|---|---|
+| D-RTC-050 | TransportParticipant | LiveKit Server | presence room | joining->joined/active->disconnected | private/session | presence | adapter projection | not canonical user/Character identity |
+| D-RTC-051 | TransportTrack | LiveKit Server | participant/session | published->subscribed/muted->ended | media/private | presence | adapter projection | canonical media reference only while active |
+| D-RTC-052 | TransportMigrationBuffer | LiveKit Server | participant transport move | bounded ephemeral | media/private | presence | implementation detail | size/time bounded continuity buffer |
+| D-RTC-053 | TransportQualitySample | LiveKit Server | track/participant transport | append/rolling | telemetry | presence/telemetry | projection | packet loss/jitter/RTT/quality evidence only |
+| D-RTC-054 | TransportRoomPlacement | LiveKit Server | room infrastructure | mutable/reassignable | internal | presence infra | projection | node/region placement not domain session identity |
