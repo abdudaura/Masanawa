@@ -135,18 +135,43 @@ The pnpm 12.8.2 dependency graph is committed in `pnpm-lock.yaml`. Foundation CI
 
 Validated on 2026-10-01 by Foundation CI run 54 at commit `b407ca04c38d801d1f7cba3fe024f87477d6f3d3`.
 
+### PostgreSQL 18 integration
+
+Foundation CI now boots an actual PostgreSQL 18 service and exposes it only to the test process through `MASANAWA_TEST_DATABASE_URL`.
+
+The adapter integration suite proves:
+- the expected PostgreSQL major version is in use;
+- package-owned migrations apply and replay idempotently;
+- idempotent Operation admission survives independent transactions;
+- changed request fingerprints conflict durably;
+- stale persisted Operation transitions are rejected;
+- stale outbox worker fences cannot settle a newer claim.
+
+Validated on 2026-10-01 by Foundation CI run 59 at commit `cef46a666606f21e78ea1d478e901262b70d25ed`.
+
+### Atomic platform event + outbox persistence
+
+`adapters/storage/postgres` now provides:
+- `appendPlatformEvent` for callers already inside a canonical domain transaction;
+- `appendPlatformEventWithOutbox` for composing event + publication custody into that same transaction;
+- `persistPlatformEventWithOutbox` as a transaction-owning convenience boundary.
+
+Outbox metadata is derived from the canonical PlatformEvent envelope rather than accepted as a second independent identity source.
+
+PostgreSQL 18 integration proves both successful joint commit and rollback of an already-inserted event when the outbox portion fails.
+
+Validated on 2026-10-01 by Foundation CI run 63 at commit `7d36285b55120776fe659e71457a323c158e8cf6`.
+
 ## Active foundation gaps
 
-1. add PostgreSQL integration tests using PostgreSQL 18;
-2. add transactionally atomic event + outbox persistence API;
-3. add inbox admission/replay repository;
-4. add reconciliation/external-receipt repository;
-5. add security/approval PostgreSQL persistence and concurrency tests;
-6. add OpenTelemetry correlation foundation;
-7. add service main/config/shutdown lifecycle;
-8. add DB/schema readiness probes;
-9. add fault-injection/restart test utilities;
-10. close Phase 2 shared-foundation gate before identity/memory/world/product migrations.
+1. add inbox admission/replay repository;
+2. add reconciliation/external-receipt repository;
+3. add security/approval PostgreSQL persistence and concurrency tests;
+4. add OpenTelemetry correlation foundation;
+5. add service main/config/shutdown lifecycle;
+6. add DB/schema readiness probes;
+7. add fault-injection/restart test utilities;
+8. close Phase 2 shared-foundation gate before identity/memory/world/product migrations.
 
 ## Foundation rules
 
