@@ -76,10 +76,14 @@ Watch-together, games and music are examples of embodied character experiences i
 
 Repository code is Apache-2.0 at the pinned revision, but bundled OCR/model/corpus/binary assets keep their own licenses. Model manifests and THIRD_PARTY_NOTICES are evidence, not permission to redistribute every artifact.
 
-## Current unresolved items
+## Closure evidence
 
-1. Produce a complete file-family manifest for the pinned source.
-2. Produce an integration disposition manifest for ASR/TTS/LLM/model workers, QQ/OneBot, plugin model-gateway/external bridges and other concrete adapters.
-3. Produce a plugin-state authority map identifying donor plugin server stores that map to canonical PluginInstallation/Runtime records versus retired UI/cache/config state.
+**COVERED at pinned revision.**
 
-Until these close, N.E.K.O remains partial (remediation).
+- `neko-file-family-manifest.json` accounts for all 4,947 pinned files with zero unresolved paths.
+- `neko-integration-disposition-manifest.json` dispositions 121 concrete ASR/TTS/LLM/channel/model-gateway/realtime/image/Steam integration files; structural contracts may migrate, concrete adapters remain C/B unless independently selected and certified.
+- `NEKO-PLUGIN-AUTHORITY.md` maps plugin registry/runtime/config/message/storage/approval/UI/provider state to canonical Masanawa owners and forbids the plugin server becoming a second platform kernel.
+- the descendant matrix above attaches implementation, tests, state, A/B/C treatment, canonical destination and behavioral parity gates for retained families.
+- third-party model/OCR/corpus/binary assets remain independently licensed/provenanced and are not implicitly adopted.
+
+This closure is revision-specific. Changing the N.E.K.O pin reopens file, integration, asset and plugin-authority verification.
