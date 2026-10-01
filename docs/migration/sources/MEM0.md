@@ -2,7 +2,7 @@
 
 Pinned: `94c3fe9f238f3dbf29c9ce98643bd71eb13077cd`.
 
-Status: Phase 0A memory deep pass complete.
+Status: Phase 0B exhaustive coverage complete at the pinned revision. See `docs/migration/coverage/MEM0.md`, `docs/migration/coverage/MEM0-MEMORY-AUTHORITY.md`, `docs/migration/coverage/mem0-file-family-manifest.json` and `docs/migration/coverage/mem0-integration-disposition-manifest.json`.
 
 Mem0 is a specialist memory platform and is selected as Masanawa's primary donor for extraction, hybrid retrieval and memory evaluation—not canonical memory ownership.
 
@@ -44,7 +44,9 @@ Masanawa adds a mandatory stage before all of these: canonical scope authorizati
 
 ## Temporal/entity model
 
-Useful fields/concepts include event dates, temporal type/state/plan/preference/relationship classification, entity attribution/linking and query-time temporal intent. These become rebuildable projections over canonical MemoryRecords.
+The exhaustive Phase 0B pass tightened the earlier Phase 0A description. Entity extraction/linking and entity-aware ranking are implemented at this pin, and expiration/validity-date behavior is implemented. However, a full reference-date/event-time temporal retrieval engine is **not** present in the pinned OSS implementation and must not be attributed to Mem0.
+
+Masanawa's richer temporal type/event-time/validity model therefore remains a synthesis requirement implemented as rebuildable projections over canonical MemoryRecords, while Mem0 remains evidence for entity projection, expiration and related retrieval mechanics.
 
 ## Decay and expiration
 
@@ -84,3 +86,8 @@ Rejected as canonical:
 - managed Mem0 service as a required runtime.
 
 See ADR-0007 and `docs/migration/MEMORY-ADOPTION-BOUNDARY.md`.
+
+
+## Phase 0B closure
+
+All 1,835 pinned files are classified with zero unresolved paths. The explicit integration/provider/server disposition manifest covers 772 files. Python OSS core is the strongest behavioral evidence for scope/extraction/retrieval at this revision; the TypeScript OSS tree is parity/delta evidence, not a second canonical runtime.
