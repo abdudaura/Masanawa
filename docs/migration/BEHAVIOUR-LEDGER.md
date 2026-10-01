@@ -356,3 +356,15 @@ Deep behavior mining from tests remains required before Phase 0 completion.
 | B-EVL-030 | EVL-030 | Post-session evaluators run independently/concurrently; a failed judge does not invalidate other judgments, and evaluation output remains evidence rather than self-authorizing production changes. | A/B | eval JudgeGroup/evaluation code | analysed |
 | B-OBS-030 | OBS-030 | Conversational/tool payload PII is removed before unauthorized exporters receive telemetry; free-form exception descriptions are replaced while structured error type may remain. | A | telemetry pii filter | analysed |
 | B-EXP-001 | EXP-001 | Serialized execution frames are research evidence only and cannot become Masanawa durable workflow truth without version/hash compatibility, checkpoint semantics and a separate architecture decision. | B/C | livekit-durable registry/function implementation | selected |
+
+### Phase 0B Pipecat pipeline invariants
+
+| ID | Feature | Required behavior | Class | Evidence | Status |
+|---|---|---|---|---|---|
+| B-RTC-080 | RTC-080 | Start/system frames may outrank ordinary data/control frames while preserving arrival order within priority tiers; interruption drops only frames marked interruptible. | A | frame processor queue + frame types | analysed |
+| B-RTC-081 | RTC-081 | Speculative turn completion remains provisional until explicitly confirmed; cancellation must discard speculative downstream work without committing user/assistant history. | A | speculation gate + tests | analysed |
+| B-RTC-082 | RTC-082 | Context/history aggregation for assistant output occurs after actual transport output, so interrupted/unplayed content is not recorded as if the user heard it. | A | LLM response/context aggregator patterns + tests | analysed |
+| B-RTC-083 | RTC-083 | Pipeline pause/resume cannot deadlock on interruption or zero-audio TTS completion; stale TTS-start state resets at the next turn boundary. | A | interruptible TTS tests | analysed |
+| B-RTC-084 | RTC-084 | User-turn stop can wait for transcription after VAD stop and uses explicit aggregation timeout; strategy state resets cleanly between turns. | A/B | user-turn stop strategy tests | analysed |
+| B-RTC-085 | RTC-082 | Function-call result/end/control frames that must survive ordinary barge-in are explicitly non-interruptible; ordinary generated media/text remains interruptible. | A | frame interruptibility semantics + function-call frame definitions | analysed |
+| B-OBS-040 | OBS-040 | Processor observers receive derived telemetry only and cannot mutate canonical turn/session/workflow truth. | B | observer subsystem | selected |
