@@ -43,27 +43,26 @@ Phase 3 is active.
 
 Merged foundation:
 - canonical identity: PR #17, merge `75549800445842f8ff1db54e06529c075ed34ea4`;
-- world generation/input foundation: PR #18, merge `871022d03f4b3fb2a81af5c6253dd38bd5b7a27f`.
+- world generation/input foundation: PR #18, merge `871022d03f4b3fb2a81af5c6253dd38bd5b7a27f`;
+- governed life/canon layer: PR #19, merge `729ab3e64eb0539ea249ceb6a39cf79afab20cb2`, validated by Foundation CI run 225.
 
-Current implementation branch: `phase3-world-canon`.
+Current branch: `phase3-world-canon-hardening`.
 
-Current branch adds:
-- active-published CharacterVersion gating for CharacterLifeState writes;
-- revision/CAS protection for evolving life state;
-- governed WorldEvent persistence with provenance, visibility, effective time and occurrence identity;
-- draft/approved/retired canon lifecycle;
-- automatic-approved event admission only under the Character's current active published version;
-- idempotent occurrence replay with changed-content conflict;
-- explicit approval for authored drafts;
-- database immutability for approved canon;
-- PostgreSQL integration tests proving these invariants.
+Current branch fixes concrete gaps found after PR #19:
+- CharacterLifeState effective time may not move backward;
+- CharacterLifeState may not become effective after the World's current simulation time;
+- automatic-approved canon now requires WorldPolicy.automaticCanonEnabled;
+- only engine provenance may use automatic-approved canon; model/authored/imported evidence remains draft/governed;
+- PostgreSQL 18 tests cover policy-disabled auto-canon, model-provenance rejection, future life-state rejection and life-state time regression.
 
 Immediate work:
-1. run PR #19 through the full PostgreSQL 18 CI gate and fix every concrete failure;
+1. run the full CI gate for `phase3-world-canon-hardening` and fix every real failure;
 2. merge when green;
-3. continue Phase 3 with routines/story arcs and governed world interactions built on the existing generation/event contracts;
-4. preserve non-spatial life semantics first; add optional spatial mechanics only after routine/canon recovery semantics are durable;
-5. keep private User↔Character Relationship state outside World write inputs and event payloads unless an explicit authorized promotion workflow is designed later.
+3. add authority-bearing world canon governance by composing `AuthorityContext`, current-policy checks and persistent allow-once ApprovalBinding consumption with draft approval/retirement;
+4. then implement routines/story arcs as typed, idempotent SimulationInputs producing life-state/event transitions;
+5. add pause/restart/catch-up acceptance tests before optional spatial mechanics.
+
+PR #20 was closed as a duplicate after PR #19 merged; do not revive its parallel implementation.
 
 The post-freeze MemPalace/Paperclip assessment remains in `docs/migration/POST-FREEZE-SUPPLEMENTAL-DONORS.md`. Neither is a Phase 3 runtime dependency.
 
