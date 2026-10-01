@@ -404,3 +404,161 @@ Acceptance gate:
 - corruption/readiness failure quarantines unsafe state rather than serving it;
 - clean-shutdown evidence cannot override current authorization/ownership;
 - backup/restore/migration verification is explicit and observable.
+
+
+## 15. Provider/model and credential-egress boundary
+
+Implementation/docs evidence:
+- `docs/plugins/sdk-provider-plugins/runtime-hooks.md`;
+- `docs/plugins/sdk-runtime/models.md`;
+- provider SDK/runtime families.
+
+Pinned behavior:
+- model route intent is prepared secret-free consumer intent; plugins do not reload config/credentials to reconstruct policy;
+- route preference can rank already-eligible auth classes but cannot manufacture a credential or make an unavailable/cooldown-blocked profile eligible;
+- candidate model order and credential precedence are separate concerns;
+- request cancellation can end a caller's wait for queued auth/profile/OAuth work without pretending an already-owned credential refresh write was cancelled;
+- built-in text transports keep SDK-internal retries disabled and let the embedded runner own retry budgeting;
+- streaming wrappers are discouraged from injecting their own retry count;
+- provider hooks explicitly classify failover reasons and can declare custom transport/auth/model normalization without owning canonical session identity;
+- command-scoped configured-model egress uses a destination-bound credential sentinel/proxy; credentials stay on the credential-owning host and output redaction covers secrets split across chunks;
+- proxy/credential access is revoked on cancellation, callback completion or failure.
+
+Masanawa destination:
+- `packages/providers` + `packages/security` credential egress.
+
+Disposition: **A/B**.
+
+Acceptance gate:
+- provider/model routing never reconstructs secret policy independently of canonical configuration;
+- provider retry is error/operation/stream aware and centrally observable;
+- credential refresh ownership survives caller cancellation correctly;
+- destination-bound secret egress cannot be reused outside its authorized provider endpoint/operation;
+- remote provider thread/session IDs remain external references only.
+
+## 16. Memory provenance, dreaming and recall boundary
+
+Implementation/docs evidence:
+- `docs/concepts/memory-architecture.md`;
+- memory-core/memory-host packages and direct tests located under `extensions/memory-core`, `packages/memory-host-sdk`, and QA runtime tests.
+
+Pinned behavior worth preserving:
+- write-time provenance is treated as the security boundary;
+- deterministic eligibility gates surround model judgment;
+- origin class is a closed set such as owner/agent/untrusted/system, with unknown external content classified conservatively rather than promoted to owner;
+- cron, heartbeat and subagent sessions do not automatically produce long-term memory candidates;
+- content recalled from memory is structurally marked so recall does not recursively re-extract itself;
+- declared network-derived tool output taints subsequent assistant text in that turn as untrusted for memory promotion;
+- episodic evidence reaches curated core only through deterministic promotion gates;
+- untrusted/system candidates are excluded before consolidation prompt construction;
+- pre-compaction memory flush preserves unsummarized context before compaction;
+- consolidation performs merge/supersession/dedupe with optimistic-concurrency check before atomic replacement;
+- rejected/oversized consolidation does not clobber the existing curated core;
+- reply-path memory failures degrade recall rather than blocking the reply.
+
+Masanawa boundary:
+- OpenClaw files/SQLite/indexes are **not** canonical memory.
+- `packages/memory` remains sole authority per ADR-0007.
+
+Disposition: **A/B for provenance/lifecycle behavior; C for storage/authority model**.
+
+Acceptance gate:
+- every memory fact carries provenance/scope/time/supersession evidence;
+- untrusted/system/automation evidence cannot silently promote to durable curated memory;
+- recalled content cannot feed a positive feedback extraction loop;
+- consolidation is version/CAS fenced;
+- memory degradation cannot corrupt or suppress an otherwise valid turn;
+- memory projections/indexes remain rebuildable from canonical records.
+
+## 17. Cron, heartbeat and proactive execution boundary
+
+Implementation evidence:
+- `src/cron/service/state.ts`;
+- `src/infra/heartbeat-runner-run.ts`;
+- heartbeat scheduler/test families;
+- `src/infra/state-migrations.cron-run-logs.ts`.
+
+Pinned behavior:
+- cron service tracks durable next-run state, lifecycle generation, scheduling pause/startup catch-up and a shared admission bound across scheduled/manual/on-exit work;
+- stopping rotates lifecycle generation so stale queued work cannot revive under the next service instance;
+- queued runs have durable reservation/receipt custody;
+- missed jobs are bounded/staggered on restart instead of exploding simultaneously;
+- execution/delivery uses attempt fences and terminal settlement callbacks;
+- service mutations are serialized;
+- heartbeat wake/preparation can skip explicitly; once work has been admitted, later skips preserve occurrence/lifecycle facts rather than pretending nothing happened;
+- legacy cron run history migrates transactionally into generic `task_runs`, avoiding duplicate mirrored identities before dropping the old table.
+
+Masanawa destination:
+- `packages/workflows` durable scheduler/automation;
+- heartbeat/proactivity becomes a trigger type, not a second job engine.
+
+Disposition: **A/B for scheduler/recovery invariants; C for OpenClaw cron as canonical business workflow authority**.
+
+Acceptance gate:
+- every scheduled occurrence has durable identity/attempt/settlement state;
+- lifecycle generation fences stale queued work across restart;
+- restart catch-up is bounded and observable;
+- delivery/side effects use the same idempotency/reconciliation rules as other workflows;
+- heartbeat/proactivity cannot create an alternate durable task source of truth.
+
+## 18. SSRF/network egress policy
+
+Implementation/test evidence:
+- `src/infra/net/ssrf.ts`;
+- `src/infra/net/fetch-guard.ts`;
+- `src/infra/net/fetch-guard.ssrf.test.ts`.
+
+Pinned behavior:
+- blocked network classes include loopback/link-local/cloud metadata/special-use IP forms unless explicitly authorized by policy;
+- hostname/origin allow/deny policy is normalized deterministically;
+- HTTP base-url exceptions are scoped to explicit hostname/origin;
+- allowed-origin trust is recalculated per URL in the redirect loop rather than inherited blindly across redirects;
+- DNS resolution is part of the policy enforcement boundary rather than relying only on the original hostname string;
+- private-network relaxations are explicit dangerous capabilities;
+- guarded fetch owns dispatcher cleanup and cancellation.
+
+Masanawa destination:
+- `packages/security` network policy + tools/provider HTTP adapters.
+
+Disposition: **A/B**.
+
+Acceptance gate:
+- every server-side URL fetch performs DNS/IP/redirect-aware SSRF validation;
+- redirect cannot escape an origin/host exception;
+- metadata/loopback/private ranges fail closed unless a narrowly scoped policy explicitly allows them;
+- proxy/custom dispatcher use cannot bypass the same effective network policy;
+- policy exceptions are auditable by capability owner.
+
+## 19. Secret storage, redaction and diagnostic privacy
+
+Implementation/docs evidence:
+- `docs/gateway/security/secrets-and-storage.md`;
+- `docs/gateway/secrets/runtime-model.md`;
+- `docs/gateway/logging.md`;
+- `docs/gateway/diagnostics.md`;
+- `docs/gateway/telemetry.md`;
+- `docs/gateway/opentelemetry/privacy-and-trace-context.md`.
+
+Pinned behavior:
+- secret references distinguish active vs inactive runtime surfaces and active unresolved references can fail startup/reload rather than silently yielding an unusable runtime;
+- command/provider secret egress is scoped to an explicit destination/operation;
+- diagnostic bundles are local, approval-gated from chat and redact/omit prompts, chat text, tool output, credentials, raw request bodies, account/message/session identifiers, hostnames and usernames;
+- group-chat diagnostics deliver sensitive result/approval details privately to the owner rather than echoing them into the group;
+- anonymous feature statistics are opt-in and separate from the default update check;
+- OpenTelemetry raw model/tool content is disabled by default;
+- enabling OTel content capture is explicit and still excludes system prompts/provider private thinking payloads;
+- inbound WebSocket `traceparent` is accepted only after authentication and never influences authorization;
+- outbound provider trace ancestry uses exporter-owned span context rather than caller-supplied spoofable headers.
+
+Masanawa destination:
+- security/vault, telemetry and support-diagnostics subsystems.
+
+Disposition: **A/B**.
+
+Acceptance gate:
+- secrets are references/capabilities, not copied into ordinary logs/config projections;
+- active missing secret fails the relevant runtime surface visibly;
+- diagnostics content release requires explicit authority and uses privacy-safe recipient routing;
+- raw prompt/tool content is opt-in in telemetry;
+- trace context is provenance only, never authorization;
+- external/caller trace headers cannot forge provider-side trust ancestry.
