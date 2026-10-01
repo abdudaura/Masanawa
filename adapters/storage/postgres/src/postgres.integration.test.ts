@@ -8,12 +8,15 @@ import type { PlatformEvent } from "@masanawa/events";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Pool } from "pg";
 import {
+  admitInboxEvent,
+  claimInboxBatch,
   claimOutboxBatch,
   createPostgresPool,
   enqueueOutbox,
   prepareOperation,
   persistPlatformEventWithOutbox,
   runMigrations,
+  settleInboxClaim,
   settleOutboxClaim,
   transitionOperation,
   withTransaction,
@@ -52,7 +55,10 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
     const applied = await runMigrations(pool, [
       { owner: "events", directory: eventMigrationDirectory },
     ]);
-    expect(applied).toEqual(["events/0001_event_foundation.sql"]);
+    expect(applied).toEqual([
+      "events/0001_event_foundation.sql",
+      "events/0002_inbox_leases.sql",
+    ]);
   });
 
   afterAll(async () => {
@@ -199,6 +205,204 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
 
     expect(eventCount.rows[0]?.count).toBe("0");
     expect(outboxCount.rows[0]?.count).toBe("0");
+  });
+
+  it("deduplicates inbox admission without collapsing tenant identity", async () => {
+    const tenantA = createCanonicalId("tenant");
+    const tenantB = createCanonicalId("tenant");
+    const base = {
+      namespace: "whatsapp:webhook",
+      eventId: "provider-event-42",
+      provider: "whatsapp",
+      accountRef: "account-main",
+      payloadHash: "sha256:payload-a",
+      tombstoneUntil: toInstant(new Date(Date.now() + 86_400_000)),
+    } as const;
+
+    const first = await withTransaction(pool, (client) =>
+      admitInboxEvent(client, {
+        ...base,
+        tenantId: tenantA,
+        payloadRef: "blob://payload-a",
+      }),
+    );
+    expect(first.reused).toBe(false);
+    expect(first.state).toBe("admitted");
+
+    const duplicate = await withTransaction(pool, (client) =>
+      admitInboxEvent(client, {
+        ...base,
+        tenantId: tenantA,
+        payloadRef: "blob://payload-a-copy",
+      }),
+    );
+    expect(duplicate.reused).toBe(true);
+    expect(duplicate.payloadHash).toBe(base.payloadHash);
+
+    await expect(
+      withTransaction(pool, (client) =>
+        admitInboxEvent(client, {
+          ...base,
+          tenantId: tenantA,
+          payloadHash: "sha256:payload-changed",
+        }),
+      ),
+    ).rejects.toMatchObject({
+      code: "inbox.payload_conflict",
+      category: "conflict",
+    });
+
+    const otherTenant = await withTransaction(pool, (client) =>
+      admitInboxEvent(client, {
+        ...base,
+        tenantId: tenantB,
+      }),
+    );
+    expect(otherTenant.reused).toBe(false);
+
+    const rows = await pool.query<{ tenant_id: string }>(
+      `SELECT tenant_id
+         FROM events.inbox
+        WHERE namespace = $1 AND event_id = $2
+        ORDER BY tenant_id`,
+      [base.namespace, base.eventId],
+    );
+    expect(rows.rows.map((row) => row.tenant_id).sort()).toEqual(
+      [tenantA, tenantB].sort(),
+    );
+  });
+
+  it("reclaims expired inbox work and fences the stale worker", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const admission = {
+      tenantId,
+      namespace: "telegram:update",
+      eventId: "update-9001",
+      provider: "telegram",
+      accountRef: "bot-main",
+      payloadHash: "sha256:update-9001",
+      tombstoneUntil: toInstant(new Date(Date.now() + 86_400_000)),
+    } as const;
+
+    await withTransaction(pool, (client) => admitInboxEvent(client, admission));
+
+    const [firstClaim] = await claimInboxBatch(pool, {
+      tenantId,
+      namespace: admission.namespace,
+      workerId: "worker-a",
+      limit: 1,
+      leaseMs: 60_000,
+    });
+    expect(firstClaim).toMatchObject({
+      eventId: admission.eventId,
+      state: "processing",
+      attempt: 1,
+      fence: 1,
+    });
+
+    await pool.query(
+      `UPDATE events.inbox
+          SET lease_expires_at = clock_timestamp() - interval '1 second'
+        WHERE tenant_id = $1 AND namespace = $2 AND event_id = $3`,
+      [tenantId, admission.namespace, admission.eventId],
+    );
+
+    await expect(
+      withTransaction(pool, (client) =>
+        settleInboxClaim(client, {
+          tenantId,
+          namespace: admission.namespace,
+          eventId: admission.eventId,
+          workerId: "worker-a",
+          fence: firstClaim!.fence,
+          state: "completed",
+        }),
+      ),
+    ).rejects.toMatchObject({
+      code: "inbox.stale_claim",
+      category: "conflict",
+    });
+
+    const [reclaimed] = await claimInboxBatch(pool, {
+      tenantId,
+      namespace: admission.namespace,
+      workerId: "worker-b",
+      limit: 1,
+      leaseMs: 60_000,
+    });
+    expect(reclaimed).toMatchObject({
+      eventId: admission.eventId,
+      state: "processing",
+      attempt: 2,
+      fence: 2,
+    });
+
+    await expect(
+      withTransaction(pool, (client) =>
+        settleInboxClaim(client, {
+          tenantId,
+          namespace: admission.namespace,
+          eventId: admission.eventId,
+          workerId: "worker-a",
+          fence: firstClaim!.fence,
+          state: "completed",
+        }),
+      ),
+    ).rejects.toMatchObject({
+      code: "inbox.stale_claim",
+      category: "conflict",
+    });
+
+    await withTransaction(pool, (client) =>
+      settleInboxClaim(client, {
+        tenantId,
+        namespace: admission.namespace,
+        eventId: admission.eventId,
+        workerId: "worker-b",
+        fence: reclaimed!.fence,
+        state: "completed",
+      }),
+    );
+
+    const afterCompletion = await claimInboxBatch(pool, {
+      tenantId,
+      namespace: admission.namespace,
+      workerId: "worker-c",
+      limit: 1,
+      leaseMs: 60_000,
+    });
+    expect(afterCompletion).toEqual([]);
+
+    const duplicate = await withTransaction(pool, (client) =>
+      admitInboxEvent(client, admission),
+    );
+    expect(duplicate.reused).toBe(true);
+    expect(duplicate.state).toBe("completed");
+
+    const persisted = await pool.query<{
+      state: string;
+      attempt: number;
+      fence: string;
+      lease_owner: string | null;
+      completed_at: Date | null;
+    }>(
+      `SELECT state,
+              attempt,
+              fence::text,
+              lease_owner,
+              completed_at
+         FROM events.inbox
+        WHERE tenant_id = $1 AND namespace = $2 AND event_id = $3`,
+      [tenantId, admission.namespace, admission.eventId],
+    );
+
+    expect(persisted.rows[0]).toMatchObject({
+      state: "completed",
+      attempt: 2,
+      fence: "2",
+      lease_owner: null,
+    });
+    expect(persisted.rows[0]?.completed_at).toBeInstanceOf(Date);
   });
 
   it("preserves one operation across restart-safe idempotent admission", async () => {
