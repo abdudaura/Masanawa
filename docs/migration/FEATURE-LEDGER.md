@@ -28,48 +28,77 @@ Purpose: exhaustive inventory of every meaningful capability across the four pin
 
 ## Domain taxonomy
 
-- foundation
-- identity
-- relationships
-- memory
-- world
-- decisions
-- agents
-- skills
-- tools
-- workflows
-- perception
-- proactivity
-- presence
-- avatar
-- channels
-- social
-- commerce
-- studio
-- plugins
-- learning/evaluation
-- security
-- operations
-- observability
-- infrastructure
-- developer experience
+foundation, identity, relationships, memory, world, decisions, agents, skills, tools, workflows, perception, proactivity, presence, avatar, channels, social, commerce, studio, plugins, learning/evaluation, security, operations, observability, infrastructure, developer experience.
 
-## Seed decisions
+## Current normalized inventory
 
 | ID | Domain | Feature | Source | Class | Donor role | Masanawa destination | Status |
 |---|---|---|---|---|---|---|---|
-| SKL-001 | skills | SkillManager/discovery architecture | OpenJarvis | B | primary | packages/skills | discovered |
-| SKL-002 | skills | versioned certification/risk/expertise | ChatWithStars | A | primary governance | packages/skills | discovered |
-| MEM-001 | memory | layered cognitive memory concepts | N.E.K.O | B | primary taxonomy | packages/memory | discovered |
-| MEM-002 | memory | fan/user isolation from shared world state | ChatWithStars | A | primary privacy | packages/memory | discovered |
-| RTC-001 | presence | WebRTC realtime digital-human session | CyberVerse | B | primary architecture | services/presence | discovered |
+| IDN-001 | identity | versioned character identity/Constitution | ChatWithStars | A | primary | packages/identity | analysed |
+| IDN-002 | identity | stable voice/appearance locks | ChatWithStars | A | primary | packages/identity | analysed |
+| IDN-003 | identity | configurable companion/persona character fields | N.E.K.O | B | secondary | packages/identity | discovered |
+| REL-001 | relationships | private user-character relationship memory | ChatWithStars | A | primary | packages/memory + identity | analysed |
+| WLD-001 | world | shared character life state/events | ChatWithStars | A | primary | packages/world | analysed |
+| WLD-002 | world | routines/story arcs/character relationships | ChatWithStars | A | primary | packages/world | analysed |
+| DEC-001 | decisions | typed bounded JEV decision fabric | ChatWithStars | A | primary | packages/decisions | analysed |
+| DEC-002 | decisions | shadow/replay/language-gated decisions | ChatWithStars | A | primary | packages/decisions + telemetry | discovered |
+| AGT-001 | agents | pluggable agent strategies | OpenJarvis | B | primary | packages/agents | analysed |
+| AGT-002 | agents | common agent context/result contract | OpenJarvis | B | primary | packages/agents | discovered |
+| AGT-003 | agents | foreground persona/background specialist | CyberVerse | B | primary pattern | packages/agents + services/runtime | analysed |
+| AGT-004 | agents | scheduled/continuous monitoring agents | OpenJarvis | B | secondary | packages/agents + proactivity | discovered |
+| AGT-005 | agents | browser/computer-use execution | N.E.K.O | B | secondary | packages/tools | discovered |
+| SKL-001 | skills | SkillManager/discovery architecture | OpenJarvis | B | primary | packages/skills | analysed |
+| SKL-002 | skills | versioned certification/risk/expertise | ChatWithStars | A | primary governance | packages/skills | analysed |
+| SKL-003 | skills | skills callable through Tool adapter | OpenJarvis | B | primary | packages/skills + tools | analysed |
+| SKL-004 | skills | dependency graph/cycle/depth validation | OpenJarvis | A | primary | packages/skills | discovered |
+| SKL-005 | skills | external skill import/source resolvers/provenance | OpenJarvis | B | primary | packages/skills | discovered |
+| SKL-006 | skills | expertise bindings and character handoff routing | ChatWithStars | A | primary | packages/skills + identity | analysed |
+| TOL-001 | tools | common atomic tool executor/interface | OpenJarvis | B | primary | packages/tools | discovered |
+| TOL-002 | tools | tool risk/readiness/idempotency/reconciliation metadata | ChatWithStars | A | primary governance | packages/tools | analysed |
+| PRV-001 | infrastructure | provider-neutral inference engine | OpenJarvis | B | primary | packages/providers | analysed |
+| PRV-002 | infrastructure | model/provider health and discovery | OpenJarvis | B | primary | packages/providers | analysed |
+| PRV-003 | infrastructure | local/cloud hardware-aware inference routing | OpenJarvis | B | secondary | packages/providers | discovered |
+| MEM-001 | memory | layered cognitive memory pipeline | N.E.K.O | B | primary taxonomy | packages/memory | analysed |
+| MEM-002 | memory | user isolation from shared world state | ChatWithStars | A | primary privacy | packages/memory | analysed |
+| MEM-003 | memory | bounded recent memory + summary compression | N.E.K.O | B | primary | packages/memory | analysed |
+| MEM-004 | memory | atomic facts + dedup/archive | N.E.K.O | B | primary | packages/memory | analysed |
+| MEM-005 | memory | reflection synthesis/evidence lifecycle | N.E.K.O | B | primary | packages/memory | analysed |
+| MEM-006 | memory | durable persona promotion/contradiction merge | N.E.K.O | B | secondary | packages/memory + identity | analysed |
+| MEM-007 | memory | explicit hybrid memory recall tool | N.E.K.O | B | primary retrieval | packages/memory + tools | analysed |
+| MEM-008 | memory | replayable memory outbox/event reconciliation | N.E.K.O | A | secondary reliability | packages/memory + events | analysed |
+| PRO-001 | proactivity | proactive/time-aware interaction | N.E.K.O | B | primary | packages/proactivity | analysed |
+| PRO-002 | proactivity | candidate/source/decision/generation/delivery separation | N.E.K.O | B | primary | packages/proactivity | discovered |
+| PER-001 | perception | screen/browser/computer perception/action | N.E.K.O | B | primary | packages/perception + tools | discovered |
+| PLG-001 | plugins | process-isolated plugin lifecycle | N.E.K.O | B | primary packaging | plugin SDK/runtime | analysed |
+| PLG-002 | plugins | external protocol Adapter concept | N.E.K.O | B | secondary | services/gateway + plugins | discovered |
+| PLG-003 | plugins | plugin marketplace/release/hosted UI | N.E.K.O | B | secondary | apps/ops + plugin SDK | discovered |
+| LRN-001 | learning/evaluation | skill-tagged traces and optimization overlays | OpenJarvis | B | primary | packages/telemetry + skills | analysed |
+| LRN-002 | learning/evaluation | candidate optimization with few-shot/description overlays | OpenJarvis | B | primary | packages/skills | discovered |
+| LRN-003 | learning/evaluation | certification/rehearsal before production promotion | ChatWithStars | A | primary governance | testing + skills | analysed |
+| SEC-001 | security | capability/file/SSRF/injection/rate-limit security primitives | OpenJarvis | B | secondary | packages/security | discovered |
+| SEC-002 | security | deterministic authorization for consequential actions | ChatWithStars | A | primary | security + workflows | analysed |
+| RTC-001 | presence | WebRTC realtime digital-human session | CyberVerse | B | primary architecture | services/presence | analysed |
 | RTC-002 | presence | barge-in/interruption | CyberVerse | A | primary behavior | services/presence | discovered |
-| AGT-001 | agents | pluggable agent strategies | OpenJarvis | B | primary | packages/agents | discovered |
-| AGT-002 | agents | foreground persona/background specialist | CyberVerse | B | primary pattern | packages/agents + runtime | discovered |
-| WLD-001 | world | shared character life state/events | ChatWithStars | A | primary | packages/world | discovered |
-| PRO-001 | proactivity | proactive/time-aware interaction | N.E.K.O | B | primary | packages/proactivity | discovered |
-| COM-001 | commerce | quote/payment/approval/reconcile/receipt | ChatWithStars | A | primary | packages/commerce + workflows | discovered |
-| SOC-001 | social | durable character social publishing | ChatWithStars | A | primary | services/social | discovered |
-| STD-001 | studio | produced media pipeline | ChatWithStars | A | primary | services/studio | discovered |
+| RTC-003 | presence | provider-separated ASR/TTS/realtime-LLM/avatar chain | CyberVerse | B | primary | services/presence + providers | analysed |
+| RTC-004 | presence | voice-only mode independent of avatar | CyberVerse | A | primary | services/presence | discovered |
+| RTC-005 | presence | live visual input to realtime persona | CyberVerse | B | primary | services/presence + perception | discovered |
+| TSK-001 | workflows | realtime background task events/artifacts | CyberVerse | B | secondary UX | packages/workflows + presence | analysed |
+| TSK-002 | workflows | reconnectable ordered task event stream | CyberVerse | A | secondary reliability | workflows + events | analysed |
+| TSK-003 | workflows | rich durable task lifecycle | ChatWithStars | A | primary | packages/workflows | analysed |
+| COM-001 | commerce | quote/payment/approval/reconcile/receipt | ChatWithStars | A | primary | packages/commerce + workflows | analysed |
+| COM-002 | commerce | append-only ledger/derived balance model | ChatWithStars | A | primary | packages/commerce | analysed |
+| COM-003 | commerce | provider inbox/retry/cutover/acceptance controls | ChatWithStars | A | primary | commerce + ops | discovered |
+| SOC-001 | social | durable character social publishing | ChatWithStars | A | primary | services/social | analysed |
+| SOC-002 | social | scheduling/review/destination/token-vault automation | ChatWithStars | A | primary | services/social | discovered |
+| STD-001 | studio | produced media pipeline | ChatWithStars | A | primary | services/studio | analysed |
+| STD-002 | studio | identity/continuity/reference management | ChatWithStars | A | primary | services/studio + identity | discovered |
+| STD-003 | studio | provider-neutral render queue/adapters | ChatWithStars | B | primary | services/studio + providers | discovered |
+| AVT-001 | avatar | multi-form avatar abstraction | N.E.K.O | B | primary breadth | clients + providers | discovered |
+| AVT-002 | avatar | realtime generated-human renderer | CyberVerse | B | primary generated-human | services/presence + providers | analysed |
+| AVT-003 | avatar | avatar warmup/silent-idle/sync behavior | CyberVerse | A | primary behavior | services/presence | discovered |
+| CHN-001 | channels | web/WhatsApp/Telegram share same character/runtime state | ChatWithStars | A | primary | gateway + channel adapters | discovered |
+| CHN-002 | channels | broad optional channel adapter ecosystem | OpenJarvis | C/B per channel | reference | gateway adapters | discovered |
+| OPS-001 | operations | provider/skill acceptance and operator control | ChatWithStars | A | primary | apps/ops | discovered |
+| OPS-002 | operations | trace/evaluation visibility | OpenJarvis + ChatWithStars | B | combined | apps/ops + telemetry | discovered |
 
-This seed is not exhaustive. Phase 0 must expand it by systematic source inspection.
+This inventory is intentionally incomplete. Source-specific map documents identify the next deep-mining areas.
