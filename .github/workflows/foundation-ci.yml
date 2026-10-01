@@ -1,0 +1,26 @@
+name: Foundation CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: "pnpm"
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Install
+        run: pnpm install --no-frozen-lockfile
+      - name: Check
+        run: pnpm check
