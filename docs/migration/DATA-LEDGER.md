@@ -351,3 +351,19 @@ Phase 0 must continue mapping donor-specific stores/tables/files into these cano
 | D-ELZ-011 | BrowserEffectReceipt | elizaOS browser | tool execution | authorized->dispatched->succeeded/failed/uncertain | sensitive | packages/tools + audit | redesign | target, domain policy, confirmation, effect receipt/reconciliation |
 | D-ELZ-012 | CredentialVaultRef | elizaOS connector credentials | integration account | created->rotated/revoked | secret pointer | packages/security | preserve concept | raw token lives only in encrypted vault |
 | D-ELZ-013 | AuthorityCasReceipt | elizaOS world metadata | authoritative mutation | expected->committed/conflict | sensitive/audit | canonical domain + security | preserve invariant | mutation and committed audit share transaction |
+
+
+### Phase 0B Microsoft Agent Framework data concepts
+
+| ID | Canonical concept | Source | Scope | Lifecycle | Sensitivity | Destination | Treatment | Notes |
+|---|---|---|---|---|---|---|---|---|
+| D-MAF-001 | WorkflowVersionSignature | MAF workflow graph | workflow definition | drafted->published->superseded | internal | packages/workflows | preserve invariant | content/graph compatibility token |
+| D-MAF-002 | WorkflowCheckpoint | MAF checkpoint | workflow run | committed->restored/pruned | private/business | packages/workflows | redesign | lineage, version, executor/edge state, pending requests |
+| D-MAF-003 | WorkflowEdgeDeliveryState | MAF edge runners | workflow run/edge group | partial->complete | private/internal | packages/workflows | preserve semantics | includes fan-in partial buffers |
+| D-MAF-004 | WorkflowExternalRequest | MAF RequestInfo/HITL | workflow run | pending->answered/revoked/expired | potentially sensitive | packages/workflows + security | redesign | durable current-authority request |
+| D-MAF-005 | ToolApprovalBinding | MAF tool approval | tool call | requested->approved/denied/invalidated->consumed | highly sensitive | security/tools/workflows | preserve semantics | exact immutable argument authority token |
+| D-MAF-006 | HandoffState | MAF orchestrations | workflow run | participant-active->handoff-requested->transferred/failed | private | workflows/agents | redesign | routing state, never Character identity |
+| D-MAF-007 | OrchestrationManagerState | MAF group/Magentic | workflow run | planning->rounds->complete/stalled | private/internal | packages/workflows | redesign | checkpointable budgets/ledger/selector state |
+| D-MAF-008 | SkillPathScope | MAF skills | skill revision | discovered->validated->used/rejected | executable/content | packages/skills | preserve invariant | trusted root + use-time path/symlink validation |
+| D-MAF-009 | ProtocolSessionBinding | MAF MCP/A2A hosting | external session | bound->active->expired | identity-adjacent | gateway/security | redesign | opaque protocol key cannot authorize itself |
+| D-MAF-010 | CheckpointBackendRecord | Cosmos/Foundry stores | tenant/workflow/run | written->indexed->restored/pruned | private/business | packages/workflows persistence | redesign | tenant/user scope must be explicit in canonical key |
