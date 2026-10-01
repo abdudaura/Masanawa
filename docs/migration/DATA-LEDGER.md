@@ -185,11 +185,11 @@ Phase 0 must continue mapping donor-specific stores/tables/files into these cano
 
 | ID | Canonical concept | Source | Scope | Lifecycle | Sensitivity | Destination | Treatment | Notes |
 |---|---|---|---|---|---|---|---|---|
-| D-PRV-001 | ProviderDefinition | Masanawa synthesis/OpenJarvis/OpenClaw/AIRI | platform | versioned | internal | providers | canonical | capability families, auth schemes, supported operations, provenance |
-| D-PRV-002 | ProviderOperationDefinition | Masanawa synthesis/ChatWithStars | provider+capability | immutable/versioned | internal | providers | canonical | effect class, timeout, retry class, idempotency, reconciliation, readiness |
-| D-PRV-003 | ProviderCredentialRef | Masanawa synthesis | tenant/org/user/device | rotatable/revocable | secret reference | providers/security | canonical | opaque vault ref + scope/environment/fingerprint metadata only |
-| D-PRV-004 | ProviderReadinessEvidence | ChatWithStars Flutterwave + Masanawa | provider+environment+requirement | append/current projection | sensitive/internal | providers/ops | canonical | freshness, observed fingerprint, dependencies, invalidation |
-| D-PRV-005 | ProviderAttempt | ChatWithStars/Google/Gemini/JEV/Telegram | workflow operation | append | private/internal | providers/telemetry | canonical | attempt number, request fingerprint, normalized result, redacted error |
-| D-PRV-006 | ProviderReceipt | ChatWithStars commerce/social/studio/channel | provider operation | append/unique | varies | providers + owning domain | canonical | definitive external evidence; never replaces domain truth |
-| D-PRV-007 | ProviderReconciliation | ChatWithStars Flutterwave + synthesis | ambiguous provider attempt | pending->resolved/needs_attention | sensitive/internal | providers/workflows | canonical | lookup/webhook/poll/operator outcome before retry |
-| D-PRV-008 | ProviderAcceptanceEvidence | ChatWithStars Ops | provider+capability+environment | append/expiry | internal | ops/providers | canonical | current end-to-end production journey distinct from config/readiness |
+| D-PVD-001 | ProviderDefinition | Masanawa synthesis/OpenJarvis/OpenClaw/AIRI | platform | versioned | internal | providers | canonical | capability families, auth schemes, supported operations, provenance |
+| D-PVD-002 | ProviderOperationDefinition | Masanawa synthesis/ChatWithStars | provider+capability | immutable/versioned | internal | providers | canonical | effect class, timeout, retry class, idempotency, reconciliation, readiness |
+| D-PVD-003 | ProviderCredentialRef | Masanawa synthesis | tenant/org/user/device | rotatable/revocable | secret reference | providers/security | canonical | opaque vault ref + scope/environment/fingerprint metadata only |
+| D-PVD-004 | ProviderReadinessEvidence | ChatWithStars Flutterwave + Masanawa | provider+environment+requirement | append/current projection | sensitive/internal | providers/ops | canonical | freshness, observed fingerprint, dependencies, invalidation |
+| D-PVD-005 | ProviderAttempt | ChatWithStars/Google/Gemini/JEV/Telegram | workflow operation | append | private/internal | providers/telemetry | canonical | attempt number, request fingerprint, normalized result, redacted error |
+| D-PVD-006 | ProviderReceipt | ChatWithStars commerce/social/studio/channel | provider operation | append/unique | varies | providers + owning domain | canonical | definitive external evidence; never replaces domain truth |
+| D-PVD-007 | ProviderReconciliation | ChatWithStars Flutterwave + synthesis | ambiguous provider attempt | pending->resolved/needs_attention | sensitive/internal | providers/workflows | canonical | lookup/webhook/poll/operator outcome before retry |
+| D-PVD-008 | ProviderAcceptanceEvidence | ChatWithStars Ops | provider+capability+environment | append/expiry | internal | ops/providers | canonical | current end-to-end production journey distinct from config/readiness |
