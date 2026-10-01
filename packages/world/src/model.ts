@@ -4,6 +4,7 @@ import type {
   TenantId,
   WorldEventId,
   WorldGenerationId,
+  WorldInteractionId,
   WorldId,
 } from "@masanawa/contracts";
 
@@ -133,4 +134,27 @@ export interface StoryArc {
   readonly revision: number;
   readonly createdAt: Instant;
   readonly updatedAt: Instant;
+}
+
+
+export interface WorldInteractionParticipant {
+  readonly characterId: CharacterId;
+  readonly characterVersionId: import("@masanawa/contracts").CharacterVersionId;
+  readonly role: string;
+}
+
+export interface WorldInteraction {
+  readonly tenantId: TenantId;
+  readonly worldInteractionId: WorldInteractionId;
+  readonly worldId: WorldId;
+  readonly interactionKind: string;
+  readonly participants: readonly WorldInteractionParticipant[];
+  readonly payload: JsonObject;
+  readonly provenance: WorldEventProvenance;
+  readonly visibility: WorldEventVisibility;
+  readonly canonState: CanonState;
+  readonly occurrenceKey: string | null;
+  readonly effectiveStart: Instant;
+  readonly effectiveEnd: Instant | null;
+  readonly recordedAt: Instant;
 }
