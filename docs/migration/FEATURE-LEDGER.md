@@ -182,5 +182,7 @@ foundation, identity, relationships, memory, world, decisions, agents, skills, t
 | SEC-006 | security | one-trust-domain Gateway model unsuitable as public multi-tenant boundary | OpenClaw | C/A | explicit non-adoption constraint | services/gateway + security | analysed |
 | PLG-007 | plugins | managed-operation cancellation/current-authority/node-idleness lifecycle | OpenClaw | B | candidate | plugin runtime + security | analysed |
 | MEM-017 | memory | active recall clamped by parent effective tool authority and fail-soft on recall failure | OpenClaw | A | secondary memory donor | packages/memory + tools | analysed |
+| PRV-005 | infrastructure | optional published @openclaw/ai provider implementation behind Masanawa IntelligenceProvider | OpenClaw | B | direct-dependency candidate | packages/providers | analysed |
+| SEC-007 | security | explicit separation of sandbox location, tool allow/deny policy and elevated exec | OpenClaw | A/B | behavior donor | packages/security + tools | analysed |
 
 This inventory is intentionally incomplete. Source-specific map documents identify the next deep-mining areas.
