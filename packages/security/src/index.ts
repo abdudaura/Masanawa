@@ -1,3 +1,4 @@
+export * from "./authentication.js";
 export * from "./approval.js";
 export * from "./authority.js";
 export * from "./canonical-json.js";
