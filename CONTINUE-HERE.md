@@ -133,14 +133,11 @@ Donor Agent/runtime/checkpoint objects never become Character, memory or busines
 
 ## Immediate next work
 
-Phase 0 and Phase 1 are closed. Phase 2 is active.
+Phase 2 Foundation is active. Read `docs/PHASE-2-FOUNDATION.md` first; it is the live implementation checklist.
 
-1. Read `docs/PHASE-1-CLOSURE-AUDIT.md` and ADR-0011.
-2. Inspect the actual root/package scaffold before creating anything; preserve completed foundation work if it already exists.
-3. Build the first foundation slice in this order: contracts/IDs/errors/time/config -> architecture-boundary tests -> PostgreSQL/migrations -> events/outbox/idempotency -> security authority/approval primitives -> Fastify Gateway/Worker/Ops bootstrap -> telemetry/test harness.
-4. Keep all dependencies aligned with `docs/PACKAGE-BOUNDARIES.md`.
-5. Do not begin product-domain porting (identity/memory/world/commerce/social/studio) ahead of the shared foundation primitives.
-6. Every consequential primitive must satisfy `docs/EVENT-CONTRACTS.md` and `docs/SECURITY-AUTHORITY.md` from its first implementation.
+Current code already contains root workspace/tooling, contracts/events/security primitives, the PostgreSQL adapter/event migration, architecture guards, and Gateway/Worker/Ops health/readiness bootstraps.
+
+Continue the first unresolved foundation gap in `docs/PHASE-2-FOUNDATION.md`; do not restart those completed slices and do not begin product-domain migrations yet.
 
 
 ## World simulation comparison — completed
