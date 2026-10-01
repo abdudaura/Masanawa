@@ -98,3 +98,14 @@ Auth, retry, idempotency and reconciliation fields still require source-by-sourc
 | I-SOC-005 | TikTok | ChatWithStars automation | publishing/provider integration | public posting | tokens/content | social provider adapter | discovered |
 | I-AUTH-001 | Google OAuth | ChatWithStars admin | connected-account authorization | OAuth grants | user/provider tokens | auth/integration adapter | discovered |
 | I-WA-001 | WhatsApp Web runtime | ChatWithStars calls/runtime | message/call transport on linked account | messaging/calls/device session | highly sensitive | gateway/channel/presence adapter; not domain authority | analysed |
+
+
+### Phase 0B AI Town integration additions
+
+| ID | Provider/system | Source repo | Purpose/capabilities | Side effects | Data sensitivity | Masanawa adapter | Status |
+|---|---|---|---|---|---|---|---|
+| I-AIT-001 | Convex | AI Town | database, transactions, scheduler, functions, vector search, object storage | DB/jobs/storage/network | world, message, memory and media state | reference only; semantics reimplemented on canonical platform services | analysed; must not become hidden runtime authority |
+| I-AIT-002 | OpenAI-compatible HTTP LLM APIs | AI Town | chat + embeddings with retry/stream handling | model calls | prompts, memories, conversation data | packages/providers | analysed; provider failure cannot partially mutate world truth |
+| I-AIT-003 | Ollama | AI Town | local chat + embeddings/model pull | local compute/network | prompts/memories local | packages/providers/local | analysed; readiness/model pull are provider state only |
+| I-AIT-004 | Replicate MusicGen | AI Town | asynchronous background-music generation | media generation/webhook/storage | prompts/provider IDs/media | studio/provider adapter if ever selected | analysed; donor webhook lacks signature verification/correlation, so signed callback + durable request + dedupe/reconcile are mandatory |
+| I-AIT-005 | Clerk | AI Town | optional/commented authentication | auth/OAuth | identity/session | none as architecture | retired/reference; canonical Masanawa auth only |
