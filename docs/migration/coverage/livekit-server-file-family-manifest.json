@@ -1,0 +1,2581 @@
+{
+  "source": "livekit/livekit@7ef0cd014e950373acd789557099305716eea196",
+  "count": 429,
+  "unresolved": 0,
+  "entries": [
+    {
+      "path": ".github/CODEOWNERS",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/bug_report.md",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": ".github/banner_dark.png",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": ".github/banner_light.png",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": ".github/scripts/go-version.sh",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": ".github/workflows/buildtest.yaml",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": ".github/workflows/docker.yaml",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": ".github/workflows/release.yaml",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": ".github/workflows/slack-notifier.yaml",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": ".github/workflows/test-server-docker.yaml",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": ".gitignore",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": ".golangci.yml",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": ".goreleaser.yaml",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "Dockerfile",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "LICENSE",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "NOTICE",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "README.md",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "bootstrap.sh",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "cmd/server/commands.go",
+      "family": "server-entrypoints",
+      "classification": "C/B",
+      "destination": "deployment"
+    },
+    {
+      "path": "cmd/server/main.go",
+      "family": "server-entrypoints",
+      "classification": "C/B",
+      "destination": "deployment"
+    },
+    {
+      "path": "cmd/server/main_test.go",
+      "family": "server-entrypoints",
+      "classification": "C/B",
+      "destination": "deployment"
+    },
+    {
+      "path": "cmd/test-server/Dockerfile",
+      "family": "server-entrypoints",
+      "classification": "C/B",
+      "destination": "deployment"
+    },
+    {
+      "path": "cmd/test-server/README.md",
+      "family": "server-entrypoints",
+      "classification": "C/B",
+      "destination": "deployment"
+    },
+    {
+      "path": "cmd/test-server/auth.go",
+      "family": "server-entrypoints",
+      "classification": "C/B",
+      "destination": "deployment"
+    },
+    {
+      "path": "cmd/test-server/config.go",
+      "family": "server-entrypoints",
+      "classification": "C/B",
+      "destination": "deployment"
+    },
+    {
+      "path": "cmd/test-server/handlers.go",
+      "family": "server-entrypoints",
+      "classification": "C/B",
+      "destination": "deployment"
+    },
+    {
+      "path": "cmd/test-server/main.go",
+      "family": "server-entrypoints",
+      "classification": "C/B",
+      "destination": "deployment"
+    },
+    {
+      "path": "cmd/test-server/signal.go",
+      "family": "server-entrypoints",
+      "classification": "C/B",
+      "destination": "deployment"
+    },
+    {
+      "path": "cmd/test-server/signal_test.go",
+      "family": "server-entrypoints",
+      "classification": "C/B",
+      "destination": "deployment"
+    },
+    {
+      "path": "config-sample.yaml",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "deploy/README.md",
+      "family": "deployment",
+      "classification": "C",
+      "destination": "deployment/reference"
+    },
+    {
+      "path": "deploy/grafana/livekit-server-overview.json",
+      "family": "deployment",
+      "classification": "C",
+      "destination": "deployment/reference"
+    },
+    {
+      "path": "go.mod",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "go.sum",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "install-livekit.sh",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "magefile.go",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "magefile_unix.go",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "magefile_windows.go",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "pkg/agent/agent_test.go",
+      "family": "livekit-agent-infra",
+      "classification": "C/B",
+      "destination": "presence/worker adapter"
+    },
+    {
+      "path": "pkg/agent/client.go",
+      "family": "livekit-agent-infra",
+      "classification": "C/B",
+      "destination": "presence/worker adapter"
+    },
+    {
+      "path": "pkg/agent/config.go",
+      "family": "livekit-agent-infra",
+      "classification": "C/B",
+      "destination": "presence/worker adapter"
+    },
+    {
+      "path": "pkg/agent/testutils/server.go",
+      "family": "livekit-agent-infra",
+      "classification": "C/B",
+      "destination": "presence/worker adapter"
+    },
+    {
+      "path": "pkg/agent/worker.go",
+      "family": "livekit-agent-infra",
+      "classification": "C/B",
+      "destination": "presence/worker adapter"
+    },
+    {
+      "path": "pkg/clientconfiguration/conf.go",
+      "family": "client-transport-config",
+      "classification": "C/B",
+      "destination": "presence/client"
+    },
+    {
+      "path": "pkg/clientconfiguration/conf_test.go",
+      "family": "client-transport-config",
+      "classification": "C/B",
+      "destination": "presence/client"
+    },
+    {
+      "path": "pkg/clientconfiguration/match.go",
+      "family": "client-transport-config",
+      "classification": "C/B",
+      "destination": "presence/client"
+    },
+    {
+      "path": "pkg/clientconfiguration/staticconfiguration.go",
+      "family": "client-transport-config",
+      "classification": "C/B",
+      "destination": "presence/client"
+    },
+    {
+      "path": "pkg/clientconfiguration/types.go",
+      "family": "client-transport-config",
+      "classification": "C/B",
+      "destination": "presence/client"
+    },
+    {
+      "path": "pkg/config/config.go",
+      "family": "server-config",
+      "classification": "C/B",
+      "destination": "deployment/presence"
+    },
+    {
+      "path": "pkg/config/config_test.go",
+      "family": "server-config",
+      "classification": "C/B",
+      "destination": "deployment/presence"
+    },
+    {
+      "path": "pkg/config/configtest/checkyamltag.go",
+      "family": "server-config",
+      "classification": "C/B",
+      "destination": "deployment/presence"
+    },
+    {
+      "path": "pkg/metric/metric_config.go",
+      "family": "transport-metrics",
+      "classification": "B",
+      "destination": "telemetry"
+    },
+    {
+      "path": "pkg/metric/metric_timestamper.go",
+      "family": "transport-metrics",
+      "classification": "B",
+      "destination": "telemetry"
+    },
+    {
+      "path": "pkg/metric/metrics_collector.go",
+      "family": "transport-metrics",
+      "classification": "B",
+      "destination": "telemetry"
+    },
+    {
+      "path": "pkg/metric/metrics_reporter.go",
+      "family": "transport-metrics",
+      "classification": "B",
+      "destination": "telemetry"
+    },
+    {
+      "path": "pkg/routing/errors.go",
+      "family": "distributed-routing",
+      "classification": "B",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "pkg/routing/interfaces.go",
+      "family": "distributed-routing",
+      "classification": "B",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "pkg/routing/localrouter.go",
+      "family": "distributed-routing",
+      "classification": "B",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "pkg/routing/messagechannel.go",
+      "family": "distributed-routing",
+      "classification": "B",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "pkg/routing/messagechannel_test.go",
+      "family": "distributed-routing",
+      "classification": "B",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "pkg/routing/node.go",
+      "family": "distributed-routing",
+      "classification": "B",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "pkg/routing/nodestats.go",
+      "family": "distributed-routing",
+      "classification": "B",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "pkg/routing/redisrouter.go",
+      "family": "distributed-routing",
+      "classification": "B",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "pkg/routing/roommanager.go",
+      "family": "distributed-routing",
+      "classification": "B",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "pkg/routing/routingfakes/fake_message_sink.go",
+      "family": "distributed-routing",
+      "classification": "B",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "pkg/routing/routingfakes/fake_message_source.go",
+      "family": "distributed-routing",
+      "classification": "B",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "pkg/routing/routingfakes/fake_room_manager_client.go",
+      "family": "distributed-routing",
+      "classification": "B",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "pkg/routing/routingfakes/fake_router.go",
+      "family": "distributed-routing",
+      "classification": "B",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "pkg/routing/routingfakes/fake_signal_client.go",
+      "family": "distributed-routing",
+      "classification": "B",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "pkg/routing/selector/any.go",
+      "family": "distributed-routing",
+      "classification": "B",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "pkg/routing/selector/any_test.go",
+      "family": "distributed-routing",
+      "classification": "B",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "pkg/routing/selector/cpuload.go",
+      "family": "distributed-routing",
+      "classification": "B",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "pkg/routing/selector/cpuload_test.go",
+      "family": "distributed-routing",
+      "classification": "B",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "pkg/routing/selector/errors.go",
+      "family": "distributed-routing",
+      "classification": "B",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "pkg/routing/selector/interfaces.go",
+      "family": "distributed-routing",
+      "classification": "B",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "pkg/routing/selector/nodesfilter.go",
+      "family": "distributed-routing",
+      "classification": "B",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "pkg/routing/selector/regionaware.go",
+      "family": "distributed-routing",
+      "classification": "B",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "pkg/routing/selector/regionaware_test.go",
+      "family": "distributed-routing",
+      "classification": "B",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "pkg/routing/selector/sortby_test.go",
+      "family": "distributed-routing",
+      "classification": "B",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "pkg/routing/selector/sysload.go",
+      "family": "distributed-routing",
+      "classification": "B",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "pkg/routing/selector/sysload_test.go",
+      "family": "distributed-routing",
+      "classification": "B",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "pkg/routing/selector/utils.go",
+      "family": "distributed-routing",
+      "classification": "B",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "pkg/routing/selector/utils_test.go",
+      "family": "distributed-routing",
+      "classification": "B",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "pkg/routing/signal.go",
+      "family": "distributed-routing",
+      "classification": "B",
+      "destination": "presence infrastructure"
+    },
+    {
+      "path": "pkg/rtc/clientinfo.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/clientinfo_test.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/config.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/datadowntrack.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/datatrack.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/datatrack_stats.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/datatrack_test.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/dynacast/dynacastmanager_test.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/dynacast/dynacastmanageraudio.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/dynacast/dynacastmanagerbase.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/dynacast/dynacastmanagervideo.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/dynacast/dynacastqualityaudio.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/dynacast/dynacastqualityvideo.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/dynacast/interfaces.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/egress.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/errors.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/mediaengine.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/mediaengine_test.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/medialossproxy.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/mediatrack.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/mediatrack_test.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/mediatrackreceiver.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/mediatracksubscriptions.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/migrationdatacache.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/migrationdatacache_test.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/participant.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/participant_data_blob.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/participant_data_blob_handler.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/participant_data_blob_handler_test.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/participant_data_blob_test.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/participant_data_track.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/participant_internal_test.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/participant_sdp.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/participant_signal.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/room.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/room_test.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/roomtrackmanager.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/signalanddatastats.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/signalling/errors.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/signalling/interfaces.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/signalling/signalhandler.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/signalling/signalhandlerunimplemented.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/signalling/signallerasync.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/signalling/signallerasyncbase.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/signalling/signallerasyncbase_test.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/signalling/signallerunimplemented.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/signalling/signalling.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/signalling/signallingunimplemented.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/subscribedtrack.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/subscriptionmanager.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/subscriptionmanager_test.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/supervisor/participant_supervisor.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/supervisor/publication_monitor.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/testutils.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/transport.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/transport/handler.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/transport/negotiationstate.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/transport/transportfakes/fake_handler.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/transport_media_sections_test.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/transport_test.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/transportmanager.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/types/ice.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/types/interfaces.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/types/protocol_version.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/types/trafficstats.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/types/typesfakes/fake_data_down_track.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/types/typesfakes/fake_data_track.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/types/typesfakes/fake_data_track_sender.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/types/typesfakes/fake_data_track_transport.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/types/typesfakes/fake_local_media_track.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/types/typesfakes/fake_local_participant.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/types/typesfakes/fake_local_participant_helper.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/types/typesfakes/fake_local_participant_listener.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/types/typesfakes/fake_media_track.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/types/typesfakes/fake_participant.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/types/typesfakes/fake_participant_listener.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/types/typesfakes/fake_participant_telemetry_listener.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/types/typesfakes/fake_room.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/types/typesfakes/fake_subscribed_track.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/types/typesfakes/fake_websocket_client.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/updatatrackmanager.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/uptrackmanager.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/uptrackmanager_test.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/user_packet_deduper.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/utils.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/utils_test.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/rtc/wrappedreceiver.go",
+      "family": "rtc-room-participant-transport",
+      "classification": "A/B",
+      "destination": "services/presence"
+    },
+    {
+      "path": "pkg/service/agent_dispatch_service.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/agentservice.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/auth.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/auth_test.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/basic_auth.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/clients.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/docker_test.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/egress.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/egressid.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/errors.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/ingress.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/ingress_test.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/interfaces.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/ioservice.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/ioservice_ingress.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/ioservice_sip.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/ioservice_sip_test.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/localstore.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/redisstore.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/redisstore_sip.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/redisstore_sip_test.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/redisstore_test.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/requestid.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/requestid_test.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/requestlimit_test.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/roomallocator.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/roomallocator_test.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/roommanager.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/roommanager_service.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/roommanager_service_test.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/roommanager_test.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/roomservice.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/roomservice_test.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/rtcservice.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/rtcservice_test.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/server.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/servicefakes/fake_agent_store.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/servicefakes/fake_egress_store.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/servicefakes/fake_ingress_launcher.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/servicefakes/fake_ingress_store.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/servicefakes/fake_ioclient.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/servicefakes/fake_object_store.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/servicefakes/fake_room_allocator.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/servicefakes/fake_service_store.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/servicefakes/fake_session_handler.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/servicefakes/fake_sipstore.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/signal.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/signal_test.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/sip.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/turn.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/turn_test.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/turnquota.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/turnquota_test.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/twirp.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/twirp_test.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/utils.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/utils_test.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/whipservice.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/wire.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/wire_gen.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/wsprotocol.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/service/wsprotocol_test.go",
+      "family": "transport-services",
+      "classification": "B/C",
+      "destination": "presence/service adapters"
+    },
+    {
+      "path": "pkg/sfu/NOTICE",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/audio/audiolevel.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/audio/audiolevel_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/buffer/buffer.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/buffer/buffer_base.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/buffer/buffer_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/buffer/datastats.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/buffer/datastats_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/buffer/dependencydescriptorparser.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/buffer/dependencydescriptorparser_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/buffer/factory.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/buffer/fps.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/buffer/fps_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/buffer/frameintegrity.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/buffer/frameintegrity_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/buffer/rtcpreader.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/buffer/streamstats.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/buffer/videolayer.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/buffer/videolayerutils.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/buffer/videolayerutils_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/bwe/bwe.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/bwe/null_bwe.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/bwe/remotebwe/channel_observer.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/bwe/remotebwe/nack_tracker.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/bwe/remotebwe/probe_controller.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/bwe/remotebwe/remote_bwe.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/bwe/sendsidebwe/congestion_detector.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/bwe/sendsidebwe/packet_group.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/bwe/sendsidebwe/packet_info.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/bwe/sendsidebwe/packet_tracker.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/bwe/sendsidebwe/probe_packet_group.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/bwe/sendsidebwe/send_side_bwe.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/bwe/sendsidebwe/traffic_stats.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/bwe/sendsidebwe/twcc_feedback.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/ccutils/probe_regulator.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/ccutils/probe_signal.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/ccutils/prober.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/ccutils/trenddetector.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/codecmunger/codecmunger.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/codecmunger/null.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/codecmunger/vp8.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/codecmunger/vp8_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/connectionquality/connectionstats.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/connectionquality/connectionstats_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/connectionquality/scorer.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/datachannel/bitrate.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/datachannel/bitrate_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/datachannel/datachannel_writer.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/datachannel/datachannel_writer_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/downtrack.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/downtrack_downstream_integration_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/errors.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/export_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/forwarder.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/forwarder_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/forwardstats.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/forwardstats_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/interceptor/rtx.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/interceptor/unhandlesimulcast.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/interfaces.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/pacer/base.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/pacer/base_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/pacer/leaky_bucket.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/pacer/no_queue.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/pacer/pacer.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/pacer/pass_through.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/pacer/probe_observer.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/packettrailer/packet_trailer.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/packettrailer/packet_trailer_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/playoutdelay.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/playoutdelay_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/receiver.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/receiver_base.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/receiver_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/redprimaryreceiver.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/redreceiver.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/redreceiver_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/rtpextension/abscapturetime/abscapturetime.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/rtpextension/dependencydescriptor/bitstreamreader.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/rtpextension/dependencydescriptor/bitstreamwriter.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/rtpextension/dependencydescriptor/dependencydescriptorextension.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/rtpextension/dependencydescriptor/dependencydescriptorextension_benchmark_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/rtpextension/dependencydescriptor/dependencydescriptorextension_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/rtpextension/dependencydescriptor/dependencydescriptorreader.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/rtpextension/dependencydescriptor/dependencydescriptorwriter.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/rtpextension/playoutdelay/playoutdelay.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/rtpextension/playoutdelay/playoutdelay_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/rtpmunger.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/rtpmunger_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/rtpstats/rtpstats_base.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/rtpstats/rtpstats_base_lite.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/rtpstats/rtpstats_receiver.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/rtpstats/rtpstats_receiver_lite.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/rtpstats/rtpstats_sender.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/rtpstats/rtpstats_sender_lite.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/rtpstats/rtpstats_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/sequencer.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/sequencer_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/sfu.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/sfufakes/fake_down_track_listener.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/sfufakes/fake_down_track_stream_allocator_listener.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/sfufakes/fake_redtransformer.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/sfufakes/fake_track_receiver.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/sfufakes/fake_track_sender.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/streamallocator/streamallocator.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/streamallocator/streamstateupdate.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/streamallocator/track.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/streamtracker/interfaces.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/streamtracker/streamtracker.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/streamtracker/streamtracker_dd.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/streamtracker/streamtracker_dd_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/streamtracker/streamtracker_frame.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/streamtracker/streamtracker_packet.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/streamtracker/streamtracker_packet_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/streamtrackermanager.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/testutils/data.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/track_remote.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/utils/debounce.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/utils/downtrackspreader.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/utils/downtrackspreader_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/utils/helpers.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/utils/norace.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/utils/race.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/utils/rangemap.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/utils/rangemap_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/videolayerselector/base.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/videolayerselector/decodetarget.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/videolayerselector/dependencydescriptor.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/videolayerselector/dependencydescriptor_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/videolayerselector/framechain.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/videolayerselector/framenumberwrapper.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/videolayerselector/framenumberwrapper_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/videolayerselector/null.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/videolayerselector/selectordecisioncache.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/videolayerselector/simulcast.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/videolayerselector/simulcast_test.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/videolayerselector/temporallayerselector/null.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/videolayerselector/temporallayerselector/temporallayerselector.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/videolayerselector/temporallayerselector/vp8.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/videolayerselector/videolayerselector.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/sfu/videolayerselector/vp9.go",
+      "family": "sfu-media-forwarding",
+      "classification": "A/B",
+      "destination": "services/presence transport"
+    },
+    {
+      "path": "pkg/telemetry/analyticsservice.go",
+      "family": "transport-telemetry",
+      "classification": "B",
+      "destination": "presence/telemetry"
+    },
+    {
+      "path": "pkg/telemetry/events.go",
+      "family": "transport-telemetry",
+      "classification": "B",
+      "destination": "presence/telemetry"
+    },
+    {
+      "path": "pkg/telemetry/events_test.go",
+      "family": "transport-telemetry",
+      "classification": "B",
+      "destination": "presence/telemetry"
+    },
+    {
+      "path": "pkg/telemetry/prometheus/datapacket.go",
+      "family": "transport-telemetry",
+      "classification": "B",
+      "destination": "presence/telemetry"
+    },
+    {
+      "path": "pkg/telemetry/prometheus/debug.go",
+      "family": "transport-telemetry",
+      "classification": "B",
+      "destination": "presence/telemetry"
+    },
+    {
+      "path": "pkg/telemetry/prometheus/node.go",
+      "family": "transport-telemetry",
+      "classification": "B",
+      "destination": "presence/telemetry"
+    },
+    {
+      "path": "pkg/telemetry/prometheus/node_linux.go",
+      "family": "transport-telemetry",
+      "classification": "B",
+      "destination": "presence/telemetry"
+    },
+    {
+      "path": "pkg/telemetry/prometheus/node_nonlinux.go",
+      "family": "transport-telemetry",
+      "classification": "B",
+      "destination": "presence/telemetry"
+    },
+    {
+      "path": "pkg/telemetry/prometheus/node_nonwindows.go",
+      "family": "transport-telemetry",
+      "classification": "B",
+      "destination": "presence/telemetry"
+    },
+    {
+      "path": "pkg/telemetry/prometheus/node_windows.go",
+      "family": "transport-telemetry",
+      "classification": "B",
+      "destination": "presence/telemetry"
+    },
+    {
+      "path": "pkg/telemetry/prometheus/packets.go",
+      "family": "transport-telemetry",
+      "classification": "B",
+      "destination": "presence/telemetry"
+    },
+    {
+      "path": "pkg/telemetry/prometheus/quality.go",
+      "family": "transport-telemetry",
+      "classification": "B",
+      "destination": "presence/telemetry"
+    },
+    {
+      "path": "pkg/telemetry/prometheus/rooms.go",
+      "family": "transport-telemetry",
+      "classification": "B",
+      "destination": "presence/telemetry"
+    },
+    {
+      "path": "pkg/telemetry/stats.go",
+      "family": "transport-telemetry",
+      "classification": "B",
+      "destination": "presence/telemetry"
+    },
+    {
+      "path": "pkg/telemetry/stats_test.go",
+      "family": "transport-telemetry",
+      "classification": "B",
+      "destination": "presence/telemetry"
+    },
+    {
+      "path": "pkg/telemetry/statsconn.go",
+      "family": "transport-telemetry",
+      "classification": "B",
+      "destination": "presence/telemetry"
+    },
+    {
+      "path": "pkg/telemetry/statsworker.go",
+      "family": "transport-telemetry",
+      "classification": "B",
+      "destination": "presence/telemetry"
+    },
+    {
+      "path": "pkg/telemetry/statsworker_test.go",
+      "family": "transport-telemetry",
+      "classification": "B",
+      "destination": "presence/telemetry"
+    },
+    {
+      "path": "pkg/telemetry/telemetryfakes/fake_analytics_service.go",
+      "family": "transport-telemetry",
+      "classification": "B",
+      "destination": "presence/telemetry"
+    },
+    {
+      "path": "pkg/telemetry/telemetryfakes/fake_telemetry_service.go",
+      "family": "transport-telemetry",
+      "classification": "B",
+      "destination": "presence/telemetry"
+    },
+    {
+      "path": "pkg/telemetry/telemetryservice.go",
+      "family": "transport-telemetry",
+      "classification": "B",
+      "destination": "presence/telemetry"
+    },
+    {
+      "path": "pkg/testutils/timeout.go",
+      "family": "test-helpers",
+      "classification": "evidence",
+      "destination": "acceptance"
+    },
+    {
+      "path": "pkg/testutils/vnettest/vnettest.go",
+      "family": "test-helpers",
+      "classification": "evidence",
+      "destination": "acceptance"
+    },
+    {
+      "path": "pkg/utils/changenotifier.go",
+      "family": "transport-utils",
+      "classification": "C/B",
+      "destination": "presence"
+    },
+    {
+      "path": "pkg/utils/changenotifier_test.go",
+      "family": "transport-utils",
+      "classification": "C/B",
+      "destination": "presence"
+    },
+    {
+      "path": "pkg/utils/context.go",
+      "family": "transport-utils",
+      "classification": "C/B",
+      "destination": "presence"
+    },
+    {
+      "path": "pkg/utils/iceconfigcache.go",
+      "family": "transport-utils",
+      "classification": "C/B",
+      "destination": "presence"
+    },
+    {
+      "path": "pkg/utils/iceconfigcache_test.go",
+      "family": "transport-utils",
+      "classification": "C/B",
+      "destination": "presence"
+    },
+    {
+      "path": "pkg/utils/incrementaldispatcher.go",
+      "family": "transport-utils",
+      "classification": "C/B",
+      "destination": "presence"
+    },
+    {
+      "path": "pkg/utils/incrementaldispatcher_test.go",
+      "family": "transport-utils",
+      "classification": "C/B",
+      "destination": "presence"
+    },
+    {
+      "path": "pkg/utils/logging.go",
+      "family": "transport-utils",
+      "classification": "C/B",
+      "destination": "presence"
+    },
+    {
+      "path": "pkg/utils/math.go",
+      "family": "transport-utils",
+      "classification": "C/B",
+      "destination": "presence"
+    },
+    {
+      "path": "pkg/utils/math_test.go",
+      "family": "transport-utils",
+      "classification": "C/B",
+      "destination": "presence"
+    },
+    {
+      "path": "pkg/utils/opsqueue.go",
+      "family": "transport-utils",
+      "classification": "C/B",
+      "destination": "presence"
+    },
+    {
+      "path": "pkg/utils/protocol.go",
+      "family": "transport-utils",
+      "classification": "C/B",
+      "destination": "presence"
+    },
+    {
+      "path": "pkg/utils/slice.go",
+      "family": "transport-utils",
+      "classification": "C/B",
+      "destination": "presence"
+    },
+    {
+      "path": "pkg/utils/slice_test.go",
+      "family": "transport-utils",
+      "classification": "C/B",
+      "destination": "presence"
+    },
+    {
+      "path": "renovate.json",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "build/reference"
+    },
+    {
+      "path": "test/agent.go",
+      "family": "integration-tests",
+      "classification": "evidence",
+      "destination": "acceptance"
+    },
+    {
+      "path": "test/agent_test.go",
+      "family": "integration-tests",
+      "classification": "evidence",
+      "destination": "acceptance"
+    },
+    {
+      "path": "test/client/client.go",
+      "family": "integration-tests",
+      "classification": "evidence",
+      "destination": "acceptance"
+    },
+    {
+      "path": "test/client/datachannel_reader.go",
+      "family": "integration-tests",
+      "classification": "evidence",
+      "destination": "acceptance"
+    },
+    {
+      "path": "test/client/datatrack_remote.go",
+      "family": "integration-tests",
+      "classification": "evidence",
+      "destination": "acceptance"
+    },
+    {
+      "path": "test/client/datatrack_writer.go",
+      "family": "integration-tests",
+      "classification": "evidence",
+      "destination": "acceptance"
+    },
+    {
+      "path": "test/client/trackwriter.go",
+      "family": "integration-tests",
+      "classification": "evidence",
+      "destination": "acceptance"
+    },
+    {
+      "path": "test/integration_helpers.go",
+      "family": "integration-tests",
+      "classification": "evidence",
+      "destination": "acceptance"
+    },
+    {
+      "path": "test/multinode_roomservice_test.go",
+      "family": "integration-tests",
+      "classification": "evidence",
+      "destination": "acceptance"
+    },
+    {
+      "path": "test/multinode_test.go",
+      "family": "integration-tests",
+      "classification": "evidence",
+      "destination": "acceptance"
+    },
+    {
+      "path": "test/rtx_pairing_integration_test.go",
+      "family": "integration-tests",
+      "classification": "evidence",
+      "destination": "acceptance"
+    },
+    {
+      "path": "test/scenarios.go",
+      "family": "integration-tests",
+      "classification": "evidence",
+      "destination": "acceptance"
+    },
+    {
+      "path": "test/signal_message_size_limit_test.go",
+      "family": "integration-tests",
+      "classification": "evidence",
+      "destination": "acceptance"
+    },
+    {
+      "path": "test/singlenode_test.go",
+      "family": "integration-tests",
+      "classification": "evidence",
+      "destination": "acceptance"
+    },
+    {
+      "path": "test/webhook_test.go",
+      "family": "integration-tests",
+      "classification": "evidence",
+      "destination": "acceptance"
+    },
+    {
+      "path": "version/version.go",
+      "family": "version-metadata",
+      "classification": "C",
+      "destination": "build"
+    }
+  ]
+}
