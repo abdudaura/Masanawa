@@ -334,3 +334,14 @@ Deep behavior mining from tests remains required before Phase 0 completion.
 | B-RTC-053 | RTC-052 | RTP accounting distinguishes loss, out-of-order, duplicate and restart conditions; old/pre-start packets do not rewrite current stream baseline. | A/B | RTP stats tests | analysed |
 | B-RTC-054 | RTC-052 | Connection-quality scoring is transport telemetry only; muted/no-packet states are interpreted explicitly and never become Character/user quality truth. | B | connection quality tests | selected |
 | B-RTC-055 | RTC-053 | Node/room routing may relocate transport, but Masanawa PresenceSession/CharacterSession identity survives infrastructure placement changes. | A/B | routing/migration architecture + ADR-0006 | selected |
+
+### Phase 0B LiveKit Agents TypeScript invariants
+
+| ID | Feature | Required behavior | Class | Evidence | Status |
+|---|---|---|---|---|---|
+| B-RTC-060 | RTC-060 | Endpointing defaults are detector-aware, while explicit runtime overrides survive activity/agent handoff. | A/B | agent_session_endpointing tests | analysed |
+| B-RTC-061 | RTC-061 | STT/realtime resources transfer only when implementation, context, tool and capability compatibility allows; ownership transfers exactly once and failed destination startup cleans only untransferred resources. | A | agent_activity_handoff tests | analysed |
+| B-RTC-062 | RTC-062 | A user interruption before first playout frame cannot wedge future speech or discard a later-resumed valid turn; playback-start evidence may arrive after generation forwarding ends. | A | generation_interrupt_before_first_frame + deadlock tests | analysed |
+| B-RTC-063 | RTC-063 | Generated text/audio completion, playback start and playback completion are separate facts; transcript synchronization follows actual playout timing. | A | generation/transcription synchronizer tests | analysed |
+| B-PVD-020 | PVD-020 | Provider fallback after output has begun is policy-controlled; failure of one provider changes availability/recovery state but must not silently duplicate partial user-visible output unless explicitly permitted. | A/B | LLM/STT/TTS fallback adapter tests | analysed |
+| B-AVT-040 | AVT-040 | Avatar output is optional/recoverable; ambiguous remote startup or cleanup cannot destroy the underlying live session, and already-absent remote avatar state is idempotent cleanup. | A/B | avatar session tests | analysed |
