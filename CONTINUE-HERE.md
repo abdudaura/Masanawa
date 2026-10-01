@@ -47,36 +47,32 @@ Merged Phase 3 slices:
 - governed CharacterLifeState + canon events: PR #19, merge `729ab3e64eb0539ea249ceb6a39cf79afab20cb2`;
 - canon policy/time hardening: PR #21, merge `ce89ce091e05508dd4d0614a9127a2256bda13e4`;
 - reconciled routines/story arcs: PR #23, merge `4bd9a3a8b2504617291d7e18e992d5f56856886d`;
-- authority-bound WorldEvent canon governance: PR #24, merge `9f2574b9d3932079a834c5c2976ee89e2fdcf2cc`.
+- authority-bound WorldEvent canon governance: PR #24, merge `9f2574b9d3932079a834c5c2976ee89e2fdcf2cc`;
+- canonical WorldInteraction evidence: PR #25, merge `ed186608248659654cdcf23ab8b793dd426fa7ef`.
 
-PR #20 was closed as a duplicate of PR #19. PR #22 was closed after its pre-hardening routines implementation was reconciled and merged safely through PR #23.
+Current implementation branch: `phase3-world-recovery-policy`.
 
-Current implementation branch: `phase3-world-interactions`.
-
-Current branch adds the first canonical WorldInteraction evidence slice:
-- canonical `WorldInteractionId`;
-- structured WorldInteraction records separate from generic WorldEvent payloads;
-- 2–64 unique Character participants, each bound to an exact CharacterVersion and normalized deterministically;
-- provenance, visibility, validity interval, occurrence key and draft/approved/retired lifecycle aligned with WorldEvent;
-- engine automatic canon requires WorldPolicy.automaticCanonEnabled and every participant's active published CharacterVersion;
-- model/authored/imported interactions cannot use automatic approval;
-- deterministic occurrence replay returns the original interaction only when canonical content matches, otherwise conflicts;
-- authored interactions remain draft for later governed canon decisions;
-- approved/retired interaction content and participants are immutable in PostgreSQL;
-- tenant-scoped reads and package-owned `0004_world_interactions.sql`;
-- PostgreSQL 18 coverage for identity/policy gates, replay/conflict, draft behavior, tenant isolation and immutability.
+Current branch implements executable World recovery policy:
+- durable `paused_at` and `recovery_target_time` metadata;
+- active→paused transition with World revision CAS;
+- simulation generation commits fail closed while World status is paused/stopped;
+- every recovery time advance appends a real WorldGeneration instead of silently moving the clock;
+- `skip` recovery advances directly to the requested simulation time and keeps explicitly queued SimulationInputs intact;
+- `bounded` recovery finds deterministic missed routine slots and admits them through the existing idempotent routine→SimulationInput path;
+- maxCatchUpSteps bounds distinct missed simulation time-steps, so simultaneous routines at one slot are never split/lost;
+- incomplete bounded batches remain paused, persist one recovery target and advance only through the last recovered slot;
+- repeated bounded calls drain missed slots and activate only when catch-up is complete;
+- `manual` recovery fails closed for operator reconciliation;
+- PostgreSQL acceptance tests cover paused worker rejection, three-batch routine catch-up without duplicate inputs, skip-mode queued-input preservation and manual-mode refusal.
 
 Immediate work:
-1. run the complete PostgreSQL 18 CI gate for `phase3-world-interactions` and fix every real failure;
+1. run the complete PostgreSQL 18 CI gate for `phase3-world-recovery-policy` and fix every real failure;
 2. merge only when frozen install, strict typecheck, tests and builds are green;
-3. implement executable World pause/restart/catch-up policy with bounded routine recovery;
-4. prove restart/catch-up cannot duplicate SimulationInputs, WorldEvents or WorldInteractions;
-5. add explicit worker/recovery acceptance tests for skip/bounded/manual policies;
-6. only then consider optional spatial mechanics.
+3. add explicit recovery concurrency/restart tests if CI exposes gaps;
+4. then review remaining non-spatial Phase 3 acceptance targets and implement any missing world-event→memory/workflow typed boundaries;
+5. only after non-spatial recovery/integration gates pass, begin optional spatial mechanics.
 
-Keep private Relationship data outside shared World inputs/events/interactions. Do not add a second scheduler, identity model, canon store or approval system.
-
-The post-freeze MemPalace/Paperclip assessment remains in `docs/migration/POST-FREEZE-SUPPLEMENTAL-DONORS.md`. Neither is a Phase 3 runtime dependency.
+Keep private Relationship data outside shared World inputs/events/interactions. Do not create a second scheduler or recovery engine.
 
 ## World simulation comparison — completed
 
