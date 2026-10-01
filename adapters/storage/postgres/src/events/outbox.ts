@@ -53,6 +53,10 @@ export async function enqueueOutbox<TPayload>(
   client: PoolClient,
   input: EnqueueOutboxInput<TPayload>,
 ): Promise<OutboxEventId> {
+  if (!input.destination.trim()) {
+    throw new TypeError("outbox destination is required");
+  }
+
   const outboxEventId = createCanonicalId("outbox-event");
   await client.query(
     `INSERT INTO events.outbox (
