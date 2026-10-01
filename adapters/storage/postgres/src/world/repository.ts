@@ -7,6 +7,7 @@ import {
   type WorldEventId,
   type WorldGenerationId,
   type WorldId,
+  type WorldInteractionId,
 } from "@masanawa/contracts";
 import {
   assertRoutineScheduledTime,
@@ -21,6 +22,7 @@ import {
   routineOccurrenceKey,
   type AdmitRoutineOccurrenceInput,
   type AdmitSimulationInput,
+  type AppendWorldInteractionInput,
   type AppendWorldEventInput,
   type ApproveWorldEventInput,
   type CharacterLifeState,
@@ -39,6 +41,8 @@ import {
   type World,
   type WorldEvent,
   type WorldGeneration,
+  type WorldInteraction,
+  type WorldInteractionParticipant,
   type WorldRepository,
 } from "@masanawa/world";
 import type { PoolClient } from "pg";
@@ -111,6 +115,30 @@ interface WorldEventRow {
   recorded_at: Date;
   approved_at: Date | null;
   retired_at: Date | null;
+}
+
+interface WorldInteractionRow {
+  tenant_id: TenantId;
+  world_interaction_id: WorldInteractionId;
+  world_id: WorldId;
+  interaction_kind: string;
+  payload: WorldInteraction["payload"];
+  provenance: WorldInteraction["provenance"];
+  visibility: WorldInteraction["visibility"];
+  canon_state: WorldInteraction["canonState"];
+  occurrence_key: string | null;
+  effective_start: Date;
+  effective_end: Date | null;
+  recorded_at: Date;
+  approved_at: Date | null;
+  retired_at: Date | null;
+}
+
+interface WorldInteractionParticipantRow {
+  character_id: CharacterId;
+  character_version_id: CharacterVersionId;
+  role: string;
+  ordinal: number;
 }
 
 interface RoutineRow {
