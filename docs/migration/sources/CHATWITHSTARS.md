@@ -2,7 +2,7 @@
 
 Pinned revision: `3ab02704118ce3d8f38a423c9a52e9d44a705aeb` (`platform-unification`)
 
-Status: Phase 0 Pass 1 source map complete; runtime/migration deep-mine started. Calls/automation/studio/Ops still need deeper extraction.
+Status: Phase 0A donor-selection coverage complete. Major domain/runtime/social/studio/Ops/world behaviors are ledgered; exhaustive path-by-path A/B/C classification continues in Phase 0B.
 
 ## Scale and shape
 
