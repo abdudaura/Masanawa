@@ -19,8 +19,8 @@ function context(policyRevision = "policy-1") {
     policyRevision,
     approvalIds: [],
     delegationChain: [],
-    requestId: "request",
-    correlationId: "correlation",
+    requestId: createCanonicalId("request"),
+    correlationId: createCanonicalId("correlation"),
   });
 }
 
@@ -43,8 +43,8 @@ describe("current authority", () => {
       policyRevision: "policy-1",
       approvalIds: [],
       delegationChain: [],
-      requestId: "request",
-      correlationId: "correlation",
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
       issuedAt: toInstant("2026-01-01T00:00:00Z"),
       expiresAt: toInstant("2026-01-01T01:00:00Z"),
     });
