@@ -86,13 +86,15 @@ export async function setPolicyRevision(
 async function loadPolicyRevision(
   client: PoolClient,
   tenantId: TenantId,
-  lock = false,
+  lock: "share" | "update" | null = null,
 ): Promise<string> {
+  const lockClause =
+    lock === "share" ? "FOR SHARE" : lock === "update" ? "FOR UPDATE" : "";
   const result = await client.query<{ revision: string }>(
     `SELECT revision
        FROM security.policy_state
       WHERE tenant_id = $1
-      ${lock ? "FOR SHARE" : ""}`,
+      ${lockClause}`,
     [tenantId],
   );
   const revision = result.rows[0]?.revision;
@@ -123,6 +125,7 @@ export async function revokeAuthorityContext(
   },
 ): Promise<void> {
   requireNonEmpty(input.reasonCode, "reasonCode");
+  await loadPolicyRevision(client, input.tenantId, "update");
   await client.query(
     `INSERT INTO security.authority_revocations (
        tenant_id, authority_context_id, reason_code
@@ -268,7 +271,7 @@ export async function settlePendingApproval(
   const currentPolicyRevision = await loadPolicyRevision(
     client,
     input.tenantId,
-    true,
+    "share",
   );
 
   const result = await client.query<ApprovalRow>(
@@ -336,7 +339,7 @@ export async function consumeOnceApproval(
     client,
     input.tenantId,
     input.approvalId,
-    true,
+    "share",
   );
   assertApprovalMatches(approval, input.binding, input.consumedAt);
 
@@ -364,7 +367,7 @@ export async function consumeOnceApproval(
   const currentRevision = await loadPolicyRevision(
     client,
     input.tenantId,
-    true,
+    "share",
   );
   if (currentRevision !== input.currentPolicyRevision) {
     throw new PlatformError({
@@ -425,7 +428,8 @@ export function createPostgresCurrentAuthoritySource(
   client: PoolClient,
 ): CurrentAuthoritySource {
   return {
-    getPolicyRevision: (tenantId) => getPolicyRevision(client, tenantId),
+    getPolicyRevision: (tenantId) =>
+      loadPolicyRevision(client, tenantId, "share"),
     isRevoked: (context: AuthorityContext) =>
       isAuthorityContextRevoked(
         client,
