@@ -46,6 +46,7 @@ The earlier four-donor assumption has been intentionally reopened before archite
 - Remaining ChatWithStars deep pass: tenant-safe social automation/review/cadence/redeploy dedupe, media-studio continuity/render/quality/lipsync, Ops acceptance evidence, privacy-safe observability, emergency kill switches and audited financial adjustments.
 - OpenClaw Phase 0A adoption pass complete: Gateway/channel/device-node architecture, one-trust-domain security mismatch, device pairing/reconciliation, durable approvals/current-authority checks, skill distribution/revision/session pinning, session/subagent behavior, steering, tool/plugin policy and memory-authority rules. ADR-0004 records that OpenClaw is the primary Gateway architectural donor but not Masanawa's kernel or public multi-tenant security boundary.
 - AIRI Phase 0A adoption pass complete: selected as primary digital-life/embodiment client donor. Captured Stage abstraction, Live2D/VRM/multi-renderer model-driver lifecycle, CCv3/AIRI package import boundary, plugin capability/permission/cleanup semantics, serialized voice-input lifecycle and computer-use lane separation. ADR-0005 explicitly keeps canonical identity/memory/provider/business truth outside AIRI client state.
+- Realtime presence donor comparison complete: LiveKit Server selected for WebRTC/media transport; LiveKit Agents TypeScript selected for realtime AgentSession/worker substrate; Pipecat retained as a secondary frame/turn-policy/multi-worker donor; CyberVerse retained as GPL-clean sync/race/background-UX behavior donor; AIRI owns local client embodiment. ADR-0006 keeps Character, memory, durable Task/Workflow, authorization and recording policy Masanawa-owned.
 
 ### Reference source vault added
 
@@ -96,16 +97,28 @@ AIRI is now selected as the primary architectural donor for digital-life clients
 
 It does **not** own canonical Character identity, memory, world/task truth or realtime transport.
 
+## Realtime presence decision (completed)
+
+See `docs/adr/0006-realtime-presence-architecture.md` and `docs/migration/PRESENCE-DONOR-COMPARISON.md`.
+
+Selected stack:
+- LiveKit Server — transport;
+- LiveKit Agents TypeScript — realtime session/worker substrate;
+- Pipecat — secondary frame/turn-policy concepts and optional specialized Python worker;
+- CyberVerse — GPL-clean A/V/race/warmup/background-task behavior;
+- AIRI — client/local embodiment.
+
+LiveKit Room/Participant/Job/AgentSession identifiers are external presence/runtime state only; they do not become canonical platform User/Character/Task records.
+
 ## Immediate next work
 
 Do not return to the old four-source coverage-proof plan yet.
 
-1. Compare LiveKit Server/Agents + Pipecat + CyberVerse + AIRI for realtime presence/embodiment and record the presence ADR.
-2. Compare Letta + Mem0 + N.E.K.O + OpenClaw for memory architecture.
-3. Compare OpenJarvis + elizaOS + Microsoft Agent Framework + OpenClaw for agent runtime, skills, plugins and workflows.
-4. Compare AI Town + ChatWithStars for world simulation.
-5. Produce remaining explicit donor decisions/ADRs and freeze provisional subsystem ownership.
-6. Only then continue Phase 0B exhaustive source coverage and A/B/C classification across the complete reference vault.
+1. Compare Letta + Mem0 + N.E.K.O + OpenClaw + ChatWithStars privacy requirements for the canonical memory architecture.
+2. Compare OpenJarvis + elizaOS + Microsoft Agent Framework + OpenClaw for agent runtime, skills, plugins and workflows.
+3. Compare AI Town + ChatWithStars for world simulation.
+4. Produce remaining explicit donor decisions/ADRs and freeze provisional subsystem ownership.
+5. Only then continue Phase 0B exhaustive source coverage and A/B/C classification across the complete reference vault.
 
 ## Non-negotiable rules
 
