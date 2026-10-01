@@ -21,13 +21,9 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: "24"
-          package-manager-cache: false
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
       - name: Install
-        run: pnpm install --no-frozen-lockfile
-      - name: Bootstrap lockfile evidence
-        run: |
-          printf 'MASANAWA_PNPM_LOCK_B64='
-          base64 -w0 pnpm-lock.yaml
-          echo
+        run: pnpm install --frozen-lockfile
       - name: Check
         run: pnpm check
