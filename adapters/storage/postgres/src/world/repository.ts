@@ -11,6 +11,7 @@ import {
 import {
   assertRoutineScheduledTime,
   assertSimulationTimeDoesNotMoveBackward,
+  assertStoryArcTransition,
   normalizeIanaTimezone,
   normalizeLocalTime,
   normalizeRoutineKey,
@@ -1183,17 +1184,6 @@ export async function admitRoutineOccurrence(
   });
 }
 
-function storyArcTransitionAllowed(
-  current: StoryArc["state"],
-  next: StoryArc["state"],
-): boolean {
-  if (current === next) return true;
-  if (current === "planned") return next === "active" || next === "retired";
-  if (current === "active") return next === "completed" || next === "retired";
-  if (current === "completed") return next === "retired";
-  return false;
-}
-
 async function loadStoryArc(
   client: PoolClient,
   tenantId: TenantId,
@@ -1285,12 +1275,7 @@ export async function putStoryArc(
       "Story arc revision is stale",
     );
   }
-  if (!storyArcTransitionAllowed(current.state, input.state)) {
-    throw conflict(
-      "world.story_arc_transition_invalid",
-      "Story arc lifecycle cannot move backward",
-    );
-  }
+  assertStoryArcTransition(current.state, input.state);
 
   const updated = await client.query<StoryArcRow>(
     `UPDATE world.story_arcs
