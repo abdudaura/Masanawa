@@ -81,6 +81,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       "events/0002_inbox_leases.sql",
       "events/0003_receipt_reconciliation_integrity.sql",
       "security/0001_security_foundation.sql",
+      "security/0002_approval_operation_integrity.sql",
     ]);
   });
 
