@@ -12,7 +12,8 @@
   "dependencies": {
     "@masanawa/contracts": "workspace:*",
     "pg": "8.23.0",
-    "@masanawa/events": "workspace:*"
+    "@masanawa/events": "workspace:*",
+    "@masanawa/security": "workspace:*"
   },
   "devDependencies": {
     "@types/pg": "8.23.1",
