@@ -6,6 +6,24 @@ export type PrivacySafeTelemetryAttributes = Readonly<
   Record<string, TelemetryAttributeValue>
 >;
 
+const defaultSafeAttributeKeys = new Set([
+  "trace.id",
+  "span.id",
+  "service.name",
+  "service.version",
+  "deployment.environment.name",
+  "http.request.method",
+  "http.response.status_code",
+  "error.type",
+  "error.code",
+  "masanawa.request.id",
+  "masanawa.correlation.id",
+  "masanawa.operation.id",
+  "masanawa.task.id",
+  "masanawa.workflow_run.id",
+  "masanawa.character_session.id",
+]);
+
 export function correlationAttributes(
   correlation: TelemetryCorrelation,
 ): PrivacySafeTelemetryAttributes {
@@ -27,30 +45,15 @@ export function correlationAttributes(
   });
 }
 
-const forbiddenAttributeFragments = [
-  "authorization",
-  "cookie",
-  "credential",
-  "password",
-  "secret",
-  "token",
-  "prompt",
-  "message.content",
-  "memory.content",
-  "tool.output",
-] as const;
-
 export function assertPrivacySafeAttributeKey(key: string): void {
   const normalized = key.trim().toLowerCase();
   if (!normalized) {
     throw new TypeError("telemetry attribute key is required");
   }
-  if (
-    forbiddenAttributeFragments.some((fragment) =>
-      normalized.includes(fragment),
-    )
-  ) {
-    throw new TypeError(`telemetry attribute key is not privacy-safe: ${key}`);
+  if (!defaultSafeAttributeKeys.has(normalized)) {
+    throw new TypeError(
+      `telemetry attribute key is not in the default privacy-safe allowlist: ${key}`,
+    );
   }
 }
 
