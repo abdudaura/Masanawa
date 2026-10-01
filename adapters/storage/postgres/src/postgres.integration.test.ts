@@ -553,6 +553,50 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       await expect(write(1, "offline")).rejects.toMatchObject({
         code: "world.life_state_revision_conflict",
       });
+
+      await expect(
+        putCharacterLifeState(client, {
+          tenantId,
+          worldId,
+          characterId,
+          characterVersionId: versionId,
+          expectedRevision: 2,
+          availability: "future",
+          narrativeState: null,
+          activeGoal: null,
+          storyArc: null,
+          coarseLocation: "Kano",
+          effectiveAt: toInstant("2026-10-01T12:01:00Z"),
+          updatedAt: toInstant("2026-10-01T12:01:00Z"),
+        }),
+      ).rejects.toMatchObject({ code: "world.life_state_from_future" });
+
+      await commitWorldGeneration(client, {
+        tenantId,
+        worldId,
+        expectedGenerationNumber: 0,
+        nextGenerationId: createCanonicalId("world-generation"),
+        simulationTime: toInstant("2026-10-01T12:10:00Z"),
+        committedAt: toInstant("2026-10-01T12:10:00Z"),
+        completedInputSequences: [],
+      });
+
+      await expect(
+        putCharacterLifeState(client, {
+          tenantId,
+          worldId,
+          characterId,
+          characterVersionId: versionId,
+          expectedRevision: 2,
+          availability: "past",
+          narrativeState: null,
+          activeGoal: null,
+          storyArc: null,
+          coarseLocation: "Kano",
+          effectiveAt: toInstant("2026-10-01T11:59:00Z"),
+          updatedAt: toInstant("2026-10-01T12:10:00Z"),
+        }),
+      ).rejects.toMatchObject({ code: "world.life_state_time_regression" });
     });
   });
 
@@ -625,6 +669,58 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
 
       const approved = await automatic(approvedEventId, { activity: "teaching" });
       expect(approved.canonState).toBe("approved");
+
+      await expect(
+        appendWorldEvent(client, {
+          tenantId,
+          worldId,
+          worldEventId: createCanonicalId("world-event"),
+          characterId,
+          characterVersionId: versionId,
+          eventKind: "life.model-proposal",
+          payload: { activity: "speculative" },
+          provenance: "model",
+          visibility: "internal",
+          occurrenceKey: null,
+          effectiveStart: now,
+          effectiveEnd: null,
+          recordedAt: now,
+          admission: "automatic-approved",
+        }),
+      ).rejects.toMatchObject({
+        code: "world.automatic_canon_provenance_forbidden",
+      });
+
+      const manualWorldId = createCanonicalId("world");
+      await createWorld(client, {
+        tenantId,
+        worldId: manualWorldId,
+        initialGenerationId: createCanonicalId("world-generation"),
+        policy: {
+          ...testWorldPolicy(),
+          automaticCanonEnabled: false,
+        },
+        simulationTime: now,
+        createdAt: now,
+      });
+      await expect(
+        appendWorldEvent(client, {
+          tenantId,
+          worldId: manualWorldId,
+          worldEventId: createCanonicalId("world-event"),
+          characterId,
+          characterVersionId: versionId,
+          eventKind: "life.activity",
+          payload: { activity: "teaching" },
+          provenance: "engine",
+          visibility: "shared",
+          occurrenceKey: null,
+          effectiveStart: now,
+          effectiveEnd: null,
+          recordedAt: now,
+          admission: "automatic-approved",
+        }),
+      ).rejects.toMatchObject({ code: "world.automatic_canon_disabled" });
 
       const replay = await automatic(
         createCanonicalId("world-event"),
