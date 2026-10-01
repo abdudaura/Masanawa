@@ -20,10 +20,10 @@ Generated/dependency/build metadata roots may be excluded after inspection, but 
 
 | Source | Pinned meaningful roots/modules | Existing Phase 0 evidence | Phase 0B state |
 |---|---|---|---|
-| ChatWithStars | apps, data, deploy, infra, packages, public, scripts, services, src, supabase | IDN/REL/HND/WLD/DEC/SKL/TOL/LRN/SEC/TSK/COM/SOC/STD/CHN/OPS/CALL + SUB/PRV/KNO/GRP/MSN/CRT/TEL/CVI/LEG/DEP/DAT | covered |
-| OpenJarvis | configs, deploy, desktop, examples, frontend, rust, src, tests | AGT/SKL/TOL/SCH/LRN + PRV/INT/CON/SBX/OBS/SES/SPH/CLI/RCP/RST | covered |
-| N.E.K.O | app, brain, config, deps, frontend, knowledge, launcher_core, local_server, main_logic, main_routers, memory, plugin, specs, tests, utils | MEM/PLG/PRO/PER/CUA + VOI/ACT/CFG/EXT/OBS/AST/AVT/MED/CHN | covered |
-| CyberVerse | frontend, inference, infra, models, proto, server, tests | RTC/AVT/TSK/WRK + INF/RAG/MOD clean-room classifications | covered; GPL clean-room |
+| ChatWithStars | apps, data, deploy, infra, packages, public, scripts, services, src, supabase | descendant evidence now tracked in `coverage/CHATWITHSTARS.md`; provider/migration closure still open | partial (remediation) |
+| OpenJarvis | configs, deploy, desktop, examples, frontend, rust, src, tests | earlier root-only sweep invalidated pending descendant remediation | partial (remediation) |
+| N.E.K.O | app, brain, config, deps, frontend, knowledge, launcher_core, local_server, main_logic, main_routers, memory, plugin, specs, tests, utils | earlier root-only sweep invalidated pending descendant remediation | partial (remediation) |
+| CyberVerse | frontend, inference, infra, models, proto, server, tests | earlier root-only sweep invalidated pending descendant remediation; GPL clean-room remains mandatory | partial (remediation); GPL clean-room |
 | AIRI | apps, bucket, engines, integrations, packages, plugins, server, services | DLF/AVT/PLG/RTC/CUA + integration rows | partial |
 | LiveKit Server | cmd, deploy, pkg, test | RTC transport/session integration + ADR-0006 | partial |
 | LiveKit Agents TS | agents, examples, plugins, tests | RTC session/turn/avatar rows + ADR-0006 | partial |
@@ -216,3 +216,18 @@ License boundary: GPLv3 repository. Masanawa uses clean-room behavior/specificat
 ### CyberVerse sweep result
 
 All roots are classified without adopting a GPL runtime boundary. The retained value is behavioral: synchronization, races, direct-media pacing, avatar warmup/idle/audio-only behavior, typed inference separation, RAG boundaries and reconnectable task semantics. Embedded model trees are explicitly excluded from license inheritance.
+
+
+## Remediation notice — 2026-10-01
+
+The earlier ChatWithStars/OpenJarvis/N.E.K.O/CyberVerse `covered` declarations were invalid because they proved top-level disposition, not exhaustive descendant classification. They are reopened.
+
+A source can now become `covered` only when:
+- meaningful implementation descendants are named, not merely the root;
+- representative tests/acceptance evidence are attached;
+- persistent state is mapped to Data Ledger concepts or explicit retirement;
+- every external integration has auth/retry/idempotency/reconciliation/secret-handling treatment;
+- generated/vendored/assets are provenance-classified;
+- the source-specific coverage file records remaining unknowns as zero.
+
+ChatWithStars remediation evidence is in `docs/migration/coverage/CHATWITHSTARS.md`. OpenJarvis, N.E.K.O and CyberVerse must receive equivalent source-specific files before their status can change.
