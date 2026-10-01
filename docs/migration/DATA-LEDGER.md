@@ -304,3 +304,12 @@ Phase 0 must continue mapping donor-specific stores/tables/files into these cano
 | D-MEM-033 | MemoryEntityProjection | Mem0 | scope + entity | rebuildable projection | private/shared depending scope | memory | redesign | normalized entity text/type -> linked canonical memory IDs |
 | D-MEM-034 | MemoryMutationHistoryEvent | Mem0 | memory record | append | private/audit | memory | merge with MemoryRevision/audit | add/update/delete old/new values and actor evidence |
 | D-MEM-035 | MemoryExpirationPolicy | Mem0 | memory record | optional validity end date | private | memory | redesign | expiration/visibility, not full bitemporal model |
+
+### Phase 0B Pipecat data concepts
+
+| ID | Canonical concept | Source | Scope | Lifecycle | Sensitivity | Destination | Treatment | Notes |
+|---|---|---|---|---|---|---|---|---|
+| D-PIP-001 | PresenceFrameEnvelope | Pipecat | live PresenceSession | ephemeral ordered stream | private/runtime | presence/processors | redesign | type, direction, priority, interruptible, timestamp, metadata; not durable domain truth |
+| D-PIP-002 | SpeculativeTurn | Pipecat | user turn | proposed->held->confirmed/cancelled | private/session | presence | redesign | provisional transcript/context + held output references |
+| D-PIP-003 | AudioOutputContext | Pipecat | generated speech | started->audio->stopped/interrupted | private/runtime | presence | redesign | provider-independent ordering/pause evidence |
+| D-PIP-004 | TurnInferenceTrigger | Pipecat | user turn | emitted->confirmed/stale | private/session | presence/telemetry | redesign | distinct from final semantic turn stop |
