@@ -103,12 +103,21 @@ export interface ApproveWorldEventInput {
   readonly approvedAt: Instant;
 }
 
+export interface RetireWorldEventInput {
+  readonly tenantId: TenantId;
+  readonly worldEventId: WorldEventId;
+  readonly retiredAt: Instant;
+}
+
 export interface GovernedWorldRepository extends WorldRepository {
   putCharacterLifeState(
     input: PutCharacterLifeStateInput,
   ): Promise<CharacterLifeState>;
   appendWorldEvent(input: AppendWorldEventInput): Promise<WorldEvent>;
-  approveWorldEvent(input: ApproveWorldEventInput): Promise<WorldEvent>;
+  getWorldEvent(
+    tenantId: TenantId,
+    worldEventId: WorldEventId,
+  ): Promise<WorldEvent | null>;
 }
 
 export interface PutRoutineInput {

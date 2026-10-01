@@ -45,33 +45,33 @@ Merged Phase 3 slices:
 - canonical identity: PR #17, merge `75549800445842f8ff1db54e06529c075ed34ea4`;
 - world generation/input foundation: PR #18, merge `871022d03f4b3fb2a81af5c6253dd38bd5b7a27f`;
 - governed CharacterLifeState + canon events: PR #19, merge `729ab3e64eb0539ea249ceb6a39cf79afab20cb2`;
-- canon policy/time hardening: PR #21, merge `ce89ce091e05508dd4d0614a9127a2256bda13e4`.
+- canon policy/time hardening: PR #21, merge `ce89ce091e05508dd4d0614a9127a2256bda13e4`;
+- reconciled routines/story arcs: PR #23, merge `4bd9a3a8b2504617291d7e18e992d5f56856886d`.
 
-PR #20 was closed as a duplicate of PR #19. Original routines PR #22 was built from pre-hardening main and became conflicting after PR #21; its validated behavior is being reconciled rather than merged over hardened code.
+PR #20 was closed as a duplicate of PR #19. PR #22 was closed after its pre-hardening routines implementation was reconciled and merged safely through PR #23.
 
-Current implementation branch: `phase3-world-routines-reconciled`.
+Current implementation branch: `phase3-world-authority-governance`.
 
-Current branch preserves PR #21 hardening and adds:
-- durable CharacterVersion-bound Routine and StoryArc records;
-- IANA timezone validation plus exact local HH:MM routine slots;
-- deterministic routine occurrence identity from Character + routine key + local date;
-- routine occurrences admitted through the canonical SimulationInput/idempotency path rather than a parallel scheduler;
-- stale CharacterVersion routine bindings fail closed until explicit revision/rebind;
-- Routine revision/CAS;
-- StoryArc revision/CAS and forward-only lifecycle;
-- one canonical StoryArc transition implementation in `packages/world` consumed by the PostgreSQL adapter;
-- package-owned migration and PostgreSQL integration coverage for timezone occurrence replay, rebinding and story-arc lifecycle;
-- existing automatic-canon policy/provenance gates and monotonic life-state time checks retained from PR #21.
+Current branch adds:
+- canonical `world.canon.approve` and `world.canon.retire` capabilities and exact event resource binding;
+- deterministic request fingerprints and authority-scope hashes for canon operations;
+- current `AuthorityContext` validation including tenant, capability, World scope, policy revision, revocation and admitted ApprovalId;
+- persistent allow-once `ApprovalBinding` consumption before canon decisions;
+- operation lifecycle binding and exact succeeded-operation replay checks;
+- approved→retired WorldEvent transition while preserving immutable evidence;
+- cross-World target validation before approval consumption;
+- raw timestamp-only approve/retire transitions removed from the public PostgreSQL repository surface;
+- package and PostgreSQL tests for exact binding, scope rejection, approve→replay→retire, and stale-policy rejection.
 
 Immediate work:
-1. run the complete PostgreSQL 18 CI gate on the reconciled branch and fix all failures;
-2. close/supersede PR #22 and merge only the reconciled PR after green CI;
-3. add authority-bearing canon approval/retirement using current AuthorityContext, persistent policy revision and exact allow-once ApprovalBinding consumption;
-4. implement WorldInteraction evidence plus executable pause/restart/catch-up behavior;
-5. prove bounded catch-up cannot duplicate routine SimulationInputs or canon after restart;
+1. run the full PostgreSQL 18 CI gate for `phase3-world-authority-governance` and fix every real failure;
+2. merge only after the combined strict typecheck/tests/builds are green;
+3. implement WorldInteraction evidence on the canonical world/evidence path;
+4. implement executable pause/restart/catch-up policy, including bounded routine recovery;
+5. prove restart/catch-up cannot duplicate SimulationInputs, WorldEvents or canon decisions;
 6. only then consider optional spatial mechanics.
 
-Keep private Relationship data outside shared World inputs. Routines/story arcs are World records keyed by canonical Character identity; they never become Character identity themselves.
+Keep private Relationship data outside shared World inputs and canon. Consequential canon decisions must continue through current authority + exact approval + operation idempotency; do not re-expose direct approval mutation.
 
 The post-freeze MemPalace/Paperclip assessment remains in `docs/migration/POST-FREEZE-SUPPLEMENTAL-DONORS.md`. Neither is a Phase 3 runtime dependency.
 

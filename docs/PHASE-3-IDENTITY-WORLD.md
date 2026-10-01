@@ -116,9 +116,9 @@ AI Town contributes:
 Neither donor object model is canonical.
 
 
-## Routines/story-arcs slice — reconciled, awaiting CI
+## Routines/story-arcs slice — merged and validated
 
-Current branch: `phase3-world-routines-reconciled`.
+Merged through PR #23 at `4bd9a3a8b2504617291d7e18e992d5f56856886d` after the reconciled branch passed the complete PostgreSQL 18 CI gate.
 
 The original PR #22 was green on its own pre-hardening base but conflicted after PR #21 merged. This branch reconstructs the routines/story-arcs slice on hardened main rather than overwriting the newer canon/time semantics.
 
@@ -141,3 +141,27 @@ Next after green CI:
 - WorldInteraction evidence;
 - executable pause/restart/catch-up with bounded routine recovery;
 - optional spatial mechanics only after non-spatial recovery is proven.
+
+
+## Authority-bound canon governance — implemented, awaiting CI
+
+Current branch: `phase3-world-authority-governance`.
+
+Implemented:
+- explicit approve/retire world-canon capabilities;
+- exact ApprovalBinding over OperationId, principal, action version, WorldEvent resource, arguments fingerprint and risk class;
+- current AuthorityContext checks against persistent policy revision/revocation;
+- World scope and ApprovalId admission checks;
+- allow-once approval consumption in the same transaction as the canon transition;
+- operation lifecycle moves to succeeded atomically with the decision;
+- safe idempotent replay only when the succeeded operation's exact request/scope binding and resulting canon state still match;
+- approved canon can retire but immutable evidence cannot be rewritten or reactivated;
+- raw timestamp-only canon decision functions are no longer exported through the PostgreSQL package root or repository facade;
+- PostgreSQL tests exercise approve, succeeded replay, retirement and stale-policy failure.
+
+Next:
+- full CI and merge;
+- WorldInteraction evidence;
+- executable pause/restart/catch-up with bounded routine recovery;
+- restart/catch-up duplicate-prevention tests;
+- optional spatial mechanics only after recovery semantics pass.

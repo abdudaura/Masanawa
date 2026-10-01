@@ -42,10 +42,11 @@ import {
   commitWorldGeneration,
   putCharacterLifeState,
   appendWorldEvent,
-  approveWorldEvent,
   putRoutine,
   admitRoutineOccurrence,
   putStoryArc,
+  prepareWorldCanonGovernance,
+  executeWorldCanonGovernance,
   putServiceVerificationKey,
   deactivateServiceVerificationKey,
   createPostgresServiceCredentialKeySource,
@@ -752,13 +753,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
         recordedAt: now,
         admission: "draft",
       });
-      await expect(
-        approveWorldEvent(client, {
-          tenantId,
-          worldEventId: draft.worldEventId,
-          approvedAt: now,
-        }),
-      ).resolves.toMatchObject({ canonState: "approved" });
+      expect(draft.canonState).toBe("draft");
     });
 
     await expect(
@@ -769,6 +764,240 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
         [tenantId, approvedEventId],
       ),
     ).rejects.toThrow(/immutable/u);
+  });
+
+  it("binds canon approval and retirement to current authority and one-time approvals", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const worldId = createCanonicalId("world");
+    const eventId = createCanonicalId("world-event");
+    const now = toInstant("2026-10-01T15:00:00Z");
+    const expiresAt = toInstant("2099-01-01T00:00:00Z");
+
+    await withTransaction(pool, async (client) => {
+      await createTenant(client, { tenantId, createdAt: now });
+      await setPolicyRevision(client, tenantId, "policy-1");
+      await createWorld(client, {
+        tenantId,
+        worldId,
+        initialGenerationId: createCanonicalId("world-generation"),
+        policy: testWorldPolicy(),
+        simulationTime: now,
+        createdAt: now,
+      });
+      await appendWorldEvent(client, {
+        tenantId,
+        worldId,
+        worldEventId: eventId,
+        characterId: null,
+        characterVersionId: null,
+        eventKind: "canon.authored",
+        payload: { note: "governed evidence" },
+        provenance: "authored",
+        visibility: "shared",
+        occurrenceKey: null,
+        effectiveStart: now,
+        effectiveEnd: null,
+        recordedAt: now,
+        admission: "draft",
+      });
+    });
+
+    const principal = { kind: "system", systemKind: "world-operator" } as const;
+    const baseAuthority = createAuthorityContext({
+      tenantId,
+      principal,
+      scopes: [],
+      capabilities: ["world.canon.approve", "world.canon.retire"],
+      resourceScope: { worldIds: [worldId] },
+      policyRevision: "policy-1",
+      approvalIds: [],
+      delegationChain: [],
+      expiresAt,
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+    });
+
+    const preparedApproval = await prepareWorldCanonGovernance(pool, {
+        tenantId,
+        worldId,
+        worldEventId: eventId,
+        decision: "approve",
+        authority: baseAuthority,
+        idempotencyKey: "canon-approve-1",
+        expiresAt,
+      });
+    const approval = createPendingApproval({
+      kind: "once",
+      binding: preparedApproval.binding,
+      policyRevision: "policy-1",
+      requestedAt: now,
+      expiresAt,
+    });
+    await withTransaction(pool, async (client) => {
+      await persistPendingApproval(client, approval);
+      await settlePendingApproval(client, {
+        tenantId,
+        approvalId: approval.approvalId,
+        decision: "approved",
+        approverKey: "operator:integration-test",
+        decidedAt: now,
+      });
+    });
+
+    const approveAuthority = createAuthorityContext({
+      tenantId,
+      principal,
+      scopes: [],
+      capabilities: ["world.canon.approve", "world.canon.retire"],
+      resourceScope: { worldIds: [worldId] },
+      policyRevision: "policy-1",
+      approvalIds: [approval.approvalId],
+      delegationChain: [],
+      expiresAt,
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+    });
+
+    const approved = await executeWorldCanonGovernance(pool, {
+        tenantId,
+        worldId,
+        worldEventId: eventId,
+        decision: "approve",
+        authority: approveAuthority,
+        operationId: preparedApproval.operation.operationId,
+        approvalId: approval.approvalId,
+        decidedAt: now,
+      });
+    expect(approved.reused).toBe(false);
+    expect(approved.operation.state).toBe("succeeded");
+    expect(approved.event.canonState).toBe("approved");
+
+    const replay = await executeWorldCanonGovernance(pool, {
+        tenantId,
+        worldId,
+        worldEventId: eventId,
+        decision: "approve",
+        authority: approveAuthority,
+        operationId: preparedApproval.operation.operationId,
+        approvalId: approval.approvalId,
+        decidedAt: now,
+      });
+    expect(replay.reused).toBe(true);
+    expect(replay.event.canonState).toBe("approved");
+
+    const preparedRetirement = await prepareWorldCanonGovernance(pool, {
+        tenantId,
+        worldId,
+        worldEventId: eventId,
+        decision: "retire",
+        authority: baseAuthority,
+        idempotencyKey: "canon-retire-1",
+        expiresAt,
+      });
+    const retirementApproval = createPendingApproval({
+      kind: "once",
+      binding: preparedRetirement.binding,
+      policyRevision: "policy-1",
+      requestedAt: now,
+      expiresAt,
+    });
+    await withTransaction(pool, async (client) => {
+      await persistPendingApproval(client, retirementApproval);
+      await settlePendingApproval(client, {
+        tenantId,
+        approvalId: retirementApproval.approvalId,
+        decision: "approved",
+        approverKey: "operator:integration-test",
+        decidedAt: now,
+      });
+    });
+
+    const retireAuthority = createAuthorityContext({
+      tenantId,
+      principal,
+      scopes: [],
+      capabilities: ["world.canon.approve", "world.canon.retire"],
+      resourceScope: { worldIds: [worldId] },
+      policyRevision: "policy-1",
+      approvalIds: [retirementApproval.approvalId],
+      delegationChain: [],
+      expiresAt,
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+    });
+
+    await executeWorldCanonGovernance(pool, {
+        tenantId,
+        worldId,
+        worldEventId: eventId,
+        decision: "retire",
+        authority: retireAuthority,
+        operationId: preparedRetirement.operation.operationId,
+        approvalId: retirementApproval.approvalId,
+        decidedAt: now,
+      }).then((result) => {
+      expect(result.event.canonState).toBe("retired");
+      expect(result.operation.state).toBe("succeeded");
+    });
+
+    const stalePrepared = await withTransaction(pool, (client) =>
+      prepareOperation(client, {
+        tenantId,
+        kind: "world.canon.retire",
+        idempotencyKey: "canon-stale-policy",
+        authorityScopeHash: preparedRetirement.operation.authorityScopeHash,
+        requestFingerprint: preparedRetirement.operation.requestFingerprint,
+        expiresAt,
+      }),
+    );
+    const staleBinding = {
+      ...preparedRetirement.binding,
+      operationId: stalePrepared.operation.operationId,
+    };
+    const staleApproval = createPendingApproval({
+      kind: "once",
+      binding: staleBinding,
+      policyRevision: "policy-1",
+      requestedAt: now,
+      expiresAt,
+    });
+    await withTransaction(pool, async (client) => {
+      await persistPendingApproval(client, staleApproval);
+      await settlePendingApproval(client, {
+        tenantId,
+        approvalId: staleApproval.approvalId,
+        decision: "approved",
+        approverKey: "operator:integration-test",
+        decidedAt: now,
+      });
+      await setPolicyRevision(client, tenantId, "policy-2");
+    });
+
+    const staleAuthority = createAuthorityContext({
+      tenantId,
+      principal,
+      scopes: [],
+      capabilities: ["world.canon.retire"],
+      resourceScope: { worldIds: [worldId] },
+      policyRevision: "policy-1",
+      approvalIds: [staleApproval.approvalId],
+      delegationChain: [],
+      expiresAt,
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+    });
+    await expect(
+      executeWorldCanonGovernance(pool, {
+          tenantId,
+          worldId,
+          worldEventId: eventId,
+          decision: "retire",
+          authority: staleAuthority,
+          operationId: stalePrepared.operation.operationId,
+          approvalId: staleApproval.approvalId,
+          decidedAt: now,
+        }),
+    ).rejects.toMatchObject({ code: "authority.stale_policy" });
   });
 
   it("admits one timezone routine occurrence per local date and rejects stale CharacterVersion bindings", async () => {

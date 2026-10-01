@@ -32,6 +32,7 @@ import {
   type PutCharacterLifeStateInput,
   type PutRoutineInput,
   type PutStoryArcInput,
+  type RetireWorldEventInput,
   type Routine,
   type SimulationInput,
   type StoryArc,
@@ -815,6 +816,14 @@ async function loadWorldEvent(
   return result.rows[0] ? asWorldEvent(result.rows[0]) : null;
 }
 
+export async function getWorldEvent(
+  client: PoolClient,
+  tenantId: TenantId,
+  worldEventId: WorldEventId,
+): Promise<WorldEvent | null> {
+  return loadWorldEvent(client, tenantId, worldEventId, false);
+}
+
 export async function appendWorldEvent(
   client: PoolClient,
   input: AppendWorldEventInput,
@@ -990,6 +999,53 @@ export async function approveWorldEvent(
     throw conflict(
       "world.event_approval_conflict",
       "World event approval raced with another writer",
+    );
+  }
+  return asWorldEvent(result.rows[0]);
+}
+
+export async function retireWorldEvent(
+  client: PoolClient,
+  input: RetireWorldEventInput,
+): Promise<WorldEvent> {
+  const existing = await loadWorldEvent(
+    client,
+    input.tenantId,
+    input.worldEventId,
+    true,
+  );
+  if (!existing) {
+    throw new PlatformError({
+      code: "world.event_not_found",
+      category: "not-found",
+      message: "World event does not exist in the requested tenant",
+      retryable: false,
+    });
+  }
+  if (existing.canonState === "retired") {
+    return existing;
+  }
+  if (existing.canonState !== "approved") {
+    throw conflict(
+      "world.event_not_retirable",
+      "Only approved world events can be retired",
+    );
+  }
+
+  const result = await client.query<WorldEventRow>(
+    `UPDATE world.events
+        SET canon_state = 'retired',
+            retired_at = $3
+      WHERE tenant_id = $1
+        AND world_event_id = $2
+        AND canon_state = 'approved'
+      RETURNING *`,
+    [input.tenantId, input.worldEventId, input.retiredAt],
+  );
+  if (!result.rows[0]) {
+    throw conflict(
+      "world.event_retirement_conflict",
+      "World event retirement raced with another writer",
     );
   }
   return asWorldEvent(result.rows[0]);
@@ -1328,8 +1384,8 @@ export function createPostgresWorldRepository(
       putCharacterLifeState(client, input),
     appendWorldEvent: (input: AppendWorldEventInput) =>
       appendWorldEvent(client, input),
-    approveWorldEvent: (input: ApproveWorldEventInput) =>
-      approveWorldEvent(client, input),
+    getWorldEvent: (tenantId: TenantId, worldEventId: WorldEventId) =>
+      getWorldEvent(client, tenantId, worldEventId),
     putRoutine: (input: PutRoutineInput) => putRoutine(client, input),
     admitRoutineOccurrence: (input: AdmitRoutineOccurrenceInput) =>
       admitRoutineOccurrence(client, input),
