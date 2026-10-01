@@ -35,6 +35,8 @@ The reference vault is deliberately outside `apps/`, `services/` and `packages/`
 
 ## Status
 
-Current phase: **Phase 0B — Exhaustive source forensics and coverage remediation**.
+Current phase: **Phase 2 — Foundation**.
 
-Phase 0A donor selection is closed. Do not begin platform feature implementation until full Phase 0 coverage and classification gates are closed.
+Phase 0 source selection/forensics and Phase 1 architecture specification are closed. Shared implementation foundations are now being built; see `docs/PHASE-2-FOUNDATION.md`.
+
+Product-domain migration must not outrun the shared contracts, persistence, security, recovery and service foundations.
