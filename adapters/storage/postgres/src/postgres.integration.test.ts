@@ -87,6 +87,31 @@ const foundationMigrationRootsForTest = [
   { owner: "world", directory: worldMigrationDirectory },
 ] as const;
 
+function testWorldPolicy() {
+  return {
+    schemaVersion: 1,
+    catchUpMode: "skip",
+    maxCatchUpSteps: 0,
+    spatialEnabled: false,
+    automaticCanonEnabled: true,
+  } as const;
+}
+
+function testCharacterConstitution() {
+  return {
+    schemaVersion: 1,
+    displayName: "Amina",
+    biography: "",
+    personality: [],
+    boundaries: [],
+    disclosurePolicy: {},
+    languages: ["ha"],
+    voiceReferences: [],
+    appearanceReferences: [],
+    expertise: [],
+  } as const;
+}
+
 describePostgres("PostgreSQL 18 foundation integration", () => {
   let pool: Pool;
 
