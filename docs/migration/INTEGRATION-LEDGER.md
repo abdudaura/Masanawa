@@ -109,3 +109,15 @@ Auth, retry, idempotency and reconciliation fields still require source-by-sourc
 | I-AIT-003 | Ollama | AI Town | local chat + embeddings/model pull | local compute/network | prompts/memories local | packages/providers/local | analysed; readiness/model pull are provider state only |
 | I-AIT-004 | Replicate MusicGen | AI Town | asynchronous background-music generation | media generation/webhook/storage | prompts/provider IDs/media | studio/provider adapter if ever selected | analysed; donor webhook lacks signature verification/correlation, so signed callback + durable request + dedupe/reconcile are mandatory |
 | I-AIT-005 | Clerk | AI Town | optional/commented authentication | auth/OAuth | identity/session | none as architecture | retired/reference; canonical Masanawa auth only |
+
+
+### Phase 0B elizaOS integration additions
+
+| ID | Provider/system | Source repo | Purpose/capabilities | Side effects | Data sensitivity | Masanawa adapter | Status |
+|---|---|---|---|---|---|---|---|
+| I-ELZ-001 | elizaOS host plugin packages | elizaOS | plugin discovery/resolution/staging | filesystem/package loading | executable code/config | plugin host/quarantine/certification | analysed; kernel must not install packages |
+| I-ELZ-002 | PostgreSQL/PGlite plugin SQL | elizaOS | runtime persistence, migrations, RLS | DB writes/migrations | identity/memory/task/etc | reference mechanics only; canonical PostgreSQL remains Masanawa-owned | analysed |
+| I-ELZ-003 | eliza model plugin ecosystem | elizaOS | text/embedding/media/local/cloud inference | model calls/local compute | prompt/media/private context | packages/providers | analysed; policy-constrained fallback only |
+| I-ELZ-004 | eliza connector ecosystem | elizaOS | inbound/outbound channel adapters | messaging/external actions | channel IDs/content | gateway/channel adapters | partial; connector metadata boundary analysed, delivery semantics still pending |
+| I-ELZ-005 | eliza cloud runtime proxy | elizaOS | remote sandbox chat/status execution | remote RPC | prompt/session/runtime metadata | optional compute/runtime adapter only | analysed; cannot own identity/memory/workflow truth |
+| I-ELZ-006 | native platform bridges | elizaOS | location/phone/device capabilities | device reads/actions | highly sensitive | device-node/perception/tools adapters | partial; authority broker analysed, native action families still pending |
