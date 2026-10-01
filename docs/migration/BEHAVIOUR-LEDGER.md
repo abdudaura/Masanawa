@@ -573,3 +573,21 @@ Deep behavior mining from tests remains required before Phase 0 completion.
 | B-OCL-067 | skills | enabling autonomous mode does not retroactively auto-apply a human/manual proposal | experience-review tests | automation policy changes cannot seize existing manual drafts |
 | B-OCL-068 | skills/system-agent | Custodian packaged skills are absent from every non-Custodian discovery/prompt/sandbox surface and ambiguous ownership exposes none | workspace-skill snapshot tests | system playbooks stay scoped to one resolved owner |
 | B-OCL-069 | skills/system-agent | loading a Custodian skill does not bypass ordinary enable/filter/tool/credential policy and operator additions use workspace precedence instead of package mutation | Custodian docs + snapshot/containment tests | operational instructions do not become an alternate authority |
+
+
+### Phase 0B OpenClaw Agent Skills invariants
+
+| ID | Domain | Invariant / behavior | Source evidence | Masanawa requirement |
+|---|---|---|---|---|
+| B-OAS-001 | skills | every distributed skill has SKILL.md with mapping frontmatter and non-empty name/description; YAML aliases are rejected | validate-skills | safe low-friction import parser |
+| B-OAS-002 | skills | force/dry-run do not waive source/destination overlap protection | install-skills | importer cannot destroy or recursively install over source |
+| B-OAS-003 | privacy | transcript preview/rendering does not authorize publication | agent-transcript | publication is separate destination-scoped authority |
+| B-OAS-004 | privacy | truncation/partial-read provenance survives preview/export and unexpected EOF cannot be labeled complete | agent-transcript/session-viewer | incomplete evidence remains visibly incomplete |
+| B-OAS-005 | quality | behavior validation stays source-blind and contamination/source dependency becomes blocked rather than hidden | behavior-validator | black-box parity proof remains independent |
+| B-OAS-006 | quality | every behavior-contract clause settles pass/fail/blocked/out-of-scope before overall pass | behavior-validator | no silent untested clause |
+| B-OAS-007 | collaboration | Beam locally redacts before egress and grants read-only projection, never terminal/filesystem/tool authority | beam | sharing cannot escalate runtime authority |
+| B-OAS-008 | quality | untrusted code cannot run in credential-hydrated trusted remote proof environments | crabbox | source trust constrains execution/secret environment |
+| B-OAS-009 | quality | ambiguous remote dispatch is reconciled before retry and fake credentials cannot count as live proof | crabbox | uncertain side effects/results remain explicit |
+| B-OAS-010 | agents | handoff context is advisory starting evidence and does not authorize push/merge/public action | handoff | delegated context cannot mint consequential authority |
+| B-OAS-011 | quality | code-review findings are advice to verify, not automatic mutation authority | autoreview | review output cannot directly change canonical state |
+| B-OAS-012 | privacy | local session viewer/export is private until separately redacted/reviewed for sharing | session-viewer | inspection and publication are separate capabilities |
