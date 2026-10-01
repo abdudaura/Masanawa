@@ -42,6 +42,8 @@ import {
   commitWorldGeneration,
   putCharacterLifeState,
   appendWorldEvent,
+  appendWorldInteraction,
+  getWorldInteraction,
   putRoutine,
   admitRoutineOccurrence,
   putStoryArc,
@@ -161,6 +163,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       "world/0001_world_foundation.sql",
       "world/0002_world_canon.sql",
       "world/0003_world_routines_story_arcs.sql",
+      "world/0004_world_interactions.sql",
     ]);
   });
 
