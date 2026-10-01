@@ -40,6 +40,8 @@ Before changing code:
 - Phase 0 forensic method.
 - Pass 1 repository source maps for all four donors.
 - First normalized expansion of feature, behavior, data and integration ledgers.
+- ChatWithStars deep pass: character ownership/handoffs, cross-channel continuity, life engine, memory policy, Skill Contract v2, provider/commerce recovery, durable delivery idempotency and call-runtime race/recovery/readiness behavior.
+- OpenJarvis deep pass: skill parser/import/dependency/manager, skill-as-tool adapter, engine discovery/fallback, tool confirmation, SSRF/security references, agent loop/budget guards, traces/learning overlays and scheduler semantics.
 
 ### Not yet complete
 The ledgers are NOT exhaustive. Do not begin Masanawa application feature implementation yet.
@@ -49,10 +51,10 @@ The ledgers are NOT exhaustive. Do not begin Masanawa application feature implem
 Continue Phase 0 Passes 2–6, source by source, using the source-map follow-up sections.
 
 Recommended order:
-1. ChatWithStars deep mine: runtime, calls, migrations, automation, studio, Ops.
-2. OpenJarvis deep mine: agents, skills/import/security, tools, scheduler, traces/learning, memory.
-3. N.E.K.O deep mine: memory tests, plugins, proactivity, character/avatar, perception/computer use, voice.
-4. CyberVerse deep mine: WebRTC/media tests, Persona/SubAgent, task store/recovery, avatar sync, visual input.
+1. N.E.K.O deep mine: memory tests, plugins, proactivity, character/avatar, perception/computer use, voice.
+2. CyberVerse deep mine: WebRTC/media tests, Persona/SubAgent, task store/recovery, avatar sync, visual input.
+3. Return to remaining ChatWithStars areas: deeper migrations, automation, media-studio and Ops.
+4. Return to remaining OpenJarvis areas only where N.E.K.O/CyberVerse overlap reveals unresolved donor conflicts.
 
 For each pass, update all affected ledgers and source-map coverage notes in the same PR.
 
