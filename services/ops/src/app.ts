@@ -1,6 +1,10 @@
 import Fastify from "fastify";
 import type { Instant } from "@masanawa/contracts";
 import { nowInstant } from "@masanawa/contracts";
+import {
+  admitTelemetryCorrelation,
+  injectCorrelationHeaders,
+} from "@masanawa/telemetry";
 import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import Type from "typebox";
 
@@ -51,6 +55,22 @@ export function createOpsApp(options: OpsAppOptions = {}) {
 
   const now = options.now ?? nowInstant;
   const checks = options.readinessChecks ?? [];
+
+  app.addHook("onRequest", async (request, reply) => {
+    const correlation = admitTelemetryCorrelation({
+      carrier: {
+        traceparent: request.headers.traceparent,
+        "x-request-id": request.headers["x-request-id"],
+        "x-correlation-id": request.headers["x-correlation-id"],
+      },
+    });
+    const headers = injectCorrelationHeaders(correlation);
+
+    request.headers.traceparent = headers.traceparent;
+    request.headers["x-request-id"] = headers["x-request-id"];
+    request.headers["x-correlation-id"] = headers["x-correlation-id"];
+    reply.headers(headers);
+  });
 
   app.get(
     "/healthz",
