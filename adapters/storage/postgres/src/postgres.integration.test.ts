@@ -27,6 +27,15 @@ import {
   claimInboxBatch,
   claimOutboxBatch,
   createPostgresPool,
+  createTenant,
+  createUser,
+  linkExternalUserIdentity,
+  resolveUserByExternalIdentity,
+  createCharacter,
+  createCharacterVersion,
+  publishCharacterVersion,
+  activateCharacterVersion,
+  getOrCreateRelationship,
   putServiceVerificationKey,
   deactivateServiceVerificationKey,
   createPostgresServiceCredentialKeySource,
@@ -58,8 +67,12 @@ const eventMigrationDirectory = fileURLToPath(
 const securityMigrationDirectory = fileURLToPath(
   new URL("../../../../packages/security/migrations", import.meta.url),
 );
+const identityMigrationDirectory = fileURLToPath(
+  new URL("../../../../packages/identity/migrations", import.meta.url),
+);
 const foundationMigrationRootsForTest = [
   { owner: "events", directory: eventMigrationDirectory },
+  { owner: "identity", directory: identityMigrationDirectory },
   { owner: "security", directory: securityMigrationDirectory },
 ] as const;
 
@@ -82,6 +95,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
   });
 
   beforeEach(async () => {
+    await pool.query("DROP SCHEMA IF EXISTS identity CASCADE");
     await pool.query("DROP SCHEMA IF EXISTS security CASCADE");
     await pool.query("DROP SCHEMA IF EXISTS events CASCADE");
     await pool.query(
@@ -90,6 +104,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
 
     const applied = await runMigrations(pool, [
       { owner: "events", directory: eventMigrationDirectory },
+      { owner: "identity", directory: identityMigrationDirectory },
       { owner: "security", directory: securityMigrationDirectory },
     ]);
     expect(applied).toEqual([
@@ -97,6 +112,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       "events/0002_inbox_leases.sql",
       "events/0003_receipt_reconciliation_integrity.sql",
       "events/0004_outbox_recovery.sql",
+      "identity/0001_identity_foundation.sql",
       "security/0001_security_foundation.sql",
       "security/0002_approval_operation_integrity.sql",
       "security/0003_service_credentials.sql",
@@ -105,6 +121,158 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
 
   afterAll(async () => {
     await pool.end();
+  });
+
+  it("resolves explicitly linked external identity only inside its tenant", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const otherTenantId = createCanonicalId("tenant");
+    const userId = createCanonicalId("user");
+    const otherUserId = createCanonicalId("user");
+    const now = toInstant(new Date());
+    const subject = {
+      system: "whatsapp",
+      namespace: "jid",
+      value: "234000000000@s.whatsapp.net",
+      subjectKind: "user",
+      authenticationStrength: "linked",
+      observedAt: now,
+    } as const;
+
+    await withTransaction(pool, async (client) => {
+      await createTenant(client, { tenantId, createdAt: now });
+      await createTenant(client, { tenantId: otherTenantId, createdAt: now });
+      await createUser(client, { tenantId, userId, createdAt: now });
+      await createUser(client, { tenantId, userId: otherUserId, createdAt: now });
+
+      await linkExternalUserIdentity(client, {
+        tenantId,
+        userId,
+        subject,
+        linkedAt: now,
+      });
+
+      await expect(
+        resolveUserByExternalIdentity(client, tenantId, subject),
+      ).resolves.toBe(userId);
+      await expect(
+        resolveUserByExternalIdentity(client, otherTenantId, subject),
+      ).resolves.toBeNull();
+
+      await expect(
+        linkExternalUserIdentity(client, {
+          tenantId,
+          userId: otherUserId,
+          subject,
+          linkedAt: now,
+        }),
+      ).rejects.toMatchObject({
+        code: "identity.external_subject_already_linked",
+      });
+    });
+  });
+
+  it("publishes and activates immutable CharacterVersion state with CAS", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const userId = createCanonicalId("user");
+    const characterId = createCanonicalId("character");
+    const characterVersionId = createCanonicalId("character-version");
+    const relationshipId = createCanonicalId("relationship");
+    const now = toInstant(new Date());
+    const constitution = {
+      schemaVersion: 1,
+      displayName: "Amina Bello",
+      biography: "A persistent fictional character.",
+      personality: ["warm", "curious"],
+      boundaries: ["Keep private relationship state scoped."],
+      disclosurePolicy: { aiNature: "disclose" },
+      languages: ["ha", "en"],
+      voiceReferences: [],
+      appearanceReferences: [],
+      expertise: ["education"],
+    } as const;
+
+    await withTransaction(pool, async (client) => {
+      await createTenant(client, { tenantId, createdAt: now });
+      await createUser(client, { tenantId, userId, createdAt: now });
+      const character = await createCharacter(client, {
+        tenantId,
+        characterId,
+        createdAt: now,
+      });
+      await createCharacterVersion(client, {
+        tenantId,
+        characterVersionId,
+        characterId,
+        versionNumber: 1,
+        constitution,
+        createdAt: now,
+      });
+
+      await expect(
+        activateCharacterVersion(client, {
+          tenantId,
+          characterId,
+          characterVersionId,
+          expectedCharacterRevision: character.revision,
+          activatedAt: now,
+        }),
+      ).rejects.toMatchObject({
+        code: "identity.character_version_not_activatable",
+      });
+
+      await publishCharacterVersion(client, {
+        tenantId,
+        characterVersionId,
+        publishedAt: now,
+      });
+      const activated = await activateCharacterVersion(client, {
+        tenantId,
+        characterId,
+        characterVersionId,
+        expectedCharacterRevision: character.revision,
+        activatedAt: now,
+      });
+
+      expect(activated.activeCharacterVersionId).toBe(characterVersionId);
+      expect(activated.revision).toBe(2);
+
+      await expect(
+        activateCharacterVersion(client, {
+          tenantId,
+          characterId,
+          characterVersionId,
+          expectedCharacterRevision: character.revision,
+          activatedAt: now,
+        }),
+      ).rejects.toMatchObject({
+        code: "identity.character_revision_conflict",
+      });
+
+      await expect(
+        client.query(
+          `UPDATE identity.character_versions
+              SET constitution = '{"schemaVersion":1}'::jsonb
+            WHERE tenant_id = $1 AND character_version_id = $2`,
+          [tenantId, characterVersionId],
+        ),
+      ).rejects.toThrow(/immutable/u);
+
+      const relationship = await getOrCreateRelationship(client, {
+        tenantId,
+        relationshipId,
+        userId,
+        characterId,
+        createdAt: now,
+      });
+      const replay = await getOrCreateRelationship(client, {
+        tenantId,
+        relationshipId: createCanonicalId("relationship"),
+        userId,
+        characterId,
+        createdAt: now,
+      });
+      expect(replay.relationshipId).toBe(relationship.relationshipId);
+    });
   });
 
   it("reports schema-aware database readiness", async () => {
