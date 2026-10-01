@@ -407,3 +407,14 @@ This inventory is intentionally incomplete. Source-specific map documents identi
 | MEM-034 | memory | entity projection linked to canonical memories, with dedup/upsert and cleanup/relink on memory update/delete | Mem0 | B | entity-index donor | packages/memory entity projection | analysed |
 | MEM-035 | memory | append history for add/update/delete with persistence-before-history ordering | Mem0 | A/B | mutation-history donor | packages/memory revisions/audit | analysed |
 | MEM-036 | memory | expiration/validity-date filtering with explicit include-expired override; full reference-date temporal search is not implemented in pinned OSS source | Mem0 | B | validity donor, not full temporal engine | packages/memory | analysed |
+
+### Phase 0B Pipecat descendant additions
+
+| ID | Domain | Feature | Source | Class | Donor role | Masanawa destination | Status |
+|---|---|---|---|---|---|---|---|
+| PIP-001 | presence | framework-neutral bidirectional frame processor seam with explicit system/data/control priority and per-frame interruptibility | Pipecat | A/B | secondary realtime pipeline donor | services/presence/processors | analysed |
+| PIP-002 | presence | speculative turn/inference gate that holds provisional output until user-turn confirmation and discards it on withdrawal/interruption | Pipecat | A | strong speculative-turn donor | services/presence | analysed |
+| PIP-003 | presence | provider-agnostic TTS/audio frame ordering and pause/resume behavior across sync and async/WebSocket providers | Pipecat | A | strong playout-order donor | services/presence | analysed |
+| PIP-004 | context | assistant/user aggregation ordered around actual output, tool results and interruption rather than raw generation completion | Pipecat | A/B | context aggregation donor | agents/context + presence | analysed |
+| PIP-005 | turns | composable user turn start/stop/mute strategies with inference-trigger distinct from final turn completion | Pipecat | B | secondary turn-control donor | services/presence | analysed |
+| PIP-006 | providers | AI service runtime settings and service metadata frames decoupled from provider implementation | Pipecat | B | provider pipeline donor | packages/providers + presence | analysed |
