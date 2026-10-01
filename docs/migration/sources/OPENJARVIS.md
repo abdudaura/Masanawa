@@ -2,7 +2,7 @@
 
 Pinned revision: `c4da16e1ca3d21f4cc1905d4200063e564104f0f` (`main`)
 
-Status: Phase 0 Pass 1 source map complete; deeper behavior/data extraction remains active.
+Status: Phase 0A donor-selection coverage complete. Major agent/skill/tool/security/trace/scheduler behaviors are ledgered; exhaustive A/B/C extraction continues in Phase 0B.
 
 ## Scale and shape
 
