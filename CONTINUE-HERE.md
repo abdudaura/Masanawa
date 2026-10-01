@@ -132,17 +132,19 @@ Donor Agent/runtime/checkpoint objects never become Character, memory or busines
 
 ## Immediate next work
 
-Phase 0A is complete. Do not reopen donor selection without contradictory evidence and an explicit ownership/ADR update.
+Phase 0A is complete. Phase 0B is in remediation because the first root-level sweeps overstated coverage.
 
-1. Phase 0B source-coverage matrix created at `docs/migration/PHASE-0B-SOURCE-COVERAGE.md` with actual pinned top-level roots for all 17 repositories.
-2. ChatWithStars root/module sweep complete: all meaningful roots classified; added SUB/PRV/KNO/GRP/MSN/CRT/TEL/CVI plus explicit legacy/deployment/fixture dispositions.
-3. OpenJarvis root/module sweep complete: all meaningful module families classified; added provider/interoperability/connectors/sandbox/observability/session/speech/operator/template/native-duplication dispositions.
-4. N.E.K.O root/module sweep complete: added explicit voice endpointing/speaker-evidence, activity sensing, config/cloud-save, plugin distribution/message-plane, optional extensions, telemetry, embodiment/media/channel and third-party artifact-license classifications.
-5. CyberVerse root/module sweep complete under GPL clean-room rules: all roots classified as behavioral/reference evidence; direct WebRTC, inference/RAG, avatar/task semantics retained as specs, embedded model trees excluded from implicit license reuse.
-6. **Next:** sweep AIRI exhaustively across `apps`, `bucket`, `engines`, `integrations`, `packages`, `plugins`, `server`, `services`, then continue through LiveKit/Pipecat/Letta/Mem0/AI Town/elizaOS/Microsoft AF/OpenClaw.
-7. For every retained capability, attach one canonical Masanawa destination and an acceptance/parity strategy.
-8. Track direct-adaptation provenance and path-specific license/NOTICE requirements before copying code.
-9. Phase 0 closes only when no meaningful pinned capability is unclassified.
+1. Read `docs/migration/PHASE-0B-REMEDIATION.md` before doing any further source sweep.
+2. ChatWithStars is reopened as `partial (remediation)`.
+   - descendant runtime/domain proof: `docs/migration/coverage/CHATWITHSTARS.md`;
+   - all 381 migration filenames accounted for: `docs/migration/coverage/chatwithstars-migration-manifest.json`;
+   - previously missed migration families: `docs/migration/coverage/CHATWITHSTARS-MIGRATIONS.md`;
+   - provider auth/retry/idempotency/reconciliation matrix: `docs/migration/coverage/CHATWITHSTARS-INTEGRATIONS.md`.
+3. **Next:** finish ChatWithStars provider gaps. Do not move to OpenJarvis until each remaining integration is either fully traced or explicitly C/reference with a reason.
+4. Then redo OpenJarvis, N.E.K.O and CyberVerse using source-specific descendant evidence files. Their previous `covered` statuses are invalidated.
+5. Only after those four remediation passes continue to AIRI and the remaining donors.
+6. No source may be marked `covered` from root names, filename counts or generic family assertions alone.
+7. Every retained capability must have exact implementation/test evidence, durable-state mapping, integration failure semantics, one canonical owner and an observable acceptance/parity gate.
 
 ## World simulation comparison — completed
 
