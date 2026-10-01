@@ -135,11 +135,11 @@ Donor Agent/runtime/checkpoint objects never become Character, memory or busines
 
 Phase 2 Foundation is active. Read `docs/PHASE-2-FOUNDATION.md` first; it is the live implementation checklist.
 
-Current code already contains root workspace/tooling, contracts/events/security primitives, the PostgreSQL adapter/event migration, architecture guards, and Gateway/Worker/Ops health/readiness bootstraps.
+Current code already contains root workspace/tooling, contracts/events/security primitives, the PostgreSQL adapter/event migrations, architecture guards, and Gateway/Worker/Ops health/readiness bootstraps.
 
-Foundation CI run 49 passed the full install, strict TypeScript checks and Vitest at `68ebe1bf8c0c18f2a2deb52904f31d75a96261d0`. The validation pass also corrected CI package-manager bootstrap, strict `PlatformError` optional fields, and persistence-layer Operation transition enforcement with direct tests.
+Foundation CI now uses the committed pnpm lockfile with frozen installs and a real PostgreSQL 18 service. The PostgreSQL integration suite covers migration replay, durable idempotency conflict handling, stale Operation transitions, outbox fencing, and transactionally atomic PlatformEvent + outbox persistence including rollback on partial failure.
 
-The immediate unresolved foundation gap is now deterministic dependency locking/reproducible installation. Add and verify the pnpm lockfile, then continue the remaining gaps in `docs/PHASE-2-FOUNDATION.md` in order. Do not restart completed slices and do not begin product-domain migrations yet.
+The immediate unresolved foundation gap is the inbox admission/replay repository. Implement durable duplicate admission, payload-hash conflict detection, restart-safe claim/lease/fencing and tombstone semantics without relying on process-local state; add forward migrations where the existing inbox schema is insufficient. Then continue `docs/PHASE-2-FOUNDATION.md` in order. Do not restart completed slices and do not begin product-domain migrations yet.
 
 
 ## World simulation comparison — completed
