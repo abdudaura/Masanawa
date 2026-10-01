@@ -148,3 +148,14 @@ Auth, retry, idempotency and reconciliation fields still require source-by-sourc
 | I-MAF-008 | Mem0/Valkey/Cosmos memory adapters | Microsoft Agent Framework | memory provider integrations | external memory reads/writes | private memory | packages/memory provider adapters only | analysed; canonical memory remains packages/memory |
 | I-MAF-009 | Hyperlight/Monty/LocalCodeAct/Shell | Microsoft Agent Framework | code/shell execution | arbitrary compute/filesystem/process | highly sensitive | packages/tools sandbox adapters | analysed; canonical authorization/approval required |
 | I-MAF-010 | OpenTelemetry exporters | Microsoft Agent Framework | traces/metrics/logs | telemetry export | operational; optionally private content | packages/telemetry | analysed; sensitive content disabled by default |
+
+
+### Phase 0B OpenClaw integration additions
+
+| ID | Provider/system | Source repo | Purpose/capabilities | Side effects | Data sensitivity | Masanawa adapter | Status |
+|---|---|---|---|---|---|---|---|
+| I-OCL-001 | OpenClaw Gateway | OpenClaw | channel/session/tool/device control plane | messaging/device/tool execution | highly sensitive | optional trusted-boundary bridge + architecture donor | analysed; never public tenant auth boundary |
+| I-OCL-002 | channel durable ingress framework | OpenClaw | append/ack/replay/restart recovery | transport ack + message dispatch | private content/IDs | gateway channel adapter framework | analysed |
+| I-OCL-003 | OpenClaw device/node protocol | OpenClaw | pairing/token rotation/node invocation | device commands/credential writes | highly sensitive | device-node adapter | analysed |
+| I-OCL-004 | OpenClaw operator approval store | OpenClaw | durable exec/operator approvals | authorization mutation/consume | highly sensitive | packages/security/workflows | analysed |
+| I-OCL-005 | OpenClaw managed skill library | OpenClaw | skill revisioning/sharing/session pinning | executable content publication | executable/content | packages/skills | analysed |
