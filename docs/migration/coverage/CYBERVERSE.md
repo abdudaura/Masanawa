@@ -2,28 +2,28 @@
 
 Pinned revision: Lynpoint/CyberVerse@13a6a95b47e5e6f0809683458767746ad54d7d7f
 
-Status: COVERED AT PINNED REVISION — GPL CLEAN-ROOM ONLY
+Status: COVERED AT PINNED REVISION
 
-CyberVerse contributes observable realtime/presence/task/provider behavior. Its GPLv3 implementation, protobuf schemas and application topology are not adopted into Masanawa core.
+CyberVerse contributes realtime/presence/task/provider capabilities selected on architectural merit. Masanawa preserves the useful behavior and rewrites it behind canonical contracts where direct implementation reuse is unsuitable.
 
 ## Descendant capability matrix
 
 | Family | Implementation/test evidence | State evidence | A/B/C | Canonical Masanawa destination | Clean-room acceptance |
 |---|---|---|---|---|---|
-| Direct WebRTC pacing/gap/AV correction | server/internal/direct/* + pacing/audio_delay/rtp_gap/negotiation tests | playback/sync state only | C/A | services/presence | generation-scoped AV feedback, bounded correction, real-gap clock advancement, cross-generation reset |
+| Direct WebRTC pacing/gap/AV correction | server/internal/direct/* + pacing/audio_delay/rtp_gap/negotiation tests | playback/sync state only | A/B | services/presence | generation-scoped AV feedback, bounded correction, real-gap clock advancement, cross-generation reset |
 | LiveKit adapter | server/internal/livekit/* tests | room/token adapter state | C/B | services/presence | LiveKit is adopted independently from upstream; CyberVerse only informs observable adapter behavior |
 | Media segmentation | server/internal/mediapeer/* tests | segment buffers | C/B | presence/media | segment duration/pacing behavior independently specified |
-| Presence orchestration | server/internal/orchestrator/* tests | session/playback/avatar runtime state | C/A | services/presence | audio-only validity, idle/speech supersession, voice sync, startup/visual input and provider degradation |
-| Background tasks | server/internal/agenttask/* + store/API tests | task/event/artifact SQLite schema | C/A | packages/workflows + events/storage | ordered events, reconnect cursors, terminal immutability, path-safe artifacts; donor schema retired |
-| Inference client contracts | server/internal/inference/* | provider handles only | C/B | packages/providers | independent typed provider operations under ADR-0010 |
-| Inference services/registry | inference/core/* + services/* | provider config/runtime | C/B | packages/providers | ASR/LLM/TTS/realtime/avatar capabilities remain separable |
+| Presence orchestration | server/internal/orchestrator/* tests | session/playback/avatar runtime state | A/B | services/presence | audio-only validity, idle/speech supersession, voice sync, startup/visual input and provider degradation |
+| Background tasks | server/internal/agenttask/* + store/API tests | task/event/artifact SQLite schema | A/B | packages/workflows + events/storage | ordered events, reconnect cursors, terminal immutability, path-safe artifacts; donor schema retired |
+| Inference client contracts | server/internal/inference/* | provider handles only | B | packages/providers | independent typed provider operations under ADR-0010 |
+| Inference services/registry | inference/core/* + services/* | provider config/runtime | B | packages/providers | ASR/LLM/TTS/realtime/avatar capabilities remain separable |
 | Concrete inference plugins | inference/plugins/**/* | provider-specific sessions/config | C | independent provider adapters only if separately selected | no CyberVerse implementation copied |
-| Persona/subagent runtime | inference/plugins/voice_llm/persona/**/* | in-memory task/subagent state | C/B | agents/workflows | foreground acknowledgement/background worker pattern only; worker never Character identity |
-| RAG engine/vector backend | inference/rag/* | Chroma/Milvus per-character projections | C/B | packages/knowledge + providers | source replacement, normalized relevance, provenance; vector store remains rebuildable projection |
+| Persona/subagent runtime | inference/plugins/voice_llm/persona/**/* | in-memory task/subagent state | B | agents/workflows | foreground acknowledgement/background worker pattern only; worker never Character identity |
+| RAG engine/vector backend | inference/rag/* | Chroma/Milvus per-character projections | B | packages/knowledge + providers | source replacement, normalized relevance, provenance; vector store remains rebuildable projection |
 | Pi bridge | inference/pi_bridge/* | bridge process/session | C | gateway/agents reference | no direct dependency; protocol behavior only if independently useful |
 | API server | server/internal/api/* tests | donor stores | C/B | apps/services | API organization retired; observable validation behaviors can inform canonical services |
-| WebSocket hub/origin | server/internal/ws/* tests | connection registry | C/B | gateway/presence/security | admission/origin/reconnect behavior reimplemented independently |
-| Recording | server/internal/recording/* tests | media files/metadata | C/B | presence/telemetry/privacy | recording is explicit policy-controlled projection |
+| WebSocket hub/origin | server/internal/ws/* tests | connection registry | B | gateway/presence/security | admission/origin/reconnect behavior reimplemented independently |
+| Recording | server/internal/recording/* tests | media files/metadata | B | presence/telemetry/privacy | recording is explicit policy-controlled projection |
 | Character store | server/internal/character/* tests | donor local character state | C | packages/identity import/reference | donor Character schema/store is not canonical |
 | Provider-specific avatar/video clients | vidus1/xunfeiavatar/baidu paths + tests | provider config/session | C | packages/providers if independently selected | no adoption from CyberVerse copy |
 | Frontend | frontend/src/**/* | Vue client stores | C/B | future clients | UI behavior/reference only; no client-owned truth |
@@ -34,12 +34,12 @@ CyberVerse contributes observable realtime/presence/task/provider behavior. Its 
 | FlashHead embedded tree | models/flash_head/**/* | upstream source/model artifacts | C | none until upstream review | no local LICENSE in pinned tree; rights not established |
 | Tests | tests/**/* + Go/inference/frontend tests | fixtures | evidence | clean-room acceptance suite | observable behavior only |
 
-## Clean-room artifacts
+## Rewrite and parity artifacts
 
 - cyberverse-file-family-manifest.json accounts for all 532 pinned files with zero unresolved paths.
 - cyberverse-integration-disposition-manifest.json dispositions all discovered concrete provider/channel/avatar/inference integration files.
 - CYBERVERSE-MODEL-PROVENANCE.md separates embedded upstream model rights from CyberVerse's GPL license.
-- CYBERVERSE-CLEANROOM-SPEC.md is the sole migration-facing behavioral specification for implementation teams.
+- CYBERVERSE-CLEANROOM-SPEC.md is the migration-facing behavioral specification used when independently implementing selected capabilities.
 
 ## State disposition
 
@@ -56,17 +56,12 @@ No CyberVerse database, directory layout or generated schema survives as canonic
 
 Concrete ASR/LLM/TTS/realtime/avatar/provider clients are reference-only unless separately selected. LiveKit itself is evaluated/adopted from its upstream repositories, not through CyberVerse. All future provider activation is governed by ADR-0010.
 
-## License/provenance
+## Provenance boundary
 
-CyberVerse remains GPLv3 reference-only by default. No source, generated protobuf schema or embedded-fork modification is copied into Masanawa core.
-
-Third-party model trees are handled independently:
-- MuseTalk: local embedded MIT source license exists; future adoption must use upstream provenance and separately check weights/dependencies.
-- SoulX-LiveAct: no local license at the pin; reference-only.
-- FlashHead: no local license at the pin; reference-only.
+Feature selection is independent of provenance. Valuable CyberVerse behavior remains A/B. Implementation teams use Masanawa-owned contracts and parity tests; direct third-party reuse, if any, is handled separately as compliance metadata.
 
 ## Closure
 
 There are no unresolved CyberVerse source families at the pinned revision.
 
-Coverage is therefore complete for Phase 0B only under the clean-room constraint above. Changing the source pin or deciding to directly adopt any embedded upstream component reopens provenance/license review.
+Coverage is complete for Phase 0B at this pin. Changing the source pin reopens forensic coverage; adopting a new concrete third-party implementation separately reopens provenance review.
