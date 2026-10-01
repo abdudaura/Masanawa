@@ -295,6 +295,23 @@ Provider-specific deployment assumptions are not canonical Masanawa architecture
 - VTPass is explicitly retired from active runtime;
 - historical project names/boundaries must not be recreated.
 
+## Phase 0A world comparison decision
+
+Compared against AI Town at its pinned revision. ChatWithStars is selected as Masanawa's primary donor for governed life/canon semantics, while AI Town is selected for simulation-engine mechanics.
+
+ChatWithStars behaviors retained in `packages/world`:
+- Constitution-gated automatic life generation;
+- immutable identity versus evolving canon versus conversation-local separation;
+- timezone routines, goals, story arcs, narrative state, availability and coarse location;
+- authored/life-engine/imported provenance and visibility;
+- draft/approved/retired lifecycle with immutable approved canon;
+- deterministic routine occurrence keys;
+- tenant isolation and private-fan/shared-world separation.
+
+Its process-local `running` overlap guard is explicitly not sufficient for Masanawa horizontal workers; ADR-0009 replaces it with durable generation/claim semantics adapted from AI Town.
+
+See `docs/migration/WORLD-SIMULATION-ADOPTION-BOUNDARY.md`.
+
 ## Phase 0 follow-up
 
 Runtime identity/handoff/life/memory/skill/provider first pass is underway.
