@@ -167,6 +167,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       "world/0003_world_routines_story_arcs.sql",
       "world/0004_world_interactions.sql",
       "world/0005_world_recovery.sql",
+      "world/0006_world_evidence_publications.sql",
     ]);
   });
 
@@ -1296,6 +1297,201 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
         [tenantId, approvedInteractionId],
       ),
     ).rejects.toThrow(/immutable/u);
+  });
+
+  it("publishes World evidence once to memory and workflow outboxes across replay", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const worldId = createCanonicalId("world");
+    const characterA = createCanonicalId("character");
+    const characterB = createCanonicalId("character");
+    const versionA = createCanonicalId("character-version");
+    const versionB = createCanonicalId("character-version");
+    const eventId = createCanonicalId("world-event");
+    const interactionId = createCanonicalId("world-interaction");
+    const now = toInstant("2026-10-01T14:45:00Z");
+
+    await withTransaction(pool, async (client) => {
+      await createTenant(client, { tenantId, createdAt: now });
+      await createWorld(client, {
+        tenantId,
+        worldId,
+        initialGenerationId: createCanonicalId("world-generation"),
+        policy: testWorldPolicy(),
+        simulationTime: now,
+        createdAt: now,
+      });
+
+      const a = await createCharacter(client, {
+        tenantId,
+        characterId: characterA,
+        createdAt: now,
+      });
+      const b = await createCharacter(client, {
+        tenantId,
+        characterId: characterB,
+        createdAt: now,
+      });
+      for (const [characterId, characterVersionId, revision] of [
+        [characterA, versionA, a.revision],
+        [characterB, versionB, b.revision],
+      ] as const) {
+        await createCharacterVersion(client, {
+          tenantId,
+          characterVersionId,
+          characterId,
+          versionNumber: 1,
+          constitution: testCharacterConstitution(),
+          createdAt: now,
+        });
+        await publishCharacterVersion(client, {
+          tenantId,
+          characterVersionId,
+          publishedAt: now,
+        });
+        await activateCharacterVersion(client, {
+          tenantId,
+          characterId,
+          characterVersionId,
+          expectedCharacterRevision: revision,
+          activatedAt: now,
+        });
+      }
+
+      const appendEvent = (worldEventId: typeof eventId) =>
+        appendWorldEvent(client, {
+          tenantId,
+          worldId,
+          worldEventId,
+          characterId: characterA,
+          characterVersionId: versionA,
+          eventKind: "life.lesson.started",
+          payload: { lesson: "geometry" },
+          provenance: "engine",
+          visibility: "shared",
+          occurrenceKey: "lesson:geometry:2026-10-01",
+          effectiveStart: now,
+          effectiveEnd: null,
+          recordedAt: now,
+          admission: "automatic-approved",
+        });
+
+      const firstEvent = await appendEvent(eventId);
+      const replayEvent = await appendEvent(createCanonicalId("world-event"));
+      expect(replayEvent.worldEventId).toBe(firstEvent.worldEventId);
+
+      const appendInteraction = (worldInteractionId: typeof interactionId) =>
+        appendWorldInteraction(client, {
+          tenantId,
+          worldId,
+          worldInteractionId,
+          interactionKind: "lesson-dialogue",
+          participants: [
+            {
+              characterId: characterA,
+              characterVersionId: versionA,
+              role: "teacher",
+            },
+            {
+              characterId: characterB,
+              characterVersionId: versionB,
+              role: "student",
+            },
+          ],
+          payload: { lesson: "geometry" },
+          provenance: "engine",
+          visibility: "shared",
+          occurrenceKey: "lesson-dialogue:geometry:2026-10-01",
+          effectiveStart: now,
+          effectiveEnd: null,
+          recordedAt: now,
+          admission: "automatic-approved",
+        });
+
+      const firstInteraction = await appendInteraction(interactionId);
+      const replayInteraction = await appendInteraction(
+        createCanonicalId("world-interaction"),
+      );
+      expect(replayInteraction.worldInteractionId).toBe(
+        firstInteraction.worldInteractionId,
+      );
+
+      const publications = await client.query<{
+        evidence_kind: string;
+        evidence_id: string;
+        event_id: string;
+      }>(
+        `SELECT evidence_kind, evidence_id, event_id
+           FROM world.evidence_publications
+          WHERE tenant_id = $1
+          ORDER BY evidence_kind, evidence_id`,
+        [tenantId],
+      );
+      expect(publications.rows).toHaveLength(2);
+      expect(publications.rows.map((row) => row.evidence_kind).sort()).toEqual([
+        "event",
+        "interaction",
+      ]);
+
+      const platformEvents = await client.query<{
+        event_id: string;
+        event_type: string;
+        aggregate_type: string;
+        sensitivity: string;
+        payload: {
+          evidenceKind: string;
+          canonState: string;
+          worldId: string;
+        };
+      }>(
+        `SELECT event_id,
+                event_type,
+                aggregate_type,
+                sensitivity,
+                payload
+           FROM events.platform_events
+          WHERE tenant_id = $1
+            AND event_type = 'world.evidence.recorded'
+          ORDER BY aggregate_type`,
+        [tenantId],
+      );
+      expect(platformEvents.rows).toHaveLength(2);
+      expect(platformEvents.rows.every((row) => row.sensitivity === "internal")).toBe(true);
+      expect(
+        platformEvents.rows.every(
+          (row) =>
+            row.payload.canonState === "approved" &&
+            row.payload.worldId === worldId,
+        ),
+      ).toBe(true);
+
+      const outbox = await client.query<{
+        event_id: string;
+        destination: string;
+        payload: { evidenceKind: string };
+      }>(
+        `SELECT event_id, destination, payload
+           FROM events.outbox
+          WHERE tenant_id = $1
+            AND event_type = 'world.evidence.recorded'
+          ORDER BY event_id, destination`,
+        [tenantId],
+      );
+      expect(outbox.rows).toHaveLength(4);
+      const byEvent = new Map<string, string[]>();
+      for (const row of outbox.rows) {
+        byEvent.set(row.event_id, [
+          ...(byEvent.get(row.event_id) ?? []),
+          row.destination,
+        ]);
+      }
+      expect([...byEvent.values()]).toHaveLength(2);
+      for (const destinations of byEvent.values()) {
+        expect(destinations.sort()).toEqual([
+          "memory.world-evidence",
+          "workflows.world-evidence",
+        ]);
+      }
+    });
   });
 
   it("binds canon approval and retirement to current authority and one-time approvals", async () => {
