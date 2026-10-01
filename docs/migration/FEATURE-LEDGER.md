@@ -120,6 +120,14 @@ foundation, identity, relationships, memory, world, decisions, agents, skills, t
 | PRV-004 | infrastructure | explicit engine selection never silently substitutes; default fallback health/model-aware | OpenJarvis | A | primary | packages/providers | analysed |
 | LRN-004 | learning/evaluation | minimum-evidence optimization and non-mutating overlay output | OpenJarvis | A/B | primary | skills + telemetry | analysed |
 | SCH-001 | proactivity | once/interval/timezone-aware cron scheduled execution lifecycle | OpenJarvis | B | secondary | packages/proactivity + workflows | analysed |
+| MEM-010 | memory | poison-input dead-letter/liveness progression across background cognition | N.E.K.O | A | primary reliability | packages/memory + workflows | analysed |
+| MEM-011 | memory | foreground turn persistence before asynchronous memory cognition | N.E.K.O | A | primary reliability | packages/memory + events | analysed |
+| MEM-012 | memory | automatic context renderer separate from explicit recall query | N.E.K.O | B | primary architecture | packages/memory | analysed |
+| PLG-004 | plugins | hot-reload preserves explicit stopped intent and rejects shutdown-race resurrection | N.E.K.O | A | primary lifecycle | plugin runtime | analysed |
+| PLG-005 | plugins | typed plugin event/entry SDK with call-chain limits | N.E.K.O | B | primary | plugin SDK | analysed |
+| PRO-003 | proactivity | persistent source/repetition history across restarts | N.E.K.O | A/B | primary | packages/proactivity | analysed |
+| PRO-004 | proactivity | conservative atomic state persistence under load/cancellation failure | N.E.K.O | A | primary reliability | packages/proactivity + events | analysed |
+| PER-002 | perception | privacy-state abstraction for OS activity signals | N.E.K.O | B | primary | packages/perception | analysed |
 | OPS-002 | operations | trace/evaluation visibility | OpenJarvis + ChatWithStars | B | combined | apps/ops + telemetry | discovered |
 
 This inventory is intentionally incomplete. Source-specific map documents identify the next deep-mining areas.
