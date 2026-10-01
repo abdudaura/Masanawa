@@ -389,3 +389,10 @@ Phase 0 must continue mapping donor-specific stores/tables/files into these cano
 | D-OCL-012 | ScheduledOccurrenceReservation | OpenClaw cron | job occurrence | reserved->admitted->settled/retried | business/operational | packages/workflows | redesign | lifecycle generation + run receipt |
 | D-OCL-013 | NetworkEgressPolicy | OpenClaw SSRF | tool/provider request | prepared->resolved->allowed/blocked | security | packages/security | preserve concept | host/origin/IP/DNS/redirect-aware |
 | D-OCL-014 | DiagnosticContentConsent | OpenClaw telemetry | telemetry/export | disabled->explicitly enabled/revoked | highly sensitive | telemetry/security | redesign | raw content capture default off |
+
+
+| D-OCL-015 | GatewayAuthorizationGrant | OpenClaw handshake | connection/device/role | negotiated->refreshed/revoked/disconnected | highly sensitive | gateway/security | redesign | scopes separate from client capabilities |
+| D-OCL-016 | WorkerAdmissionReceipt | OpenClaw closed worker | execution environment/run | admitted->active->expired/revoked | security/operational | workflows/worker adapter | preserve invariant | environment/bundle/owner epoch/session proof |
+| D-OCL-017 | AgentRoutingBinding | OpenClaw bindings | admitted channel conversation | configured->matched/superseded | identity-adjacent | gateway routing | redesign | routing evidence only |
+| D-OCL-018 | ChildRunCustody | OpenClaw subagent/ACP | parent/child run | delegated->running->terminal/recovered | private/security | agents/workflows | preserve semantics | parent/requester/generation/delegated authority |
+| D-OCL-019 | OutboundDeliveryOperation | OpenClaw message action | channel/account/destination | prepared->dispatched->queued/partial/accepted/unknown->reconciled | message/operational | gateway outbox/workflows | preserve semantics | idempotency key + receipt + authority fence |
