@@ -115,7 +115,7 @@ export function createPostgresServiceCredentialKeySource(
   client: PoolClient,
 ): ServiceCredentialKeySource {
   return Object.freeze({
-    resolve: (issuer, keyId) =>
+    resolve: (issuer: ServiceId, keyId: string) =>
       loadServiceVerificationKey(client, issuer, keyId),
   });
 }
