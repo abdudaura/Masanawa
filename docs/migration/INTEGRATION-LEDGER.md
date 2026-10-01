@@ -56,7 +56,7 @@ Every external dependency must enter Masanawa through a canonical capability/pro
 | I-AVT-003 | LiveKit avatar plugin ecosystem | LiveKit Agents | realtime avatar providers | external/GPU media | character image/audio | provider/avatar | discovered |
 | I-MEM-001 | Letta APIs/runtime | Letta | persistent stateful-agent memory/server | memory/state operations | private memory | memory donor/provider only if adopted | discovered |
 | I-MEM-002 | Mem0 | Mem0 | extraction/retrieval/entity/temporal memory | memory/vector operations | private memory | memory specialist provider/reference | discovered |
-| I-GW-001 | OpenClaw channel/device ecosystem | OpenClaw | WhatsApp/Telegram/Slack/Discord/Teams/iMessage/device nodes | messages/device actions | highly sensitive | gateway/channel/device adapters | discovered |
+| I-GW-001 | OpenClaw channel/device ecosystem | OpenClaw | WhatsApp/Telegram/Slack/Discord/Teams/iMessage/device nodes | messages/device actions | highly sensitive | **design donor; reimplement behind Masanawa adapters** | analysed |
 | I-INT-001 | MCP | LiveKit/OpenClaw/MAF/elizaOS ecosystem | external tools/context protocol | external tool calls | varies | gateway/tools interoperability | discovered |
 | I-INT-002 | A2A | Microsoft Agent Framework ecosystem | cross-agent protocol | inter-agent calls | bounded task/context | gateway/agent interoperability | discovered |
 | I-LOC-001 | elizaOS local inference/device runtime | elizaOS | local text/embedding/speech/vision/image inference | local compute/device | prompt/media local | provider/local compute reference | discovered |
