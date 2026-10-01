@@ -110,5 +110,10 @@ Inventory semantic state concepts before designing tables. Do not mirror donor s
 | D-PLG-007 | PluginCleanupDebt | AIRI | extension session | durable until settled | internal | plugin runtime | redesign | independent runtime/assets cleanup completion |
 | D-VOICE-001 | VoiceInputBinding | AIRI | device/client session | ephemeral lifecycle | sensitive | client/presence | redesign | stream+provider mode+generation identity |
 | D-CUA-001 | ComputerUseRunEvidence | AIRI | task/run | append | highly sensitive | tools/telemetry | redesign | approvals, screenshots, audit, tool evidence |
+| D-PRS-001 | PresenceTransportBinding | LiveKit | presence session | ephemeral + external refs | private/internal | presence | redesign | room/participant/track IDs map to canonical user/character but never replace them |
+| D-PRS-002 | TurnPolicy | LiveKit/Pipecat | presence session/activity | versioned runtime policy | internal | presence | redesign | detector/endpoint/interruption/speculation settings |
+| D-PRS-003 | PresenceActivityHandoff | LiveKit | one presence session | ephemeral lifecycle | internal | presence | redesign | transferable STT/media resources; distinct from CharacterHandoff |
+| D-PRS-004 | RemoteAvatarBinding | LiveKit/CyberVerse | presence session | ephemeral + provider refs | internal | presence/providers | redesign | generated-avatar participant, join state and cleanup |
+| D-PRS-005 | PresenceRecordingPolicy | LiveKit + Masanawa | tenant/user/session | durable policy + runtime projection | highly sensitive | security/presence | redesign | consent/redaction categories compile to framework recording options |
 
 Phase 0 must continue mapping donor-specific stores/tables/files into these canonical concepts or explicit retirement.
