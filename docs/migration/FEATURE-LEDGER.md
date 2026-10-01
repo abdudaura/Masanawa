@@ -383,3 +383,15 @@ This inventory is intentionally incomplete. Source-specific map documents identi
 | RTC-083 | presence | pause/resume-safe frame processing and zero-audio TTS completion that cannot deadlock downstream processing | Pipecat | A | strong pipeline liveness donor | services/presence | analysed |
 | RTC-084 | presence | pluggable user-turn start/stop strategies combining VAD, transcription, external signals, timeouts and turn analyzers | Pipecat | B | turn-policy donor | services/presence | analysed |
 | OBS-040 | telemetry | processor-level observers for turn tracking, user-bot latency, function calls, startup and service metrics | Pipecat | B | secondary observability donor | packages/telemetry | analysed |
+
+### Phase 0B Letta Code descendant additions
+
+| ID | Domain | Feature | Source | Class | Donor role | Masanawa destination | Status |
+|---|---|---|---|---|---|---|---|
+| MEM-020 | memory | revisioned memory mutation with serialized writer lease, conflict detection/repair and stale-worker compare-and-set protection | Letta Code | A/B | strong mutation-control donor | packages/memory + workflows | analysed |
+| MEM-021 | memory/security | constrained memory write paths, symlink-safe confinement and fail-closed sandboxing for unattended memory workers | Letta Code | A | strong memory safety donor | packages/memory + security | analysed |
+| MEM-022 | memory | separate primary vs attached/shared memory repositories with explicit read/write permissions and post-turn synchronization | Letta Code | A/B | shared-memory donor | packages/memory | analysed |
+| MEM-023 | memory | bounded memory layout/size constraints with protected config changes and explicit human approval for limit changes | Letta Code | B | memory-governance donor | packages/memory + apps/ops | analysed |
+| CTX-001 | agents/memory | context-pressure estimation and compaction policy separated from durable memory records | Letta Code | A/B | working-context donor | packages/agents/context + memory | analysed |
+| MEM-024 | memory | completion-coupled memory notification: clients observe update only after canonical persistence/sync outcome is known | Letta Code | A | memory delivery donor | packages/memory + events | analysed |
+| ATT-001 | channels/security | attachment ingestion/send policy with recipient, MIME and realpath directory constraints | Letta Code | B | attachment-policy donor | gateway + knowledge/security | analysed |
