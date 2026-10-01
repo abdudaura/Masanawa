@@ -19,7 +19,7 @@ import {
   type WorldCanonGovernanceTarget,
   type WorldEvent,
 } from "@masanawa/world";
-import type { PoolClient } from "pg";
+import type { Pool, PoolClient } from "pg";
 import {
   loadOperation,
   prepareOperation,
@@ -29,6 +29,7 @@ import {
   consumeOnceApproval,
   createPostgresCurrentAuthoritySource,
 } from "../security/approvals.js";
+import { withTransaction } from "../transaction.js";
 import {
   approveWorldEvent,
   getWorldEvent,
@@ -123,7 +124,7 @@ function assertOperationBinding(
   }
 }
 
-export async function prepareWorldCanonGovernance(
+async function prepareWorldCanonGovernanceInTransaction(
   client: PoolClient,
   input: PrepareWorldCanonGovernanceInput,
 ): Promise<PreparedWorldCanonGovernance> {
@@ -155,7 +156,7 @@ export async function prepareWorldCanonGovernance(
   });
 }
 
-export async function executeWorldCanonGovernance(
+async function executeWorldCanonGovernanceInTransaction(
   client: PoolClient,
   input: ExecuteWorldCanonGovernanceInput,
 ): Promise<ExecutedWorldCanonGovernance> {
@@ -269,4 +270,23 @@ export async function executeWorldCanonGovernance(
     event,
     reused: false,
   });
+}
+
+
+export async function prepareWorldCanonGovernance(
+  pool: Pool,
+  input: PrepareWorldCanonGovernanceInput,
+): Promise<PreparedWorldCanonGovernance> {
+  return withTransaction(pool, (client) =>
+    prepareWorldCanonGovernanceInTransaction(client, input),
+  );
+}
+
+export async function executeWorldCanonGovernance(
+  pool: Pool,
+  input: ExecuteWorldCanonGovernanceInput,
+): Promise<ExecutedWorldCanonGovernance> {
+  return withTransaction(pool, (client) =>
+    executeWorldCanonGovernanceInTransaction(client, input),
+  );
 }
