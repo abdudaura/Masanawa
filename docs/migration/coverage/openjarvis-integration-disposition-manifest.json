@@ -1,0 +1,879 @@
+{
+  "source": "open-jarvis/OpenJarvis@c4da16e1ca3d21f4cc1905d4200063e564104f0f",
+  "rule": "All concrete external adapters are C/B reference candidates unless separately selected. Activation requires provider/channel security, auth, retry, idempotency/reconciliation and acceptance evidence under ADR-0010/OpenClaw gateway boundaries.",
+  "count": 109,
+  "entries": [
+    {
+      "path": "src/openjarvis/connectors/__init__.py",
+      "kind": "connector",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/connectors/_stubs.py",
+      "kind": "connector",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/connectors/apple_calendar.py",
+      "kind": "connector",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/connectors/apple_contacts.py",
+      "kind": "connector",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/connectors/apple_health.py",
+      "kind": "connector",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/connectors/apple_music.py",
+      "kind": "connector",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/connectors/apple_notes.py",
+      "kind": "connector",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/connectors/attachment_store.py",
+      "kind": "connector",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Retain interface/lifecycle behavior; redesign behind canonical Masanawa contracts."
+    },
+    {
+      "path": "src/openjarvis/connectors/chunker.py",
+      "kind": "connector",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Retain interface/lifecycle behavior; redesign behind canonical Masanawa contracts."
+    },
+    {
+      "path": "src/openjarvis/connectors/dropbox.py",
+      "kind": "connector",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/connectors/embedding_store.py",
+      "kind": "connector",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Retain interface/lifecycle behavior; redesign behind canonical Masanawa contracts."
+    },
+    {
+      "path": "src/openjarvis/connectors/embeddings.py",
+      "kind": "connector",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Retain interface/lifecycle behavior; redesign behind canonical Masanawa contracts."
+    },
+    {
+      "path": "src/openjarvis/connectors/gcalendar.py",
+      "kind": "connector",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/connectors/gcontacts.py",
+      "kind": "connector",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/connectors/gdrive.py",
+      "kind": "connector",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/connectors/github_notifications.py",
+      "kind": "connector",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/connectors/gmail.py",
+      "kind": "connector",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/connectors/gmail_imap.py",
+      "kind": "connector",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/connectors/google_auth.py",
+      "kind": "connector",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Retain interface/lifecycle behavior; redesign behind canonical Masanawa contracts."
+    },
+    {
+      "path": "src/openjarvis/connectors/google_tasks.py",
+      "kind": "connector",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/connectors/granola.py",
+      "kind": "connector",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/connectors/hackernews.py",
+      "kind": "connector",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/connectors/hybrid_search.py",
+      "kind": "connector",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Retain interface/lifecycle behavior; redesign behind canonical Masanawa contracts."
+    },
+    {
+      "path": "src/openjarvis/connectors/imap.py",
+      "kind": "connector",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/connectors/imessage.py",
+      "kind": "connector",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/connectors/news_rss.py",
+      "kind": "connector",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/connectors/notion.py",
+      "kind": "connector",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/connectors/oauth.py",
+      "kind": "connector",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Retain interface/lifecycle behavior; redesign behind canonical Masanawa contracts."
+    },
+    {
+      "path": "src/openjarvis/connectors/obsidian.py",
+      "kind": "connector",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/connectors/oura.py",
+      "kind": "connector",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/connectors/outlook.py",
+      "kind": "connector",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/connectors/pipeline.py",
+      "kind": "connector",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Retain interface/lifecycle behavior; redesign behind canonical Masanawa contracts."
+    },
+    {
+      "path": "src/openjarvis/connectors/retriever.py",
+      "kind": "connector",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Retain interface/lifecycle behavior; redesign behind canonical Masanawa contracts."
+    },
+    {
+      "path": "src/openjarvis/connectors/scheduler.py",
+      "kind": "connector",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Retain interface/lifecycle behavior; redesign behind canonical Masanawa contracts."
+    },
+    {
+      "path": "src/openjarvis/connectors/slack_connector.py",
+      "kind": "connector",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/connectors/spotify.py",
+      "kind": "connector",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/connectors/store.py",
+      "kind": "connector",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Retain interface/lifecycle behavior; redesign behind canonical Masanawa contracts."
+    },
+    {
+      "path": "src/openjarvis/connectors/strava.py",
+      "kind": "connector",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/connectors/sync_engine.py",
+      "kind": "connector",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Retain interface/lifecycle behavior; redesign behind canonical Masanawa contracts."
+    },
+    {
+      "path": "src/openjarvis/connectors/weather.py",
+      "kind": "connector",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/connectors/whatsapp.py",
+      "kind": "connector",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/connectors",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/__init__.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/_stubs.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/bluebubbles.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/discord_channel.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/email_channel.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/feishu.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/gmail.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/google_chat.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/imessage_daemon.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/irc_channel.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/line_channel.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/mastodon_channel.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/matrix_channel.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/mattermost.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/messenger_channel.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/nostr_channel.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/reddit_channel.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/rocketchat_channel.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/sendblue.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/signal_channel.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/slack.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/slack_daemon.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/teams.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/telegram.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/twilio_sms.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/twitch_channel.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/twitter_channel.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/viber_channel.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/webchat.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/webhook.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/whatsapp.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/whatsapp_baileys.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/whatsapp_baileys_bridge/package-lock.json",
+      "kind": "channel",
+      "classification": "C",
+      "disposition": "build-metadata",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Bridge build metadata only."
+    },
+    {
+      "path": "src/openjarvis/channels/whatsapp_baileys_bridge/package.json",
+      "kind": "channel",
+      "classification": "C",
+      "disposition": "build-metadata",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Bridge build metadata only."
+    },
+    {
+      "path": "src/openjarvis/channels/whatsapp_baileys_bridge/src/bridge.ts",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/whatsapp_baileys_bridge/tsconfig.json",
+      "kind": "channel",
+      "classification": "C",
+      "disposition": "build-metadata",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Bridge build metadata only."
+    },
+    {
+      "path": "src/openjarvis/channels/xmpp_channel.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/channels/zulip_channel.py",
+      "kind": "channel",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/speech/__init__.py",
+      "kind": "speech-provider",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/speech/_discovery.py",
+      "kind": "speech-provider",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/speech/_stubs.py",
+      "kind": "speech-provider",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/speech/_tts_discovery.py",
+      "kind": "speech-provider",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/speech/cartesia_tts.py",
+      "kind": "speech-provider",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Retain interface/lifecycle behavior; redesign behind canonical Masanawa contracts."
+    },
+    {
+      "path": "src/openjarvis/speech/deepgram.py",
+      "kind": "speech-provider",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/speech/faster_whisper.py",
+      "kind": "speech-provider",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/speech/kokoro_tts.py",
+      "kind": "speech-provider",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Retain interface/lifecycle behavior; redesign behind canonical Masanawa contracts."
+    },
+    {
+      "path": "src/openjarvis/speech/openai_tts.py",
+      "kind": "speech-provider",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Retain interface/lifecycle behavior; redesign behind canonical Masanawa contracts."
+    },
+    {
+      "path": "src/openjarvis/speech/openai_whisper.py",
+      "kind": "speech-provider",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/speech/tts.py",
+      "kind": "speech-provider",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Retain interface/lifecycle behavior; redesign behind canonical Masanawa contracts."
+    },
+    {
+      "path": "src/openjarvis/speech/voice_io.py",
+      "kind": "speech-provider",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Retain interface/lifecycle behavior; redesign behind canonical Masanawa contracts."
+    },
+    {
+      "path": "src/openjarvis/engine/__init__.py",
+      "kind": "inference-provider",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/engine/_apple_fm_support.py",
+      "kind": "inference-provider",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/engine/_async_loop.py",
+      "kind": "inference-provider",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/engine/_base.py",
+      "kind": "inference-provider",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Retain interface/lifecycle behavior; redesign behind canonical Masanawa contracts."
+    },
+    {
+      "path": "src/openjarvis/engine/_discovery.py",
+      "kind": "inference-provider",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/engine/_http_async.py",
+      "kind": "inference-provider",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/engine/_openai_compat.py",
+      "kind": "inference-provider",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/engine/_stubs.py",
+      "kind": "inference-provider",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/engine/apple_fm.py",
+      "kind": "inference-provider",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/engine/apple_fm_shim.py",
+      "kind": "inference-provider",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/engine/cloud.py",
+      "kind": "inference-provider",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/engine/gemma_cpp.py",
+      "kind": "inference-provider",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/engine/litellm.py",
+      "kind": "inference-provider",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/engine/multi.py",
+      "kind": "inference-provider",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Retain interface/lifecycle behavior; redesign behind canonical Masanawa contracts."
+    },
+    {
+      "path": "src/openjarvis/engine/nexa_shim.py",
+      "kind": "inference-provider",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/engine/nim.py",
+      "kind": "inference-provider",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/engine/ollama.py",
+      "kind": "inference-provider",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    },
+    {
+      "path": "src/openjarvis/engine/openai_compat_engines.py",
+      "kind": "inference-provider",
+      "classification": "C/B",
+      "disposition": "reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter is not automatically adopted; must pass ADR-0010 certification if activated."
+    }
+  ]
+}
