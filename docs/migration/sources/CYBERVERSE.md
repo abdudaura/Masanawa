@@ -4,7 +4,7 @@ Pinned revision: `13a6a95b47e5e6f0809683458767746ad54d7d7f` (`main`)
 
 License: GPLv3. Architecture/behavior reference by default; no direct Masanawa-core copying without explicit review.
 
-Status: Phase 0 Pass 1 source map complete.
+Status: Phase 0A donor-selection coverage complete. CyberVerse remains GPL-clean behavior reference; exhaustive A/B/C coverage continues in Phase 0B.
 
 ## Scale and shape
 
