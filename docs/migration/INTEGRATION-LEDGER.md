@@ -63,5 +63,7 @@ Every external dependency must enter Masanawa through a canonical capability/pro
 | I-GW-002 | @openclaw/gateway-protocol | OpenClaw | typed WebSocket protocol schemas/validators | control-plane messages | sensitive depending payload | optional OpenClaw bridge adapter only | analysed |
 | I-GW-003 | @openclaw/gateway-client | OpenClaw | reference WebSocket client | Gateway RPC/events | sensitive depending payload | optional OpenClaw bridge adapter only | analysed |
 | I-DEV-001 | OpenClaw node/device protocol | OpenClaw | pairing, token rotation, capability publication, remote invoke, offline pending work | device actions | highly sensitive | device-node architecture donor | analysed |
+| I-OC-001 | @openclaw/ai | OpenClaw | published provider adapters/streaming/tool-call normalization | model calls | prompt/private context | optional provider implementation behind Masanawa adapter | analysed |
+| I-OC-002 | @openclaw/gateway-protocol + gateway-client | OpenClaw | optional interoperability with OpenClaw Gateway/nodes/clients | gateway RPC/events | session/device metadata | compatibility adapter only, never canonical protocol | analysed |
 
 Auth, retry, idempotency and reconciliation fields still require source-by-source deep extraction.
