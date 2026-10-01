@@ -205,7 +205,39 @@ The modular design and tests show proactivity as a stateful domain:
 Masanawa should use PostgreSQL transactions/claims instead of JSON-file locks, but preserve persistence, repetition controls and fail-conservative state handling.
 
 ### Computer/browser-use safety
-N.E.K.O has dedicated hardening/capture-lifecycle tests. These remain to be fully enumerated, but computer/browser execution must enter Masanawa through explicit permissioned Tool + Perception boundaries and cannot inherit broad desktop authority from character conversation.
+Verified from `test_computer_use_hardening.py`:
+- generated desktop-control code is parsed/sanitized as AST and narrowed to approved actions/imports/literals;
+- reflection/introspection, arbitrary imports, unpacking and indirect access to hidden backend objects are rejected;
+- held keyboard/mouse state is always cleaned up, and failed releases remain tracked for retry;
+- completion is not signalled until input cleanup has run;
+- desktop execution is globally serialized so two computer-use agents cannot race the same physical desktop;
+- rejected actions are fed back into the next reasoning step as an execution failure rather than silently ignored.
+
+Masanawa must not execute model-generated general Python for desktop control. The canonical Tool should compile a typed action plan or similarly restricted action language, enforce exclusive device leases, and guarantee cleanup.
+
+### Voice identity
+N.E.K.O contains a substantial optional owner/speaker voice-identity subsystem, not merely TTS voice selection.
+
+Verified from runtime/service tests:
+- voice verification profile activation applies to current and future session managers;
+- activation has explicit states such as READY, RUNTIME_DEGRADED and UNSUPPORTED_ASR_ROUTE rather than a boolean;
+- newer session-level activation is preferred over legacy per-utterance filtering;
+- incompatible legacy routes fail/degrade rather than receiving an unsafe verifier object;
+- enrollment temporarily suppresses voice input and reliably restores suppression on unregister/cancel/failure;
+- policy revision/CAS-style checks prevent stale activation work from overwriting newer requirements;
+- sensitive embeddings/models are explicitly closed/wiped on cancellation/failure paths.
+
+For Masanawa this should remain an optional security/recognition capability, separate from a character's canonical output voice identity.
+
+### Avatar interaction -> memory
+Verified from avatar interaction memory tests:
+- embodied interactions can create compact factual memory notes;
+- rapid/repeated variants use dedupe keys/ranks so a stronger summary can replace a weaker event within the dedupe window without repeating every interaction;
+- unsupported/missing touch-zone detail is not invented;
+- only direct event facts enter memory; compatibility/free-text draft context is excluded;
+- automatic game/avatar lines can be marked interaction-only so generated chatter is not indiscriminately written into ordinary relationship memory.
+
+This is useful for Masanawa's PerceptionEvent -> MemoryCandidate contract: embodied events need explicit provenance and memory eligibility.
 
 ## Phase 0 follow-up
 
