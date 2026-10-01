@@ -293,3 +293,14 @@ Phase 0 must continue mapping donor-specific stores/tables/files into these cano
 | D-MEM-025 | MemorySyncReceipt | Letta Code | mutation/revision | pending->succeeded/failed | private/internal | memory/events | redesign | client notification follows receipt state |
 | D-CTX-001 | WorkingContextProjection | Letta Code | live agent/session | ephemeral/rebuildable | private | agents/context | redesign | compacted/bounded view over durable memory/conversation evidence |
 | D-ATT-001 | AttachmentAdmission | Letta Code | channel message/recipient | proposed->allowed/denied->ingested/sent | sensitive | gateway/knowledge/security | redesign | MIME/path/recipient policy evidence |
+
+### Phase 0B Mem0 memory data concepts
+
+| ID | Canonical concept | Source | Scope | Lifecycle | Sensitivity | Destination | Treatment | Notes |
+|---|---|---|---|---|---|---|---|---|
+| D-MEM-030 | MemoryScopeKey | Mem0 | authorized memory partition | deterministic | private/internal | memory | redesign | typed components, collision-safe encoding; not free-form metadata |
+| D-MEM-031 | MemoryExtractionAttempt | Mem0 | turn/input + scope | attempted->no_facts/failed/persisted_partial/persisted | private/internal | memory/providers/telemetry | redesign | distinguishes provider failure from empty extraction |
+| D-MEM-032 | MemoryRetrievalCandidate | Mem0 | authorized query scope | ephemeral | private | memory retrieval | redesign | semantic/BM25/entity component scores + normalized composite score |
+| D-MEM-033 | MemoryEntityProjection | Mem0 | scope + entity | rebuildable projection | private/shared depending scope | memory | redesign | normalized entity text/type -> linked canonical memory IDs |
+| D-MEM-034 | MemoryMutationHistoryEvent | Mem0 | memory record | append | private/audit | memory | merge with MemoryRevision/audit | add/update/delete old/new values and actor evidence |
+| D-MEM-035 | MemoryExpirationPolicy | Mem0 | memory record | optional validity end date | private | memory | redesign | expiration/visibility, not full bitemporal model |
