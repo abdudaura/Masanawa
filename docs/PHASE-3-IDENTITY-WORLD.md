@@ -190,9 +190,9 @@ Next after green CI:
 - only then add optional spatial mechanics.
 
 
-## World pause/restart/catch-up — implemented, awaiting CI
+## World pause/restart/catch-up — merged and validated
 
-Current branch: `phase3-world-recovery-policy`.
+Merged through PR #26 at `bcfe597bd8aa7cb6191bb34fb5c626bbe5884ee0` after the complete PostgreSQL 18 CI gate passed.
 
 Implemented:
 - durable pause and in-progress recovery metadata on canonical World;
@@ -213,3 +213,28 @@ Next after green CI:
 - add any missing explicit memory/workflow integration ports for World evidence;
 - close remaining non-spatial Phase 3 acceptance gaps;
 - optional spatial mechanics only after those gates pass.
+
+
+## World evidence integrations — implemented, awaiting CI
+
+Current branch: `phase3-world-evidence-integrations`.
+
+The memory and workflow packages are still canonical boundaries rather than implemented repositories. World therefore integrates through the existing canonical events/outbox infrastructure instead of importing either subsystem.
+
+Implemented:
+- typed `world.evidence.recorded` payloads for WorldEvent and WorldInteraction;
+- full evidence content plus canonical IDs, provenance, visibility, canon state, occurrence key and time semantics;
+- stable destinations `memory.world-evidence` and `workflows.world-evidence`;
+- durable World publication receipts keyed by evidence identity/publication kind;
+- automatic evidence publication from the WorldEvent and WorldInteraction admission paths;
+- one PlatformEvent per evidence record and two existing-outbox deliveries;
+- idempotent replay: deterministic World evidence replay never produces duplicate platform/outbox publications;
+- privacy-sensitive visibility mapped into event sensitivity rather than stripped or silently widened;
+- no World write to memory/workflow stores and no parallel event bus;
+- PostgreSQL integration coverage verifies one event + one interaction + both replays yield exactly two PlatformEvents and four outbox rows.
+
+Next after green CI:
+- merge the evidence boundary;
+- audit all non-spatial Phase 3 acceptance targets;
+- record non-spatial Phase 3 closure if all are proven;
+- optional spatial mechanics only after that closure checkpoint.
