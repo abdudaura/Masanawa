@@ -189,9 +189,25 @@ Important capabilities:
 ### Calls/voice
 Evidence:
 - `services/calls`;
-- tests around call readiness, incoming/outgoing state, race handling, recovery, voice delivery and provider state.
+- call readiness, incoming/outgoing state, race, recovery, renderer-safety, delivery and provider-state tests.
 
-Still requires dedicated behavior-mining pass.
+Dedicated first behavior pass completed. Important requirements:
+- readiness is not a single boolean: operational, degraded-but-attemptable and action-required states are distinct;
+- diagnostic heartbeat staleness alone must not disable a connected engine whose primitives were previously verified;
+- explicit diagnostics proving primitives unavailable must block readiness;
+- pairing remains available without restart loops;
+- hard recovery is escalation only after repeated soft-repair failures and sustained degradation;
+- hard recovery never interrupts pairing or active/setup calls;
+- incoming acceptance tolerates the race where signalling arrives before the provider call object appears;
+- resident/authorized incoming control must not accidentally fall through to a competing direct accept path;
+- reconnect and relink are distinct: reconnect preserves the dedicated login and keeps the HTTP gateway alive, while relink explicitly logs out/removes only the call-device browser profile;
+- renderer stabilization must not race provider/WPP injection during startup/restart;
+- outbound timeout preserves offer phase and provider-call state for diagnostics;
+- provider state supports native CallStore compatibility when public wrappers are absent;
+- live audio includes normalization/peak limiting/fade handling;
+- voice identity/language is selected contextually at session start rather than hard-coded.
+
+Still deep-mine call session state machine, Gemini Live orchestration, audio bridge implementation and resident/direct transport boundaries.
 
 ### Studio/media
 Evidence:
