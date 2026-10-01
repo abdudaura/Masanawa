@@ -48,6 +48,29 @@ function toOperationRecord(row: OperationRow): OperationRecord {
   };
 }
 
+export async function loadOperation(
+  client: PoolClient,
+  tenantId: TenantId,
+  operationId: OperationId,
+): Promise<OperationRecord | null> {
+  const result = await client.query<OperationRow>(
+    `SELECT operation_id,
+            tenant_id,
+            kind,
+            idempotency_key,
+            authority_scope_hash,
+            request_fingerprint,
+            state,
+            created_at,
+            updated_at
+       FROM events.operations
+      WHERE tenant_id = $1
+        AND operation_id = $2`,
+    [tenantId, operationId],
+  );
+  return result.rows[0] ? toOperationRecord(result.rows[0]) : null;
+}
+
 async function loadOperationByIdempotency(
   client: PoolClient,
   input: PrepareOperationInput,
