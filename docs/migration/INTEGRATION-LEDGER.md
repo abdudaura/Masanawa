@@ -63,5 +63,12 @@ Every external dependency must enter Masanawa through a canonical capability/pro
 | I-GW-002 | @openclaw/gateway-protocol | OpenClaw | typed WebSocket protocol schemas/validators | control-plane messages | sensitive depending payload | optional OpenClaw bridge adapter only | analysed |
 | I-GW-003 | @openclaw/gateway-client | OpenClaw | reference WebSocket client | Gateway RPC/events | sensitive depending payload | optional OpenClaw bridge adapter only | analysed |
 | I-DEV-001 | OpenClaw node/device protocol | OpenClaw | pairing, token rotation, capability publication, remote invoke, offline pending work | device actions | highly sensitive | device-node architecture donor | analysed |
+| I-AIRI-001 | Character Card V3 / AIRI card packs | AIRI | portable persona/presentation/avatar import-export | imported files/config | potentially sensitive/untrusted | identity import/export adapter | analysed |
+| I-AIRI-002 | Live2D/Pixi renderer ecosystem | AIRI | 2D avatar rendering/expression/motion | client rendering | character assets | AvatarRenderer implementation candidate | analysed |
+| I-AIRI-003 | Three.js / VRM renderer ecosystem | AIRI | 3D avatar rendering/animation | client rendering | character assets | AvatarRenderer implementation candidate | analysed |
+| I-AIRI-004 | AIRI Plugin Host/SDK | AIRI | extension sessions/kits/capabilities/permissions | extension execution | sensitive by capability | plugin architecture donor; no direct core dependency | analysed |
+| I-AIRI-005 | AIRI computer-use MCP | AIRI | native desktop/browser DOM/terminal execution | device actions | highly sensitive | computer-use architecture donor | analysed |
+| I-AIRI-006 | AIRI provider-inference | AIRI | runtime-neutral text/speech/transcription provider definitions | model/media calls | prompt/audio | secondary provider architecture donor | analysed |
+| I-AIRI-007 | Electron/Capacitor shells | AIRI | desktop/mobile packaging and native bridges | local device access | device-sensitive | reference only pending client ADR | analysed |
 
 Auth, retry, idempotency and reconciliation fields still require source-by-source deep extraction.
