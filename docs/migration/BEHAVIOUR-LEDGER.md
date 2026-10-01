@@ -430,3 +430,23 @@ Deep behavior mining from tests remains required before Phase 0 completion.
 | B-AIT-012 | integrations | Replicate callback lacks signature verification and durable local request correlation | `convex/music.ts`, `http.ts` | signed webhook + correlation + dedupe + reconciliation required |
 | B-AIT-013 | world | vacuuming old inputs breaks full replay unless snapshots/retention exist | `convex/crons.ts` | never claim replayability after retention destroys required evidence |
 | B-AIT-014 | world | stochastic donor choices use process randomness | `player.ts`, `agent.ts` | authoritative stochastic outcomes record policy/provenance/seed where replay matters |
+
+
+### Phase 0B elizaOS behavior invariants
+
+| ID | Domain | Invariant / behavior | Source evidence | Masanawa requirement |
+|---|---|---|---|---|
+| B-ELZ-001 | plugins | core never installs/imports named plugins; host resolver is required and unresolved names fail closed | `packages/core/src/plugin.ts` | package acquisition remains outside kernel and explicitly authorized |
+| B-ELZ-002 | plugins | failed plugin registration rolls back owned partial registrations | `packages/core/src/plugin-lifecycle.ts` | activation failure leaves no orphan extension points |
+| B-ELZ-003 | plugins | database-adapter plugin cannot hot-unload safely | `packages/core/src/plugin-lifecycle.ts` | persistence authority changes require controlled runtime restart/migration |
+| B-ELZ-004 | security | runtime-registered stricter contexts participate in role-gate derivation | `plugin-lifecycle.ts` | live canonical policy cannot collapse to permissive static defaults |
+| B-ELZ-005 | operations | prepareStop closes service admission before async drain | `types/service.ts` | shutdown rejects new work before draining accepted work |
+| B-ELZ-006 | workflows | scheduler generation/registration fences reject stale in-flight results | `services/task-scheduler.ts` | stale scheduler work cannot dispatch after restart/rebind |
+| B-ELZ-007 | workflows | adapter returning out-of-scope tasks is a scope violation | `services/task-scheduler.ts` | cross-agent/tenant task leakage is fatal and observable |
+| B-ELZ-008 | providers | provider/context acquisition is read-only and cancellation-aware | `types/components.ts` | context providers cannot commit external side effects |
+| B-ELZ-009 | decisions | evaluator failures are isolated and remaining evaluators continue | `runtime/response-handler-evaluators.ts` | one enrichment failure cannot collapse the whole response stage |
+| B-ELZ-010 | channels | connector metadata is owner-scoped and removable without clobbering other owners | `connectors.ts` | channel metadata teardown is precise |
+| B-ELZ-011 | security | same action gate governs planner exposure and execution; execution cannot skip private gate | `runtime/action-gate.ts` | hallucinated/forced calls cannot bypass current authority |
+| B-ELZ-012 | plugins | required plugin-plan evaluation failure aborts boot instead of silently omitting capabilities | `agent/runtime/plugin-resolver.ts` | required extension plan fails closed |
+| B-ELZ-013 | security | human-only view capability overrides generic agent grants and denied writes fail visibly | `view-capability-broker.ts` | client mutating actions default deny; no fabricated success |
+| B-ELZ-014 | infrastructure | migration failures are aggregated/visible; RLS reapplied after successful schema migration when enabled | `plugin-sql/migration-service.ts`, `rls.ts` | partial schema change is never reported as full success |
