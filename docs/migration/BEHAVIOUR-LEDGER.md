@@ -248,3 +248,15 @@ Deep behavior mining from tests remains required before Phase 0 completion.
 | B-TEL-001 | TEL-001 | A telecom/bill purchase has explicit quote/confirmation/order/provider outcome/reconciliation/receipt semantics and safe repeat handling. | A | bill-service/telecom/repeat/receipt tests | analysed |
 | B-CVI-001 | CVI-001 | Civic/public-information assertions preserve jurisdiction, source and freshness/truth lifecycle; uncertain extraction is not silently promoted to canonical fact. | A/B | civic source/truth/jurisdiction/grounding tests | analysed |
 | B-LEG-001 | LEG-001 | Legacy UI/runtime boundaries are not preserved as parallel Masanawa authorities; only required externally observable behavior and migration evidence survive. | C | old Astro surface + legacy contracts vs canonical platform services | selected |
+
+### Phase 0B N.E.K.O coverage additions
+
+| ID | Feature | Required behavior | Class | Evidence | Status |
+|---|---|---|---|---|---|
+| B-VOI-001 | VOI-001 | Voice-input endpointing/candidate decisions are explicit and cancellable; stale worker/candidate results cannot commit after the active turn changes. | A/B | ASR lifecycle, candidate-control, endpointing and worker-failure modules/tests | analysed |
+| B-VOI-002 | VOI-002 | Speaker recognition is probabilistic evidence only and cannot by itself authenticate a user or rewrite durable identity. | A | speaker-shadow/voice-identity and speaker-trust boundaries | analysed |
+| B-ACT-001 | ACT-001 | Activity/focus signals may propose proactive behavior but remain permission/frequency/privacy gated and cannot directly cause consequential side effects. | A/B | activity state machine + proactive settings/runtime | analysed |
+| B-CFG-001 | CFG-001 | Config/cloud-save writes are staged/versioned and migration-aware; partial or stale snapshots cannot silently replace a newer healthy configuration. | A/B | cloudsave runtime fences/staging/snapshots + config migrations | analysed |
+| B-PLG-012 | PLG-012 | Plugin communication is schema/permission validated and lifecycle bounded; plugin deadlock/crash/reload cannot become canonical domain truth or stall the host indefinitely. | A | plugin message plane, host, deadlock detector and tests | analysed |
+| B-AST-001 | AST-001 | Bundled models/corpora/binaries are never inherited under the repository license by assumption; each artifact requires its own provenance/license record before redistribution. | A | third-party notices, corpus license files, vendored deps | selected |
+| B-EXT-001 | EXT-001 | Optional games/watch/music extensions consume Character/session contracts without becoming alternate memory, identity or world authorities. | B/C | game/watch/music routers and SDK | selected |
