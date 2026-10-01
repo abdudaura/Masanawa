@@ -115,17 +115,19 @@ EXECUTE FUNCTION world.protect_governed_interaction();
 CREATE OR REPLACE FUNCTION world.protect_interaction_participant()
 RETURNS trigger
 LANGUAGE plpgsql
-AS $$
+AS $interaction_participant$
 DECLARE
   interaction_state text;
   target_tenant text;
   target_interaction text;
 BEGIN
-  target_tenant := COALESCE(NEW.tenant_id, OLD.tenant_id);
-  target_interaction := COALESCE(
-    NEW.world_interaction_id,
-    OLD.world_interaction_id
-  );
+  IF TG_OP = 'DELETE' THEN
+    target_tenant := OLD.tenant_id;
+    target_interaction := OLD.world_interaction_id;
+  ELSE
+    target_tenant := NEW.tenant_id;
+    target_interaction := NEW.world_interaction_id;
+  END IF;
 
   SELECT canon_state
     INTO interaction_state
@@ -143,7 +145,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$;
+$interaction_participant$;
 
 CREATE TRIGGER world_interaction_participants_immutable
 BEFORE INSERT OR UPDATE OR DELETE ON world.interaction_participants
