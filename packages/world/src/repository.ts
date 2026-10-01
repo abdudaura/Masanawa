@@ -114,6 +114,10 @@ export interface GovernedWorldRepository extends WorldRepository {
     input: PutCharacterLifeStateInput,
   ): Promise<CharacterLifeState>;
   appendWorldEvent(input: AppendWorldEventInput): Promise<WorldEvent>;
+  getWorldEvent(
+    tenantId: TenantId,
+    worldEventId: WorldEventId,
+  ): Promise<WorldEvent | null>;
   approveWorldEvent(input: ApproveWorldEventInput): Promise<WorldEvent>;
   retireWorldEvent(input: RetireWorldEventInput): Promise<WorldEvent>;
 }
