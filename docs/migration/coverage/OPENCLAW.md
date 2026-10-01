@@ -250,3 +250,157 @@ Before OpenClaw can be marked covered:
 18. repository-wide descendant proof with zero unresolved production families.
 
 Do not advance to OpenClaw Agent Skills until these are closed.
+
+
+## 10. Tool policy, sandbox and elevated execution
+
+Implementation/docs evidence:
+- `docs/gateway/sandbox-vs-tool-policy-vs-elevated.md`;
+- exec/tool policy runtime families under `src/agents` and policy extension.
+
+Pinned behavior:
+- sandbox decides where a tool runs;
+- tool policy decides whether a tool exists/is callable;
+- elevated is an exec-only escape from ordinary sandboxing and does not grant tools;
+- deny always wins;
+- a non-empty allowlist blocks everything not listed;
+- `/exec` cannot override a denied exec tool;
+- creator-role-required sandbox cannot be bypassed by elevated or host override and fails closed if sandbox provision fails;
+- bind sources are validated before and after resolving existing ancestors so symlink-parent escapes cannot bypass blocked/allowed-root checks;
+- tool-name policy alone does not make shell execution read-only.
+
+Masanawa destination:
+- `packages/security` + `packages/tools` sandbox/tool admission.
+
+Disposition: **A/B**.
+
+Acceptance gate:
+- execution-location policy and capability authorization remain separate;
+- deny/current-role requirements dominate local session overrides;
+- privileged/elevated mode cannot mint tool permission;
+- symlink/ancestor resolution cannot escape filesystem scope;
+- shell capability is treated as broad consequential authority, not inferred safe from denial of higher-level file tools.
+
+## 11. Plugin inventory, hot replacement and resource ownership
+
+Implementation/docs evidence:
+- `docs/plugins/architecture.md`;
+- `docs/plugins/sdk-runtime/state-and-system.md`;
+- Gateway startup/maintenance plugin lifecycle families.
+
+Pinned behavior:
+- Gateway retains one prepared plugin inventory/cache generation;
+- runtime readers reuse one published inventory rather than cold-discovering independently;
+- install/update/remove/source changes prepare a new inventory before publication;
+- candidate metadata is validated before draining affected services/channels;
+- unchanged plugin instances are retained;
+- previous registration is stopped/disposed before replacement acquires its resources;
+- failure before publication attempts recovery from captured previous code/config rather than newly changed package files;
+- replacement waits for admitted/retained work and cleanup; deadline failure leaves previous generation serving instead of force-disposing writes;
+- publication and runtime methods/metadata move together;
+- failure after publication reports the committed generation and attempts explicit recovery;
+- shutdown closes admission, joins retained cleanup and reports cleanup failures before shared DB closure;
+- plugin-scoped SQLite stores are durable, namespace-isolated and support atomic register-if-absent / compare-and-apply;
+- ownership/current-authority assertions can be carried through worker preparation/admission before plugin-state writes.
+
+Masanawa destination:
+- `packages/plugins` + runtime supervisor + security/state adapters.
+
+Disposition: **A/B**.
+
+Acceptance gate:
+- one published plugin registry generation is authoritative per runtime;
+- hot replacement never runs old/new callbacks concurrently against the same exclusive resource without explicit version ownership;
+- failed candidate activation cannot silently strand partial registrations;
+- previously admitted work may drain, but retired generation cannot accept new work;
+- current-authority mutation checks survive async worker queues;
+- plugin state cannot become Character/memory/workflow/business truth merely because it is durable.
+
+## 12. Queue steering and transcript commitment
+
+Implementation/docs evidence:
+- `docs/concepts/queue.md`;
+- `docs/plugins/codex-harness-runtime/queue-and-feedback.md`.
+
+Pinned behavior:
+- queue modes distinguish steer, follow-up, collect and interrupt;
+- steering targets the current run where the runtime supports it;
+- if steering cannot be accepted, the full input remains eligible as follow-up rather than disappearing;
+- steer does not imply aborting in-flight tools;
+- transcript-commit acknowledgment is distinct from request acceptance and distinct again from a later model having read the input;
+- input sent without confirmed transcript commit is not automatically replayed;
+- confirmed history items retain identities so later steers do not duplicate them;
+- pending question answers are checked against the question creator's current permissions and active run;
+- uncertain question-answer commit is reported as uncertainty and is not automatically resent;
+- queued-turn cancellation retains a Gateway-owned cancel identity per run and checks requester ownership.
+
+Masanawa destination:
+- agent/session turn-control + workflow-safe input admission.
+
+Disposition: **A/B**.
+
+Acceptance gate:
+- steer/follow-up/collect/interrupt remain distinct typed intents;
+- steering cannot authorize replay/undo of already-started consequential effects;
+- accepted input, transcript-committed input and model-consumed input are separate states;
+- uncertain commit enters reconciliation rather than automatic replay;
+- queued cancellation is requester/current-authority scoped.
+
+## 13. Restart recovery, write custody and durable ownership
+
+Implementation/docs evidence:
+- `docs/gateway/restart-recovery.md`;
+- session/delivery/cron/subagent/restart-sentinel state families.
+
+Pinned behavior:
+- conversations, transcripts, accepted browser follow-ups, interrupted main-session turns, subagent records, outbound deliveries, cron schedules and restart continuation are durable;
+- PTY processes are explicitly not recovered;
+- browser reconnect reconciles saved receipt before resubmitting and never reuses old execution authority;
+- output-persistence failure does not make consumed input automatically replayable;
+- uncertain submission remains unconfirmed until reconciled or explicitly retried;
+- detached child completion recovery retains exact source completion/requester-session claims and does not restart the child merely because the old monitor disappeared;
+- contradictory/missing source ownership does not authorize replay;
+- failed outbound delivery settlement can resume without resending when payload already exhausted retry/failure state;
+- graceful restart first fences new admission and drains admitted work;
+- read-only waiters can disconnect/retry while underlying durable run/approval/write continues;
+- maintenance exposes write-custody phases distinct from generic active work.
+
+Masanawa destination:
+- runtime supervisor + `packages/workflows` + gateway outbox/recovery.
+
+Disposition: **A/B**.
+
+Acceptance gate:
+- every admitted durable operation has explicit recovery ownership;
+- restart cannot reuse stale request authority;
+- consumed input is not replayed because output persistence failed;
+- terminal external effect settlement can resume without repeating the effect;
+- recovery requires original lineage/ownership evidence;
+- graceful restart fences admission before drain and preserves already-admitted write custody.
+
+## 14. SQLite integrity/quarantine boundary
+
+Implementation/docs evidence:
+- `docs/reference/database-schemas/integrity-and-recovery.md`;
+- `src/state/openclaw-state-schema.sql`;
+- database preflight/backup/doctor/recovery families.
+
+Pinned behavior:
+- writable agent admission validates schema metadata and conditionally performs integrity/foreign-key checks;
+- corruption or FK violations fail admission into quarantine;
+- pending migrations/repairs/backup verification use full checks;
+- clean-close/runtime verification is bound to physical file identity and can be revoked;
+- failed dirty-marker publication refuses open rather than reusing stale clean proof after crash;
+- database replacement/quarantine/failed admission discards verification;
+- ownership/current write authority is not inferred from integrity success;
+- independent Gateways must not share mutable agent databases across state directories.
+
+Masanawa disposition:
+- **B** for integrity/quarantine/repair mechanics;
+- **C** for OpenClaw SQLite files as Masanawa canonical domain persistence.
+
+Acceptance gate:
+- canonical PostgreSQL migrations/readiness include integrity/version/ownership checks appropriate to the DB;
+- corruption/readiness failure quarantines unsafe state rather than serving it;
+- clean-shutdown evidence cannot override current authorization/ownership;
+- backup/restore/migration verification is explicit and observable.
