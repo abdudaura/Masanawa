@@ -16,6 +16,7 @@ import type { Pool } from "pg";
 import {
   admitInboxEvent,
   beginReconciliation,
+  checkPostgresReadiness,
   claimInboxBatch,
   claimOutboxBatch,
   createPostgresPool,
@@ -46,6 +47,10 @@ const eventMigrationDirectory = fileURLToPath(
 const securityMigrationDirectory = fileURLToPath(
   new URL("../../../../packages/security/migrations", import.meta.url),
 );
+const foundationMigrationRootsForTest = [
+  { owner: "events", directory: eventMigrationDirectory },
+  { owner: "security", directory: securityMigrationDirectory },
+] as const;
 
 describePostgres("PostgreSQL 18 foundation integration", () => {
   let pool: Pool;
@@ -87,6 +92,56 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
 
   afterAll(async () => {
     await pool.end();
+  });
+
+  it("reports schema-aware database readiness", async () => {
+    await expect(
+      checkPostgresReadiness(pool, foundationMigrationRootsForTest),
+    ).resolves.toEqual({ ready: true });
+  });
+
+  it("fails readiness when a required migration is missing", async () => {
+    await pool.query(
+      `DELETE FROM public.masanawa_schema_migrations
+        WHERE owner = 'security'
+          AND name = '0002_approval_operation_integrity.sql'`,
+    );
+
+    await expect(
+      checkPostgresReadiness(pool, foundationMigrationRootsForTest),
+    ).resolves.toEqual({
+      ready: false,
+      reason: "schema-outdated",
+    });
+  });
+
+  it("fails readiness when an applied migration hash drifts", async () => {
+    await pool.query(
+      `UPDATE public.masanawa_schema_migrations
+          SET sha256 = 'sha256:tampered'
+        WHERE owner = 'events'
+          AND name = '0001_event_foundation.sql'`,
+    );
+
+    await expect(
+      checkPostgresReadiness(pool, foundationMigrationRootsForTest),
+    ).resolves.toEqual({
+      ready: false,
+      reason: "schema-drift",
+    });
+  });
+
+  it("fails readiness when the schema ledger is absent", async () => {
+    await pool.query(
+      "DROP TABLE public.masanawa_schema_migrations",
+    );
+
+    await expect(
+      checkPostgresReadiness(pool, foundationMigrationRootsForTest),
+    ).resolves.toEqual({
+      ready: false,
+      reason: "schema-ledger-missing",
+    });
   });
 
   it("replays package-owned migrations idempotently", async () => {
