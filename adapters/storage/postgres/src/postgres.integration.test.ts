@@ -156,6 +156,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       "security/0003_service_credentials.sql",
       "world/0001_world_foundation.sql",
       "world/0002_world_canon.sql",
+      "world/0003_world_routines_story_arcs.sql",
     ]);
   });
 
