@@ -341,3 +341,13 @@ This inventory is intentionally incomplete. Source-specific map documents identi
 | AVT-030 | embodiment | renderer/model-driver target ownership with replace-without-release and explicit stop/dispose release | AIRI | A/B | strong embodiment lifecycle donor | clients/embodiment | analysed |
 | CUA-030 | computer use | private serialized desktop daemon with route/storage ownership, bounded command grammar and artifact-path validation | AIRI | A/B | strong desktop execution donor | packages/tools + perception/security | analysed |
 | MOB-001 | clients | native mobile host WebSocket bridge preserving connection lifecycle independently of web app implementation | AIRI | B | mobile bridge donor | clients/mobile + gateway | analysed |
+
+### Phase 0B LiveKit Server descendant additions
+
+| ID | Domain | Feature | Source | Class | Donor role | Masanawa destination | Status |
+|---|---|---|---|---|---|---|---|
+| RTC-050 | presence | room/participant/track transport lifecycle with permission-checked publication and bounded participant admission | LiveKit Server | A/B | selected transport donor | services/presence | analysed |
+| RTC-051 | presence | bounded migration packet cache preserving continuity during participant/server movement | LiveKit Server | B | transport continuity donor | services/presence | analysed |
+| RTC-052 | presence | RTP loss/out-of-order/restart accounting and connection-quality telemetry | LiveKit Server | B | transport telemetry donor | services/presence + telemetry | analysed |
+| RTC-053 | presence | routing/node selection and room allocation separated from Character/session domain identity | LiveKit Server | B | selected distributed transport donor | services/presence infrastructure | analysed |
+| RTC-054 | presence | TURN/SIP/ingress/egress/service admission as transport capabilities only | LiveKit Server | B/C | infrastructure donor | presence/provider adapters | analysed |
