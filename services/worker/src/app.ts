@@ -60,9 +60,15 @@ export function createWorkerApp(options: WorkerAppOptions = {}) {
   app.addHook("onRequest", async (request, reply) => {
     const correlation = admitTelemetryCorrelation({
       carrier: {
-        traceparent: request.headers.traceparent,
-        "x-request-id": request.headers["x-request-id"],
-        "x-correlation-id": request.headers["x-correlation-id"],
+        ...(request.headers.traceparent !== undefined
+          ? { traceparent: request.headers.traceparent }
+          : {}),
+        ...(request.headers["x-request-id"] !== undefined
+          ? { "x-request-id": request.headers["x-request-id"] }
+          : {}),
+        ...(request.headers["x-correlation-id"] !== undefined
+          ? { "x-correlation-id": request.headers["x-correlation-id"] }
+          : {}),
       },
     });
     const headers = injectCorrelationHeaders(correlation);
