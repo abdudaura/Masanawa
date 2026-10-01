@@ -674,6 +674,156 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
     ).rejects.toThrow(/immutable/u);
   });
 
+  it("admits one timezone routine occurrence per local date and rejects stale CharacterVersion bindings", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const worldId = createCanonicalId("world");
+    const characterId = createCanonicalId("character");
+    const version1 = createCanonicalId("character-version");
+    const version2 = createCanonicalId("character-version");
+    const now = toInstant("2026-10-01T06:55:00Z");
+
+    await withTransaction(pool, async (client) => {
+      await createTenant(client, { tenantId, createdAt: now });
+      await createWorld(client, {
+        tenantId,
+        worldId,
+        initialGenerationId: createCanonicalId("world-generation"),
+        policy: testWorldPolicy(),
+        simulationTime: now,
+        createdAt: now,
+      });
+      const character = await createCharacter(client, {
+        tenantId,
+        characterId,
+        createdAt: now,
+      });
+      await createCharacterVersion(client, {
+        tenantId,
+        characterVersionId: version1,
+        characterId,
+        versionNumber: 1,
+        constitution: testCharacterConstitution(),
+        createdAt: now,
+      });
+      await publishCharacterVersion(client, {
+        tenantId,
+        characterVersionId: version1,
+        publishedAt: now,
+      });
+      await activateCharacterVersion(client, {
+        tenantId,
+        characterId,
+        characterVersionId: version1,
+        expectedCharacterRevision: character.revision,
+        activatedAt: now,
+      });
+
+      const routine = await putRoutine(client, {
+        tenantId,
+        worldId,
+        routineKey: "morning",
+        characterId,
+        characterVersionId: version1,
+        expectedRevision: null,
+        timezone: "Africa/Lagos",
+        localTime: "08:00",
+        enabled: true,
+        inputKind: "routine.due",
+        inputPayload: { activity: "morning routine" },
+        updatedAt: now,
+      });
+      expect(routine.revision).toBe(1);
+
+      const scheduled = toInstant("2026-10-01T07:00:00Z");
+      const first = await admitRoutineOccurrence(client, {
+        tenantId,
+        worldId,
+        routineKey: "morning",
+        scheduledFor: scheduled,
+        receivedAt: scheduled,
+      });
+      const replay = await admitRoutineOccurrence(client, {
+        tenantId,
+        worldId,
+        routineKey: "morning",
+        scheduledFor: scheduled,
+        receivedAt: toInstant("2026-10-01T07:00:05Z"),
+      });
+      expect(replay.sequence).toBe(first.sequence);
+
+      await expect(
+        admitRoutineOccurrence(client, {
+          tenantId,
+          worldId,
+          routineKey: "morning",
+          scheduledFor: toInstant("2026-10-01T08:00:00Z"),
+          receivedAt: scheduled,
+        }),
+      ).rejects.toThrow(/expected 08:00/u);
+
+      await createCharacterVersion(client, {
+        tenantId,
+        characterVersionId: version2,
+        characterId,
+        versionNumber: 2,
+        constitution: testCharacterConstitution(),
+        createdAt: now,
+      });
+      await publishCharacterVersion(client, {
+        tenantId,
+        characterVersionId: version2,
+        publishedAt: now,
+      });
+      await activateCharacterVersion(client, {
+        tenantId,
+        characterId,
+        characterVersionId: version2,
+        expectedCharacterRevision: 2,
+        activatedAt: now,
+      });
+
+      await expect(
+        admitRoutineOccurrence(client, {
+          tenantId,
+          worldId,
+          routineKey: "morning",
+          scheduledFor: toInstant("2026-10-02T07:00:00Z"),
+          receivedAt: toInstant("2026-10-02T07:00:00Z"),
+        }),
+      ).rejects.toMatchObject({
+        code: "world.character_version_not_active",
+      });
+
+      await putRoutine(client, {
+        tenantId,
+        worldId,
+        routineKey: "morning",
+        characterId,
+        characterVersionId: version2,
+        expectedRevision: 1,
+        timezone: "Africa/Lagos",
+        localTime: "08:00",
+        enabled: true,
+        inputKind: "routine.due",
+        inputPayload: { activity: "morning routine" },
+        updatedAt: toInstant("2026-10-02T06:50:00Z"),
+      });
+
+      await expect(
+        admitRoutineOccurrence(client, {
+          tenantId,
+          worldId,
+          routineKey: "morning",
+          scheduledFor: toInstant("2026-10-02T07:00:00Z"),
+          receivedAt: toInstant("2026-10-02T07:00:00Z"),
+        }),
+      ).resolves.toMatchObject({
+        state: "admitted",
+        kind: "routine.due",
+      });
+    });
+  });
+
   it("reports schema-aware database readiness", async () => {
     await expect(
       checkPostgresReadiness(pool, foundationMigrationRootsForTest),
