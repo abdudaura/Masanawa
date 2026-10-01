@@ -489,6 +489,291 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
     });
   });
 
+  it("recovers bounded routine catch-up in generation-recorded batches without duplicates", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const worldId = createCanonicalId("world");
+    const characterId = createCanonicalId("character");
+    const versionId = createCanonicalId("character-version");
+    const initialGenerationId = createCanonicalId("world-generation");
+    const now = toInstant("2026-10-01T06:55:00Z");
+    const resumeTo = toInstant("2026-10-03T08:00:00Z");
+
+    await withTransaction(pool, async (client) => {
+      await createTenant(client, { tenantId, createdAt: now });
+      await createWorld(client, {
+        tenantId,
+        worldId,
+        initialGenerationId,
+        policy: {
+          schemaVersion: 1,
+          catchUpMode: "bounded",
+          maxCatchUpSteps: 1,
+          spatialEnabled: false,
+          automaticCanonEnabled: true,
+        },
+        simulationTime: now,
+        createdAt: now,
+      });
+      const character = await createCharacter(client, {
+        tenantId,
+        characterId,
+        createdAt: now,
+      });
+      await createCharacterVersion(client, {
+        tenantId,
+        characterVersionId: versionId,
+        characterId,
+        versionNumber: 1,
+        constitution: testCharacterConstitution(),
+        createdAt: now,
+      });
+      await publishCharacterVersion(client, {
+        tenantId,
+        characterVersionId: versionId,
+        publishedAt: now,
+      });
+      await activateCharacterVersion(client, {
+        tenantId,
+        characterId,
+        characterVersionId: versionId,
+        expectedCharacterRevision: character.revision,
+        activatedAt: now,
+      });
+      await putRoutine(client, {
+        tenantId,
+        worldId,
+        routineKey: "morning",
+        characterId,
+        characterVersionId: versionId,
+        expectedRevision: null,
+        timezone: "Africa/Lagos",
+        localTime: "08:00",
+        enabled: true,
+        inputKind: "routine.due",
+        inputPayload: { activity: "morning" },
+        updatedAt: now,
+      });
+
+      const paused = await pauseWorld(client, {
+        tenantId,
+        worldId,
+        expectedRevision: 1,
+        pausedAt: now,
+      });
+      expect(paused).toMatchObject({
+        status: "paused",
+        revision: 2,
+        pausedAt: now,
+      });
+
+      await expect(
+        commitWorldGeneration(client, {
+          tenantId,
+          worldId,
+          expectedGenerationNumber: 0,
+          nextGenerationId: createCanonicalId("world-generation"),
+          simulationTime: toInstant("2026-10-01T07:00:00Z"),
+          committedAt: toInstant("2026-10-01T07:00:00Z"),
+          completedInputSequences: [],
+        }),
+      ).rejects.toMatchObject({ code: "world.not_active" });
+
+      const first = await recoverPausedWorld(client, {
+        tenantId,
+        worldId,
+        expectedRevision: 2,
+        nextGenerationId: createCanonicalId("world-generation"),
+        resumeTo,
+        requestedAt: toInstant("2026-10-03T08:01:00Z"),
+      });
+      expect(first.complete).toBe(false);
+      expect(first.world).toMatchObject({
+        status: "paused",
+        revision: 3,
+        currentGenerationNumber: 1,
+        simulationTime: toInstant("2026-10-01T07:00:00Z"),
+        recoveryTargetTime: resumeTo,
+      });
+      expect(first.admittedInputs).toHaveLength(1);
+
+      const second = await recoverPausedWorld(client, {
+        tenantId,
+        worldId,
+        expectedRevision: 3,
+        nextGenerationId: createCanonicalId("world-generation"),
+        resumeTo,
+        requestedAt: toInstant("2026-10-03T08:02:00Z"),
+      });
+      expect(second.complete).toBe(false);
+      expect(second.world).toMatchObject({
+        status: "paused",
+        revision: 4,
+        currentGenerationNumber: 2,
+        simulationTime: toInstant("2026-10-02T07:00:00Z"),
+        recoveryTargetTime: resumeTo,
+      });
+      expect(second.admittedInputs).toHaveLength(1);
+
+      const third = await recoverPausedWorld(client, {
+        tenantId,
+        worldId,
+        expectedRevision: 4,
+        nextGenerationId: createCanonicalId("world-generation"),
+        resumeTo,
+        requestedAt: toInstant("2026-10-03T08:03:00Z"),
+      });
+      expect(third.complete).toBe(true);
+      expect(third.world).toMatchObject({
+        status: "active",
+        revision: 5,
+        currentGenerationNumber: 3,
+        simulationTime: resumeTo,
+        pausedAt: null,
+        recoveryTargetTime: null,
+      });
+      expect(third.admittedInputs).toHaveLength(1);
+
+      const admitted = await client.query<{
+        idempotency_key: string;
+        effective_at: Date;
+      }>(
+        `SELECT idempotency_key, effective_at
+           FROM world.simulation_inputs
+          WHERE tenant_id = $1
+            AND world_id = $2
+            AND kind = 'routine.due'
+          ORDER BY effective_at`,
+        [tenantId, worldId],
+      );
+      expect(admitted.rows).toHaveLength(3);
+      expect(new Set(admitted.rows.map((row) => row.idempotency_key)).size).toBe(3);
+      expect(
+        admitted.rows.map((row) => row.effective_at.toISOString()),
+      ).toEqual([
+        "2026-10-01T07:00:00.000Z",
+        "2026-10-02T07:00:00.000Z",
+        "2026-10-03T07:00:00.000Z",
+      ]);
+    });
+  });
+
+  it("applies skip recovery without replaying routines while preserving queued inputs", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const worldId = createCanonicalId("world");
+    const now = toInstant("2026-10-01T10:00:00Z");
+    const resumeTo = toInstant("2026-10-02T10:00:00Z");
+
+    await withTransaction(pool, async (client) => {
+      await createTenant(client, { tenantId, createdAt: now });
+      await createWorld(client, {
+        tenantId,
+        worldId,
+        initialGenerationId: createCanonicalId("world-generation"),
+        policy: {
+          schemaVersion: 1,
+          catchUpMode: "skip",
+          maxCatchUpSteps: 0,
+          spatialEnabled: false,
+          automaticCanonEnabled: false,
+        },
+        simulationTime: now,
+        createdAt: now,
+      });
+      await pauseWorld(client, {
+        tenantId,
+        worldId,
+        expectedRevision: 1,
+        pausedAt: now,
+      });
+      const queued = await admitSimulationInput(client, {
+        tenantId,
+        worldId,
+        idempotencyKey: "external:queued:1",
+        kind: "external.command",
+        payload: { command: "queued while paused" },
+        receivedAt: toInstant("2026-10-01T11:00:00Z"),
+        effectiveAt: toInstant("2026-10-01T11:00:00Z"),
+      });
+
+      const recovered = await recoverPausedWorld(client, {
+        tenantId,
+        worldId,
+        expectedRevision: 2,
+        nextGenerationId: createCanonicalId("world-generation"),
+        resumeTo,
+        requestedAt: resumeTo,
+      });
+      expect(recovered.complete).toBe(true);
+      expect(recovered.admittedInputs).toEqual([]);
+      expect(recovered.world).toMatchObject({
+        status: "active",
+        currentGenerationNumber: 1,
+        simulationTime: resumeTo,
+        pausedAt: null,
+      });
+
+      const committed = await commitWorldGeneration(client, {
+        tenantId,
+        worldId,
+        expectedGenerationNumber: 1,
+        nextGenerationId: createCanonicalId("world-generation"),
+        simulationTime: resumeTo,
+        committedAt: resumeTo,
+        completedInputSequences: [queued.sequence],
+      });
+      expect(committed.completedInputs[0]?.state).toBe("completed");
+      expect(committed.world.currentGenerationNumber).toBe(2);
+    });
+  });
+
+  it("keeps manual-recovery Worlds paused until operator reconciliation", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const worldId = createCanonicalId("world");
+    const now = toInstant("2026-10-01T16:00:00Z");
+
+    await withTransaction(pool, async (client) => {
+      await createTenant(client, { tenantId, createdAt: now });
+      await createWorld(client, {
+        tenantId,
+        worldId,
+        initialGenerationId: createCanonicalId("world-generation"),
+        policy: {
+          schemaVersion: 1,
+          catchUpMode: "manual",
+          maxCatchUpSteps: 0,
+          spatialEnabled: false,
+          automaticCanonEnabled: false,
+        },
+        simulationTime: now,
+        createdAt: now,
+      });
+      await pauseWorld(client, {
+        tenantId,
+        worldId,
+        expectedRevision: 1,
+        pausedAt: now,
+      });
+
+      await expect(
+        recoverPausedWorld(client, {
+          tenantId,
+          worldId,
+          expectedRevision: 2,
+          nextGenerationId: createCanonicalId("world-generation"),
+          resumeTo: toInstant("2026-10-02T16:00:00Z"),
+          requestedAt: toInstant("2026-10-02T16:00:00Z"),
+        }),
+      ).rejects.toMatchObject({ code: "world.manual_recovery_required" });
+
+      await expect(getWorld(client, tenantId, worldId)).resolves.toMatchObject({
+        status: "paused",
+        revision: 2,
+        currentGenerationNumber: 0,
+        simulationTime: now,
+      });
+    });
+  });
+
   it("gates Character life state on active published identity and revision CAS", async () => {
     const tenantId = createCanonicalId("tenant");
     const worldId = createCanonicalId("world");
