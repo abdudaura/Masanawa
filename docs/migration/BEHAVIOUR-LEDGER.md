@@ -234,3 +234,17 @@ Deep behavior mining from tests remains required before Phase 0 completion.
 | B-SKL-012 | SKL-011 | Imported/distributed skill bundles are validated before activation; invalid frontmatter or unsafe source/destination layout fails without corrupting healthy skills. | A/B | OpenClaw Agent Skills validator/installer tests | selected |
 | B-EVL-001 | EVL-001 | Acceptance tests may validate externally observable behavior against a contract without depending on donor implementation internals. | A/B | behavior-validator skill | selected |
 | B-DEV-001 | DEV-004 | Session/transcript artifacts intended for sharing require explicit redaction/provenance treatment; local private output is not implicitly publishable. | A | agent-transcript/session-viewer guidance | selected |
+
+### Phase 0B ChatWithStars coverage additions
+
+| ID | Feature | Required behavior | Class | Evidence | Status |
+|---|---|---|---|---|---|
+| B-SUB-001 | SUB-001 | Billing state alone never grants a capability; entitlement resolution and current policy determine usable access, and retries/webhooks remain idempotent. | A | runtime/admin subscription, entitlement and billing tests | analysed |
+| B-PRV-001 | PRV-001 | Export/delete operates on the authenticated subject and declared inventory; deletion cannot silently erase immutable financial/audit evidence that must instead be minimized/retained by policy. | A | consumer privacy, data inventory and privacy routes | analysed |
+| B-KNO-001 | KNO-001 | Knowledge retrieval is scoped before search and preserves source/evidence metadata; extracted content is not promoted to shared canon merely because it was ingested. | A/B | knowledge routes/extraction + grounding patterns | analysed |
+| B-GRP-001 | GRP-001 | Group context and membership are explicit scopes; group conversation state cannot expose or merge a member's private relationship memory. | A | group membership/thread/listener tests | analysed |
+| B-MSN-001 | MSN-001 | Autonomous mission work requires current authority, bounded policy and durable outcome/evaluation evidence; stale or revoked authority cannot commit a consequential action. | A/B | mission constitution/control/evaluator + durable authority tests | analysed |
+| B-CRT-001 | CRT-001 | Creator/tenant provisioning and payout/service settings remain tenant-scoped and cannot authorize another tenant's funds, credentials or runtime. | A | tenant provisioning + creator mode/payout safety tests | analysed |
+| B-TEL-001 | TEL-001 | A telecom/bill purchase has explicit quote/confirmation/order/provider outcome/reconciliation/receipt semantics and safe repeat handling. | A | bill-service/telecom/repeat/receipt tests | analysed |
+| B-CVI-001 | CVI-001 | Civic/public-information assertions preserve jurisdiction, source and freshness/truth lifecycle; uncertain extraction is not silently promoted to canonical fact. | A/B | civic source/truth/jurisdiction/grounding tests | analysed |
+| B-LEG-001 | LEG-001 | Legacy UI/runtime boundaries are not preserved as parallel Masanawa authorities; only required externally observable behavior and migration evidence survive. | C | old Astro surface + legacy contracts vs canonical platform services | selected |
