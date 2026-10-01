@@ -127,6 +127,14 @@ Features describe what exists; this ledger records observable and operational be
 | B-CWS-OPS-002 | OPS-004 | Operator/JEV telemetry exposes privacy-safe aggregate evidence, not raw private semantic packets, secrets or hidden reasoning. | A | CWS operations-observability tests | analysed |
 | B-CWS-OPS-003 | OPS-005 | Emergency global pause/resume is a durable service-side operation and must not silently destroy individual per-group/user modes. | A | CWS group-kill-switch tests | analysed |
 | B-CWS-OPS-004 | OPS-006 | Manual financial adjustment requires allowed direction, bounded amount, reason and evidence/reference. | A | CWS financial-adjustments tests | analysed |
+| B-ECO-001 | ECO-001 | Agent/model evaluation may consider resource efficiency (energy/FLOPs/latency/cost) alongside task quality, but resource optimization cannot bypass quality/safety gates. | B | OpenJarvis project/evaluation architecture | analysed |
+| B-UGC-001 | UGC-001 | User-supplied character/model/voice assets must retain provenance, compatibility and permission metadata before activation; marketplace packaging cannot create a second identity authority. | A/B | N.E.K.O UGC/Workshop feature + Masanawa architecture | designed |
+| B-VOC-001 | VOC-001 | Voice cloning/custom voice enrollment requires an authorized source/reference and produces a versioned provider-independent VoiceReference rather than hard-coding provider state into Character. | A/B | N.E.K.O voice cloning feature + CWS rights policy | designed |
+| B-KNO-001 | KNO-001 | Imported knowledge documents are retrieval evidence for a character/task and do not automatically become authored identity or world truth. | A | CyberVerse RAG feature + Masanawa identity boundary | designed |
+| B-RTC-REC-001 | RTC-010 | Recording is optional, permission/policy controlled, and stored as an artifact with retention/provenance rather than an implicit property of every call. | A/B | CyberVerse recording capability + Masanawa privacy model | designed |
+| B-SAF-001 | SAF-001 | Public character/profile/social surfaces disclose AI/fictional status according to product policy. | A | CWS PLATFORM-FOCUS | analysed |
+| B-SAF-002 | SAF-002 | Adult/sensitive content mode is never inferred from conversational tone; age/content/channel rules require explicit product policy and gating. | A | CWS PLATFORM-FOCUS | analysed |
+| B-SAF-003 | SAF-003 | Production face/voice/media references retain source/provenance and documented usage rights/authorization. | A | CWS PLATFORM-FOCUS | analysed |
 | B-LRN-001 | LRN-003 | Learned/optimized skill changes are candidates and require evaluation/certification before consequential production promotion. | A | Masanawa decision from CWS+OpenJarvis | designed |
 
 Deep behavior mining from tests remains required before Phase 0 completion.
