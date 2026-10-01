@@ -14,8 +14,8 @@ Masanawa owns the resulting architecture. Every repository under `references/sou
 | Character identity/versioning | ChatWithStars | Letta, AIRI, N.E.K.O | canonical Constitution/identity compiler and disclosure |
 | Private relationships | ChatWithStars | Letta, N.E.K.O | strict user-character isolation |
 | Shared world/life | ChatWithStars, AI Town | N.E.K.O | governed world truth + persistent simulation |
-| Memory lifecycle | N.E.K.O, Letta | OpenClaw | type+scope memory, evidence, reflection, durable experience |
-| Memory retrieval/evaluation | Mem0 | N.E.K.O, OpenClaw, Letta | tenant/privacy filters before retrieval |
+| Memory lifecycle | **N.E.K.O (selected cognitive donor)** | Letta Code, OpenClaw | **packages/memory owns canonical type+scope records, evidence, lifecycle and persistence** |
+| Memory retrieval/evaluation | **Mem0 (selected specialist donor)** | N.E.K.O, OpenClaw, Letta Code | **packages/memory authorizes scope before hybrid retrieval; indexes are rebuildable** |
 | Agent execution | OpenJarvis, elizaOS | Microsoft Agent Framework, OpenClaw | character-aware execution envelope |
 | Skills | OpenJarvis, OpenClaw | Microsoft Agent Framework, ChatWithStars | CWS governance/certification/risk |
 | Tools/security | OpenJarvis, OpenClaw | ChatWithStars, elizaOS | provider-neutral capability/readiness + deterministic side-effect policy |
@@ -79,17 +79,22 @@ Conditional direct reuse of `@openclaw/gateway-protocol` and `@openclaw/gateway-
 
 See ADR-0004.
 
-### Memory
-No single donor owns Masanawa memory.
+### Memory — decision recorded
 
-Compare:
-- N.E.K.O: cognitive lifecycle, facts, evidence, reflections, persona promotion, liveness;
-- Letta: persistent agent identity/experience, shared memory and always-on stateful agents;
-- Mem0: entity/temporal extraction, hybrid retrieval and evaluation;
-- OpenClaw: action-sensitive memory, compaction flush, dreaming, memory engines and provenance-rich memory wiki;
-- ChatWithStars: multi-user/privacy/world separation.
+`packages/memory` is the sole canonical memory authority.
 
-Masanawa's type+scope privacy model remains mandatory regardless of donor.
+Selected composition:
+- N.E.K.O — primary cognitive-lifecycle donor for facts, evidence, reflections, promotion, liveness and explicit/proactive recall separation;
+- Mem0 — primary extraction/retrieval/evaluation donor for ADD-oriented extraction, entity/temporal metadata, hybrid retrieval, reranking and benchmarks;
+- Letta Code — working/core-context, revisioned editable memory, serialized writes/conflict repair and explicit shared-memory attachment donor;
+- OpenClaw — action-sensitive metadata, compaction flush, consolidation/dreaming and provenance donor;
+- ChatWithStars — mandatory relationship/private/shared/world privacy invariant.
+
+Canonical PostgreSQL `MemoryRecord` + explicit `MemoryScope` own truth. Vector, lexical, graph and temporal stores are rebuildable projections. Authorization runs before retrieval. No donor agent/workspace/filesystem/vector object is a platform memory contract.
+
+At the pinned baseline, `letta-ai/letta` is a landing/historical repository; current implementation evidence comes from Letta Code.
+
+See ADR-0007 and `docs/migration/MEMORY-ADOPTION-BOUNDARY.md`.
 
 ### Digital-life and embodiment — decision recorded
 
