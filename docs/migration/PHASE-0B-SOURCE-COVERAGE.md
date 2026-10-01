@@ -21,7 +21,7 @@ Generated/dependency/build metadata roots may be excluded after inspection, but 
 | Source | Pinned meaningful roots/modules | Existing Phase 0 evidence | Phase 0B state |
 |---|---|---|---|
 | ChatWithStars | apps, data, deploy, infra, packages, public, scripts, services, src, supabase | IDN/REL/HND/WLD/DEC/SKL/TOL/LRN/SEC/TSK/COM/SOC/STD/CHN/OPS/CALL + SUB/PRV/KNO/GRP/MSN/CRT/TEL/CVI/LEG/DEP/DAT | covered |
-| OpenJarvis | configs, deploy, desktop, examples, frontend, rust, src, tests | AGT/SKL/TOL/SCH/LRN/security/integration rows | partial |
+| OpenJarvis | configs, deploy, desktop, examples, frontend, rust, src, tests | AGT/SKL/TOL/SCH/LRN + PRV/INT/CON/SBX/OBS/SES/SPH/CLI/RCP/RST | covered |
 | N.E.K.O | app, brain, config, deps, frontend, knowledge, launcher_core, local_server, main_logic, main_routers, memory, plugin, specs, tests, utils | MEM/PLG/PRO/PER/CUA rows | partial |
 | CyberVerse | frontend, inference, infra, models, proto, server, tests | RTC/AVT/TSK/WRK behavior/data/integration rows | partial; GPL clean-room |
 | AIRI | apps, bucket, engines, integrations, packages, plugins, server, services | DLF/AVT/PLG/RTC/CUA + integration rows | partial |
@@ -121,3 +121,36 @@ Pinned revision: `3ab02704118ce3d8f38a423c9a52e9d44a705aeb`.
 All meaningful top-level roots now have an explicit Phase 0B disposition. New previously underrepresented domains were added as SUB-001, PRV-001, KNO-001, GRP-001, MSN-001, CRT-001, TEL-001 and CVI-001. Legacy/deployment/fixture boundaries are explicitly classified with LEG-001, DEP-001 and DAT-001.
 
 The source is therefore **covered at root/module level**. Individual descendant behavior can still add parity detail later, but no top-level ChatWithStars subsystem is unclassified.
+
+## OpenJarvis root sweep
+
+Pinned revision: `c4da16e1ca3d21f4cc1905d4200063e564104f0f`.
+
+| Root/module family | Classification / ledger coverage | Canonical treatment | State |
+|---|---|---|---|
+| `configs` | AGT/SKL/TOL/SCH + RCP-001 | configuration/examples inform schemas and fixtures; donor persona prompts are not Character identity | covered |
+| `deploy` | CLI-001/RST-001 | deployment recipes are ops evidence only | covered |
+| `desktop` + `frontend` | CLI-001, OBS-001, SPH-001 | UX/ops behavior may migrate; Tauri/React donor shell is not mandatory architecture | covered |
+| `examples` | RCP-001 plus connector/scheduler/tool behaviors | parity/reference fixtures; no example becomes a product boundary | covered |
+| `rust` | AGT/SKL/TOL/LRN/SCH + PRV-002/INT-001/RST-001 | preserve algorithms/behavior where stronger; no duplicate Rust authority; native acceleration only behind canonical contracts | covered |
+| `src/openjarvis/agents` | AGT rows + SES-001 | `packages/agents` | covered |
+| `analytics`, `bench`, `evals`, `telemetry`, `traces`, `learning`, `mining` | LRN + OBS-001 | telemetry/evaluation/learning; learning cannot self-promote production truth | covered |
+| `channels` | CHN/Gateway comparison evidence | channel adapters behind Masanawa Gateway | covered |
+| `connectors` | CON-001 | `packages/connectors` with scoped ingestion | covered |
+| `core`, `system`, `intelligence`, `prompt` | AGT + PRV-002 | canonical agent/provider contracts; prompts are compiled inputs, not identity | covered |
+| `engine` | PRV-002 | provider/engine adapters behind `packages/providers` | covered |
+| `mcp`, `a2a` | INT-001 + I-INT-001/002 | interoperability adapters only | covered |
+| `memory` | memory comparison secondary evidence | canonical `packages/memory`; OpenJarvis store is not authority | covered |
+| `operators`, `cli`, `daemon`, `server`, `sdk.py` | CLI-001 | operator/SDK surfaces over canonical services | covered |
+| `recipes`, `templates`, `workflow` | RCP-001 + workflow rows | templates/imports; durable workflows remain `packages/workflows` | covered |
+| `sandbox`, `security` | TOL/security + SBX-001 | platform security/tool execution policy | covered |
+| `scheduler` | SCH rows | scheduling trigger into workflows/proactivity, not business truth | covered |
+| `sessions` | SES-001 | runtime session state only | covered |
+| `skills` | SKL rows | `packages/skills` | covered |
+| `speech` | SPH-001 | media/provider adapters | covered |
+| `tools` | TOL rows | `packages/tools` | covered |
+| `tests` | behavior/parity evidence across every family | retained as evidence source; Masanawa acceptance fixtures derived by behavior | covered |
+
+### OpenJarvis sweep result
+
+Every production module family and top-level root now has an explicit disposition. New cross-cutting coverage records provider engines, interoperability, connectors, sandboxing, observability, runtime sessions, speech/operator surfaces and the Rust/Python duplication boundary.
