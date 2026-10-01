@@ -193,7 +193,6 @@ export async function renewOutboxClaim(
         AND state = 'claimed'
         AND lease_owner = $2
         AND fence = $3
-        AND lease_expires_at > clock_timestamp()
         AND lease_expires_at > clock_timestamp()`,
     [
       input.outboxEventId,
@@ -219,7 +218,10 @@ export async function settleOutboxClaim(
     readonly outboxEventId: OutboxEventId;
     readonly workerId: string;
     readonly fence: number;
-    readonly state: Extract<OutboxState, "acknowledged" | "retry-scheduled" | "unknown" | "dead-letter">;
+    readonly state: Extract<
+      OutboxState,
+      "acknowledged" | "retry-scheduled" | "unknown" | "dead-letter"
+    >;
     readonly terminalReceiptRef?: string;
     readonly safeErrorCode?: string;
     readonly availableAt?: Instant;
@@ -237,7 +239,8 @@ export async function settleOutboxClaim(
       WHERE outbox_event_id = $1
         AND state = 'claimed'
         AND lease_owner = $2
-        AND fence = $3`,
+        AND fence = $3
+        AND lease_expires_at > clock_timestamp()`,
     [
       input.outboxEventId,
       input.workerId,
