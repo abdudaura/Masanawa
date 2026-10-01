@@ -817,8 +817,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       correlationId: createCanonicalId("correlation"),
     });
 
-    const preparedApproval = await withTransaction(pool, (client) =>
-      prepareWorldCanonGovernance(client, {
+    const preparedApproval = await prepareWorldCanonGovernance(pool, {
         tenantId,
         worldId,
         worldEventId: eventId,
@@ -826,8 +825,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
         authority: baseAuthority,
         idempotencyKey: "canon-approve-1",
         expiresAt,
-      }),
-    );
+      });
     const approval = createPendingApproval({
       kind: "once",
       binding: preparedApproval.binding,
@@ -860,8 +858,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       correlationId: createCanonicalId("correlation"),
     });
 
-    const approved = await withTransaction(pool, (client) =>
-      executeWorldCanonGovernance(client, {
+    const approved = await executeWorldCanonGovernance(pool, {
         tenantId,
         worldId,
         worldEventId: eventId,
@@ -870,14 +867,12 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
         operationId: preparedApproval.operation.operationId,
         approvalId: approval.approvalId,
         decidedAt: now,
-      }),
-    );
+      });
     expect(approved.reused).toBe(false);
     expect(approved.operation.state).toBe("succeeded");
     expect(approved.event.canonState).toBe("approved");
 
-    const replay = await withTransaction(pool, (client) =>
-      executeWorldCanonGovernance(client, {
+    const replay = await executeWorldCanonGovernance(pool, {
         tenantId,
         worldId,
         worldEventId: eventId,
@@ -886,13 +881,11 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
         operationId: preparedApproval.operation.operationId,
         approvalId: approval.approvalId,
         decidedAt: now,
-      }),
-    );
+      });
     expect(replay.reused).toBe(true);
     expect(replay.event.canonState).toBe("approved");
 
-    const preparedRetirement = await withTransaction(pool, (client) =>
-      prepareWorldCanonGovernance(client, {
+    const preparedRetirement = await prepareWorldCanonGovernance(pool, {
         tenantId,
         worldId,
         worldEventId: eventId,
@@ -900,8 +893,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
         authority: baseAuthority,
         idempotencyKey: "canon-retire-1",
         expiresAt,
-      }),
-    );
+      });
     const retirementApproval = createPendingApproval({
       kind: "once",
       binding: preparedRetirement.binding,
@@ -934,8 +926,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       correlationId: createCanonicalId("correlation"),
     });
 
-    await withTransaction(pool, (client) =>
-      executeWorldCanonGovernance(client, {
+    await executeWorldCanonGovernance(pool, {
         tenantId,
         worldId,
         worldEventId: eventId,
@@ -944,8 +935,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
         operationId: preparedRetirement.operation.operationId,
         approvalId: retirementApproval.approvalId,
         decidedAt: now,
-      }),
-    ).then((result) => {
+      }).then((result) => {
       expect(result.event.canonState).toBe("retired");
       expect(result.operation.state).toBe("succeeded");
     });
@@ -997,8 +987,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       correlationId: createCanonicalId("correlation"),
     });
     await expect(
-      withTransaction(pool, (client) =>
-        executeWorldCanonGovernance(client, {
+      executeWorldCanonGovernance(pool, {
           tenantId,
           worldId,
           worldEventId: eventId,
@@ -1008,7 +997,6 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
           approvalId: staleApproval.approvalId,
           decidedAt: now,
         }),
-      ),
     ).rejects.toMatchObject({ code: "authority.stale_policy" });
   });
 
