@@ -43,6 +43,7 @@ export interface CorrelationCarrier {
 
 export interface AdmitTelemetryCorrelationInput {
   readonly carrier?: CorrelationCarrier;
+  readonly acceptInboundCanonicalIds?: boolean;
   readonly operationId?: OperationId;
   readonly taskId?: TaskId;
   readonly workflowRunId?: WorkflowRunId;
@@ -140,11 +141,15 @@ export function admitTelemetryCorrelation(
     trace,
     requestId: canonicalHeaderId(
       "request",
-      firstHeader(carrier[REQUEST_HEADER]),
+      input.acceptInboundCanonicalIds
+        ? firstHeader(carrier[REQUEST_HEADER])
+        : undefined,
     ),
     correlationId: canonicalHeaderId(
       "correlation",
-      firstHeader(carrier[CORRELATION_HEADER]),
+      input.acceptInboundCanonicalIds
+        ? firstHeader(carrier[CORRELATION_HEADER])
+        : undefined,
     ),
     ...(input.operationId ? { operationId: input.operationId } : {}),
     ...(input.taskId ? { taskId: input.taskId } : {}),
