@@ -46,7 +46,7 @@ Features describe what exists; this ledger records observable and operational be
 | B-TSK-001 | TSK-002 | Reconnecting clients can recover task progress from ordered persisted task events. | A | CyberVerse PersonaAgent/TaskService design | analysed |
 | B-TSK-002 | TSK-001 | Terminal tasks reject late running/completed/artifact mutations. | A | CyberVerse design/store tests (to deep verify) | discovered |
 | B-TSK-003 | TSK-004 | Before re-sending scheduled outbound work, durable delivery evidence must be checked and previously recorded delivery recovered as completed. | A | CWS durable-whatsapp-idempotency.test.ts | analysed |
-| B-RTC-001 | RTC-002 | User speech during character output interrupts output without destroying session/conversation continuity. | A | CyberVerse README/tests (deep verify pending) | discovered |
+| B-RTC-001 | RTC-002 | User speech during character output interrupts output without destroying session/conversation continuity. | A | CyberVerse + LiveKit interruption regressions | analysed |
 | B-RTC-002 | RTC-004 | Disabling avatar rendering still permits a functioning voice session. | A | CyberVerse README/config | analysed |
 | B-CALL-001 | CALL-001 | A connected engine with previously verified primitives remains usable despite a stale/missing diagnostics heartbeat; explicit proof of primitive unavailability blocks it. | A | CWS call-readiness.test.ts | analysed |
 | B-CALL-002 | CALL-001 | Pairing/explicit runtime failure is reported as action-required rather than silently treated as ordinary degradation. | A | CWS call-readiness.test.ts | analysed |
@@ -163,5 +163,17 @@ Features describe what exists; this ledger records observable and operational be
 | B-AIRI-VOICE-003 | RTC-013 | Replacing a stream/provider creates a fresh binding and an aborted prior binding cannot deliver late transcript callbacks into the replacement. | A | AIRI voice-input ADR | analysed |
 | B-AIRI-CUA-001 | PER-004 | Browser DOM, terminal/tool and raw desktop control are distinct execution lanes; deterministic structured execution is preferred before blind coordinate action. | B | AIRI computer-use-mcp README | analysed |
 | B-AIRI-CUA-002 | PER-004 | Computer-use actions retain approval, trace/audit and run evidence; approval alone is not treated as Masanawa's complete isolation policy. | A/B | AIRI computer-use-mcp + Masanawa security decision | analysed |
+| B-LK-RTC-001 | RTC-016 | Detector-specific endpointing defaults may differ, explicit overrides win, and runtime endpointing overrides survive activity handoff. | A/B | LiveKit Agents agent_session_endpointing tests | analysed |
+| B-LK-RTC-002 | RTC-016 | A reply interrupted before its first audio playout cannot leave the current speech handle wedged and block every subsequent turn. | A | LiveKit Agents interrupt-before-playout regression | analysed |
+| B-LK-RTC-003 | RTC-016 | Interruption thresholds apply consistently to empty/short transcripts so incidental noise/backchannels need not stop output. | B | LiveKit Agents interruption detection tests | analysed |
+| B-LK-RTC-004 | RTC-014 | Reusable realtime resources transfer ownership during activity handoff; untransferred resources are cleaned on failed next-start, transferred resources are not double-cleaned. | A | LiveKit Agents handoff tests | analysed |
+| B-LK-AVT-001 | RTC-017 | Remote avatar lifecycle is tied to the active job/session and waits for the avatar participant/video track with a bounded timeout. | B | LiveKit Agents AvatarSession | analysed |
+| B-LK-AVT-002 | RTC-017 | Cleanup treats an already-absent avatar participant as success; other remote cleanup failure is observable but must not leak local session ownership. | A/B | LiveKit Agents AvatarSession tests | analysed |
+| B-LK-AVT-003 | RTC-017 | Ambiguous avatar provisioning may roll back local start state without blindly deleting a remote participant that may have been created successfully. | A | LiveKit Agents AvatarSession rollback behavior | analysed |
+| B-PC-RTC-001 | RTC-018 | Media/control items explicitly declare interruptibility; function-result/end/control work may remain uninterruptible even while speech/text is interruptible. | A/B | Pipecat interruptible frame tests | analysed |
+| B-PC-RTC-002 | RTC-018 | TTS ordering preserves start -> audio -> stop boundaries and interruption during paused processing cannot permanently deadlock downstream work. | A | Pipecat TTS ordering regression suite | analysed |
+| B-PC-RTC-003 | RTC-018 | Provider generation completion with zero audio and actual playout completion are distinct cases; either must not leave a pipeline indefinitely paused. | A | Pipecat TTS ordering regression suite | analysed |
+| B-PC-RTC-004 | RTC-019 | Turn inference may begin speculatively before semantic finalization, but speculation must be explicitly confirmed or cancelled rather than silently committed. | B | Pipecat turn-stop strategy contracts | analysed |
+| B-PRS-ARCH-001 | RTC-014 | LiveKit worker/job/session state is realtime infrastructure state and cannot become the durable Masanawa Task or Character identity record. | A | Masanawa ADR-0006 | designed |
 
 Deep behavior mining from tests remains required before Phase 0 completion.
