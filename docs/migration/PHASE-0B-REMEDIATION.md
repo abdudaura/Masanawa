@@ -1,6 +1,6 @@
 # Phase 0B Remediation
 
-Status: ACTIVE
+Status: COMPLETE — closed by `docs/migration/PHASE-0B-CLOSURE-AUDIT.md`.
 
 ## Why this exists
 
@@ -37,7 +37,7 @@ A source is covered only when all meaningful descendant families are represented
 2. OpenJarvis — remediation complete at pinned revision; descendant/file/integration/native-parity evidence recorded under `coverage/`.
 3. N.E.K.O — remediation complete at pinned revision; descendant/file/integration/plugin-authority evidence recorded under `coverage/`.
 4. CyberVerse — remediation complete at pinned revision under strict GPL clean-room rules; file, integration, model-provenance and acceptance-spec evidence recorded under `coverage/`.
-5. Continue the remaining sources under the corrected descendant-level standard, beginning with AIRI.
+5. Remaining pinned sources completed under the corrected descendant-level standard through OpenClaw Agent Skills; see `PHASE-0B-CLOSURE-AUDIT.md`.
 
 ## Rules added by remediation
 
