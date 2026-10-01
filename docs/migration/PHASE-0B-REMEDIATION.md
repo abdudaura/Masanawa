@@ -33,9 +33,9 @@ A source is covered only when all meaningful descendant families are represented
 
 ## Remediation order
 
-1. ChatWithStars — active; descendant runtime/domain evidence now captured in `coverage/CHATWITHSTARS.md`; migration and integration matrices remain.
-2. OpenJarvis — next after ChatWithStars closure.
-3. N.E.K.O.
+1. ChatWithStars — remediation complete at pinned revision.
+2. OpenJarvis — remediation complete at pinned revision; descendant/file/integration/native-parity evidence recorded under `coverage/`.
+3. N.E.K.O — next active remediation source.
 4. CyberVerse — clean-room behavior-only proof plus independent third-party model provenance.
 5. Continue the remaining 13 sources under the corrected standard.
 
