@@ -465,3 +465,26 @@ This inventory is intentionally incomplete. Source-specific map documents identi
 | SEC-023 | security | durable encrypted connector credential vault with opaque refs | elizaOS | A/B | secondary security | packages/security | analysed |
 | INF-022 | infrastructure | process-local cloud secret scrubbing from environment | elizaOS | B | defense-in-depth | security/runtime host | analysed |
 | SEC-024 | security | transactional compare-and-swap authority writes with atomic audit evidence | elizaOS | A/B | secondary concurrency | security + canonical domains | analysed |
+
+
+### Phase 0B Microsoft Agent Framework feature additions
+
+| ID | Domain | Feature | Source | Class | Donor role | Masanawa destination | Status |
+|---|---|---|---|---|---|---|---|
+| WFL-030 | workflows | immutable graph builder with duplicate/type/connectivity/output validation | Microsoft Agent Framework | A/B | primary workflow donor | packages/workflows | analysed |
+| WFL-031 | workflows | single/conditional/fan-out/fan-in/switch edge groups with checkpointable delivery state | Microsoft Agent Framework | A/B | primary workflow donor | packages/workflows | analysed |
+| WFL-032 | workflows | workflow graph signature/version compatibility for checkpoint restore | Microsoft Agent Framework | A | primary workflow donor | packages/workflows | analysed |
+| WFL-033 | workflows | durable checkpoint lineage with executor/edge/fan-in/pending-request state | Microsoft Agent Framework | A/B | primary workflow donor | packages/workflows | analysed |
+| WFL-034 | workflows | convergence budget, ordered same-edge delivery, concurrent independent edges and cancellation | Microsoft Agent Framework | A/B | primary workflow donor | packages/workflows | analysed |
+| WFL-035 | workflows | first-class HITL/request-info pause, checkpoint and resume | Microsoft Agent Framework | A/B | primary workflow donor | packages/workflows + security | analysed |
+| WFL-036 | workflows | handoff/group-chat/Magentic/sequential/concurrent orchestration patterns | Microsoft Agent Framework | A/B | primary orchestration donor | packages/workflows + agents | analysed |
+| WFL-037 | workflows | declarative workflow authoring compiled to checkpointable graph state | Microsoft Agent Framework | B | secondary authoring donor | packages/workflows authoring/import | analysed |
+| SEC-030 | security | approval bound to exact prepared immutable tool arguments | Microsoft Agent Framework | A | primary HITL safety donor | packages/security + tools + workflows | analysed |
+| SKL-030 | skills | progressive-disclosure skill source/resource/script abstraction with use-time path revalidation | Microsoft Agent Framework | A/B | secondary skills donor | packages/skills | analysed |
+| AGT-030 | agents | middleware/interceptor pipeline for agent/chat/function execution | Microsoft Agent Framework | B | secondary runtime donor | packages/agents + telemetry | analysed |
+| INT-030 | protocols | A2A typed adapter boundary with explicit HITL continuation ownership | Microsoft Agent Framework | B | protocol donor | gateway/protocol adapters | analysed |
+| INT-031 | protocols | MCP hosting adapters with app-owned auth/session/server lifecycle | Microsoft Agent Framework | A/B | protocol donor | gateway/tools/protocol adapters | analysed |
+| PRV-030 | providers | common chat client/stream abstraction across cloud/local model providers | Microsoft Agent Framework | B | provider donor | packages/providers | analysed |
+| OBS-030 | observability | OpenTelemetry spans for agent/chat/tool/workflow with sensitive content opt-in | Microsoft Agent Framework | A/B | telemetry donor | packages/telemetry | analysed |
+| INF-030 | infrastructure | pluggable checkpoint storage with Cosmos/Foundry durable adapter evidence | Microsoft Agent Framework | A/B | persistence donor | packages/workflows persistence | analysed |
+| INF-031 | infrastructure | arbitrary Python pickle checkpoint encoding as canonical persistence | Microsoft Agent Framework | C | reject | none | analysed |
