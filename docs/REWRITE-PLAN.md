@@ -56,11 +56,13 @@ Gate: every meaningful reference capability is assigned a Masanawa destination o
 
 ## Phase 1 — Architecture specification
 
-Status: active.
+Status: complete. Closure audit: `PHASE-1-CLOSURE-AUDIT.md`.
 
 Finalize domain model, package boundaries, events, data/security, service contracts, ADRs and golden journeys. Phase 0 is closed; no production feature porting begins until this architecture gate passes.
 
 ## Phase 2 — Foundation
+
+Status: active.
 
 Implement pnpm monorepo, strict TypeScript, contracts, IDs/errors/config, events, Fastify service bootstrap, Next.js shells, PostgreSQL migrations, auth/service auth, OpenTelemetry, test harnesses, architecture-boundary CI.
 
