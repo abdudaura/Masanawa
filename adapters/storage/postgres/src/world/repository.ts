@@ -3,6 +3,7 @@ import {
   toInstant,
   type CharacterId,
   type CharacterVersionId,
+  type Instant,
   type TenantId,
   type WorldEventId,
   type WorldGenerationId,
@@ -1775,6 +1776,12 @@ export function createPostgresWorldRepository(
       appendWorldEvent(client, input),
     getWorldEvent: (tenantId: TenantId, worldEventId: WorldEventId) =>
       getWorldEvent(client, tenantId, worldEventId),
+    appendWorldInteraction: (input: AppendWorldInteractionInput) =>
+      appendWorldInteraction(client, input),
+    getWorldInteraction: (
+      tenantId: TenantId,
+      worldInteractionId: WorldInteractionId,
+    ) => getWorldInteraction(client, tenantId, worldInteractionId),
     putRoutine: (input: PutRoutineInput) => putRoutine(client, input),
     admitRoutineOccurrence: (input: AdmitRoutineOccurrenceInput) =>
       admitRoutineOccurrence(client, input),
