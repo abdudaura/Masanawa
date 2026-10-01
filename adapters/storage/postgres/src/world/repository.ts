@@ -265,6 +265,29 @@ function asWorldEvent(row: WorldEventRow): WorldEvent {
   });
 }
 
+function asWorldInteraction(
+  row: WorldInteractionRow,
+  participants: readonly WorldInteractionParticipant[],
+): WorldInteraction {
+  return Object.freeze({
+    tenantId: row.tenant_id,
+    worldInteractionId: row.world_interaction_id,
+    worldId: row.world_id,
+    interactionKind: row.interaction_kind,
+    participants: Object.freeze([...participants]),
+    payload: Object.freeze({ ...row.payload }),
+    provenance: row.provenance,
+    visibility: row.visibility,
+    canonState: row.canon_state,
+    occurrenceKey: row.occurrence_key,
+    effectiveStart: toInstant(row.effective_start),
+    effectiveEnd: row.effective_end ? toInstant(row.effective_end) : null,
+    recordedAt: toInstant(row.recorded_at),
+    approvedAt: row.approved_at ? toInstant(row.approved_at) : null,
+    retiredAt: row.retired_at ? toInstant(row.retired_at) : null,
+  });
+}
+
 function asRoutine(row: RoutineRow): Routine {
   return Object.freeze({
     tenantId: row.tenant_id,
