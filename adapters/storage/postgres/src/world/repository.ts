@@ -1,7 +1,10 @@
 import {
   PlatformError,
   toInstant,
+  type CharacterId,
+  type CharacterVersionId,
   type TenantId,
+  type WorldEventId,
   type WorldGenerationId,
   type WorldId,
 } from "@masanawa/contracts";
@@ -11,11 +14,15 @@ import {
   normalizeSimulationInputKind,
   normalizeWorldPolicy,
   type AdmitSimulationInput,
+  type CharacterLifeState,
+  type CharacterLifeStateChange,
   type CommitWorldGenerationInput,
   type CommitWorldGenerationResult,
   type CreateWorldInput,
   type SimulationInput,
   type World,
+  type WorldEvent,
+  type WorldEventDraft,
   type WorldGeneration,
   type WorldRepository,
 } from "@masanawa/world";
@@ -56,6 +63,45 @@ interface InputRow {
   received_at: Date;
   effective_at: Date;
   completed_generation_number: string | null;
+}
+
+interface ActiveCharacterRow {
+  character_id: CharacterId;
+  active_character_version_id: CharacterVersionId;
+}
+
+interface LifeStateRow {
+  tenant_id: TenantId;
+  world_id: WorldId;
+  character_id: CharacterId;
+  availability: string | null;
+  narrative_state: string | null;
+  active_goal: string | null;
+  story_arc: string | null;
+  coarse_location: string | null;
+  revision: string;
+  effective_at: Date;
+  updated_at: Date;
+}
+
+interface WorldEventRow {
+  tenant_id: TenantId;
+  world_id: WorldId;
+  world_event_id: WorldEventId;
+  generation_number: string;
+  character_id: CharacterId | null;
+  source_character_version_id: CharacterVersionId | null;
+  kind: string;
+  payload: WorldEvent["payload"];
+  provenance: WorldEvent["provenance"];
+  visibility: WorldEvent["visibility"];
+  canon_state: WorldEvent["canonState"];
+  occurrence_key: string | null;
+  valid_from: Date;
+  valid_until: Date | null;
+  recorded_at: Date;
+  approved_at: Date | null;
+  retired_at: Date | null;
 }
 
 function integer(value: string, name: string): number {
