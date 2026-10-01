@@ -194,6 +194,9 @@ importers:
       '@masanawa/events':
         specifier: workspace:*
         version: link:../../../packages/events
+      '@masanawa/identity':
+        specifier: workspace:*
+        version: link:../../../packages/identity
       '@masanawa/security':
         specifier: workspace:*
         version: link:../../../packages/security
