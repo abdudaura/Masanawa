@@ -2,7 +2,7 @@
 
 Pinned revision: `3ab02704118ce3d8f38a423c9a52e9d44a705aeb`
 
-Status: ACTIVE — descendant-level remediation pass.
+Status: COVERED AT PINNED REVISION
 
 This file supersedes the earlier root-only declaration of coverage. A subsystem is complete only when implementation, tests, durable state, external integrations, classification, canonical owner and acceptance strategy are all identified.
 
