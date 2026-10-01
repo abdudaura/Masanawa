@@ -221,3 +221,13 @@ Phase 0 must continue mapping donor-specific stores/tables/files into these cano
 | D-CFG-002 | CloudSaveSnapshot | N.E.K.O | user/device config bundle | staged->verified->current/superseded | private/internal | config/storage | redesign | fencing/staging prevents stale/partial snapshot replacing newer healthy config |
 | D-PLG-020 | PluginInstallationTransaction | N.E.K.O | tenant/plugin installation | preparing->validated->replacing->committed/rolled_back | security-sensitive | plugins/workflows | redesign | source ownership, preflight, operation lock, previous healthy version, rollback evidence |
 | D-PLG-021 | PluginMessageEnvelope | N.E.K.O | plugin runtime call/event | ephemeral + trace | varies | plugins/events | redesign | typed RPC/pubsub/event, call chain/deadlock metadata; never domain truth |
+
+### Phase 0B CyberVerse clean-room data concepts
+
+| ID | Canonical concept | Source | Scope | Lifecycle | Sensitivity | Destination | Treatment | Notes |
+|---|---|---|---|---|---|---|---|---|
+| D-RTC-030 | PlaybackEpoch | CyberVerse clean-room | presence session | monotonic per playback generation | private/session | presence | clean reimplementation | scopes AV feedback, idle/speech media and stale-event rejection |
+| D-RTC-031 | MediaSyncEvidence | CyberVerse clean-room | playback epoch | ephemeral/trace | media telemetry | presence/telemetry | clean reimplementation | observed audio/video presentation lag, correction reason, bounded delay state |
+| D-TSK-030 | WorkflowTaskEventCursor | CyberVerse clean-room | workflow task | monotonic sequence | internal/private | workflows/events | clean reimplementation | reconnect cursor; not donor schema |
+| D-TSK-031 | WorkflowArtifact | CyberVerse clean-room | workflow task | append then immutable after terminal | private/content-dependent | workflows/storage | clean reimplementation | external ID/path-safe storage semantics; content store implementation independent |
+| D-RAG-030 | KnowledgeSourceProjection | CyberVerse clean-room | tenant/character/source | replaceable derived projection | source-dependent | knowledge | clean reimplementation | source ID, chunk IDs, backend projection and provenance; vector index rebuildable |
