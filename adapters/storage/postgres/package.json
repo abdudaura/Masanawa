@@ -19,6 +19,7 @@
     "@masanawa/events": "workspace:*",
     "@masanawa/identity": "workspace:*",
     "@masanawa/security": "workspace:*",
+    "@masanawa/world": "workspace:*",
     "pg": "8.23.0"
   },
   "devDependencies": {
