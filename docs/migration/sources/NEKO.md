@@ -137,6 +137,76 @@ Pinned runtime targets Python 3.11 exactly. It has a very large Python applicati
 - browser/computer use is highly permission-sensitive.
 - N.E.K.O's vast test suite is a major behavior-mining source.
 
+## Deep-mined behavior added in Pass 2
+
+### Memory liveness and poison-input handling
+Verified from `tests/unit/test_memory_liveness_dead_letter.py` and memory-server code:
+- background LLM stages track repeated failures against a stable progress key/cursor;
+- failures below the threshold preserve the cursor for retry;
+- the terminal repeated failure moves the progress marker/dead-letters the poison input so one bad item cannot stall the entire character memory pipeline forever;
+- successful processing clears accumulated failure counters;
+- the same liveness principle is applied across fact extraction, rebuttal checks, persona correction batches, dedup/refine work and outbox completion;
+- progress updates preserve work that arrived while a pass was in flight rather than blindly zeroing counters.
+
+Masanawa should generalize this into durable per-work-item attempt state and a Needs Attention/dead-letter path rather than process memory.
+
+### Foreground persistence contract
+Verified from `test_memory_server_cache_settle.py`:
+- a completed conversation turn is persisted to bounded recent history and chronological original-event storage before background extraction;
+- post-turn/outbox work is spawned from that durable foreground write;
+- stale/deleted recent-history identity aborts downstream persistence rather than writing mismatched state;
+- locale/language admission ordering is allocated deterministically before thread offload.
+
+Masanawa equivalent: commit the canonical Turn plus memory-ingest event transactionally before asynchronous cognition jobs run.
+
+### Memory rendering and retrieval separation
+The architecture doc confirms:
+- automatic new-dialog context is a bounded renderer over persona/reflections/recent context, not a semantic dump of all history;
+- explicit recall is a separate tool/query path;
+- persona is excluded from explicit user-facing recall because it is already injected automatically;
+- retrieval has caller-specific degradation when embeddings fail;
+- memory-server query failure degrades to an empty recall result so ordinary conversation can continue.
+
+This distinction should become explicit Masanawa APIs: `compileMemoryContext` vs `recallMemory`.
+
+### Plugin lifecycle/isolation
+Verified from plugin docs and hot-reload tests:
+- plugins/adapters execute in separate processes behind async IPC;
+- hot reload does not auto-start a plugin that the user intentionally stopped;
+- reload rechecks running state inside the operation lock, preventing race resurrection;
+- start/registration is rejected once host shutdown begins;
+- busy reload is rescheduled/retried rather than blocking forever;
+- stop is idempotent;
+- restart drain has a deadline and retains in-flight task ownership until it actually finishes;
+- invalid/preflight-broken source changes must not replace a healthy running instance.
+
+Masanawa should borrow isolation/lifecycle semantics, while plugin packages may only register canonical Tools/Skills/Providers/EventHandlers and cannot own platform identity/memory.
+
+### Plugin SDK contracts
+Verified:
+- event/entry metadata is typed and supports input schema, timeout, persistence/autostart/LLM-result metadata;
+- plugin-to-plugin calls expose typed success/error results;
+- call-chain depth/circular-call errors are explicit;
+- enabled/disabled plugin state is queryable;
+- OS activity snapshots narrow system signals and explicitly represent `visible`, `private` and `unavailable` privacy states.
+
+Masanawa should preserve typed extension contracts and call-chain limits.
+
+### Proactivity
+The modular design and tests show proactivity as a stateful domain:
+- candidate/source collection, decisions, generation and delivery are separate;
+- persistent source history prevents repetitive use across restarts;
+- source-history load failure fails conservatively: it avoids overwrite that could truncate unknown on-disk history;
+- concurrent writes are lock-protected through the actual atomic replace;
+- cancellation waits for an already-offloaded atomic write to finish before releasing the lock;
+- state survives restarts;
+- repeated/unanswered proactive content, voice failure/backoff, user directives and screenshot staging have dedicated tests.
+
+Masanawa should use PostgreSQL transactions/claims instead of JSON-file locks, but preserve persistence, repetition controls and fail-conservative state handling.
+
+### Computer/browser-use safety
+N.E.K.O has dedicated hardening/capture-lifecycle tests. These remain to be fully enumerated, but computer/browser execution must enter Masanawa through explicit permissioned Tool + Perception boundaries and cannot inherit broad desktop authority from character conversation.
+
 ## Phase 0 follow-up
 
 Deep-mine:
