@@ -151,14 +151,14 @@ foundation, identity, relationships, memory, world, decisions, agents, skills, t
 | OPS-005 | operations | durable emergency kill switches independent of browser state | ChatWithStars | A | primary | apps/ops + security | analysed |
 | OPS-006 | operations | audited bounded financial adjustments | ChatWithStars | A | primary | apps/ops + commerce | analysed |
 | OPS-002 | operations | trace/evaluation visibility | OpenJarvis + ChatWithStars | B | combined | apps/ops + telemetry | analysed |
-| GW-001 | channels | unified local-first Gateway/control plane for sessions/tools/events/channels | OpenClaw | B | major candidate | services/gateway | discovered |
-| CHN-003 | channels | per-agent channel/account bindings and isolated workspaces/session stores | OpenClaw | B | major candidate | gateway + identity/runtime | discovered |
-| DEV-001 | perception | device nodes for voice/camera/screen/device-local actions | OpenClaw | B | major candidate | gateway + perception + tools | discovered |
+| GW-001 | channels | unified local-first Gateway/control plane for sessions/tools/events/channels | OpenClaw | B | **selected design donor** | services/gateway | analysed |
+| CHN-003 | channels | per-agent channel/account bindings and isolated workspaces/session stores | OpenClaw | B | selected pattern; adapted to Character/Route | gateway + identity/runtime | analysed |
+| DEV-001 | perception | device nodes for voice/camera/screen/device-local actions | OpenClaw | B | **selected design donor** | gateway + perception + tools | analysed |
 | SKL-008 | skills | scoped skill roots/precedence/gating/install/update/verify/workshop distribution | OpenClaw | B | major candidate | packages/skills | discovered |
 | MEM-013 | memory | action-sensitive memory + compaction flush + background dreaming | OpenClaw | B | secondary candidate | packages/memory | discovered |
 | MEM-014 | memory | pluggable memory engines and provenance-rich memory wiki | OpenClaw | B | secondary candidate | packages/memory + plugins | discovered |
-| AGT-008 | agents | active-run steer/followup/collect/interrupt queue semantics | OpenClaw | B | candidate | packages/agents + runtime | discovered |
-| SEC-005 | security | workspace attestation and fail-safe missing-workspace handling | OpenClaw | A/B | candidate | packages/security + runtime | discovered |
+| AGT-008 | agents | active-run steer/followup/collect/interrupt queue semantics | OpenClaw | B | selected behavior donor | packages/agents + runtime | analysed |
+| SEC-005 | security | workspace attestation and fail-safe missing-workspace handling | OpenClaw | A/B | selected behavior donor | packages/security + runtime | analysed |
 | DLF-001 | avatar | persistent digital-life client across web/desktop/avatar/game contexts | AIRI | B | major candidate | apps/clients + avatar | discovered |
 | DLF-002 | avatar | Live2D/VRM embodied character runtime | AIRI | B | major candidate | avatar providers/clients | discovered |
 | RTC-009 | presence | AgentSession/Worker/job abstraction over production WebRTC | LiveKit Agents | B | major candidate | services/presence | discovered |
