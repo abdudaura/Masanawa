@@ -248,3 +248,19 @@ This inventory is intentionally incomplete. Source-specific map documents identi
 | SKL-011 | skills | canonical-source skill bundle with validated frontmatter, colocated resources/scripts and generated-snapshot provenance | OpenClaw Agent Skills | B | authoring/distribution convention donor | packages/skills + developer tooling | selected |
 | EVL-001 | learning/evaluation | source-blind behavior validation against explicit contracts | OpenClaw Agent Skills | A/B | acceptance-test donor | testing/evaluation | selected |
 | DEV-004 | developer experience | redacted transcript provenance, bounded handoff and repeatable operational helper workflows | OpenClaw Agent Skills | B | developer-workflow donor | developer tooling | selected |
+
+### Phase 0B ChatWithStars coverage additions
+
+| ID | Domain | Feature | Source | Class | Donor role | Masanawa destination | Status |
+|---|---|---|---|---|---|---|---|
+| SUB-001 | subscriptions | plan/trial/entitlement lifecycle separated from capability authorization | ChatWithStars | A/B | domain behavior donor | packages/entitlements + commerce | analysed |
+| PRV-001 | privacy | user data inventory/export/delete with scoped canonical deletion policy | ChatWithStars | A | domain/privacy donor | packages/privacy + apps/ops | analysed |
+| KNO-001 | knowledge | tenant/user-scoped knowledge ingestion, extraction and grounded retrieval | ChatWithStars | B | domain behavior donor | packages/knowledge + providers | analysed |
+| GRP-001 | groups | durable group/community membership and thread continuity without collapsing private relationships | ChatWithStars | A/B | domain behavior donor | packages/relationships + gateway | analysed |
+| MSN-001 | autonomy | bounded missions/commitments with Constitution/policy authority and evaluation evidence | ChatWithStars | B | domain behavior donor | packages/workflows + proactivity | analysed |
+| CRT-001 | creator | creator/tenant provisioning, service configuration and payout/account boundaries | ChatWithStars | B | domain behavior donor | packages/tenancy + commerce + apps/ops | analysed |
+| TEL-001 | commerce | telecom/bill-service catalog, order, fulfilment, receipt and reconciliation lifecycle | ChatWithStars | A/B | vertical commerce donor | packages/commerce + providers | analysed |
+| CVI-001 | civic | evidence-grounded jurisdiction/case/public-information workflows with explicit source/truth lifecycle | ChatWithStars | B | optional vertical donor | packages/verticals/civic + knowledge/workflows | analysed |
+| LEG-001 | legacy | old Astro fan/creator/admin surface and compatibility contracts retained only as behavior/data migration evidence | ChatWithStars | C | historical reference | no runtime destination; extract parity fixtures only | selected |
+| DEP-001 | deployment | donor-specific Railway/Cloudflare/Modal/RunPod wrappers are deployment evidence, not canonical architecture | ChatWithStars | C/B | operations reference | deploy + provider adapters only where selected | selected |
+| DAT-001 | fixtures | checked-in star/profile/media/project data are fixtures/reference assets, not canonical runtime state | ChatWithStars | C/B | fixture/reference | seed/test fixtures after provenance/privacy review | selected |
