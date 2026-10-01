@@ -262,6 +262,9 @@ importers:
       '@masanawa/node-runtime':
         specifier: workspace:*
         version: link:../../adapters/runtime/node
+      '@masanawa/postgres':
+        specifier: workspace:*
+        version: link:../../adapters/storage/postgres
       '@masanawa/telemetry':
         specifier: workspace:*
         version: link:../../packages/telemetry
@@ -287,6 +290,9 @@ importers:
       '@masanawa/node-runtime':
         specifier: workspace:*
         version: link:../../adapters/runtime/node
+      '@masanawa/postgres':
+        specifier: workspace:*
+        version: link:../../adapters/storage/postgres
       '@masanawa/telemetry':
         specifier: workspace:*
         version: link:../../packages/telemetry
@@ -312,6 +318,9 @@ importers:
       '@masanawa/node-runtime':
         specifier: workspace:*
         version: link:../../adapters/runtime/node
+      '@masanawa/postgres':
+        specifier: workspace:*
+        version: link:../../adapters/storage/postgres
       '@masanawa/telemetry':
         specifier: workspace:*
         version: link:../../packages/telemetry
