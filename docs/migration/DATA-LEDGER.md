@@ -367,3 +367,17 @@ Phase 0 must continue mapping donor-specific stores/tables/files into these cano
 | D-MAF-008 | SkillPathScope | MAF skills | skill revision | discovered->validated->used/rejected | executable/content | packages/skills | preserve invariant | trusted root + use-time path/symlink validation |
 | D-MAF-009 | ProtocolSessionBinding | MAF MCP/A2A hosting | external session | bound->active->expired | identity-adjacent | gateway/security | redesign | opaque protocol key cannot authorize itself |
 | D-MAF-010 | CheckpointBackendRecord | Cosmos/Foundry stores | tenant/workflow/run | written->indexed->restored/pruned | private/business | packages/workflows persistence | redesign | tenant/user scope must be explicit in canonical key |
+
+
+### Phase 0B OpenClaw data concepts
+
+| ID | Canonical concept | Source | Scope | Lifecycle | Sensitivity | Destination | Treatment | Notes |
+|---|---|---|---|---|---|---|---|---|
+| D-OCL-001 | ChannelIngressEnvelope | OpenClaw durable ingress | channel account/conversation | appended->claimed->adopted->completed/failed | private message metadata/content | gateway/events | preserve semantics | raw transport envelope + stable event ID |
+| D-OCL-002 | IngressCompletionTombstone | OpenClaw queue | channel queue/event | completed->retained->pruned | operational | gateway | preserve invariant | replay rejection window |
+| D-OCL-003 | IngressEffectClaim | OpenClaw effect-once | ingress event/effect | active->committed/released/expired | business/operational | workflows/gateway | redesign | stable namespace + event/effect identity |
+| D-OCL-004 | DeviceSetupAttempt | OpenClaw device pairing | device/bootstrap | issued->completed/delivery_uncertain/expired | credential-adjacent | device-node + security | preserve semantics | opaque setupId independent from bearer |
+| D-OCL-005 | DeviceCredentialRotation | OpenClaw device protocol | device/role | rotated/revoked/upgraded | highly sensitive | security/device-node | redesign | token delivery mode + scopes + timestamp |
+| D-OCL-006 | OperatorApprovalRecord | OpenClaw approval store | approval request | pending->allowed/denied/expired->consumed/history | highly sensitive | security/workflows | preserve semantics | durable terminal truth/current authority |
+| D-OCL-007 | ManagedSkillRevision | OpenClaw skill library | skill stable ID | drafted->published->pinned/disabled/retained | executable/content | packages/skills | preserve concept | content-derived immutable revision |
+| D-OCL-008 | SessionSkillSelection | OpenClaw session | session | selected->explicitly refreshed | private/runtime | packages/skills + agents | redesign | exact skill IDs/revisions |
