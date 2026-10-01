@@ -514,3 +514,10 @@ This inventory is intentionally incomplete. Source-specific map documents identi
 | WFL-041 | workflows | heartbeat/proactivity as typed wake/trigger with admitted-occurrence preservation | OpenClaw | B | secondary proactive donor | packages/workflows triggers | analysed |
 | SEC-044 | security | DNS/IP/redirect-aware SSRF network policy | OpenClaw | A/B | security donor | packages/security | analysed |
 | OBS-040 | observability | privacy-safe diagnostics/OTel with explicit content capture and non-authoritative trace context | OpenClaw | A/B | telemetry donor | packages/telemetry | analysed |
+
+
+| GTW-033 | gateway | role/scope negotiated Gateway handshake with capabilities explicitly non-authoritative | OpenClaw | A/B | primary Gateway donor | gateway + security | analysed |
+| GTW-034 | gateway | closed worker protocol with environment/bundle/epoch/session-bound admission | OpenClaw | A/B | primary worker donor | worker execution adapter | analysed |
+| GTW-035 | gateway | deterministic post-admission agent binding/routing by specificity | OpenClaw | A/B | primary routing donor | gateway routing | analysed |
+| AGT-040 | agents | session/subagent/ACP requester-parent-child lineage and delegated authority custody | OpenClaw | A/B | primary runtime custody donor | packages/agents + workflows | analysed |
+| GTW-036 | gateway | outbound send idempotency with timeout reattach and typed partial/queued/unknown outcomes | OpenClaw | A | primary delivery donor | gateway outbox + workflows | analysed |
