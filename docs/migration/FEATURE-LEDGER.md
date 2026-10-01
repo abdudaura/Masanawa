@@ -296,3 +296,14 @@ This inventory is intentionally incomplete. Source-specific map documents identi
 | AVT-010 | embodiment | Live2D/MMD/PNGTuber import/control and avatar interaction surfaces remain client embodiment adapters | N.E.K.O | B | secondary embodiment donor | clients/embodiment + packages/identity imports | analysed |
 | MED-001 | media | provider-neutral TTS/image-generation/media utilities behind canonical provider registry | N.E.K.O | B | provider adapter reference | packages/providers/media | analysed |
 | CHN-010 | channels | QQ/OneBot/community connection adapters separated from canonical conversation/Character state | N.E.K.O | B | channel adapter reference | gateway/channel adapters | analysed |
+
+### Phase 0B CyberVerse coverage additions
+
+| ID | Domain | Feature | Source | Class | Donor role | Masanawa destination | Status |
+|---|---|---|---|---|---|---|---|
+| RTC-020 | presence | direct WebRTC RTP pacing/gap/audio-delay/negotiation behavior independent of LiveKit-room path | CyberVerse | C/B | GPL clean-room behavior reference | services/presence tests/specs | selected |
+| INF-001 | providers | typed gRPC inference service boundaries for ASR/LLM/RAG/TTS/avatar/realtime voice | CyberVerse | C/B | GPL clean-room interface reference | packages/providers/media contracts | selected |
+| RAG-001 | knowledge | vector/RAG service boundary and knowledge-source management | CyberVerse | C/B | GPL clean-room behavior reference | packages/knowledge + provider adapters | selected |
+| AVT-020 | embodiment | avatar warmup, silent/idle runtime, provider catalog and offline-video orchestration | CyberVerse | C/B | GPL clean-room behavior reference | clients/embodiment + services/studio/presence | selected |
+| TSK-020 | workflows | reconnectable agent-task store/API with terminal artifact/event semantics | CyberVerse | C/B | GPL clean-room workflow reference | packages/workflows + events | selected |
+| MOD-001 | assets | embedded third-party avatar/lipsync/video model source trees require their own licenses and are not reusable through CyberVerse's GPL classification | CyberVerse | C | third-party model reference | no direct import; separate upstream evaluation | selected |
