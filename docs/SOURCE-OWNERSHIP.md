@@ -24,7 +24,7 @@ Masanawa owns the resulting architecture. Every repository under `references/sou
 | Durable workflows | ChatWithStars, Microsoft Agent Framework | Pipecat Flows, CyberVerse tasks | deterministic business state + restartability |
 | Proactivity | N.E.K.O | OpenClaw, Letta, ChatWithStars world | permission/frequency/privacy/quiet-hours |
 | Perception | N.E.K.O, OpenClaw device nodes | AIRI, elizaOS, CyberVerse | canonical PerceptionEvent + permissions |
-| Gateway/channels | OpenClaw | elizaOS, OpenJarvis channels | canonical channel/device routing into one runtime |
+| Gateway/channels | **OpenClaw — selected design donor (ADR-0004)** | elizaOS, OpenJarvis channels | canonical Masanawa routing; no OpenClaw state authority |
 | Realtime transport | LiveKit | CyberVerse | production WebRTC/session infrastructure |
 | Realtime agent session | LiveKit Agents TS | Pipecat, CyberVerse | Masanawa CharacterSession bridge |
 | Realtime pipeline/turn-taking | Pipecat, LiveKit Agents | CyberVerse | interruption, frames, multimodal composition |
@@ -52,10 +52,10 @@ OpenClaw must now be compared before we freeze the subsystem because it adds:
 
 ChatWithStars remains the governance donor for certification, readiness, risk, approval, pricing, idempotency and expertise.
 
-### Gateway, channels and devices
-OpenClaw is now a major donor. It provides an integrated Gateway/control plane with many channels, per-agent workspace/session isolation, channel-account bindings, companion/device nodes, local-first credentials/state, steering queues and operator tooling.
+### Gateway, channels and devices — DECIDED
+ADR-0004 selects OpenClaw as the **primary design donor** for Gateway/channels/device nodes, but explicitly rejects OpenClaw as Masanawa's base runtime.
 
-Masanawa should not copy OpenClaw's personal-assistant storage model, but its control-plane and routing architecture may be substantially more mature than our original channel plan.
+Masanawa will reimplement Gateway/channel/device contracts in Masanawa terms. Narrow published packages may be used behind adapters, but OpenClaw agent/workspace/session/SQLite state cannot become platform truth. See `docs/migration/OPENCLAW-SUITABILITY.md`.
 
 ### Memory
 No single donor owns Masanawa memory.
