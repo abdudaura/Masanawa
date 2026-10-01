@@ -48,6 +48,14 @@ Features describe what exists; this ledger records observable and operational be
 | B-TSK-003 | TSK-004 | Before re-sending scheduled outbound work, durable delivery evidence must be checked and previously recorded delivery recovered as completed. | A | CWS durable-whatsapp-idempotency.test.ts | analysed |
 | B-RTC-001 | RTC-002 | User speech during character output interrupts output without destroying session/conversation continuity. | A | CyberVerse README/tests (deep verify pending) | discovered |
 | B-RTC-002 | RTC-004 | Disabling avatar rendering still permits a functioning voice session. | A | CyberVerse README/config | analysed |
+| B-CALL-001 | CALL-001 | A connected engine with previously verified primitives remains usable despite a stale/missing diagnostics heartbeat; explicit proof of primitive unavailability blocks it. | A | CWS call-readiness.test.ts | analysed |
+| B-CALL-002 | CALL-001 | Pairing/explicit runtime failure is reported as action-required rather than silently treated as ordinary degradation. | A | CWS call-readiness.test.ts | analysed |
+| B-CALL-003 | CALL-002 | Hard recovery requires repeated soft-repair failures plus sustained degradation and must never interrupt pairing or an active/setup call. | A | CWS recovery-policy.test.ts | analysed |
+| B-CALL-004 | CALL-003 | Incoming accept retries for a bounded period until provider call state materializes, preventing a signalling/provider race from causing false failure. | A | CWS incoming-accept-race + provider-call-store tests | analysed |
+| B-CALL-005 | CALL-004 | Routine reconnect restarts the browser/call client without killing the HTTP gateway or erasing credentials; explicit relink clears only the dedicated call-device profile. | A | CWS runtime-ownership.test.ts | analysed |
+| B-CALL-006 | CALL-002 | Recovery/stabilization must not interfere with QR pairing or run renderer stabilization before WhatsApp/provider connection is established. | A | CWS recovery-policy + startup-renderer-safety tests | analysed |
+| B-CALL-007 | CALL-005 | On outbound timeout, retain last offer phase and provider-call presence/state for diagnosis before surfacing failure. | B | CWS outbound-offer-diagnostics.test.ts | analysed |
+| B-CALL-008 | CALL-006 | Playback is normalized/soft-limited before output and final audio fades to silence to reduce clipping/click artifacts. | B | CWS live-call-quality-regression.test.ts | analysed |
 | B-WLD-001 | WLD-001 | Shared character/world events remain consistent across users while private memories remain isolated. | A | CWS PLATFORM-FOCUS | analysed |
 | B-WLD-002 | WLD-003 | Only published, valid, complete character Constitutions may drive automatic life events. | A | CWS star-life-engine.ts | analysed |
 | B-WLD-003 | WLD-003 | Reprocessing the same routine occurrence must not duplicate the life event. | A | CWS engine key + idempotency migration | analysed |
