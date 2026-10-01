@@ -68,9 +68,18 @@ describe("OpenTelemetry-compatible correlation", () => {
     expect(Object.keys(attributes)).not.toContain("tenant.id");
     expect(() =>
       privacySafeAttributes({ authorization: "Bearer secret" }),
-    ).toThrow(/not privacy-safe/);
+    ).toThrow(/privacy-safe allowlist/);
     expect(() =>
       privacySafeAttributes({ "prompt.text": "private" }),
-    ).toThrow(/not privacy-safe/);
+    ).toThrow(/privacy-safe allowlist/);
+    expect(
+      privacySafeAttributes({
+        "service.name": "gateway",
+        "http.response.status_code": 200,
+      }),
+    ).toEqual({
+      "service.name": "gateway",
+      "http.response.status_code": 200,
+    });
   });
 });
