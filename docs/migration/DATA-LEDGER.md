@@ -83,5 +83,16 @@ Inventory semantic state concepts before designing tables. Do not mirror donor s
 | D-OPS-004 | KillSwitch | CWS | organization/feature scope | durable mutable | sensitive | ops/security | preserve concept | global emergency pause preserving lower-scope settings |
 | D-OPS-005 | FinancialAdjustment | CWS | financial account/contact | append-only request/evidence | financial | ops/commerce | preserve | direction, amount, reason, reference, actor |
 | D-AUD-001 | AuditEvent | CWS/OpenJarvis/N.E.K.O | org | append-only | sensitive | events/security | preserve concept | immutable actor/action trail |
+| D-AGT-002 | AgentWorkspace | OpenClaw, Letta, elizaOS | agent/character | durable | private/internal | agents/runtime | redesign | execution workspace is not canonical character identity |
+| D-CHN-001 | ChannelAccountBinding | OpenClaw | agent/character+channel account | durable mutable | sensitive | gateway | redesign | explicit inbound routing and account isolation |
+| D-DEV-001 | DeviceNode | OpenClaw, elizaOS | user/device | durable registration + ephemeral presence | highly sensitive | gateway/perception | redesign | capabilities, trust, availability and permissions |
+| D-SKL-005 | SkillSourceInstallation | OpenClaw/OpenJarvis | workspace/tenant | versioned | internal | skills | redesign | source, revision, scope, trust/verification |
+| D-MEM-011 | ActionSensitiveMemoryMetadata | OpenClaw | scoped memory | mutable/versioned | private/internal | memory/security | redesign | authority, expiry, safe-to-act condition, prohibition |
+| D-MEM-012 | MemoryConsolidationCandidate | OpenClaw/N.E.K.O | scoped memory | lifecycle | private/internal | memory | redesign | dreaming/reflection/promotion candidate |
+| D-MEM-013 | SharedAgentMemory | Letta | explicit shared scope | durable | private/shared by policy | memory | redesign | never implicit across users/characters |
+| D-RTC-006 | PresenceWorkerJob | LiveKit Agents | session/worker | lifecycle | internal/private | presence | redesign | worker dispatch separate from domain task |
+| D-WLD-005 | SimulationTick/WorldTransaction | AI Town/CWS | world | append/transactional | shared/internal | world | redesign | deterministic shared-state mutation |
+| D-WF-005 | WorkflowCheckpoint | Microsoft Agent Framework | workflow | append/versioned | internal/private | workflows | redesign | restart/time-travel/human-in-loop state |
+| D-PLG-004 | PluginComponentRegistration | elizaOS/OpenClaw/N.E.K.O | plugin+tenant | versioned | internal | plugin system | redesign | canonical registered skills/tools/providers/events/views |
 
 Phase 0 must continue mapping donor-specific stores/tables/files into these canonical concepts or explicit retirement.
