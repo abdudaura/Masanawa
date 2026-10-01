@@ -173,6 +173,18 @@ Useful patterns:
 
 Security caveat: same-agent/session visibility can span multiple users and is not sufficient for Masanawa privacy isolation.
 
+## Gateway input durability and execution policy
+
+Additional verified behavior:
+- ordinary user input is persisted before Gateway acknowledgement;
+- accepted input can be reconciled after reconnect;
+- queued/in-memory execution is not equivalent to a durable business workflow;
+- sandbox decides where execution occurs;
+- tool policy decides which tools are callable;
+- elevated execution is a narrower exec escape and cannot override deterministic tool denial or a required sandbox.
+
+Masanawa should preserve these distinctions.
+
 ## Runtime steering
 
 OpenClaw distinguishes:
@@ -224,8 +236,11 @@ Rejected:
 ## Direct reuse classification
 
 ### Conditional direct dependency
-- `@openclaw/gateway-protocol`
-- `@openclaw/gateway-client`
+- `@openclaw/ai` behind Masanawa provider adapters;
+- `@openclaw/gateway-protocol`;
+- `@openclaw/gateway-client`.
+
+Gateway protocol/client are compatibility-only. `@openclaw/ai` may be evaluated as a provider implementation dependency, but its types must remain behind Masanawa contracts.
 
 Only inside an optional compatibility/bridge adapter.
 
