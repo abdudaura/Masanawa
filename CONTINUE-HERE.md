@@ -142,7 +142,7 @@ Phase 0A is complete. Phase 0B is in remediation because the first root-level sw
    - provider behavior normalized through ADR-0010 and `CHATWITHSTARS-INTEGRATIONS.md`.
 3. OpenJarvis remediation is complete at its pinned revision: descendant evidence, exhaustive Python/Rust manifests, integration dispositions and native parity boundary are under `docs/migration/coverage/`.
 4. N.E.K.O remediation is complete at its pinned revision: descendant evidence, exhaustive file manifest, integration dispositions and plugin-authority map are under `docs/migration/coverage/`.
-5. CyberVerse remediation is complete at its pinned revision under strict GPL clean-room rules; coverage, manifests, model provenance and clean-room acceptance specs are under `docs/migration/coverage/`.
+5. CyberVerse remediation is complete at its pinned revision; selected capabilities remain preserved through Masanawa-owned contracts, with provenance tracked separately from feature selection.
 6. AIRI exhaustive descendant coverage is complete at its pinned revision: 5,697-file manifest, 483 integration dispositions, client-state authority map and descendant behavior matrix are under `docs/migration/coverage/`.
 7. LiveKit Server exhaustive descendant coverage is complete at its pinned revision: 429-file manifest, transport integration dispositions and transport invariants are recorded under `docs/migration/coverage/`.
 8. LiveKit Agents TypeScript exhaustive descendant coverage is complete: 1,042-file manifest, 522 plugin dispositions, live-session state concepts and turn/interruption/handoff invariants are under `docs/migration/coverage/`.
@@ -150,8 +150,8 @@ Phase 0A is complete. Phase 0B is in remediation because the first root-level sw
 10. Pipecat exhaustive descendant coverage is complete: 1,820-file manifest, 275 integration dispositions, speculative-turn, interruptibility, context-commit and pause/resume liveness invariants are recorded.
 11. Letta landing repository is verified reference-only (12 non-runtime files). Letta Code exhaustive coverage is complete: 2,429-file manifest, 739 integration dispositions, memory revision/conflict/shared-memory/context-compaction authority map and ledger invariants are recorded.
 12. **Next:** sweep Mem0 exhaustively for extraction, hybrid retrieval, entity/temporal memory, evaluation and provider/storage adapters.
-6. No source may be marked `covered` from root names, filename counts or generic family assertions alone.
-7. Every retained capability must have exact implementation/test evidence, durable-state mapping, integration failure semantics, one canonical owner and an observable acceptance/parity gate.
+13. No source may be marked `covered` from root names, filename counts or generic family assertions alone.
+14. Every retained capability must have exact implementation/test evidence, durable-state mapping, integration failure semantics, one canonical owner and an observable acceptance/parity gate.
 
 ## World simulation comparison — completed
 
