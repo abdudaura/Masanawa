@@ -10,6 +10,8 @@ import {
 } from "@masanawa/contracts";
 import {
   createApprovalBinding,
+  fingerprintCanonicalJson,
+  principalKey,
   type ApprovalBinding,
   type AuthorityContext,
 } from "@masanawa/security";
@@ -47,6 +49,30 @@ export function worldCanonCapability(
   return decision === "approve"
     ? worldCanonApproveCapability
     : worldCanonRetireCapability;
+}
+
+export function worldCanonRequestFingerprint(
+  target: WorldCanonGovernanceTarget,
+): string {
+  return fingerprintCanonicalJson({
+    tenantId: target.tenantId,
+    worldId: target.worldId,
+    worldEventId: target.worldEventId,
+    decision: target.decision,
+  });
+}
+
+export function worldCanonAuthorityScopeHash(
+  authority: AuthorityContext,
+  target: WorldCanonGovernanceTarget,
+): string {
+  return fingerprintCanonicalJson({
+    tenantId: target.tenantId,
+    principalKey: principalKey(authority.principal),
+    capability: worldCanonCapability(target.decision),
+    worldId: target.worldId,
+    policyRevision: authority.policyRevision,
+  });
 }
 
 export function assertWorldCanonAuthority(
