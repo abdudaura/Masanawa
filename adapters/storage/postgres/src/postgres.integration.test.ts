@@ -45,6 +45,7 @@ import {
   approveWorldEvent,
   putRoutine,
   admitRoutineOccurrence,
+  putStoryArc,
   putServiceVerificationKey,
   deactivateServiceVerificationKey,
   createPostgresServiceCredentialKeySource,
