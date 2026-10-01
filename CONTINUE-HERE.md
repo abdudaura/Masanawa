@@ -42,6 +42,7 @@ Before changing code:
 - First normalized expansion of feature, behavior, data and integration ledgers.
 - ChatWithStars deep pass: character ownership/handoffs, cross-channel continuity, life engine, memory policy, Skill Contract v2, provider/commerce recovery, durable delivery idempotency and call-runtime race/recovery/readiness behavior.
 - OpenJarvis deep pass: skill parser/import/dependency/manager, skill-as-tool adapter, engine discovery/fallback, tool confirmation, SSRF/security references, agent loop/budget guards, traces/learning overlays and scheduler semantics.
+- N.E.K.O deep pass: memory lifecycle/liveness/dead-letter behavior, foreground persistence, explicit-vs-automatic recall, process-isolated plugin lifecycle/hot reload, proactive state persistence/repetition controls, restricted computer use, optional speaker identity, and embodied-interaction memory semantics.
 
 ### Not yet complete
 The ledgers are NOT exhaustive. Do not begin Masanawa application feature implementation yet.
@@ -51,10 +52,10 @@ The ledgers are NOT exhaustive. Do not begin Masanawa application feature implem
 Continue Phase 0 Passes 2–6, source by source, using the source-map follow-up sections.
 
 Recommended order:
-1. N.E.K.O deep mine: memory tests, plugins, proactivity, character/avatar, perception/computer use, voice.
-2. CyberVerse deep mine: WebRTC/media tests, Persona/SubAgent, task store/recovery, avatar sync, visual input.
-3. Return to remaining ChatWithStars areas: deeper migrations, automation, media-studio and Ops.
-4. Return to remaining OpenJarvis areas only where N.E.K.O/CyberVerse overlap reveals unresolved donor conflicts.
+1. CyberVerse deep mine: WebRTC/media tests, Persona/SubAgent, task store/recovery, avatar sync, visual input.
+2. Return to remaining ChatWithStars areas: deeper migrations, automation, media-studio and Ops.
+3. Resolve donor overlaps/conflicts exposed by N.E.K.O/CyberVerse, especially realtime voice, avatar, memory and background-task boundaries.
+4. Perform repository-wide coverage proof before ending Phase 0.
 
 For each pass, update all affected ledgers and source-map coverage notes in the same PR.
 

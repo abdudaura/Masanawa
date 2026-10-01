@@ -59,6 +59,13 @@ Inventory semantic state concepts before designing tables. Do not mirror donor s
 | D-RTC-002 | AvatarSessionMetadata | CyberVerse | presence | ephemeral | internal | presence | redesign | provider-specific details isolated |
 | D-PLG-001 | PluginManifest/Installation | N.E.K.O | tenant/platform | mutable/versioned | internal | plugin system | redesign | permissions/provenance |
 | D-OPS-001 | ProviderHealth/Acceptance | CWS/OpenJarvis | provider | mutable/history | internal | ops/telemetry | preserve concept | production readiness |
+| D-MEM-009 | CognitionWorkAttempt/DeadLetter | N.E.K.O | memory partition/work item | durable lifecycle | internal | memory/workflows | redesign | bounded retries and liveness progression |
+| D-MEM-010 | MemoryIngestEvent | N.E.K.O | turn+relationship | append | private | memory/events | redesign | foreground durable handoff to async cognition |
+| D-PRO-001 | ProactiveSourceHistory | N.E.K.O | user-character/proactivity policy | durable | private/internal | proactivity | redesign | repetition/cooldown across restarts |
+| D-PRO-002 | ProactiveDeliveryState | N.E.K.O | user-character/channel | durable mutable | private/internal | proactivity | redesign | unanswered/backoff/delivery state |
+| D-PLG-002 | PluginRuntimeIntent | N.E.K.O | plugin installation | durable mutable | internal | plugin system | preserve concept | explicitly stopped/running/autostart intent |
+| D-PLG-003 | PluginCallChain | N.E.K.O | execution | ephemeral/trace | internal | plugin system/telemetry | redesign | recursion/depth enforcement |
+| D-PER-001 | ActivityPrivacyState | N.E.K.O | device/session | ephemeral | sensitive | perception | redesign | visible/private/unavailable |
 | D-AUD-001 | AuditEvent | CWS/OpenJarvis/N.E.K.O | org | append-only | sensitive | events/security | preserve concept | immutable actor/action trail |
 
 Phase 0 must continue mapping donor-specific stores/tables/files into these canonical concepts or explicit retirement.
