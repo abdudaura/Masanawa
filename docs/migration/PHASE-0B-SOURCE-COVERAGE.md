@@ -20,7 +20,7 @@ Generated/dependency/build metadata roots may be excluded after inspection, but 
 
 | Source | Pinned meaningful roots/modules | Existing Phase 0 evidence | Phase 0B state |
 |---|---|---|---|
-| ChatWithStars | apps, data, deploy, infra, packages, public, scripts, services, src, supabase | IDN/REL/HND/WLD/DEC/SKL/TOL/LRN/SEC/TSK/COM/SOC/STD/CHN/OPS/CALL rows | partial |
+| ChatWithStars | apps, data, deploy, infra, packages, public, scripts, services, src, supabase | IDN/REL/HND/WLD/DEC/SKL/TOL/LRN/SEC/TSK/COM/SOC/STD/CHN/OPS/CALL + SUB/PRV/KNO/GRP/MSN/CRT/TEL/CVI/LEG/DEP/DAT | covered |
 | OpenJarvis | configs, deploy, desktop, examples, frontend, rust, src, tests | AGT/SKL/TOL/SCH/LRN/security/integration rows | partial |
 | N.E.K.O | app, brain, config, deps, frontend, knowledge, launcher_core, local_server, main_logic, main_routers, memory, plugin, specs, tests, utils | MEM/PLG/PRO/PER/CUA rows | partial |
 | CyberVerse | frontend, inference, infra, models, proto, server, tests | RTC/AVT/TSK/WRK behavior/data/integration rows | partial; GPL clean-room |
@@ -93,3 +93,31 @@ Tests are never ignored merely because they are tests: they are evidence for beh
 ## Completion gate
 
 Phase 0B is complete only when every row above is `covered` or deliberately `reference-only`, and every meaningful root has descendant proof. A source-level `partial` status cannot close Phase 0.
+
+## ChatWithStars root sweep
+
+Pinned revision: `3ab02704118ce3d8f38a423c9a52e9d44a705aeb`.
+
+| Root | Classification / ledger coverage | Canonical treatment | State |
+|---|---|---|---|
+| `apps/admin` | OPS-001/003-006, SKL-002/007, COM-*, SUB-001, PRV-001, CRT-001 plus admin acceptance tests | rebuild as `apps/ops`; UI/API is not domain truth | covered |
+| `data` | DAT-001 | fixtures/reference only after provenance/privacy review | covered |
+| `deploy` | DEP-001 | deployment recipes only; no domain/runtime ownership | covered |
+| `infra` | DEP-001 + I-GPU-001/002 | provider/deployment adapters where still selected | covered |
+| `packages/contracts` | IDN-001/002, agent/voice contracts plus LEG-001 legacy compatibility | split into canonical Masanawa package contracts; legacy names do not survive | covered |
+| `public` | DAT-001 | static/SEO/reference media; no canonical state | covered |
+| `scripts` | schema/security/canonical-boundary checks support SEC/OPS; seed/eval/setup scripts support DAT/RTC | retain behavior as migration/CI/operator tooling where applicable | covered |
+| `services/automation` | SOC-001/003-005, security/token-vault integrations | `services/social` + workflows/providers; Python service boundary does not survive by default | covered |
+| `services/calls` | CALL-001..006 + presence integrations | fold behavior behind canonical PresenceSession/CharacterSession; donor WhatsApp browser runtime is not a second presence authority | covered |
+| `services/certification` | LRN-003, OPS-003, provider acceptance | certification/acceptance tooling; not a permanent standalone runtime | covered |
+| `services/media-studio` | STD-001..006, DAT-001 | `services/studio`; generated project/export artifacts are fixtures, not architecture | covered |
+| `services/runtime` | existing IDN/REL/HND/WLD/DEC/SKL/TOL/MEM/LRN/SEC/TSK/COM/CHN rows plus SUB-001, PRV-001, KNO-001, GRP-001, MSN-001, CRT-001, TEL-001, CVI-001 | capabilities split into canonical domain packages/services; monolithic donor runtime does not survive | covered |
+| `src` | LEG-001 plus retained fan-facing behavior, identity/chat/voice/payment/channel evidence | old Astro application is retired as an architectural boundary; parity requirements migrate to future Masanawa client surfaces | covered |
+| `supabase/functions` | legacy profile update/voice-chat behavior under LEG-001/IDN/CHN | no parallel function-owned domain truth | covered |
+| `supabase/migrations` | primary schema/history evidence for identity, relationships, memory, world, workflows, commerce, social, ops | semantic concepts map through Data Ledger; migration filenames/schema are not copied blindly | covered |
+
+### ChatWithStars sweep result
+
+All meaningful top-level roots now have an explicit Phase 0B disposition. New previously underrepresented domains were added as SUB-001, PRV-001, KNO-001, GRP-001, MSN-001, CRT-001, TEL-001 and CVI-001. Legacy/deployment/fixture boundaries are explicitly classified with LEG-001, DEP-001 and DAT-001.
+
+The source is therefore **covered at root/module level**. Individual descendant behavior can still add parity detail later, but no top-level ChatWithStars subsystem is unclassified.
