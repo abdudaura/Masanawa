@@ -825,6 +825,87 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
     });
   });
 
+  it("keeps story arcs version-gated, revisioned, and forward-only", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const worldId = createCanonicalId("world");
+    const characterId = createCanonicalId("character");
+    const versionId = createCanonicalId("character-version");
+    const now = toInstant("2026-10-01T14:00:00Z");
+
+    await withTransaction(pool, async (client) => {
+      await createTenant(client, { tenantId, createdAt: now });
+      await createWorld(client, {
+        tenantId,
+        worldId,
+        initialGenerationId: createCanonicalId("world-generation"),
+        policy: testWorldPolicy(),
+        simulationTime: now,
+        createdAt: now,
+      });
+      const character = await createCharacter(client, {
+        tenantId,
+        characterId,
+        createdAt: now,
+      });
+      await createCharacterVersion(client, {
+        tenantId,
+        characterVersionId: versionId,
+        characterId,
+        versionNumber: 1,
+        constitution: testCharacterConstitution(),
+        createdAt: now,
+      });
+      await publishCharacterVersion(client, {
+        tenantId,
+        characterVersionId: versionId,
+        publishedAt: now,
+      });
+      await activateCharacterVersion(client, {
+        tenantId,
+        characterId,
+        characterVersionId: versionId,
+        expectedCharacterRevision: character.revision,
+        activatedAt: now,
+      });
+
+      const write = (
+        expectedRevision: number | null,
+        state: "planned" | "active" | "completed" | "retired",
+      ) =>
+        putStoryArc(client, {
+          tenantId,
+          worldId,
+          storyArcKey: "school-opening",
+          characterId,
+          characterVersionId: versionId,
+          expectedRevision,
+          state,
+          title: "School opening",
+          summary: "Prepare and complete the opening-week arc.",
+          updatedAt: now,
+        });
+
+      await expect(write(null, "planned")).resolves.toMatchObject({
+        state: "planned",
+        revision: 1,
+      });
+      await expect(write(1, "active")).resolves.toMatchObject({
+        state: "active",
+        revision: 2,
+      });
+      await expect(write(2, "completed")).resolves.toMatchObject({
+        state: "completed",
+        revision: 3,
+      });
+      await expect(write(3, "active")).rejects.toMatchObject({
+        code: "world.story_arc_transition_invalid",
+      });
+      await expect(write(2, "retired")).rejects.toMatchObject({
+        code: "world.story_arc_revision_conflict",
+      });
+    });
+  });
+
   it("reports schema-aware database readiness", async () => {
     await expect(
       checkPostgresReadiness(pool, foundationMigrationRootsForTest),
