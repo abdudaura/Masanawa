@@ -143,7 +143,9 @@ Inbox admission/replay recovery and external receipt/reconciliation persistence 
 
 Security/approval PostgreSQL persistence is now implemented and PostgreSQL-18 verified: current policy revision/revocations are durable, exact Approval bindings are tenant/Operation-bound, and allow-once consumption is serialized so concurrent consumers cannot both succeed.
 
-The immediate unresolved foundation gap is the OpenTelemetry correlation foundation. Add privacy-minimized trace/log correlation around canonical request/correlation/operation identities without making telemetry authoritative or exporting raw private content by default. Then continue `docs/PHASE-2-FOUNDATION.md` in order and do not begin product-domain migrations yet.
+The OpenTelemetry correlation foundation is now implemented: `packages/telemetry` owns W3C trace propagation, canonical request/correlation linkage, OpenTelemetry log correlation fields and a strict privacy-safe attribute allowlist; Gateway/Worker/Ops ingress normalize correlation without trusting public caller-supplied canonical IDs.
+
+The immediate unresolved foundation gap is service main/config/shutdown lifecycle. Replace test-only app factories with production entrypoints that parse explicit configuration, bind/listen safely, handle SIGTERM/SIGINT idempotently, stop accepting work before close, expose startup/shutdown failures without leaking secrets, and remain directly testable without binding real ports. Then continue `docs/PHASE-2-FOUNDATION.md` in order and do not begin product-domain migrations yet.
 
 
 ## World simulation comparison — completed
