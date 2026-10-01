@@ -410,3 +410,23 @@ Deep behavior mining from tests remains required before Phase 0 completion.
 | B-PIP-004 | PIP-004 | Context/history commit follows actual user/assistant/tool lifecycle; provisional/eager transcript does not mutate committed context until turn confirmation. | A | universal aggregators + eager-turn tests | analysed |
 | B-PIP-005 | PIP-005 | Turn-inference trigger may precede semantic turn finalization; a completion that arrives while the user is speaking is stale and must not finalize the turn. | A | user turn controller tests | analysed |
 | B-PIP-006 | PIP-001/003 | Per-frame interruptibility survives output chunking/buffering so protected audio/control segments cannot accidentally become interruptible downstream. | A | base output transport + frame ordering tests | analysed |
+
+
+### Phase 0B AI Town behavior invariants
+
+| ID | Domain | Invariant / behavior | Source evidence | Masanawa requirement |
+|---|---|---|---|---|
+| B-AIT-001 | world | input numbers form one ordered stream per engine/world and committed inputs receive terminal success/error evidence | `convex/engine/schema.ts`, `abstractGame.ts` | one ordered admitted-command stream with durable outcome/idempotency evidence |
+| B-AIT-002 | world | simulation time never moves backward and catch-up work is bounded by tick/input limits | `abstractGame.ts`, `aiTown/game.ts` | preserve monotonic effective time and bounded recovery |
+| B-AIT-003 | world | stale scheduled/overlapping workers fail generation comparison instead of committing | `engine/schema.ts`, `abstractGame.ts`, `aiTown/main.ts` | PostgreSQL generation/CAS prevents competing commits |
+| B-AIT-004 | world | world diff and engine/input progress cross one authoritative commit boundary | `aiTown/game.ts` | projection/event/outcome commit is atomic or recoverably equivalent |
+| B-AIT-005 | operations | developer stop is not auto-resumed; inactive and dead-running worlds have distinct recovery paths | `convex/world.ts`, `crons.ts` | explicit operator-stop/inactive/dead states with observable recovery |
+| B-AIT-006 | world | async cognition does not directly mutate hot simulation state; it returns through admitted inputs | `aiTown/agent.ts`, `aiTown/game.ts`, `agent/*` | agents/workflows produce governed world commands only |
+| B-AIT-007 | world | a player can participate in at most one active donor conversation and membership transitions are state-checked | `aiTown/conversation.ts` | preserve illegal-transition rejection while removing two-person limitation |
+| B-AIT-008 | world | typing locks expire and cannot be taken by a second participant while active | `aiTown/conversation.ts` | interaction locks are leased/expiring and observable |
+| B-AIT-009 | world | pathfinding/collision work is bounded and can back off instead of monopolizing a step | `aiTown/player.ts`, `movement.ts` | bound spatial work per step and surface failure/timeout |
+| B-AIT-010 | security | recalled memory is untrusted data, not privileged instruction text | `agent/conversation.ts`, `agent/conversation.test.ts` | authorized memory retrieval cannot escalate prompt authority |
+| B-AIT-011 | security | donor world mutation paths with commented-out auth are not acceptable production ingress | `convex/world.ts` | authenticate/authorize before command admission |
+| B-AIT-012 | integrations | Replicate callback lacks signature verification and durable local request correlation | `convex/music.ts`, `http.ts` | signed webhook + correlation + dedupe + reconciliation required |
+| B-AIT-013 | world | vacuuming old inputs breaks full replay unless snapshots/retention exist | `convex/crons.ts` | never claim replayability after retention destroys required evidence |
+| B-AIT-014 | world | stochastic donor choices use process randomness | `player.ts`, `agent.ts` | authoritative stochastic outcomes record policy/provenance/seed where replay matters |
