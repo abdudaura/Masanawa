@@ -418,3 +418,22 @@ This inventory is intentionally incomplete. Source-specific map documents identi
 | PIP-004 | context | assistant/user aggregation ordered around actual output, tool results and interruption rather than raw generation completion | Pipecat | A/B | context aggregation donor | agents/context + presence | analysed |
 | PIP-005 | turns | composable user turn start/stop/mute strategies with inference-trigger distinct from final turn completion | Pipecat | B | secondary turn-control donor | services/presence | analysed |
 | PIP-006 | providers | AI service runtime settings and service metadata frames decoupled from provider implementation | Pipecat | B | provider pipeline donor | packages/providers + presence | analysed |
+
+
+### Phase 0B AI Town feature additions
+
+| ID | Domain | Feature | Source | Class | Donor role | Masanawa destination | Status |
+|---|---|---|---|---|---|---|---|
+| WLD-010 | world | ordered per-world simulation input queue with durable terminal outcomes | AI Town | A | primary simulation | packages/world | analysed |
+| WLD-011 | world | monotonic simulation clock with bounded tick/step catch-up | AI Town | A/B | primary simulation | packages/world | analysed |
+| WLD-012 | world | durable generation/CAS stale-writer rejection | AI Town | A/B | primary simulation | packages/world | analysed |
+| WLD-013 | world | atomic step commit of world transition plus input outcomes | AI Town | A/B | primary simulation | packages/world + events | analysed |
+| WLD-014 | world | explicit inactive/developer-stopped/dead-engine recovery states | AI Town | A/B | primary simulation | packages/world + workers + ops | analysed |
+| WLD-015 | world | autonomous actor interaction state machines separated from async cognition | AI Town | B | primary mechanics | packages/world + agents + workflows | analysed |
+| WLD-016 | world | conversation invitation/walk-over/participation/typing lifecycle | AI Town | B | secondary interaction | packages/world | analysed |
+| WLD-017 | world | optional spatial movement/pathfinding/collision simulation | AI Town | B | primary spatial mechanics | packages/world | analysed |
+| WLD-018 | world | historical numeric state samples for client interpolation | AI Town | B | primary spatial UX | packages/world + clients | analysed |
+| WLD-019 | world | hot-state archival plus prior co-participation history | AI Town | A/B | secondary history | packages/world + events | analysed |
+| WLD-020 | security | world command ingress requires canonical auth despite donor auth-disabled paths | AI Town | A | Masanawa hardening | security + packages/world | analysed |
+| WLD-021 | infrastructure | Convex-specific simulation/runtime persistence | AI Town | C | reference | none; semantics reimplemented | analysed |
+| STD-020 | studio | asynchronous generated background music callback flow | AI Town | C/B | reference | studio + providers | analysed |
