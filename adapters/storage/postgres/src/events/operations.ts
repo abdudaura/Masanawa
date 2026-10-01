@@ -1,7 +1,6 @@
 import {
   PlatformError,
   createCanonicalId,
-  nowInstant,
   type Instant,
   type OperationId,
   type TenantId,
@@ -214,6 +213,8 @@ export async function transitionOperation(
     readonly expectedFence?: number;
   },
 ): Promise<OperationRecord> {
+  assertOperationTransition(input.from, input.to);
+
   const params: unknown[] = [input.operationId, input.from, input.to];
   const fenceClause =
     input.expectedFence === undefined
