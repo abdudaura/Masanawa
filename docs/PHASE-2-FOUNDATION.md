@@ -192,14 +192,33 @@ Integration coverage proves observation reuse/conflict, append-only status obser
 
 Validated on 2026-10-01 by Foundation CI run 81 at commit `354aaed14f24884138f0eee45ce421907e2c7757`.
 
+### Security/approval persistence
+
+`packages/security/migrations/0001_security_foundation.sql` and `0002_approval_operation_integrity.sql` now persist:
+- current tenant policy revision;
+- durable AuthorityContext revocations;
+- exact Approval bindings and lifecycle state;
+- tenant-scoped Approval → Operation integrity.
+
+The PostgreSQL security adapter:
+- exposes a transaction-bound `CurrentAuthoritySource`;
+- locks current policy state while authority-sensitive decisions settle;
+- stores only pending approvals initially;
+- settles pending approvals only while unexpired and still bound to the current policy;
+- row-locks approvals before allow-once consumption;
+- rechecks both the exact binding and current policy before consumption.
+
+PostgreSQL 18 integration proves concurrent allow-once consumption has exactly one winner, revocation blocks subsequent current-authority checks, stale policy revisions fail closed, and approval persistence remains bound to the exact tenant Operation.
+
+Validated on 2026-10-01 by Foundation CI run 85-equivalent latest green run at commit `7fd3ac3971073f28aaad56bb6c4af22c0975db82` (15 test files / 44 tests).
+
 ## Active foundation gaps
 
-1. add security/approval PostgreSQL persistence and concurrency tests;
-2. add OpenTelemetry correlation foundation;
-3. add service main/config/shutdown lifecycle;
-4. add DB/schema readiness probes;
-5. add fault-injection/restart test utilities;
-6. close Phase 2 shared-foundation gate before identity/memory/world/product migrations.
+1. add OpenTelemetry correlation foundation;
+2. add service main/config/shutdown lifecycle;
+3. add DB/schema readiness probes;
+4. add fault-injection/restart test utilities;
+5. close Phase 2 shared-foundation gate before identity/memory/world/product migrations.
 
 ## Foundation rules
 
