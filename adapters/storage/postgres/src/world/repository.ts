@@ -369,6 +369,306 @@ export async function admitSimulationInput(
   return asInput(result.rows[0]);
 }
 
+async function requireCanonReadyCharacter(
+  client: PoolClient,
+  tenantId: TenantId,
+  characterId: CharacterId,
+): Promise<CharacterVersionId> {
+  const result = await client.query<ActiveCharacterRow>(
+    `SELECT c.character_id, c.active_character_version_id
+       FROM identity.characters AS c
+       JOIN identity.character_versions AS v
+         ON v.tenant_id = c.tenant_id
+        AND v.character_version_id = c.active_character_version_id
+        AND v.character_id = c.character_id
+      WHERE c.tenant_id = $1
+        AND c.character_id = $2
+        AND c.state = 'active'
+        AND v.state = 'published'
+      FOR SHARE OF c, v`,
+    [tenantId, characterId],
+  );
+  const row = result.rows[0];
+  if (!row?.active_character_version_id) {
+    throw conflict(
+      "world.character_not_canon_ready",
+      "World canon requires an active Character with a published active Constitution",
+    );
+  }
+  return row.active_character_version_id;
+}
+
+async function applyLifeStateChange(
+  client: PoolClient,
+  tenantId: TenantId,
+  worldId: WorldId,
+  simulationTime: ReturnType<typeof toInstant>,
+  committedAt: ReturnType<typeof toInstant>,
+  change: CharacterLifeStateChange,
+): Promise<CharacterLifeState> {
+  await requireCanonReadyCharacter(client, tenantId, change.characterId);
+
+  if (change.effectiveAt > simulationTime) {
+    throw conflict(
+      "world.life_state_from_future",
+      "Character life state cannot become effective after the committed simulation time",
+    );
+  }
+
+  const existing = await client.query<LifeStateRow>(
+    `SELECT tenant_id,
+            world_id,
+            character_id,
+            availability,
+            narrative_state,
+            active_goal,
+            story_arc,
+            coarse_location,
+            revision,
+            effective_at,
+            updated_at
+       FROM world.character_life_state
+      WHERE tenant_id = $1
+        AND world_id = $2
+        AND character_id = $3
+      FOR UPDATE`,
+    [tenantId, worldId, change.characterId],
+  );
+
+  const current = existing.rows[0];
+  if (!current) {
+    if (change.expectedRevision !== null) {
+      throw conflict(
+        "world.life_state_revision_conflict",
+        "Character life state does not yet exist",
+      );
+    }
+    const inserted = await client.query<LifeStateRow>(
+      `INSERT INTO world.character_life_state (
+         tenant_id,
+         world_id,
+         character_id,
+         availability,
+         narrative_state,
+         active_goal,
+         story_arc,
+         coarse_location,
+         revision,
+         effective_at,
+         updated_at
+       )
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,1,$9,$10)
+       RETURNING tenant_id,
+                 world_id,
+                 character_id,
+                 availability,
+                 narrative_state,
+                 active_goal,
+                 story_arc,
+                 coarse_location,
+                 revision,
+                 effective_at,
+                 updated_at`,
+      [
+        tenantId,
+        worldId,
+        change.characterId,
+        change.availability,
+        change.narrativeState,
+        change.activeGoal,
+        change.storyArc,
+        change.coarseLocation,
+        change.effectiveAt,
+        committedAt,
+      ],
+    );
+    return asLifeState(inserted.rows[0]!);
+  }
+
+  const currentRevision = integer(current.revision, "life-state revision");
+  if (change.expectedRevision !== currentRevision) {
+    throw conflict(
+      "world.life_state_revision_conflict",
+      "Character life state was changed by another writer",
+    );
+  }
+  if (change.effectiveAt < toInstant(current.effective_at)) {
+    throw conflict(
+      "world.life_state_time_regression",
+      "Character life-state effective time cannot move backward",
+    );
+  }
+
+  const updated = await client.query<LifeStateRow>(
+    `UPDATE world.character_life_state
+        SET availability = $4,
+            narrative_state = $5,
+            active_goal = $6,
+            story_arc = $7,
+            coarse_location = $8,
+            revision = revision + 1,
+            effective_at = $9,
+            updated_at = $10
+      WHERE tenant_id = $1
+        AND world_id = $2
+        AND character_id = $3
+        AND revision = $11
+      RETURNING tenant_id,
+                world_id,
+                character_id,
+                availability,
+                narrative_state,
+                active_goal,
+                story_arc,
+                coarse_location,
+                revision,
+                effective_at,
+                updated_at`,
+    [
+      tenantId,
+      worldId,
+      change.characterId,
+      change.availability,
+      change.narrativeState,
+      change.activeGoal,
+      change.storyArc,
+      change.coarseLocation,
+      change.effectiveAt,
+      committedAt,
+      change.expectedRevision,
+    ],
+  );
+  if (!updated.rows[0]) {
+    throw conflict(
+      "world.life_state_revision_conflict",
+      "Character life state was changed by another writer",
+    );
+  }
+  return asLifeState(updated.rows[0]);
+}
+
+async function appendWorldEvent(
+  client: PoolClient,
+  world: World,
+  generationNumber: number,
+  committedAt: ReturnType<typeof toInstant>,
+  draft: WorldEventDraft,
+): Promise<WorldEvent> {
+  const kind = normalizeSimulationInputKind(draft.kind);
+  const occurrenceKey = draft.occurrenceKey?.trim() || null;
+  if (occurrenceKey !== null && occurrenceKey.length > 256) {
+    throw new TypeError("World event occurrenceKey is invalid");
+  }
+  if (draft.validFrom > world.simulationTime) {
+    throw conflict(
+      "world.event_from_future",
+      "World event cannot begin after the committed simulation time",
+    );
+  }
+  if (draft.validUntil !== undefined && draft.validUntil <= draft.validFrom) {
+    throw new TypeError("World event validUntil must follow validFrom");
+  }
+
+  let sourceCharacterVersionId: CharacterVersionId | null = null;
+  if (draft.characterId !== null) {
+    sourceCharacterVersionId = await requireCanonReadyCharacter(
+      client,
+      world.tenantId,
+      draft.characterId,
+    );
+  }
+
+  const autoApprove = draft.requestAutoApproval === true;
+  if (
+    autoApprove &&
+    (draft.provenance !== "engine" || !world.policy.automaticCanonEnabled)
+  ) {
+    throw conflict(
+      "world.event_auto_approval_forbidden",
+      "Only engine evidence under an automatic-canon policy may auto-approve",
+    );
+  }
+
+  if (occurrenceKey !== null) {
+    const existing = await client.query<{ world_event_id: WorldEventId }>(
+      `SELECT world_event_id
+         FROM world.events
+        WHERE tenant_id = $1
+          AND world_id = $2
+          AND occurrence_key = $3`,
+      [world.tenantId, world.worldId, occurrenceKey],
+    );
+    if (existing.rows[0]) {
+      throw conflict(
+        "world.event_occurrence_conflict",
+        "World event occurrence key has already been admitted",
+      );
+    }
+  }
+
+  const canonState = autoApprove ? "approved" : "draft";
+  const inserted = await client.query<WorldEventRow>(
+    `INSERT INTO world.events (
+       tenant_id,
+       world_id,
+       world_event_id,
+       generation_number,
+       character_id,
+       source_character_version_id,
+       kind,
+       payload,
+       provenance,
+       visibility,
+       canon_state,
+       occurrence_key,
+       valid_from,
+       valid_until,
+       recorded_at,
+       approved_at,
+       retired_at
+     )
+     VALUES (
+       $1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9,$10,$11,$12,$13,$14,$15,$16,NULL
+     )
+     RETURNING tenant_id,
+               world_id,
+               world_event_id,
+               generation_number,
+               character_id,
+               source_character_version_id,
+               kind,
+               payload,
+               provenance,
+               visibility,
+               canon_state,
+               occurrence_key,
+               valid_from,
+               valid_until,
+               recorded_at,
+               approved_at,
+               retired_at`,
+    [
+      world.tenantId,
+      world.worldId,
+      draft.worldEventId,
+      generationNumber,
+      draft.characterId,
+      sourceCharacterVersionId,
+      kind,
+      JSON.stringify(draft.payload),
+      draft.provenance,
+      draft.visibility,
+      canonState,
+      occurrenceKey,
+      draft.validFrom,
+      draft.validUntil ?? null,
+      committedAt,
+      autoApprove ? committedAt : null,
+    ],
+  );
+  return asWorldEvent(inserted.rows[0]!);
+}
+
 export async function commitWorldGeneration(
   client: PoolClient,
   input: CommitWorldGenerationInput,
