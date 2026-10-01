@@ -262,3 +262,12 @@ Phase 0 must continue mapping donor-specific stores/tables/files into these cano
 | D-RTC-062 | PlaybackCommitEvidence | LiveKit Agents TS | speech/turn | pending->first_frame->completed/interrupted | private/telemetry | presence | redesign | prevents transcript/history commit from relying on generation completion alone |
 | D-PVD-020 | ProviderAvailabilityState | LiveKit Agents TS | provider instance/operation | healthy->unavailable->recovering->healthy | internal | providers | redesign | runtime availability only; provider registry remains canonical elsewhere |
 | D-AVT-040 | AvatarOutputSession | LiveKit Agents TS | PresenceSession | provisioning->ready->closing/absent | private/runtime | presence/embodiment | redesign | optional output projection only |
+
+### Phase 0B LiveKit Agents Python parity data concepts
+
+| ID | Canonical concept | Source | Scope | Lifecycle | Sensitivity | Destination | Treatment | Notes |
+|---|---|---|---|---|---|---|---|---|
+| D-RTC-070 | RealtimeProviderSwap | LiveKit Agents Python | live PresenceSession | preparing->swapping->reconnected/failed | private/runtime | presence/providers | redesign | old/new provider, preserved context revision, dropped-input window, regeneration decision |
+| D-SPK-030 | SpeakerRoleEvidence | LiveKit Agents Python | voice turn | ephemeral/trace | biometric/voice-derived | perception/security | redesign | primary/background classification only, not authentication |
+| D-EVL-030 | SessionEvaluationResult | LiveKit Agents Python | completed session/run | append | private/internal | telemetry/evaluation | redesign | per-judge verdict/reasoning/error + aggregate; never activation authority |
+| D-OBS-030 | TelemetryRedactionPolicy | LiveKit Agents Python | tenant/provider/exporter | versioned | security/privacy | telemetry/privacy | redesign | field/event filtering and exception-message policy |
