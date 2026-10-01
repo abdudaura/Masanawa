@@ -372,3 +372,14 @@ This inventory is intentionally incomplete. Source-specific map documents identi
 | EVL-030 | evaluation | post-session judge groups for task completion, handoff continuity, accuracy, tool use, safety, relevance/coherence and concision | LiveKit Agents Python | B | evaluation donor | packages/telemetry/evaluation + certification | analysed |
 | OBS-030 | telemetry/privacy | PII-aware trace/log export filtering with project-level redaction policy and exporter-specific allow rules | LiveKit Agents Python | A/B | observability privacy donor | packages/telemetry + privacy/security | analysed |
 | EXP-001 | workflows/runtime | serializable live Python coroutine/generator experiment for resumable function execution | LiveKit durable plugin | C/B | research donor only | workflow research; Microsoft AF remains durable workflow authority | selected |
+
+### Phase 0B Pipecat descendant additions
+
+| ID | Domain | Feature | Source | Class | Donor role | Masanawa destination | Status |
+|---|---|---|---|---|---|---|---|
+| RTC-080 | presence | frame-processor pipeline seam with explicit data/system/control priorities and interruptible-frame semantics | Pipecat | A/B | secondary processor donor | services/presence processor contracts | analysed |
+| RTC-081 | presence | speculative user-turn completion with explicit confirm/cancel gate rather than irreversible early commit | Pipecat | A | strong turn-management donor | services/presence | analysed |
+| RTC-082 | presence | playout-aware context aggregation and protected control/function-result frames across barge-in | Pipecat | A/B | strong pipeline behavior donor | services/presence + packages/agents | analysed |
+| RTC-083 | presence | pause/resume-safe frame processing and zero-audio TTS completion that cannot deadlock downstream processing | Pipecat | A | strong pipeline liveness donor | services/presence | analysed |
+| RTC-084 | presence | pluggable user-turn start/stop strategies combining VAD, transcription, external signals, timeouts and turn analyzers | Pipecat | B | turn-policy donor | services/presence | analysed |
+| OBS-040 | telemetry | processor-level observers for turn tracking, user-bot latency, function calls, startup and service metrics | Pipecat | B | secondary observability donor | packages/telemetry | analysed |
