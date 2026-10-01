@@ -47,6 +47,7 @@ export interface StartNodeServiceInput {
   readonly signals?: NodeSignalSource;
   readonly logger?: ServiceLifecycleLogger;
   readonly onDraining?: () => void;
+  readonly onAfterClose?: () => Promise<void>;
   readonly onFatalShutdown?: () => void;
 }
 
@@ -118,6 +119,11 @@ export async function startNodeService(
     } catch {
       // Startup failure remains authoritative; cleanup details are never logged here.
     }
+    try {
+      await input.onAfterClose?.();
+    } catch {
+      // Startup failure remains authoritative; cleanup details are never logged here.
+    }
     throw lifecycleError(
       "service.start_failed",
       "Service failed to start",
@@ -176,18 +182,29 @@ export async function startNodeService(
       }, input.config.shutdownTimeoutMs);
       timeoutHandle.unref?.();
 
+      let closeFailed = false;
       try {
         await input.server.close();
       } catch {
+        closeFailed = true;
         input.server.server?.closeIdleConnections?.();
         input.server.server?.closeAllConnections?.();
+      }
+
+      try {
+        await input.onAfterClose?.();
+      } catch {
+        closeFailed = true;
+      } finally {
+        clearTimeout(timeoutHandle);
+      }
+
+      if (closeFailed) {
         throw lifecycleError(
           "service.shutdown_failed",
           "Service failed to shut down cleanly",
           serviceName,
         );
-      } finally {
-        clearTimeout(timeoutHandle);
       }
 
       if (forced) {
