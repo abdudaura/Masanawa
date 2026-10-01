@@ -6,9 +6,26 @@ export type PrivacySafeTelemetryAttributes = Readonly<
   Record<string, TelemetryAttributeValue>
 >;
 
+export interface OpenTelemetryLogCorrelation {
+  readonly trace_id: string;
+  readonly span_id: string;
+  readonly trace_flags: string;
+}
+
+export function logCorrelationFields(
+  correlation: TelemetryCorrelation,
+): OpenTelemetryLogCorrelation {
+  return Object.freeze({
+    trace_id: correlation.trace.traceId,
+    span_id: correlation.trace.spanId,
+    trace_flags: correlation.trace.traceFlags,
+  });
+}
+
 const defaultSafeAttributeKeys = new Set([
-  "trace.id",
-  "span.id",
+  "trace_id",
+  "span_id",
+  "trace_flags",
   "service.name",
   "service.version",
   "deployment.environment.name",
@@ -28,8 +45,7 @@ export function correlationAttributes(
   correlation: TelemetryCorrelation,
 ): PrivacySafeTelemetryAttributes {
   return Object.freeze({
-    "trace.id": correlation.trace.traceId,
-    "span.id": correlation.trace.spanId,
+    ...logCorrelationFields(correlation),
     "masanawa.request.id": correlation.requestId,
     "masanawa.correlation.id": correlation.correlationId,
     ...(correlation.operationId
