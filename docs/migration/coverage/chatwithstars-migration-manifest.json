@@ -1,0 +1,2842 @@
+{
+  "source": "Baatiku/chatwithstars@3ab02704118ce3d8f38a423c9a52e9d44a705aeb",
+  "generated_for": "Phase 0B forensic coverage",
+  "count": 381,
+  "entries": [
+    {
+      "file": "0001_platform_core.sql",
+      "families": [
+        "platform-core"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "0002_lock_worker_rpcs_and_cover_fks.sql",
+      "families": [
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "0003_messages_realtime.sql",
+      "families": [
+        "channels-presence"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "0004_worker_control_rate_limit.sql",
+      "families": [
+        "workflow-continuity",
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "0005_smarter_memory_retrieval.sql",
+      "families": [
+        "memory-knowledge"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "0006_native_memory_intelligence.sql",
+      "families": [
+        "memory-knowledge"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "0007_memory_slots_quality_and_temporal.sql",
+      "families": [
+        "memory-knowledge"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "0008_auto_pool_gemini_credentials.sql",
+      "families": [
+        "ops-security",
+        "provider-capacity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "0009_enforce_gemini_pool_membership.sql",
+      "families": [
+        "provider-capacity"
+      ],
+      "classification": "B"
+    },
+    {
+      "file": "20240120_create_queue.sql",
+      "families": [
+        "social-automation"
+      ],
+      "classification": "C/B"
+    },
+    {
+      "file": "20250120110000_create_advanced_mgmt.sql",
+      "families": [
+        "platform-core"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20250126_create_cron_job.sql",
+      "families": [
+        "social-automation"
+      ],
+      "classification": "C/B"
+    },
+    {
+      "file": "20251231_omni_bot_configs.sql",
+      "families": [
+        "social-automation"
+      ],
+      "classification": "C/B"
+    },
+    {
+      "file": "20260809_drip_reliability.sql",
+      "families": [
+        "social-automation"
+      ],
+      "classification": "C/B"
+    },
+    {
+      "file": "20260809_fetch_policy.sql",
+      "families": [
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260809_review_queue.sql",
+      "families": [
+        "social-automation"
+      ],
+      "classification": "C/B"
+    },
+    {
+      "file": "20260809_saas_tenancy.sql",
+      "families": [
+        "social-automation"
+      ],
+      "classification": "C/B"
+    },
+    {
+      "file": "20260809_saas_users.sql",
+      "families": [
+        "social-automation"
+      ],
+      "classification": "C/B"
+    },
+    {
+      "file": "20260810_dubbing.sql",
+      "families": [
+        "social-automation"
+      ],
+      "classification": "C/B"
+    },
+    {
+      "file": "20260810_profile_destinations.sql",
+      "families": [
+        "social-automation"
+      ],
+      "classification": "C/B"
+    },
+    {
+      "file": "20260901152745_restore_search_conversations_rpc.sql",
+      "families": [
+        "memory-knowledge",
+        "cleanup-compatibility"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260901173616_people_runtime_schema_reconciliation.sql",
+      "families": [
+        "identity",
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260901173850_bootstrap_failure_status_compatibility.sql",
+      "families": [
+        "platform-core",
+        "cleanup-compatibility"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260901174800_people_runtime_integrity.sql",
+      "families": [
+        "identity",
+        "platform-core"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260901174914_gemini_credential_rpm_guard.sql",
+      "families": [
+        "ops-security",
+        "provider-capacity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260901175621_people_performance_cleanup.sql",
+      "families": [
+        "identity",
+        "platform-core",
+        "cleanup-compatibility"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260901175836_preserve_synced_contact_display_names.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260901180000_people_relationships_and_delegated_outreach.sql",
+      "families": [
+        "identity",
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260901181500_outreach_delivery_event_fk_indexes.sql",
+      "families": [
+        "workflow-continuity",
+        "world-groups",
+        "platform-core"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260901184500_outreach_followups_and_bootstrap_review.sql",
+      "families": [
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260901185217_gemini_capacity_intelligence.sql",
+      "families": [
+        "memory-knowledge",
+        "provider-capacity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260901185500_outreach_delivery_events_and_followup_suppression.sql",
+      "families": [
+        "workflow-continuity",
+        "world-groups"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260901190348_include_contact_memories_in_retrieval.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260901190720_project_structured_contact_guidance_to_memory.sql",
+      "families": [
+        "identity",
+        "memory-knowledge"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260901191200_unlimited_community_gemini_sharing.sql",
+      "families": [
+        "world-groups",
+        "provider-capacity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260901191300_normalize_legacy_gemini_share_limit.sql",
+      "families": [
+        "provider-capacity",
+        "cleanup-compatibility"
+      ],
+      "classification": "B"
+    },
+    {
+      "file": "20260901192500_unlimited_community_borrowing.sql",
+      "families": [
+        "world-groups",
+        "provider-capacity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260901193000_low_context_conversation_intelligence.sql",
+      "families": [
+        "memory-knowledge"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260901195500_low_context_fk_indexes.sql",
+      "families": [
+        "memory-knowledge",
+        "platform-core"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260901210500_delegate_disclosure_and_social_closure.sql",
+      "families": [
+        "workflow-continuity",
+        "social-automation"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260901220625_conversation_brain_pending_threads_and_posture.sql",
+      "families": [
+        "workflow-continuity",
+        "social-automation"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260901221214_conversation_pending_threads_conversation_fk_index.sql",
+      "families": [
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260901225000_fix_group_threads_and_gemini_pool.sql",
+      "families": [
+        "world-groups",
+        "provider-capacity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260901230500_conversation_brain_sessions.sql",
+      "families": [
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260901231000_conversation_brain_fk_indexes.sql",
+      "families": [
+        "platform-core"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260902004308_harden_whatsapp_worker_lease.sql",
+      "families": [
+        "workflow-continuity",
+        "channels-presence"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260902070500_outreach_goal_driven_missions.sql",
+      "families": [
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260903080500_owner_first_response_grace.sql",
+      "families": [
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260906010245_dashboard_hot_path_indexes.sql",
+      "families": [
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260906010246_memory_lifecycle.sql",
+      "families": [
+        "memory-knowledge",
+        "world-groups"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260906010247_money_ledger.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260906010248_tenant_spend_cap.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260907223000_billing_and_payments.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260907233905_chatwithchatra_character_core_v1.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260908120500_character_core_v2_role_packs.sql",
+      "families": [
+        "identity",
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260908122800_character_core_v3_evidence_stub.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260908122900_character_core_v3_contact_helper.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260908123000_character_core_v3_learning.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260908123100_character_core_v3_contact_backfill.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260908123200_character_core_v3_contact_history.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260908123300_character_core_v3_knowledge.sql",
+      "families": [
+        "identity",
+        "memory-knowledge"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260908124500_character_core_v4_contact_memory_evidence.sql",
+      "families": [
+        "identity",
+        "memory-knowledge"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260908132000_character_core_v5_knowledge_ingestion.sql",
+      "families": [
+        "identity",
+        "memory-knowledge"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260908133500_character_core_v6_handoffs.sql",
+      "families": [
+        "identity",
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260908135000_character_core_v7_outcome_learning.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260908141000_character_core_v8_communication_profiles.sql",
+      "families": [
+        "identity",
+        "channels-presence"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260908144500_character_core_v9_capability_observability.sql",
+      "families": [
+        "identity",
+        "skills-decisions",
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260909140500_customer_wallets_and_commerce.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260909142000_telecom_fulfilment.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260909142500_telecom_customer_funding.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260909143000_telecom_phone_validation_fix.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260909144000_commerce_preferences.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260909145500_telecom_customer_notifications.sql",
+      "families": [
+        "workflow-continuity",
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260909153500_crypto_fulfilment.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260909175500_billstack_payment_provider.sql",
+      "families": [
+        "commerce-finance",
+        "provider-capacity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260909181000_billstack_wallet_credit_rpc.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260909183500_vtpass_service_orders.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260909185500_financial_contact_tenant_isolation.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260909190000_service_customer_notifications.sql",
+      "families": [
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260909191000_core_tenant_relationship_isolation.sql",
+      "families": [
+        "platform-core"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260909191000_owner_product_catalogue.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260909193000_contact_identity_graph.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260909193000_conversation_turn_postures.sql",
+      "families": [
+        "social-automation"
+      ],
+      "classification": "C/B"
+    },
+    {
+      "file": "20260909193100_contact_identity_merge.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260909194500_durable_call_sessions.sql",
+      "families": [
+        "channels-presence"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260909195500_commitment_reminder_lifecycle.sql",
+      "families": [
+        "workflow-continuity",
+        "world-groups"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260909195800_commitment_followups_in_reminder_heartbeat.sql",
+      "families": [
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260909200500_service_customer_notifications.sql",
+      "families": [
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260909203000_autonomous_multichannel_core.sql",
+      "families": [
+        "channels-presence"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260909205500_telegram_vault_credentials.sql",
+      "families": [
+        "channels-presence",
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260909210500_telegram_contact_source.sql",
+      "families": [
+        "identity",
+        "channels-presence"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260909223000_durable_missions_routines_work.sql",
+      "families": [
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260909225744_scheduled_agent_routines.sql",
+      "families": [
+        "identity",
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260909230220_durable_work_conflict_keys.sql",
+      "families": [
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260910052511_mission_continuation_and_event_routines.sql",
+      "families": [
+        "workflow-continuity",
+        "world-groups"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260910052915_harden_internal_trigger_functions.sql",
+      "families": [
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260910054000_cascade_failed_agent_work.sql",
+      "families": [
+        "identity",
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260910061000_queue_mission_evaluation_from_inbound.sql",
+      "families": [
+        "workflow-continuity",
+        "social-automation"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260910061500_agent_execution_lifecycle_guards.sql",
+      "families": [
+        "identity",
+        "world-groups"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260910062500_normalize_agent_routine_run_error_aggregation.sql",
+      "families": [
+        "identity",
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260910064000_community_memberships_and_teaching.sql",
+      "families": [
+        "world-groups",
+        "teaching"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260910065000_durable_teaching_delivery.sql",
+      "families": [
+        "teaching"
+      ],
+      "classification": "B"
+    },
+    {
+      "file": "20260910074000_allow_failed_message_ai_status.sql",
+      "families": [
+        "channels-presence"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260910080500_telegram_user_mtproto_credentials.sql",
+      "families": [
+        "channels-presence",
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260910081500_telegram_user_auth_requests.sql",
+      "families": [
+        "channels-presence"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260910082500_cleanup_telegram_user_auth_secrets.sql",
+      "families": [
+        "channels-presence",
+        "cleanup-compatibility"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260910224500_mission_constitution_versioning.sql",
+      "families": [
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260910233000_unify_goal_outreach_with_agent_missions.sql",
+      "families": [
+        "identity",
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260911051000_remove_duplicate_service_notification_index.sql",
+      "families": [
+        "cleanup-compatibility"
+      ],
+      "classification": "C/B"
+    },
+    {
+      "file": "20260912222220_atomic_autonomy_spend_reservations.sql",
+      "families": [
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260912222325_index_autonomy_spend_reservation_conversation.sql",
+      "families": [
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260912222703_tenant_capability_registry.sql",
+      "families": [
+        "skills-decisions"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260912222741_preserve_existing_optional_capabilities.sql",
+      "families": [
+        "skills-decisions"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260912223600_open_persona_archetype_key.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260913103500_response_intelligence_evidence_memory.sql",
+      "families": [
+        "memory-knowledge"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260913105500_response_intelligence_runtime_hardening.sql",
+      "families": [
+        "memory-knowledge",
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260913111000_response_intelligence_identity_and_indexes.sql",
+      "families": [
+        "identity",
+        "memory-knowledge"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260913123000_language_aware_voice_policy.sql",
+      "families": [
+        "channels-presence",
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260913144330_agent_foundation.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260913144504_create_tenant_agent_rpc.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260913144927_agent_foundation_indexes.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260913151254_agent_binding_and_version_management.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260913152844_capability_manifests_and_starter_agents.sql",
+      "families": [
+        "identity",
+        "skills-decisions"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260913154103_durable_work_agent_ownership.sql",
+      "families": [
+        "identity",
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260913162134_agent_scoped_creator_commerce.sql",
+      "families": [
+        "identity",
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260913162418_agent_scoped_creator_commerce_indexes.sql",
+      "families": [
+        "identity",
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260913162512_creator_commerce_explicit_client_revokes.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260913162752_commerce_orders_inherit_approval_agent.sql",
+      "families": [
+        "identity",
+        "workflow-continuity",
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260913163213_agent_template_lifecycle_and_starters.sql",
+      "families": [
+        "identity",
+        "world-groups"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260913163452_version_agent_persona_identity.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260913181105_agent_scoped_runtime_readers_and_audit.sql",
+      "families": [
+        "identity",
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260913182512_creator_commerce_accounting_core.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260913182759_creator_commerce_transaction_primitives.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260913183725_paid_community_entitlement_lifecycle.sql",
+      "families": [
+        "world-groups",
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260913183929_protect_renewed_community_entitlement.sql",
+      "families": [
+        "world-groups",
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260913184059_reconcile_entitlements_on_work_claim.sql",
+      "families": [
+        "workflow-continuity",
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260913184250_generic_creator_order_execution.sql",
+      "families": [
+        "workflow-continuity",
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260913184949_creator_order_customer_wallet_settlement.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260913185159_authorized_creator_wallet_payment_and_refund.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260913185258_pin_creator_wallet_action_authorizations.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260913185420_bind_creator_wallet_actions_to_order_payload.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260913213000_call_device_runtime_state.sql",
+      "families": [
+        "channels-presence"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260914130055_group_expert_world_model.sql",
+      "families": [
+        "world-groups"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260914130341_expert_agent_starter_catalog.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260914183500_upgrade_unigeria_civic_assistant.sql",
+      "families": [
+        "civic"
+      ],
+      "classification": "B"
+    },
+    {
+      "file": "20260914184500_civic_intelligence_layer.sql",
+      "families": [
+        "memory-knowledge",
+        "civic"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260914191500_civic_pulse_and_refresh.sql",
+      "families": [
+        "civic"
+      ],
+      "classification": "B"
+    },
+    {
+      "file": "20260914193000_unigeria_civic_intelligence_v3.sql",
+      "families": [
+        "memory-knowledge",
+        "civic"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260914194500_seed_civic_pulse.sql",
+      "families": [
+        "civic"
+      ],
+      "classification": "B"
+    },
+    {
+      "file": "20260914195500_scope_civic_refresh_to_civic_agents.sql",
+      "families": [
+        "identity",
+        "civic"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260914213000_unigeria_civic_house_staff.sql",
+      "families": [
+        "civic",
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260914220500_unigeria_citizen_engagement.sql",
+      "families": [
+        "civic"
+      ],
+      "classification": "B"
+    },
+    {
+      "file": "20260915125500_canonicalize_civic_people.sql",
+      "families": [
+        "identity",
+        "world-groups",
+        "civic"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260915142500_enforce_gemini_four_rpm.sql",
+      "families": [
+        "provider-capacity"
+      ],
+      "classification": "B"
+    },
+    {
+      "file": "20260915165000_civic_truth_lifecycle.sql",
+      "families": [
+        "world-groups",
+        "civic"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260915170000_refresh_civic_truth_lifecycle.sql",
+      "families": [
+        "world-groups",
+        "civic"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260917101839_owner_communication_kill_switch.sql",
+      "families": [
+        "channels-presence"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260917153000_whatsapp_account_directory.sql",
+      "families": [
+        "channels-presence"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260917161014_harden_whatsapp_account_tracking_trigger.sql",
+      "families": [
+        "channels-presence"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260917161100_whatsapp_account_directory_fk_indexes.sql",
+      "families": [
+        "channels-presence",
+        "platform-core"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260917222500_transactional_clear_conversation_history.sql",
+      "families": [
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260917231000_contact_addressing_gender.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260917234500_contact_self_addressing_gender.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260918084000_civic_pulse_campaign_flyers.sql",
+      "families": [
+        "civic"
+      ],
+      "classification": "B"
+    },
+    {
+      "file": "20260918090500_seed_2027_civic_pulse_draft.sql",
+      "families": [
+        "civic"
+      ],
+      "classification": "B"
+    },
+    {
+      "file": "20260918093000_civic_pulse_minimum_privacy_cohort.sql",
+      "families": [
+        "civic",
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260918102500_civic_election_candidate_registry.sql",
+      "families": [
+        "civic"
+      ],
+      "classification": "B"
+    },
+    {
+      "file": "20260918111000_group_kill_switch_rpc.sql",
+      "families": [
+        "world-groups"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260918123500_seed_2027_election_refresh_targets.sql",
+      "families": [
+        "civic"
+      ],
+      "classification": "B"
+    },
+    {
+      "file": "20260918140316_flutterwave_unified_commerce.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260918143000_telecom_sales_agent_template.sql",
+      "families": [
+        "identity",
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260918162500_telecom_sales_conversation_quality.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260918163041_platform_admin_skills_commerce_controls.sql",
+      "families": [
+        "skills-decisions",
+        "commerce-finance",
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260918163943_starter_skill_bindings_and_news_reporter.sql",
+      "families": [
+        "identity",
+        "skills-decisions"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260918164203_publish_seeded_skill_versions.sql",
+      "families": [
+        "skills-decisions",
+        "social-automation"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260918170500_financial_adjustments.sql",
+      "families": [
+        "commerce-finance",
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260918171500_operational_completeness_primitives.sql",
+      "families": [
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260918173000_security_definer_hardening.sql",
+      "families": [
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260918174500_commerce_promotions.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260918180500_authenticated_rpc_hardening.sql",
+      "families": [
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260918190000_unified_skill_v2_contracts.sql",
+      "families": [
+        "skills-decisions"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260918193000_unified_agent_skill_bindings.sql",
+      "families": [
+        "identity",
+        "skills-decisions"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260918194000_default_specialist_staff_roster.sql",
+      "families": [
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260918194500_service_handoff_context.sql",
+      "families": [
+        "memory-knowledge",
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260918200000_capability_discovery_events.sql",
+      "families": [
+        "world-groups",
+        "skills-decisions"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260918201500_remove_duplicate_memory_evidence_index.sql",
+      "families": [
+        "memory-knowledge",
+        "cleanup-compatibility"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260918203000_harden_call_device_runtime_privileges.sql",
+      "families": [
+        "channels-presence",
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260918204000_normalize_public_table_privileges.sql",
+      "families": [
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260918205000_restate_commerce_agent_ownership.sql",
+      "families": [
+        "identity",
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260919090000_complete_professional_skill_catalog.sql",
+      "families": [
+        "skills-decisions"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260919093000_teaching_agent_ownership.sql",
+      "families": [
+        "identity",
+        "teaching"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260919102000_unified_service_fk_indexes.sql",
+      "families": [
+        "platform-core"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260921010500_commerce_refund_recovery.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260921065000_service_handoff_return_evidence.sql",
+      "families": [
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260921131500_presidential_civic_poll.sql",
+      "families": [
+        "civic"
+      ],
+      "classification": "B"
+    },
+    {
+      "file": "20260921133000_presidential_civic_poll_empty_guard.sql",
+      "families": [
+        "civic"
+      ],
+      "classification": "B"
+    },
+    {
+      "file": "20260921134500_anonymize_presidential_poll_change_history.sql",
+      "families": [
+        "civic"
+      ],
+      "classification": "B"
+    },
+    {
+      "file": "20260921135500_close_presidential_poll_at_election.sql",
+      "families": [
+        "civic"
+      ],
+      "classification": "B"
+    },
+    {
+      "file": "20260921142000_reconcile_civic_contact_merges.sql",
+      "families": [
+        "identity",
+        "civic"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260921143500_civic_pulse_database_aggregation.sql",
+      "families": [
+        "civic"
+      ],
+      "classification": "B"
+    },
+    {
+      "file": "20260921150500_creator_business_ledger.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260921151500_creator_balance_funding_and_plan_spend.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260921152000_service_clarifications.sql",
+      "families": [
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260921152500_creator_service_cost_balance.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260921153500_creator_pricing_preferences.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260921154500_creator_earnings_settlement.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260921160000_creator_payout_lifecycle.sql",
+      "families": [
+        "world-groups",
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260921233000_commerce_sales_discovery_v3.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260921234500_customer_concierge_front_desk.sql",
+      "families": [
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922003000_specialist_continuity_state.sql",
+      "families": [
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922010500_news_event_signatures.sql",
+      "families": [
+        "world-groups"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922011500_specialist_continuity_source_ids.sql",
+      "families": [
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922013000_commerce_sales_company_operator_v4.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922014500_customer_wallet_funding_notifications.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922023000_unigeria_nigerian_identity_refresh.sql",
+      "families": [
+        "identity",
+        "civic"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922023500_wallet_funding_all_commerce_orders.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922031500_contact_phone_dedupe.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922032500_compact_unigeria_civic_desks.sql",
+      "families": [
+        "civic"
+      ],
+      "classification": "B"
+    },
+    {
+      "file": "20260922095853_customer_wallet_profiles_for_dynamic_funding.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922095918_track_dynamic_wallet_funding_amount.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922100342_guided_telecom_checkout_sessions.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922103000_creator_platform_mode_and_onboarding.sql",
+      "families": [
+        "platform-core"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922110000_creator_group_activation.sql",
+      "families": [
+        "world-groups"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922111500_creator_reseller_sale_settlement.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922112500_harden_creator_workspace_profile_control.sql",
+      "families": [
+        "workflow-continuity",
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922113000_creator_payout_provider_fees.sql",
+      "families": [
+        "commerce-finance",
+        "provider-capacity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922113500_creator_funding_provider_fees.sql",
+      "families": [
+        "commerce-finance",
+        "provider-capacity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922114000_creator_workspace_roles.sql",
+      "families": [
+        "workflow-continuity",
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922114500_preserve_paid_plan_entitlements.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922115000_split_creator_admin_permissions.sql",
+      "families": [
+        "workflow-continuity",
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922115300_idempotent_plan_checkout.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922115500_wallet_funding_intents.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922115800_completed_plan_checkout_is_paid.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922120500_versioned_billing_plan_runtime.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922121500_grandfather_legacy_workspaces_as_platform.sql",
+      "families": [
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922122000_creator_data_resale_inventory.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922122500_creator_data_inventory_lot_allocations.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922122500_flutterwave_chargeback_recovery.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922123000_creator_inventory_provider_reserve.sql",
+      "families": [
+        "provider-capacity"
+      ],
+      "classification": "B"
+    },
+    {
+      "file": "20260922123000_immutable_creator_data_pack_orders.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922123500_creator_funding_safety_state_machine.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922123500_restore_creator_data_inventory_lot_allocator.sql",
+      "families": [
+        "commerce-finance",
+        "cleanup-compatibility"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922124500_creator_chargeback_state_integration.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922125000_reconcile_creator_debt_recovery_sources.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922125500_creator_debt_cash_credit_guard.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922130000_creator_partial_chargeback_reconciliation.sql",
+      "families": [
+        "commerce-finance",
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922131000_exact_order_funding_resume.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922131000_telecom_provider_quote_snapshots.sql",
+      "families": [
+        "commerce-finance",
+        "provider-capacity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922132000_atomic_commerce_wallet_funding_cycles.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922132000_wallet_onboarding_drafts_and_rpc_lockdown.sql",
+      "families": [
+        "commerce-finance",
+        "platform-core"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922133000_service_order_reseller_economics.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922134000_creator_payout_submission_claim.sql",
+      "families": [
+        "workflow-continuity",
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922135000_reconcile_deployed_commerce_safety_functions.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922153000_wallet_funding_amount_match_state.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922154500_wallet_funding_underpayment_notifications.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922160000_payment_provider_event_inbox.sql",
+      "families": [
+        "world-groups",
+        "commerce-finance",
+        "provider-capacity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922161500_provider_quote_freshness.sql",
+      "families": [
+        "provider-capacity"
+      ],
+      "classification": "B"
+    },
+    {
+      "file": "20260922163000_payment_provider_event_inbox_state_machine.sql",
+      "families": [
+        "world-groups",
+        "commerce-finance",
+        "provider-capacity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922164500_provider_liquidity_health.sql",
+      "families": [
+        "ops-security",
+        "provider-capacity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922165000_flutterwave_liquidity_requirements.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922170500_payment_provider_fee_ledger.sql",
+      "families": [
+        "commerce-finance",
+        "provider-capacity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922172000_provider_catalogue_snapshots.sql",
+      "families": [
+        "provider-capacity"
+      ],
+      "classification": "B"
+    },
+    {
+      "file": "20260922183000_payment_provider_event_retry_backoff.sql",
+      "families": [
+        "world-groups",
+        "commerce-finance",
+        "provider-capacity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922184500_provider_event_manual_retry.sql",
+      "families": [
+        "world-groups",
+        "provider-capacity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922190000_commerce_refund_lifecycle.sql",
+      "families": [
+        "world-groups",
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922193000_preserve_paid_plan_entitlements.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922194500_provider_event_retry_claim.sql",
+      "families": [
+        "world-groups",
+        "provider-capacity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922201500_provider_event_retry_claims.sql",
+      "families": [
+        "world-groups",
+        "provider-capacity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922203000_provider_event_retry_verified_recovery.sql",
+      "families": [
+        "world-groups",
+        "provider-capacity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922204500_payment_provider_cutover_checks.sql",
+      "families": [
+        "commerce-finance",
+        "provider-capacity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922211000_flutterwave_acceptance_certification.sql",
+      "families": [
+        "commerce-finance",
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922211500_invalidate_acceptance_on_cutover_revocation.sql",
+      "families": [
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922213000_live_provider_read_acceptance.sql",
+      "families": [
+        "ops-security",
+        "provider-capacity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922214500_require_validated_live_flutterwave_credentials.sql",
+      "families": [
+        "commerce-finance",
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922215500_expire_stale_flutterwave_credential_validation.sql",
+      "families": [
+        "commerce-finance",
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922220500_bind_flutterwave_whitelist_to_egress_config.sql",
+      "families": [
+        "commerce-finance",
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922221500_bind_acceptance_ready_to_current_cutover.sql",
+      "families": [
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922222500_require_egress_fingerprint_match_in_readiness.sql",
+      "families": [
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922223500_mark_system_managed_flutterwave_acceptance.sql",
+      "families": [
+        "commerce-finance",
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922230000_bind_webhook_registration_to_secret_fingerprint.sql",
+      "families": [
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922231500_require_current_webhook_receiver_observation.sql",
+      "families": [
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922233000_drop_legacy_creator_payout_finalizer.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922234500_expire_manual_flutterwave_cutover_evidence.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260922235500_reconcile_creator_payout_provider_fees.sql",
+      "families": [
+        "commerce-finance",
+        "provider-capacity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260923000500_bind_acceptance_to_exact_release.sql",
+      "families": [
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260923001500_enforce_acceptance_release_binding.sql",
+      "families": [
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260923002500_lock_reconciled_payout_provider_fee.sql",
+      "families": [
+        "commerce-finance",
+        "provider-capacity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260923003500_require_exact_dashboard_release.sql",
+      "families": [
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260923004500_drop_legacy_creator_payout_reserver.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260923005500_retire_billstack_and_harden_acceptance_trigger.sql",
+      "families": [
+        "commerce-finance",
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260923006500_atomic_creator_payout_account_replacement.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260923007500_serialize_wallet_funding_provisioning.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260923008500_reconcile_stale_funding_provisioning.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260923009500_recover_stale_commerce_resume_jobs.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260923100500_immutable_wallet_funding_identity.sql",
+      "families": [
+        "identity",
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260923101500_immutable_collection_fee_evidence.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260923102500_immutable_creator_payout_identity.sql",
+      "families": [
+        "identity",
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260925050000_platform_companion_identity_refresh.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260925051500_contact_companion_preference.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260925053000_consumer_trial_foundation.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260925054500_simplify_gemini_pool.sql",
+      "families": [
+        "provider-capacity"
+      ],
+      "classification": "B"
+    },
+    {
+      "file": "20260925055437_consumer_subscription_entitlement_gate.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260925060000_partner_operating_mode.sql",
+      "families": [
+        "platform-core"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260925060207_consumer_subscription_fk_indexes.sql",
+      "families": [
+        "commerce-finance",
+        "platform-core"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260925060832_consumer_subscription_wallet_rpc_fix.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260925063000_partner_mode_selection.sql",
+      "families": [
+        "civic"
+      ],
+      "classification": "B"
+    },
+    {
+      "file": "20260925072644_jev_shadow_foundation.sql",
+      "families": [
+        "skills-decisions"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260925073728_jev_language_direct_thresholds.sql",
+      "families": [
+        "skills-decisions"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260925080217_jev_routing_bundle_shadow_policies.sql",
+      "families": [
+        "skills-decisions"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260925085935_consumer_entitlement_identity_hardening.sql",
+      "families": [
+        "identity",
+        "commerce-finance",
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260925092337_consumer_subscription_payment_capabilities.sql",
+      "families": [
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260925093756_contact_subscription_prompt_preference.sql",
+      "families": [
+        "identity",
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260925113000_global_consumer_privacy_controls.sql",
+      "families": [
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260925183000_contributor_discount_policy.sql",
+      "families": [
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260925190000_partner_subscription_commission.sql",
+      "families": [
+        "workflow-continuity",
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260926102801_teaching_mastery_profiles.sql",
+      "families": [
+        "teaching"
+      ],
+      "classification": "B"
+    },
+    {
+      "file": "20260926110831_teaching_study_sessions.sql",
+      "families": [
+        "teaching"
+      ],
+      "classification": "B"
+    },
+    {
+      "file": "20260926111237_teaching_study_sessions_authenticated_read_only.sql",
+      "families": [
+        "teaching"
+      ],
+      "classification": "B"
+    },
+    {
+      "file": "20260926120000_retire_vtpass_provider.sql",
+      "families": [
+        "commerce-finance",
+        "provider-capacity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260926185700_star_identity_foundation.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260926185839_star_platform_identity_privacy.sql",
+      "families": [
+        "identity",
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260926185941_star_foundation_fk_indexes.sql",
+      "families": [
+        "identity",
+        "platform-core"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260926190611_star_runtime_publication_primitives.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260926191331_star_rehearsal_provisioning.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260926191638_star_expertise_skill_version_integrity.sql",
+      "families": [
+        "identity",
+        "skills-decisions"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260926191706_star_expertise_composite_fk_index.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260926193727_star_rehearsal_evidence_certification.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260926193923_star_rehearsal_evaluation_fk_indexes.sql",
+      "families": [
+        "identity",
+        "platform-core"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260926194306_star_rehearsal_identity_drafts.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260926194331_star_rehearsal_identity_draft_idempotency.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260926204851_star_draft_bound_publication.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260926210024_star_pilot_skill_contracts_v2.sql",
+      "families": [
+        "identity",
+        "skills-decisions"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260926211100_star_life_event_canon_immutability.sql",
+      "families": [
+        "identity",
+        "world-groups"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260926214235_star_web_platform_identity.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927053852_named_star_handoff_lifecycle.sql",
+      "families": [
+        "identity",
+        "workflow-continuity",
+        "world-groups"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927053929_named_star_handoff_source_index.sql",
+      "families": [
+        "identity",
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927054013_named_star_handoff_jev_replays.sql",
+      "families": [
+        "identity",
+        "workflow-continuity",
+        "skills-decisions"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927054249_named_star_bounded_return.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927055801_named_star_nested_specialist_lifecycle.sql",
+      "families": [
+        "identity",
+        "world-groups"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927060202_star_web_conversation_channel.sql",
+      "families": [
+        "identity",
+        "channels-presence"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927063349_star_message_ownership.sql",
+      "families": [
+        "identity",
+        "channels-presence"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927063523_star_message_ownership_fk_index.sql",
+      "families": [
+        "identity",
+        "channels-presence"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927063925_star_memory_ownership.sql",
+      "families": [
+        "identity",
+        "memory-knowledge"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927064848_star_commitment_ownership.sql",
+      "families": [
+        "identity",
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927065036_named_star_handoff_from_resolved_binding.sql",
+      "families": [
+        "identity",
+        "workflow-continuity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927065423_star_fan_relationship_touch.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927065651_star_fan_explicit_preferences.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927070333_star_scoped_memory_search.sql",
+      "families": [
+        "identity",
+        "memory-knowledge"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927070752_chatra_evidence_projection_contracts.sql",
+      "families": [
+        "platform-core"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927072745_star_learning_reconciliation.sql",
+      "families": [
+        "identity",
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927072911_star_learning_reconciliation_temporal_status_fix.sql",
+      "families": [
+        "identity",
+        "ops-security"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927073231_star_priority_skill_contracts_v2.sql",
+      "families": [
+        "identity",
+        "skills-decisions"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927073345_star_commerce_skill_v2_contract_fix.sql",
+      "families": [
+        "identity",
+        "skills-decisions",
+        "commerce-finance"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927081332_named_star_durable_completion_evidence.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927081349_named_star_completion_evidence_binding.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927081623_star_teaching_support_skill_contracts_v2.sql",
+      "families": [
+        "identity",
+        "skills-decisions",
+        "teaching"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927081755_star_current_rehearsal_evidence_gate.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927081854_star_evaluation_supersession_scope.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927084953_star_group_civic_skill_contracts_v2.sql",
+      "families": [
+        "identity",
+        "world-groups",
+        "skills-decisions",
+        "civic"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927085248_messages_web_channel_support.sql",
+      "families": [
+        "channels-presence"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927094051_named_star_return_resume_acknowledgement.sql",
+      "families": [
+        "identity",
+        "memory-knowledge"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927103000_star_rehearsal_job_queue.sql",
+      "families": [
+        "identity",
+        "social-automation"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927104500_star_rehearsal_job_lease_recovery.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927115500_star_web_recent_chats_rpc.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927121000_star_rehearsal_executed_release_commit.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927122500_clear_star_web_conversation.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927124500_star_rehearsal_job_skill_version_staleness_retry.sql",
+      "families": [
+        "identity",
+        "skills-decisions"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927130500_star_rehearsal_abandoned_failure_and_cancel.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927133000_star_web_recent_message_count.sql",
+      "families": [
+        "identity",
+        "channels-presence"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927134500_star_rehearsal_job_evaluation_idempotency.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927141000_web_platform_identity_alias_resolution.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260927142500_safe_web_account_identity_link.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260928011428_star_life_engine_idempotency.sql",
+      "families": [
+        "identity",
+        "world-groups"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260928012321_star_pilot_arabic_hindi_rehearsal.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260928025222_star_rehearsal_persona_journey_jobs.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20260928062500_star_web_hidden_recent_chats.sql",
+      "families": [
+        "identity"
+      ],
+      "classification": "A/B"
+    },
+    {
+      "file": "20261001002500_secure_retired_omni_bot_claims.sql",
+      "families": [
+        "social-automation",
+        "cleanup-compatibility"
+      ],
+      "classification": "C/B"
+    },
+    {
+      "file": "20261001004600_secure_retired_omni_bot_tables.sql",
+      "families": [
+        "social-automation",
+        "cleanup-compatibility"
+      ],
+      "classification": "C/B"
+    },
+    {
+      "file": "omni_bot_add_split_columns.sql",
+      "families": [
+        "social-automation",
+        "cleanup-compatibility"
+      ],
+      "classification": "C/B"
+    },
+    {
+      "file": "omni_bot_master_schema.sql",
+      "families": [
+        "social-automation",
+        "cleanup-compatibility"
+      ],
+      "classification": "C/B"
+    },
+    {
+      "file": "omni_bot_settings.sql",
+      "families": [
+        "social-automation",
+        "cleanup-compatibility"
+      ],
+      "classification": "C/B"
+    }
+  ]
+}
