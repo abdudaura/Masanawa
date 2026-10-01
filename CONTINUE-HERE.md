@@ -135,13 +135,12 @@ Donor Agent/runtime/checkpoint objects never become Character, memory or busines
 Phase 0A is complete. Phase 0B is in remediation because the first root-level sweeps overstated coverage.
 
 1. Read `docs/migration/PHASE-0B-REMEDIATION.md` before doing any further source sweep.
-2. ChatWithStars is reopened as `partial (remediation)`.
+2. ChatWithStars remediation is complete at the pinned revision:
    - descendant runtime/domain proof: `docs/migration/coverage/CHATWITHSTARS.md`;
-   - all 381 migration filenames accounted for: `docs/migration/coverage/chatwithstars-migration-manifest.json`;
-   - previously missed migration families: `docs/migration/coverage/CHATWITHSTARS-MIGRATIONS.md`;
-   - provider auth/retry/idempotency/reconciliation matrix: `docs/migration/coverage/CHATWITHSTARS-INTEGRATIONS.md`.
-3. **Next:** finish ChatWithStars provider gaps. Do not move to OpenJarvis until each remaining integration is either fully traced or explicitly C/reference with a reason.
-4. Then redo OpenJarvis, N.E.K.O and CyberVerse using source-specific descendant evidence files. Their previous `covered` statuses are invalidated.
+   - all 381 migrations accounted for with zero unresolved entries;
+   - provider behavior normalized through ADR-0010 and `CHATWITHSTARS-INTEGRATIONS.md`.
+3. **Next:** redo OpenJarvis using the corrected descendant-level forensic standard. Create a source-specific coverage file and do not reuse the invalidated root-only `covered` claim.
+4. Then remediate N.E.K.O and CyberVerse the same way.
 5. Only after those four remediation passes continue to AIRI and the remaining donors.
 6. No source may be marked `covered` from root names, filename counts or generic family assertions alone.
 7. Every retained capability must have exact implementation/test evidence, durable-state mapping, integration failure semantics, one canonical owner and an observable acceptance/parity gate.
