@@ -411,3 +411,16 @@ Phase 0 must continue mapping donor-specific stores/tables/files into these cano
 | D-OCL-032 | SkillApplyRecovery | OpenClaw Workshop | proposal generation/target | prepared->mutating->committed/recovered/quarantined | executable/operational | packages/skills + workflows | preserve invariant | rollback/commit facts fence crash reconciliation |
 | D-OCL-033 | SkillCollectionReviewOccurrence | OpenClaw Workshop review cron | owner agent/review declaration | scheduled->admitted->cancelled/completed | private/operational | packages/workflows + skills | redesign | current-authority generation and review outcome only |
 | D-OCL-034 | CustodianSkillProjection | OpenClaw Custodian skills | resolved system agent | packaged->visible/filtered | executable/content | packages/skills | derived only | release-owned source; no independent authority |
+
+
+### Phase 0B OpenClaw Agent Skills data concepts
+
+| ID | Canonical concept | Source | Scope | Lifecycle | Sensitivity | Destination | Treatment | Notes |
+|---|---|---|---|---|---|---|---|---|
+| D-OAS-001 | ImportedSkillCandidate | OpenClaw Agent Skills | skill directory | discovered->validated->certified/rejected | executable/content | packages/skills | redesign | SKILL.md is input, not canonical SkillVersion |
+| D-OAS-002 | ValidationContract | behavior-validator | acceptance run | drafted->executed->settled | internal/product | QA/parity | preserve concept | observable clauses only |
+| D-OAS-003 | ValidationFinding | behavior-validator/autoreview | evidence run | observed->verified/rejected/resolved | internal | QA/release | redesign | advisory evidence, no mutation authority |
+| D-OAS-004 | TranscriptExport | agent-transcript/session-viewer | local session | rendered->trimmed/redacted->previewed/published | highly sensitive | developer/support tooling | preserve invariant | carries truncation/provenance facts |
+| D-OAS-005 | BeamProjection | Beam | coding session | sanitized->published->updated/completed | private developer data | developer collaboration | noncanonical projection | receiver read-only |
+| D-OAS-006 | RemoteProofRun | Crabbox | source revision/command/provider | prepared->dispatched->settled/blocked/cleaned | operational/secret-adjacent | QA/CI | preserve evidence | exact provider/source/result identity |
+| D-OAS-007 | AgentHandoffArtifact | handoff | developer task | drafted->transferred->superseded | internal | developer tooling | advisory | no canonical runtime state |
