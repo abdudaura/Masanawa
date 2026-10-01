@@ -108,7 +108,7 @@ Tests already cover:
 
 No product-domain tables have been introduced yet.
 
-### service bootstrap
+### Service bootstrap
 
 Fastify workspaces now exist for:
 - `services/gateway`;
@@ -117,20 +117,30 @@ Fastify workspaces now exist for:
 
 Each has typed TypeBox health/readiness endpoints. Readiness fails closed and sanitizes thrown dependency errors.
 
+### Workspace validation
+
+Foundation CI now boots pnpm before Node package-manager integration, defers pnpm caching until a lockfile exists, and runs the actual root `pnpm check` under Node 24.
+
+Validated on 2026-10-01 by Foundation CI run 49 at commit `68ebe1bf8c0c18f2a2deb52904f31d75a96261d0`: install, strict TypeScript checks and Vitest all passed.
+
+Validation also fixed:
+- `PlatformError` optional metadata under `exactOptionalPropertyTypes` without weakening compiler strictness;
+- PostgreSQL `transitionOperation` now enforces the canonical Operation state graph before issuing SQL;
+- direct tests cover the persisted transition guard and PlatformError serialization contract.
+
 ## Active foundation gaps
 
-1. validate the new workspace through CI/typecheck/test and repair any compiler/runtime incompatibilities;
-2. add deterministic lockfile/reproducible install once install execution is available;
-3. add PostgreSQL integration tests using PostgreSQL 18;
-4. add transactionally atomic event + outbox persistence API;
-5. add inbox admission/replay repository;
-6. add reconciliation/external-receipt repository;
-7. add security/approval PostgreSQL persistence and concurrency tests;
-8. add OpenTelemetry correlation foundation;
-9. add service main/config/shutdown lifecycle;
-10. add DB/schema readiness probes;
-11. add fault-injection/restart test utilities;
-12. close Phase 2 shared-foundation gate before identity/memory/world/product migrations.
+1. add deterministic lockfile/reproducible install now that install execution is available;
+2. add PostgreSQL integration tests using PostgreSQL 18;
+3. add transactionally atomic event + outbox persistence API;
+4. add inbox admission/replay repository;
+5. add reconciliation/external-receipt repository;
+6. add security/approval PostgreSQL persistence and concurrency tests;
+7. add OpenTelemetry correlation foundation;
+8. add service main/config/shutdown lifecycle;
+9. add DB/schema readiness probes;
+10. add fault-injection/restart test utilities;
+11. close Phase 2 shared-foundation gate before identity/memory/world/product migrations.
 
 ## Foundation rules
 
