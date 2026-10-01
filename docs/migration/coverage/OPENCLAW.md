@@ -231,10 +231,9 @@ Acceptance gate:
 
 Before OpenClaw can be marked covered, the remaining gaps are now limited to:
 
-1. native desktop/mobile/node-host descendant proof, especially device capability publication/offline behavior and app-local state boundaries;
-2. Skill Workshop/Custodian direct descendant/test proof (managed revisions, ClawHub/source installs and node-hosted skills are now covered below);
-3. exact direct-test inventory proving every retained consequential invariant has pinned implementation/test evidence;
-4. repository-wide descendant proof with zero unexplained production families after the above closures.
+1. Skill Workshop/Custodian direct descendant/test proof (managed revisions, ClawHub/source installs and node-hosted skills are now covered below);
+2. exact direct-test inventory proving every retained consequential invariant has pinned implementation/test evidence;
+3. repository-wide descendant proof with zero unexplained production families after the above closures.
 
 The repository/package/plugin enumeration gap is closed by `OPENCLAW-INVENTORY.md` (18/18 maintained packages; 163/163 generated plugin inventory entries; zero enumeration ambiguity). Gateway RPC, approvals, steering/restart, provider, memory, scheduler, SSRF/privacy, session lineage, outbound delivery, session catalog/import/attachment handling, and broad skill-source/node-host behavior are covered in the sections below.
 
@@ -806,3 +805,69 @@ Acceptance gate:
 - restart/config replacement preserves accepted durable work and its retry/settlement facts without duplicate visible effects.
 
 The channel-specific descendant gap is closed for the shared framework and the major bundled carrier families above. Remaining external plugins stay classified by the generated plugin inventory and must conform to these canonical adapter contracts; they do not create separate authority.
+
+
+## 27. Native apps, node capability publication and route-authority fencing
+
+Implementation/docs/tests:
+- `docs/nodes/device-commands.md`;
+- `docs/nodes/command-policy.md`;
+- `docs/platforms/android.md`;
+- `docs/platforms/ios.md`;
+- `src/gateway/node-command-policy.test.ts`;
+- `src/gateway/node-registry.test.ts`;
+- `src/gateway/node-registry-policy.test.ts`;
+- `src/gateway/node-connect-reconcile.test.ts`;
+- `src/gateway/device-scope-upgrade.test.ts`;
+- `src/gateway/android-node.capabilities.required-commands.test.ts`;
+- `src/gateway/android-node.capabilities.live.test.ts`;
+- `apps/android/app/src/test/java/ai/openclaw/app/node/ConnectionManagerTest.kt`;
+- `apps/android/app/src/test/java/ai/openclaw/app/node/InvokeDispatcherTest.kt`;
+- `apps/android/app/src/test/java/ai/openclaw/app/GatewayBootstrapAuthTest.kt`;
+- `apps/android/app/src/test/java/ai/openclaw/app/gateway/GatewaySessionReconnectTest.kt`;
+- `apps/shared/OpenClawKit/Tests/OpenClawKitTests/GatewayNodeSessionTests.swift`;
+- `apps/ios/Tests/GatewayConnectionControllerTests.swift`;
+- `apps/ios/Tests/GatewayOperatorFleetTests.swift`;
+- `apps/macos/Tests/OpenClawIPCTests/MacNodeModeCoordinatorTests.swift`.
+
+Pinned authority model:
+- pairing a device is necessary but insufficient to authorize commands;
+- an invocation is usable only when the current authenticated node declares the command, the exact paired-device generation has the command in its approved surface, Gateway policy permits it, any plugin policy permits it, and the local OS/app capability is actually available;
+- `commands.deny` wins; dangerous/privacy-heavy commands require persistent Gateway opt-in even when the node declares them;
+- command/capability expansion creates a pending approval surface; the old approved intersection remains effective until the expanded surface is explicitly approved;
+- node registry dispatch revalidates current persistent pairing generation and runtime connection immediately before dispatch and rejects replaced/stale sockets;
+- node-hosted plugin tools remain inside the approved command surface rather than becoming a second invocation authority.
+
+Native application boundary:
+- Android is explicitly a companion node and never hosts the Gateway;
+- Android may keep multiple operator Gateway sessions, but only the focused Gateway owns the node/device capability session, preventing simultaneous Gateways from commanding one phone;
+- iOS/Android advertised commands are derived from current settings, platform support and permissions; sensitive command families remain separately Gateway-authorized;
+- route changes, disconnects and socket replacement fence decoded/queued native invokes before detached admission; stale completion/results cannot adopt the replacement route;
+- sequence gaps trigger reconnect without admitting the gap-triggering event or command, and sequence state restarts fresh on the replacement connection;
+- macOS separates native app capabilities from CLI/node-host worker commands, binds stored device auth to the endpoint owner, and rotates route-authority generations so revocation completes before successor command admission;
+- native worker failure may degrade the node capability set with a visible reason without falsely killing unrelated native capabilities.
+
+Local state treatment:
+- saved endpoints, device tokens, TLS fingerprints, local permission/settings state and presentation caches are native credential/cache state;
+- they are scoped to the exact Gateway/device/role/endpoint owner and may support reconnect;
+- they are not Character, relationship, memory, world, workflow, commerce or permission truth for Masanawa;
+- canonical server-side pairing/authorization and durable domain state remain authoritative after reconnect or app reinstall.
+
+Masanawa destination:
+- device-node transport/host adapters;
+- `packages/security` for pairing, command-surface approval and current-authority checks;
+- `packages/tools` for command invocation contracts;
+- clients/mobile/desktop for local presentation/permission/cache state only.
+
+Disposition: **A/B**.
+
+Acceptance gate:
+- no native app can widen server authority merely by advertising a command/capability or receiving an OS permission;
+- every consequential node invocation is bound to the exact current device identity, pairing generation, connection/route generation and approved command surface;
+- disconnect/replacement/scope change revokes old admission before successor work can use the route;
+- reconnect may restore safe local transport/cache state but cannot silently restore revoked server authorization;
+- Android/iOS/macOS local state remains explicitly noncanonical for Masanawa domain truth;
+- capability degradation/offline state is observable and does not masquerade as successful execution;
+- dangerous device actions remain least-privilege, explicit and independently gated by server policy and device permission.
+
+The native/mobile/desktop descendant gap is closed. The donor's app implementations remain reference/adapter donors; Masanawa does not inherit their local stores as server truth.
