@@ -137,7 +137,9 @@ Phase 2 Foundation is active. Read `docs/PHASE-2-FOUNDATION.md` first; it is the
 
 Current code already contains root workspace/tooling, contracts/events/security primitives, the PostgreSQL adapter/event migration, architecture guards, and Gateway/Worker/Ops health/readiness bootstraps.
 
-Continue the first unresolved foundation gap in `docs/PHASE-2-FOUNDATION.md`; do not restart those completed slices and do not begin product-domain migrations yet.
+Foundation CI run 49 passed the full install, strict TypeScript checks and Vitest at `68ebe1bf8c0c18f2a2deb52904f31d75a96261d0`. The validation pass also corrected CI package-manager bootstrap, strict `PlatformError` optional fields, and persistence-layer Operation transition enforcement with direct tests.
+
+The immediate unresolved foundation gap is now deterministic dependency locking/reproducible installation. Add and verify the pnpm lockfile, then continue the remaining gaps in `docs/PHASE-2-FOUNDATION.md` in order. Do not restart completed slices and do not begin product-domain migrations yet.
 
 
 ## World simulation comparison — completed
