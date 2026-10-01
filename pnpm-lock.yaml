@@ -176,6 +176,16 @@ importers:
         specifier: 5.0.3
         version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
 
+  adapters/runtime/node:
+    dependencies:
+      '@masanawa/contracts':
+        specifier: workspace:*
+        version: link:../../../packages/contracts
+    devDependencies:
+      vitest:
+        specifier: 5.0.3
+        version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
+
   adapters/storage/postgres:
     dependencies:
       '@masanawa/contracts':
