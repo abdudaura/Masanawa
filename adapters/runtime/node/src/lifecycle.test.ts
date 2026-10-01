@@ -102,11 +102,12 @@ describe("Node service runtime", () => {
   });
 
   it("wraps startup failures in a stable safe error", async () => {
+    const close = vi.fn(async () => undefined);
     const server: ManagedNodeServer = {
       listen: vi.fn(async () => {
         throw new Error("api-key=super-secret");
       }),
-      close: vi.fn(async () => undefined),
+      close,
     };
 
     await expect(
@@ -121,5 +122,51 @@ describe("Node service runtime", () => {
       code: "service.start_failed",
       message: "Service failed to start",
     });
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
+  it("forces lingering connections at the graceful shutdown deadline", async () => {
+    vi.useFakeTimers();
+    try {
+      const signals = new EventEmitter();
+      let releaseClose: (() => void) | undefined;
+      const close = vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            releaseClose = resolve;
+          }),
+      );
+      const closeAllConnections = vi.fn(() => {
+        releaseClose?.();
+      });
+      const server: ManagedNodeServer = {
+        listen: vi.fn(async () => "http://127.0.0.1:3400"),
+        close,
+        server: {
+          closeAllConnections,
+          closeIdleConnections: vi.fn(),
+        },
+      };
+      const runtime = await startNodeService({
+        serviceName: "gateway",
+        server,
+        config: readNodeServiceRuntimeConfig(
+          { MASANAWA_SHUTDOWN_TIMEOUT_MS: "100" },
+          { port: 3400 },
+        ),
+        signals,
+        logger: logger(),
+      });
+
+      const stopping = runtime.stop("deadline-test");
+      await vi.advanceTimersByTimeAsync(100);
+
+      await expect(stopping).rejects.toMatchObject({
+        code: "service.shutdown_timeout",
+      });
+      expect(closeAllConnections).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
