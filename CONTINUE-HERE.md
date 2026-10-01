@@ -39,24 +39,25 @@ The active implementation line remains `phase2-closure` until PR #16 is merged. 
 
 ## Immediate next work
 
-Begin Phase 3 from the canonical domain model, not from donor object models.
+Phase 3 implementation is active on `phase3-identity-world`. Live checklist: `docs/PHASE-3-IDENTITY-WORLD.md`.
 
-Required first read for Phase 3:
+Completed on the active branch:
+- `packages/identity` is now a real canonical package rather than a placeholder;
+- Tenant/User/Character/CharacterVersion/Relationship contracts are defined;
+- Character Constitution is versioned and normalized independently of CharacterId;
+- external provider/channel subjects require explicit linked/strong evidence before canonical User resolution;
+- identity owns a package migration for Tenant/User/external identity link/Character/version/Relationship state;
+- CharacterVersion authored content is database-immutable;
+- PostgreSQL identity repository supports explicit publish→activate, Character revision CAS, tenant-scoped external-subject resolution and stable User↔Character relationship creation;
+- PostgreSQL 18 integration coverage has been added for those invariants.
 
-1. `docs/PHASE-2-CLOSURE-AUDIT.md`;
-2. `docs/DOMAIN-MODEL.md`;
-3. `docs/DATA-ARCHITECTURE.md`;
-4. `docs/PRIVACY-SCOPES.md`;
-5. `docs/SOURCE-OWNERSHIP.md`;
-6. ADR-0009;
-7. `docs/migration/WORLD-SIMULATION-ADOPTION-BOUNDARY.md`;
-8. relevant ChatWithStars and AI Town source maps/ledger rows.
+Immediate work:
+1. run the complete CI gate for the Phase 3 identity slice and fix all real failures;
+2. once green, keep identity as the sole owner and begin `packages/world` with World/WorldPolicy/WorldGeneration/CharacterLifeState and generation-CAS foundations;
+3. world may reference Character identifiers through `packages/identity` only; it must never recreate Character/User/Relationship truth;
+4. add package-owned world migrations and PostgreSQL tests for stale-generation rejection, monotonic simulation time and tenant isolation before adding routines/story arcs.
 
-Start with canonical identity ownership and persistence needed by Phase 3: Tenant/User external identity links, Character + immutable/versioned Constitution state, and User↔Character Relationship. Then layer world/life state on those canonical IDs. Keep provider/channel subjects as external evidence/links, not UserIds.
-
-Every Phase 3 write must use package-owned migrations/repositories and preserve tenant scope, revisions/CAS, audit/event/outbox rules, current authority and privacy boundaries.
-
-The post-freeze MemPalace/Paperclip assessment is recorded in `docs/migration/POST-FREEZE-SUPPLEMENTAL-DONORS.md`. Neither is a Phase 3 runtime dependency. Paperclip should receive a bounded delta pass before deep workflow/agent/Ops implementation; MemPalace before deep memory implementation.
+The post-freeze MemPalace/Paperclip assessment remains in `docs/migration/POST-FREEZE-SUPPLEMENTAL-DONORS.md`. Neither is a Phase 3 runtime dependency. Paperclip should receive a bounded delta pass before deep workflow/agent/Ops implementation; MemPalace before deep memory implementation.
 
 ## World simulation comparison — completed
 
