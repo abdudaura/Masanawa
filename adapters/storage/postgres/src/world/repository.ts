@@ -9,10 +9,16 @@ import {
   type WorldId,
 } from "@masanawa/contracts";
 import {
+  assertRoutineScheduledTime,
   assertSimulationTimeDoesNotMoveBackward,
+  normalizeIanaTimezone,
+  normalizeLocalTime,
+  normalizeRoutineKey,
   normalizeSimulationInputKey,
   normalizeSimulationInputKind,
   normalizeWorldPolicy,
+  routineOccurrenceKey,
+  type AdmitRoutineOccurrenceInput,
   type AdmitSimulationInput,
   type AppendWorldEventInput,
   type ApproveWorldEventInput,
@@ -21,8 +27,13 @@ import {
   type CommitWorldGenerationResult,
   type CreateWorldInput,
   type GovernedWorldRepository,
+  type NarrativeWorldRepository,
   type PutCharacterLifeStateInput,
+  type PutRoutineInput,
+  type PutStoryArcInput,
+  type Routine,
   type SimulationInput,
+  type StoryArc,
   type World,
   type WorldEvent,
   type WorldGeneration,
@@ -98,6 +109,36 @@ interface WorldEventRow {
   recorded_at: Date;
   approved_at: Date | null;
   retired_at: Date | null;
+}
+
+interface RoutineRow {
+  tenant_id: TenantId;
+  world_id: WorldId;
+  routine_key: string;
+  character_id: CharacterId;
+  character_version_id: CharacterVersionId;
+  timezone: string;
+  local_time: string;
+  enabled: boolean;
+  input_kind: string;
+  input_payload: Routine["inputPayload"];
+  revision: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+interface StoryArcRow {
+  tenant_id: TenantId;
+  world_id: WorldId;
+  story_arc_key: string;
+  character_id: CharacterId;
+  character_version_id: CharacterVersionId;
+  state: StoryArc["state"];
+  title: string;
+  summary: string;
+  revision: string;
+  created_at: Date;
+  updated_at: Date;
 }
 
 function integer(value: string, name: string): number {
@@ -191,6 +232,40 @@ function asWorldEvent(row: WorldEventRow): WorldEvent {
     recordedAt: toInstant(row.recorded_at),
     approvedAt: row.approved_at ? toInstant(row.approved_at) : null,
     retiredAt: row.retired_at ? toInstant(row.retired_at) : null,
+  });
+}
+
+function asRoutine(row: RoutineRow): Routine {
+  return Object.freeze({
+    tenantId: row.tenant_id,
+    worldId: row.world_id,
+    routineKey: row.routine_key,
+    characterId: row.character_id,
+    characterVersionId: row.character_version_id,
+    timezone: row.timezone,
+    localTime: row.local_time.slice(0, 5),
+    enabled: row.enabled,
+    inputKind: row.input_kind,
+    inputPayload: Object.freeze({ ...row.input_payload }),
+    revision: integer(row.revision, "routine revision"),
+    createdAt: toInstant(row.created_at),
+    updatedAt: toInstant(row.updated_at),
+  });
+}
+
+function asStoryArc(row: StoryArcRow): StoryArc {
+  return Object.freeze({
+    tenantId: row.tenant_id,
+    worldId: row.world_id,
+    storyArcKey: row.story_arc_key,
+    characterId: row.character_id,
+    characterVersionId: row.character_version_id,
+    state: row.state,
+    title: row.title,
+    summary: row.summary,
+    revision: integer(row.revision, "story-arc revision"),
+    createdAt: toInstant(row.created_at),
+    updatedAt: toInstant(row.updated_at),
   });
 }
 
