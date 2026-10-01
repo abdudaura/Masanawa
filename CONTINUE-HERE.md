@@ -145,7 +145,8 @@ Phase 0A is complete. Phase 0B is in remediation because the first root-level sw
 5. CyberVerse remediation is complete at its pinned revision under strict GPL clean-room rules; coverage, manifests, model provenance and clean-room acceptance specs are under `docs/migration/coverage/`.
 6. AIRI exhaustive descendant coverage is complete at its pinned revision: 5,697-file manifest, 483 integration dispositions, client-state authority map and descendant behavior matrix are under `docs/migration/coverage/`.
 7. LiveKit Server exhaustive descendant coverage is complete at its pinned revision: 429-file manifest, transport integration dispositions and transport invariants are recorded under `docs/migration/coverage/`.
-8. **Next:** sweep LiveKit Agents TypeScript exhaustively, then LiveKit Agents Python and Pipecat.
+8. LiveKit Agents TypeScript exhaustive descendant coverage is complete: 1,042-file manifest, 522 plugin dispositions, live-session state concepts and turn/interruption/handoff invariants are under `docs/migration/coverage/`.
+9. **Next:** sweep LiveKit Agents Python for parity/delta evidence only, then Pipecat.
 6. No source may be marked `covered` from root names, filename counts or generic family assertions alone.
 7. Every retained capability must have exact implementation/test evidence, durable-state mapping, integration failure semantics, one canonical owner and an observable acceptance/parity gate.
 
