@@ -127,3 +127,8 @@ Auth, retry, idempotency and reconciliation fields still require source-by-sourc
 | I-ELZ-008 | Telegram connector | elizaOS | inbound/outbound messaging/forum topics | external messages | message/account/chat IDs | gateway/channel adapter | partial; service lifecycle located, delivery ambiguity still pending |
 | I-ELZ-009 | OpenAI-compatible provider plugin | elizaOS | text/embedding/media capabilities | model/media calls | prompt/media/private context | packages/providers | analysed; capability registration and fallback constraints recorded |
 | I-ELZ-010 | local inference router | elizaOS | on-device inference with optional cloud fallback | local/cloud compute | private prompts/media | packages/providers/local | analysed; explicit recoverable-failure classification and TTS fail-closed |
+
+
+| I-ELZ-011 | Browser workspace/native Chromium/Stagehand targets | elizaOS | browser/computer use | web navigation/forms/clicks/uploads | credentials/page/device data | packages/tools browser adapters | analysed; no post-dispatch replay, domain policy and confirmation requirements recorded |
+| I-ELZ-012 | connector credential vault | elizaOS | OAuth/provider secret persistence | encrypted secret read/write/reveal | highly sensitive | packages/security vault | analysed; durable restart test and fail-closed key behavior recorded |
+| I-ELZ-013 | cloud environment secret cache | elizaOS | reduce process.env secret exposure | in-process secret read/clear | highly sensitive | host defense-in-depth only | analysed; non-durable, never canonical |
