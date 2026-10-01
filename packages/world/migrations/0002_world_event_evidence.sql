@@ -64,7 +64,7 @@ RETURNS trigger
 LANGUAGE plpgsql
 AS $$
 BEGIN
-  IF OLD.canon_state = 'approved' THEN
+  IF OLD.canon_state IN ('approved', 'retired') THEN
     IF NEW.tenant_id IS DISTINCT FROM OLD.tenant_id
        OR NEW.world_id IS DISTINCT FROM OLD.world_id
        OR NEW.world_event_id IS DISTINCT FROM OLD.world_event_id
@@ -84,8 +84,15 @@ BEGIN
         USING ERRCODE = '23514';
     END IF;
 
-    IF NEW.canon_state NOT IN ('approved', 'retired') THEN
+    IF OLD.canon_state = 'approved'
+       AND NEW.canon_state NOT IN ('approved', 'retired') THEN
       RAISE EXCEPTION 'Approved WorldEvent cannot return to draft'
+        USING ERRCODE = '23514';
+    END IF;
+
+    IF OLD.canon_state = 'retired'
+       AND NEW.canon_state IS DISTINCT FROM OLD.canon_state THEN
+      RAISE EXCEPTION 'Retired WorldEvent cannot change lifecycle state'
         USING ERRCODE = '23514';
     END IF;
   END IF;
