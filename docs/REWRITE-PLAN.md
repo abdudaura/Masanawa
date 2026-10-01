@@ -15,7 +15,7 @@ Lifecycle:
 
 ## Phase 0A — Landscape expansion and donor selection
 
-Status: complete. Current active work is Phase 0B exhaustive source forensics and corrected descendant-level coverage.
+Status: complete. Phase 0B is also closed; current active work is Phase 1 architecture specification.
 
 Inputs: all pinned submodules in `references/sources/` and `migration/SOURCE-LOCK.md`.
 
@@ -33,7 +33,9 @@ Gate: foundation subsystems have evidence-backed donor decisions rather than ass
 
 ## Phase 0B — Exhaustive source forensics
 
-Continue deep mining across selected and secondary donors.
+Status: complete. Closure audit: `migration/PHASE-0B-CLOSURE-AUDIT.md`.
+
+Completed deep mining across selected and secondary donors.
 
 Outputs:
 - FEATURE-LEDGER;
@@ -54,7 +56,9 @@ Gate: every meaningful reference capability is assigned a Masanawa destination o
 
 ## Phase 1 — Architecture specification
 
-Finalize domain model, package boundaries, events, data/security, service contracts, ADRs and golden journeys. No production feature porting until Phase 0 is closed.
+Status: active.
+
+Finalize domain model, package boundaries, events, data/security, service contracts, ADRs and golden journeys. Phase 0 is closed; no production feature porting begins until this architecture gate passes.
 
 ## Phase 2 — Foundation
 
