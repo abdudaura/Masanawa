@@ -10,7 +10,7 @@
   },
   "scripts": {
     "check": "pnpm typecheck && pnpm test",
-    "typecheck": "pnpm -r --if-present typecheck",
+    "typecheck": "tsc -p tsconfig.json && pnpm -r --if-present typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
     "architecture:check": "vitest run test/architecture"
