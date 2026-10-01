@@ -341,3 +341,8 @@ Phase 0 must continue mapping donor-specific stores/tables/files into these cano
 | D-ELZ-005 | ConnectorSourceMetadata | elizaOS connectors | channel adapter | registered->merged->unregistered | identity-adjacent | gateway registry | redesign | aliases, active/passive, projection metadata only |
 | D-ELZ-006 | ViewCapabilityGrant | elizaOS view broker | client/view | declared->resolved->allowed/denied | device-sensitive | security/client policy | redesign | human vs agent authority |
 | D-ELZ-007 | ElizaDomainDatabaseSchema | plugin-sql | runtime/domain | migrated | highly sensitive | none as authority | C/reference | must not become second canonical data model |
+
+
+| D-ELZ-008 | MembershipAuthorityEvidence | elizaOS SQL membership | connector/world/room | publisher-registered->snapshot/delta->fresh/stale/revoked | identity/authorization | packages/security + identity | preserve semantics | generation, idempotency key, source cursor/version, bounded validUntil |
+| D-ELZ-009 | DeliveryAudienceAttestation | elizaOS core security | turn/destination | attested->renewed/invalidated/used | highly sensitive | packages/security | redesign | current-authority evidence, not durable identity truth |
+| D-ELZ-010 | ConnectorIngressReceipt | elizaOS Discord | provider account/room/message | seen->durably admitted->processed | message metadata | gateway/events | redesign | provider record identity survives process reconstruction |
