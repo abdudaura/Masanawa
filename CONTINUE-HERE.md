@@ -69,7 +69,18 @@ Masanawa now pins **17 reference repositories** as Git submodules under `referen
 
 Exact paths, branches, SHAs and licenses are in `docs/migration/SOURCE-LOCK.md` and `docs/migration/LICENSE-LEDGER.md`.
 
-## OpenClaw is a major donor
+## OpenClaw suitability decision completed
+
+ADR-0004 and `docs/migration/OPENCLAW-SUITABILITY.md` close the base-layer question:
+
+- OpenClaw is the **primary design donor for Gateway/channels/device nodes**.
+- OpenClaw is **not** the Masanawa base runtime.
+- Masanawa reimplements canonical Gateway/channel/device contracts.
+- `@openclaw/ai` is a possible provider implementation dependency behind an adapter.
+- `@openclaw/gateway-protocol` / `gateway-client` are compatibility-only candidates.
+- OpenClaw internal agent/plugin/memory packages and host-coupled channel extensions are not canonical dependencies.
+
+The following details remain relevant for later cross-donor comparisons
 
 Do not treat OpenClaw as only a skill source. It must be deep-mined for:
 
@@ -92,14 +103,13 @@ Its Markdown/SQLite personal-assistant storage model is **not** Masanawa's canon
 
 Do not return to the old four-source coverage-proof plan yet.
 
-1. Deep-mine OpenClaw and update all affected ledgers.
-2. Deep-mine AIRI for digital-life/embodiment/client architecture.
-3. Compare LiveKit Server/Agents + Pipecat + CyberVerse + AIRI for realtime presence/embodiment.
-4. Compare Letta + Mem0 + N.E.K.O + OpenClaw for memory architecture.
-5. Compare OpenJarvis + elizaOS + Microsoft Agent Framework + OpenClaw for agent runtime, skills, plugins and workflows.
-6. Compare AI Town + ChatWithStars for world simulation.
-7. Produce explicit donor decisions/ADRs and freeze provisional subsystem ownership.
-8. Only then continue Phase 0B exhaustive source coverage and A/B/C classification across the complete reference vault.
+1. **Deep-mine AIRI** for digital-life/embodiment/client architecture and update all ledgers.
+2. Compare LiveKit Server/Agents + Pipecat + CyberVerse + AIRI for realtime presence/embodiment.
+3. Compare Letta + Mem0 + N.E.K.O + OpenClaw for memory architecture.
+4. Compare OpenJarvis + elizaOS + Microsoft Agent Framework + OpenClaw for agent runtime, skills, plugins and workflows.
+5. Compare AI Town + ChatWithStars for world simulation.
+6. Produce explicit donor decisions/ADRs and freeze provisional subsystem ownership.
+7. Only then continue Phase 0B exhaustive source coverage and A/B/C classification across the complete reference vault.
 
 ## Non-negotiable rules
 
