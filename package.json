@@ -9,11 +9,12 @@
     "pnpm": ">=12 <13"
   },
   "scripts": {
-    "check": "pnpm typecheck && pnpm test",
+    "check": "pnpm typecheck && pnpm test && pnpm build",
     "typecheck": "tsc -p tsconfig.json && pnpm -r --if-present typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
-    "architecture:check": "vitest run test/architecture"
+    "architecture:check": "vitest run test/architecture",
+    "build": "pnpm --filter @masanawa/contracts build && pnpm --filter @masanawa/telemetry build && pnpm --filter @masanawa/node-runtime build && pnpm --filter @masanawa/gateway-service build && pnpm --filter @masanawa/worker-service build && pnpm --filter @masanawa/ops-service build"
   },
   "devDependencies": {
     "@types/node": "24.13.6",
