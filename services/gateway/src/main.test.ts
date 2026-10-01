@@ -23,14 +23,30 @@ function processRef(): ServiceProcess {
 }
 
 describe("gateway production lifecycle", () => {
-  it("maps deployment config, exposes draining before close, and shuts down idempotently", async () => {
+  it("composes schema readiness, drains before close, and releases the database once", async () => {
     let isDraining: (() => boolean) | undefined;
-    const close = vi.fn(async () => {
+    let readinessChecks:
+      | readonly {
+          readonly name: string;
+          check(): Promise<{ readonly ready: boolean; readonly reason?: string }>;
+        }[]
+      | undefined;
+
+    const appClose = vi.fn(async () => {
       expect(isDraining?.()).toBe(true);
     });
+    const databaseClose = vi.fn(async () => undefined);
+    const databaseReadiness = {
+      name: "database-schema",
+      check: vi.fn(async () => ({ ready: true as const })),
+    };
+    const existingReadiness = {
+      name: "runtime-registry",
+      check: vi.fn(async () => ({ ready: true as const })),
+    };
     const app: ManagedNodeServer = {
       listen: vi.fn(async ({ host, port }) => `http://${host}:${port}`),
-      close,
+      close: appClose,
     };
     const log: ServiceLifecycleLogger = {
       info: vi.fn(),
@@ -48,8 +64,16 @@ describe("gateway production lifecycle", () => {
       },
       processRef: processRef(),
       logger: log,
+      databaseFactory: () => ({
+        readinessCheck: databaseReadiness,
+        close: databaseClose,
+      }),
+      appOptions: {
+        readinessChecks: [existingReadiness],
+      },
       appFactory: (options) => {
         isDraining = options.isDraining;
+        readinessChecks = options.readinessChecks;
         return app;
       },
     });
@@ -61,9 +85,46 @@ describe("gateway production lifecycle", () => {
       shutdownTimeoutMs: 1000,
     });
     expect(runtime.isDraining()).toBe(false);
+    expect(readinessChecks?.map((check) => check.name)).toEqual([
+      "runtime-registry",
+      "database-schema",
+    ]);
 
     await Promise.all([runtime.shutdown(), runtime.shutdown()]);
+
     expect(runtime.isDraining()).toBe(true);
-    expect(close).toHaveBeenCalledTimes(1);
+    expect(appClose).toHaveBeenCalledTimes(1);
+    expect(databaseClose).toHaveBeenCalledTimes(1);
+    expect(appClose.mock.invocationCallOrder[0]).toBeLessThan(
+      databaseClose.mock.invocationCallOrder[0]!,
+    );
+  });
+
+  it("does not require or expose a database URL when an injected dependency is used", async () => {
+    const app: ManagedNodeServer = {
+      listen: vi.fn(async () => "http://127.0.0.1:3000"),
+      close: vi.fn(async () => undefined),
+    };
+
+    const runtime = await startGatewayService({
+      env: {},
+      processRef: processRef(),
+      logger: {
+        info: vi.fn(),
+        error: vi.fn(),
+      },
+      databaseFactory: () => ({
+        readinessCheck: {
+          name: "database-schema",
+          check: async () => ({ ready: true }),
+        },
+        close: async () => undefined,
+      }),
+      appFactory: () => app,
+    });
+
+    expect(runtime.config).not.toHaveProperty("databaseUrl");
+    expect(runtime.config).not.toHaveProperty("connectionString");
+    await runtime.shutdown();
   });
 });
