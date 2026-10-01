@@ -1,75 +1,96 @@
 # External and Source References
 
-## Donor repositories
+## Canonical local reference vault
 
-- ChatWithStars: https://github.com/Baatiku/chatwithstars
-- OpenJarvis: https://github.com/open-jarvis/OpenJarvis
-- N.E.K.O: https://github.com/Project-N-E-K-O/N.E.K.O
-- CyberVerse: https://github.com/Lynpoint/CyberVerse
+All donor repositories are available as pinned submodules under `references/sources/`.
 
-Use exact revisions from `migration/SOURCE-LOCK.md`, not floating branches, for Phase 0 evidence.
+Read:
+- `references/README.md` for usage rules;
+- `references/SOURCES.md` for the navigation index;
+- `migration/SOURCE-LOCK.md` for exact revisions;
+- `migration/LICENSE-LEDGER.md` before direct code adaptation.
 
-## Particularly important OpenJarvis references
+Do not use floating upstream branches as Phase 0 evidence unless performing an explicit reference refresh.
 
-At the pinned revision, inspect at minimum:
-- `docs/architecture/overview.md`
-- `docs/architecture/agents.md`
-- `docs/architecture/skills.md`
-- `docs/architecture/memory.md`
-- `docs/architecture/learning.md`
-- `docs/architecture/engine.md`
-- `src/openjarvis/skills/`
-- `src/openjarvis/agents/`
-- tool/execution/event/trace implementations and tests.
+## Donor groups
 
-## Particularly important N.E.K.O references
+### Domain/product
+- Baatiku/chatwithstars
 
-Inspect at minimum:
-- README architecture/features;
-- `memory/`;
-- `main_logic/`;
-- `brain/`;
-- plugin subsystem;
-- character/persona configuration;
-- proactive/activity/topic logic;
-- realtime clients;
-- avatar/frontend interaction logic;
-- source tests and developer docs.
+### Agent/runtime/workflow
+- open-jarvis/OpenJarvis
+- elizaOS/eliza
+- microsoft/agent-framework
+- openclaw/openclaw
 
-## Particularly important CyberVerse references
+### Companion/digital life
+- Project-N-E-K-O/N.E.K.O
+- moeru-ai/airi
 
-Inspect at minimum:
-- README architecture;
-- `inference/core/`;
-- `inference/services/`;
-- `inference/plugins/`;
-- `inference/rag/`;
-- `server/`;
-- WebRTC/frontend session logic;
-- digital-human/avatar services;
-- interruption/foreground-background behavior;
-- tests/configuration.
+### Memory
+- letta-ai/letta
+- letta-ai/letta-code
+- mem0ai/mem0
+- openclaw/openclaw memory system
 
-## Particularly important ChatWithStars references
+### Presence
+- livekit/livekit
+- livekit/agents-js
+- livekit/agents
+- pipecat-ai/pipecat
+- Lynpoint/CyberVerse
 
-Use `platform-unification` pinned source and inspect:
-- canonical docs such as PLATFORM-FOCUS, SKILL-TOOL-ROUTING, JEV architecture, experience/ops/completeness docs;
-- `services/runtime`;
-- `services/calls`;
-- `packages/contracts`;
-- `apps/admin`;
-- database migrations;
-- current tests;
-- world/identity/memory/handoff/commerce/social/studio implementations and historical compatibility behaviors still present.
+### World
+- a16z-infra/ai-town
+
+### Skills
+- OpenJarvis skill system
+- OpenClaw skill system
+- openclaw/agent-skills
+- Microsoft Agent Framework skills
+- CWS Skill Contract governance
+
+## OpenClaw areas to inspect
+
+At the pinned revision inspect at minimum:
+- Gateway/concepts architecture;
+- agent runtime/workspaces/sessions;
+- multi-agent routing/bindings;
+- channels;
+- nodes/platforms;
+- tools/security/sandbox;
+- skills/install/update/verify/workshop/ClawHub;
+- plugins;
+- memory/search/dreaming/wiki/user model;
+- queue/steering;
+- cron/intents;
+- operator/control UI and device trust.
+
+## Existing deep-mined sources
+
+### ChatWithStars
+Inspect canonical docs, runtime/calls, migrations, automation, studio, Ops and tests.
+
+### OpenJarvis
+Inspect architecture docs, agents, skills, tools, engine, security, traces/learning, scheduler and tests.
+
+### N.E.K.O
+Inspect memory, proactivity, plugin lifecycle/SDK, character/avatar/voice, computer/browser use and extensive tests.
+
+### CyberVerse
+Inspect Go session/media server, Python inference plugins, PersonaAgent/SubAgent, task store/recovery, avatar synchronization and visual input.
+
+## Expanded donor source maps
+
+Initial maps live under `migration/sources/`. Phase 0A must deepen them before donor freeze.
 
 ## Technology references at foundation date
 
-Official sources used for the initial technology ADR:
-- Node.js downloads/releases: https://nodejs.org/en/download
-- TypeScript 6 documentation: https://www.typescriptlang.org/docs/handbook/release-notes/typescript-6-0.html
-- Next.js release/security blog: https://nextjs.org/blog
-- Fastify documentation: https://fastify.dev/docs/latest/
-- Python releases: https://www.python.org/downloads/
-- PostgreSQL versioning: https://www.postgresql.org/support/versioning/
+- Node.js: https://nodejs.org/en/download
+- TypeScript: https://www.typescriptlang.org/docs/
+- Next.js: https://nextjs.org/blog
+- Fastify: https://fastify.dev/docs/latest/
+- Python: https://www.python.org/downloads/
+- PostgreSQL: https://www.postgresql.org/support/versioning/
 
-Technology references should be rechecked before major version upgrades.
+Recheck technology sources before major version upgrades.
