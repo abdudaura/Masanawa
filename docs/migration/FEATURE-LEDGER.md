@@ -437,3 +437,24 @@ This inventory is intentionally incomplete. Source-specific map documents identi
 | WLD-020 | security | world command ingress requires canonical auth despite donor auth-disabled paths | AI Town | A | Masanawa hardening | security + packages/world | analysed |
 | WLD-021 | infrastructure | Convex-specific simulation/runtime persistence | AI Town | C | reference | none; semantics reimplemented | analysed |
 | STD-020 | studio | asynchronous generated background music callback flow | AI Town | C/B | reference | studio + providers | analysed |
+
+
+### Phase 0B elizaOS feature additions
+
+| ID | Domain | Feature | Source | Class | Donor role | Masanawa destination | Status |
+|---|---|---|---|---|---|---|---|
+| PLG-020 | plugins | fail-closed host-injected plugin resolution with dependency ordering/cycle handling | elizaOS | A/B | primary plugin runtime | packages/plugins + host | analysed |
+| PLG-021 | plugins | plugin ownership reverse index with unload/reload/rollback | elizaOS | A/B | primary plugin runtime | packages/plugins | analysed |
+| PLG-022 | plugins | plugin-owned service/model/route/event/action/provider/evaluator registration | elizaOS | B | primary packaging | packages/plugins | analysed |
+| PLG-023 | plugins | staged host-side package resolution with explicit load reasons/failure classification | elizaOS | A/B | secondary host | plugin host + security | analysed |
+| SVC-001 | operations | service start/prepareStop/drain/stop lifecycle with explicit multi-implementation policy | elizaOS | A/B | primary service lifecycle | runtime supervisor | analysed |
+| AGT-020 | agents | replaceable AgentRuntime execution composition | elizaOS | B | secondary runtime | packages/agents | analysed |
+| PRV-020 | infrastructure | provider-neutral model-type registry and prioritized/fallback dispatch | elizaOS | B | primary TS provider seam | packages/providers | analysed |
+| DEC-020 | decisions | isolated response-handler evaluators with bounded patches | elizaOS | A/B | secondary | packages/decisions + telemetry | analysed |
+| CHN-020 | channels | owner-scoped connector alias/source metadata and identity projection declaration | elizaOS | A/B | secondary channel registry | gateway/channel adapters | analysed |
+| SEC-020 | security | unified private/disclosure/role/context action gate for exposure and execution | elizaOS | A/B | secondary security | packages/security + tools | analysed |
+| WFL-020 | workflows | shared task scheduler with generation and registration stale-work fences | elizaOS | A/B | secondary scheduling | packages/workflows | analysed |
+| SEC-021 | security | view capability broker with human-only versus agent authority | elizaOS | A | secondary client security | security + clients | analysed |
+| DEV-020 | perception | portable native/device bridge capability packaging | elizaOS | B | secondary device | device-node adapters + tools | analysed |
+| INF-020 | infrastructure | plugin SQL PostgreSQL/PGlite adapter/migration/RLS mechanics | elizaOS | B/C | reference | canonical DB foundation only | analysed |
+| INF-021 | infrastructure | eliza domain SQL schema as platform truth | elizaOS | C | reference | none | analysed |
