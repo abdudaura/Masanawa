@@ -556,6 +556,121 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
     });
   });
 
+  it("gates automatic canon on active CharacterVersion and keeps approved content immutable", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const worldId = createCanonicalId("world");
+    const characterId = createCanonicalId("character");
+    const versionId = createCanonicalId("character-version");
+    const approvedEventId = createCanonicalId("world-event");
+    const now = toInstant("2026-10-01T13:00:00Z");
+
+    await withTransaction(pool, async (client) => {
+      await createTenant(client, { tenantId, createdAt: now });
+      await createWorld(client, {
+        tenantId,
+        worldId,
+        initialGenerationId: createCanonicalId("world-generation"),
+        policy: testWorldPolicy(),
+        simulationTime: now,
+        createdAt: now,
+      });
+      const character = await createCharacter(client, {
+        tenantId,
+        characterId,
+        createdAt: now,
+      });
+      await createCharacterVersion(client, {
+        tenantId,
+        characterVersionId: versionId,
+        characterId,
+        versionNumber: 1,
+        constitution: testCharacterConstitution(),
+        createdAt: now,
+      });
+
+      const automatic = (worldEventId: typeof approvedEventId, payload: { activity: string }) =>
+        appendWorldEvent(client, {
+          tenantId,
+          worldId,
+          worldEventId,
+          characterId,
+          characterVersionId: versionId,
+          eventKind: "life.activity",
+          payload,
+          provenance: "engine",
+          visibility: "shared",
+          occurrenceKey: "routine:morning:2026-10-01",
+          effectiveStart: now,
+          effectiveEnd: null,
+          recordedAt: now,
+          admission: "automatic-approved",
+        });
+
+      await expect(
+        automatic(approvedEventId, { activity: "teaching" }),
+      ).rejects.toMatchObject({ code: "world.character_version_not_active" });
+
+      await publishCharacterVersion(client, {
+        tenantId,
+        characterVersionId: versionId,
+        publishedAt: now,
+      });
+      await activateCharacterVersion(client, {
+        tenantId,
+        characterId,
+        characterVersionId: versionId,
+        expectedCharacterRevision: character.revision,
+        activatedAt: now,
+      });
+
+      const approved = await automatic(approvedEventId, { activity: "teaching" });
+      expect(approved.canonState).toBe("approved");
+
+      const replay = await automatic(
+        createCanonicalId("world-event"),
+        { activity: "teaching" },
+      );
+      expect(replay.worldEventId).toBe(approvedEventId);
+
+      await expect(
+        automatic(createCanonicalId("world-event"), { activity: "travelling" }),
+      ).rejects.toMatchObject({ code: "world.event_occurrence_conflict" });
+
+      const draft = await appendWorldEvent(client, {
+        tenantId,
+        worldId,
+        worldEventId: createCanonicalId("world-event"),
+        characterId,
+        characterVersionId: versionId,
+        eventKind: "canon.authored",
+        payload: { note: "approved by operator" },
+        provenance: "authored",
+        visibility: "shared",
+        occurrenceKey: null,
+        effectiveStart: now,
+        effectiveEnd: null,
+        recordedAt: now,
+        admission: "draft",
+      });
+      await expect(
+        approveWorldEvent(client, {
+          tenantId,
+          worldEventId: draft.worldEventId,
+          approvedAt: now,
+        }),
+      ).resolves.toMatchObject({ canonState: "approved" });
+    });
+
+    await expect(
+      pool.query(
+        `UPDATE world.events
+            SET payload = '{"activity":"rewritten"}'::jsonb
+          WHERE tenant_id = $1 AND world_event_id = $2`,
+        [tenantId, approvedEventId],
+      ),
+    ).rejects.toThrow(/immutable/u);
+  });
+
   it("reports schema-aware database readiness", async () => {
     await expect(
       checkPostgresReadiness(pool, foundationMigrationRootsForTest),
