@@ -222,7 +222,7 @@ export async function claimInboxBatch(
   return withTransaction(pool, async (client) => {
     const result = await client.query<InboxRow>(
       `WITH candidates AS (
-         SELECT namespace, event_id
+         SELECT tenant_id, namespace, event_id
            FROM events.inbox
           WHERE tenant_id = $1
             AND namespace = $2
