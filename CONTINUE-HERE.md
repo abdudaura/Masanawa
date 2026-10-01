@@ -47,6 +47,7 @@ The earlier four-donor assumption has been intentionally reopened before archite
 - OpenClaw Phase 0A adoption pass complete: Gateway/channel/device-node architecture, one-trust-domain security mismatch, device pairing/reconciliation, durable approvals/current-authority checks, skill distribution/revision/session pinning, session/subagent behavior, steering, tool/plugin policy and memory-authority rules. ADR-0004 records that OpenClaw is the primary Gateway architectural donor but not Masanawa's kernel or public multi-tenant security boundary.
 - AIRI Phase 0A adoption pass complete: selected as primary digital-life/embodiment client donor. Captured Stage abstraction, Live2D/VRM/multi-renderer model-driver lifecycle, CCv3/AIRI package import boundary, plugin capability/permission/cleanup semantics, serialized voice-input lifecycle and computer-use lane separation. ADR-0005 explicitly keeps canonical identity/memory/provider/business truth outside AIRI client state.
 - Realtime presence Phase 0A comparison complete: LiveKit Server selected for production WebRTC transport, LiveKit Agents TypeScript selected as the primary realtime-session donor, Pipecat retained as a secondary frame/pipeline donor, AIRI retained for embodiment clients, and CyberVerse retained as GPL-clean behavior reference for synchronization/race/audio-only/task UX. ADR-0006 fixes the boundary.
+- Memory Phase 0A comparison complete: `packages/memory` selected as sole canonical memory authority; N.E.K.O selected for cognitive lifecycle, Mem0 for extraction/retrieval/evaluation, Letta Code for bounded working context + revision/conflict semantics, and OpenClaw for action-sensitive/compaction/provenance behavior. Canonical PostgreSQL records precede rebuildable vector/lexical/entity/temporal projections. ADR-0007 fixes the boundary. The pinned `letta-ai/letta` repo is a landing/historical pointer; implementation evidence comes from Letta Code.
 
 ### Reference source vault added
 
@@ -99,19 +100,31 @@ Selected composition:
 
 Stable boundary is Masanawa `PresenceSession` + CharacterSession bridge, not donor object models.
 
+### Memory
+
+See `docs/adr/0007-memory-architecture-adoption-boundary.md` and `docs/migration/MEMORY-ADOPTION-BOUNDARY.md`.
+
+Selected composition:
+- `packages/memory` — sole canonical authority;
+- N.E.K.O — cognitive lifecycle/liveness/reflection donor;
+- Mem0 — extraction/hybrid retrieval/entity-temporal/evaluation donor;
+- Letta Code — working-context/revision/conflict/shared-attachment donor;
+- OpenClaw — action-sensitive/compaction/provenance donor.
+
+No donor memory store or agent/workspace object owns canonical truth.
+
 ## Immediate next work
 
 Do not return to the old four-source coverage-proof plan yet.
 
-1. Compare Letta + Mem0 + N.E.K.O + OpenClaw for memory architecture and record the memory ADR.
-2. Compare OpenJarvis + elizaOS + Microsoft Agent Framework + OpenClaw for agent runtime, skills, plugins and workflows.
-3. Compare AI Town + ChatWithStars for world simulation.
-4. Produce remaining explicit donor decisions/ADRs and freeze provisional subsystem ownership.
-5. Only then continue Phase 0B exhaustive source coverage and A/B/C classification across the complete reference vault.
+1. **Next:** compare OpenJarvis + elizaOS + Microsoft Agent Framework + OpenClaw for agent runtime, skills, plugins and workflows; record explicit donor ownership/ADR(s).
+2. Compare AI Town + ChatWithStars for world simulation.
+3. Produce any remaining explicit donor decisions/ADRs and freeze provisional subsystem ownership.
+4. Only then continue Phase 0B exhaustive source coverage and A/B/C classification across the complete reference vault.
 
-## Memory comparison questions
+## Memory comparison — completed
 
-The next pass must decide:
+ADR-0007 and `docs/migration/MEMORY-ADOPTION-BOUNDARY.md` decide:
 - canonical memory record and scope model;
 - relationship/private/shared/world separation;
 - write/extraction lifecycle;
@@ -125,7 +138,7 @@ The next pass must decide:
 - evaluation/quality measurement;
 - which donor components are safe to reuse directly versus adapt behind `packages/memory`.
 
-Masanawa's existing type+scope privacy model remains non-negotiable.
+Decision: `packages/memory` owns canonical scoped PostgreSQL records, provenance, lifecycle and context compilation. N.E.K.O/Letta Code/Mem0/OpenClaw are bounded donors only. Masanawa's type+scope privacy model remains non-negotiable.
 
 ## Non-negotiable rules
 
