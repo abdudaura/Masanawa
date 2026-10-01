@@ -139,7 +139,9 @@ Current code already contains root workspace/tooling, contracts/events/security 
 
 Foundation CI now uses the committed pnpm lockfile with frozen installs and a real PostgreSQL 18 service. The PostgreSQL integration suite covers migration replay, durable idempotency conflict handling, stale Operation transitions, outbox fencing, and transactionally atomic PlatformEvent + outbox persistence including rollback on partial failure.
 
-The immediate unresolved foundation gap is the inbox admission/replay repository. Implement durable duplicate admission, payload-hash conflict detection, restart-safe claim/lease/fencing and tombstone semantics without relying on process-local state; add forward migrations where the existing inbox schema is insufficient. Then continue `docs/PHASE-2-FOUNDATION.md` in order. Do not restart completed slices and do not begin product-domain migrations yet.
+Inbox admission/replay recovery and external receipt/reconciliation persistence are now implemented and PostgreSQL-18 verified. Durable replay identity is tenant-scoped; inbox work uses lease/fence reclaim; external receipt observations are append-only/idempotent; ambiguous Operations enter one durable reconciliation case under row-lock serialization.
+
+The immediate unresolved foundation gap is security/approval PostgreSQL persistence and concurrency testing. Persist current policy revision/revocation evidence and exact Approval bindings, then prove stale policy/revocation rejection and one-time approval consumption remains single-use under concurrent transactions. Continue `docs/PHASE-2-FOUNDATION.md` in order and do not begin product-domain migrations yet.
 
 
 ## World simulation comparison — completed
