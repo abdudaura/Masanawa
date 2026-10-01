@@ -226,3 +226,11 @@ Deep behavior mining from tests remains required before Phase 0 completion.
 | B-WLD-011 | WLD-008 | Spatial state is optional; disabling coordinates/pathfinding does not remove Character life state, routines or semantic locations. | A/B | AI Town spatial model + CWS coarse location | selected |
 | B-WLD-012 | WLD-011 | Private relationship memory may influence a private interaction but cannot silently mutate shared Character/world canon. | A | CWS privacy invariant + memory ADR | selected |
 | B-WLD-013 | WLD-011 | World events cross explicit typed boundaries to memory/workflows/presence; donor Agent/Player/session objects never become canonical world truth. | A | ADR-0009 | selected |
+
+### Phase 0A OpenClaw Agent Skills additions
+
+| ID | Feature | Invariant / expected behavior | Class | Evidence | Status |
+|---|---|---|---|---|---|
+| B-SKL-012 | SKL-011 | Imported/distributed skill bundles are validated before activation; invalid frontmatter or unsafe source/destination layout fails without corrupting healthy skills. | A/B | OpenClaw Agent Skills validator/installer tests | selected |
+| B-EVL-001 | EVL-001 | Acceptance tests may validate externally observable behavior against a contract without depending on donor implementation internals. | A/B | behavior-validator skill | selected |
+| B-DEV-001 | DEV-004 | Session/transcript artifacts intended for sharing require explicit redaction/provenance treatment; local private output is not implicitly publishable. | A | agent-transcript/session-viewer guidance | selected |
