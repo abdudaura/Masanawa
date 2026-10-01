@@ -4,37 +4,37 @@
 
 Masanawa owns the resulting architecture. Every repository under `references/sources/` is a donor/reference system only.
 
-**Donor ownership is currently provisional.** We deliberately expanded the landscape before freezing architecture because newer/more mature projects may provide a stronger skeleton for specific subsystems than the original four.
+**Phase 0A donor ownership is frozen.** The expanded landscape has been compared at the pinned revisions. Later source mining may refine behavior/parity details, but changing a selected foundation owner now requires contradictory evidence plus an explicit ADR/update rather than silently reopening the architecture.
 
-## Provisional donor matrix
+## Selected donor matrix
 
 | Masanawa domain | Primary candidates | Secondary candidates | Masanawa-specific responsibility |
 |---|---|---|---|
-| Product/domain model | ChatWithStars | — | generalize beyond the original Stars product |
-| Character identity/versioning | ChatWithStars | Letta, AIRI, N.E.K.O | canonical Constitution/identity compiler and disclosure |
-| Private relationships | ChatWithStars | Letta, N.E.K.O | strict user-character isolation |
+| Product/domain model | **ChatWithStars (selected domain donor)** | — | Masanawa domain packages own generalized product truth |
+| Character identity/versioning | **ChatWithStars (selected identity/canon donor)** | Letta, AIRI, N.E.K.O | **packages/identity owns canonical Constitution/identity compiler and disclosure** |
+| Private relationships | **ChatWithStars (selected privacy/domain donor)** | Letta, N.E.K.O | **canonical relationship scope + packages/memory enforce strict user-character isolation** |
 | Shared world/life | **AI Town (selected simulation-mechanics donor)** + **ChatWithStars (selected life/canon donor)** | N.E.K.O | **packages/world owns canonical world/life state, events, generations, policy and projections** |
 | Memory lifecycle | **N.E.K.O (selected cognitive donor)** | Letta Code, OpenClaw | **packages/memory owns canonical type+scope records, evidence, lifecycle and persistence** |
 | Memory retrieval/evaluation | **Mem0 (selected specialist donor)** | N.E.K.O, OpenClaw, Letta Code | **packages/memory authorizes scope before hybrid retrieval; indexes are rebuildable** |
 | Agent execution | **OpenJarvis (selected structural donor)** + **elizaOS (selected TS component donor)** | OpenClaw, Microsoft Agent Framework | **packages/agents owns character-aware execution envelope, strategies and budgets** |
 | Skills | **OpenJarvis (selected structural donor)** | OpenClaw, Microsoft Agent Framework, ChatWithStars | **packages/skills owns canonical versions; CWS governance, OpenClaw revisions, MAF disclosure/security** |
 | Tools/security | **OpenJarvis (selected structural donor)** | OpenClaw, ChatWithStars, elizaOS | **packages/tools + security own atomic capabilities and deterministic side-effect policy** |
-| Learning/traces | OpenJarvis | ChatWithStars, Microsoft AF | gated candidate promotion |
-| Decision fabric | ChatWithStars JEV | Microsoft AF middleware/policies | bounded typed decisions only |
+| Learning/traces | **OpenJarvis (selected trace/learning donor)** | ChatWithStars, Microsoft AF | gated candidate promotion; telemetry/learning never self-promotes production truth |
+| Decision fabric | **ChatWithStars JEV (selected bounded-decision donor)** | Microsoft AF middleware/policies | **packages/decisions owns bounded typed decisions only** |
 | Durable workflows | **Microsoft Agent Framework (selected orchestration donor)** + **ChatWithStars (business-state donor)** | OpenClaw authority patterns, CyberVerse tasks | **packages/workflows owns durable graph/checkpoints/HITL; domain packages own business truth** |
-| Proactivity | N.E.K.O | OpenClaw, Letta, ChatWithStars world | permission/frequency/privacy/quiet-hours |
-| Perception | N.E.K.O, OpenClaw device nodes | AIRI, elizaOS, CyberVerse | canonical PerceptionEvent + permissions |
+| Proactivity | **N.E.K.O (selected behavioral donor)** | OpenClaw, Letta, ChatWithStars world | **packages/proactivity owns permission/frequency/privacy/quiet-hours policy** |
+| Perception | **N.E.K.O (selected perception/event donor)** + **OpenClaw (selected device-node donor)** | AIRI, elizaOS, CyberVerse | **canonical PerceptionEvent + security permissions; device nodes are adapters** |
 | Gateway/channels | **OpenClaw (selected architectural donor)** | elizaOS, OpenJarvis channels | Masanawa-native multi-tenant Gateway; optional OpenClaw bridge |
 | Realtime transport | **LiveKit Server (selected)** | CyberVerse | production WebRTC/session infrastructure behind Masanawa PresenceSession |
 | Realtime agent session | **LiveKit Agents TS (selected primary)** | LiveKit Agents Python, Pipecat, CyberVerse | Masanawa CharacterSession bridge |
 | Realtime pipeline/turn-taking | **LiveKit Agents TS (selected primary)** | Pipecat, CyberVerse | interruption, frame/processor seams, multimodal composition |
 | Digital-life/embodiment | **AIRI (selected architectural donor)** | N.E.K.O | Masanawa-owned Character contracts across web/desktop/mobile/avatar contexts |
 | Avatars | **AIRI renderer architecture** + LiveKit avatar ecosystem | CyberVerse, N.E.K.O | one renderer-neutral AvatarProvider tied to canonical identity |
-| Social | ChatWithStars | OpenClaw/eliza channel patterns | durable outbox/publish state |
-| Commerce | ChatWithStars | eliza approval patterns | deterministic ledger/reconciliation |
-| Studio | ChatWithStars | AIRI/CyberVerse media concepts | produced-media pipeline separate from live presence |
+| Social | **ChatWithStars (selected domain donor)** | OpenClaw/eliza channel patterns | **services/social owns durable outbox/publish state** |
+| Commerce | **ChatWithStars (selected domain donor)** | eliza approval patterns | **packages/commerce owns deterministic ledger/reconciliation** |
+| Studio | **ChatWithStars (selected domain donor)** | AIRI/CyberVerse media concepts | **services/studio owns produced-media pipeline separate from live presence** |
 | Plugin ecosystem | **elizaOS (selected component-model donor)** | OpenClaw, N.E.K.O | **packages/plugins owns manifests/components/capabilities/lifecycle; plugins register canonical components only** |
-| Ops/governance | ChatWithStars | OpenClaw control plane, Microsoft AF observability | unified operator control and readiness |
+| Ops/governance | **ChatWithStars (selected domain/governance donor)** | OpenClaw control plane, Microsoft AF observability | **apps/ops + security/telemetry own unified operator control and readiness** |
 
 ## Important candidate decisions
 
