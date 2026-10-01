@@ -600,6 +600,17 @@ export async function putCharacterLifeState(
     input.characterVersionId,
   );
 
+  const world = await loadWorld(client, input.tenantId, input.worldId, false);
+  if (!world) {
+    throw notFound();
+  }
+  if (input.effectiveAt > world.simulationTime) {
+    throw conflict(
+      "world.life_state_from_future",
+      "Character life state cannot become effective after current simulation time",
+    );
+  }
+
   const values = [
     nullableText(input.availability, "availability", 1000),
     nullableText(input.narrativeState, "narrativeState", 4000),
@@ -608,7 +619,25 @@ export async function putCharacterLifeState(
     nullableText(input.coarseLocation, "coarseLocation", 1000),
   ] as const;
 
+  const currentResult = await client.query<LifeStateRow>(
+    `SELECT *
+       FROM world.character_life_state
+      WHERE tenant_id = $1
+        AND world_id = $2
+        AND character_id = $3
+      FOR UPDATE`,
+    [input.tenantId, input.worldId, input.characterId],
+  );
+  const current = currentResult.rows[0];
+
   if (input.expectedRevision === null) {
+    if (current) {
+      throw conflict(
+        "world.life_state_revision_conflict",
+        "Character life state already exists",
+      );
+    }
+
     const created = await client.query<LifeStateRow>(
       `INSERT INTO world.character_life_state (
          tenant_id,
@@ -624,7 +653,6 @@ export async function putCharacterLifeState(
          updated_at
        )
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,1,$9,$10)
-       ON CONFLICT (tenant_id, world_id, character_id) DO NOTHING
        RETURNING *`,
       [
         input.tenantId,
@@ -635,13 +663,7 @@ export async function putCharacterLifeState(
         input.updatedAt,
       ],
     );
-    if (!created.rows[0]) {
-      throw conflict(
-        "world.life_state_revision_conflict",
-        "Character life state already exists",
-      );
-    }
-    return asLifeState(created.rows[0]);
+    return asLifeState(created.rows[0]!);
   }
 
   if (
@@ -649,6 +671,21 @@ export async function putCharacterLifeState(
     input.expectedRevision < 1
   ) {
     throw new RangeError("expectedRevision must be a positive safe integer");
+  }
+  if (
+    !current ||
+    integer(current.revision, "life-state revision") !== input.expectedRevision
+  ) {
+    throw conflict(
+      "world.life_state_revision_conflict",
+      "Character life state revision is stale",
+    );
+  }
+  if (input.effectiveAt < toInstant(current.effective_at)) {
+    throw conflict(
+      "world.life_state_time_regression",
+      "Character life-state effective time cannot move backward",
+    );
   }
 
   const updated = await client.query<LifeStateRow>(
