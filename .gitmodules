@@ -1,0 +1,85 @@
+[submodule "references/sources/domain/chatwithstars"]
+	path = references/sources/domain/chatwithstars
+	url = https://github.com/Baatiku/chatwithstars.git
+	branch = platform-unification
+	shallow = true
+[submodule "references/sources/agents/openjarvis"]
+	path = references/sources/agents/openjarvis
+	url = https://github.com/open-jarvis/OpenJarvis.git
+	branch = main
+	shallow = true
+[submodule "references/sources/companion/neko"]
+	path = references/sources/companion/neko
+	url = https://github.com/Project-N-E-K-O/N.E.K.O.git
+	branch = main
+	shallow = true
+[submodule "references/sources/presence/cyberverse"]
+	path = references/sources/presence/cyberverse
+	url = https://github.com/Lynpoint/CyberVerse.git
+	branch = main
+	shallow = true
+[submodule "references/sources/digital-life/airi"]
+	path = references/sources/digital-life/airi
+	url = https://github.com/moeru-ai/airi.git
+	branch = main
+	shallow = true
+[submodule "references/sources/presence/livekit-server"]
+	path = references/sources/presence/livekit-server
+	url = https://github.com/livekit/livekit.git
+	branch = master
+	shallow = true
+[submodule "references/sources/presence/livekit-agents-ts"]
+	path = references/sources/presence/livekit-agents-ts
+	url = https://github.com/livekit/agents-js.git
+	branch = main
+	shallow = true
+[submodule "references/sources/presence/livekit-agents-py"]
+	path = references/sources/presence/livekit-agents-py
+	url = https://github.com/livekit/agents.git
+	branch = main
+	shallow = true
+[submodule "references/sources/presence/pipecat"]
+	path = references/sources/presence/pipecat
+	url = https://github.com/pipecat-ai/pipecat.git
+	branch = main
+	shallow = true
+[submodule "references/sources/memory/letta-server"]
+	path = references/sources/memory/letta-server
+	url = https://github.com/letta-ai/letta.git
+	branch = main
+	shallow = true
+[submodule "references/sources/memory/letta-code"]
+	path = references/sources/memory/letta-code
+	url = https://github.com/letta-ai/letta-code.git
+	branch = main
+	shallow = true
+[submodule "references/sources/memory/mem0"]
+	path = references/sources/memory/mem0
+	url = https://github.com/mem0ai/mem0.git
+	branch = main
+	shallow = true
+[submodule "references/sources/world/ai-town"]
+	path = references/sources/world/ai-town
+	url = https://github.com/a16z-infra/ai-town.git
+	branch = main
+	shallow = true
+[submodule "references/sources/agents/eliza"]
+	path = references/sources/agents/eliza
+	url = https://github.com/elizaOS/eliza.git
+	branch = develop
+	shallow = true
+[submodule "references/sources/agents/microsoft-agent-framework"]
+	path = references/sources/agents/microsoft-agent-framework
+	url = https://github.com/microsoft/agent-framework.git
+	branch = main
+	shallow = true
+[submodule "references/sources/gateway/openclaw"]
+	path = references/sources/gateway/openclaw
+	url = https://github.com/openclaw/openclaw.git
+	branch = main
+	shallow = true
+[submodule "references/sources/skills/openclaw-agent-skills"]
+	path = references/sources/skills/openclaw-agent-skills
+	url = https://github.com/openclaw/agent-skills.git
+	branch = main
+	shallow = true
