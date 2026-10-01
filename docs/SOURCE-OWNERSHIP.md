@@ -28,8 +28,8 @@ Masanawa owns the resulting architecture. Every repository under `references/sou
 | Realtime transport | LiveKit | CyberVerse | production WebRTC/session infrastructure |
 | Realtime agent session | LiveKit Agents TS | Pipecat, CyberVerse | Masanawa CharacterSession bridge |
 | Realtime pipeline/turn-taking | Pipecat, LiveKit Agents | CyberVerse | interruption, frames, multimodal composition |
-| Digital-life/embodiment | AIRI | N.E.K.O | same character across web/desktop/mobile/avatar contexts |
-| Avatars | AIRI, LiveKit avatar ecosystem | CyberVerse, N.E.K.O | one AvatarProvider contract tied to canonical identity |
+| Digital-life/embodiment | **AIRI (selected architectural donor)** | N.E.K.O | Masanawa-owned Character contracts across web/desktop/mobile/avatar contexts |
+| Avatars | **AIRI renderer architecture** + LiveKit avatar ecosystem | CyberVerse, N.E.K.O | one renderer-neutral AvatarProvider tied to canonical identity |
 | Social | ChatWithStars | OpenClaw/eliza channel patterns | durable outbox/publish state |
 | Commerce | ChatWithStars | eliza approval patterns | deterministic ledger/reconciliation |
 | Studio | ChatWithStars | AIRI/CyberVerse media concepts | produced-media pipeline separate from live presence |
@@ -90,6 +90,30 @@ Compare:
 - ChatWithStars: multi-user/privacy/world separation.
 
 Masanawa's type+scope privacy model remains mandatory regardless of donor.
+
+### Digital-life and embodiment — decision recorded
+
+AIRI is selected as the primary architectural donor for client-side digital-life and embodiment.
+
+Adopt:
+- one Stage concept across web/desktop/mobile;
+- renderer-neutral Live2D/VRM/MMD/Spine/static presentation contracts;
+- model-driver lifecycle and explicit renderer ownership/release;
+- Character Card V3/AIRI pack as a validated interoperability/import format;
+- plugin capability lifecycle and least-privilege grant intersection;
+- serialized voice-input lifecycle and stale-callback protection;
+- separate deterministic/browser-DOM/desktop computer-use lanes.
+
+Do not adopt:
+- AIRI card/module/provider configuration as canonical Character truth;
+- Vue/Pinia/browser local state as platform truth;
+- AIRI memory as the primary memory system;
+- AIRI as realtime WebRTC transport;
+- Vue/Electron/Capacitor as mandatory Masanawa frameworks.
+
+Relevant AIRI packages are mostly private and/or Vue-specific, so architecture/source adaptation is preferred to hidden direct dependency.
+
+See ADR-0005.
 
 ### Presence
 CyberVerse is no longer the presumptive structural skeleton.
