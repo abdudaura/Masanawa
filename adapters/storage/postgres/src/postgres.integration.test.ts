@@ -1,3 +1,4 @@
+import { generateKeyPairSync } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import {
   createCanonicalId,
@@ -9,6 +10,8 @@ import {
   assertCurrentAuthority,
   createAuthorityContext,
   createPendingApproval,
+  issueServiceCredential,
+  verifyServiceCredential,
   type ApprovalBinding,
 } from "@masanawa/security";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -24,6 +27,9 @@ import {
   claimInboxBatch,
   claimOutboxBatch,
   createPostgresPool,
+  putServiceVerificationKey,
+  deactivateServiceVerificationKey,
+  createPostgresServiceCredentialKeySource,
   settlePendingApproval,
   setPolicyRevision,
   revokeAuthorityContext,
@@ -93,6 +99,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       "events/0004_outbox_recovery.sql",
       "security/0001_security_foundation.sql",
       "security/0002_approval_operation_integrity.sql",
+      "security/0003_service_credentials.sql",
     ]);
   });
 
@@ -914,6 +921,116 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       code: "reconciliation.operation_not_ambiguous",
       category: "conflict",
       operationId: nonAmbiguous.operation.operationId,
+    });
+  });
+
+  it("uses durable service verification generation and revocation state", async () => {
+    const { privateKey, publicKey } = generateKeyPairSync("ed25519");
+    const issuer = createCanonicalId("service");
+    const audience = createCanonicalId("service");
+    const tenantId = createCanonicalId("tenant");
+    const keyId = "integration-service-key";
+    const publicKeyPem = publicKey
+      .export({ type: "spki", format: "pem" })
+      .toString();
+
+    await withTransaction(pool, (client) =>
+      putServiceVerificationKey(client, {
+        serviceId: issuer,
+        keyId,
+        credentialGeneration: 1,
+        publicKeyPem,
+      }),
+    );
+
+    const issue = (generation: number) =>
+      issueServiceCredential({
+        keyId,
+        privateKey,
+        issuer,
+        audience,
+        tenantId,
+        capabilities: ["workflow.dispatch"],
+        credentialGeneration: generation,
+        issuedAt: toInstant("2026-10-01T18:00:00Z"),
+        expiresAt: toInstant("2026-10-01T18:04:00Z"),
+        requestId: createCanonicalId("request"),
+        correlationId: createCanonicalId("correlation"),
+      });
+
+    const generationOne = issue(1);
+    const first = await withTransaction(pool, (client) =>
+      verifyServiceCredential(generationOne, {
+        expectedAudience: audience,
+        expectedTenantId: tenantId,
+        requiredCapabilities: ["workflow.dispatch"],
+        keySource: createPostgresServiceCredentialKeySource(client),
+        at: toInstant("2026-10-01T18:02:00Z"),
+        clockSkewMs: 0,
+      }),
+    );
+    expect(first.principal).toEqual({
+      kind: "service",
+      serviceId: issuer,
+    });
+
+    await withTransaction(pool, (client) =>
+      putServiceVerificationKey(client, {
+        serviceId: issuer,
+        keyId,
+        credentialGeneration: 2,
+        publicKeyPem,
+      }),
+    );
+
+    await expect(
+      withTransaction(pool, (client) =>
+        verifyServiceCredential(generationOne, {
+          expectedAudience: audience,
+          keySource: createPostgresServiceCredentialKeySource(client),
+          at: toInstant("2026-10-01T18:02:00Z"),
+          clockSkewMs: 0,
+        }),
+      ),
+    ).rejects.toMatchObject({
+      code: "service-credential.stale_generation",
+      category: "authentication",
+    });
+
+    const generationTwo = issue(2);
+    await expect(
+      withTransaction(pool, (client) =>
+        verifyServiceCredential(generationTwo, {
+          expectedAudience: audience,
+          keySource: createPostgresServiceCredentialKeySource(client),
+          at: toInstant("2026-10-01T18:02:00Z"),
+          clockSkewMs: 0,
+        }),
+      ),
+    ).resolves.toMatchObject({
+      principal: {
+        kind: "service",
+        serviceId: issuer,
+      },
+    });
+
+    const deactivated = await withTransaction(pool, (client) =>
+      deactivateServiceVerificationKey(client, issuer, keyId),
+    );
+    expect(deactivated).toBe(true);
+
+    await expect(
+      withTransaction(pool, (client) =>
+        verifyServiceCredential(generationTwo, {
+          expectedAudience: audience,
+          keySource: createPostgresServiceCredentialKeySource(client),
+          at: toInstant("2026-10-01T18:02:00Z"),
+          clockSkewMs: 0,
+        }),
+      ),
+    ).rejects.toMatchObject({
+      code: "service-credential.unknown_key",
+      category: "authentication",
     });
   });
 
