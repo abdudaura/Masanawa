@@ -1,0 +1,975 @@
+{
+  "source": "Project-N-E-K-O/N.E.K.O@48ac9243a9d8e75a37d7598548c29017df1c6d2e",
+  "count": 121,
+  "rule": "N.E.K.O concrete external integrations are not adopted wholesale. Structural lifecycle/contract behavior may migrate; concrete provider/channel adapters remain C/B references unless independently selected.",
+  "entries": [
+    {
+      "path": "main_logic/asr_client/workers/__init__.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/asr_client/workers/_shared.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/asr_client/workers/dummy.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/asr_client/workers/faster_whisper.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/asr_client/workers/gemini.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/asr_client/workers/glm.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/asr_client/workers/grok.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/asr_client/workers/openai.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/asr_client/workers/qwen.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/asr_client/workers/soniox.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/asr_client/workers/step.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/tts_client/__init__.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/tts_client/_infra.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/tts_client/_registry_meta.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/tts_client/_telemetry.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/tts_client/workers/__init__.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/tts_client/workers/_step_protocol.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/tts_client/workers/cogtts.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/tts_client/workers/cosyvoice.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/tts_client/workers/doubao.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/tts_client/workers/dummy.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/tts_client/workers/elevenlabs.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/tts_client/workers/free.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/tts_client/workers/gemini.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/tts_client/workers/gptsovits.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/tts_client/workers/grok.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/tts_client/workers/local_cosyvoice.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/tts_client/workers/mimo.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/tts_client/workers/minimax.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/tts_client/workers/openai.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/tts_client/workers/qwen.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/tts_client/workers/step.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/tts_client/workers/vllm_omni.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "utils/llm_client/__init__.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "utils/llm_client/anthropic_client.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "utils/llm_client/cache_control.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "utils/llm_client/embeddings.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "utils/llm_client/factory.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "utils/llm_client/history.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "utils/llm_client/lifecycle.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "utils/llm_client/messages.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "utils/llm_client/openai_client.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "utils/llm_client/retry.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "utils/llm_client/thinking.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "utils/connection/__init__.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "utils/connection/base.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "utils/connection/onebot/__init__.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "utils/connection/onebot/factory.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "utils/connection/onebot/napcat_actions.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "utils/connection/onebot/onebot_client.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "utils/connection/onebot/onebot_connection.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "utils/connection/onebot/qq_open_plat.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "utils/connection/qq/__init__.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "utils/connection/qq/factory.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "utils/connection/qq/open_platform.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "utils/connection/qq/open_platform_media.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "plugin/server/model_gateway/__init__.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "plugin/server/model_gateway/anthropic.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "plugin/server/model_gateway/errors.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "plugin/server/model_gateway/execution.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "plugin/server/model_gateway/observation.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "plugin/server/model_gateway/openai.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "plugin/server/model_gateway/request.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "plugin/server/model_gateway/transport.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "app/agent_server/channels/__init__.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "app/agent_server/channels/browser_use.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "app/agent_server/channels/computer_use.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "app/agent_server/channels/mcp.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "app/agent_server/channels/openclaw.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "app/agent_server/channels/user_plugin.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "gateway adapters",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/omni_realtime_client/__init__.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/omni_realtime_client/_audio.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/omni_realtime_client/_client.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/omni_realtime_client/_gemini_support.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/omni_realtime_client/_protocol_capabilities.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/omni_realtime_client/_response_arbiter.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/omni_realtime_client/_responses.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/omni_realtime_client/_shared.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/omni_realtime_client/_tools.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/omni_realtime_client/_transport.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/omni_realtime_client/_wire_trace.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/omni_offline_client/__init__.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/omni_offline_client/_client.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/omni_offline_client/_genai_support.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/omni_offline_client/_lifecycle.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/omni_offline_client/_media.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/omni_offline_client/_shared.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/omni_offline_client/_streaming.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "main_logic/omni_offline_client/_tools.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "utils/image_generation/__init__.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "utils/image_generation/config.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "utils/image_generation/dashscope.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "utils/image_generation/openai.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "utils/image_generation/transport.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "utils/image_generation/types.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "steamworks/SteamworksPy.dylib",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "optional extension/provider",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "steamworks/SteamworksPy.so",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "optional extension/provider",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "steamworks/SteamworksPy64.dll",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "optional extension/provider",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "steamworks/__init__.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "optional extension/provider",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "steamworks/_native_ugc.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "optional extension/provider",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "steamworks/enums.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "optional extension/provider",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "steamworks/exceptions.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "optional extension/provider",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "steamworks/interfaces/__init__.py",
+      "type": "adapter",
+      "classification": "B",
+      "disposition": "structural",
+      "canonical_destination": "optional extension/provider",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "steamworks/interfaces/apps.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "optional extension/provider",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "steamworks/interfaces/friends.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "optional extension/provider",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "steamworks/interfaces/input.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "optional extension/provider",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "steamworks/interfaces/matchmaking.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "optional extension/provider",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "steamworks/interfaces/microtxn.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "optional extension/provider",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "steamworks/interfaces/music.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "optional extension/provider",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "steamworks/interfaces/screenshots.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "optional extension/provider",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "steamworks/interfaces/users.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "optional extension/provider",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "steamworks/interfaces/userstats.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "optional extension/provider",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "steamworks/interfaces/utils.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "optional extension/provider",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "steamworks/interfaces/workshop.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "optional extension/provider",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "steamworks/libsteam_api.dylib",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "optional extension/provider",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "steamworks/libsteam_api.so",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "optional extension/provider",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "steamworks/methods.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "optional extension/provider",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "steamworks/steam_api64.dll",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "optional extension/provider",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "steamworks/steam_api64.lib",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "optional extension/provider",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "steamworks/structs.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "optional extension/provider",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    },
+    {
+      "path": "steamworks/util.py",
+      "type": "adapter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "optional extension/provider",
+      "activation_rule": "Concrete external adapter requires independent selection plus ADR-0010/Gateway security certification before activation."
+    }
+  ]
+}
