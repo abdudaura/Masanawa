@@ -83,12 +83,16 @@ export async function setPolicyRevision(
   );
 }
 
-export async function getPolicyRevision(
+async function loadPolicyRevision(
   client: PoolClient,
   tenantId: TenantId,
+  lock = false,
 ): Promise<string> {
   const result = await client.query<{ revision: string }>(
-    `SELECT revision FROM security.policy_state WHERE tenant_id = $1`,
+    `SELECT revision
+       FROM security.policy_state
+      WHERE tenant_id = $1
+      ${lock ? "FOR SHARE" : ""}`,
     [tenantId],
   );
   const revision = result.rows[0]?.revision;
@@ -101,6 +105,13 @@ export async function getPolicyRevision(
     });
   }
   return revision;
+}
+
+export async function getPolicyRevision(
+  client: PoolClient,
+  tenantId: TenantId,
+): Promise<string> {
+  return loadPolicyRevision(client, tenantId);
 }
 
 export async function revokeAuthorityContext(
@@ -254,6 +265,11 @@ export async function settlePendingApproval(
   },
 ): Promise<ApprovalRecord> {
   requireNonEmpty(input.approverKey, "approverKey");
+  const currentPolicyRevision = await loadPolicyRevision(
+    client,
+    input.tenantId,
+    true,
+  );
 
   const result = await client.query<ApprovalRow>(
     `UPDATE security.approvals
@@ -265,6 +281,7 @@ export async function settlePendingApproval(
         AND approval_id = $2
         AND state = 'pending'
         AND expires_at > $4::timestamptz
+        AND policy_revision = $6
       RETURNING approval_id,
                 tenant_id,
                 operation_id,
@@ -287,6 +304,7 @@ export async function settlePendingApproval(
       input.decision,
       input.decidedAt,
       input.approverKey,
+      currentPolicyRevision,
     ],
   );
 
@@ -343,7 +361,11 @@ export async function consumeOnceApproval(
     });
   }
 
-  const currentRevision = await getPolicyRevision(client, input.tenantId);
+  const currentRevision = await loadPolicyRevision(
+    client,
+    input.tenantId,
+    true,
+  );
   if (currentRevision !== input.currentPolicyRevision) {
     throw new PlatformError({
       code: "approval.policy_changed",
