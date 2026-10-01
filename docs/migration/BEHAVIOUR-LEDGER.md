@@ -296,3 +296,18 @@ Deep behavior mining from tests remains required before Phase 0 completion.
 | B-SPK-020 | VOI-002/VID-001 | Enrollment/activation is reversible and policy-versioned; cancellation/failure restores voice-input suppression and wipes/closes sensitive model state. | A | voice identity service/runtime tests | analysed |
 | B-CFG-020 | CFG-001 | Cloud/config restore is staged and fenced; stale, partial or legacy-migration output cannot replace a newer verified current revision. | A/B | cloudsave runtime lifecycle/startup/config tests | analysed |
 | B-ACT-020 | ACT-001 | Raw device activity may be visible/private/unavailable; private/unavailable state cannot be silently enriched into inferred user activity or proactive context. | A | activity privacy/state/gating evidence | selected |
+
+### Phase 0B CyberVerse clean-room invariants
+
+| ID | Feature | Required behavior | Class | Evidence | Status |
+|---|---|---|---|---|---|
+| B-RTC-030 | RTC-006/007 | AV feedback is scoped to the active playback epoch; stale feedback from an older turn cannot change current audio delay/sync state. | A | direct audio-delay tests | selected clean-room |
+| B-RTC-031 | RTC-007 | RTP gap clocks reset across playback epochs but remain continuous within one epoch; real idle gaps may advance media time while normal jitter does not. | A/B | direct RTP gap/pacing tests | selected clean-room |
+| B-RTC-032 | RTC-007 | Media-path reset clears transport/media sync state without tearing down still-valid user input channels unnecessarily. | A/B | direct media-path reset test | selected clean-room |
+| B-RTC-033 | RTC-008 | Avatar-disabled mode remains a valid audio-only session and must not call avatar generation; conversation history/session state still progresses. | A | orchestrator audio-only test | selected clean-room |
+| B-RTC-034 | AVT-003/004 | Idle/avatar media caches are keyed by renderer-relevant profile/resolution; wrong-resolution cache entries are not reused. | B | idle-video tests | selected clean-room |
+| B-TSK-030 | TSK-005/006 | Task events are monotonically sequenced and terminal tasks reject late events and artifacts. | A | agenttask store tests | selected clean-room |
+| B-TSK-031 | TSK-006 | Reconnect/catch-up reads task events strictly after a supplied sequence cursor and preserves ordering. | A | agenttask event store/API tests | selected clean-room |
+| B-TSK-032 | TSK-005 | External task/artifact IDs are validated against path traversal before any filesystem persistence. | A | agenttask external-ID tests | selected clean-room |
+| B-RAG-030 | RAG-001 | Re-indexing a source replaces that source's prior chunks rather than silently accumulating stale copies; source provenance remains query-visible. | A/B | RAG engine/vector backend behavior | selected clean-room |
+| B-RAG-031 | RAG-001 | Vector backend scores are normalized to one higher-is-better contract before min-score filtering, regardless of backend metric representation. | B | vector-store backend interface | selected clean-room |
