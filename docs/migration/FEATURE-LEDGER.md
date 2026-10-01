@@ -165,8 +165,8 @@ foundation, identity, relationships, memory, world, decisions, agents, skills, t
 | RTC-010 | presence | semantic turn detection and multi-provider STT/LLM/TTS/realtime/avatar plugins | LiveKit Agents | B | major candidate | presence + providers | discovered |
 | RTC-011 | presence | composable frame/pipeline processors for voice/video/control | Pipecat | B | major candidate | services/presence | discovered |
 | AGT-009 | agents | multi-agent handoff/fan-out/sidecar/shared-bus realtime composition | Pipecat | B | candidate | agents + presence | discovered |
-| MEM-015 | memory | persistent agent identity/experience across conversations + shared memory | Letta | B | major candidate | packages/memory + identity | discovered |
-| MEM-016 | memory | temporal/entity-aware multi-signal retrieval and memory evaluation | Mem0 | B | major candidate | packages/memory + telemetry | discovered |
+| MEM-015 | memory | bounded working/core blocks + revisioned editable durable memory + explicit shared attachments | Letta Code | B | selected working-context/revision donor | packages/memory | analysed |
+| MEM-016 | memory | temporal/entity-aware multi-signal retrieval and memory evaluation | Mem0 | B | selected extraction/retrieval/evaluation donor | packages/memory + telemetry | analysed |
 | WLD-004 | world | transactional shared-state simulation engine for autonomous characters | AI Town | B | major candidate | packages/world + workers | discovered |
 | AGT-010 | agents | TypeScript AgentRuntime with actions/providers/evaluators/services/events | elizaOS | B | major candidate | packages/agents + providers | discovered |
 | PLG-006 | plugins | TypeScript plugin model registering actions/providers/evaluators/services/routes/events/views | elizaOS | B | major candidate | plugin SDK/runtime | discovered |
@@ -195,3 +195,16 @@ foundation, identity, relationships, memory, world, decisions, agents, skills, t
 | PRV-005 | infrastructure | runtime-neutral client inference/provider definitions | AIRI | B | secondary provider donor | packages/providers | analysed |
 
 This inventory is intentionally incomplete. Source-specific map documents identify the next deep-mining areas.
+
+
+### Phase 0A memory comparison additions
+
+| ID | Domain | Capability | Source | Class | Donor role | Masanawa destination | Status |
+|---|---|---|---|---|---|---|---|
+| MEM-018 | memory | ADD-oriented asynchronous extraction with related-memory lookup and dedup | Mem0 | B | primary extraction donor | packages/memory | analysed |
+| MEM-019 | memory | semantic + BM25 + entity + temporal retrieval fusion and reranking | Mem0 | B | primary retrieval donor | packages/memory | analysed |
+| MEM-020 | memory | explicit expiration distinct from decay and deletion | Mem0 | B | specialist lifecycle donor | packages/memory | analysed |
+| MEM-021 | memory | bounded always-visible working memory blocks distinct from durable memory | Letta Code | B | primary working-context donor | packages/memory | analysed |
+| MEM-022 | memory | serialized memory writes + stale-safe conflict repair/revision semantics | Letta Code | B | primary concurrency donor | packages/memory + workflows | analysed |
+| MEM-023 | memory | canonical scope authorization before extraction lookup/retrieval | Masanawa synthesis (CWS + donors) | A | canonical invariant | packages/memory + security | selected |
+| MEM-024 | memory | rebuildable vector/lexical/entity/temporal projections over canonical records | Masanawa synthesis + Mem0 | B | canonical architecture | packages/memory | selected |
