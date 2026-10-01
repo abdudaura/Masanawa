@@ -37,6 +37,8 @@ export interface World {
   readonly currentGenerationId: WorldGenerationId;
   readonly currentGenerationNumber: number;
   readonly simulationTime: Instant;
+  readonly pausedAt: Instant | null;
+  readonly recoveryTargetTime: Instant | null;
   readonly revision: number;
   readonly createdAt: Instant;
   readonly updatedAt: Instant;
