@@ -771,7 +771,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
     const worldId = createCanonicalId("world");
     const eventId = createCanonicalId("world-event");
     const now = toInstant("2026-10-01T15:00:00Z");
-    const expiresAt = toInstant("2026-10-01T16:00:00Z");
+    const expiresAt = toInstant("2099-01-01T00:00:00Z");
 
     await withTransaction(pool, async (client) => {
       await createTenant(client, { tenantId, createdAt: now });
