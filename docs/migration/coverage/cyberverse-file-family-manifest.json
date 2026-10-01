@@ -1,0 +1,3732 @@
+{
+  "source": "Lynpoint/CyberVerse@13a6a95b47e5e6f0809683458767746ad54d7d7f",
+  "count": 532,
+  "unresolved": 0,
+  "clean_room_rule": "GPL implementation and protobuf schemas are not copied into Masanawa core. Only behavior, architecture observations, and independently written acceptance contracts migrate unless separate upstream licensing is established.",
+  "entries": [
+    {
+      "path": ".dockerignore",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": ".gitattributes",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": ".githooks/pre-commit",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": ".gitignore",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": ".nvmrc",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": ".vscode/launch.json",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "AGENTS.md",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "LICENSE",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "Makefile",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "README.ja.md",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "README.ko.md",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "README.md",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "README.zh-CN.md",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "claude.md",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "docs/assets/PRs-welcome-brightgreen.svg",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "docs/assets/character1.png",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "docs/assets/character2.png",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "docs/assets/digital-human-agent.jpeg",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "docs/assets/logo.png",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "docs/assets/peiyin_clone_25s.mp3",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "docs/assets/wechat.jpg",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "docs/assets/wechat_group.jpg",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "docs/assets/丽娜.mov.png",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "docs/assets/小龙女.mov.png",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "docs/assets/爱丽丝.mov.png",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "docs/en/CHANGELOG.md",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "docs/ja/CHANGELOG.md",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "docs/ko/CHANGELOG.md",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "docs/zh-CN/CHANGELOG.md",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "docs/zh-CN/README.md",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "docs/zh-CN/features/2026-04-24-voice-llm-text-input-via-doubao.md",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "docs/zh-CN/features/2026-05-11-persona-agent-task-mvp.md",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "docs/zh-CN/templates/feature-design-implementation-template.md",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/.env.production",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/.gitignore",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/.vscode/extensions.json",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/README.md",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/index.html",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/package-lock.json",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/package.json",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/public/favicon.svg",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/public/icons.svg",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/public/liukanshan/idle-poster.png",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/public/liukanshan/knowledge.png",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/public/liukanshan/persona.png",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/public/liukanshan/poses.png",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/public/liukanshan/session-a.png",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/public/liukanshan/session-b.png",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/public/liukanshan/session-b3.png",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/App.vue",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/components/AppHeader.vue",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/components/AvatarUpload.vue",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/components/BaiduXilingPlayer.vue",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/components/CharacterCard.vue",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/components/ChatPanel.vue",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/components/ControlBar.vue",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/components/CvSelect.vue",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/components/KnowledgeSourceManager.vue",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/components/LanguageSwitcher.vue",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/components/SetupBanner.vue",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/components/TaskProgressCard.vue",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/components/VideoPlayer.vue",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/components/ViduS1Player.vue",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/components/VoiceWaveform.vue",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/components/XunfeiAvatarPlayer.vue",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/composables/useChat.ts",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/composables/useDirectWebRTC.ts",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/composables/useVisualInput.ts",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/composables/useWebRTC.ts",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/i18n/index.ts",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/i18n/messages.ts",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/main.ts",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/pages/CharacterEditPage.vue",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/pages/CharacterListPage.vue",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/pages/KanshanLandingPage.vue",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/pages/LandingPage.vue",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/pages/LaunchConfigPage.vue",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/pages/OfflineVideoPage.vue",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/pages/SessionPage.vue",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/pages/SettingsPage.vue",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/router/index.ts",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/services/api.ts",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/stores/characters.ts",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/stores/settings.ts",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/style.css",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/types/index.ts",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/utils/launchModePreference.ts",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/utils/sessionLaunchState.ts",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/src/utils/voice.ts",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/tsconfig.app.json",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/tsconfig.json",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/tsconfig.node.json",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "frontend/vite.config.ts",
+      "family": "client-ui-reference",
+      "classification": "C/B",
+      "destination": "clients/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/__init__.py",
+      "family": "inference-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/core/__init__.py",
+      "family": "provider-registry-reference",
+      "classification": "C/B",
+      "destination": "packages/providers clean-room",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/core/config.py",
+      "family": "provider-registry-reference",
+      "classification": "C/B",
+      "destination": "packages/providers clean-room",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/core/registry.py",
+      "family": "provider-registry-reference",
+      "classification": "C/B",
+      "destination": "packages/providers clean-room",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/core/types.py",
+      "family": "provider-registry-reference",
+      "classification": "C/B",
+      "destination": "packages/providers clean-room",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/generated/__init__.py",
+      "family": "generated-proto",
+      "classification": "C",
+      "destination": "do not copy",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/pi_bridge/package-lock.json",
+      "family": "agent-bridge-reference",
+      "classification": "C",
+      "destination": "gateway/agents reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/pi_bridge/package.json",
+      "family": "agent-bridge-reference",
+      "classification": "C",
+      "destination": "gateway/agents reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/pi_bridge/src/bridge.mjs",
+      "family": "agent-bridge-reference",
+      "classification": "C",
+      "destination": "gateway/agents reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/pi_bridge/test/bridge.test.mjs",
+      "family": "agent-bridge-reference",
+      "classification": "C",
+      "destination": "gateway/agents reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/__init__.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/asr/__init__.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/asr/base.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/asr/qwen_asr_plugin.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/asr/whisper_plugin.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/avatar/__init__.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/avatar/base.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/avatar/flash_head_plugin.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/avatar/live_act_plugin.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/avatar/warmup.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/base.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/llm/__init__.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/llm/base.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/llm/litellm_plugin.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/llm/openai_plugin.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/llm/qwen_plugin.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/qwen_endpoint.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/tts/__init__.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/tts/base.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/tts/doubao_tts_plugin.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/tts/openai_tts_plugin.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/tts/qwen_tts_plugin.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/voice_llm/__init__.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/voice_llm/base.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/voice_llm/doubao_config.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/voice_llm/doubao_protocol.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/voice_llm/doubao_realtime.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/voice_llm/gemini_live.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/voice_llm/openai_realtime_compatible.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/voice_llm/persona/__init__.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/voice_llm/persona/i18n.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/voice_llm/persona/runtime.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/voice_llm/persona/schemas.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/voice_llm/persona/subagents/__init__.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/voice_llm/persona/subagents/runner.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/voice_llm/persona/supervisor.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/voice_llm/persona_agent.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/plugins/voice_llm/qwen_omni_realtime.py",
+      "family": "provider-plugins",
+      "classification": "C",
+      "destination": "independent provider evaluation",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/rag/__init__.py",
+      "family": "rag-reference",
+      "classification": "C/B",
+      "destination": "packages/knowledge clean-room",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/rag/engine.py",
+      "family": "rag-reference",
+      "classification": "C/B",
+      "destination": "packages/knowledge clean-room",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/rag/vector_store.py",
+      "family": "rag-reference",
+      "classification": "C/B",
+      "destination": "packages/knowledge clean-room",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/server.py",
+      "family": "inference-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/services/__init__.py",
+      "family": "typed-inference-services",
+      "classification": "C/B",
+      "destination": "packages/providers clean-room",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/services/asr_service.py",
+      "family": "typed-inference-services",
+      "classification": "C/B",
+      "destination": "packages/providers clean-room",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/services/avatar_service.py",
+      "family": "typed-inference-services",
+      "classification": "C/B",
+      "destination": "packages/providers clean-room",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/services/llm_service.py",
+      "family": "typed-inference-services",
+      "classification": "C/B",
+      "destination": "packages/providers clean-room",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/services/rag_service.py",
+      "family": "typed-inference-services",
+      "classification": "C/B",
+      "destination": "packages/providers clean-room",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/services/tts_service.py",
+      "family": "typed-inference-services",
+      "classification": "C/B",
+      "destination": "packages/providers clean-room",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "inference/services/voice_llm_service.py",
+      "family": "typed-inference-services",
+      "classification": "C/B",
+      "destination": "packages/providers clean-room",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "infra/Dockerfile.frontend",
+      "family": "provider-deployment-config",
+      "classification": "C",
+      "destination": "deployment/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "infra/Dockerfile.inference",
+      "family": "provider-deployment-config",
+      "classification": "C",
+      "destination": "deployment/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "infra/Dockerfile.server",
+      "family": "provider-deployment-config",
+      "classification": "C",
+      "destination": "deployment/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "infra/config/asr_models/qwen.yaml",
+      "family": "provider-deployment-config",
+      "classification": "C",
+      "destination": "deployment/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "infra/config/asr_models/whisper.yaml",
+      "family": "provider-deployment-config",
+      "classification": "C",
+      "destination": "deployment/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "infra/config/avatar_models/flash_head.yaml",
+      "family": "provider-deployment-config",
+      "classification": "C",
+      "destination": "deployment/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "infra/config/avatar_models/live_act.yaml",
+      "family": "provider-deployment-config",
+      "classification": "C",
+      "destination": "deployment/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "infra/config/cyberverse.yaml",
+      "family": "provider-deployment-config",
+      "classification": "C",
+      "destination": "deployment/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "infra/config/embedding_models/openai.yaml",
+      "family": "provider-deployment-config",
+      "classification": "C",
+      "destination": "deployment/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "infra/config/embedding_models/qwen.yaml",
+      "family": "provider-deployment-config",
+      "classification": "C",
+      "destination": "deployment/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "infra/config/env",
+      "family": "provider-deployment-config",
+      "classification": "C",
+      "destination": "deployment/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "infra/config/llm_models/atlas.yaml",
+      "family": "provider-deployment-config",
+      "classification": "C",
+      "destination": "deployment/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "infra/config/llm_models/litellm.yaml",
+      "family": "provider-deployment-config",
+      "classification": "C",
+      "destination": "deployment/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "infra/config/llm_models/openai.yaml",
+      "family": "provider-deployment-config",
+      "classification": "C",
+      "destination": "deployment/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "infra/config/llm_models/qwen.yaml",
+      "family": "provider-deployment-config",
+      "classification": "C",
+      "destination": "deployment/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "infra/config/omni_models/doubao.yaml",
+      "family": "provider-deployment-config",
+      "classification": "C",
+      "destination": "deployment/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "infra/config/omni_models/gemini.yaml",
+      "family": "provider-deployment-config",
+      "classification": "C",
+      "destination": "deployment/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "infra/config/omni_models/grok.yaml",
+      "family": "provider-deployment-config",
+      "classification": "C",
+      "destination": "deployment/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "infra/config/omni_models/openai_realtime.yaml",
+      "family": "provider-deployment-config",
+      "classification": "C",
+      "destination": "deployment/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "infra/config/omni_models/qwen_omni.yaml",
+      "family": "provider-deployment-config",
+      "classification": "C",
+      "destination": "deployment/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "infra/config/subagents/pi.json",
+      "family": "provider-deployment-config",
+      "classification": "C",
+      "destination": "deployment/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "infra/config/tts_models/doubao.yaml",
+      "family": "provider-deployment-config",
+      "classification": "C",
+      "destination": "deployment/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "infra/config/tts_models/openai.yaml",
+      "family": "provider-deployment-config",
+      "classification": "C",
+      "destination": "deployment/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "infra/config/tts_models/qwen.yaml",
+      "family": "provider-deployment-config",
+      "classification": "C",
+      "destination": "deployment/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "infra/docker-compose.yml",
+      "family": "provider-deployment-config",
+      "classification": "C",
+      "destination": "deployment/reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "models/MuseTalk/.gitignore",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/LICENSE",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/README.md",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/app.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/configs/inference/realtime.yaml",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/configs/inference/test.yaml",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/configs/training/gpu.yaml",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/configs/training/preprocess.yaml",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/configs/training/stage1.yaml",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/configs/training/stage2.yaml",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/configs/training/syncnet.yaml",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/download_weights.bat",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/download_weights.sh",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/entrypoint.sh",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/inference.sh",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/loss/basic_loss.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/loss/conv.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/loss/discriminator.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/loss/resnet.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/loss/syncnet.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/loss/vgg_face.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/utils/__init__.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/utils/audio_processor.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/utils/audio_utils.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/utils/blending.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/utils/dwpose/default_runtime.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/utils/dwpose/rtmpose-l_8xb32-270e_coco-ubody-wholebody-384x288.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/utils/face_detection/README.md",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/utils/face_detection/__init__.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/utils/face_detection/api.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/utils/face_detection/detection/__init__.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/utils/face_detection/detection/core.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/utils/face_detection/detection/sfd/__init__.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/utils/face_detection/detection/sfd/bbox.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/utils/face_detection/detection/sfd/detect.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/utils/face_detection/detection/sfd/net_s3fd.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/utils/face_detection/detection/sfd/sfd_detector.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/utils/face_detection/models.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/utils/face_detection/utils.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/utils/face_parsing/__init__.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/utils/face_parsing/model.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/utils/face_parsing/resnet.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/utils/preprocessing.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/utils/training_utils.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/utils/utils.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/whisper/audio2feature.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/whisper/whisper/__init__.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/whisper/whisper/__main__.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/whisper/whisper/audio.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/whisper/whisper/decoding.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/whisper/whisper/model.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/whisper/whisper/normalizers/__init__.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/whisper/whisper/normalizers/basic.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/whisper/whisper/normalizers/english.json",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/whisper/whisper/normalizers/english.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/whisper/whisper/tokenizer.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/whisper/whisper/transcribe.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/musetalk/whisper/whisper/utils.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/requirements.txt",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/scripts/__init__.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/scripts/inference.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/scripts/preprocess.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/scripts/realtime_inference.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/test_ffmpeg.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/train.py",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/MuseTalk/train.sh",
+      "family": "embedded-model-MuseTalk",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "embedded tree has local MIT license; upstream weights/dependencies still separately checked"
+    },
+    {
+      "path": "models/SoulX-LiveAct/README.md",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/demo.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/fp4_gemm.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/fp8_gemm.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/generate.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/kokoro/__init__.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/kokoro/__main__.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/kokoro/custom_stft.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/kokoro/istftnet.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/kokoro/model.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/kokoro/modules.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/kokoro/pipeline.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/lightx2v/__init__.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/lightx2v/models/__init__.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/lightx2v/models/video_encoders/__init__.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/lightx2v/models/video_encoders/hf/__init__.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/lightx2v/models/video_encoders/hf/wan/__init__.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/lightx2v/models/video_encoders/hf/wan/vae.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/lightx2v/utils/__init__.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/lightx2v/utils/envs.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/lightx2v/utils/utils.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/lightx2v_platform/__init__.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/lightx2v_platform/base/__init__.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/lightx2v_platform/base/global_var.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/model_liveact/attention.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/model_liveact/model_memory.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/model_liveact/model_memory_sp.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/requirements.txt",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/src/audio_analysis/torch_utils.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/src/audio_analysis/wav2vec2.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/src/utils.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/src/vram_management/__init__.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/src/vram_management/layers.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/templates/index.html",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/util_liveact.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/wan/__init__.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/wan/configs/__init__.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/wan/configs/shared_config.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/wan/configs/wan_i2v_14B.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/wan/configs/wan_t2v_14B.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/wan/configs/wan_t2v_1_3B.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/wan/distributed/__init__.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/wan/distributed/fsdp.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/wan/distributed/xdit_context_parallel.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/wan/first_last_frame2video.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/wan/image2video.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/wan/modules/__init__.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/wan/modules/attention.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/wan/modules/clip.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/wan/modules/model.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/wan/modules/t5.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/wan/modules/tokenizers.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/wan/modules/vace_model.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/wan/modules/vae.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/wan/modules/xlm_roberta.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/wan/text2video.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/wan/utils/__init__.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/wan/utils/fm_solvers.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/wan/utils/fm_solvers_unipc.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/wan/utils/prompt_extend.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/wan/utils/qwen_vl_utils.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/wan/utils/utils.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/wan/utils/vace_processor.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/SoulX-LiveAct/wan/vace.py",
+      "family": "embedded-model-SoulX-LiveAct",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/README.md",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/audio_analysis/torch_utils.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/audio_analysis/wav2vec2.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/demos/generate_video.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/demos/gradio_app.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/demos/gradio_app_streaming.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/demos/scripts/inference_script_multi_gpu_pro.sh",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/demos/scripts/inference_script_single_gpu_lite.sh",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/demos/scripts/inference_script_single_gpu_pro.sh",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/generate_video.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/gradio_app.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/gradio_app_streaming.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/inference.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/inference_script_multi_gpu_pro.sh",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/inference_script_single_gpu_lite.sh",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/inference_script_single_gpu_pro.sh",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/ltx_video/__init__.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/ltx_video/ltx_vae.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/ltx_video/models/__init__.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/ltx_video/models/autoencoders/__init__.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/ltx_video/models/autoencoders/causal_conv3d.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/ltx_video/models/autoencoders/causal_video_autoencoder.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/ltx_video/models/autoencoders/conv_nd_factory.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/ltx_video/models/autoencoders/dual_conv3d.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/ltx_video/models/autoencoders/pixel_norm.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/ltx_video/models/autoencoders/vae.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/ltx_video/models/autoencoders/vae_encode.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/ltx_video/models/autoencoders/video_autoencoder.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/ltx_video/models/transformers/__init__.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/ltx_video/models/transformers/attention.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/ltx_video/models/transformers/embeddings.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/ltx_video/models/transformers/symmetric_patchifier.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/ltx_video/models/transformers/transformer3d.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/ltx_video/utils/__init__.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/ltx_video/utils/diffusers_config_mapping.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/ltx_video/utils/prompt_enhance_utils.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/ltx_video/utils/skip_layer_strategy.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/ltx_video/utils/torch_utils.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/src/distributed/usp_device.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/src/modules/flash_head_model.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/src/pipeline/flash_head_pipeline.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/utils/cpu_face_handler.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/utils/facecrop.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/utils/utils.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/wan/modules/__init__.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "models/flash_head/wan/modules/vae.py",
+      "family": "embedded-model-flash_head",
+      "classification": "C",
+      "destination": "independent upstream evaluation",
+      "license_rule": "rights not established by CyberVerse repo license; independent upstream verification required"
+    },
+    {
+      "path": "package-lock.json",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "package.json",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "proto/asr.proto",
+      "family": "protocol-schema-reference",
+      "classification": "C",
+      "destination": "independent contract design only",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "proto/avatar.proto",
+      "family": "protocol-schema-reference",
+      "classification": "C",
+      "destination": "independent contract design only",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "proto/common.proto",
+      "family": "protocol-schema-reference",
+      "classification": "C",
+      "destination": "independent contract design only",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "proto/llm.proto",
+      "family": "protocol-schema-reference",
+      "classification": "C",
+      "destination": "independent contract design only",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "proto/rag.proto",
+      "family": "protocol-schema-reference",
+      "classification": "C",
+      "destination": "independent contract design only",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "proto/tts.proto",
+      "family": "protocol-schema-reference",
+      "classification": "C",
+      "destination": "independent contract design only",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "proto/voice_llm.proto",
+      "family": "protocol-schema-reference",
+      "classification": "C",
+      "destination": "independent contract design only",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "pyproject.toml",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "scripts/Untitled",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "scripts/chain_connectivity_quick_test.py",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "scripts/generate_proto.sh",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "scripts/inference.sh",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "scripts/inference_multi_gpu.sh",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "scripts/persona_subagent_e2e_verify.sh",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "scripts/start_services.sh",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "scripts/voice_chain_connectivity_quick.py",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "scripts/voice_chain_connectivity_silence_sim.py",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/cmd/cyberverse-server/main.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/cmd/cyberverse-server/main_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/cmd/livekit_silence_user/main.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/cmd/xunfei-avatar-smoke/main.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/go.mod",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/go.sum",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/agenttask/mime.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/agenttask/service.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/agenttask/store.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/agenttask/store_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/agenttask/types.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/anonymous_owner.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/avatar_model_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/baidu_xiling.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/baidu_xiling_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/baidu_xiling_video.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/characters.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/characters_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/components.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/components_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/conversations.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/cors_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/handlers.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/handlers_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/kanshan_owner.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/knowledge.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/knowledge_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/offline_videos.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/offline_videos_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/offline_videos_xunfei.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/router.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/settings.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/settings_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/tasks.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/tasks_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/vidu_s1.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/vidu_s1_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/xunfei_avatar.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/xunfei_avatar_catalog.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/xunfei_avatar_catalog.json",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/xunfei_avatar_catalog_embed.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/xunfei_avatar_catalog_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/xunfei_avatar_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/xunfei_stream.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/api/xunfei_stream_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/character/store.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/character/store_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/config/config.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/config/config_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/config/dotenv.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/config/yamlfile.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/direct/audio_delay_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/direct/negotiation_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/direct/pacing_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/direct/peer.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/direct/rtp_gap.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/direct/rtp_gap_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/direct/turn.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/direct/webrtcapi.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/inference/asr_client.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/inference/avatar_client.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/inference/client.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/inference/interfaces.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/inference/llm_client.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/inference/rag_client.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/inference/trace_context.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/inference/tts_client.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/inference/voice_llm_client.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/inference/voice_llm_client_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/kanshan/constants.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/livekit/bot.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/livekit/room_manager.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/livekit/token.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/livekit/token_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/livekit/vp8_chunk.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/livekit/vp8_chunk_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/mediapeer/mediapeer.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/mediapeer/segment.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/mediapeer/segment_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/mediapeer/vp8_segment_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/orchestrator/errors.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/orchestrator/offline_video.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/orchestrator/offline_video_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/orchestrator/orchestrator.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/orchestrator/orchestrator_audio_only_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/orchestrator/orchestrator_baidu_xiling_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/orchestrator/orchestrator_idle_video_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/orchestrator/orchestrator_vidu_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/orchestrator/orchestrator_voice_recording_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/orchestrator/orchestrator_voice_sync_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/orchestrator/orchestrator_xunfei_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/orchestrator/prompt_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/orchestrator/session.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/orchestrator/session_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/orchestrator/silent_avatar_runtime.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/orchestrator/silent_avatar_runtime_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/orchestrator/startup_greeting_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/orchestrator/visual_input_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/pb/asr.pb.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/pb/asr_grpc.pb.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/pb/avatar.pb.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/pb/avatar_grpc.pb.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/pb/common.pb.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/pb/llm.pb.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/pb/llm_grpc.pb.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/pb/rag.pb.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/pb/rag_grpc.pb.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/pb/tts.pb.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/pb/tts_grpc.pb.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/pb/voice_llm.pb.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/pb/voice_llm_grpc.pb.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/rag/store.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/rag/store_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/recording/recorder.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/recording/recorder_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/vidus1/client.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/vidus1/client_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/ws/client.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/ws/handler.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/ws/hub.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/ws/hub_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/ws/origin_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/xunfeiavatar/client.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/internal/xunfeiavatar/client_test.go",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/stubs/livekit/media-sdk/go.mod",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/stubs/livekit/protocol/go.mod",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "server/stubs/livekit/server-sdk-go-v2/go.mod",
+      "family": "server-other",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/__init__.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/conftest.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/integration/__init__.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/integration/test_flash_head_generates_real_video.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/unit/__init__.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/unit/test_audio_rechunker.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/unit/test_avatar_warmup.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/unit/test_config.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/unit/test_doubao_plugin.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/unit/test_doubao_tts_plugin.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/unit/test_flash_head_plugin.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/unit/test_fp4_gemm.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/unit/test_grpc_services.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/unit/test_inference_server.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/unit/test_litellm_plugin.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/unit/test_live_act_plugin.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/unit/test_llm_plugin.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/unit/test_openai_plugins.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/unit/test_openai_realtime_plugin.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/unit/test_persona_agent_plugin.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/unit/test_persona_rag_tool.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/unit/test_plugin_discovery.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/unit/test_qwen_asr_plugin.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/unit/test_qwen_endpoint.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/unit/test_qwen_omni_plugin.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/unit/test_qwen_tts_plugin.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/unit/test_rag_engine.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/unit/test_registry.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/unit/test_types.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/unit/test_vector_store.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/unit/test_voice_llm_grpc_service.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "tests/unit/test_whisper_plugin.py",
+      "family": "behavior-evidence",
+      "classification": "evidence",
+      "destination": "clean-room acceptance specs",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    },
+    {
+      "path": "uv.lock",
+      "family": "root-metadata",
+      "classification": "C",
+      "destination": "reference",
+      "license_rule": "CyberVerse GPLv3: behavior/specification evidence only; no direct implementation/schema copying by default"
+    }
+  ]
+}
