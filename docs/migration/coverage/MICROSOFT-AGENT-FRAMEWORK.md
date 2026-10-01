@@ -384,3 +384,143 @@ Acceptance gate:
 - provider/tool/workflow failures preserve trace linkage without leaking secrets;
 - abandoned streams/spans close deterministically;
 - telemetry identifiers never become domain identity authority.
+
+
+## 16. MCP hosting boundary
+
+Implementation evidence:
+- `python/packages/hosting-mcp/README.md`;
+- core MCP adapters in `python/packages/core/agent_framework/_mcp.py`;
+- .NET `Microsoft.Agents.AI.Mcp` project/tests.
+
+Pinned behavior:
+- MCP hosting helpers deliberately do **not** own server lifecycle, transport, authentication, authorization, deployment or session-key trust;
+- tool schema is app-owned and only explicitly allowlisted chat-option arguments are forwarded into model options;
+- workflow tool input is validated against the start-executor input type;
+- HITL/checkpoint continuation remains application-owned and a workflow requiring external input raises instead of returning false success;
+- optional AgentState session IDs are opaque application keys; applications must authenticate/authorize them and serialize concurrent use.
+
+Disposition: **A/B protocol boundary**.
+
+Acceptance gate:
+- MCP adapter never becomes auth/session/workflow authority;
+- remote MCP tool/resource output is untrusted until tool/provider validation;
+- session ID cannot be supplied by an unauthenticated caller and treated as authority;
+- HITL continuation remains explicit;
+- exposed model options are allowlisted.
+
+## 17. Checkpoint persistence, storage and serialization security
+
+Implementation evidence:
+- core `_checkpoint.py`, `_checkpoint_encoding.py`;
+- Cosmos durable checkpoint backend `python/packages/azure-cosmos/agent_framework_azure_cosmos/_checkpoint_storage.py` + tests;
+- .NET Foundry checkpoint store `dotnet/src/Microsoft.Agents.AI.Foundry.Hosting/FoundryJsonCheckpointStore.cs`;
+- .NET hosting Azure Storage project provides session persistence rather than redefining workflow semantics.
+
+Pinned behavior:
+- Python file checkpoint serialization carefully orders same-path writers inside one process, but explicitly cannot coordinate distinct replicas;
+- Cosmos checkpoint storage implements the same workflow checkpoint protocol with per-workflow partitioning;
+- Python checkpoint encoding uses JSON plus pickle for arbitrary object fidelity and explicitly warns that restricted unpickling is **not** a security boundary and storage must be trusted;
+- .NET Foundry store persists JSON, uses optimistic concurrency with bounded retry on the session index, retains sibling/later branches while pruning superseded ancestors, and hashes unbounded IDs rather than truncating them;
+- session/user isolation is the host's responsibility when a storage contract only carries a session key.
+
+Masanawa disposition:
+- **A** for lineage/concurrency/retention/current-storage invariants;
+- **C** for Python pickle serialization as canonical Masanawa persistence;
+- **B** for backend adapter patterns.
+
+Acceptance gate:
+- PostgreSQL canonical checkpoint writes use transactional/optimistic concurrency across replicas;
+- canonical checkpoint payloads use explicit versioned schemas, not arbitrary object deserialization;
+- no untrusted payload can trigger code-bearing deserialization;
+- retention preserves active sibling branches and audit/side-effect evidence;
+- tenant/user scope is part of the canonical checkpoint key, not hidden in an untrusted session string.
+
+## 18. Provider/client adapters and retry ownership
+
+Implementation evidence:
+- 40 pinned Python workspace packages listed in root `python/pyproject.toml`, including Anthropic, Bedrock, Claude, Foundry, Gemini, GitHub Copilot, Mistral, Ollama, OpenAI and local/provider packages;
+- core `BaseChatClient` in `python/packages/core/agent_framework/_clients.py`;
+- `python/samples/02-agents/auto_retry.py`.
+
+Pinned behavior:
+- provider clients implement a common response/stream surface;
+- some providers may store server-side conversation state (`STORES_BY_DEFAULT`) while others do not;
+- the framework does not impose one universal retry policy: the explicit retry sample implements rate-limit retry as middleware/decorator with bounded attempts and exponential backoff;
+- streaming retry is intentionally treated as more complex and is not blindly retried by that sample;
+- provider-specific SDK behavior remains provider-local.
+
+Masanawa destination: `packages/providers`.
+
+Disposition: **B**.
+
+Acceptance gate:
+- provider adapters declare whether remote continuation/history is stored;
+- retries are capability/provider/error-class specific and observable;
+- streaming/side-effectful provider operations are never blindly replayed after partial output;
+- provider fallback obeys Masanawa privacy/cost/region/capability policy;
+- external provider conversation IDs cannot become Character/session identity.
+
+## 19. .NET parity / delta findings
+
+Exact pinned solution inventory source:
+- `dotnet/agent-framework-dotnet.slnx` contains **35 source projects** and **48 test projects**.
+
+Important source families:
+- core/abstractions;
+- workflows + declarative workflows + generators;
+- A2A/MCP/AG-UI hosting;
+- Foundry/Foundry Hosting/Azure persistent agents;
+- OpenAI/Anthropic/GitHub Copilot/Copilot Studio;
+- Cosmos NoSQL/Mem0/Valkey;
+- Agent Hooks/Purview;
+- Hyperlight/LocalCodeAct/Shell;
+- DevUI/Aspire integrations.
+
+Parity findings:
+- .NET WorkflowBuilder independently enforces explicit executor binding/identity and fan-in/fan-out graph construction;
+- RequestInfoEvent is a first-class external-input event;
+- checkpoint resume tests prove pending request events are republished after restore;
+- Foundry JSON checkpoint storage adds bounded optimistic-concurrency index retries and branch-aware retention;
+- hosting/storage packages are adapters around workflow/session state, not alternate workflow semantics.
+
+Delta rule:
+Python and .NET implementations are **two evidence surfaces**, not two Masanawa runtimes. Where one implementation has the stronger invariant (for example .NET JSON hosted checkpoint persistence or Python lineage/edge-state detail), Masanawa adopts the invariant into one TypeScript/PostgreSQL workflow engine.
+
+## 20. Durable-data integration classification
+
+Pinned Python package manifests show:
+- `azure-ai-search`, `azure-documentdb`, `duckdb`, `mongodb`, `postgres`, `sql-server`, `qdrant`, `redis` are search/vector/data integration packages;
+- `azure-cosmos` additionally contains a concrete workflow `CheckpointStorage` implementation;
+- `mem0` and .NET Mem0/Valkey/Cosmos packages are memory/data-provider adapters;
+- Foundry Hosting has its own host state/checkpoint adapters.
+
+Disposition:
+- **C as Masanawa domain authority** for all donor stores;
+- **B** as backend/provider adapter references;
+- **A/B** for durable checkpoint concurrency where explicitly evidenced.
+
+Acceptance gate:
+- adding a storage adapter never changes which package owns memory/workflow/world/business truth;
+- vector/search indexes are rebuildable projections unless explicitly canonicalized by a Masanawa ADR;
+- workflow checkpoint backends must implement the same canonical checkpoint transaction/idempotency contract.
+
+## 21. Direct test evidence inventory
+
+Pinned consequential tests explicitly inspected/located include:
+- `python/packages/core/tests/workflow/test_checkpoint.py`;
+- `test_checkpoint_validation.py`;
+- `test_checkpoint_storage_conformance.py`;
+- `test_request_info_event_rehydrate.py`;
+- `test_runner.py`;
+- `test_workflow.py`;
+- `test_edge.py`;
+- `test_agent_executor.py`;
+- `test_agent_executor_tool_calls.py`;
+- orchestration tests for handoff/group-chat/Magentic/sequential/concurrent;
+- skills/core tests referenced by the skills design;
+- `python/packages/core/tests/core/test_observability.py`;
+- `python/packages/azure-cosmos/tests/test_cosmos_checkpoint_storage.py`;
+- .NET `CheckpointResumeTests.cs`, WorkflowBuilder/Handoff/GroupChat/Concurrent/Sequential tests and Foundry Hosting checkpoint tests.
+
+These prove specific retained behaviors; repository closure additionally depends on the package/project inventory below.
