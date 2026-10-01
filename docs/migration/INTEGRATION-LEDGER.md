@@ -166,3 +166,8 @@ Auth, retry, idempotency and reconciliation fields still require source-by-sourc
 | I-OCL-008 | OpenClaw cron/heartbeat | OpenClaw | schedules/proactive wakes | model/tool/message execution | task/session data | packages/workflows trigger/scheduler adapters | analysed; not canonical workflow engine |
 | I-OCL-009 | OpenClaw guarded HTTP/SSRF layer | OpenClaw | secure network fetch | outbound network | URLs/network metadata | packages/security HTTP policy | analysed |
 | I-OCL-010 | OpenClaw diagnostics/OTel/telemetry | OpenClaw | support/tracing/usage telemetry | telemetry/export | operational; optional private content | packages/telemetry | analysed; content opt-in |
+
+
+| I-OCL-011 | OpenClaw Gateway RPC/worker protocol | OpenClaw | operator/node/worker RPC | control-plane and compute actions | highly sensitive | gateway/worker adapters | analysed; scopes/capabilities/worker admission separated |
+| I-OCL-012 | OpenClaw session/subagent/ACP runtime | OpenClaw | parent-child agent execution and persistent bindings | model/tool/session work | private/session state | packages/agents + workflows | analysed; donor session IDs noncanonical |
+| I-OCL-013 | OpenClaw outbound delivery layer | OpenClaw | channel sends/polls/reconciliation | external messages | message content/recipient IDs | gateway outbox | analysed; same-key reattach after timeout |
