@@ -79,6 +79,9 @@ describe("OpenTelemetry-compatible correlation", () => {
       "x-request-id": admitted.requestId,
       "x-correlation-id": admitted.correlationId,
     });
+    expect(attributes.trace_id).toBe(admitted.trace.traceId);
+    expect(attributes.span_id).toBe(admitted.trace.spanId);
+    expect(attributes.trace_flags).toBe(admitted.trace.traceFlags);
     expect(attributes["masanawa.operation.id"]).toBe(operationId);
     expect(Object.keys(attributes)).not.toContain("tenant.id");
     expect(() =>
