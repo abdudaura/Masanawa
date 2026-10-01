@@ -3,9 +3,7 @@
   "compilerOptions": {
     "composite": true
   },
-  "include": ["src/**/*.ts"],
-  "references": [
-    { "path": "../contracts" },
-    { "path": "../events" }
+  "include": [
+    "src/**/*.ts"
   ]
 }
