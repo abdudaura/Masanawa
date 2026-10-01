@@ -78,3 +78,8 @@ Every external dependency must enter Masanawa through a canonical capability/pro
 Auth, retry, idempotency and reconciliation fields still require source-by-source deep extraction.
 
 | I-MEM-003 | PostgreSQL/pgvector memory projections | Masanawa | canonical memory records + initial vector/search projections | DB/index writes | private/shared memory by scope | packages/memory persistence/retrieval | selected architecture; implementation deferred until Phase 0 closes |
+
+| I-AGT-001 | donor agent runtimes (OpenJarvis/elizaOS/MAF) | comparison donors | execution/strategy/component/workflow reference | model/tool calls | private context | architecture/reference only; no canonical runtime dependency | selected boundary |
+| I-SKL-001 | Agent Skills / MCP skill sources | OpenJarvis/MAF/OpenClaw | import/progressive disclosure/interoperability | source/resource reads | untrusted code/content | packages/skills source adapters with quarantine/certification | selected boundary |
+| I-WFL-001 | Microsoft Agent Framework | Microsoft AF | workflow/checkpoint/HITL semantics | workflow/model/tool calls | private/business state | architecture/reference; reimplement TS/PostgreSQL | selected boundary |
+| I-PLG-001 | elizaOS plugin ecosystem | elizaOS | component/plugin interoperability reference | extension-defined | varies/high | optional import/compatibility adapters only | selected boundary |

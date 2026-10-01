@@ -213,3 +213,18 @@ This inventory is intentionally incomplete. Source-specific map documents identi
 | MEM-022 | memory | serialized memory writes + stale-safe conflict repair/revision semantics | Letta Code | B | primary concurrency donor | packages/memory + workflows | analysed |
 | MEM-023 | memory | canonical scope authorization before extraction lookup/retrieval | Masanawa synthesis (CWS + donors) | A | canonical invariant | packages/memory + security | selected |
 | MEM-024 | memory | rebuildable vector/lexical/entity/temporal projections over canonical records | Masanawa synthesis + Mem0 | B | canonical architecture | packages/memory | selected |
+
+
+### Phase 0A runtime/skills/plugins/workflow comparison additions
+
+| ID | Domain | Capability | Source | Class | Donor role | Masanawa destination | Status |
+|---|---|---|---|---|---|---|---|
+| AGT-014 | agents | bounded strategy-based agent execution envelope with loop/tool/cost/token guards | OpenJarvis | A/B | selected structural runtime donor | packages/agents | selected |
+| AGT-015 | agents | typed component runtime with staged routing, provider composition and service lifecycle | elizaOS | B | selected TypeScript component donor | packages/agents + plugins | selected |
+| SKL-009 | skills | canonical manager/parser/dependency/executor/SkillTool/import/provenance architecture | OpenJarvis | A/B | selected structural skill donor | packages/skills | selected |
+| SKL-010 | skills | progressive disclosure, composable sources, resources/scripts and path-safe reads | Microsoft Agent Framework | A/B | secondary skill donor | packages/skills | selected |
+| PLG-011 | plugins | typed action/provider/evaluator/service/model/route/event component registration | elizaOS | B | selected component-model donor | packages/plugins | selected |
+| PLG-012 | plugins | host-owned package resolution/install with fail-closed kernel loading | elizaOS | A | selected supply-chain boundary | packages/plugins + ops | selected |
+| WFL-001 | workflows | typed graph orchestration with fan-out/fan-in/conditional edges and convergence guard | Microsoft Agent Framework | A/B | selected orchestration donor | packages/workflows | selected |
+| WFL-002 | workflows | graph-signature checkpoint lineage with executor/edge/pending-human state | Microsoft Agent Framework | A | selected recovery donor | packages/workflows | selected |
+| WFL-003 | workflows | restored execution revalidates current authority and reconciles side-effect receipts | Masanawa synthesis (MAF+CWS+OpenClaw) | A | canonical invariant | packages/workflows + security | selected |
