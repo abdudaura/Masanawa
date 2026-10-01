@@ -395,3 +395,15 @@ This inventory is intentionally incomplete. Source-specific map documents identi
 | CTX-001 | agents/memory | context-pressure estimation and compaction policy separated from durable memory records | Letta Code | A/B | working-context donor | packages/agents/context + memory | analysed |
 | MEM-024 | memory | completion-coupled memory notification: clients observe update only after canonical persistence/sync outcome is known | Letta Code | A | memory delivery donor | packages/memory + events | analysed |
 | ATT-001 | channels/security | attachment ingestion/send policy with recipient, MIME and realpath directory constraints | Letta Code | B | attachment-policy donor | gateway + knowledge/security | analysed |
+
+### Phase 0B Mem0 descendant additions
+
+| ID | Domain | Feature | Source | Class | Donor role | Masanawa destination | Status |
+|---|---|---|---|---|---|---|---|
+| MEM-030 | memory/security | immutable typed memory scope: caller metadata cannot inject or change user/agent/run/actor identity fields | Mem0 | A | strong scope-hardening donor | packages/memory + security | analysed |
+| MEM-031 | memory | extraction pipeline that distinguishes provider failure, no extracted facts, duplicate facts and persisted records | Mem0 | A/B | extraction lifecycle donor | packages/memory + providers | analysed |
+| MEM-032 | memory/retrieval | hybrid semantic + lexical/BM25 + entity-boost retrieval with normalized higher-is-better scoring | Mem0 | A/B | primary retrieval donor | packages/memory retrieval projections | analysed |
+| MEM-033 | memory/retrieval | optional reranking with failure-safe fallback that does not mutate caller-owned candidates and still honors top-k | Mem0 | A/B | reranking donor | packages/memory retrieval | analysed |
+| MEM-034 | memory | entity projection linked to canonical memories, with dedup/upsert and cleanup/relink on memory update/delete | Mem0 | B | entity-index donor | packages/memory entity projection | analysed |
+| MEM-035 | memory | append history for add/update/delete with persistence-before-history ordering | Mem0 | A/B | mutation-history donor | packages/memory revisions/audit | analysed |
+| MEM-036 | memory | expiration/validity-date filtering with explicit include-expired override; full reference-date temporal search is not implemented in pinned OSS source | Mem0 | B | validity donor, not full temporal engine | packages/memory | analysed |
