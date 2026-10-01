@@ -1386,10 +1386,6 @@ export function createPostgresWorldRepository(
       appendWorldEvent(client, input),
     getWorldEvent: (tenantId: TenantId, worldEventId: WorldEventId) =>
       getWorldEvent(client, tenantId, worldEventId),
-    approveWorldEvent: (input: ApproveWorldEventInput) =>
-      approveWorldEvent(client, input),
-    retireWorldEvent: (input: RetireWorldEventInput) =>
-      retireWorldEvent(client, input),
     putRoutine: (input: PutRoutineInput) => putRoutine(client, input),
     admitRoutineOccurrence: (input: AdmitRoutineOccurrenceInput) =>
       admitRoutineOccurrence(client, input),
