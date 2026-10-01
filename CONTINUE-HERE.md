@@ -39,29 +39,26 @@ The active implementation line remains `phase2-closure` until PR #16 is merged. 
 
 ## Immediate next work
 
-Phase 3 is active. Canonical identity was merged to `main` in PR #17 at merge commit `75549800445842f8ff1db54e06529c075ed34ea4` after the full CI check passed.
+Phase 3 is active. Canonical identity and the first world-generation foundation are merged to `main`. The current branch is `phase3-world-evidence-life-state`.
 
-Current implementation branch: `phase3-world-foundation`.
-
-Completed on the current branch:
-- `@masanawa/world` is active as the sole canonical world/life-state package;
-- World, WorldPolicy, WorldGeneration, SimulationInput and CharacterLifeState contracts are defined;
-- simulation time regression is rejected;
-- catch-up policy is explicit rather than inferred from wall-clock gaps;
-- package-owned world migration adds tenant-owned worlds, append-only generations, ordered/idempotent simulation inputs and Character life-state projection storage;
-- PostgreSQL world repository admits idempotent inputs and rejects same-key/different-content conflicts;
-- generation commits lock the current World, compare expected generation, reject stale writers, settle admitted inputs in the same transaction, append the next generation and advance the World projection;
-- integration coverage includes a two-worker race proving only one expected-generation writer may commit, tenant-scoped reads, backward-time rejection and atomic input settlement.
+Completed on this branch:
+- WorldEvent evidence now records generation, Character/CharacterVersion provenance, visibility, validity interval, occurrence key and canon lifecycle;
+- approved and retired canon evidence is database-immutable;
+- generation commits can carry CharacterLifeState changes and WorldEvent drafts in the same transaction;
+- life-state writes require an active Character with a published active Constitution, use revision CAS and reject effective-time regression/future state;
+- engine events may auto-approve only when WorldPolicy.automaticCanonEnabled is true;
+- authored/imported events remain draft unless a later governed approval action promotes them;
+- event occurrence keys are tenant/world-scoped and duplicate admission is rejected;
+- PostgreSQL 18 tests cover automatic-canon policy, active Constitution binding, source CharacterVersion capture, life-state CAS, duplicate occurrence rejection and approved-event immutability.
 
 Immediate work:
-1. run PR/CI for `phase3-world-foundation` against PostgreSQL 18 and fix all real failures;
-2. after green CI, merge the world foundation;
-3. continue Phase 3 with governed CharacterLifeState writes plus WorldEvent/WorldInteraction evidence and Constitution-gated canon admission;
-4. only after those invariants are durable, add routines/story arcs and optional spatial simulation.
+1. run the full PR/CI gate for `phase3-world-evidence-life-state` and fix every real failure;
+2. after green CI, merge this evidence/life-state slice;
+3. implement the explicit governed approval/retirement command for draft canon with AuthorityContext/ApprovalBinding checks rather than direct table mutation;
+4. then add routines/story arcs using deterministic occurrence keys and the established generation/evidence path;
+5. keep private User↔Character Relationship state outside shared world-event payloads and world projections.
 
-Do not create another world engine, relationship store, or Character identity. World consumes canonical CharacterId; private Relationship data must never become shared World state implicitly.
-
-The post-freeze MemPalace/Paperclip assessment remains in `docs/migration/POST-FREEZE-SUPPLEMENTAL-DONORS.md`. Neither is a Phase 3 runtime dependency.
+Do not add a second world engine, second Character identity, or alternate relationship/memory authority.
 
 ## World simulation comparison — completed
 
