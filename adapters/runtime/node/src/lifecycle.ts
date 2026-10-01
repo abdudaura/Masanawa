@@ -37,6 +37,7 @@ export interface ServiceLifecycleLogger {
 export interface StartedNodeService {
   readonly address: string;
   stop(reason?: string): Promise<void>;
+  disposeSignals(): void;
 }
 
 export interface StartNodeServiceInput {
@@ -112,6 +113,11 @@ export async function startNodeService(
       port: input.config.port,
     });
   } catch {
+    try {
+      await input.server.close();
+    } catch {
+      // Startup failure remains authoritative; cleanup details are never logged here.
+    }
     throw lifecycleError(
       "service.start_failed",
       "Service failed to start",
@@ -173,6 +179,8 @@ export async function startNodeService(
       try {
         await input.server.close();
       } catch {
+        input.server.server?.closeIdleConnections?.();
+        input.server.server?.closeAllConnections?.();
         throw lifecycleError(
           "service.shutdown_failed",
           "Service failed to shut down cleanly",
@@ -209,5 +217,9 @@ export async function startNodeService(
     address,
   });
 
-  return Object.freeze({ address, stop });
+  return Object.freeze({
+    address,
+    stop,
+    disposeSignals: detachSignals,
+  });
 }
