@@ -40,6 +40,8 @@ import {
   getWorld,
   admitSimulationInput,
   commitWorldGeneration,
+  pauseWorld,
+  recoverPausedWorld,
   putCharacterLifeState,
   appendWorldEvent,
   appendWorldInteraction,
@@ -164,6 +166,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       "world/0002_world_canon.sql",
       "world/0003_world_routines_story_arcs.sql",
       "world/0004_world_interactions.sql",
+      "world/0005_world_recovery.sql",
     ]);
   });
 
