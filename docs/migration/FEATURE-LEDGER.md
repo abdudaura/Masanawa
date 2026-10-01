@@ -532,3 +532,17 @@ This inventory is intentionally incomplete. Source-specific map documents identi
 | SKL-044 | skills | proposal-first Workshop authoring with immutable draft generations, stale baselines, crash-recoverable apply and quarantine | OpenClaw | A/B | primary authoring/recovery donor | packages/skills + security | analysed |
 | SKL-045 | skills/workflows | bounded autonomous/collection review with current-authority cancellation and no retroactive auto-apply | OpenClaw | A/B | review automation donor | packages/skills + workflows + security | analysed |
 | SKL-046 | skills/system-agent | release-owned Custodian playbooks isolated to the resolved system agent and narrowed by ordinary skill policy | OpenClaw | A/B | operational-playbook donor | packages/skills | analysed |
+
+
+### Phase 0B OpenClaw Agent Skills additions
+
+| ID | Domain | Feature | Source | Class | Donor role | Masanawa destination | Status |
+|---|---|---|---|---|---|---|---|
+| SKL-050 | skills | minimal SKILL.md authoring format with validated name/description frontmatter | OpenClaw Agent Skills | A/B | authoring donor | packages/skills import | analysed |
+| SKL-051 | skills | source/destination-safe skill install with dry-run/copy/symlink/force semantics | OpenClaw Agent Skills | A/B | distribution safety donor | developer tooling + packages/skills import | analysed |
+| QA-050 | quality | source-blind behavior validation against explicit observable contract | OpenClaw Agent Skills | A | acceptance donor | parity/release harness | analysed |
+| QA-051 | quality | exact-source-scoped independent code review with frozen evidence and bounded fallback | OpenClaw Agent Skills | B | review tooling donor | CI/release tooling | analysed |
+| OBS-050 | privacy | local transcript redaction/truncation provenance with publication authority separated from preview | OpenClaw Agent Skills | A/B | developer privacy donor | support/developer tooling | analysed |
+| OBS-051 | privacy | read-only redacted Beam session projection with destination-scoped sharing | OpenClaw Agent Skills | B | collaboration donor | optional developer projection | analysed |
+| QA-052 | quality | remote clean-machine/cross-OS proof with source-trust/provider isolation | OpenClaw Agent Skills | B | validation tooling donor | CI/dev proof | analysed |
+| AGT-050 | agents | path-free portable handoff prompt preserving review/validation/publication boundaries | OpenClaw Agent Skills | B | continuity donor | developer-agent handoff | analysed |
