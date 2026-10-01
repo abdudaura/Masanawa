@@ -43,6 +43,9 @@ import {
   putCharacterLifeState,
   appendWorldEvent,
   approveWorldEvent,
+  putRoutine,
+  admitRoutineOccurrence,
+  putStoryArc,
   putServiceVerificationKey,
   deactivateServiceVerificationKey,
   createPostgresServiceCredentialKeySource,
@@ -156,6 +159,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       "security/0003_service_credentials.sql",
       "world/0001_world_foundation.sql",
       "world/0002_world_canon.sql",
+      "world/0003_world_routines_story_arcs.sql",
     ]);
   });
 
@@ -765,6 +769,237 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
         [tenantId, approvedEventId],
       ),
     ).rejects.toThrow(/immutable/u);
+  });
+
+  it("admits one timezone routine occurrence per local date and rejects stale CharacterVersion bindings", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const worldId = createCanonicalId("world");
+    const characterId = createCanonicalId("character");
+    const version1 = createCanonicalId("character-version");
+    const version2 = createCanonicalId("character-version");
+    const now = toInstant("2026-10-01T06:55:00Z");
+
+    await withTransaction(pool, async (client) => {
+      await createTenant(client, { tenantId, createdAt: now });
+      await createWorld(client, {
+        tenantId,
+        worldId,
+        initialGenerationId: createCanonicalId("world-generation"),
+        policy: testWorldPolicy(),
+        simulationTime: now,
+        createdAt: now,
+      });
+      const character = await createCharacter(client, {
+        tenantId,
+        characterId,
+        createdAt: now,
+      });
+      await createCharacterVersion(client, {
+        tenantId,
+        characterVersionId: version1,
+        characterId,
+        versionNumber: 1,
+        constitution: testCharacterConstitution(),
+        createdAt: now,
+      });
+      await publishCharacterVersion(client, {
+        tenantId,
+        characterVersionId: version1,
+        publishedAt: now,
+      });
+      await activateCharacterVersion(client, {
+        tenantId,
+        characterId,
+        characterVersionId: version1,
+        expectedCharacterRevision: character.revision,
+        activatedAt: now,
+      });
+
+      const routine = await putRoutine(client, {
+        tenantId,
+        worldId,
+        routineKey: "morning",
+        characterId,
+        characterVersionId: version1,
+        expectedRevision: null,
+        timezone: "Africa/Lagos",
+        localTime: "08:00",
+        enabled: true,
+        inputKind: "routine.due",
+        inputPayload: { activity: "morning routine" },
+        updatedAt: now,
+      });
+      expect(routine.revision).toBe(1);
+
+      const scheduled = toInstant("2026-10-01T07:00:00Z");
+      const first = await admitRoutineOccurrence(client, {
+        tenantId,
+        worldId,
+        routineKey: "morning",
+        scheduledFor: scheduled,
+        receivedAt: scheduled,
+      });
+      const replay = await admitRoutineOccurrence(client, {
+        tenantId,
+        worldId,
+        routineKey: "morning",
+        scheduledFor: scheduled,
+        receivedAt: toInstant("2026-10-01T07:00:05Z"),
+      });
+      expect(replay.sequence).toBe(first.sequence);
+
+      await expect(
+        admitRoutineOccurrence(client, {
+          tenantId,
+          worldId,
+          routineKey: "morning",
+          scheduledFor: toInstant("2026-10-01T08:00:00Z"),
+          receivedAt: scheduled,
+        }),
+      ).rejects.toThrow(/expected 08:00/u);
+
+      await createCharacterVersion(client, {
+        tenantId,
+        characterVersionId: version2,
+        characterId,
+        versionNumber: 2,
+        constitution: testCharacterConstitution(),
+        createdAt: now,
+      });
+      await publishCharacterVersion(client, {
+        tenantId,
+        characterVersionId: version2,
+        publishedAt: now,
+      });
+      await activateCharacterVersion(client, {
+        tenantId,
+        characterId,
+        characterVersionId: version2,
+        expectedCharacterRevision: 2,
+        activatedAt: now,
+      });
+
+      await expect(
+        admitRoutineOccurrence(client, {
+          tenantId,
+          worldId,
+          routineKey: "morning",
+          scheduledFor: toInstant("2026-10-02T07:00:00Z"),
+          receivedAt: toInstant("2026-10-02T07:00:00Z"),
+        }),
+      ).rejects.toMatchObject({
+        code: "world.character_version_not_active",
+      });
+
+      await putRoutine(client, {
+        tenantId,
+        worldId,
+        routineKey: "morning",
+        characterId,
+        characterVersionId: version2,
+        expectedRevision: 1,
+        timezone: "Africa/Lagos",
+        localTime: "08:00",
+        enabled: true,
+        inputKind: "routine.due",
+        inputPayload: { activity: "morning routine" },
+        updatedAt: toInstant("2026-10-02T06:50:00Z"),
+      });
+
+      await expect(
+        admitRoutineOccurrence(client, {
+          tenantId,
+          worldId,
+          routineKey: "morning",
+          scheduledFor: toInstant("2026-10-02T07:00:00Z"),
+          receivedAt: toInstant("2026-10-02T07:00:00Z"),
+        }),
+      ).resolves.toMatchObject({
+        state: "admitted",
+        kind: "routine.due",
+      });
+    });
+  });
+
+  it("keeps story arcs version-gated, revisioned, and forward-only", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const worldId = createCanonicalId("world");
+    const characterId = createCanonicalId("character");
+    const versionId = createCanonicalId("character-version");
+    const now = toInstant("2026-10-01T14:00:00Z");
+
+    await withTransaction(pool, async (client) => {
+      await createTenant(client, { tenantId, createdAt: now });
+      await createWorld(client, {
+        tenantId,
+        worldId,
+        initialGenerationId: createCanonicalId("world-generation"),
+        policy: testWorldPolicy(),
+        simulationTime: now,
+        createdAt: now,
+      });
+      const character = await createCharacter(client, {
+        tenantId,
+        characterId,
+        createdAt: now,
+      });
+      await createCharacterVersion(client, {
+        tenantId,
+        characterVersionId: versionId,
+        characterId,
+        versionNumber: 1,
+        constitution: testCharacterConstitution(),
+        createdAt: now,
+      });
+      await publishCharacterVersion(client, {
+        tenantId,
+        characterVersionId: versionId,
+        publishedAt: now,
+      });
+      await activateCharacterVersion(client, {
+        tenantId,
+        characterId,
+        characterVersionId: versionId,
+        expectedCharacterRevision: character.revision,
+        activatedAt: now,
+      });
+
+      const write = (
+        expectedRevision: number | null,
+        state: "planned" | "active" | "completed" | "retired",
+      ) =>
+        putStoryArc(client, {
+          tenantId,
+          worldId,
+          storyArcKey: "school-opening",
+          characterId,
+          characterVersionId: versionId,
+          expectedRevision,
+          state,
+          title: "School opening",
+          summary: "Prepare and complete the opening-week arc.",
+          updatedAt: now,
+        });
+
+      await expect(write(null, "planned")).resolves.toMatchObject({
+        state: "planned",
+        revision: 1,
+      });
+      await expect(write(1, "active")).resolves.toMatchObject({
+        state: "active",
+        revision: 2,
+      });
+      await expect(write(2, "completed")).resolves.toMatchObject({
+        state: "completed",
+        revision: 3,
+      });
+      await expect(write(3, "active")).rejects.toMatchObject({
+        code: "world.story_arc_transition_invalid",
+      });
+      await expect(write(2, "retired")).rejects.toMatchObject({
+        code: "world.story_arc_revision_conflict",
+      });
+    });
   });
 
   it("reports schema-aware database readiness", async () => {
