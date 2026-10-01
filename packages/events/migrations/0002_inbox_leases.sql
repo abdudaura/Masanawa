@@ -1,4 +1,10 @@
 ALTER TABLE events.inbox
+  DROP CONSTRAINT inbox_pkey;
+
+ALTER TABLE events.inbox
+  ADD PRIMARY KEY (tenant_id, namespace, event_id);
+
+ALTER TABLE events.inbox
   ADD COLUMN lease_owner text,
   ADD COLUMN lease_expires_at timestamptz,
   ADD COLUMN updated_at timestamptz NOT NULL DEFAULT clock_timestamp();
