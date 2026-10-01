@@ -73,6 +73,15 @@ Inventory semantic state concepts before designing tables. Do not mirror donor s
 | D-WRK-001 | WorkerExecutionContext | CyberVerse | task+character | bounded ephemeral config | sensitive | agents/workers | redesign | role workspace and allowlists |
 | D-WRK-002 | WorkerCancellation/LeaseState | CyberVerse | task execution | lifecycle | internal | agents/workers | redesign | explicit cancel, timeout, process cleanup |
 | D-AVT-001 | AvatarWarmupPolicy | CyberVerse | avatar provider/deployment | configuration | internal | providers/presence | redesign | global/distributed/timeout policy |
+| D-SOC-003 | SocialReviewDecision | CWS | tenant+planned post | append/state | internal/public content | social | preserve | approve/reject/caption override/operator |
+| D-SOC-004 | SocialSchedulePolicy | CWS | destination/tenant | versioned config | internal | social/proactivity | redesign | cadence, quiet window, timezone |
+| D-STD-003 | ContinuityState | CWS | character/project/shot | versioned state | internal | studio | preserve concept | clothing, props, physical/location state, prior frame refs |
+| D-STD-004 | QualityGateResult | CWS | render job | append per attempt | internal | studio | preserve | checks/verdict/reasons/reviewer transition |
+| D-STD-005 | RenderAttempt | CWS | render job | append | internal | studio | preserve | provider, attempt, output, failure/requeue/review |
+| D-OPS-002 | AcceptanceEvidence | CWS | tenant+capability+release/provider | append/expiry | internal | ops/telemetry | preserve | configured/readiness distinct from observed live journey |
+| D-OPS-003 | OperationalIncident | CWS | tenant+domain resource | durable lifecycle | internal | ops | redesign | stale/failure/needs-attention with safe action |
+| D-OPS-004 | KillSwitch | CWS | organization/feature scope | durable mutable | sensitive | ops/security | preserve concept | global emergency pause preserving lower-scope settings |
+| D-OPS-005 | FinancialAdjustment | CWS | financial account/contact | append-only request/evidence | financial | ops/commerce | preserve | direction, amount, reason, reference, actor |
 | D-AUD-001 | AuditEvent | CWS/OpenJarvis/N.E.K.O | org | append-only | sensitive | events/security | preserve concept | immutable actor/action trail |
 
 Phase 0 must continue mapping donor-specific stores/tables/files into these canonical concepts or explicit retirement.
