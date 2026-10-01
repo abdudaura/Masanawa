@@ -10,6 +10,8 @@ import type {
 import type {
   CharacterLifeState,
   JsonObject,
+  Routine,
+  StoryArc,
   SimulationInput,
   World,
   WorldEvent,
@@ -107,4 +109,48 @@ export interface GovernedWorldRepository extends WorldRepository {
   ): Promise<CharacterLifeState>;
   appendWorldEvent(input: AppendWorldEventInput): Promise<WorldEvent>;
   approveWorldEvent(input: ApproveWorldEventInput): Promise<WorldEvent>;
+}
+
+export interface PutRoutineInput {
+  readonly tenantId: TenantId;
+  readonly worldId: WorldId;
+  readonly routineKey: string;
+  readonly characterId: CharacterId;
+  readonly characterVersionId: CharacterVersionId;
+  readonly expectedRevision: number | null;
+  readonly timezone: string;
+  readonly localTime: string;
+  readonly enabled: boolean;
+  readonly inputKind: string;
+  readonly inputPayload: JsonObject;
+  readonly updatedAt: Instant;
+}
+
+export interface AdmitRoutineOccurrenceInput {
+  readonly tenantId: TenantId;
+  readonly worldId: WorldId;
+  readonly routineKey: string;
+  readonly scheduledFor: Instant;
+  readonly receivedAt: Instant;
+}
+
+export interface PutStoryArcInput {
+  readonly tenantId: TenantId;
+  readonly worldId: WorldId;
+  readonly storyArcKey: string;
+  readonly characterId: CharacterId;
+  readonly characterVersionId: CharacterVersionId;
+  readonly expectedRevision: number | null;
+  readonly state: StoryArc["state"];
+  readonly title: string;
+  readonly summary: string;
+  readonly updatedAt: Instant;
+}
+
+export interface NarrativeWorldRepository extends GovernedWorldRepository {
+  putRoutine(input: PutRoutineInput): Promise<Routine>;
+  admitRoutineOccurrence(
+    input: AdmitRoutineOccurrenceInput,
+  ): Promise<SimulationInput>;
+  putStoryArc(input: PutStoryArcInput): Promise<StoryArc>;
 }

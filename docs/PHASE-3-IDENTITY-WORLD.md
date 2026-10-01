@@ -2,7 +2,7 @@
 
 Status: ACTIVE
 Started: 2026-10-01
-Active branch: `phase3-identity-world`
+Active branch: `phase3-world-routines`
 
 Phase 2 shared foundation is closed. This phase implements canonical identity first, then canonical world/life state on those identities.
 
@@ -73,9 +73,9 @@ Implemented:
 
 The world foundation passed the full CI gate before merge.
 
-## Governed life/canon slice — implemented, awaiting CI
+## Governed life/canon slice — merged and validated
 
-Current branch: `phase3-world-canon`; PR #19.
+Merged in PR #19 at `729ab3e64eb0539ea249ceb6a39cf79afab20cb2` after the full PostgreSQL 18 CI gate passed.
 
 Implemented:
 - CharacterLifeState writes require the referenced CharacterVersion to remain the Character's active published version;
@@ -88,12 +88,30 @@ Implemented:
 - approved/retired canon content is protected by a database trigger from silent rewrite;
 - world write contracts accept no Relationship/private-memory input.
 
-Next after green CI:
-- merge PR #19;
-- add routines/story arcs as governed simulation inputs that produce life-state/event transitions through the existing generation boundary;
-- add WorldInteraction evidence;
-- define pause/restart/catch-up acceptance tests;
-- add optional spatial mechanics only after non-spatial life semantics and recovery are complete.
+The governed life/canon slice passed the full CI gate before merge.
+
+## Routines/story-arcs slice — implemented, awaiting CI
+
+Current branch: `phase3-world-routines`.
+
+Implemented:
+- durable Routine and StoryArc records in the canonical World package;
+- every routine/story arc is bound to a canonical CharacterId plus exact CharacterVersionId;
+- IANA timezone validation and exact local HH:MM routine slots;
+- deterministic routine occurrence identity from Character + routine key + local date;
+- routine occurrences enter through the existing SimulationInput idempotency path;
+- duplicate occurrence replay reuses the original input instead of creating parallel life-engine work;
+- activating a newer CharacterVersion makes an older routine binding fail closed until explicitly revised/rebound;
+- routine updates use expected revision/CAS;
+- story arcs use expected revision/CAS and a forward-only lifecycle;
+- PostgreSQL tests cover timezone resolution, same-date occurrence replay, wrong-slot rejection, CharacterVersion rebinding, stale revisions, and story-arc backward-transition rejection.
+
+Immediate next:
+- run the complete PostgreSQL 18 CI gate and fix all failures;
+- merge this slice when green;
+- then implement WorldInteraction evidence and executable pause/restart/catch-up policy;
+- prove bounded catch-up cannot duplicate routine inputs or canon after restart;
+- keep spatial simulation deferred until non-spatial life/recovery semantics are complete.
 
 ## Donor boundary
 
