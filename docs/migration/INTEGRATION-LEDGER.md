@@ -43,6 +43,8 @@ Every external dependency must enter Masanawa through a canonical capability/pro
 | I-INF-002 | Railway/DigitalOcean | ChatWithStars | stateful compute | deployment | config/secrets | deployment only | discovered |
 | I-EMB-001 | local ONNX embeddings | N.E.K.O | memory similarity | local compute | memory text | retrieval provider | analysed |
 | I-IPC-001 | ZeroMQ | N.E.K.O | plugin process IPC | local IPC | plugin data | plugin runtime option | discovered |
-| I-IPC-002 | gRPC/protobuf | CyberVerse | Go/Python inference boundary | internal RPC | media/control | presence internal contract reference | discovered |
+| I-IPC-002 | gRPC/protobuf | CyberVerse | Go/Python inference boundary | internal RPC | media/control | presence internal contract reference | analysed |
+| I-PRS-004 | RTP/RTCP transport feedback | CyberVerse | realtime A/V pacing, bitrate and sync feedback | media transport control | session/network metadata | presence transport abstraction | analysed |
+| I-WRK-001 | isolated subagent bridge process | CyberVerse | background specialist execution | child-process work/artifacts | task context + selected credentials | worker execution adapter | analysed |
 
 Auth, retry, idempotency and reconciliation fields still require source-by-source deep extraction.

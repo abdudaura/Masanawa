@@ -43,6 +43,7 @@ Before changing code:
 - ChatWithStars deep pass: character ownership/handoffs, cross-channel continuity, life engine, memory policy, Skill Contract v2, provider/commerce recovery, durable delivery idempotency and call-runtime race/recovery/readiness behavior.
 - OpenJarvis deep pass: skill parser/import/dependency/manager, skill-as-tool adapter, engine discovery/fallback, tool confirmation, SSRF/security references, agent loop/budget guards, traces/learning overlays and scheduler semantics.
 - N.E.K.O deep pass: memory lifecycle/liveness/dead-letter behavior, foreground persistence, explicit-vs-automatic recall, process-isolated plugin lifecycle/hot reload, proactive state persistence/repetition controls, restricted computer use, optional speaker identity, and embodied-interaction memory semantics.
+- CyberVerse deep pass: playback epochs and stale-feedback rejection, RTP/AV sync, audio-only mode, idle/speech avatar synchronization, pipeline generation races, terminal task/event/artifact semantics, reconnectable task events, foreground ACK/background worker UX, role-isolated worker allowlists/cancellation/timeouts, and avatar warmup policy. CyberVerse remains a GPL-clean behavior reference only.
 
 ### Not yet complete
 The ledgers are NOT exhaustive. Do not begin Masanawa application feature implementation yet.
@@ -52,10 +53,10 @@ The ledgers are NOT exhaustive. Do not begin Masanawa application feature implem
 Continue Phase 0 Passes 2–6, source by source, using the source-map follow-up sections.
 
 Recommended order:
-1. CyberVerse deep mine: WebRTC/media tests, Persona/SubAgent, task store/recovery, avatar sync, visual input.
-2. Return to remaining ChatWithStars areas: deeper migrations, automation, media-studio and Ops.
-3. Resolve donor overlaps/conflicts exposed by N.E.K.O/CyberVerse, especially realtime voice, avatar, memory and background-task boundaries.
-4. Perform repository-wide coverage proof before ending Phase 0.
+1. Return to remaining ChatWithStars areas: deeper migrations, automation, media-studio and Ops.
+2. Resolve donor overlaps/conflicts, especially realtime voice/presence, avatar, background-task, memory and extension boundaries.
+3. Perform repository-wide coverage proof across all four pinned trees, configs, schemas and tests.
+4. Only after Phase 0 coverage is proven, finalize Phase 1 architecture specifications/ADRs.
 
 For each pass, update all affected ledgers and source-map coverage notes in the same PR.
 

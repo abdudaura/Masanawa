@@ -99,6 +99,23 @@ Features describe what exists; this ledger records observable and operational be
 | B-NEKO-VID-002 | VID-001 | Enrollment/suppression state is restored on unregister/cancel/failure, and sensitive computed embeddings are wiped on cancelled work. | A | N.E.K.O voice identity tests | analysed |
 | B-NEKO-EMB-001 | EMB-001 | Embodied interaction memory is deduplicated by event key/rank, allowing a stronger summary to replace a weaker repetition without logging every physical interaction. | B | N.E.K.O avatar memory contract tests | analysed |
 | B-NEKO-EMB-002 | EMB-001 | Missing/unsupported physical interaction details are not invented and free-form compatibility context cannot leak into the factual memory event. | A | N.E.K.O avatar memory contract tests | analysed |
+| B-CV-RTC-001 | RTC-006 | AV-sync/control feedback from a previous playback epoch/turn must not change the current turn's audio/video timing. | A | CyberVerse audio_delay/session tests | analysed |
+| B-CV-RTC-002 | RTC-007 | Media reset clears stale output tracks/codec/bitrate/sync state while preserving the inbound user-audio path needed for continued conversation. | A | CyberVerse audio_delay tests | analysed |
+| B-CV-RTC-003 | RTC-007 | Large idle RTP gaps may be skipped according to frame-duration policy rather than replayed as long frozen latency. | B | CyberVerse rtp_gap tests | analysed |
+| B-CV-RTC-004 | RTC-008 | Avatar-disabled sessions continue as valid audio-only sessions and must not invoke avatar generation. | A | CyberVerse orchestrator_audio_only tests | analysed |
+| B-CV-RTC-005 | RTC-008 | Idle avatar filler stops when real speech video becomes active and resumes only after the speech turn finishes. | A | CyberVerse silent_avatar_runtime tests | analysed |
+| B-CV-RTC-006 | RTC-009 | A late finish callback from an older pipeline generation cannot clear/cancel the currently active pipeline. | A | CyberVerse session tests | analysed |
+| B-CV-RTC-007 | RTC-009 | Delayed assistant output is ordered beside its matching user turn, not merely appended by arrival time. | A | CyberVerse session turn-seq tests | analysed |
+| B-CV-RTC-008 | RTC-009 | Provider dialog projections do not create user/assistant pairs across different session IDs and drop orphan/incomplete pairs. | A | CyberVerse dialog-context tests | analysed |
+| B-CV-TSK-001 | TSK-005 | Once a task is terminal, late state events and artifact creation are rejected. | A | CyberVerse agenttask store tests | analysed |
+| B-CV-TSK-002 | TSK-006 | Task event sequence increments atomically with status/progress and supports list-after-sequence reconnect catch-up. | A | CyberVerse agenttask store tests | analysed |
+| B-CV-TSK-003 | TSK-005 | External task/artifact identifiers containing traversal/path segments are rejected. | A | CyberVerse agenttask store tests | analysed |
+| B-CV-AGT-001 | AGT-009 | Long background work returns an accepted task to the foreground persona before execution so the persona can acknowledge immediately. | B | CyberVerse PersonaSupervisor/PersonaAgent tests | analysed |
+| B-CV-AGT-002 | AGT-009 | Final natural persona response is emitted only after terminal task completion and must not expose internal task/artifact IDs or raw JSON. | A/B | CyberVerse PersonaAgent/Supervisor tests | analysed |
+| B-CV-AGT-003 | AGT-008 | Background worker receives only explicitly allowed tools/skills/packages/extensions and selected provider credentials; unrelated parent secrets are not inherited. | A | CyberVerse subagent runner tests | analysed |
+| B-CV-AGT-004 | AGT-008 | Background cancellation sends an explicit cancel signal; timeout force-terminates the stuck child; child failure is reaped before surfacing structured error. | A | CyberVerse subagent runner tests | analysed |
+| B-CV-AGT-005 | AGT-008 | Background artifact size is bounded before it enters the canonical task/artifact system. | A | CyberVerse subagent runner tests | analysed |
+| B-CV-AVT-001 | AVT-004 | Multi-GPU/distributed avatar warmup occurs only when both global and distributed warmup policies permit it and remains timeout-bounded. | B | CyberVerse avatar warmup tests | analysed |
 | B-LRN-001 | LRN-003 | Learned/optimized skill changes are candidates and require evaluation/certification before consequential production promotion. | A | Masanawa decision from CWS+OpenJarvis | designed |
 
 Deep behavior mining from tests remains required before Phase 0 completion.

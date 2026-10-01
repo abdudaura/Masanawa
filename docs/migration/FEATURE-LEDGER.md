@@ -131,6 +131,15 @@ foundation, identity, relationships, memory, world, decisions, agents, skills, t
 | PER-003 | perception | restricted/sanitized computer-use action runtime with exclusive desktop lease | N.E.K.O | A/B | primary safety | packages/tools + perception | analysed |
 | VID-001 | security | optional speaker/owner voice identity activation and enrollment | N.E.K.O | B | primary | packages/security + services/presence | analysed |
 | EMB-001 | avatar | embodied interaction events with dedupe-ranked memory eligibility | N.E.K.O | B | primary | packages/perception + memory | analysed |
+| RTC-006 | presence | playback/turn epoch media synchronization and stale-feedback rejection | CyberVerse | A | primary behavior | services/presence | analysed |
+| RTC-007 | presence | bounded AV sync correction, gap skipping and media-path reset | CyberVerse | A/B | primary behavior | services/presence | analysed |
+| RTC-008 | presence | optional avatar with continuous idle/speech renderer synchronization | CyberVerse | A/B | primary behavior | services/presence | analysed |
+| RTC-009 | presence | generation-safe conversational pipeline cancellation/completion | CyberVerse | A | primary behavior | services/presence + runtime | analysed |
+| TSK-005 | workflows | terminal task/artifact immutability | CyberVerse | A | secondary reliability | packages/workflows | analysed |
+| TSK-006 | workflows | atomic ordered task-event progression and reconnect catch-up | CyberVerse | A | secondary reliability | packages/workflows + events | analysed |
+| AGT-008 | agents | role-isolated background worker context with allowlisted tools/skills/packages/env | CyberVerse | A/B | primary background-worker pattern | packages/agents + workers | analysed |
+| AGT-009 | agents | immediate foreground acknowledgment before background task execution | CyberVerse | B | primary UX | packages/agents + runtime | analysed |
+| AVT-004 | avatar | renderer warmup policy including distributed capability/timeout | CyberVerse | B | primary generated-human | services/presence + providers | analysed |
 | OPS-002 | operations | trace/evaluation visibility | OpenJarvis + ChatWithStars | B | combined | apps/ops + telemetry | discovered |
 
 This inventory is intentionally incomplete. Source-specific map documents identify the next deep-mining areas.

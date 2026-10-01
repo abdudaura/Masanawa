@@ -125,6 +125,102 @@ Masanawa adopts none of these language/storage choices by default. WebRTC/media 
 GPLv3 is materially different from the Apache donors. Default migration method:
 behavior/architecture ledger -> independent Masanawa contract -> clean implementation -> parity test.
 
+## Deep-mined behavior added in Pass 2
+
+### Realtime media epochs and synchronization
+Verified from direct-media/orchestrator tests:
+- media playback is partitioned by playback/turn epoch so feedback from an older turn cannot mutate current-turn sync;
+- RTP gap handling derives its threshold from real frame duration and may skip a large idle gap rather than reproducing a long frozen pause;
+- AV synchronization can insert bounded silence/shift PCM while preserving output length;
+- delayed PCM tail carries correctly into the next chunk;
+- changing playback epoch resets delay/gap state;
+- media-path reset clears stale tracks, bitrate, codec and AV-sync state while leaving the inbound user-audio channel usable;
+- idle/supersedable avatar segments queued before a newer speech epoch become stale once speech advances;
+- transport-estimated bitrate is bounded by platform min/max policy rather than copied directly.
+
+Masanawa should model `PlaybackEpoch`/turn identity explicitly inside presence streams and reject stale media/control feedback.
+
+### Audio/avatar synchronization
+Verified:
+- voice/avatar synchronization computes target audio samples from video frames/FPS;
+- short audio is padded to match video duration;
+- bounded audio buffers discard oldest overflow rather than growing without limit;
+- silent/idle avatar playback may continue before first speech video is ready;
+- first actual speech video suppresses idle filler;
+- final speech completion permits idle filler again;
+- continuous avatar inference streams are not torn down on every spoken utterance;
+- maximum avatar lead is derived from actual renderer FPS/chunk duration.
+
+### Audio-only mode
+Verified:
+- disabling avatar generation still produces a valid voice session;
+- audio is published directly;
+- avatar generation is not called;
+- no synthetic AV segment is required;
+- user and assistant history are persisted;
+- pipeline returns the session to listening after response completion.
+
+This is a non-negotiable separation: AvatarRenderer is optional to live voice.
+
+### Session/pipeline races
+Verified:
+- every running conversational pipeline receives a sequence/generation;
+- a late completion callback from an older pipeline must not clear or cancel the current pipeline;
+- history associates assistant messages with matching turn sequence so delayed responses remain next to the correct user turn;
+- provider dialog-context construction keeps recent complete pairs, drops orphan/incomplete pairs, never pairs across session IDs, and rejects messages without session identity;
+- repeated user fragments within the same session may be merged before a complete assistant pair;
+- provider timestamps are normalized to a strictly increasing sequence without creating future time.
+
+Masanawa should keep canonical conversation ordering independently of provider-specific dialog projections.
+
+### Durable task store
+Verified from `server/internal/agenttask/store_test.go`:
+- task creation begins queued with zero progress;
+- appending a task event atomically advances per-task sequence and updates task status/progress;
+- terminal completion records finish time;
+- artifacts have explicit type/MIME/content metadata;
+- after terminal state, late task events and late artifacts are rejected;
+- events can be listed strictly after a sequence number for reconnect/catch-up;
+- latest active task can be resolved per session;
+- externally supplied task/artifact IDs are accepted only when path-safe; path-segment/traversal IDs are rejected.
+
+Masanawa's richer workflow engine should preserve terminal immutability and ordered event catch-up.
+
+### Foreground persona + background subagent
+Verified from PersonaAgent/Supervisor tests:
+- long work is accepted as a durable task and returned to the voice layer before background execution begins, allowing an immediate natural acknowledgement;
+- background progress/artifact/completion events are projected into the same persona session;
+- delayed task completion is still awaited after the original input stream ends;
+- the user can ask for progress while background work continues;
+- final spoken completion occurs after the terminal task event;
+- final persona response is generated from user request + task status + safe summary/artifact hint, and explicitly must not read JSON/internal task/artifact IDs aloud.
+
+Masanawa should preserve the UX pattern while using its canonical Task/Workflow engine rather than a separate Persona task store.
+
+### Role-isolated worker context
+Verified from subagent runner/tests:
+- background execution requires a character/role identity;
+- each role may have separate workspace/session/agent directories;
+- allowed tools, skills, packages and extensions are explicit;
+- subprocess environment is allowlisted/constructed rather than inheriting arbitrary parent secrets;
+- unrelated environment secrets must not leak to the worker;
+- cancellation sends an explicit cancel command before teardown;
+- timeout terminates the stuck bridge;
+- failed child process is reaped and its structured error is preserved;
+- artifact payload has a configured maximum size.
+
+Masanawa should generalize this as a sandboxed WorkerExecutionContext.
+
+### Avatar warmup
+Verified:
+- renderer warmup can be globally disabled;
+- single-device warmup follows global enable;
+- distributed/multi-GPU warmup requires an explicit distributed-warmup capability;
+- warmup has a timeout.
+
+### License boundary
+All findings in this section are behavioral requirements derived from the pinned GPLv3 source/tests. They are specifications for independent Masanawa implementation, not copied implementation code.
+
 ## Phase 0 follow-up
 
 Deep-mine:

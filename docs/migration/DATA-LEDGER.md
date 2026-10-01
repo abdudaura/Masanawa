@@ -66,6 +66,13 @@ Inventory semantic state concepts before designing tables. Do not mirror donor s
 | D-PLG-002 | PluginRuntimeIntent | N.E.K.O | plugin installation | durable mutable | internal | plugin system | preserve concept | explicitly stopped/running/autostart intent |
 | D-PLG-003 | PluginCallChain | N.E.K.O | execution | ephemeral/trace | internal | plugin system/telemetry | redesign | recursion/depth enforcement |
 | D-PER-001 | ActivityPrivacyState | N.E.K.O | device/session | ephemeral | sensitive | perception | redesign | visible/private/unavailable |
+| D-RTC-003 | PlaybackEpoch | CyberVerse | presence session | monotonic/ephemeral+trace | internal | presence | redesign | rejects stale feedback/output across turns |
+| D-RTC-004 | MediaSyncState | CyberVerse | presence session+epoch | ephemeral | internal | presence | redesign | bounded AV delay/gap/buffer state |
+| D-RTC-005 | PresencePipelineGeneration | CyberVerse | presence session | monotonic/ephemeral | internal | presence/runtime | redesign | prevents late pipeline cleanup races |
+| D-TSK-004 | TaskEventSequence | CyberVerse | task | append-only monotonic | internal/private | workflows/events | preserve concept | reconnect cursor |
+| D-WRK-001 | WorkerExecutionContext | CyberVerse | task+character | bounded ephemeral config | sensitive | agents/workers | redesign | role workspace and allowlists |
+| D-WRK-002 | WorkerCancellation/LeaseState | CyberVerse | task execution | lifecycle | internal | agents/workers | redesign | explicit cancel, timeout, process cleanup |
+| D-AVT-001 | AvatarWarmupPolicy | CyberVerse | avatar provider/deployment | configuration | internal | providers/presence | redesign | global/distributed/timeout policy |
 | D-AUD-001 | AuditEvent | CWS/OpenJarvis/N.E.K.O | org | append-only | sensitive | events/security | preserve concept | immutable actor/action trail |
 
 Phase 0 must continue mapping donor-specific stores/tables/files into these canonical concepts or explicit retirement.
