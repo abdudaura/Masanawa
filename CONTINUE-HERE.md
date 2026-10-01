@@ -46,6 +46,7 @@ The earlier four-donor assumption has been intentionally reopened before archite
 - Remaining ChatWithStars deep pass: tenant-safe social automation/review/cadence/redeploy dedupe, media-studio continuity/render/quality/lipsync, Ops acceptance evidence, privacy-safe observability, emergency kill switches and audited financial adjustments.
 - OpenClaw Phase 0A adoption pass complete: Gateway/channel/device-node architecture, one-trust-domain security mismatch, device pairing/reconciliation, durable approvals/current-authority checks, skill distribution/revision/session pinning, session/subagent behavior, steering, tool/plugin policy and memory-authority rules. ADR-0004 records that OpenClaw is the primary Gateway architectural donor but not Masanawa's kernel or public multi-tenant security boundary.
 - AIRI Phase 0A adoption pass complete: selected as primary digital-life/embodiment client donor. Captured Stage abstraction, Live2D/VRM/multi-renderer model-driver lifecycle, CCv3/AIRI package import boundary, plugin capability/permission/cleanup semantics, serialized voice-input lifecycle and computer-use lane separation. ADR-0005 explicitly keeps canonical identity/memory/provider/business truth outside AIRI client state.
+- Realtime presence Phase 0A comparison complete: LiveKit Server selected for production WebRTC transport, LiveKit Agents TypeScript selected as the primary realtime-session donor, Pipecat retained as a secondary frame/pipeline donor, AIRI retained for embodiment clients, and CyberVerse retained as GPL-clean behavior reference for synchronization/race/audio-only/task UX. ADR-0006 fixes the boundary.
 
 ### Reference source vault added
 
@@ -71,41 +72,60 @@ Masanawa now pins **17 reference repositories** as Git submodules under `referen
 
 Exact paths, branches, SHAs and licenses are in `docs/migration/SOURCE-LOCK.md` and `docs/migration/LICENSE-LEDGER.md`.
 
-## OpenClaw decision (completed)
+## Completed adoption decisions
 
-OpenClaw has been deep-mined sufficiently for its adoption-boundary decision. See `docs/adr/0004-openclaw-adoption-boundary.md` and `docs/migration/OPENCLAW-ADOPTION-BOUNDARY.md`. The key areas assessed were:
+### OpenClaw
 
-- Gateway/control-plane architecture;
-- 20+ channel adapters and account bindings;
-- per-agent workspace/session isolation;
-- device nodes for microphone/camera/screen/local actions;
-- multi-agent routing/team/delegation;
-- model/tool/plugin swapping;
-- active-run steer/followup/collect/interrupt semantics;
-- skill precedence, install/update/verify/workshop/ClawHub distribution;
-- local-first credentials/state;
-- sandbox/security/approval/operator controls;
-- memory search, action-sensitive memory, compaction flush, dreaming and memory-wiki;
-- cron/intents and durable automation.
+See `docs/adr/0004-openclaw-adoption-boundary.md` and `docs/migration/OPENCLAW-ADOPTION-BOUNDARY.md`.
 
-Its Markdown/SQLite personal-assistant storage model is **not** Masanawa's canonical data model.
+Selected as primary Gateway/channel/device-node architectural donor, not Masanawa kernel or public multi-tenant security boundary.
 
-## AIRI decision (completed)
+### AIRI
 
-AIRI is now selected as the primary architectural donor for digital-life clients/embodiment. See `docs/adr/0005-airi-digital-life-adoption-boundary.md` and `docs/migration/AIRI-ADOPTION-BOUNDARY.md`.
+See `docs/adr/0005-airi-digital-life-adoption-boundary.md` and `docs/migration/AIRI-ADOPTION-BOUNDARY.md`.
 
-It does **not** own canonical Character identity, memory, world/task truth or realtime transport.
+Selected as primary architectural donor for digital-life clients/embodiment. It does not own canonical Character identity, memory, world/task truth or realtime transport.
+
+### Realtime presence
+
+See `docs/adr/0006-realtime-presence-adoption-boundary.md` and `docs/migration/PRESENCE-ADOPTION-BOUNDARY.md`.
+
+Selected composition:
+- LiveKit Server — WebRTC/media transport;
+- LiveKit Agents TypeScript — primary live agent-session/turn runtime;
+- Pipecat — secondary frame/pipeline processor donor;
+- AIRI — client Stage/embodiment;
+- CyberVerse — clean-room synchronization/race/audio-only/background-task behavior.
+
+Stable boundary is Masanawa `PresenceSession` + CharacterSession bridge, not donor object models.
 
 ## Immediate next work
 
 Do not return to the old four-source coverage-proof plan yet.
 
-1. Compare LiveKit Server/Agents + Pipecat + CyberVerse + AIRI for realtime presence/embodiment and record the presence ADR.
-2. Compare Letta + Mem0 + N.E.K.O + OpenClaw for memory architecture.
-3. Compare OpenJarvis + elizaOS + Microsoft Agent Framework + OpenClaw for agent runtime, skills, plugins and workflows.
-4. Compare AI Town + ChatWithStars for world simulation.
-5. Produce remaining explicit donor decisions/ADRs and freeze provisional subsystem ownership.
-6. Only then continue Phase 0B exhaustive source coverage and A/B/C classification across the complete reference vault.
+1. Compare Letta + Mem0 + N.E.K.O + OpenClaw for memory architecture and record the memory ADR.
+2. Compare OpenJarvis + elizaOS + Microsoft Agent Framework + OpenClaw for agent runtime, skills, plugins and workflows.
+3. Compare AI Town + ChatWithStars for world simulation.
+4. Produce remaining explicit donor decisions/ADRs and freeze provisional subsystem ownership.
+5. Only then continue Phase 0B exhaustive source coverage and A/B/C classification across the complete reference vault.
+
+## Memory comparison questions
+
+The next pass must decide:
+- canonical memory record and scope model;
+- relationship/private/shared/world separation;
+- write/extraction lifecycle;
+- provenance/evidence/confidence;
+- working-context blocks versus durable memory;
+- retrieval, entity/temporal indexing and reranking;
+- reflection/consolidation/compaction;
+- deletion/retention/tombstones;
+- rebuildable vector/graph indexes;
+- proactive memory recall versus explicit retrieval;
+- evaluation/quality measurement;
+- which donor components are safe to reuse directly versus adapt behind `packages/memory`.
+
+Masanawa's existing type+scope privacy model remains non-negotiable.
 
 ## Non-negotiable rules
 
