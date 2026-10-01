@@ -31,7 +31,7 @@ Do not recreate donor project boundaries. Do not begin application feature imple
 
 ## Current phase
 
-**Phase 1 — Architecture specification.**
+**Phase 2 — Foundation.**
 
 Phase 0A donor selection and Phase 0B exhaustive source forensics are closed at the revisions pinned in `docs/migration/SOURCE-LOCK.md`. See `docs/migration/PHASE-0A-CLOSURE-AUDIT.md` and `docs/migration/PHASE-0B-CLOSURE-AUDIT.md`.
 
@@ -133,14 +133,14 @@ Donor Agent/runtime/checkpoint objects never become Character, memory or busines
 
 ## Immediate next work
 
-Phase 0 is closed. Phase 1 is active.
+Phase 0 and Phase 1 are closed. Phase 2 is active.
 
-1. Read `docs/migration/PHASE-0B-CLOSURE-AUDIT.md`.
-2. Read `docs/PHASE-1-ARCHITECTURE-GAP-AUDIT.md` after it is created/updated.
-3. Convert the frozen donor decisions into canonical Masanawa contracts; do not re-open donor selection without contradictory evidence or a deliberate pin refresh.
-4. Finalize domain identities/scopes, package dependency rules, event/outbox contracts, persistence/transaction boundaries, auth/current-authority rules, provider/tool/workflow/device side-effect semantics, service APIs and golden-journey acceptance contracts.
-5. Do not begin Phase 2 implementation until the Phase 1 architecture gate passes.
-6. Any Phase 1 design that drops or weakens a Phase 0 A/B invariant must update the affected ledger and ADR explicitly.
+1. Read `docs/PHASE-1-CLOSURE-AUDIT.md` and ADR-0011.
+2. Inspect the actual root/package scaffold before creating anything; preserve completed foundation work if it already exists.
+3. Build the first foundation slice in this order: contracts/IDs/errors/time/config -> architecture-boundary tests -> PostgreSQL/migrations -> events/outbox/idempotency -> security authority/approval primitives -> Fastify Gateway/Worker/Ops bootstrap -> telemetry/test harness.
+4. Keep all dependencies aligned with `docs/PACKAGE-BOUNDARIES.md`.
+5. Do not begin product-domain porting (identity/memory/world/commerce/social/studio) ahead of the shared foundation primitives.
+6. Every consequential primitive must satisfy `docs/EVENT-CONTRACTS.md` and `docs/SECURITY-AUTHORITY.md` from its first implementation.
 
 
 ## World simulation comparison — completed
