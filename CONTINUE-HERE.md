@@ -5,7 +5,6 @@ This is the mandatory handoff entry point for every new Masanawa implementation 
 ## Current mission
 
 Build Masanawa from the ground up as one clean platform that delivers the validated union of:
-
 1. `Baatiku/chatwithstars`
 2. `open-jarvis/OpenJarvis`
 3. `Project-N-E-K-O/N.E.K.O`
@@ -16,7 +15,6 @@ Do **not** merge those repositories into this repository. They are source refere
 ## Mandatory read order
 
 Before changing code:
-
 1. `README.md`
 2. `docs/VISION.md`
 3. `docs/ARCHITECTURE.md`
@@ -24,21 +22,41 @@ Before changing code:
 5. `docs/SOURCE-OWNERSHIP.md`
 6. `docs/REWRITE-PLAN.md`
 7. `docs/migration/SOURCE-LOCK.md`
-8. `docs/migration/FEATURE-LEDGER.md`
-9. `docs/migration/BEHAVIOUR-LEDGER.md`
-10. `docs/migration/DATA-LEDGER.md`
-11. `docs/migration/INTEGRATION-LEDGER.md`
-12. `docs/migration/LICENSE-LEDGER.md`
-
-Then inspect the active phase in `docs/REWRITE-PLAN.md`.
+8. `docs/migration/FORENSICS-METHOD.md`
+9. `docs/migration/FEATURE-LEDGER.md`
+10. `docs/migration/BEHAVIOUR-LEDGER.md`
+11. `docs/migration/DATA-LEDGER.md`
+12. `docs/migration/INTEGRATION-LEDGER.md`
+13. `docs/migration/LICENSE-LEDGER.md`
+14. all four files under `docs/migration/sources/`.
 
 ## Current phase
 
 **Phase 0 — Source forensics and completeness inventory.**
 
-The next implementation task is NOT application feature coding. The next task is to inspect all four pinned sources exhaustively and populate the five migration ledgers.
+### Completed
+- Foundation architecture and technology decisions.
+- Exact pinned donor revisions.
+- Phase 0 forensic method.
+- Pass 1 repository source maps for all four donors.
+- First normalized expansion of feature, behavior, data and integration ledgers.
+- ChatWithStars deep pass: character ownership/handoffs, cross-channel continuity, life engine, memory policy, Skill Contract v2, provider/commerce recovery, durable delivery idempotency and call-runtime race/recovery/readiness behavior.
+- OpenJarvis deep pass: skill parser/import/dependency/manager, skill-as-tool adapter, engine discovery/fallback, tool confirmation, SSRF/security references, agent loop/budget guards, traces/learning overlays and scheduler semantics.
 
-Parallel source-forensics work is encouraged. Each source repository should be analysed against the same domain taxonomy so results can be deduplicated.
+### Not yet complete
+The ledgers are NOT exhaustive. Do not begin Masanawa application feature implementation yet.
+
+## Immediate next work
+
+Continue Phase 0 Passes 2–6, source by source, using the source-map follow-up sections.
+
+Recommended order:
+1. N.E.K.O deep mine: memory tests, plugins, proactivity, character/avatar, perception/computer use, voice.
+2. CyberVerse deep mine: WebRTC/media tests, Persona/SubAgent, task store/recovery, avatar sync, visual input.
+3. Return to remaining ChatWithStars areas: deeper migrations, automation, media-studio and Ops.
+4. Return to remaining OpenJarvis areas only where N.E.K.O/CyberVerse overlap reveals unresolved donor conflicts.
+
+For each pass, update all affected ledgers and source-map coverage notes in the same PR.
 
 ## Non-negotiable rules
 
@@ -65,7 +83,6 @@ Parallel source-forensics work is encouraged. Each source repository should be a
 ## Definition of done for Phase 0
 
 Phase 0 finishes only when every meaningful subsystem/feature in the four pinned sources is represented in the ledgers and classified:
-
 - **A — preserve behaviour**
 - **B — preserve capability, redesign implementation**
 - **C — reference/retire explicitly**
@@ -74,4 +91,4 @@ Every overlap must have a donor decision and a Masanawa destination.
 
 ## If context is missing
 
-Do not ask the user to repeat this conversation. The repository is the source of truth. Read these docs, inspect the pinned source revisions and continue from the active phase.
+Do not ask the user to repeat prior conversations. The repository is the source of truth. Read these docs, inspect the pinned source revisions and continue from the active phase.
