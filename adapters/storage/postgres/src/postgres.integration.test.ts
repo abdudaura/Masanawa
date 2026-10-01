@@ -4,6 +4,7 @@ import {
   toInstant,
   type OperationId,
 } from "@masanawa/contracts";
+import type { PlatformEvent } from "@masanawa/events";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Pool } from "pg";
 import {
@@ -11,6 +12,7 @@ import {
   createPostgresPool,
   enqueueOutbox,
   prepareOperation,
+  persistPlatformEventWithOutbox,
   runMigrations,
   settleOutboxClaim,
   transitionOperation,
@@ -81,6 +83,122 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       "platform_events",
       "reconciliation_cases",
     ]);
+  });
+
+  it("commits a platform event and its outbox custody atomically", async () => {
+    const occurredAt = toInstant(new Date());
+    const event: PlatformEvent<{ message: string }> = {
+      eventId: createCanonicalId("event"),
+      eventType: "message.requested",
+      schemaVersion: 1,
+      tenantId: createCanonicalId("tenant"),
+      aggregate: {
+        type: "operation",
+        id: createCanonicalId("operation"),
+        revision: 1,
+      },
+      occurredAt,
+      recordedAt: occurredAt,
+      actor: null,
+      authorityRef: null,
+      correlationId: createCanonicalId("correlation"),
+      causationId: null,
+      requestId: null,
+      workflowRunId: null,
+      characterSessionId: null,
+      provenance: { source: "foundation-integration" },
+      sensitivity: "internal",
+      payload: { message: "hello" },
+    };
+
+    const outboxEventId = await persistPlatformEventWithOutbox(pool, {
+      event,
+      outbox: {
+        destination: "test-channel",
+        availableAt: occurredAt,
+        payload: { eventId: event.eventId, message: "hello" },
+      },
+    });
+
+    const persisted = await pool.query<{
+      event_id: string;
+      outbox_event_id: string;
+      tenant_id: string;
+      event_type: string;
+      correlation_id: string;
+      destination: string;
+    }>(
+      `SELECT e.event_id,
+              o.outbox_event_id,
+              o.tenant_id,
+              o.event_type,
+              o.correlation_id,
+              o.destination
+         FROM events.platform_events AS e
+         JOIN events.outbox AS o ON o.event_id = e.event_id
+        WHERE e.event_id = $1`,
+      [event.eventId],
+    );
+
+    expect(persisted.rows).toEqual([
+      {
+        event_id: event.eventId,
+        outbox_event_id: outboxEventId,
+        tenant_id: event.tenantId,
+        event_type: event.eventType,
+        correlation_id: event.correlationId,
+        destination: "test-channel",
+      },
+    ]);
+  });
+
+  it("rolls back the event when outbox persistence fails", async () => {
+    const occurredAt = toInstant(new Date());
+    const event: PlatformEvent<{ message: string }> = {
+      eventId: createCanonicalId("event"),
+      eventType: "message.requested",
+      schemaVersion: 1,
+      tenantId: createCanonicalId("tenant"),
+      aggregate: {
+        type: "operation",
+        id: createCanonicalId("operation"),
+      },
+      occurredAt,
+      recordedAt: occurredAt,
+      actor: null,
+      authorityRef: null,
+      correlationId: createCanonicalId("correlation"),
+      causationId: null,
+      requestId: null,
+      workflowRunId: null,
+      characterSessionId: null,
+      provenance: { source: "foundation-integration" },
+      sensitivity: "internal",
+      payload: { message: "rollback-me" },
+    };
+
+    await expect(
+      persistPlatformEventWithOutbox(pool, {
+        event,
+        outbox: {
+          destination: "   ",
+          availableAt: occurredAt,
+          payload: { eventId: event.eventId },
+        },
+      }),
+    ).rejects.toThrow("outbox destination is required");
+
+    const eventCount = await pool.query<{ count: string }>(
+      "SELECT count(*)::text AS count FROM events.platform_events WHERE event_id = $1",
+      [event.eventId],
+    );
+    const outboxCount = await pool.query<{ count: string }>(
+      "SELECT count(*)::text AS count FROM events.outbox WHERE event_id = $1",
+      [event.eventId],
+    );
+
+    expect(eventCount.rows[0]?.count).toBe("0");
+    expect(outboxCount.rows[0]?.count).toBe("0");
   });
 
   it("preserves one operation across restart-safe idempotent admission", async () => {
