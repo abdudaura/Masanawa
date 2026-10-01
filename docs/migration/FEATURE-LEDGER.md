@@ -38,8 +38,12 @@ foundation, identity, relationships, memory, world, decisions, agents, skills, t
 | IDN-002 | identity | stable voice/appearance locks | ChatWithStars | A | primary | packages/identity | analysed |
 | IDN-003 | identity | configurable companion/persona character fields | N.E.K.O | B | secondary | packages/identity | discovered |
 | REL-001 | relationships | private user-character relationship memory | ChatWithStars | A | primary | packages/memory + identity | analysed |
+| REL-002 | relationships | per-character language/modality preferences | ChatWithStars | A | primary | packages/identity + memory | analysed |
+| HND-001 | relationships | bounded named-character handoff envelope | ChatWithStars | A | primary | packages/workflows + runtime | analysed |
+| HND-002 | relationships | return-to-source and completion-with-durable-evidence | ChatWithStars | A | primary | packages/workflows | analysed |
 | WLD-001 | world | shared character life state/events | ChatWithStars | A | primary | packages/world | analysed |
 | WLD-002 | world | routines/story arcs/character relationships | ChatWithStars | A | primary | packages/world | analysed |
+| WLD-003 | world | timezone-aware idempotent life-engine routine events | ChatWithStars | A | primary | packages/world + workers | analysed |
 | DEC-001 | decisions | typed bounded JEV decision fabric | ChatWithStars | A | primary | packages/decisions | analysed |
 | DEC-002 | decisions | shadow/replay/language-gated decisions | ChatWithStars | A | primary | packages/decisions + telemetry | discovered |
 | AGT-001 | agents | pluggable agent strategies | OpenJarvis | B | primary | packages/agents | analysed |
@@ -53,6 +57,7 @@ foundation, identity, relationships, memory, world, decisions, agents, skills, t
 | SKL-004 | skills | dependency graph/cycle/depth validation | OpenJarvis | A | primary | packages/skills | discovered |
 | SKL-005 | skills | external skill import/source resolvers/provenance | OpenJarvis | B | primary | packages/skills | discovered |
 | SKL-006 | skills | expertise bindings and character handoff routing | ChatWithStars | A | primary | packages/skills + identity | analysed |
+| SKL-007 | skills | Skill Contract v2 negative activation/typed entities/idempotency/paid confirmation gates | ChatWithStars | A | primary governance | packages/skills | analysed |
 | TOL-001 | tools | common atomic tool executor/interface | OpenJarvis | B | primary | packages/tools | discovered |
 | TOL-002 | tools | tool risk/readiness/idempotency/reconciliation metadata | ChatWithStars | A | primary governance | packages/tools | analysed |
 | PRV-001 | infrastructure | provider-neutral inference engine | OpenJarvis | B | primary | packages/providers | analysed |
@@ -66,6 +71,7 @@ foundation, identity, relationships, memory, world, decisions, agents, skills, t
 | MEM-006 | memory | durable persona promotion/contradiction merge | N.E.K.O | B | secondary | packages/memory + identity | analysed |
 | MEM-007 | memory | explicit hybrid memory recall tool | N.E.K.O | B | primary retrieval | packages/memory + tools | analysed |
 | MEM-008 | memory | replayable memory outbox/event reconciliation | N.E.K.O | A | secondary reliability | packages/memory + events | analysed |
+| MEM-009 | memory | expiry/sensitivity/importance decay/constraint floor at recall | ChatWithStars | B | secondary policy | packages/memory + security | analysed |
 | PRO-001 | proactivity | proactive/time-aware interaction | N.E.K.O | B | primary | packages/proactivity | analysed |
 | PRO-002 | proactivity | candidate/source/decision/generation/delivery separation | N.E.K.O | B | primary | packages/proactivity | discovered |
 | PER-001 | perception | screen/browser/computer perception/action | N.E.K.O | B | primary | packages/perception + tools | discovered |
@@ -85,9 +91,11 @@ foundation, identity, relationships, memory, world, decisions, agents, skills, t
 | TSK-001 | workflows | realtime background task events/artifacts | CyberVerse | B | secondary UX | packages/workflows + presence | analysed |
 | TSK-002 | workflows | reconnectable ordered task event stream | CyberVerse | A | secondary reliability | workflows + events | analysed |
 | TSK-003 | workflows | rich durable task lifecycle | ChatWithStars | A | primary | packages/workflows | analysed |
+| TSK-004 | workflows | durable outbound delivery evidence before resend | ChatWithStars | A | primary reliability | packages/workflows + events | analysed |
 | COM-001 | commerce | quote/payment/approval/reconcile/receipt | ChatWithStars | A | primary | packages/commerce + workflows | analysed |
 | COM-002 | commerce | append-only ledger/derived balance model | ChatWithStars | A | primary | packages/commerce | analysed |
-| COM-003 | commerce | provider inbox/retry/cutover/acceptance controls | ChatWithStars | A | primary | commerce + ops | discovered |
+| COM-003 | commerce | provider inbox/retry/cutover/acceptance controls | ChatWithStars | A | primary | commerce + ops | analysed |
+| COM-004 | commerce | production sandbox-provider rejection and retired-provider exclusion | ChatWithStars | A | primary | commerce + security | analysed |
 | SOC-001 | social | durable character social publishing | ChatWithStars | A | primary | services/social | analysed |
 | SOC-002 | social | scheduling/review/destination/token-vault automation | ChatWithStars | A | primary | services/social | discovered |
 | STD-001 | studio | produced media pipeline | ChatWithStars | A | primary | services/studio | analysed |
@@ -96,7 +104,7 @@ foundation, identity, relationships, memory, world, decisions, agents, skills, t
 | AVT-001 | avatar | multi-form avatar abstraction | N.E.K.O | B | primary breadth | clients + providers | discovered |
 | AVT-002 | avatar | realtime generated-human renderer | CyberVerse | B | primary generated-human | services/presence + providers | analysed |
 | AVT-003 | avatar | avatar warmup/silent-idle/sync behavior | CyberVerse | A | primary behavior | services/presence | discovered |
-| CHN-001 | channels | web/WhatsApp/Telegram share same character/runtime state | ChatWithStars | A | primary | gateway + channel adapters | discovered |
+| CHN-001 | channels | web/WhatsApp/Telegram share same character/runtime state | ChatWithStars | A | primary | gateway + channel adapters | analysed |
 | CHN-002 | channels | broad optional channel adapter ecosystem | OpenJarvis | C/B per channel | reference | gateway adapters | discovered |
 | OPS-001 | operations | provider/skill acceptance and operator control | ChatWithStars | A | primary | apps/ops | discovered |
 | OPS-002 | operations | trace/evaluation visibility | OpenJarvis + ChatWithStars | B | combined | apps/ops + telemetry | discovered |

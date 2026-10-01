@@ -11,6 +11,9 @@ Inventory semantic state concepts before designing tables. Do not mirror donor s
 | D-IDN-003 | VoiceReference | CWS, N.E.K.O, CyberVerse | character | versioned | biometric-like/sensitive asset | identity | redesign | canonical reference, not provider config |
 | D-IDN-004 | Appearance/AvatarReference | all | character | versioned | asset metadata | identity | redesign | renderer-independent |
 | D-REL-001 | UserCharacterRelationship | CWS, N.E.K.O | user+character | mutable | private | identity/memory | preserve+redesign | relationship state and policies |
+| D-REL-002 | CharacterRelationshipPreference | CWS | user+character | mutable | private | identity/memory | preserve | language/modality must stay character-scoped |
+| D-HND-001 | CharacterHandoff | CWS | conversation+source+destination | durable lifecycle | private/internal | workflows | preserve | bounded context, active/returned/completed |
+| D-HND-002 | HandoffCompletionEvidence | CWS | handoff+task | append | internal/private | workflows | preserve | must match inherited task |
 | D-CON-001 | Conversation/Session | all | user+character+channel | mutable/append | private | runtime | redesign | separate durable conversation from live presence |
 | D-CON-002 | Turn/Message | all | conversation | append | private | runtime | preserve semantic | modality/provenance |
 | D-MEM-001 | RecentMemory | N.E.K.O | user-character/session | mutable derived | private | memory | redesign | bounded projection |
@@ -20,9 +23,11 @@ Inventory semantic state concepts before designing tables. Do not mirror donor s
 | D-MEM-005 | MemoryEvidence | N.E.K.O | memory record | append/decay projection | private/internal | memory | redesign | reinforcement/disputation |
 | D-MEM-006 | MemoryRecallIndex | N.E.K.O/OpenJarvis | derived | rebuildable | mirrors source sensitivity | memory | redesign | BM25/vector/etc derived |
 | D-MEM-007 | MemoryOutbox/EventCursor | N.E.K.O | character/partition | mutable operational | internal | memory/events | redesign | durable replay/idempotency |
+| D-MEM-008 | MemoryPolicyMetadata | CWS | memory | mutable/versioned policy | internal | memory/security | redesign | expiry, sensitivity, importance, category |
 | D-WLD-001 | CharacterLifeState | CWS | character/world | mutable | shared/internal | world | preserve | separate from relationship memory |
 | D-WLD-002 | WorldEvent | CWS | world | append | shared/internal | world | preserve | authoritative fictional event |
 | D-WLD-003 | Routine/StoryArc/Commitment | CWS | character/world | mutable | shared/internal | world | preserve | scheduler inputs |
+| D-WLD-004 | LifeEngineOccurrenceKey | CWS | character+date+routine | durable uniqueness | internal | world | preserve concept | idempotency across ticks |
 | D-CAP-001 | CapabilityDefinition | CWS/OpenJarvis | platform | versioned | internal | tools | redesign | atomic capability |
 | D-CAP-002 | ToolDefinition/Version | CWS/OpenJarvis | platform/tenant | versioned | internal | tools | redesign | schemas/risk/provider requirements |
 | D-CAP-003 | ToolReadiness | CWS | tenant/provider | mutable derived | internal | tools | preserve | auth/health/capacity |
@@ -38,11 +43,14 @@ Inventory semantic state concepts before designing tables. Do not mirror donor s
 | D-WF-001 | WorkflowInstance | CWS | task | durable mutable | internal | workflows | preserve | deterministic state |
 | D-WF-002 | Approval | CWS | task/action | append/state | sensitive | workflows/security | preserve | actor/evidence |
 | D-WF-003 | IdempotencyRecord | CWS | side-effect boundary | durable | internal | workflows/tools | preserve | replay safety |
+| D-WF-004 | OutboundDeliveryEvidence | CWS | work+channel | append/unique | private/internal | workflows/events | preserve | prevents duplicate resend |
 | D-COM-001 | Quote/Order | CWS | user/task | durable | financial/private | commerce | preserve | price validity |
 | D-COM-002 | Payment | CWS | order | durable | financial | commerce | preserve | provider refs/state |
 | D-COM-003 | LedgerEntry | CWS | account/tenant | append-only | financial | commerce | preserve | canonical money evidence |
 | D-COM-004 | ProviderAttempt/Receipt | CWS | transaction | append | financial/internal | commerce | preserve | reconciliation |
 | D-COM-005 | ReconciliationRecord | CWS | transaction | append/state | financial/internal | commerce | preserve | uncertain outcome handling |
+| D-COM-006 | ProviderEventInboxItem | CWS | provider+event key | durable lifecycle | financial/internal | commerce | preserve | claim/retry/failure/backoff |
+| D-COM-007 | ProviderAcceptance/HealthSnapshot | CWS | provider | history/derived | internal | commerce/ops | preserve | live/sandbox/cutover/readiness |
 | D-SOC-001 | SocialAccount | CWS | character+channel | mutable | credentials separate | social | preserve concept | vault ref, health, cadence |
 | D-SOC-002 | PlannedPost/PublishAttempt/Receipt | CWS | social account | durable | public/internal | social | preserve | outbox lifecycle |
 | D-STD-001 | MediaProject/Script/Storyboard/Shot | CWS | character/project | versioned | internal | studio | preserve concept | produced-media state |
