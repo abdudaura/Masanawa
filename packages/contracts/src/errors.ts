@@ -38,9 +38,15 @@ export class PlatformError extends Error {
     this.code = shape.code;
     this.category = shape.category;
     this.retryable = shape.retryable;
-    this.correlationId = shape.correlationId;
-    this.operationId = shape.operationId;
-    this.details = shape.details;
+    if (shape.correlationId !== undefined) {
+      this.correlationId = shape.correlationId;
+    }
+    if (shape.operationId !== undefined) {
+      this.operationId = shape.operationId;
+    }
+    if (shape.details !== undefined) {
+      this.details = shape.details;
+    }
   }
 
   toJSON(): PlatformErrorShape {
