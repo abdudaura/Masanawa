@@ -450,3 +450,11 @@ Deep behavior mining from tests remains required before Phase 0 completion.
 | B-ELZ-012 | plugins | required plugin-plan evaluation failure aborts boot instead of silently omitting capabilities | `agent/runtime/plugin-resolver.ts` | required extension plan fails closed |
 | B-ELZ-013 | security | human-only view capability overrides generic agent grants and denied writes fail visibly | `view-capability-broker.ts` | client mutating actions default deny; no fabricated success |
 | B-ELZ-014 | infrastructure | migration failures are aggregated/visible; RLS reapplied after successful schema migration when enabled | `plugin-sql/migration-service.ts`, `rls.ts` | partial schema change is never reported as full success |
+
+
+| B-ELZ-015 | security | agent-side owner/admin/private checks delegate to one core role authority and fail closed on missing/failed context | `agent/src/security/access.ts`, `core/src/roles.ts` | one canonical authorization seam; lookup failure denies and reports |
+| B-ELZ-016 | security | membership commands are tenant-scoped, generation-fenced, idempotent and bounded by evidence freshness | `plugin-sql/src/services/sql-membership.ts` + real integration test | stale or replayed membership evidence cannot silently authorize |
+| B-ELZ-017 | security | delivery-audience evidence is bound to runtime/turn/destination and revalidated after authority change/expiry | trusted-delivery-audience + renewal test | disclosure authority must be current at point of use |
+| B-ELZ-018 | channels | durable inbound record suppresses duplicate connector delivery across manager restart; pre-persistence failure stays retryable | Discord inbound idempotency test | exactly-once canonical admission with retry-before-admission |
+| B-ELZ-019 | providers | retryable model failures may rotate providers; non-retryable errors and TTS fail closed; pinned provider remains pinned | provider fallback + TTS tests | capability-specific, policy-constrained failover with observability |
+| B-ELZ-020 | providers | local-to-cloud fallback classifies only known recoverable failures; unknown/programming failures surface | local inference cloud-fallback | fallback must not conceal correctness bugs or violate privacy policy |
