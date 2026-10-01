@@ -311,3 +311,15 @@ Deep behavior mining from tests remains required before Phase 0 completion.
 | B-TSK-032 | TSK-005 | External task/artifact IDs are validated against path traversal before any filesystem persistence. | A | agenttask external-ID tests | selected clean-room |
 | B-RAG-030 | RAG-001 | Re-indexing a source replaces that source's prior chunks rather than silently accumulating stale copies; source provenance remains query-visible. | A/B | RAG engine/vector backend behavior | selected clean-room |
 | B-RAG-031 | RAG-001 | Vector backend scores are normalized to one higher-is-better contract before min-score filtering, regardless of backend metric representation. | B | vector-store backend interface | selected clean-room |
+
+### Phase 0B AIRI descendant invariants
+
+| ID | Feature | Required behavior | Class | Evidence | Status |
+|---|---|---|---|---|---|
+| B-PLG-030 | PLG-030 | Extension activation planning is side-effect free and deterministic; missing/incompatible dependencies, duplicate providers, runtime/version mismatch and dependency cycles block activation before lifecycle mutation. | A | plugin activation planner/tests | analysed |
+| B-PLG-031 | PLG-031 | Effective permission = intersection(requested, granted); wildcard requests are narrowed to concrete approved keys/actions and child-module grants cannot exceed the parent extension ceiling. | A | permission service/tests | analysed |
+| B-RTC-040 | RTC-040 | Voice-input start/stop/replace operations serialize; a newer binding supersedes queued stale work, an in-flight old start is cleaned before replacement, and failed start remains an error while cleanup still runs. | A | voice-input lifecycle/binding tests | analysed |
+| B-AVT-030 | AVT-030 | Replacing an active renderer generator must not release the target; stop/dispose releases target exactly once and clears generated/filter state. | A/B | MAGIC Live2D driver tests | analysed |
+| B-CUA-030 | CUA-030 | Desktop tool input is restricted to an allowlisted command grammar; host-owned routing/storage flags cannot be overridden; screenshot reads resolve real paths and stay inside the artifact store. | A | AIRI computer-use runtime/tests | analysed |
+| B-CUA-031 | CUA-030 | Desktop commands are serialized; a failed command cannot poison the queue; disposal rejects queued/future work and tears down private daemon/socket state. | A | AIRI computer-use runtime/tests | analysed |
+| B-MOB-001 | MOB-001 | Native-host WebSocket bridge distinguishes close-before-open from post-open close and removes closed session mappings so stale native events cannot target a new logical connection. | A/B | Stage Pocket bridge implementation/tests | analysed |
