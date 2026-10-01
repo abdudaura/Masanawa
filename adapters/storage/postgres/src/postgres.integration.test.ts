@@ -127,6 +127,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       "security/0002_approval_operation_integrity.sql",
       "security/0003_service_credentials.sql",
       "world/0001_world_foundation.sql",
+      "world/0002_world_event_evidence.sql",
     ]);
   });
 
