@@ -60,5 +60,7 @@ Every external dependency must enter Masanawa through a canonical capability/pro
 | I-INT-001 | MCP | LiveKit/OpenClaw/MAF/elizaOS ecosystem | external tools/context protocol | external tool calls | varies | gateway/tools interoperability | discovered |
 | I-INT-002 | A2A | Microsoft Agent Framework ecosystem | cross-agent protocol | inter-agent calls | bounded task/context | gateway/agent interoperability | discovered |
 | I-LOC-001 | elizaOS local inference/device runtime | elizaOS | local text/embedding/speech/vision/image inference | local compute/device | prompt/media local | provider/local compute reference | discovered |
+| I-OC-001 | @openclaw/ai | OpenClaw | published provider adapters/streaming/model normalization | model calls | prompt/private context | optional packages/providers implementation dependency behind adapter | analysed |
+| I-OC-002 | @openclaw/gateway-protocol + gateway-client | OpenClaw | compatibility with OpenClaw Gateway/nodes/clients | gateway RPC/events | session/device metadata | optional compatibility adapter only; not canonical protocol | analysed |
 
 Auth, retry, idempotency and reconciliation fields still require source-by-source deep extraction.
