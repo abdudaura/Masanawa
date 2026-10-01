@@ -231,11 +231,10 @@ Acceptance gate:
 
 Before OpenClaw can be marked covered, the remaining gaps are now limited to:
 
-1. channel-specific descendant deltas beyond the generic ingress/outbound framework: typing/status/media/thread/account lifecycle behavior and direct tests for the major bundled channel families;
-2. native desktop/mobile/node-host descendant proof, especially device capability publication/offline behavior and app-local state boundaries;
-3. Skill Workshop/Custodian direct descendant/test proof (managed revisions, ClawHub/source installs and node-hosted skills are now covered below);
-4. exact direct-test inventory proving every retained consequential invariant has pinned implementation/test evidence;
-5. repository-wide descendant proof with zero unexplained production families after the above closures.
+1. native desktop/mobile/node-host descendant proof, especially device capability publication/offline behavior and app-local state boundaries;
+2. Skill Workshop/Custodian direct descendant/test proof (managed revisions, ClawHub/source installs and node-hosted skills are now covered below);
+3. exact direct-test inventory proving every retained consequential invariant has pinned implementation/test evidence;
+4. repository-wide descendant proof with zero unexplained production families after the above closures.
 
 The repository/package/plugin enumeration gap is closed by `OPENCLAW-INVENTORY.md` (18/18 maintained packages; 163/163 generated plugin inventory entries; zero enumeration ambiguity). Gateway RPC, approvals, steering/restart, provider, memory, scheduler, SSRF/privacy, session lineage, outbound delivery, session catalog/import/attachment handling, and broad skill-source/node-host behavior are covered in the sections below.
 
@@ -750,3 +749,60 @@ Acceptance gate:
 - skill visibility/source trust never grants tool, credential, filesystem or node execution authority.
 
 The remaining skill-specific Phase 0B gap is direct Workshop/Custodian descendant/test closure; managed revision/session pinning, generic source installs, ClawHub trust behavior and node-hosted skills are now evidenced.
+
+
+## 26. Channel lifecycle, presentation feedback and carrier-specific recovery
+
+Generic implementation/docs/tests:
+- `docs/plugins/sdk-channel-plugins/status-and-media.md`;
+- `src/plugin-sdk/channel-lifecycle.test.ts`;
+- `src/channels/typing-lifecycle.test.ts`;
+- `src/infra/heartbeat-runner.typing.test.ts`.
+
+Major bundled-carrier direct evidence at the pinned revision:
+- WhatsApp: `extensions/whatsapp/src/inbound/durable-receive.test.ts`, `extensions/whatsapp/src/channel.status.test.ts`;
+- Telegram: `extensions/telegram/src/channel.gateway.test.ts`, `extensions/telegram/src/telegram-ingress-drain.test.ts`;
+- Discord: `extensions/discord/src/monitor/message-handler.ingress-recovery.test.ts`, `extensions/discord/src/monitor/thread-bindings.authority.test.ts`;
+- Slack: `extensions/slack/src/monitor/ingress.test.ts`, `extensions/slack/src/monitor/message-handler/prepare.route-owner-admission.test.ts`;
+- Signal: `extensions/signal/src/monitor/event-handler.ingress-lifecycle.test.ts`;
+- Matrix: `extensions/matrix/src/matrix/monitor/sync-lifecycle.test.ts`;
+- LINE: `extensions/line/src/webhook-spool.test.ts`, `extensions/line/src/monitor.lifecycle.test.ts`;
+- iMessage: `extensions/imessage/src/monitor.watch-subscribe-retry.test.ts`.
+
+Pinned generic behavior:
+- account lifecycle remains pending while active and joins abort/cleanup; readiness/startup failures settle the account task rather than leaking a detached monitor;
+- lifecycle/status is account-scoped; transport state distinguishes ready/recovering/blocked/stopped/error where supported;
+- typing keepalive has one active provider tick across stop/restart, begins before work, refreshes while work is active and clears exactly once on success or failure;
+- media limits and local media roots come from resolved account/session authority, never from an untrusted requested path;
+- grouped media/payload sends are opt-in and reassert the current delivery owner immediately before each physical provider send;
+- an ambiguous send is not a receipt; follow-up actions such as pinning carry the existing delivery-owner assertion and cannot reuse expired authority.
+
+Carrier-specific retained deltas:
+- WhatsApp requires a native message ID, retains durable queue claims until turn adoption, preserves per-chat receive order through debounce/merge and bounds completion/failure replay guards;
+- Telegram marks invalid credentials as terminal blocked startup, rejects ambiguous multi-agent account ownership before monitor start, preserves identity/cursor state selectively across config changes, and classifies recipient-unreachable failures separately from retryable flood/permission failures;
+- Discord preserves retry facts across cancellation/monitor replacement and binds accepted thread creation to current owner authority without losing already accepted native-create settlement;
+- Slack never acknowledges before durable append, recovers uncompleted rows after restart, tombstones delayed provider redelivery, keeps channel-ID migration ordered with message lanes and revalidates reply ownership after routing;
+- Signal fans merged/debounced turns into the constituent durable claim lifecycles so every source claim reaches the same adopted/failed terminal fact;
+- Matrix distinguishes intentional shutdown from fatal sync stop/error and will not downgrade a recorded fatal error during later shutdown noise;
+- LINE acknowledges signed HTTP webhook input only after durable admission, routes shared paths by account signature, rejects ambiguous signatures, recovers uncompleted spool rows exactly once, bounds retry and dead-letters permanent/auth/post-side-effect failures;
+- iMessage distinguishes transient startup recovery from terminal permission failure, bounds watch-subscribe retries, and redacts message/conversation identifiers from recovery diagnostics.
+
+Masanawa destination:
+- canonical Gateway ChannelAccount runtime/readiness projection;
+- gateway durable ingress/outbox and channel adapters;
+- security current-authority policy;
+- perception/media attachment policy;
+- telemetry privacy-safe channel diagnostics.
+
+Disposition: **A/B**.
+
+Acceptance gate:
+- no provider ack/cursor advancement precedes durable ingress admission when replay is available;
+- account lifecycle exposes typed recoverable versus terminal failure without orphaning startup/drain work;
+- carrier retry occurs only while the provider-specific operation remains safely retryable; post-effect ambiguity is reconciled, not blindly replayed;
+- routing/thread/account selection cannot grant sender or tool authority and ambiguous ownership fails closed;
+- typing/status are presentation facts only and cannot become authorization/session truth;
+- media path/root and grouped-send authority are host-derived and rechecked at provider-I/O boundaries;
+- restart/config replacement preserves accepted durable work and its retry/settlement facts without duplicate visible effects.
+
+The channel-specific descendant gap is closed for the shared framework and the major bundled carrier families above. Remaining external plugins stay classified by the generated plugin inventory and must conform to these canonical adapter contracts; they do not create separate authority.
