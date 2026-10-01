@@ -27,7 +27,7 @@ Generated/dependency/build metadata roots may be excluded after inspection, but 
 | AIRI | apps, bucket, engines, integrations, packages, plugins, server, services | descendant matrix + 5,697-file manifest + 483 integration dispositions + client-authority map | covered |
 | LiveKit Server | cmd, deploy, pkg, test | RTC transport/session integration + ADR-0006 | partial |
 | LiveKit Agents TS | agents, examples, plugins, tests | RTC session/turn/avatar rows + ADR-0006 | partial |
-| LiveKit Agents Python | livekit-agents, livekit-plugins, examples, tests | maturity/provider reference under ADR-0006 | partial |
+| LiveKit Agents Python | livekit-agents, livekit-plugins, examples, tests | parity/delta matrix + 1,472-file manifest + 750 plugin dispositions; no second runtime | covered |
 | Pipecat | evals, examples, src, tests | RTC pipeline/interruption rows + ADR-0006 | partial |
 | Letta | .github + root landing metadata only | historical/landing provenance in LETTA map | reference-only |
 | Letta Code | bin, hooks, python, src, vendor | MEM working-context/revision/conflict/shared attachment rows | partial |
