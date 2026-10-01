@@ -1,0 +1,2481 @@
+{
+  "source": "pipecat-ai/pipecat@6396f9771e4d7870b3d538fda38a4241caf6c642",
+  "count": 275,
+  "entries": [
+    {
+      "path": "src/pipecat/services/__init__.py",
+      "family": "services",
+      "provider": "__init__.py",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/ai_service.py",
+      "family": "services",
+      "provider": "ai_service.py",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/anthropic/__init__.py",
+      "family": "services",
+      "provider": "anthropic",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/anthropic/llm.py",
+      "family": "services",
+      "provider": "anthropic",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/assemblyai/__init__.py",
+      "family": "services",
+      "provider": "assemblyai",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/assemblyai/models.py",
+      "family": "services",
+      "provider": "assemblyai",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/assemblyai/stt.py",
+      "family": "services",
+      "provider": "assemblyai",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/asyncai/__init__.py",
+      "family": "services",
+      "provider": "asyncai",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/asyncai/tts.py",
+      "family": "services",
+      "provider": "asyncai",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/aws/__init__.py",
+      "family": "services",
+      "provider": "aws",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/aws/agent_core.py",
+      "family": "services",
+      "provider": "aws",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/aws/llm.py",
+      "family": "services",
+      "provider": "aws",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/aws/nova_sonic/__init__.py",
+      "family": "services",
+      "provider": "aws",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/aws/nova_sonic/llm.py",
+      "family": "services",
+      "provider": "aws",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/aws/nova_sonic/ready.wav",
+      "family": "services",
+      "provider": "aws",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/aws/nova_sonic/session_continuation.py",
+      "family": "services",
+      "provider": "aws",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/aws/sagemaker/__init__.py",
+      "family": "services",
+      "provider": "aws",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/aws/sagemaker/bidi_client.py",
+      "family": "services",
+      "provider": "aws",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/aws/stt.py",
+      "family": "services",
+      "provider": "aws",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/aws/tts.py",
+      "family": "services",
+      "provider": "aws",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/aws/utils.py",
+      "family": "services",
+      "provider": "aws",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/azure/__init__.py",
+      "family": "services",
+      "provider": "azure",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/azure/common.py",
+      "family": "services",
+      "provider": "azure",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/azure/image.py",
+      "family": "services",
+      "provider": "azure",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/azure/llm.py",
+      "family": "services",
+      "provider": "azure",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/azure/realtime/__init__.py",
+      "family": "services",
+      "provider": "azure",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/azure/realtime/llm.py",
+      "family": "services",
+      "provider": "azure",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/azure/stt.py",
+      "family": "services",
+      "provider": "azure",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/azure/tts.py",
+      "family": "services",
+      "provider": "azure",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/baseten/__init__.py",
+      "family": "services",
+      "provider": "baseten",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/baseten/llm.py",
+      "family": "services",
+      "provider": "baseten",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/bland/__init__.py",
+      "family": "services",
+      "provider": "bland",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/bland/tts.py",
+      "family": "services",
+      "provider": "bland",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/camb/__init__.py",
+      "family": "services",
+      "provider": "camb",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/camb/tts.py",
+      "family": "services",
+      "provider": "camb",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/cartesia/__init__.py",
+      "family": "services",
+      "provider": "cartesia",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/cartesia/stt.py",
+      "family": "services",
+      "provider": "cartesia",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/cartesia/tts.py",
+      "family": "services",
+      "provider": "cartesia",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/cartesia/turns/__init__.py",
+      "family": "services",
+      "provider": "cartesia",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/cartesia/turns/stt.py",
+      "family": "services",
+      "provider": "cartesia",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/cerebras/__init__.py",
+      "family": "services",
+      "provider": "cerebras",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/cerebras/llm.py",
+      "family": "services",
+      "provider": "cerebras",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/crusoe/__init__.py",
+      "family": "services",
+      "provider": "crusoe",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/crusoe/llm.py",
+      "family": "services",
+      "provider": "crusoe",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/deepgram/__init__.py",
+      "family": "services",
+      "provider": "deepgram",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/deepgram/flux/__init__.py",
+      "family": "services",
+      "provider": "deepgram",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/deepgram/flux/sagemaker/__init__.py",
+      "family": "services",
+      "provider": "deepgram",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/deepgram/flux/sagemaker/stt.py",
+      "family": "services",
+      "provider": "deepgram",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/deepgram/flux/sagemaker/tts.py",
+      "family": "services",
+      "provider": "deepgram",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/deepgram/flux/stt.py",
+      "family": "services",
+      "provider": "deepgram",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/deepgram/flux/stt_base.py",
+      "family": "services",
+      "provider": "deepgram",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/deepgram/flux/tts.py",
+      "family": "services",
+      "provider": "deepgram",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/deepgram/flux/tts_base.py",
+      "family": "services",
+      "provider": "deepgram",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/deepgram/sagemaker/__init__.py",
+      "family": "services",
+      "provider": "deepgram",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/deepgram/sagemaker/stt.py",
+      "family": "services",
+      "provider": "deepgram",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/deepgram/sagemaker/tts.py",
+      "family": "services",
+      "provider": "deepgram",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/deepgram/stt.py",
+      "family": "services",
+      "provider": "deepgram",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/deepgram/tts.py",
+      "family": "services",
+      "provider": "deepgram",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/deepseek/__init__.py",
+      "family": "services",
+      "provider": "deepseek",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/deepseek/llm.py",
+      "family": "services",
+      "provider": "deepseek",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/elevenlabs/__init__.py",
+      "family": "services",
+      "provider": "elevenlabs",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/elevenlabs/dialogue/__init__.py",
+      "family": "services",
+      "provider": "elevenlabs",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/elevenlabs/dialogue/tts.py",
+      "family": "services",
+      "provider": "elevenlabs",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/elevenlabs/stt.py",
+      "family": "services",
+      "provider": "elevenlabs",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/elevenlabs/tts.py",
+      "family": "services",
+      "provider": "elevenlabs",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/elevenlabs/tts_base.py",
+      "family": "services",
+      "provider": "elevenlabs",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/fal/__init__.py",
+      "family": "services",
+      "provider": "fal",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/fal/image.py",
+      "family": "services",
+      "provider": "fal",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/fal/stt.py",
+      "family": "services",
+      "provider": "fal",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/fireworks/__init__.py",
+      "family": "services",
+      "provider": "fireworks",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/fireworks/llm.py",
+      "family": "services",
+      "provider": "fireworks",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/fish/__init__.py",
+      "family": "services",
+      "provider": "fish",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/fish/tts.py",
+      "family": "services",
+      "provider": "fish",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/funasr/__init__.py",
+      "family": "services",
+      "provider": "funasr",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/funasr/stt.py",
+      "family": "services",
+      "provider": "funasr",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/gladia/__init__.py",
+      "family": "services",
+      "provider": "gladia",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/gladia/config.py",
+      "family": "services",
+      "provider": "gladia",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/gladia/stt.py",
+      "family": "services",
+      "provider": "gladia",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/google/__init__.py",
+      "family": "services",
+      "provider": "google",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/google/frames.py",
+      "family": "services",
+      "provider": "google",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/google/gemini_live/__init__.py",
+      "family": "services",
+      "provider": "google",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/google/gemini_live/file_api.py",
+      "family": "services",
+      "provider": "google",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/google/gemini_live/llm.py",
+      "family": "services",
+      "provider": "google",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/google/gemini_live/stt.py",
+      "family": "services",
+      "provider": "google",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/google/gemini_live/vertex/__init__.py",
+      "family": "services",
+      "provider": "google",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/google/gemini_live/vertex/llm.py",
+      "family": "services",
+      "provider": "google",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/google/image.py",
+      "family": "services",
+      "provider": "google",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/google/llm.py",
+      "family": "services",
+      "provider": "google",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/google/rtvi.py",
+      "family": "services",
+      "provider": "google",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/google/stt.py",
+      "family": "services",
+      "provider": "google",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/google/tts.py",
+      "family": "services",
+      "provider": "google",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/google/utils.py",
+      "family": "services",
+      "provider": "google",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/google/vertex/__init__.py",
+      "family": "services",
+      "provider": "google",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/google/vertex/llm.py",
+      "family": "services",
+      "provider": "google",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/gradium/__init__.py",
+      "family": "services",
+      "provider": "gradium",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/gradium/stt.py",
+      "family": "services",
+      "provider": "gradium",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/gradium/tts.py",
+      "family": "services",
+      "provider": "gradium",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/grok/__init__.py",
+      "family": "services",
+      "provider": "grok",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/grok/llm.py",
+      "family": "services",
+      "provider": "grok",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/grok/realtime/__init__.py",
+      "family": "services",
+      "provider": "grok",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/grok/realtime/events.py",
+      "family": "services",
+      "provider": "grok",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/grok/realtime/llm.py",
+      "family": "services",
+      "provider": "grok",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/groq/__init__.py",
+      "family": "services",
+      "provider": "groq",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/groq/llm.py",
+      "family": "services",
+      "provider": "groq",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/groq/stt.py",
+      "family": "services",
+      "provider": "groq",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/groq/tts.py",
+      "family": "services",
+      "provider": "groq",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/heygen/__init__.py",
+      "family": "services",
+      "provider": "heygen",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/heygen/api_interactive_avatar.py",
+      "family": "services",
+      "provider": "heygen",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/heygen/api_liveavatar.py",
+      "family": "services",
+      "provider": "heygen",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/heygen/base_api.py",
+      "family": "services",
+      "provider": "heygen",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/heygen/client.py",
+      "family": "services",
+      "provider": "heygen",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/heygen/video.py",
+      "family": "services",
+      "provider": "heygen",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/hume/__init__.py",
+      "family": "services",
+      "provider": "hume",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/hume/tts.py",
+      "family": "services",
+      "provider": "hume",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/image_service.py",
+      "family": "services",
+      "provider": "image_service.py",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/inception/__init__.py",
+      "family": "services",
+      "provider": "inception",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/inception/llm.py",
+      "family": "services",
+      "provider": "inception",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/inworld/__init__.py",
+      "family": "services",
+      "provider": "inworld",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/inworld/realtime/__init__.py",
+      "family": "services",
+      "provider": "inworld",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/inworld/realtime/events.py",
+      "family": "services",
+      "provider": "inworld",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/inworld/realtime/llm.py",
+      "family": "services",
+      "provider": "inworld",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/inworld/tts.py",
+      "family": "services",
+      "provider": "inworld",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/keenable/__init__.py",
+      "family": "services",
+      "provider": "keenable",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/keenable/search.py",
+      "family": "services",
+      "provider": "keenable",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/kokoro/__init__.py",
+      "family": "services",
+      "provider": "kokoro",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/kokoro/tts.py",
+      "family": "services",
+      "provider": "kokoro",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/llm_service.py",
+      "family": "services",
+      "provider": "llm_service.py",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/mcp_service.py",
+      "family": "services",
+      "provider": "mcp_service.py",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/mem0/__init__.py",
+      "family": "services",
+      "provider": "mem0",
+      "classification": "B",
+      "disposition": "interop reference only; memory authority remains ADR-0007",
+      "canonical_destination": "packages/memory adapter",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/mem0/memory.py",
+      "family": "services",
+      "provider": "mem0",
+      "classification": "C/B",
+      "disposition": "interop reference only; memory authority remains ADR-0007",
+      "canonical_destination": "packages/memory adapter",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/meta/__init__.py",
+      "family": "services",
+      "provider": "meta",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/meta/stt.py",
+      "family": "services",
+      "provider": "meta",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/minimax/__init__.py",
+      "family": "services",
+      "provider": "minimax",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/minimax/tts.py",
+      "family": "services",
+      "provider": "minimax",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/mistral/__init__.py",
+      "family": "services",
+      "provider": "mistral",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/mistral/llm.py",
+      "family": "services",
+      "provider": "mistral",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/mistral/stt.py",
+      "family": "services",
+      "provider": "mistral",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/mistral/tts.py",
+      "family": "services",
+      "provider": "mistral",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/moondream/__init__.py",
+      "family": "services",
+      "provider": "moondream",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/moondream/vision.py",
+      "family": "services",
+      "provider": "moondream",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/moonshine/__init__.py",
+      "family": "services",
+      "provider": "moonshine",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/moonshine/stt.py",
+      "family": "services",
+      "provider": "moonshine",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/nebius/__init__.py",
+      "family": "services",
+      "provider": "nebius",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/nebius/llm.py",
+      "family": "services",
+      "provider": "nebius",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/neuphonic/__init__.py",
+      "family": "services",
+      "provider": "neuphonic",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/neuphonic/tts.py",
+      "family": "services",
+      "provider": "neuphonic",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/novita/__init__.py",
+      "family": "services",
+      "provider": "novita",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/novita/llm.py",
+      "family": "services",
+      "provider": "novita",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/nvidia/__init__.py",
+      "family": "services",
+      "provider": "nvidia",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/nvidia/llm.py",
+      "family": "services",
+      "provider": "nvidia",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/nvidia/sagemaker/__init__.py",
+      "family": "services",
+      "provider": "nvidia",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/nvidia/sagemaker/stt.py",
+      "family": "services",
+      "provider": "nvidia",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/nvidia/sagemaker/tts.py",
+      "family": "services",
+      "provider": "nvidia",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/nvidia/stt.py",
+      "family": "services",
+      "provider": "nvidia",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/nvidia/tts.py",
+      "family": "services",
+      "provider": "nvidia",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/ollama/__init__.py",
+      "family": "services",
+      "provider": "ollama",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/ollama/llm.py",
+      "family": "services",
+      "provider": "ollama",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/openai/__init__.py",
+      "family": "services",
+      "provider": "openai",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/openai/_constants.py",
+      "family": "services",
+      "provider": "openai",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/openai/base_llm.py",
+      "family": "services",
+      "provider": "openai",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/openai/image.py",
+      "family": "services",
+      "provider": "openai",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/openai/live/__init__.py",
+      "family": "services",
+      "provider": "openai",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/openai/live/events.py",
+      "family": "services",
+      "provider": "openai",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/openai/live/llm.py",
+      "family": "services",
+      "provider": "openai",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/openai/llm.py",
+      "family": "services",
+      "provider": "openai",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/openai/realtime/__init__.py",
+      "family": "services",
+      "provider": "openai",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/openai/realtime/events.py",
+      "family": "services",
+      "provider": "openai",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/openai/realtime/llm.py",
+      "family": "services",
+      "provider": "openai",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/openai/responses/__init__.py",
+      "family": "services",
+      "provider": "openai",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/openai/responses/llm.py",
+      "family": "services",
+      "provider": "openai",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/openai/stt.py",
+      "family": "services",
+      "provider": "openai",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/openai/tts.py",
+      "family": "services",
+      "provider": "openai",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/openclaw/__init__.py",
+      "family": "services",
+      "provider": "openclaw",
+      "classification": "B",
+      "disposition": "interop reference only",
+      "canonical_destination": "gateway/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/openclaw/client.py",
+      "family": "services",
+      "provider": "openclaw",
+      "classification": "C/B",
+      "disposition": "interop reference only",
+      "canonical_destination": "gateway/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/openclaw/frames.py",
+      "family": "services",
+      "provider": "openclaw",
+      "classification": "C/B",
+      "disposition": "interop reference only",
+      "canonical_destination": "gateway/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/openclaw/gateway.py",
+      "family": "services",
+      "provider": "openclaw",
+      "classification": "C/B",
+      "disposition": "interop reference only",
+      "canonical_destination": "gateway/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/openrouter/__init__.py",
+      "family": "services",
+      "provider": "openrouter",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/openrouter/llm.py",
+      "family": "services",
+      "provider": "openrouter",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/perplexity/__init__.py",
+      "family": "services",
+      "provider": "perplexity",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/perplexity/llm.py",
+      "family": "services",
+      "provider": "perplexity",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/piper/__init__.py",
+      "family": "services",
+      "provider": "piper",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/piper/tts.py",
+      "family": "services",
+      "provider": "piper",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/pocket_tts/__init__.py",
+      "family": "services",
+      "provider": "pocket_tts",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/pocket_tts/tts.py",
+      "family": "services",
+      "provider": "pocket_tts",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/qwen/__init__.py",
+      "family": "services",
+      "provider": "qwen",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/qwen/llm.py",
+      "family": "services",
+      "provider": "qwen",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/resembleai/__init__.py",
+      "family": "services",
+      "provider": "resembleai",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/resembleai/tts.py",
+      "family": "services",
+      "provider": "resembleai",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/rime/__init__.py",
+      "family": "services",
+      "provider": "rime",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/rime/tts.py",
+      "family": "services",
+      "provider": "rime",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/sambanova/__init__.py",
+      "family": "services",
+      "provider": "sambanova",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/sambanova/llm.py",
+      "family": "services",
+      "provider": "sambanova",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/sarvam/__init__.py",
+      "family": "services",
+      "provider": "sarvam",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/sarvam/_sdk.py",
+      "family": "services",
+      "provider": "sarvam",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/sarvam/llm.py",
+      "family": "services",
+      "provider": "sarvam",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/sarvam/stt.py",
+      "family": "services",
+      "provider": "sarvam",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/sarvam/tts.py",
+      "family": "services",
+      "provider": "sarvam",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/settings.py",
+      "family": "services",
+      "provider": "settings.py",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/simli/__init__.py",
+      "family": "services",
+      "provider": "simli",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/simli/video.py",
+      "family": "services",
+      "provider": "simli",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/smallest/__init__.py",
+      "family": "services",
+      "provider": "smallest",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/smallest/stt.py",
+      "family": "services",
+      "provider": "smallest",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/smallest/tts.py",
+      "family": "services",
+      "provider": "smallest",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/soniox/__init__.py",
+      "family": "services",
+      "provider": "soniox",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/soniox/stt.py",
+      "family": "services",
+      "provider": "soniox",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/soniox/tts.py",
+      "family": "services",
+      "provider": "soniox",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/speechify/__init__.py",
+      "family": "services",
+      "provider": "speechify",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/speechify/tts.py",
+      "family": "services",
+      "provider": "speechify",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/speechmatics/__init__.py",
+      "family": "services",
+      "provider": "speechmatics",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/speechmatics/stt.py",
+      "family": "services",
+      "provider": "speechmatics",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/speechmatics/tts.py",
+      "family": "services",
+      "provider": "speechmatics",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/stt_latency.py",
+      "family": "services",
+      "provider": "stt_latency.py",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/stt_service.py",
+      "family": "services",
+      "provider": "stt_service.py",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/tavus/__init__.py",
+      "family": "services",
+      "provider": "tavus",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/tavus/video.py",
+      "family": "services",
+      "provider": "tavus",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/together/__init__.py",
+      "family": "services",
+      "provider": "together",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/together/llm.py",
+      "family": "services",
+      "provider": "together",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/together/stt.py",
+      "family": "services",
+      "provider": "together",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/together/tts.py",
+      "family": "services",
+      "provider": "together",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/tts_service.py",
+      "family": "services",
+      "provider": "tts_service.py",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/ultravox/__init__.py",
+      "family": "services",
+      "provider": "ultravox",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/ultravox/llm.py",
+      "family": "services",
+      "provider": "ultravox",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/vision_service.py",
+      "family": "services",
+      "provider": "vision_service.py",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/websocket_service.py",
+      "family": "services",
+      "provider": "websocket_service.py",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/whisper/__init__.py",
+      "family": "services",
+      "provider": "whisper",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/whisper/base_stt.py",
+      "family": "services",
+      "provider": "whisper",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/whisper/stt.py",
+      "family": "services",
+      "provider": "whisper",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/whisper/utils.py",
+      "family": "services",
+      "provider": "whisper",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/xai/__init__.py",
+      "family": "services",
+      "provider": "xai",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/xai/llm.py",
+      "family": "services",
+      "provider": "xai",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/xai/realtime/__init__.py",
+      "family": "services",
+      "provider": "xai",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/xai/realtime/events.py",
+      "family": "services",
+      "provider": "xai",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/xai/realtime/llm.py",
+      "family": "services",
+      "provider": "xai",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/xai/stt.py",
+      "family": "services",
+      "provider": "xai",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/xai/tts.py",
+      "family": "services",
+      "provider": "xai",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/xtts/__init__.py",
+      "family": "services",
+      "provider": "xtts",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/services/xtts/tts.py",
+      "family": "services",
+      "provider": "xtts",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "packages/providers",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/__init__.py",
+      "family": "transports",
+      "provider": "__init__.py",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/base_input.py",
+      "family": "transports",
+      "provider": "base_input.py",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/base_output.py",
+      "family": "transports",
+      "provider": "base_output.py",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/base_transport.py",
+      "family": "transports",
+      "provider": "base_transport.py",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/daily/__init__.py",
+      "family": "transports",
+      "provider": "daily",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/daily/transport.py",
+      "family": "transports",
+      "provider": "daily",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/daily/utils.py",
+      "family": "transports",
+      "provider": "daily",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/heygen/__init__.py",
+      "family": "transports",
+      "provider": "heygen",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/heygen/transport.py",
+      "family": "transports",
+      "provider": "heygen",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/lemonslice/__init__.py",
+      "family": "transports",
+      "provider": "lemonslice",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/lemonslice/api.py",
+      "family": "transports",
+      "provider": "lemonslice",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/lemonslice/transport.py",
+      "family": "transports",
+      "provider": "lemonslice",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/livekit/__init__.py",
+      "family": "transports",
+      "provider": "livekit",
+      "classification": "B",
+      "disposition": "secondary adapter evidence; canonical transport remains LiveKit Server",
+      "canonical_destination": "services/presence",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/livekit/transport.py",
+      "family": "transports",
+      "provider": "livekit",
+      "classification": "C/B",
+      "disposition": "secondary adapter evidence; canonical transport remains LiveKit Server",
+      "canonical_destination": "services/presence",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/livekit/utils.py",
+      "family": "transports",
+      "provider": "livekit",
+      "classification": "C/B",
+      "disposition": "secondary adapter evidence; canonical transport remains LiveKit Server",
+      "canonical_destination": "services/presence",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/local/__init__.py",
+      "family": "transports",
+      "provider": "local",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/local/audio.py",
+      "family": "transports",
+      "provider": "local",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/local/tk.py",
+      "family": "transports",
+      "provider": "local",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/moq/__init__.py",
+      "family": "transports",
+      "provider": "moq",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/moq/transport.py",
+      "family": "transports",
+      "provider": "moq",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/smallwebrtc/__init__.py",
+      "family": "transports",
+      "provider": "smallwebrtc",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/smallwebrtc/connection.py",
+      "family": "transports",
+      "provider": "smallwebrtc",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/smallwebrtc/request_handler.py",
+      "family": "transports",
+      "provider": "smallwebrtc",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/smallwebrtc/transport.py",
+      "family": "transports",
+      "provider": "smallwebrtc",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/tavus/__init__.py",
+      "family": "transports",
+      "provider": "tavus",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/tavus/transport.py",
+      "family": "transports",
+      "provider": "tavus",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/vonage/__init__.py",
+      "family": "transports",
+      "provider": "vonage",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/vonage/client.py",
+      "family": "transports",
+      "provider": "vonage",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/vonage/utils.py",
+      "family": "transports",
+      "provider": "vonage",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/vonage/video_connector.py",
+      "family": "transports",
+      "provider": "vonage",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/websocket/__init__.py",
+      "family": "transports",
+      "provider": "websocket",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/websocket/client.py",
+      "family": "transports",
+      "provider": "websocket",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/websocket/fastapi.py",
+      "family": "transports",
+      "provider": "websocket",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/websocket/rtvi_client.py",
+      "family": "transports",
+      "provider": "websocket",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/websocket/server.py",
+      "family": "transports",
+      "provider": "websocket",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/whatsapp/__init__.py",
+      "family": "transports",
+      "provider": "whatsapp",
+      "classification": "B",
+      "disposition": "structural contract/reference",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/whatsapp/api.py",
+      "family": "transports",
+      "provider": "whatsapp",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    },
+    {
+      "path": "src/pipecat/transports/whatsapp/client.py",
+      "family": "transports",
+      "provider": "whatsapp",
+      "classification": "C/B",
+      "disposition": "reference-unless-selected",
+      "canonical_destination": "presence adapters",
+      "activation_rule": "Concrete service/transport is optional. If selected, it must satisfy canonical provider/presence/Gateway contracts and cannot create separate session, memory, tool, workflow, or identity truth."
+    }
+  ]
+}
