@@ -137,10 +137,12 @@ Phase 0A is complete. Do not reopen donor selection without contradictory eviden
 1. Phase 0B source-coverage matrix created at `docs/migration/PHASE-0B-SOURCE-COVERAGE.md` with actual pinned top-level roots for all 17 repositories.
 2. ChatWithStars root/module sweep complete: all meaningful roots classified; added SUB/PRV/KNO/GRP/MSN/CRT/TEL/CVI plus explicit legacy/deployment/fixture dispositions.
 3. OpenJarvis root/module sweep complete: all meaningful module families classified; added provider/interoperability/connectors/sandbox/observability/session/speech/operator/template/native-duplication dispositions.
-4. **Next:** sweep N.E.K.O exhaustively across `app`, `brain`, `config`, `deps`, `frontend`, `knowledge`, `launcher_core`, `local_server`, `main_logic`, `main_routers`, `memory`, `plugin`, `specs`, `tests`, `utils`, then continue in the fixed 17-source order.
-4. For every retained capability, attach one canonical Masanawa destination and an acceptance/parity strategy.
-5. Track direct-adaptation provenance and path-specific license/NOTICE requirements before copying code.
-6. Phase 0 closes only when no meaningful pinned capability is unclassified.
+4. N.E.K.O root/module sweep complete: added explicit voice endpointing/speaker-evidence, activity sensing, config/cloud-save, plugin distribution/message-plane, optional extensions, telemetry, embodiment/media/channel and third-party artifact-license classifications.
+5. CyberVerse root/module sweep complete under GPL clean-room rules: all roots classified as behavioral/reference evidence; direct WebRTC, inference/RAG, avatar/task semantics retained as specs, embedded model trees excluded from implicit license reuse.
+6. **Next:** sweep AIRI exhaustively across `apps`, `bucket`, `engines`, `integrations`, `packages`, `plugins`, `server`, `services`, then continue through LiveKit/Pipecat/Letta/Mem0/AI Town/elizaOS/Microsoft AF/OpenClaw.
+7. For every retained capability, attach one canonical Masanawa destination and an acceptance/parity strategy.
+8. Track direct-adaptation provenance and path-specific license/NOTICE requirements before copying code.
+9. Phase 0 closes only when no meaningful pinned capability is unclassified.
 
 ## World simulation comparison — completed
 
