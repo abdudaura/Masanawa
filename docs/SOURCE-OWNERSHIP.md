@@ -13,7 +13,7 @@ Masanawa owns the resulting architecture. Every repository under `references/sou
 | Product/domain model | ChatWithStars | — | generalize beyond the original Stars product |
 | Character identity/versioning | ChatWithStars | Letta, AIRI, N.E.K.O | canonical Constitution/identity compiler and disclosure |
 | Private relationships | ChatWithStars | Letta, N.E.K.O | strict user-character isolation |
-| Shared world/life | ChatWithStars, AI Town | N.E.K.O | governed world truth + persistent simulation |
+| Shared world/life | **AI Town (selected simulation-mechanics donor)** + **ChatWithStars (selected life/canon donor)** | N.E.K.O | **packages/world owns canonical world/life state, events, generations, policy and projections** |
 | Memory lifecycle | **N.E.K.O (selected cognitive donor)** | Letta Code, OpenClaw | **packages/memory owns canonical type+scope records, evidence, lifecycle and persistence** |
 | Memory retrieval/evaluation | **Mem0 (selected specialist donor)** | N.E.K.O, OpenClaw, Letta Code | **packages/memory authorizes scope before hybrid retrieval; indexes are rebuildable** |
 | Agent execution | **OpenJarvis (selected structural donor)** + **elizaOS (selected TS component donor)** | OpenClaw, Microsoft Agent Framework | **packages/agents owns character-aware execution envelope, strategies and budgets** |
@@ -144,8 +144,18 @@ See ADR-0006 and `docs/migration/PRESENCE-ADOPTION-BOUNDARY.md`.
 
 Decision recorded above and in ADR-0008. No donor Agent object becomes Character identity or durable workflow/business truth.
 
-### World
-AI Town is the new external simulation donor. Compare its transactional shared-state/simulation patterns with ChatWithStars world/life requirements. Masanawa still needs stronger privacy, governance and non-game product semantics than AI Town provides.
+### World — decision recorded
+
+The AI Town + ChatWithStars comparison is complete.
+
+Selected composition:
+- AI Town — primary donor for ordered-input tick/step simulation, generation conflict rejection, transactional step commit, autonomous interactions, optional spatial mechanics and engine liveness;
+- ChatWithStars — primary donor for Character life-state/canon semantics, Constitution gating, routines/story arcs, visibility/provenance, tenant isolation and immutable approved canon;
+- Masanawa `packages/world` — sole canonical authority for world/life records, WorldPolicy, simulation generations/inputs/steps, WorldEvent/WorldInteraction evidence and current projections.
+
+Do not make AI Town `Player`/`Agent`/Convex world documents canonical Character/world truth. Do not retain ChatWithStars' process-local life-engine lock for horizontal execution. Spatial state is optional, and world events cross explicit boundaries to memory, workflows and presence.
+
+See ADR-0009 and `docs/migration/WORLD-SIMULATION-ADOPTION-BOUNDARY.md`.
 
 ## Donor conflict procedure
 
