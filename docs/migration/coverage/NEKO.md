@@ -2,7 +2,7 @@
 
 Pinned revision: Project-N-E-K-O/N.E.K.O@48ac9243a9d8e75a37d7598548c29017df1c6d2e
 
-Status: ACTIVE REMEDIATION
+Status: COVERED AT PINNED REVISION
 
 This file replaces the invalid earlier root-only coverage claim.
 
