@@ -19,6 +19,8 @@ const privateReferenceKinds = new Set<CanonicalIdKind>([
   "device-credential",
 ]);
 
+const privateReferenceKindList = [...privateReferenceKinds];
+
 const privateFieldNames = new Set([
   "userid",
   "userids",
@@ -67,9 +69,21 @@ export function assertWorldTextHasNoPrivateReference(
   value: string,
   path = "$",
 ): void {
-  const kind = getCanonicalIdKind(value);
-  if (kind !== null && privateReferenceKinds.has(kind)) {
-    throw privateReferenceError(path, `canonical-id:${kind}`);
+  const exactKind = getCanonicalIdKind(value);
+  if (exactKind !== null && privateReferenceKinds.has(exactKind)) {
+    throw privateReferenceError(path, `canonical-id:${exactKind}`);
+  }
+
+  for (const kind of privateReferenceKindList) {
+    const prefix = `${kind}_`;
+    let offset = value.indexOf(prefix);
+    while (offset >= 0) {
+      const candidate = value.slice(offset, offset + prefix.length + 36);
+      if (getCanonicalIdKind(candidate) === kind) {
+        throw privateReferenceError(path, `embedded-canonical-id:${kind}`);
+      }
+      offset = value.indexOf(prefix, offset + prefix.length);
+    }
   }
 }
 
