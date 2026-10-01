@@ -101,5 +101,14 @@ Inventory semantic state concepts before designing tables. Do not mirror donor s
 | D-SKL-007 | SessionSkillSelection | OpenClaw | runtime session | durable/session-scoped | internal | skills/runtime | redesign | selected skill IDs/revisions pinned per session |
 | D-APR-001 | ApprovalRecord | OpenClaw/CWS | action/workflow | pending->terminal | sensitive | workflows/security | preserve+redesign | first-answer-wins canonical result |
 | D-AUT-001 | CurrentAuthorityAssertion | OpenClaw | mutation execution | ephemeral/derived | sensitive | security | redesign | revalidation immediately before delayed mutation |
+| D-DLF-001 | ClientPresentationProfile | AIRI | character+client/user | versioned preferences | private/internal | identity/client | redesign | renderer/display preferences separate from canonical authored identity |
+| D-DLF-002 | PortableCharacterPackage | AIRI/CCv3 | import/export artifact | immutable package | potentially sensitive assets | identity/import | redesign | untrusted input until validated/reviewed |
+| D-AVT-002 | AvatarAssetReference | AIRI/CWS/CyberVerse | character identity version | versioned | asset/provenance | identity/avatar | redesign | renderer-neutral asset reference |
+| D-AVT-003 | AvatarRendererSession | AIRI | presence/client | ephemeral | internal | client/avatar | redesign | renderer target/motion/expression/lipsync state |
+| D-PLG-005 | PluginCapabilityState | AIRI | plugin session+capability | lifecycle | internal | plugin runtime | redesign | announced/ready/degraded/withdrawn |
+| D-PLG-006 | PluginPermissionGrant | AIRI | extension/module | durable/versioned | security-sensitive | plugin runtime/security | redesign | concrete actions/keys after host intersection |
+| D-PLG-007 | PluginCleanupDebt | AIRI | extension session | durable until settled | internal | plugin runtime | redesign | independent runtime/assets cleanup completion |
+| D-VOICE-001 | VoiceInputBinding | AIRI | device/client session | ephemeral lifecycle | sensitive | client/presence | redesign | stream+provider mode+generation identity |
+| D-CUA-001 | ComputerUseRunEvidence | AIRI | task/run | append | highly sensitive | tools/telemetry | redesign | approvals, screenshots, audit, tool evidence |
 
 Phase 0 must continue mapping donor-specific stores/tables/files into these canonical concepts or explicit retirement.
