@@ -119,28 +119,34 @@ Each has typed TypeBox health/readiness endpoints. Readiness fails closed and sa
 
 ### Workspace validation
 
-Foundation CI now boots pnpm before Node package-manager integration, defers pnpm caching until a lockfile exists, and runs the actual root `pnpm check` under Node 24.
+Foundation CI now boots pnpm before Node package-manager integration and runs the actual root `pnpm check` under Node 24.
 
 Validated on 2026-10-01 by Foundation CI run 49 at commit `68ebe1bf8c0c18f2a2deb52904f31d75a96261d0`: install, strict TypeScript checks and Vitest all passed.
 
 Validation also fixed:
 - `PlatformError` optional metadata under `exactOptionalPropertyTypes` without weakening compiler strictness;
 - PostgreSQL `transitionOperation` now enforces the canonical Operation state graph before issuing SQL;
-- direct tests cover the persisted transition guard and PlatformError serialization contract.
+- direct tests cover the persisted transition guard and PlatformError serialization contract;
+- root Vitest discovery includes package, adapter, service, application and architecture suites instead of silently omitting edge-layer tests.
+
+### Reproducible installs
+
+The pnpm 12.8.2 dependency graph is committed in `pnpm-lock.yaml`. Foundation CI enables pnpm caching from that lockfile and installs with `pnpm install --frozen-lockfile`.
+
+Validated on 2026-10-01 by Foundation CI run 54 at commit `b407ca04c38d801d1f7cba3fe024f87477d6f3d3`.
 
 ## Active foundation gaps
 
-1. add deterministic lockfile/reproducible install now that install execution is available;
-2. add PostgreSQL integration tests using PostgreSQL 18;
-3. add transactionally atomic event + outbox persistence API;
-4. add inbox admission/replay repository;
-5. add reconciliation/external-receipt repository;
-6. add security/approval PostgreSQL persistence and concurrency tests;
-7. add OpenTelemetry correlation foundation;
-8. add service main/config/shutdown lifecycle;
-9. add DB/schema readiness probes;
-10. add fault-injection/restart test utilities;
-11. close Phase 2 shared-foundation gate before identity/memory/world/product migrations.
+1. add PostgreSQL integration tests using PostgreSQL 18;
+2. add transactionally atomic event + outbox persistence API;
+3. add inbox admission/replay repository;
+4. add reconciliation/external-receipt repository;
+5. add security/approval PostgreSQL persistence and concurrency tests;
+6. add OpenTelemetry correlation foundation;
+7. add service main/config/shutdown lifecycle;
+8. add DB/schema readiness probes;
+9. add fault-injection/restart test utilities;
+10. close Phase 2 shared-foundation gate before identity/memory/world/product migrations.
 
 ## Foundation rules
 
