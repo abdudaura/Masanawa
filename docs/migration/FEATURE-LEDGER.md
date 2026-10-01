@@ -162,6 +162,16 @@ foundation, identity, relationships, memory, world, decisions, agents, skills, t
 | SAF-001 | security | explicit fictional/AI disclosure on public character surfaces | ChatWithStars | A | primary | identity + apps/social | analysed |
 | SAF-002 | security | explicit age/content classification and channel policy | ChatWithStars | A | primary | security + identity/social | analysed |
 | SAF-003 | security | face/voice/media rights and provenance tracking | ChatWithStars | A | primary | identity + studio + audit | analysed |
+| USR-001 | identity | global platform user separate from channel identity and tenant-private relationship state | ChatWithStars | A | primary | packages/identity | analysed |
+| USR-002 | identity | multi-channel identity aliases/linking/merge into canonical person/contact | ChatWithStars | A | primary | packages/identity | analysed |
+| ENT-001 | commerce | durable trial/usage entitlement reservation with per-message idempotency | ChatWithStars | A | primary | packages/commerce + workflows | analysed |
+| ENT-002 | commerce | subscription price/version/payment/period entitlement lifecycle | ChatWithStars | A | primary | packages/commerce | analysed |
+| ENT-003 | commerce | paid community membership entitlement/fulfilment/reconciliation | ChatWithStars | A/B | primary | packages/commerce + workflows | analysed |
+| AUT-001 | security | tenant autonomy mode/action limit/daily spend policy with audit events | ChatWithStars | A | primary | packages/security + workflows | analysed |
+| OUT-001 | proactivity | consent-aware outreach/follow-up delivery history and suppression | ChatWithStars | A/B | secondary | packages/proactivity + events | analysed |
+| COMU-001 | channels | group/community interaction model and durable global kill switch | ChatWithStars | B | secondary | gateway + workflows + ops | analysed |
+| TPL-001 | agents | versioned validated reusable agent/role templates and starter packs | ChatWithStars | B | secondary | packages/agents + skills | analysed |
+| PKG-001 | skills | reusable domain packs (assistant, teaching, support, commerce, community, news, civic etc.) | ChatWithStars | B | secondary product packs | packages/skills | analysed |
 | OPS-002 | operations | trace/evaluation visibility | OpenJarvis + ChatWithStars | B | combined | apps/ops + telemetry | analysed |
 
 This inventory is intentionally incomplete. Source-specific map documents identify the next deep-mining areas.
