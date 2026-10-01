@@ -272,3 +272,16 @@ Deep behavior mining from tests remains required before Phase 0 completion.
 | B-PRV-005 | provider credentials | Raw provider credentials never enter domain records, model context, audit logs or traces; execution resolves scoped vault refs only at the edge. | A | ChatWithStars vault/encryption patterns + Masanawa security boundary | selected |
 | B-PRV-006 | provider idempotency | Canonical workflow idempotency remains authoritative even when the provider supplies its own idempotency/reference key; provider receipts are deduplicated before domain application. | A | Flutterwave/NOWPayments/Telegram/workflow evidence | selected |
 | B-PRV-007 | model providers | Model retries may repeat inference because model output is only a proposal, but every attempt still counts for cost/rate-limit evidence and cannot itself commit business truth. | A/B | Gemini routing/quota evidence + decision fabric boundary | selected |
+
+### Phase 0B OpenJarvis remediation invariants
+
+| ID | Feature | Required behavior | Class | Evidence | Status |
+|---|---|---|---|---|---|
+| B-CON-020 | CON-020 | Progress, cancellation or failure may persist a resume cursor but must not advance the last-successful sync watermark; only exhaustion/success advances the watermark. | A | `connectors/sync_engine.py`, incremental/sync-engine tests | analysed |
+| B-LRN-020 | LRN-020 | Learning edits are candidates: require minimum evidence, bounded cost/tool budget and risk tier; benchmark regression rejects/rolls back staged change; review-tier changes wait for explicit approval. | A/B | spec-search orchestrator, checkpoint store, benchmark/regression/pending-queue tests | analysed |
+| B-LRN-021 | LRN-020 | Learning rollback preserves history by reverting committed staged changes rather than rewriting history, and dirty configuration state blocks automated staging. | A/B | `checkpoint/store.py`, rollback tests | analysed |
+| B-APR-020 | APR-020 | A dangerous tool cannot execute merely because confirmation infrastructure is absent: non-interactive/no-callback/denied cases all fail closed. | A | `test_tool_confirmation.py` | analysed |
+| B-SES-020 | SES-020 | Channel history may feed runtime context, but session linkage is not proof of canonical user identity and must not merge private relationship memory without identity authorization. | A/B | session store + wire-channel-history tests, Masanawa relationship rules | selected |
+| B-SCH-020 | SCH-020 | Cron evaluation uses configured IANA timezone but persists next run in UTC; pause/resume/cancel are durable and one-shot tasks clear next run after completion. | A/B | scheduler implementation/tests | analysed |
+| B-TRC-020 | TRC-020 | Trace collectors unsubscribe at run completion so later events cannot contaminate another execution trace. | A | `traces/collector.py`, collector tests | analysed |
+| B-SEC-020 | SEC-021 | SSRF checks fail closed on unresolved DNS by default and normalize IPv4-mapped/compatible/disguised forms before private/metadata classification. | A | `security/ssrf.py`, SSRF/disguised tests | analysed |
