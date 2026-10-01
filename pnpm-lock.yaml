@@ -259,6 +259,12 @@ importers:
       '@masanawa/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@masanawa/node-runtime':
+        specifier: workspace:*
+        version: link:../../adapters/runtime/node
+      '@masanawa/telemetry':
+        specifier: workspace:*
+        version: link:../../packages/telemetry
       fastify:
         specifier: 5.12.5
         version: 5.12.5
@@ -278,6 +284,12 @@ importers:
       '@masanawa/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@masanawa/node-runtime':
+        specifier: workspace:*
+        version: link:../../adapters/runtime/node
+      '@masanawa/telemetry':
+        specifier: workspace:*
+        version: link:../../packages/telemetry
       fastify:
         specifier: 5.12.5
         version: 5.12.5
@@ -297,6 +309,12 @@ importers:
       '@masanawa/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@masanawa/node-runtime':
+        specifier: workspace:*
+        version: link:../../adapters/runtime/node
+      '@masanawa/telemetry':
+        specifier: workspace:*
+        version: link:../../packages/telemetry
       fastify:
         specifier: 5.12.5
         version: 5.12.5
