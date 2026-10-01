@@ -157,3 +157,27 @@ The comparison must freeze:
 - deletion/retention;
 - evaluation and rebuildability;
 - what may be reused directly versus adapted behind `packages/memory`.
+
+
+## Additional verified implementation invariants
+
+The comparative deep pass also verified the following implementation-level behaviors:
+
+### LiveKit Agents
+- Detector-aware endpointing defaults differ between streaming semantic detection and legacy/non-streaming modes.
+- Explicit runtime endpointing overrides survive activity handoff.
+- A speech interruption before the first playout frame has a watchdog path so the current speech handle cannot wedge all future replies.
+- Reusable resources such as an STT pipeline transfer ownership during activity handoff; a failed destination start cleans resources only when ownership was not transferred.
+- Remote AvatarSession startup can be rolled back locally without blindly deleting a possibly valid remote participant after ambiguous provisioning.
+- Avatar cleanup treats an already-absent participant as a normal idempotent condition.
+- AgentSession recording supports independent audio/traces/logs/transcript/redaction flags; Masanawa policy, not LiveKit defaults, decides which are enabled.
+
+### Pipecat
+- Frames can explicitly be interruptible or uninterruptible.
+- Function-call results/end/control frames can remain protected from ordinary barge-in.
+- TTS ordering is regression-tested across synchronous and WebSocket providers.
+- Provider generation completion, actual audio generation and actual playout completion are separate lifecycle facts.
+- Interruption while downstream processing is paused must not deadlock the pipeline.
+- User-turn inference trigger and semantic turn finalization can be separate; speculative responses require explicit confirm/cancel semantics.
+
+These invariants are now represented in the Behaviour Ledger and must become acceptance tests for Masanawa's framework-neutral Presence contracts.

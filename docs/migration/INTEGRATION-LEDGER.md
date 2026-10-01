@@ -50,10 +50,10 @@ Every external dependency must enter Masanawa through a canonical capability/pro
 | I-SEC-001 | token vault/encryption layer | ChatWithStars automation | social/provider credential protection | credential read/write | secrets | security/vault abstraction | analysed |
 | I-PRS-004 | RTP/RTCP transport feedback | CyberVerse | realtime A/V pacing, bitrate and sync feedback | media transport control | session/network metadata | presence transport abstraction | analysed |
 | I-WRK-001 | isolated subagent bridge process | CyberVerse | background specialist execution | child-process work/artifacts | task context + selected credentials | worker execution adapter | analysed |
-| I-PRS-005 | LiveKit Server | LiveKit | WebRTC rooms/participants/tracks/data/telephony infrastructure | realtime network/media | audio/video/IP/session | services/presence transport | discovered |
-| I-PRS-006 | LiveKit Agents | LiveKit | AgentSession/Worker/STT/LLM/TTS/realtime/avatar integrations | model/media/tool calls | prompt/audio/video | services/presence runtime adapter | discovered |
-| I-PRS-007 | Pipecat | Pipecat | frame/pipeline realtime multimodal processing | model/media/network | prompt/audio/video | presence pipeline reference/adapter | discovered |
-| I-AVT-003 | LiveKit avatar plugin ecosystem | LiveKit Agents | realtime avatar providers | external/GPU media | character image/audio | provider/avatar | discovered |
+| I-PRS-005 | LiveKit Server | LiveKit | WebRTC rooms/participants/tracks/data/telephony infrastructure | realtime network/media | audio/video/IP/session | selected services/presence transport | analysed |
+| I-PRS-006 | LiveKit Agents TypeScript | LiveKit | AgentSession/Worker/STT/LLM/TTS/realtime/avatar integrations | model/media/tool calls | prompt/audio/video | selected services/presence session runtime | analysed |
+| I-PRS-007 | Pipecat | Pipecat | frame/pipeline realtime multimodal processing | model/media/network | prompt/audio/video | secondary architecture / optional specialized worker | analysed |
+| I-AVT-003 | LiveKit avatar plugin ecosystem | LiveKit Agents | realtime remote/generated avatar providers | external/GPU media | character image/audio | selected remote AvatarSession provider boundary | analysed |
 | I-MEM-001 | Letta APIs/runtime | Letta | persistent stateful-agent memory/server | memory/state operations | private memory | memory donor/provider only if adopted | discovered |
 | I-MEM-002 | Mem0 | Mem0 | extraction/retrieval/entity/temporal memory | memory/vector operations | private memory | memory specialist provider/reference | discovered |
 | I-GW-001 | OpenClaw channel/device ecosystem | OpenClaw | WhatsApp/Telegram/Slack/Discord/Teams/iMessage/device nodes | messages/device actions | highly sensitive | optional bridge + architecture donor | analysed |
@@ -72,5 +72,7 @@ Every external dependency must enter Masanawa through a canonical capability/pro
 | I-AIRI-005 | AIRI computer-use MCP | AIRI | native desktop/browser DOM/terminal execution | device actions | highly sensitive | computer-use architecture donor | analysed |
 | I-AIRI-006 | AIRI provider-inference | AIRI | runtime-neutral text/speech/transcription provider definitions | model/media calls | prompt/audio | secondary provider architecture donor | analysed |
 | I-AIRI-007 | Electron/Capacitor shells | AIRI | desktop/mobile packaging and native bridges | local device access | device-sensitive | reference only pending client ADR | analysed |
+| I-PRS-008 | Official LiveKit client SDKs | LiveKit | browser/mobile/desktop room/media clients | realtime network/media | audio/video/device permissions | client PresenceTransport adapters | analysed |
+| I-PRS-009 | LiveKit SIP/telephony ecosystem | LiveKit | phone call ingress/egress into realtime rooms | telephony side effects | phone/audio/call metadata | future telephony presence adapter | analysed |
 
 Auth, retry, idempotency and reconciliation fields still require source-by-source deep extraction.
