@@ -50,8 +50,13 @@ export interface AdmitTelemetryCorrelationInput {
   readonly characterSessionId?: CharacterSessionId;
 }
 
-function firstHeader(value: string | readonly string[] | undefined): string | undefined {
-  return Array.isArray(value) ? value[0] : value;
+function firstHeader(
+  value: string | readonly string[] | undefined,
+): string | undefined {
+  if (typeof value === "string" || value === undefined) {
+    return value;
+  }
+  return value[0];
 }
 
 function randomHex(bytes: number): string {
@@ -120,14 +125,26 @@ export function createChildTraceContext(parent: W3cTraceContext): W3cTraceContex
   });
 }
 
-function canonicalHeaderId<K extends "request" | "correlation">(
-  kind: K,
+function canonicalHeaderId(
+  kind: "request",
   value: string | undefined,
-): K extends "request" ? RequestId : CorrelationId {
-  if (value && isCanonicalId(kind, value)) {
-    return value as K extends "request" ? RequestId : CorrelationId;
+): RequestId;
+function canonicalHeaderId(
+  kind: "correlation",
+  value: string | undefined,
+): CorrelationId;
+function canonicalHeaderId(
+  kind: "request" | "correlation",
+  value: string | undefined,
+): RequestId | CorrelationId {
+  if (kind === "request") {
+    return value && isCanonicalId("request", value)
+      ? value
+      : createCanonicalId("request");
   }
-  return createCanonicalId(kind) as K extends "request" ? RequestId : CorrelationId;
+  return value && isCanonicalId("correlation", value)
+    ? value
+    : createCanonicalId("correlation");
 }
 
 export function admitTelemetryCorrelation(
