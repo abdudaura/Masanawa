@@ -25,7 +25,7 @@ The documented current architecture separates write/extraction from read/retriev
 3. distill ADD-oriented facts;
 4. hash-deduplicate and embed;
 5. extract/link entities;
-6. derive temporal metadata independently.
+6. preserve available timestamp/expiration metadata for downstream validity handling; richer event-time temporal derivation remains a Masanawa synthesis responsibility.
 
 The ADD-oriented approach intentionally preserves prior contradictory facts rather than destructively replacing them. Masanawa should preserve that history and add explicit supersession/validity state.
 
@@ -35,10 +35,10 @@ Mem0 combines:
 - semantic/vector similarity;
 - BM25 lexical matching with normalization/lemmatization;
 - entity matching/boosts;
-- temporal-intent scoring;
+- expiration/validity handling and entity-aware scoring; full temporal-intent/reference-date scoring is not implemented at this pin;
 - optional reranking.
 
-The signals are fused rather than allowing temporal/entity signals to hard-filter otherwise relevant results.
+The implemented semantic, lexical and entity signals are fused rather than letting an entity signal hard-filter otherwise relevant results. Masanawa may add temporal signals later from its canonical temporal projection.
 
 Masanawa adds a mandatory stage before all of these: canonical scope authorization. Retrieval cannot widen visibility.
 
@@ -72,9 +72,9 @@ Mem0 has broad embedder, reranker and vector-store abstractions. These are usefu
 
 Primary donor for:
 - extraction/dedup;
-- semantic + lexical + entity + temporal retrieval;
+- semantic + lexical + entity retrieval, with Masanawa-owned temporal projection added separately;
 - reranking;
-- temporal/entity indexing;
+- entity indexing plus expiration/validity behavior; richer temporal indexing remains Masanawa-owned;
 - decay/expiration concepts;
 - evaluation methodology;
 - embedding/vector/reranker provider seams.
