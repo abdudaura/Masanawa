@@ -223,19 +223,21 @@ export async function linkExternalUserIdentity(
   input: LinkExternalUserIdentityInput,
 ): Promise<ExternalUserIdentityLink> {
   assertExternalUserSubjectLinkable(input.subject);
-  const values = [
+  const authStrength =
+    input.subject.authenticationStrength === "strong" ? "strong" : "linked";
+  const values: unknown[] = [
     input.tenantId,
     input.userId,
     input.subject.system.trim(),
     input.subject.namespace.trim(),
     input.subject.accountId ?? null,
     input.subject.value.trim(),
-    input.subject.authenticationStrength,
+    authStrength,
     input.subject.observedAt,
     input.subject.expiresAt ?? null,
     JSON.stringify(input.subject.provenance ?? {}),
     input.linkedAt,
-  ] as const;
+  ];
   const inserted = await client.query<LinkRow>(
     `INSERT INTO identity.external_user_identities
        (tenant_id, user_id, system, namespace, account_id, subject_value,
