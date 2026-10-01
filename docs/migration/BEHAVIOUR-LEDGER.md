@@ -458,3 +458,11 @@ Deep behavior mining from tests remains required before Phase 0 completion.
 | B-ELZ-018 | channels | durable inbound record suppresses duplicate connector delivery across manager restart; pre-persistence failure stays retryable | Discord inbound idempotency test | exactly-once canonical admission with retry-before-admission |
 | B-ELZ-019 | providers | retryable model failures may rotate providers; non-retryable errors and TTS fail closed; pinned provider remains pinned | provider fallback + TTS tests | capability-specific, policy-constrained failover with observability |
 | B-ELZ-020 | providers | local-to-cloud fallback classifies only known recoverable failures; unknown/programming failures surface | local inference cloud-fallback | fallback must not conceal correctness bugs or violate privacy policy |
+
+
+| B-ELZ-021 | channels | provider accepted outbound delivery must not be retried solely because local receipt persistence failed; unknown acceptance requires reconciliation | scheduled-task connector dispatch | preserve acceptance-state-aware retry semantics |
+| B-ELZ-022 | tools | browser target fallback is pre-dispatch only; post-dispatch opaque mutation failures become uncertain outcome and are never replayed | browser-service.ts | no automatic replay after possible side effect |
+| B-ELZ-023 | security | browser policy hooks fail closed; unknown subactions classify as mutating; eval/upload use restricted paths | browser-domain-policy + workspace | mutating computer use defaults restricted |
+| B-ELZ-024 | security | durable credential refs survive restart while encrypted secret material remains in vault; missing master key fails closed | connector credential store + durability test | vault-reference separation and recoverability required |
+| B-ELZ-025 | security | process environment secrets are scrubbed into a narrower in-process cache but that cache is not durable authority | cloud-secrets.ts | minimize env exposure; vault remains authority |
+| B-ELZ-026 | security | stale expected world metadata cannot overwrite a newer write and cannot emit a false committed audit record | world metadata CAS + real SQL test | current-authority CAS and audit commit atomically |
