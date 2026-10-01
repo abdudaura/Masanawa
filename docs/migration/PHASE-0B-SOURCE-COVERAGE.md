@@ -24,7 +24,7 @@ Generated/dependency/build metadata roots may be excluded after inspection, but 
 | OpenJarvis | configs, deploy, desktop, examples, frontend, rust, src, tests | descendant matrix + 950 Python/143 Rust file manifest + 109 adapter disposition manifest + native parity boundary | covered |
 | N.E.K.O | app, brain, config, deps, frontend, knowledge, launcher_core, local_server, main_logic, main_routers, memory, plugin, specs, tests, utils | descendant matrix + 4,947-file manifest + 121 integration dispositions + plugin authority map | covered |
 | CyberVerse | frontend, inference, infra, models, proto, server, tests | descendant clean-room matrix + 532-file manifest + integration dispositions + model provenance + independent acceptance spec | covered; GPL clean-room |
-| AIRI | apps, bucket, engines, integrations, packages, plugins, server, services | DLF/AVT/PLG/RTC/CUA + integration rows | partial |
+| AIRI | apps, bucket, engines, integrations, packages, plugins, server, services | descendant matrix + 5,697-file manifest + 483 integration dispositions + client-authority map | covered |
 | LiveKit Server | cmd, deploy, pkg, test | RTC transport/session integration + ADR-0006 | partial |
 | LiveKit Agents TS | agents, examples, plugins, tests | RTC session/turn/avatar rows + ADR-0006 | partial |
 | LiveKit Agents Python | livekit-agents, livekit-plugins, examples, tests | maturity/provider reference under ADR-0006 | partial |
