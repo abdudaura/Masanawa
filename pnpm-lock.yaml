@@ -184,6 +184,9 @@ importers:
       '@masanawa/events':
         specifier: workspace:*
         version: link:../../../packages/events
+      '@masanawa/security':
+        specifier: workspace:*
+        version: link:../../../packages/security
       pg:
         specifier: 8.23.0
         version: 8.23.0
