@@ -515,3 +515,16 @@ Deep behavior mining from tests remains required before Phase 0 completion.
 | B-OCL-013 | skills | skill revision includes supporting files and executable bits; identical save no-ops and stale edit conflicts | skills docs | immutable content-addressed skill versions |
 | B-OCL-014 | skills | existing session keeps exact skill IDs/revisions when new revision is published/disabled/removed | skills docs | session reproducibility and revision pinning |
 | B-OCL-015 | skills | skill source precedence/visibility does not grant tools, credentials, host rights or authorization | skills docs | capability authority remains separate |
+
+
+| B-OCL-016 | providers | route preference ranks already-eligible credentials but cannot create credentials or bypass cooldown/availability | provider runtime hooks | provider policy and credential authority remain separate |
+| B-OCL-017 | providers | built-in text transport retry budget belongs to the host runner; streaming wrappers do not blindly self-retry | provider runtime hooks | one observable retry owner per operation |
+| B-OCL-018 | security | destination-bound secret egress is revoked on cancellation/completion/failure and redacts split output chunks | model runtime helpers | secrets cannot escape command/provider scope |
+| B-OCL-019 | memory | unknown/external evidence is conservatively untrusted; automation/subagent sessions do not automatically promote memory | memory architecture | durable memory promotion is provenance-gated |
+| B-OCL-020 | memory | recalled content is structurally ineligible for re-extraction and network-derived turn output is tainted for promotion | memory architecture | prevent recall amplification/poisoning loops |
+| B-OCL-021 | memory | consolidation checks current content hash before atomic replacement and rejects unsafe/oversized rewrites | memory architecture | CAS/version fence curated memory mutation |
+| B-OCL-022 | workflows | cron lifecycle generation rotates on stop and durable queued reservations fence stale work across restart | cron service state | stale scheduled occurrence cannot revive after runtime replacement |
+| B-OCL-023 | workflows | missed scheduled work is bounded/staggered on restart | cron service state | no restart thundering herd |
+| B-OCL-024 | security | SSRF policy re-evaluates DNS/IP/origin on redirects and blocks metadata/loopback/private ranges by default | SSRF/fetch guard | redirect/proxy cannot escape egress policy |
+| B-OCL-025 | observability | OTel raw model/tool content is off by default; trace context is request provenance, not authorization | OTel privacy docs | privacy-safe telemetry defaults |
+| B-OCL-026 | observability | diagnostics export is explicit/approval-gated, redacted and privately routed from group conversations | diagnostics docs | support artifacts cannot leak private chat/credentials |
