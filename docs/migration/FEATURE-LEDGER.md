@@ -128,6 +128,9 @@ foundation, identity, relationships, memory, world, decisions, agents, skills, t
 | PRO-003 | proactivity | persistent source/repetition history across restarts | N.E.K.O | A/B | primary | packages/proactivity | analysed |
 | PRO-004 | proactivity | conservative atomic state persistence under load/cancellation failure | N.E.K.O | A | primary reliability | packages/proactivity + events | analysed |
 | PER-002 | perception | privacy-state abstraction for OS activity signals | N.E.K.O | B | primary | packages/perception | analysed |
+| PER-003 | perception | restricted/sanitized computer-use action runtime with exclusive desktop lease | N.E.K.O | A/B | primary safety | packages/tools + perception | analysed |
+| VID-001 | security | optional speaker/owner voice identity activation and enrollment | N.E.K.O | B | primary | packages/security + services/presence | analysed |
+| EMB-001 | avatar | embodied interaction events with dedupe-ranked memory eligibility | N.E.K.O | B | primary | packages/perception + memory | analysed |
 | OPS-002 | operations | trace/evaluation visibility | OpenJarvis + ChatWithStars | B | combined | apps/ops + telemetry | discovered |
 
 This inventory is intentionally incomplete. Source-specific map documents identify the next deep-mining areas.
