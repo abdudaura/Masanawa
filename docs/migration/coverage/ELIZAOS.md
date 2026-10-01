@@ -475,3 +475,114 @@ Still required before closure:
 6. cloud/deployment credential/state ownership and recovery;
 7. direct-test inventory for the consequential retained behaviors;
 8. repository-wide descendant/file-family proof sufficient to show no production subsystem remains unexplained.
+
+
+## 18. Authorization, membership and delivery audience
+
+Implementation evidence:
+- `packages/agent/src/security/access.ts` — agent-side checks delegate to canonical core role primitives rather than maintaining a second authorization implementation; malformed/missing context fails closed.
+- `packages/core/src/roles.ts` — one role-rank source, auditable grant provenance, connector identity projection, privilege-escalation rules and fail-closed sender resolution.
+- `plugins/plugin-sql/src/services/sql-membership.ts` — SQL-backed membership authority with tenant/scope checks, expected-generation fencing, idempotency keys, publisher generations, ordered evidence cursors, bounded validity and exact command validation.
+- `packages/core/src/security/trusted-delivery-audience.ts`, `packages/core/src/access-control/audience-egress.ts`, `packages/core/src/access-control/provenance-envelope.ts` — turn/destination-bound disclosure evidence, canonical room/source provenance and fail-closed recall/egress checks.
+- tests: `plugins/plugin-sql/src/__tests__/integration/membership-authority.real.test.ts`, `packages/core/src/security/trusted-delivery-audience.renewal.test.ts`.
+
+Pinned invariants worth preserving:
+- authorization helpers do not fork a second role hierarchy;
+- missing/failed private-access resolution denies and reports;
+- membership updates are tenant-scoped, generation-fenced and idempotent;
+- membership evidence has bounded freshness rather than indefinite trust;
+- delivery-audience evidence is turn/runtime/destination bound and must be revalidated after expiry or authority change;
+- stored connector metadata is provenance evidence, not automatically an unforgeable identity attestation.
+
+Masanawa destination:
+- `packages/security` + canonical `packages/identity` relationship/account bindings;
+- channel adapters supply evidence, never authority.
+
+Disposition: **A for fail-closed/current-authority/idempotency/freshness invariants; B for data model; C for eliza world/role schema as canonical truth**.
+
+Acceptance gate:
+- role/membership resolution has one canonical policy source;
+- stale membership evidence cannot authorize an action;
+- owner/private disclosure is revalidated at use time;
+- connector metadata cannot self-promote an identity;
+- auth lookup failures deny consequential access and surface telemetry.
+
+## 19. Connector ingress idempotency and provenance
+
+Implementation evidence:
+- `plugins/plugin-discord/__tests__/messages-inbound-idempotency.test.ts`;
+- `plugins/plugin-discord/messages.ts`;
+- `packages/core/src/access-control/provenance-envelope.ts`.
+
+Pinned behavior proven by tests:
+- duplicate inbound platform messages are suppressed within one manager;
+- duplicate delivery remains suppressed after manager reconstruction when the inbound record was durably persisted;
+- if processing failed before persistence, the same platform message remains retryable rather than being permanently poisoned by an in-memory dedupe guard;
+- a direct-message delivery-audience attestation is created from canonical room state before dispatch and survives persistence;
+- provenance dedupe includes source/account/room/platform-record identity rather than text alone.
+
+Masanawa destination:
+- gateway/channel ingress + canonical event/delivery idempotency evidence.
+
+Disposition: **A — preserve durable inbound dedupe/retry semantics; B — normalize away eliza Memory authority**.
+
+Acceptance gate:
+- same provider event cannot produce two canonical turns after restart;
+- failure before durable admission can retry;
+- failure after durable admission resumes without duplicate downstream effects;
+- dedupe scope includes account + destination + provider record ID;
+- inbound provenance is retained for audit and disclosure policy.
+
+## 20. Provider fallback and local/cloud routing
+
+Implementation evidence:
+- `packages/core/src/runtime/model-dispatch/dispatcher.ts`;
+- `packages/core/src/runtime/__tests__/use-model-provider-fallback.test.ts`;
+- `plugins/plugin-openai/index.ts`;
+- `plugins/plugin-local-inference/src/services/cloud-fallback.ts`;
+- `plugins/plugin-local-inference/src/services/router-dispatch.test.ts`;
+- `plugins/plugin-local-inference/src/services/router-tts-fail-closed.test.ts`.
+
+Pinned behavior:
+- model handlers are capability-registered rather than hard-coded by provider;
+- retryable provider errors may rotate to lower-priority handlers;
+- non-retryable failures fail closed;
+- pinned-provider requests are honored;
+- local fallback classifies known recoverable local failures explicitly and lets unknown/programming failures surface;
+- cloud fallback is registry-driven rather than hard-coded to a vendor;
+- TTS/voice routing deliberately fails closed instead of silently switching to a different voice engine where voice identity would change.
+
+Masanawa destination:
+- `packages/providers` provider registry/health/routing.
+
+Disposition: **A/B — preserve typed fallback classification/current policy and voice identity safeguards; redesign registry under Masanawa provider contracts**.
+
+Acceptance gate:
+- failover is per-capability and policy-constrained;
+- non-retryable/programming failures are not hidden by fallback;
+- pinned provider/voice constraints are honored;
+- fallback path and reason are observable;
+- local-to-cloud escalation obeys privacy/consent/data-residency policy.
+
+## 21. Direct test evidence recorded
+
+Consequential pinned tests now explicitly accounted for:
+- `plugins/plugin-sql/src/__tests__/integration/membership-authority.real.test.ts` — publisher registration, complete-snapshot atomicity, bounded freshness, cursor fencing, restart and concurrent revocation;
+- `packages/core/src/runtime/__tests__/use-model-provider-fallback.test.ts` — retryable rotation, non-retryable/TTS fail-closed and pinned-provider behavior;
+- `packages/ui/src/components/views/view-capability-broker.test.tsx` — fail-closed mutation brokerage through the real view-interact path;
+- `plugins/plugin-sql/src/__tests__/unit/plugin-init-error-policy.test.ts` — unexpected adapter-readiness failures cannot masquerade as missing-adapter replacement;
+- `plugins/plugin-local-inference/src/services/router-dispatch.test.ts` — registry introspection dispatch;
+- `plugins/plugin-local-inference/src/services/router-tts-fail-closed.test.ts` — no silent TTS provider rotation;
+- `plugins/plugin-discord/__tests__/messages-inbound-idempotency.test.ts` — durable ingress dedupe/retry;
+- `packages/core/src/security/trusted-delivery-audience.renewal.test.ts` — expiry renewal and invalidation on membership/ownership/destination/runtime changes.
+
+These tests are evidence for specific retained behaviors, not proof that every elizaOS descendant is covered.
+
+## Updated unresolved descendant families
+
+Still required before closure:
+1. representative outbound delivery semantics across connector implementations (Telegram/Discord/iMessage etc.), including ambiguous send outcomes and receipt persistence;
+2. representative native/device action families beyond view brokerage, including computer-use/terminal/browser bridges;
+3. cloud/deployment credential and durable-state ownership/recovery;
+4. remaining SQL schema family classification so eliza identity/memory/world/task tables are explicitly C/B mapped rather than generically rejected;
+5. repository-wide descendant/file-family proof sufficient to show no meaningful production subsystem remains unexplained.
