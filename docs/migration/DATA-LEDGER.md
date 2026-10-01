@@ -163,3 +163,20 @@ Phase 0 must continue mapping donor-specific stores/tables/files into these cano
 | D-WLD-014 | WorldSpace | AI Town | world | versioned | shared/internal | world | optional canonical module | map/scene/topology; absent for non-spatial worlds |
 | D-WLD-015 | LocationProjection | AI Town + CWS | actor/world | mutable + history | shared/internal | world | canonical projection | coordinate or semantic/coarse location with effective time |
 | D-WLD-016 | CanonAdmission | CWS + Masanawa | world event/proposal | draft->approved/retired or auto-policy | internal | world/ops | canonical | records authored/engine/model provenance and policy/approval evidence |
+
+### Phase 0B ChatWithStars forensic additions
+
+| ID | Canonical concept | Source | Scope | Lifecycle | Sensitivity | Destination | Treatment | Notes |
+|---|---|---|---|---|---|---|---|---|
+| D-ENT-001 | EntitlementPolicyVersion | CWS | platform/plan | immutable/versioned | internal | entitlements | preserve concept | trial/subscription allowance policy is versioned, not hard-coded runtime truth |
+| D-ENT-002 | ConsumerEntitlementReservation | CWS | platform user + source message | reserved->delivered/released/blocked | private/billing | entitlements/workflows | preserve | reservation before response delivery prevents double-consumption; stale reservations release |
+| D-PRV-001 | PrivacyErasureRequest | CWS | authenticated subject | requested->confirmed->executed | highly sensitive | privacy/security | preserve+redesign | exact confirmation/actor evidence; no guessed identity |
+| D-PRV-002 | PrivacyRetentionProjection | CWS | erased subject/financial records | durable minimized record | financial/audit | privacy+commerce | preserve | receipt/reconciliation continuity retained without tenant/contact linkage |
+| D-MSN-001 | Mission | CWS | tenant + optional conversation/contact | draft->queued->running/waiting/blocked->terminal | private/internal | workflows/proactivity | preserve concept | objective, constraints, budget, deadline, autonomy mode |
+| D-MSN-002 | MissionWorkItem | CWS | mission | queued/leased/running->terminal | private/internal | workflows | preserve+redesign | lease/retry/error/owner notification semantics |
+| D-GRP-001 | GroupProfile | CWS | tenant+group/channel | mutable projection | group/private | relationships/world | preserve+redesign | purpose/topics/languages/norms/open threads/confidence |
+| D-GRP-002 | GroupPolicy | CWS | tenant+group | versioned mutable | internal | relationships/security | preserve | moderation/proactivity/topics/rate limits separate from inferred profile |
+| D-CVI-001 | CivicClaimLifecycle | CWS | tenant+jurisdiction/entity | current/superseded/disputed/stale | public/internal provenance | verticals/civic+knowledge | preserve concept | historical rows retained; answer eligibility is lifecycle-driven |
+| D-COM-008 | CreatorPayout | CWS | tenant + payout account | reserved->processing->succeeded/failed/uncertain | financial | commerce/workflows | preserve | idempotency key, reserve ledger, provider transfer, uncertain-state reconciliation |
+| D-COM-009 | ConsumerSubscription | CWS | platform user | active/past_due/cancelled/expired | financial/private | entitlements+commerce | preserve concept | billing state separate from capability authorization |
+| D-COM-010 | ConsumerUsageReservation | CWS | platform user+message+modality | reserved/delivered/released/blocked | private/billing | entitlements | preserve | delivery-coupled usage accounting |
