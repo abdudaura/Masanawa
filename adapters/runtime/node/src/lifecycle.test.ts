@@ -159,11 +159,12 @@ describe("Node service runtime", () => {
       });
 
       const stopping = runtime.stop("deadline-test");
-      await vi.advanceTimersByTimeAsync(100);
-
-      await expect(stopping).rejects.toMatchObject({
+      const rejection = expect(stopping).rejects.toMatchObject({
         code: "service.shutdown_timeout",
       });
+      await vi.advanceTimersByTimeAsync(100);
+
+      await rejection;
       expect(closeAllConnections).toHaveBeenCalledTimes(1);
     } finally {
       vi.useRealTimers();
