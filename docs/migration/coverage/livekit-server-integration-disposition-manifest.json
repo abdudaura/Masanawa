@@ -1,0 +1,188 @@
+{
+  "source": "livekit/livekit@7ef0cd014e950373acd789557099305716eea196",
+  "count": 26,
+  "entries": [
+    {
+      "path": "pkg/agent/agent_test.go",
+      "type": "agent-worker-adapter",
+      "classification": "B/C",
+      "disposition": "secondary/reference; LiveKit Agents repositories remain primary session evidence",
+      "authority_rule": "Transport/infrastructure only; cannot own Character, relationship, memory, world, workflow, commerce or canonical authorization."
+    },
+    {
+      "path": "pkg/agent/client.go",
+      "type": "agent-worker-adapter",
+      "classification": "B/C",
+      "disposition": "secondary/reference; LiveKit Agents repositories remain primary session evidence",
+      "authority_rule": "Transport/infrastructure only; cannot own Character, relationship, memory, world, workflow, commerce or canonical authorization."
+    },
+    {
+      "path": "pkg/agent/config.go",
+      "type": "agent-worker-adapter",
+      "classification": "B/C",
+      "disposition": "secondary/reference; LiveKit Agents repositories remain primary session evidence",
+      "authority_rule": "Transport/infrastructure only; cannot own Character, relationship, memory, world, workflow, commerce or canonical authorization."
+    },
+    {
+      "path": "pkg/agent/testutils/server.go",
+      "type": "agent-worker-adapter",
+      "classification": "B/C",
+      "disposition": "secondary/reference; LiveKit Agents repositories remain primary session evidence",
+      "authority_rule": "Transport/infrastructure only; cannot own Character, relationship, memory, world, workflow, commerce or canonical authorization."
+    },
+    {
+      "path": "pkg/agent/worker.go",
+      "type": "agent-worker-adapter",
+      "classification": "B/C",
+      "disposition": "secondary/reference; LiveKit Agents repositories remain primary session evidence",
+      "authority_rule": "Transport/infrastructure only; cannot own Character, relationship, memory, world, workflow, commerce or canonical authorization."
+    },
+    {
+      "path": "pkg/routing/redisrouter.go",
+      "type": "distributed-state-adapter",
+      "classification": "B/C",
+      "disposition": "implementation candidate/reference",
+      "authority_rule": "Transport/infrastructure only; cannot own Character, relationship, memory, world, workflow, commerce or canonical authorization."
+    },
+    {
+      "path": "pkg/service/agent_dispatch_service.go",
+      "type": "agent-worker-adapter",
+      "classification": "B/C",
+      "disposition": "secondary/reference; LiveKit Agents repositories remain primary session evidence",
+      "authority_rule": "Transport/infrastructure only; cannot own Character, relationship, memory, world, workflow, commerce or canonical authorization."
+    },
+    {
+      "path": "pkg/service/agentservice.go",
+      "type": "agent-worker-adapter",
+      "classification": "B/C",
+      "disposition": "secondary/reference; LiveKit Agents repositories remain primary session evidence",
+      "authority_rule": "Transport/infrastructure only; cannot own Character, relationship, memory, world, workflow, commerce or canonical authorization."
+    },
+    {
+      "path": "pkg/service/egress.go",
+      "type": "media-edge-adapter",
+      "classification": "B/C",
+      "disposition": "capability retained; concrete deployment optional",
+      "authority_rule": "Transport/infrastructure only; cannot own Character, relationship, memory, world, workflow, commerce or canonical authorization."
+    },
+    {
+      "path": "pkg/service/egressid.go",
+      "type": "media-edge-adapter",
+      "classification": "B/C",
+      "disposition": "capability retained; concrete deployment optional",
+      "authority_rule": "Transport/infrastructure only; cannot own Character, relationship, memory, world, workflow, commerce or canonical authorization."
+    },
+    {
+      "path": "pkg/service/ingress.go",
+      "type": "media-edge-adapter",
+      "classification": "B/C",
+      "disposition": "capability retained; concrete deployment optional",
+      "authority_rule": "Transport/infrastructure only; cannot own Character, relationship, memory, world, workflow, commerce or canonical authorization."
+    },
+    {
+      "path": "pkg/service/ingress_test.go",
+      "type": "media-edge-adapter",
+      "classification": "B/C",
+      "disposition": "capability retained; concrete deployment optional",
+      "authority_rule": "Transport/infrastructure only; cannot own Character, relationship, memory, world, workflow, commerce or canonical authorization."
+    },
+    {
+      "path": "pkg/service/ioservice.go",
+      "type": "transport-service",
+      "classification": "B/C",
+      "disposition": "selected-infrastructure-or-adapter",
+      "authority_rule": "Transport/infrastructure only; cannot own Character, relationship, memory, world, workflow, commerce or canonical authorization."
+    },
+    {
+      "path": "pkg/service/ioservice_ingress.go",
+      "type": "media-edge-adapter",
+      "classification": "B/C",
+      "disposition": "capability retained; concrete deployment optional",
+      "authority_rule": "Transport/infrastructure only; cannot own Character, relationship, memory, world, workflow, commerce or canonical authorization."
+    },
+    {
+      "path": "pkg/service/ioservice_sip.go",
+      "type": "media-edge-adapter",
+      "classification": "B/C",
+      "disposition": "capability retained; concrete deployment optional",
+      "authority_rule": "Transport/infrastructure only; cannot own Character, relationship, memory, world, workflow, commerce or canonical authorization."
+    },
+    {
+      "path": "pkg/service/ioservice_sip_test.go",
+      "type": "media-edge-adapter",
+      "classification": "B/C",
+      "disposition": "capability retained; concrete deployment optional",
+      "authority_rule": "Transport/infrastructure only; cannot own Character, relationship, memory, world, workflow, commerce or canonical authorization."
+    },
+    {
+      "path": "pkg/service/redisstore.go",
+      "type": "distributed-state-adapter",
+      "classification": "B/C",
+      "disposition": "implementation candidate/reference",
+      "authority_rule": "Transport/infrastructure only; cannot own Character, relationship, memory, world, workflow, commerce or canonical authorization."
+    },
+    {
+      "path": "pkg/service/redisstore_sip.go",
+      "type": "media-edge-adapter",
+      "classification": "B/C",
+      "disposition": "capability retained; concrete deployment optional",
+      "authority_rule": "Transport/infrastructure only; cannot own Character, relationship, memory, world, workflow, commerce or canonical authorization."
+    },
+    {
+      "path": "pkg/service/redisstore_sip_test.go",
+      "type": "media-edge-adapter",
+      "classification": "B/C",
+      "disposition": "capability retained; concrete deployment optional",
+      "authority_rule": "Transport/infrastructure only; cannot own Character, relationship, memory, world, workflow, commerce or canonical authorization."
+    },
+    {
+      "path": "pkg/service/redisstore_test.go",
+      "type": "distributed-state-adapter",
+      "classification": "B/C",
+      "disposition": "implementation candidate/reference",
+      "authority_rule": "Transport/infrastructure only; cannot own Character, relationship, memory, world, workflow, commerce or canonical authorization."
+    },
+    {
+      "path": "pkg/service/sip.go",
+      "type": "media-edge-adapter",
+      "classification": "B/C",
+      "disposition": "capability retained; concrete deployment optional",
+      "authority_rule": "Transport/infrastructure only; cannot own Character, relationship, memory, world, workflow, commerce or canonical authorization."
+    },
+    {
+      "path": "pkg/service/turn.go",
+      "type": "media-edge-adapter",
+      "classification": "B/C",
+      "disposition": "capability retained; concrete deployment optional",
+      "authority_rule": "Transport/infrastructure only; cannot own Character, relationship, memory, world, workflow, commerce or canonical authorization."
+    },
+    {
+      "path": "pkg/service/turn_test.go",
+      "type": "media-edge-adapter",
+      "classification": "B/C",
+      "disposition": "capability retained; concrete deployment optional",
+      "authority_rule": "Transport/infrastructure only; cannot own Character, relationship, memory, world, workflow, commerce or canonical authorization."
+    },
+    {
+      "path": "pkg/service/turnquota.go",
+      "type": "media-edge-adapter",
+      "classification": "B/C",
+      "disposition": "capability retained; concrete deployment optional",
+      "authority_rule": "Transport/infrastructure only; cannot own Character, relationship, memory, world, workflow, commerce or canonical authorization."
+    },
+    {
+      "path": "pkg/service/turnquota_test.go",
+      "type": "media-edge-adapter",
+      "classification": "B/C",
+      "disposition": "capability retained; concrete deployment optional",
+      "authority_rule": "Transport/infrastructure only; cannot own Character, relationship, memory, world, workflow, commerce or canonical authorization."
+    },
+    {
+      "path": "pkg/service/whipservice.go",
+      "type": "media-edge-adapter",
+      "classification": "B/C",
+      "disposition": "capability retained; concrete deployment optional",
+      "authority_rule": "Transport/infrastructure only; cannot own Character, relationship, memory, world, workflow, commerce or canonical authorization."
+    }
+  ]
+}
