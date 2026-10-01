@@ -45,6 +45,7 @@ The earlier four-donor assumption has been intentionally reopened before archite
 - CyberVerse deep pass: playback epochs/stale-feedback rejection, RTP/AV sync, audio-only mode, avatar idle/speech synchronization, pipeline-generation races, terminal task/event/artifact semantics, reconnectable task events, foreground ACK/background-worker UX, worker allowlists/cancellation/timeouts and avatar warmup policy. CyberVerse remains GPL-clean behavior reference only.
 - Remaining ChatWithStars deep pass: tenant-safe social automation/review/cadence/redeploy dedupe, media-studio continuity/render/quality/lipsync, Ops acceptance evidence, privacy-safe observability, emergency kill switches and audited financial adjustments.
 - OpenClaw Phase 0A adoption pass complete: Gateway/channel/device-node architecture, one-trust-domain security mismatch, device pairing/reconciliation, durable approvals/current-authority checks, skill distribution/revision/session pinning, session/subagent behavior, steering, tool/plugin policy and memory-authority rules. ADR-0004 records that OpenClaw is the primary Gateway architectural donor but not Masanawa's kernel or public multi-tenant security boundary.
+- AIRI Phase 0A adoption pass complete: selected as primary digital-life/embodiment client donor. Captured Stage abstraction, Live2D/VRM/multi-renderer model-driver lifecycle, CCv3/AIRI package import boundary, plugin capability/permission/cleanup semantics, serialized voice-input lifecycle and computer-use lane separation. ADR-0005 explicitly keeps canonical identity/memory/provider/business truth outside AIRI client state.
 
 ### Reference source vault added
 
@@ -89,17 +90,22 @@ OpenClaw has been deep-mined sufficiently for its adoption-boundary decision. Se
 
 Its Markdown/SQLite personal-assistant storage model is **not** Masanawa's canonical data model.
 
+## AIRI decision (completed)
+
+AIRI is now selected as the primary architectural donor for digital-life clients/embodiment. See `docs/adr/0005-airi-digital-life-adoption-boundary.md` and `docs/migration/AIRI-ADOPTION-BOUNDARY.md`.
+
+It does **not** own canonical Character identity, memory, world/task truth or realtime transport.
+
 ## Immediate next work
 
 Do not return to the old four-source coverage-proof plan yet.
 
-1. Deep-mine AIRI for digital-life/embodiment/client architecture.
-2. Compare LiveKit Server/Agents + Pipecat + CyberVerse + AIRI for realtime presence/embodiment.
-3. Compare Letta + Mem0 + N.E.K.O + OpenClaw for memory architecture.
-4. Compare OpenJarvis + elizaOS + Microsoft Agent Framework + OpenClaw for agent runtime, skills, plugins and workflows.
-5. Compare AI Town + ChatWithStars for world simulation.
-6. Produce explicit donor decisions/ADRs and freeze provisional subsystem ownership.
-7. Only then continue Phase 0B exhaustive source coverage and A/B/C classification across the complete reference vault.
+1. Compare LiveKit Server/Agents + Pipecat + CyberVerse + AIRI for realtime presence/embodiment and record the presence ADR.
+2. Compare Letta + Mem0 + N.E.K.O + OpenClaw for memory architecture.
+3. Compare OpenJarvis + elizaOS + Microsoft Agent Framework + OpenClaw for agent runtime, skills, plugins and workflows.
+4. Compare AI Town + ChatWithStars for world simulation.
+5. Produce remaining explicit donor decisions/ADRs and freeze provisional subsystem ownership.
+6. Only then continue Phase 0B exhaustive source coverage and A/B/C classification across the complete reference vault.
 
 ## Non-negotiable rules
 
