@@ -24,5 +24,10 @@ jobs:
           package-manager-cache: false
       - name: Install
         run: pnpm install --no-frozen-lockfile
+      - name: Bootstrap lockfile evidence
+        run: |
+          printf 'MASANAWA_PNPM_LOCK_B64='
+          base64 -w0 pnpm-lock.yaml
+          echo
       - name: Check
         run: pnpm check
