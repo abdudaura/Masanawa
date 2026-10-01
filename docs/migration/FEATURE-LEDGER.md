@@ -228,3 +228,15 @@ This inventory is intentionally incomplete. Source-specific map documents identi
 | WFL-001 | workflows | typed graph orchestration with fan-out/fan-in/conditional edges and convergence guard | Microsoft Agent Framework | A/B | selected orchestration donor | packages/workflows | selected |
 | WFL-002 | workflows | graph-signature checkpoint lineage with executor/edge/pending-human state | Microsoft Agent Framework | A | selected recovery donor | packages/workflows | selected |
 | WFL-003 | workflows | restored execution revalidates current authority and reconciles side-effect receipts | Masanawa synthesis (MAF+CWS+OpenClaw) | A | canonical invariant | packages/workflows + security | selected |
+
+### Phase 0A world simulation comparison additions
+
+| ID | Domain | Capability | Source | Class | Donor role | Masanawa destination | Status |
+|---|---|---|---|---|---|---|---|
+| WLD-005 | world | ordered-input monotonic tick/step simulation with bounded catch-up | AI Town | B | selected simulation-mechanics donor | packages/world + workers | selected |
+| WLD-006 | world | generation/CAS overlap rejection and transactional simulation commit | AI Town | A/B | selected concurrency donor | packages/world + workers | selected |
+| WLD-007 | world | autonomous actor interaction/activity/conversation state machines | AI Town | B | primary simulation behavior donor | packages/world + agents | selected |
+| WLD-008 | world | optional spatial map/pathfinding/collision/location-history simulation | AI Town | B | optional spatial donor | packages/world | selected |
+| WLD-009 | world | governed authored/engine canon with visibility, provenance and immutable approval lifecycle | ChatWithStars | A | selected canon/governance donor | packages/world + ops | selected |
+| WLD-010 | world | policy-controlled pause/resume/catch-up/recovery semantics | AI Town + Masanawa synthesis | B | combined liveness donor | packages/world + workers | selected |
+| WLD-011 | world | canonical world/life authority separated from identity, memory, workflow and presence truth | Masanawa synthesis | A | canonical invariant | packages/world | selected |
