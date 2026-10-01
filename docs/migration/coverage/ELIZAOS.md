@@ -628,3 +628,150 @@ Still required before closure:
 4. repository-wide descendant/file-family proof sufficient to show no meaningful production subsystem remains unexplained.
 
 Outbound connector acceptance/idempotency semantics are no longer unresolved.
+
+
+## 23. Browser/computer-use side-effect boundary
+
+Implementation evidence:
+- `plugins/plugin-browser/src/actions/browser.ts`;
+- `plugins/plugin-browser/src/browser-service.ts`;
+- `plugins/plugin-browser/src/browser-domain-policy.ts`;
+- `plugins/plugin-browser/src/workspace/browser-workspace.ts`;
+- `plugins/plugin-browser/src/bridge-policy.ts`.
+
+Pinned behavior:
+- one browser action targets a pluggable backend registry (workspace, paired/native Chromium, Stagehand, optional computer-use providers);
+- target capability/availability is checked before dispatch;
+- target fallback is permitted only before any command begins;
+- once `execute()` is invoked, a command is never replayed on another target because a click/navigation/submit may already have taken effect; opaque mutating failures become an explicit uncertain-outcome class;
+- generic browser `eval` is disabled;
+- upload is blocked from the generic command path and requires an exact consume-once interaction confirmation plus proof-producing target;
+- nested batch steps are flattened and individually policy-checked before execution;
+- domain policies classify read/interact/navigate/submit/upload/eval, fail closed when a policy throws/returns malformed data, and support `allow|block|require_confirmation`;
+- unknown subactions classify as mutating/interact rather than read;
+- malformed/non-http(s) URL parsing returns no domain rather than fabricating an allowed destination;
+- the workspace command router also blocks eval/upload even when invoked below the higher service layer.
+
+Masanawa destination:
+- `packages/tools` computer/browser-use capability;
+- `packages/security` current authorization/confirmation/domain policy;
+- device/browser targets as edge adapters.
+
+Disposition: **A — preserve no-post-dispatch-replay, typed uncertain outcome, fail-closed domain policy and proof-bound upload semantics; B — reimplement behind Masanawa Tool contracts**.
+
+Acceptance gate:
+- mutating browser action is never replayed automatically after an ambiguous post-dispatch failure;
+- domain/target policy runs before side effects and again at resolved submit boundary where needed;
+- upload/eval cannot bypass specialized authorization;
+- unknown/new mutating actions default to restricted treatment;
+- device/browser target availability never becomes authorization;
+- every consequential browser effect is traceable to tool call, target, policy decision and outcome/reconciliation state.
+
+## 24. Durable connector credential authority
+
+Implementation evidence:
+- `packages/agent/src/services/connector-credential-store.ts`;
+- `packages/agent/test/connector-credential-durable.test.ts`.
+
+Pinned behavior:
+- connector-account records retain opaque `vaultRef` pointers while secret material lives in a durable encrypted vault;
+- a durable host vault is preferred when available; hostless runtime falls back to a state-directory PGlite vault;
+- the fallback vault encrypts at rest using OS-keychain material or `ELIZA_VAULT_PASSPHRASE`;
+- a headless host without a usable master key fails writes closed rather than silently persisting unrecoverable plaintext/ephemeral secrets;
+- secret reveal is an explicit/auditable operation;
+- deterministic namespaced refs include agent/provider/account/credential type;
+- the integration test boots the real standalone runtime in separate OS processes, writes credentials, restarts and verifies both ref metadata and encrypted secret material survive;
+- cloud-container replacement is modeled with a persisted per-agent volume and persisted vault passphrase; a fresh random passphrase is a negative control that cannot read prior ciphertext.
+
+Masanawa destination:
+- `packages/security` credential/vault abstraction + integration account metadata in canonical provider/channel domains.
+
+Disposition: **A — preserve durable encrypted ref/secret separation and fail-closed key recovery; B — use Masanawa vault implementation rather than eliza agent-scoped store**.
+
+Acceptance gate:
+- database rows never contain raw provider tokens where a vault ref suffices;
+- process/container restart does not orphan valid refs;
+- missing/wrong master key fails closed and is operator-visible;
+- reveal/read is scoped and audited;
+- rotation/revocation updates refs/credentials without exposing values to logs;
+- backup/restore documents whether ciphertext and key material are recoverable together or intentionally separate.
+
+## 25. Cloud in-process secret scrubbing
+
+Implementation evidence:
+- `plugins/plugin-elizacloud/src/cloud-config/cloud-secrets.ts`.
+
+Pinned behavior:
+- selected cloud API secrets can be copied from `process.env` into a sealed process-local object and removed from the environment so later environment dumps/child processes/`/proc/self/environ` do not expose them;
+- explicit disconnect clears the sealed values;
+- a compatibility fallback can still read preexisting environment values.
+
+Masanawa disposition: **B as defense-in-depth only**, not durable credential authority.
+
+Reason:
+process-local sealing reduces accidental environment leakage but disappears on restart and is not a vault. Durable credentials must remain owned by Masanawa security/vault storage.
+
+Acceptance gate:
+- production long-lived provider secrets use vault references;
+- environment import, when unavoidable at boot, is minimized/scrubbed after secure ingestion;
+- child processes receive only explicitly delegated secrets;
+- process-local caches are clearable and never treated as canonical recovery storage.
+
+## 26. SQL schema family authority map
+
+Implementation evidence:
+- `plugins/plugin-sql/src/schema.ts` and imported schema modules.
+
+The pinned schema explicitly includes these families. They are classified by Masanawa authority rather than inherited as an eliza database model:
+
+| elizaOS schema family | Masanawa treatment |
+|---|---|
+| `agentTable`, component/runtime registration | **C as identity authority**; execution metadata may inform `packages/agents` / plugins |
+| auth identity/session/owner/login/bootstrap/audit tables | **C as canonical auth model**; selected audit/session-hardening mechanics may be B references under security |
+| channel/channelParticipants/messageServer/messageServerAgents | **B adapter/runtime evidence**; gateway/channel state only, never Character truth |
+| connectorAccounts/credentials/audit/OAuth flows | **B capability**; account metadata canonicalized in integration domain, raw secrets moved to vault |
+| entity/entityIdentity/merge/fact-candidate | **C as canonical identity graph**; useful merge/evidence mechanics can inform `packages/identity` only after explicit design |
+| identityAuthority state/claims/redirects/merge journal/person-link attestation | **B evidence mechanics, C schema authority**; canonical identity authority remains `packages/identity` + security |
+| membershipAuthority scope/records/journal | **A/B behavioral donor** for current-authority evidence; schema itself noncanonical |
+| memory/longTermMemories/embeddings/memoryAccessLogs/sessionSummaries | **C as memory authority**; `packages/memory` owns canonical records and projections |
+| message | **B transport/conversation evidence**; channel/runtime persistence cannot replace canonical relationship/task/world state |
+| relationship/participant/room/server | **C as cross-domain source of truth**; normalize to identity/relationships/gateway/world contracts |
+| task | **C as workflow authority**; `packages/workflows` owns durable task state; scheduler fencing behavior retained separately |
+| world/worldRoleAudit | **C as world authority**; `packages/world` owns world state, while CAS/audit mechanics are reusable |
+| approvalRequest/approvalDispatchControl | **B capability** behind canonical workflow/approval policy |
+| cache/embedding | derived/rebuildable only |
+| logs/audit tables | **B observability/audit mechanics**, subject to Masanawa retention/privacy policy |
+
+Unresolved schema ownership conflicts after this map: **0**. The remaining repository-wide proof must still verify there are no unlisted schema descendants with independent authority.
+
+## 27. World-metadata CAS and audit atomicity
+
+Implementation evidence:
+- `packages/core/src/database/world-metadata-cas.ts`;
+- `plugins/plugin-sql/src/__tests__/integration/world-metadata-cas.real.test.ts`.
+
+Pinned behavior proven against real SQL:
+- a matching expected snapshot commits replacement metadata and audit evidence together;
+- a raced/stale expected snapshot returns conflict and does not overwrite the newer writer;
+- a lost/stale attempt does not emit a false committed audit row;
+- JSON object key order does not create a false conflict;
+- authority audit evidence is intentionally retained independently of later actor/room lifetime.
+
+Masanawa destination:
+- reusable current-authority/CAS pattern in `packages/security`, `packages/world` or other canonical domain writers as appropriate.
+
+Disposition: **A as concurrency/audit invariant; C for eliza World metadata as canonical storage**.
+
+Acceptance gate:
+- current-authority writes validate the expected version/generation in the same transaction as mutation;
+- conflict cannot overwrite a winner;
+- audit says committed only when the domain write committed;
+- durable audit retention is explicit and privacy-governed.
+
+## Updated unresolved descendant families
+
+Still required before closure:
+1. cloud/deployment durable-state ownership and recovery beyond credentials;
+2. repository-wide descendant/file-family proof sufficient to show no meaningful production subsystem remains unexplained.
+
+Browser/device side-effect policy, credential durability, SQL schema authority and CAS behavior are no longer unresolved.
