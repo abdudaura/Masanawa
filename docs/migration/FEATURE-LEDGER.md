@@ -240,3 +240,11 @@ This inventory is intentionally incomplete. Source-specific map documents identi
 | WLD-009 | world | governed authored/engine canon with visibility, provenance and immutable approval lifecycle | ChatWithStars | A | selected canon/governance donor | packages/world + ops | selected |
 | WLD-010 | world | policy-controlled pause/resume/catch-up/recovery semantics | AI Town + Masanawa synthesis | B | combined liveness donor | packages/world + workers | selected |
 | WLD-011 | world | canonical world/life authority separated from identity, memory, workflow and presence truth | Masanawa synthesis | A | canonical invariant | packages/world | selected |
+
+### Phase 0A OpenClaw Agent Skills additions
+
+| ID | Domain | Capability | Source | Class | Donor role | Masanawa destination | Status |
+|---|---|---|---|---|---|---|---|
+| SKL-011 | skills | canonical-source skill bundle with validated frontmatter, colocated resources/scripts and generated-snapshot provenance | OpenClaw Agent Skills | B | authoring/distribution convention donor | packages/skills + developer tooling | selected |
+| EVL-001 | learning/evaluation | source-blind behavior validation against explicit contracts | OpenClaw Agent Skills | A/B | acceptance-test donor | testing/evaluation | selected |
+| DEV-004 | developer experience | redacted transcript provenance, bounded handoff and repeatable operational helper workflows | OpenClaw Agent Skills | B | developer-workflow donor | developer tooling | selected |
