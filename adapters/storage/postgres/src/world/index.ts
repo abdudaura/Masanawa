@@ -6,6 +6,8 @@ export {
   putCharacterLifeState,
   appendWorldEvent,
   getWorldEvent,
+  appendWorldInteraction,
+  getWorldInteraction,
   putRoutine,
   admitRoutineOccurrence,
   putStoryArc,
