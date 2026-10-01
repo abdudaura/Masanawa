@@ -73,9 +73,9 @@ Implemented:
 
 The world foundation passed the full CI gate before merge.
 
-## Governed life/canon slice — implemented, awaiting CI
+## Governed life/canon slice — merged and validated
 
-Current branch: `phase3-world-canon`; PR #19.
+Merged in PR #19 at `729ab3e64eb0539ea249ceb6a39cf79afab20cb2`, then hardened by PR #21 at `ce89ce091e05508dd4d0614a9127a2256bda13e4`.
 
 Implemented:
 - CharacterLifeState writes require the referenced CharacterVersion to remain the Character's active published version;
@@ -114,3 +114,30 @@ AI Town contributes:
 - liveness/recovery policy.
 
 Neither donor object model is canonical.
+
+
+## Routines/story-arcs slice — reconciled, awaiting CI
+
+Current branch: `phase3-world-routines-reconciled`.
+
+The original PR #22 was green on its own pre-hardening base but conflicted after PR #21 merged. This branch reconstructs the routines/story-arcs slice on hardened main rather than overwriting the newer canon/time semantics.
+
+Implemented:
+- durable Routine and StoryArc records in the canonical World package;
+- Character + exact CharacterVersion binding;
+- IANA timezone and HH:MM local-slot validation;
+- deterministic per-Character/per-routine/per-local-date occurrence keys;
+- routine occurrence admission through canonical SimulationInput idempotency;
+- stale CharacterVersion bindings fail closed until explicit routine rebind;
+- Routine revision CAS;
+- StoryArc revision CAS and forward-only lifecycle;
+- one package-owned story-arc transition rule used by adapters;
+- PostgreSQL 18 tests for routine replay, timezone slots, version rebinding and story-arc transition/revision behavior;
+- PR #21's automatic-canon policy/provenance and life-state time hardening preserved.
+
+Next after green CI:
+- merge reconciled routines slice;
+- authority-bound approval/retirement for draft canon;
+- WorldInteraction evidence;
+- executable pause/restart/catch-up with bounded routine recovery;
+- optional spatial mechanics only after non-spatial recovery is proven.
