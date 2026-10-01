@@ -102,3 +102,35 @@ export interface WorldEvent {
   readonly approvedAt: Instant | null;
   readonly retiredAt: Instant | null;
 }
+
+export interface Routine {
+  readonly tenantId: TenantId;
+  readonly worldId: WorldId;
+  readonly routineKey: string;
+  readonly characterId: CharacterId;
+  readonly characterVersionId: import("@masanawa/contracts").CharacterVersionId;
+  readonly timezone: string;
+  readonly localTime: string;
+  readonly enabled: boolean;
+  readonly inputKind: string;
+  readonly inputPayload: JsonObject;
+  readonly revision: number;
+  readonly createdAt: Instant;
+  readonly updatedAt: Instant;
+}
+
+export type StoryArcState = "planned" | "active" | "completed" | "retired";
+
+export interface StoryArc {
+  readonly tenantId: TenantId;
+  readonly worldId: WorldId;
+  readonly storyArcKey: string;
+  readonly characterId: CharacterId;
+  readonly characterVersionId: import("@masanawa/contracts").CharacterVersionId;
+  readonly state: StoryArcState;
+  readonly title: string;
+  readonly summary: string;
+  readonly revision: number;
+  readonly createdAt: Instant;
+  readonly updatedAt: Instant;
+}
