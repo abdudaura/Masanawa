@@ -48,6 +48,11 @@ Every external dependency must enter Masanawa through a canonical capability/pro
 | I-MED-002 | Kling/Hailuo/Runway/Veo | ChatWithStars | external video render providers | media jobs | prompts/assets | studio render providers | analysed |
 | I-MED-003 | ffmpeg | ChatWithStars | deterministic media probing/fitting/mux/assembly | local media processing | media files | studio media tool | analysed |
 | I-SEC-001 | token vault/encryption layer | ChatWithStars automation | social/provider credential protection | credential read/write | secrets | security/vault abstraction | analysed |
+| I-AVT-003 | Baidu Xiling Digital Human | CyberVerse | cloud digital-human rendering | media/network | character assets/audio | avatar provider | reference/future |
+| I-AVT-004 | Xunfei Digital Human | CyberVerse | cloud digital-human rendering | media/network | character assets/audio | avatar provider | reference/future |
+| I-AVT-005 | Vidu digital-human/video API | CyberVerse | cloud digital-human/video rendering | media/network | prompts/assets | avatar/media provider | reference/future |
+| I-UGC-001 | Steam Workshop/Steamworks | N.E.K.O | UGC package distribution/discovery | account/package operations | public account/package metadata | optional marketplace adapter | reference/future |
+| I-REC-001 | call/media recording storage | CyberVerse | optional presence recording | writes sensitive media artifact | audio/video | storage/artifact adapter | reference/future |
 | I-PRS-004 | RTP/RTCP transport feedback | CyberVerse | realtime A/V pacing, bitrate and sync feedback | media transport control | session/network metadata | presence transport abstraction | analysed |
 | I-WRK-001 | isolated subagent bridge process | CyberVerse | background specialist execution | child-process work/artifacts | task context + selected credentials | worker execution adapter | analysed |
 
