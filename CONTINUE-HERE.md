@@ -31,11 +31,11 @@ Do not recreate donor project boundaries. Do not begin application feature imple
 
 ## Current phase
 
-**Phase 0B — Exhaustive source coverage and A/B/C classification.**
+**Phase 1 — Architecture specification.**
 
-Phase 0A donor selection is closed at the revisions pinned in `docs/migration/SOURCE-LOCK.md`. See `docs/migration/PHASE-0A-CLOSURE-AUDIT.md`.
+Phase 0A donor selection and Phase 0B exhaustive source forensics are closed at the revisions pinned in `docs/migration/SOURCE-LOCK.md`. See `docs/migration/PHASE-0A-CLOSURE-AUDIT.md` and `docs/migration/PHASE-0B-CLOSURE-AUDIT.md`.
 
-The earlier four-donor assumption has been intentionally reopened before architecture freeze because broader 2026 open-source projects may provide stronger subsystem skeletons.
+Architecture is now being converted from donor evidence into implementation-ready Masanawa contracts.
 
 ### Completed before landscape expansion
 
@@ -133,29 +133,15 @@ Donor Agent/runtime/checkpoint objects never become Character, memory or busines
 
 ## Immediate next work
 
-Phase 0A is complete. Phase 0B is in remediation because the first root-level sweeps overstated coverage.
+Phase 0 is closed. Phase 1 is active.
 
-1. Read `docs/migration/PHASE-0B-REMEDIATION.md` before doing any further source sweep.
-2. ChatWithStars remediation is complete at the pinned revision:
-   - descendant runtime/domain proof: `docs/migration/coverage/CHATWITHSTARS.md`;
-   - all 381 migrations accounted for with zero unresolved entries;
-   - provider behavior normalized through ADR-0010 and `CHATWITHSTARS-INTEGRATIONS.md`.
-3. OpenJarvis remediation is complete at its pinned revision: descendant evidence, exhaustive Python/Rust manifests, integration dispositions and native parity boundary are under `docs/migration/coverage/`.
-4. N.E.K.O remediation is complete at its pinned revision: descendant evidence, exhaustive file manifest, integration dispositions and plugin-authority map are under `docs/migration/coverage/`.
-5. CyberVerse remediation is complete at its pinned revision; selected capabilities remain preserved through Masanawa-owned contracts, with provenance tracked separately from feature selection.
-6. AIRI exhaustive descendant coverage is complete at its pinned revision: 5,697-file manifest, 483 integration dispositions, client-state authority map and descendant behavior matrix are under `docs/migration/coverage/`.
-7. LiveKit Server exhaustive descendant coverage is complete at its pinned revision: 429-file manifest, transport integration dispositions and transport invariants are recorded under `docs/migration/coverage/`.
-8. LiveKit Agents TypeScript exhaustive descendant coverage is complete: 1,042-file manifest, 522 plugin dispositions, live-session state concepts and turn/interruption/handoff invariants are under `docs/migration/coverage/`.
-9. LiveKit Agents Python parity/delta coverage is complete: 1,472-file manifest, 750 plugin dispositions, realtime failover, diarization, evaluation and telemetry privacy deltas are recorded without creating a second runtime.
-10. Pipecat exhaustive descendant coverage is complete: 1,820-file manifest, 275 integration dispositions, speculative-turn, interruptibility, context-commit and pause/resume liveness invariants are recorded.
-11. Letta landing repository is verified reference-only (12 non-runtime files). Letta Code exhaustive coverage is complete: 2,429-file manifest, 739 integration dispositions, memory revision/conflict/shared-memory/context-compaction authority map and ledger invariants are recorded.
-12. Mem0 exhaustive descendant coverage is complete at its pinned revision: 1,835-file manifest, 772 integration/provider/server dispositions, scope hardening, extraction outcome semantics, hybrid semantic/BM25/entity retrieval, reranker fallback, entity projection, mutation history and expiration are recorded. The pinned OSS source is explicitly **not** credited with a full reference-date temporal retrieval engine.
-13. AI Town exhaustive descendant-family coverage is complete at its pinned revision: ordered inputs, monotonic simulation time, generation/CAS conflict rejection, transactional world commit, liveness/recovery, autonomous actor operations, conversation state, spatial/pathfinding behavior, historical interpolation, archival history, provider/integration boundaries and security gaps are recorded under `docs/migration/coverage/AI-TOWN.md` and the migration ledgers. `packages/world` remains sole canonical world/life authority.
-14. elizaOS Phase 0B remediation is complete at the pinned revision: runtime/plugin/service/task/provider/connector/security/browser/device/credential/cloud behavior is covered in `docs/migration/coverage/ELIZAOS.md`; the 77-package pinned workspace inventory plus additional local package/runtime-reference closure is in `docs/migration/coverage/ELIZAOS-INVENTORY.md`; unresolved production families and canonical-authority conflicts are zero.
-15. Microsoft Agent Framework Phase 0B remediation is complete at pinned revision `e15c6dce2d10196a61c851a56ef3d839ff3c3ea7`: 40/40 maintained Python packages and 35/35 .NET source projects are mapped, workflow/checkpoint/HITL/approval/orchestration/provider/hosting/storage/skills/telemetry families are ledgered, and unresolved production families/authority conflicts are zero.
-16. **ACTIVE:** OpenClaw Phase 0B remediation is in progress at pinned revision `83e4755b55e8864e48348f3eb2364ee3e5f0fb54`. Initial descendant evidence for durable channel ingress, effect-once crash windows, dynamic current-authority policy, device pairing/uncertain credential delivery, node retry boundaries, durable approvals, shared-Gateway trust mismatch and managed skill revisions is in `docs/migration/coverage/OPENCLAW.md`. Continue its exact unresolved-family list; do not advance to OpenClaw Agent Skills until it reaches zero.
-17. No source may be marked `covered` from root names, filename counts or generic family assertions alone.
-18. Every retained capability must have exact implementation/test evidence, durable-state mapping, integration failure semantics, one canonical owner and an observable acceptance/parity gate.
+1. Read `docs/migration/PHASE-0B-CLOSURE-AUDIT.md`.
+2. Read `docs/PHASE-1-ARCHITECTURE-GAP-AUDIT.md` after it is created/updated.
+3. Convert the frozen donor decisions into canonical Masanawa contracts; do not re-open donor selection without contradictory evidence or a deliberate pin refresh.
+4. Finalize domain identities/scopes, package dependency rules, event/outbox contracts, persistence/transaction boundaries, auth/current-authority rules, provider/tool/workflow/device side-effect semantics, service APIs and golden-journey acceptance contracts.
+5. Do not begin Phase 2 implementation until the Phase 1 architecture gate passes.
+6. Any Phase 1 design that drops or weakens a Phase 0 A/B invariant must update the affected ledger and ADR explicitly.
+
 
 ## World simulation comparison — completed
 
