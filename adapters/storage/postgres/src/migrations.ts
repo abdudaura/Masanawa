@@ -9,7 +9,13 @@ export interface MigrationRoot {
   readonly directory: string;
 }
 
-interface MigrationFile {
+export interface MigrationFingerprint {
+  readonly owner: string;
+  readonly name: string;
+  readonly sha256: string;
+}
+
+interface MigrationFile extends MigrationFingerprint {
   readonly owner: string;
   readonly name: string;
   readonly path: string;
@@ -38,6 +44,26 @@ async function loadMigrationRoot(root: MigrationRoot): Promise<MigrationFile[]> 
     });
   }
   return migrations;
+}
+
+export async function readMigrationManifest(
+  roots: readonly MigrationRoot[],
+): Promise<readonly MigrationFingerprint[]> {
+  const migrations = (
+    await Promise.all(roots.map((root) => loadMigrationRoot(root)))
+  )
+    .flat()
+    .sort((left, right) =>
+      left.owner === right.owner
+        ? left.name.localeCompare(right.name)
+        : left.owner.localeCompare(right.owner),
+    );
+
+  return Object.freeze(
+    migrations.map(({ owner, name, sha256 }) =>
+      Object.freeze({ owner, name, sha256 }),
+    ),
+  );
 }
 
 async function ensureMigrationTable(client: PoolClient): Promise<void> {
