@@ -816,6 +816,14 @@ async function loadWorldEvent(
   return result.rows[0] ? asWorldEvent(result.rows[0]) : null;
 }
 
+export async function getWorldEvent(
+  client: PoolClient,
+  tenantId: TenantId,
+  worldEventId: WorldEventId,
+): Promise<WorldEvent | null> {
+  return loadWorldEvent(client, tenantId, worldEventId, false);
+}
+
 export async function appendWorldEvent(
   client: PoolClient,
   input: AppendWorldEventInput,
@@ -1376,6 +1384,8 @@ export function createPostgresWorldRepository(
       putCharacterLifeState(client, input),
     appendWorldEvent: (input: AppendWorldEventInput) =>
       appendWorldEvent(client, input),
+    getWorldEvent: (tenantId: TenantId, worldEventId: WorldEventId) =>
+      getWorldEvent(client, tenantId, worldEventId),
     approveWorldEvent: (input: ApproveWorldEventInput) =>
       approveWorldEvent(client, input),
     retireWorldEvent: (input: RetireWorldEventInput) =>
