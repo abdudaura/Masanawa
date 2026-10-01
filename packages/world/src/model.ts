@@ -2,6 +2,8 @@ import type {
   CharacterId,
   Instant,
   TenantId,
+  CharacterVersionId,
+  WorldEventId,
   WorldGenerationId,
   WorldId,
 } from "@masanawa/contracts";
@@ -77,4 +79,28 @@ export interface CharacterLifeState {
   readonly revision: number;
   readonly effectiveAt: Instant;
   readonly updatedAt: Instant;
+}
+
+export type WorldEventProvenance = "authored" | "imported" | "engine";
+export type WorldEventVisibility = "public" | "internal" | "private";
+export type WorldCanonState = "draft" | "approved" | "retired";
+
+export interface WorldEvent {
+  readonly tenantId: TenantId;
+  readonly worldId: WorldId;
+  readonly worldEventId: WorldEventId;
+  readonly generationNumber: number;
+  readonly characterId: CharacterId | null;
+  readonly sourceCharacterVersionId: CharacterVersionId | null;
+  readonly kind: string;
+  readonly payload: JsonObject;
+  readonly provenance: WorldEventProvenance;
+  readonly visibility: WorldEventVisibility;
+  readonly canonState: WorldCanonState;
+  readonly occurrenceKey: string | null;
+  readonly validFrom: Instant;
+  readonly validUntil: Instant | null;
+  readonly recordedAt: Instant;
+  readonly approvedAt: Instant | null;
+  readonly retiredAt: Instant | null;
 }
