@@ -159,8 +159,8 @@ foundation, identity, relationships, memory, world, decisions, agents, skills, t
 | MEM-014 | memory | pluggable memory engines and provenance-rich memory wiki | OpenClaw | B | secondary donor | packages/memory + plugins | analysed |
 | AGT-008 | agents | active-run steer/followup/collect/interrupt queue semantics | OpenClaw | B | secondary runtime donor | packages/agents + runtime | analysed |
 | SEC-005 | security | workspace attestation and fail-safe missing-workspace handling | OpenClaw | A/B | secondary security donor | packages/security + runtime | analysed |
-| DLF-001 | avatar | persistent digital-life client across web/desktop/avatar/game contexts | AIRI | B | major candidate | apps/clients + avatar | discovered |
-| DLF-002 | avatar | Live2D/VRM embodied character runtime | AIRI | B | major candidate | avatar providers/clients | discovered |
+| DLF-001 | avatar | persistent digital-life client across web/desktop/avatar/game contexts | AIRI | B | selected architectural donor | apps/clients + avatar | analysed |
+| DLF-002 | avatar | Live2D/VRM embodied character runtime | AIRI | B | primary embodiment donor | avatar providers/clients | analysed |
 | RTC-009 | presence | AgentSession/Worker/job abstraction over production WebRTC | LiveKit Agents | B | major candidate | services/presence | discovered |
 | RTC-010 | presence | semantic turn detection and multi-provider STT/LLM/TTS/realtime/avatar plugins | LiveKit Agents | B | major candidate | presence + providers | discovered |
 | RTC-011 | presence | composable frame/pipeline processors for voice/video/control | Pipecat | B | major candidate | services/presence | discovered |
@@ -182,5 +182,14 @@ foundation, identity, relationships, memory, world, decisions, agents, skills, t
 | SEC-006 | security | one-trust-domain Gateway model unsuitable as public multi-tenant boundary | OpenClaw | C/A | explicit non-adoption constraint | services/gateway + security | analysed |
 | PLG-007 | plugins | managed-operation cancellation/current-authority/node-idleness lifecycle | OpenClaw | B | candidate | plugin runtime + security | analysed |
 | MEM-017 | memory | active recall clamped by parent effective tool authority and fail-soft on recall failure | OpenClaw | A | secondary memory donor | packages/memory + tools | analysed |
+| DLF-003 | avatar | shared Stage contract across web/desktop/mobile character surfaces | AIRI | B | primary client donor | apps/clients + contracts | analysed |
+| AVT-005 | avatar | renderer-neutral model-driver lifecycle with target ownership/release | AIRI | B | primary embodiment donor | avatar providers/clients | analysed |
+| IDN-004 | identity | validated Character Card V3/AIRI pack interoperability import | AIRI | B | interoperability donor | packages/identity + clients | analysed |
+| PLG-008 | plugins | capability lifecycle announced/ready/degraded/withdrawn | AIRI | B | strong secondary donor | plugin runtime | analysed |
+| PLG-009 | plugins | least-privilege permission intersection and parent-extension ceiling | AIRI | A | strong security donor | plugin runtime + security | analysed |
+| PLG-010 | plugins | extension session cleanup ownership with independent runtime/asset debt | AIRI | A/B | strong lifecycle donor | plugin runtime | analysed |
+| RTC-013 | presence | serialized microphone/ASR binding lifecycle with stale-callback isolation | AIRI | A | primary client-lifecycle donor | clients + services/presence | analysed |
+| PER-004 | perception | deterministic/browser-DOM/desktop computer-use lane separation with approval/audit | AIRI | B | secondary execution donor | tools + perception | analysed |
+| PRV-005 | infrastructure | runtime-neutral client inference/provider definitions | AIRI | B | secondary provider donor | packages/providers | analysed |
 
 This inventory is intentionally incomplete. Source-specific map documents identify the next deep-mining areas.
