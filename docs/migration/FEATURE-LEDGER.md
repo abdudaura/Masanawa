@@ -351,3 +351,14 @@ This inventory is intentionally incomplete. Source-specific map documents identi
 | RTC-052 | presence | RTP loss/out-of-order/restart accounting and connection-quality telemetry | LiveKit Server | B | transport telemetry donor | services/presence + telemetry | analysed |
 | RTC-053 | presence | routing/node selection and room allocation separated from Character/session domain identity | LiveKit Server | B | selected distributed transport donor | services/presence infrastructure | analysed |
 | RTC-054 | presence | TURN/SIP/ingress/egress/service admission as transport capabilities only | LiveKit Server | B/C | infrastructure donor | presence/provider adapters | analysed |
+
+### Phase 0B LiveKit Agents TypeScript descendant additions
+
+| ID | Domain | Feature | Source | Class | Donor role | Masanawa destination | Status |
+|---|---|---|---|---|---|---|---|
+| RTC-060 | presence | live AgentSession/AgentActivity turn runtime with endpointing/interruption/playout lifecycle | LiveKit Agents TS | A/B | primary live-session donor | services/presence + packages/agents | analysed |
+| RTC-061 | presence | activity handoff with reusable STT/realtime resources only when compatibility is proven | LiveKit Agents TS | A | primary handoff donor | services/presence | analysed |
+| RTC-062 | presence | interruption-before-first-playout protection and false-interruption resume without transcript loss/deadlock | LiveKit Agents TS | A | primary interruption donor | services/presence | analysed |
+| RTC-063 | presence | audio/transcription synchronization tied to actual playback rather than generation completion | LiveKit Agents TS | A/B | primary playout synchronization donor | services/presence | analysed |
+| PVD-020 | providers | LLM/STT/TTS fallback adapters with health/recovery state and explicit mid-stream fallback policy | LiveKit Agents TS | B | provider resilience donor | packages/providers | analysed |
+| AVT-040 | embodiment | remote avatar session as replaceable output capability with lifecycle/rollback semantics | LiveKit Agents TS | B | presence-avatar bridge donor | presence + clients/embodiment | analysed |
