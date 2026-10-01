@@ -339,7 +339,7 @@ export async function consumeOnceApproval(
     client,
     input.tenantId,
     input.approvalId,
-    "share",
+    true,
   );
   assertApprovalMatches(approval, input.binding, input.consumedAt);
 
