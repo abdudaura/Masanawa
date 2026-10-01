@@ -943,6 +943,195 @@ export async function approveWorldEvent(
   return asWorldEvent(result.rows[0]);
 }
 
+async function loadRoutine(
+  client: PoolClient,
+  tenantId: TenantId,
+  worldId: WorldId,
+  routineKeyInput: string,
+  forUpdate: boolean,
+): Promise<Routine | null> {
+  const routineKey = normalizeRoutineKey(routineKeyInput);
+  const result = await client.query<RoutineRow>(
+    `SELECT *
+       FROM world.routines
+      WHERE tenant_id = $1
+        AND world_id = $2
+        AND routine_key = $3
+      ${forUpdate ? "FOR UPDATE" : ""}`,
+    [tenantId, worldId, routineKey],
+  );
+  return result.rows[0] ? asRoutine(result.rows[0]) : null;
+}
+
+export async function putRoutine(
+  client: PoolClient,
+  input: PutRoutineInput,
+): Promise<Routine> {
+  const routineKey = normalizeRoutineKey(input.routineKey);
+  const timezone = normalizeIanaTimezone(input.timezone);
+  const localTime = normalizeLocalTime(input.localTime);
+  const inputKind = normalizeSimulationInputKind(input.inputKind);
+
+  await assertActiveCharacterVersion(
+    client,
+    input.tenantId,
+    input.characterId,
+    input.characterVersionId,
+  );
+
+  if (input.expectedRevision === null) {
+    const created = await client.query<RoutineRow>(
+      `INSERT INTO world.routines (
+         tenant_id,
+         world_id,
+         routine_key,
+         character_id,
+         character_version_id,
+         timezone,
+         local_time,
+         enabled,
+         input_kind,
+         input_payload,
+         revision,
+         created_at,
+         updated_at
+       )
+       VALUES ($1,$2,$3,$4,$5,$6,$7::time,$8,$9,$10::jsonb,1,$11,$11)
+       ON CONFLICT (tenant_id, world_id, routine_key) DO NOTHING
+       RETURNING *`,
+      [
+        input.tenantId,
+        input.worldId,
+        routineKey,
+        input.characterId,
+        input.characterVersionId,
+        timezone,
+        localTime,
+        input.enabled,
+        inputKind,
+        JSON.stringify(input.inputPayload),
+        input.updatedAt,
+      ],
+    );
+    if (!created.rows[0]) {
+      throw conflict("world.routine_revision_conflict", "Routine already exists");
+    }
+    return asRoutine(created.rows[0]);
+  }
+
+  const current = await loadRoutine(
+    client,
+    input.tenantId,
+    input.worldId,
+    routineKey,
+    true,
+  );
+  if (
+    !current ||
+    current.characterId !== input.characterId ||
+    current.revision !== input.expectedRevision
+  ) {
+    throw conflict(
+      "world.routine_revision_conflict",
+      "Routine revision is stale",
+    );
+  }
+
+  const updated = await client.query<RoutineRow>(
+    `UPDATE world.routines
+        SET character_version_id = $4,
+            timezone = $5,
+            local_time = $6::time,
+            enabled = $7,
+            input_kind = $8,
+            input_payload = $9::jsonb,
+            revision = revision + 1,
+            updated_at = $10
+      WHERE tenant_id = $1
+        AND world_id = $2
+        AND routine_key = $3
+        AND character_id = $11
+        AND revision = $12
+      RETURNING *`,
+    [
+      input.tenantId,
+      input.worldId,
+      routineKey,
+      input.characterVersionId,
+      timezone,
+      localTime,
+      input.enabled,
+      inputKind,
+      JSON.stringify(input.inputPayload),
+      input.updatedAt,
+      input.characterId,
+      input.expectedRevision,
+    ],
+  );
+  if (!updated.rows[0]) {
+    throw conflict(
+      "world.routine_revision_conflict",
+      "Routine revision is stale",
+    );
+  }
+  return asRoutine(updated.rows[0]);
+}
+
+export async function admitRoutineOccurrence(
+  client: PoolClient,
+  input: AdmitRoutineOccurrenceInput,
+): Promise<SimulationInput> {
+  const routine = await loadRoutine(
+    client,
+    input.tenantId,
+    input.worldId,
+    input.routineKey,
+    false,
+  );
+  if (!routine || !routine.enabled) {
+    throw conflict(
+      "world.routine_unavailable",
+      "Routine is missing or disabled",
+    );
+  }
+
+  await assertActiveCharacterVersion(
+    client,
+    routine.tenantId,
+    routine.characterId,
+    routine.characterVersionId,
+  );
+
+  const occurrence = assertRoutineScheduledTime(
+    input.scheduledFor,
+    routine.timezone,
+    routine.localTime,
+  );
+  const idempotencyKey = routineOccurrenceKey(
+    routine.characterId,
+    routine.routineKey,
+    occurrence.localDate,
+  );
+
+  return admitSimulationInput(client, {
+    tenantId: routine.tenantId,
+    worldId: routine.worldId,
+    idempotencyKey,
+    kind: routine.inputKind,
+    payload: {
+      routine: {
+        key: routine.routineKey,
+        characterId: routine.characterId,
+        characterVersionId: routine.characterVersionId,
+        localDate: occurrence.localDate,
+      },
+      payload: routine.inputPayload,
+    },
+    receivedAt: input.receivedAt,
+    effectiveAt: input.scheduledFor,
+  });
+}
+
 export function createPostgresWorldRepository(
   client: PoolClient,
 ): GovernedWorldRepository {
