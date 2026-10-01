@@ -12,6 +12,8 @@ import {
   type ApprovalKind,
   type ApprovalRecord,
   type ApprovalState,
+  type AuthorityContext,
+  type CurrentAuthoritySource,
 } from "@masanawa/security";
 import type { PoolClient } from "pg";
 
@@ -394,4 +396,19 @@ export async function consumeOnceApproval(
     });
   }
   return toApprovalRecord(row);
+}
+
+
+export function createPostgresCurrentAuthoritySource(
+  client: PoolClient,
+): CurrentAuthoritySource {
+  return {
+    getPolicyRevision: (tenantId) => getPolicyRevision(client, tenantId),
+    isRevoked: (context: AuthorityContext) =>
+      isAuthorityContextRevoked(
+        client,
+        context.tenantId,
+        context.authorityContextId,
+      ),
+  };
 }
