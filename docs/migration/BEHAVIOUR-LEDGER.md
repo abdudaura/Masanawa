@@ -528,3 +528,13 @@ Deep behavior mining from tests remains required before Phase 0 completion.
 | B-OCL-024 | security | SSRF policy re-evaluates DNS/IP/origin on redirects and blocks metadata/loopback/private ranges by default | SSRF/fetch guard | redirect/proxy cannot escape egress policy |
 | B-OCL-025 | observability | OTel raw model/tool content is off by default; trace context is request provenance, not authorization | OTel privacy docs | privacy-safe telemetry defaults |
 | B-OCL-026 | observability | diagnostics export is explicit/approval-gated, redacted and privately routed from group conversations | diagnostics docs | support artifacts cannot leak private chat/credentials |
+
+
+| B-OCL-027 | gateway | negotiated client capabilities describe support/presentation and never grant method authorization | Gateway handshake | keep capability and authority independent |
+| B-OCL-028 | gateway | reserved RPC prefixes and resource-specific checks can require stricter scopes than the base method scope | Gateway handshake/operator scopes | strictest current policy wins |
+| B-OCL-029 | workers | closed worker protocol rechecks environment/bundle/owner epoch/expiry/session and transcript CAS on each RPC | Gateway worker handshake | remote compute cannot reuse stale execution authority |
+| B-OCL-030 | routing | agent bindings are evaluated only after channel admission and cannot grant access | agent bindings docs | routing never substitutes for authorization |
+| B-OCL-031 | routing | explicit multi-agent ownership fails with selection-required instead of arbitrary fallback | agent bindings docs | ambiguous routing fails closed |
+| B-OCL-032 | agents | child/subagent/ACP completion requires retained requester/parent lineage and delegated authority, not child ID alone | subagent/ACP spawn + recovery tests | child cannot expand or reconstruct authority |
+| B-OCL-033 | delivery | caller-side send timeout after request transmission reattaches with the same idempotency key instead of resending | message-action execution | ambiguous send joins/reconciles original operation |
+| B-OCL-034 | delivery | queued/partial/unknown/confirmed-rejected delivery states remain distinct and carry receipt evidence | outbound execution | no false success/no blind duplicate send |
