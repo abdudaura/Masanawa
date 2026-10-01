@@ -4,3 +4,4 @@ export * from "./repository.js";
 export * from "./routines.js";
 export * from "./story-arcs.js";
 export * from "./governance.js";
+export * from "./evidence-publication.js";
