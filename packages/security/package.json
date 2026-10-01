@@ -12,5 +12,8 @@
   "dependencies": {
     "@masanawa/contracts": "workspace:*",
     "@masanawa/events": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "5.0.3"
   }
 }
