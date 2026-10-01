@@ -174,7 +174,7 @@ export async function admitInboxEvent(
     throw new PlatformError({
       code: "inbox.admission_conflict",
       category: "conflict",
-      message: "Inbox identity is already bound outside the requested tenant scope",
+      message: "Could not resolve inbox admission after a uniqueness conflict",
       retryable: false,
     });
   }
@@ -358,7 +358,10 @@ export async function settleInboxClaim(
               WHEN $6 = 'completed' THEN clock_timestamp()
               ELSE NULL
             END,
-            safe_error_code = $7,
+            safe_error_code = CASE
+              WHEN $6 = 'completed' THEN NULL
+              ELSE $7
+            END,
             updated_at = clock_timestamp()
       WHERE tenant_id = $1
         AND namespace = $2
