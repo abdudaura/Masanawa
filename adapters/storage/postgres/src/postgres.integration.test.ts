@@ -1053,6 +1053,13 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
     );
     expect(first.reused).toBe(false);
 
+    const faults = createFaultInjector({
+      "after-operation-commit-before-response": 1,
+    });
+    expect(() =>
+      faults.checkpoint("after-operation-commit-before-response"),
+    ).toThrowError(InjectedCrash);
+
     const second = await withTransaction(pool, (client) =>
       prepareOperation(client, input),
     );
