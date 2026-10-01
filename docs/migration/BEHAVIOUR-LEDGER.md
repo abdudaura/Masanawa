@@ -466,3 +466,31 @@ Deep behavior mining from tests remains required before Phase 0 completion.
 | B-ELZ-024 | security | durable credential refs survive restart while encrypted secret material remains in vault; missing master key fails closed | connector credential store + durability test | vault-reference separation and recoverability required |
 | B-ELZ-025 | security | process environment secrets are scrubbed into a narrower in-process cache but that cache is not durable authority | cloud-secrets.ts | minimize env exposure; vault remains authority |
 | B-ELZ-026 | security | stale expected world metadata cannot overwrite a newer write and cannot emit a false committed audit record | world metadata CAS + real SQL test | current-authority CAS and audit commit atomically |
+
+
+### Phase 0B Microsoft Agent Framework behavior invariants
+
+| ID | Domain | Invariant / behavior | Source evidence | Masanawa requirement |
+|---|---|---|---|---|
+| B-MAF-001 | workflows | checkpoint lineage is predecessor-chain/version based; iteration number is not a unique ordering key | Python checkpoint contract/tests | canonical WorkflowCheckpoint carries explicit lineage/version |
+| B-MAF-002 | workflows | incompatible workflow graph/version cannot silently restore a checkpoint | workflow graph signature + restore validation | exact WorkflowVersion compatibility or explicit migration required |
+| B-MAF-003 | workflows | fan-in partial delivery, executor state and pending external requests survive checkpoint/restore | checkpoint + edge runner tests | restart preserves all admitted workflow state |
+| B-MAF-004 | workflows | duplicate executors/edges, incompatible types and disconnected graphs fail before publication | workflow builder/validation | invalid graph cannot publish |
+| B-MAF-005 | workflows | same-edge ordering is preserved while independent edges/fan-out may run concurrently | runner tests | concurrency cannot reorder ordered edge semantics |
+| B-MAF-006 | workflows | non-converging cyclic execution is bounded by an explicit max-iteration budget | runner tests | no unbounded graph loop |
+| B-MAF-007 | workflows | cancellation stops further coroutine work but cannot prove already-started external side effects were undone | runner/tool execution | cancelled consequential work enters reconciliation when dispatch may have happened |
+| B-MAF-008 | security | approval binds to exact prepared tool arguments and fails if middleware changes them afterward | core tools approval code | approval is invalidated on argument/tool/version/principal/scope change |
+| B-MAF-009 | security | opaque mutable values are unsafe approval authority | core tools authority token | approval authority uses stable canonical serializable arguments only |
+| B-MAF-010 | workflows | pending HITL requests are republished/recoverable after checkpoint resume | Python + .NET checkpoint resume tests | restart cannot lose pending human decisions |
+| B-MAF-011 | agents | handoff target must be an eligible known participant and does not mint new identity | handoff implementation/tests | handoff is routing only; identity remains canonical |
+| B-MAF-012 | agents | manager-selected group-chat participant is validated against known participants | group-chat tests | LLM routing output cannot name arbitrary executor as authority |
+| B-MAF-013 | workflows | Magentic coordination is bounded by stall/reset/round budgets and manager state is checkpointable | Magentic implementation/tests | orchestrator coordination cannot run forever |
+| B-MAF-014 | skills | file skill resources/scripts are revalidated against trusted root and symlink/reparse escape at use time | core skills implementation | close discovery-to-use TOCTOU path escape |
+| B-MAF-015 | protocols | A2A/MCP adapters do not convert pending HITL into a successful completed response | hosting adapters | external protocol status reflects canonical run state |
+| B-MAF-016 | protocols | MCP session keys/auth/concurrency remain application-owned, not adapter-owned | hosting-mcp README/adapter | protocol key is never sufficient authorization |
+| B-MAF-017 | observability | sensitive prompt/message telemetry is opt-in and stream errors still close/report spans | observability implementation/tests | private content off by default; abandoned/error streams close deterministically |
+| B-MAF-018 | persistence | file checkpoint writer coordination is process-local only and is insufficient for multi-replica production | Python file checkpoint implementation | PostgreSQL transaction/version fencing across replicas required |
+| B-MAF-019 | persistence | checkpoint pickle deserialization assumes trusted storage; restricted unpickler is not a security boundary | checkpoint encoding | canonical Masanawa persistence must use explicit versioned non-code-bearing schemas |
+| B-MAF-020 | persistence | hosted checkpoint index updates use bounded optimistic concurrency and retain active sibling branches | .NET FoundryJsonCheckpointStore | concurrent writers cannot lose checkpoints; retention is branch-aware |
+| B-MAF-021 | providers | generic provider abstraction does not imply universal retry safety; streaming retry is deliberately separate | BaseChatClient + auto-retry sample | retry policy is provider/error/operation specific |
+| B-MAF-022 | declarative | workflow expression environment exposes only caller config by default; ambient env fallback is reference-allowlisted | declarative workflow state | declarative definitions cannot enumerate/inherit arbitrary process secrets |
