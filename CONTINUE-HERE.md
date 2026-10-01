@@ -140,8 +140,8 @@ Phase 0A is complete. Phase 0B is in remediation because the first root-level sw
    - all 381 migrations accounted for with zero unresolved entries;
    - provider behavior normalized through ADR-0010 and `CHATWITHSTARS-INTEGRATIONS.md`.
 3. OpenJarvis remediation is complete at its pinned revision: descendant evidence, exhaustive Python/Rust manifests, integration dispositions and native parity boundary are under `docs/migration/coverage/`.
-4. **Next:** remediate N.E.K.O with the same descendant-level standard. Its earlier root-only `covered` claim remains invalid.
-5. Then remediate CyberVerse under GPL clean-room rules.
+4. N.E.K.O remediation is complete at its pinned revision: descendant evidence, exhaustive file manifest, integration dispositions and plugin-authority map are under `docs/migration/coverage/`.
+5. **Next:** remediate CyberVerse under strict GPL clean-room rules. No GPL implementation/schema may be copied into the canonical runtime by default.
 5. Only after those four remediation passes continue to AIRI and the remaining donors.
 6. No source may be marked `covered` from root names, filename counts or generic family assertions alone.
 7. Every retained capability must have exact implementation/test evidence, durable-state mapping, integration failure semantics, one canonical owner and an observable acceptance/parity gate.
