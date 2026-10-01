@@ -43,6 +43,8 @@ import {
   putCharacterLifeState,
   appendWorldEvent,
   approveWorldEvent,
+  putRoutine,
+  admitRoutineOccurrence,
   putServiceVerificationKey,
   deactivateServiceVerificationKey,
   createPostgresServiceCredentialKeySource,
