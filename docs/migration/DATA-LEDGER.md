@@ -131,3 +131,19 @@ Phase 0 must continue mapping donor-specific stores/tables/files into these cano
 | D-MEM-019 | WorkingMemoryBlock | Letta Code | character+relationship/session purpose | ephemeral/compiled | private/internal | memory/runtime | redesign | bounded always-visible projection, not identity or durable truth |
 | D-MEM-020 | MemoryTombstone | Masanawa synthesis | memory record | durable logical deletion | sensitive/audit | memory | canonical | separate from expiry and physical purge |
 | D-MEM-021 | MemoryRetrievalEvidence | Mem0/OpenClaw | query/session | append telemetry | private/internal | memory/telemetry | redesign | query, eligible scopes, signals, selected record IDs, provenance/cost |
+
+
+### Phase 0A runtime/skills/plugins/workflow additions
+
+| ID | Canonical concept | Source | Scope | Lifecycle | Sensitivity | Destination | Treatment | Notes |
+|---|---|---|---|---|---|---|---|---|
+| D-AGT-003 | AgentRun | OpenJarvis/elizaOS/OpenClaw | tenant+character+relationship/session | ephemeral with durable trace | private/internal | agents/runtime | redesign | strategy, effective capabilities, budgets, provider policy, trace ID |
+| D-SKL-008 | SkillVersion | OpenJarvis/OpenClaw/CWS | tenant/global skill | immutable published version | internal | skills | canonical | manifest, graph, provenance, certification/readiness |
+| D-SKL-009 | SkillRevisionSelection | OpenClaw | run/session | pinned | internal | skills/runtime | canonical projection | selected immutable skill versions for reproducible execution |
+| D-PLG-008 | PluginManifest | elizaOS/OpenClaw | installed extension | versioned | internal/security-sensitive | plugins | canonical | declared components/dependencies/capabilities/supply-chain provenance |
+| D-PLG-009 | PluginServiceInstance | elizaOS | runtime/tenant | ephemeral lifecycle | internal | plugins/runtime | redesign | admission/start/drain/stop state; never business truth |
+| D-WF-006 | WorkflowDefinitionVersion | Microsoft AF + CWS | tenant/platform | immutable version | internal | workflows | canonical | typed graph + signature + policy metadata |
+| D-WF-007 | WorkflowRun | Microsoft AF + CWS | tenant/workflow | durable lifecycle | private/internal | workflows | canonical | current status, definition version, principal/purpose refs |
+| D-WF-008 | WorkflowCheckpoint | Microsoft AF | workflow run | append/lineage | private/internal | workflows | canonical | committed state, executor/edge state, pending requests, iteration |
+| D-WF-009 | WorkflowHumanRequest | Microsoft AF | workflow run | pending->answered/expired | sensitive | workflows | canonical | approval/clarification/HITL request with durable response evidence |
+| D-WF-010 | SideEffectReceipt | CWS/OpenClaw | workflow operation | append/terminal/reconciled | sensitive | workflows/domain | canonical | idempotency key, provider ref, ambiguous/reconciled outcome |
