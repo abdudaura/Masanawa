@@ -66,6 +66,33 @@ export interface WorldRepository {
   commitGeneration(
     input: CommitWorldGenerationInput,
   ): Promise<CommitWorldGenerationResult>;
+  pauseWorld(input: PauseWorldInput): Promise<World>;
+  recoverPausedWorld(
+    input: RecoverPausedWorldInput,
+  ): Promise<RecoverPausedWorldResult>;
+}
+
+export interface PauseWorldInput {
+  readonly tenantId: TenantId;
+  readonly worldId: WorldId;
+  readonly expectedRevision: number;
+  readonly pausedAt: Instant;
+}
+
+export interface RecoverPausedWorldInput {
+  readonly tenantId: TenantId;
+  readonly worldId: WorldId;
+  readonly expectedRevision: number;
+  readonly nextGenerationId: WorldGenerationId;
+  readonly resumeTo: Instant;
+  readonly requestedAt: Instant;
+}
+
+export interface RecoverPausedWorldResult {
+  readonly world: World;
+  readonly generation: WorldGeneration;
+  readonly admittedInputs: readonly SimulationInput[];
+  readonly complete: boolean;
 }
 
 export interface PutCharacterLifeStateInput {
