@@ -147,5 +147,7 @@ Features describe what exists; this ledger records observable and operational be
 | B-OC-MEM-003 | MEM-017 | Active-memory recall can only use tools remaining after parent effective policy/sandbox/provider restrictions; it cannot gain authority the parent lacks. | A | OpenClaw active-memory docs | analysed |
 | B-OC-MEM-004 | MEM-017 | If recall tools are unavailable or recall fails, normal conversation continues without fabricated memory context. | A | OpenClaw active-memory docs | analysed |
 | B-OC-PLG-001 | PLG-007 | A delayed plugin mutation rechecks current authority after async preparation; a stale owner boolean is not sufficient authorization. | A | OpenClaw Plugin SDK docs | analysed |
+| B-OC-GW-004 | GW-001 | Gateway-accepted user input is durably recorded before acknowledgement; reconnect may reconcile accepted input, while the in-memory run queue is not treated as durable workflow truth. | A | OpenClaw queue/session docs | analysed |
+| B-OC-SEC-002 | SEC-007 | Tool deny policy remains authoritative: session exec/elevation settings cannot make a deterministically denied tool callable, and required sandbox policy fails closed. | A | OpenClaw sandbox/tool-policy docs | analysed |
 
 Deep behavior mining from tests remains required before Phase 0 completion.
