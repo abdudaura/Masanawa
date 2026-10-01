@@ -39,27 +39,31 @@ The active implementation line remains `phase2-closure` until PR #16 is merged. 
 
 ## Immediate next work
 
-Phase 3 is active. Canonical identity was merged to `main` in PR #17 at merge commit `75549800445842f8ff1db54e06529c075ed34ea4` after the full CI check passed.
+Phase 3 is active.
 
-Current implementation branch: `phase3-world-foundation`.
+Merged foundation:
+- canonical identity: PR #17, merge `75549800445842f8ff1db54e06529c075ed34ea4`;
+- world generation/input foundation: PR #18, merge `871022d03f4b3fb2a81af5c6253dd38bd5b7a27f`.
 
-Completed on the current branch:
-- `@masanawa/world` is active as the sole canonical world/life-state package;
-- World, WorldPolicy, WorldGeneration, SimulationInput and CharacterLifeState contracts are defined;
-- simulation time regression is rejected;
-- catch-up policy is explicit rather than inferred from wall-clock gaps;
-- package-owned world migration adds tenant-owned worlds, append-only generations, ordered/idempotent simulation inputs and Character life-state projection storage;
-- PostgreSQL world repository admits idempotent inputs and rejects same-key/different-content conflicts;
-- generation commits lock the current World, compare expected generation, reject stale writers, settle admitted inputs in the same transaction, append the next generation and advance the World projection;
-- integration coverage includes a two-worker race proving only one expected-generation writer may commit, tenant-scoped reads, backward-time rejection and atomic input settlement.
+Current implementation branch: `phase3-world-canon`.
+
+Current branch adds:
+- active-published CharacterVersion gating for CharacterLifeState writes;
+- revision/CAS protection for evolving life state;
+- governed WorldEvent persistence with provenance, visibility, effective time and occurrence identity;
+- draft/approved/retired canon lifecycle;
+- automatic-approved event admission only under the Character's current active published version;
+- idempotent occurrence replay with changed-content conflict;
+- explicit approval for authored drafts;
+- database immutability for approved canon;
+- PostgreSQL integration tests proving these invariants.
 
 Immediate work:
-1. run PR/CI for `phase3-world-foundation` against PostgreSQL 18 and fix all real failures;
-2. after green CI, merge the world foundation;
-3. continue Phase 3 with governed CharacterLifeState writes plus WorldEvent/WorldInteraction evidence and Constitution-gated canon admission;
-4. only after those invariants are durable, add routines/story arcs and optional spatial simulation.
-
-Do not create another world engine, relationship store, or Character identity. World consumes canonical CharacterId; private Relationship data must never become shared World state implicitly.
+1. run PR #19 through the full PostgreSQL 18 CI gate and fix every concrete failure;
+2. merge when green;
+3. continue Phase 3 with routines/story arcs and governed world interactions built on the existing generation/event contracts;
+4. preserve non-spatial life semantics first; add optional spatial mechanics only after routine/canon recovery semantics are durable;
+5. keep private User↔Character Relationship state outside World write inputs and event payloads unless an explicit authorized promotion workflow is designed later.
 
 The post-freeze MemPalace/Paperclip assessment remains in `docs/migration/POST-FREEZE-SUPPLEMENTAL-DONORS.md`. Neither is a Phase 3 runtime dependency.
 

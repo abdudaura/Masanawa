@@ -1,7 +1,10 @@
 import {
   PlatformError,
   toInstant,
+  type CharacterId,
+  type CharacterVersionId,
   type TenantId,
+  type WorldEventId,
   type WorldGenerationId,
   type WorldId,
 } from "@masanawa/contracts";
@@ -11,11 +14,17 @@ import {
   normalizeSimulationInputKind,
   normalizeWorldPolicy,
   type AdmitSimulationInput,
+  type AppendWorldEventInput,
+  type ApproveWorldEventInput,
+  type CharacterLifeState,
   type CommitWorldGenerationInput,
   type CommitWorldGenerationResult,
   type CreateWorldInput,
+  type GovernedWorldRepository,
+  type PutCharacterLifeStateInput,
   type SimulationInput,
   type World,
+  type WorldEvent,
   type WorldGeneration,
   type WorldRepository,
 } from "@masanawa/world";
@@ -56,6 +65,39 @@ interface InputRow {
   received_at: Date;
   effective_at: Date;
   completed_generation_number: string | null;
+}
+
+interface LifeStateRow {
+  tenant_id: TenantId;
+  world_id: WorldId;
+  character_id: CharacterId;
+  availability: string | null;
+  narrative_state: string | null;
+  active_goal: string | null;
+  story_arc: string | null;
+  coarse_location: string | null;
+  revision: string;
+  effective_at: Date;
+  updated_at: Date;
+}
+
+interface WorldEventRow {
+  tenant_id: TenantId;
+  world_event_id: WorldEventId;
+  world_id: WorldId;
+  character_id: CharacterId | null;
+  character_version_id: CharacterVersionId | null;
+  event_kind: string;
+  payload: WorldEvent["payload"];
+  provenance: WorldEvent["provenance"];
+  visibility: WorldEvent["visibility"];
+  canon_state: WorldEvent["canonState"];
+  occurrence_key: string | null;
+  effective_start: Date;
+  effective_end: Date | null;
+  recorded_at: Date;
+  approved_at: Date | null;
+  retired_at: Date | null;
 }
 
 function integer(value: string, name: string): number {
@@ -112,6 +154,43 @@ function asInput(row: InputRow): SimulationInput {
       row.completed_generation_number === null
         ? null
         : integer(row.completed_generation_number, "completed generation number"),
+  });
+}
+
+function asLifeState(row: LifeStateRow): CharacterLifeState {
+  return Object.freeze({
+    tenantId: row.tenant_id,
+    worldId: row.world_id,
+    characterId: row.character_id,
+    availability: row.availability,
+    narrativeState: row.narrative_state,
+    activeGoal: row.active_goal,
+    storyArc: row.story_arc,
+    coarseLocation: row.coarse_location,
+    revision: integer(row.revision, "life-state revision"),
+    effectiveAt: toInstant(row.effective_at),
+    updatedAt: toInstant(row.updated_at),
+  });
+}
+
+function asWorldEvent(row: WorldEventRow): WorldEvent {
+  return Object.freeze({
+    tenantId: row.tenant_id,
+    worldEventId: row.world_event_id,
+    worldId: row.world_id,
+    characterId: row.character_id,
+    characterVersionId: row.character_version_id,
+    eventKind: row.event_kind,
+    payload: Object.freeze({ ...row.payload }),
+    provenance: row.provenance,
+    visibility: row.visibility,
+    canonState: row.canon_state,
+    occurrenceKey: row.occurrence_key,
+    effectiveStart: toInstant(row.effective_start),
+    effectiveEnd: row.effective_end ? toInstant(row.effective_end) : null,
+    recordedAt: toInstant(row.recorded_at),
+    approvedAt: row.approved_at ? toInstant(row.approved_at) : null,
+    retiredAt: row.retired_at ? toInstant(row.retired_at) : null,
   });
 }
 
@@ -466,10 +545,333 @@ export async function commitWorldGeneration(
   });
 }
 
+function boundedText(value: string, name: string, max: number): string {
+  const normalized = value.trim();
+  if (!normalized || normalized.length > max) {
+    throw new TypeError(`${name} is invalid`);
+  }
+  return normalized;
+}
+
+function nullableText(
+  value: string | null,
+  name: string,
+  max: number,
+): string | null {
+  return value === null ? null : boundedText(value, name, max);
+}
+
+async function assertActiveCharacterVersion(
+  client: PoolClient,
+  tenantId: TenantId,
+  characterId: CharacterId,
+  characterVersionId: CharacterVersionId,
+): Promise<void> {
+  const result = await client.query(
+    `SELECT 1
+       FROM identity.characters c
+       JOIN identity.character_versions v
+         ON v.tenant_id = c.tenant_id
+        AND v.character_id = c.character_id
+        AND v.character_version_id = c.active_character_version_id
+      WHERE c.tenant_id = $1
+        AND c.character_id = $2
+        AND c.state = 'active'
+        AND c.active_character_version_id = $3
+        AND v.state = 'published'`,
+    [tenantId, characterId, characterVersionId],
+  );
+  if ((result.rowCount ?? 0) !== 1) {
+    throw conflict(
+      "world.character_version_not_active",
+      "World mutation requires the Character's active published version",
+    );
+  }
+}
+
+export async function putCharacterLifeState(
+  client: PoolClient,
+  input: PutCharacterLifeStateInput,
+): Promise<CharacterLifeState> {
+  await assertActiveCharacterVersion(
+    client,
+    input.tenantId,
+    input.characterId,
+    input.characterVersionId,
+  );
+
+  const values = [
+    nullableText(input.availability, "availability", 1000),
+    nullableText(input.narrativeState, "narrativeState", 4000),
+    nullableText(input.activeGoal, "activeGoal", 4000),
+    nullableText(input.storyArc, "storyArc", 4000),
+    nullableText(input.coarseLocation, "coarseLocation", 1000),
+  ] as const;
+
+  if (input.expectedRevision === null) {
+    const created = await client.query<LifeStateRow>(
+      `INSERT INTO world.character_life_state (
+         tenant_id,
+         world_id,
+         character_id,
+         availability,
+         narrative_state,
+         active_goal,
+         story_arc,
+         coarse_location,
+         revision,
+         effective_at,
+         updated_at
+       )
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,1,$9,$10)
+       ON CONFLICT (tenant_id, world_id, character_id) DO NOTHING
+       RETURNING *`,
+      [
+        input.tenantId,
+        input.worldId,
+        input.characterId,
+        ...values,
+        input.effectiveAt,
+        input.updatedAt,
+      ],
+    );
+    if (!created.rows[0]) {
+      throw conflict(
+        "world.life_state_revision_conflict",
+        "Character life state already exists",
+      );
+    }
+    return asLifeState(created.rows[0]);
+  }
+
+  if (
+    !Number.isSafeInteger(input.expectedRevision) ||
+    input.expectedRevision < 1
+  ) {
+    throw new RangeError("expectedRevision must be a positive safe integer");
+  }
+
+  const updated = await client.query<LifeStateRow>(
+    `UPDATE world.character_life_state
+        SET availability = $4,
+            narrative_state = $5,
+            active_goal = $6,
+            story_arc = $7,
+            coarse_location = $8,
+            revision = revision + 1,
+            effective_at = $9,
+            updated_at = $10
+      WHERE tenant_id = $1
+        AND world_id = $2
+        AND character_id = $3
+        AND revision = $11
+      RETURNING *`,
+    [
+      input.tenantId,
+      input.worldId,
+      input.characterId,
+      ...values,
+      input.effectiveAt,
+      input.updatedAt,
+      input.expectedRevision,
+    ],
+  );
+  if (!updated.rows[0]) {
+    throw conflict(
+      "world.life_state_revision_conflict",
+      "Character life state revision is stale",
+    );
+  }
+  return asLifeState(updated.rows[0]);
+}
+
+async function loadWorldEvent(
+  client: PoolClient,
+  tenantId: TenantId,
+  worldEventId: WorldEventId,
+  forUpdate: boolean,
+): Promise<WorldEvent | null> {
+  const result = await client.query<WorldEventRow>(
+    `SELECT *
+       FROM world.events
+      WHERE tenant_id = $1
+        AND world_event_id = $2
+      ${forUpdate ? "FOR UPDATE" : ""}`,
+    [tenantId, worldEventId],
+  );
+  return result.rows[0] ? asWorldEvent(result.rows[0]) : null;
+}
+
+export async function appendWorldEvent(
+  client: PoolClient,
+  input: AppendWorldEventInput,
+): Promise<WorldEvent> {
+  const eventKind = boundedText(input.eventKind, "eventKind", 128);
+  const occurrenceKey =
+    input.occurrenceKey === null
+      ? null
+      : boundedText(input.occurrenceKey, "occurrenceKey", 256);
+
+  if ((input.characterId === null) !== (input.characterVersionId === null)) {
+    throw new TypeError(
+      "characterId and characterVersionId must be supplied together",
+    );
+  }
+  if (
+    input.effectiveEnd !== null &&
+    input.effectiveEnd < input.effectiveStart
+  ) {
+    throw new TypeError("effectiveEnd must not precede effectiveStart");
+  }
+
+  if (
+    input.admission === "automatic-approved" &&
+    input.characterId !== null &&
+    input.characterVersionId !== null
+  ) {
+    await assertActiveCharacterVersion(
+      client,
+      input.tenantId,
+      input.characterId,
+      input.characterVersionId,
+    );
+  }
+
+  const canonState =
+    input.admission === "automatic-approved" ? "approved" : "draft";
+  const approvedAt =
+    input.admission === "automatic-approved" ? input.recordedAt : null;
+
+  const parameters = [
+    input.tenantId,
+    input.worldEventId,
+    input.worldId,
+    input.characterId,
+    input.characterVersionId,
+    eventKind,
+    JSON.stringify(input.payload),
+    input.provenance,
+    input.visibility,
+    canonState,
+    occurrenceKey,
+    input.effectiveStart,
+    input.effectiveEnd,
+    input.recordedAt,
+    approvedAt,
+  ];
+
+  const conflictClause =
+    occurrenceKey === null
+      ? ""
+      : `ON CONFLICT (tenant_id, world_id, occurrence_key)
+           WHERE occurrence_key IS NOT NULL
+         DO UPDATE SET occurrence_key = EXCLUDED.occurrence_key
+           WHERE world.events.character_id IS NOT DISTINCT FROM EXCLUDED.character_id
+             AND world.events.character_version_id IS NOT DISTINCT FROM EXCLUDED.character_version_id
+             AND world.events.event_kind = EXCLUDED.event_kind
+             AND world.events.payload = EXCLUDED.payload
+             AND world.events.provenance = EXCLUDED.provenance
+             AND world.events.visibility = EXCLUDED.visibility
+             AND world.events.canon_state = EXCLUDED.canon_state
+             AND world.events.effective_start = EXCLUDED.effective_start
+             AND world.events.effective_end IS NOT DISTINCT FROM EXCLUDED.effective_end`;
+
+  const result = await client.query<WorldEventRow>(
+    `INSERT INTO world.events (
+       tenant_id,
+       world_event_id,
+       world_id,
+       character_id,
+       character_version_id,
+       event_kind,
+       payload,
+       provenance,
+       visibility,
+       canon_state,
+       occurrence_key,
+       effective_start,
+       effective_end,
+       recorded_at,
+       approved_at
+     )
+     VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8,$9,$10,$11,$12,$13,$14,$15)
+     ${conflictClause}
+     RETURNING *`,
+    parameters,
+  );
+
+  if (!result.rows[0]) {
+    throw conflict(
+      "world.event_occurrence_conflict",
+      "World occurrence key was reused with different canon content",
+    );
+  }
+  return asWorldEvent(result.rows[0]);
+}
+
+export async function approveWorldEvent(
+  client: PoolClient,
+  input: ApproveWorldEventInput,
+): Promise<WorldEvent> {
+  const existing = await loadWorldEvent(
+    client,
+    input.tenantId,
+    input.worldEventId,
+    true,
+  );
+  if (!existing) {
+    throw new PlatformError({
+      code: "world.event_not_found",
+      category: "not-found",
+      message: "World event does not exist in the requested tenant",
+      retryable: false,
+    });
+  }
+  if (existing.canonState === "approved") {
+    return existing;
+  }
+  if (existing.canonState !== "draft") {
+    throw conflict(
+      "world.event_not_approvable",
+      "Only draft world events can be approved",
+    );
+  }
+
+  if (
+    existing.characterId !== null &&
+    existing.characterVersionId !== null
+  ) {
+    await assertActiveCharacterVersion(
+      client,
+      existing.tenantId,
+      existing.characterId,
+      existing.characterVersionId,
+    );
+  }
+
+  const result = await client.query<WorldEventRow>(
+    `UPDATE world.events
+        SET canon_state = 'approved',
+            approved_at = $3
+      WHERE tenant_id = $1
+        AND world_event_id = $2
+        AND canon_state = 'draft'
+      RETURNING *`,
+    [input.tenantId, input.worldEventId, input.approvedAt],
+  );
+  if (!result.rows[0]) {
+    throw conflict(
+      "world.event_approval_conflict",
+      "World event approval raced with another writer",
+    );
+  }
+  return asWorldEvent(result.rows[0]);
+}
+
 export function createPostgresWorldRepository(
   client: PoolClient,
-): WorldRepository {
-  const repository: WorldRepository = {
+): GovernedWorldRepository {
+  const repository: GovernedWorldRepository = {
     createWorld: (input: CreateWorldInput) => createWorld(client, input),
     getWorld: (tenantId: TenantId, worldId: WorldId) =>
       getWorld(client, tenantId, worldId),
@@ -477,6 +879,12 @@ export function createPostgresWorldRepository(
       admitSimulationInput(client, input),
     commitGeneration: (input: CommitWorldGenerationInput) =>
       commitWorldGeneration(client, input),
+    putCharacterLifeState: (input: PutCharacterLifeStateInput) =>
+      putCharacterLifeState(client, input),
+    appendWorldEvent: (input: AppendWorldEventInput) =>
+      appendWorldEvent(client, input),
+    approveWorldEvent: (input: ApproveWorldEventInput) =>
+      approveWorldEvent(client, input),
   };
   return Object.freeze(repository);
 }
