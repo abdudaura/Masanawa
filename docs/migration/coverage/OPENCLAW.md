@@ -231,9 +231,8 @@ Acceptance gate:
 
 Before OpenClaw can be marked covered, the remaining gaps are now limited to:
 
-1. Skill Workshop/Custodian direct descendant/test proof (managed revisions, ClawHub/source installs and node-hosted skills are now covered below);
-2. exact direct-test inventory proving every retained consequential invariant has pinned implementation/test evidence;
-3. repository-wide descendant proof with zero unexplained production families after the above closures.
+1. exact direct-test inventory proving every retained consequential invariant has pinned implementation/test evidence;
+2. repository-wide descendant proof with zero unexplained production families after the above closure.
 
 The repository/package/plugin enumeration gap is closed by `OPENCLAW-INVENTORY.md` (18/18 maintained packages; 163/163 generated plugin inventory entries; zero enumeration ambiguity). Gateway RPC, approvals, steering/restart, provider, memory, scheduler, SSRF/privacy, session lineage, outbound delivery, session catalog/import/attachment handling, and broad skill-source/node-host behavior are covered in the sections below.
 
@@ -871,3 +870,58 @@ Acceptance gate:
 - dangerous device actions remain least-privilege, explicit and independently gated by server policy and device permission.
 
 The native/mobile/desktop descendant gap is closed. The donor's app implementations remain reference/adapter donors; Masanawa does not inherit their local stores as server truth.
+
+
+## 28. Workshop proposals, autonomous review and Custodian skill isolation
+
+Implementation/docs/tests:
+- `docs/tools/skill-workshop/reference.md`;
+- `docs/tools/custodian-skills.md`;
+- `src/skills/workshop/policy.test.ts`;
+- `src/skills/workshop/service.test.ts`;
+- `src/skills/workshop/experience-review.apply.test.ts`;
+- `src/agents/tools/skill-workshop-tool.review.test.ts`;
+- `src/gateway/server-methods/skills.proposals.test.ts`;
+- `src/gateway/skill-library-authoring.test.ts`;
+- `src/gateway/server-cron-skill-review-jobs.test.ts`;
+- `src/skills/loading/workspace-skill-snapshot.test.ts`;
+- `src/skills/loading/skill-path-containment.test.ts`;
+- `packages/gateway-protocol/src/schema/agents-models-skills.test.ts`.
+
+Pinned Workshop behavior:
+- Workshop authoring is proposal-first: create/update/revise produce a pending immutable-generation draft; apply/reject/quarantine are separate lifecycle actions;
+- read/list is operator-read scoped while proposal mutation/apply/reject/quarantine is operator-admin scoped;
+- pending proposals are isolated per owning agent and survive execution/session workspace changes;
+- update apply carries a baseline and becomes stale when the live target/support files change before apply; ambiguous proposal names require an explicit proposal ID;
+- proposal generations are never overwritten in place, and apply records rollback/recovery facts before mutating the live skill;
+- interrupted create/update applies are explicitly reconciled from recorded rollback facts; tampered drafts, cross-agent recovery, unreadable targets and targets outside those facts fail closed rather than guessing;
+- unsafe content/path/link/executable/credential cases are rejected or quarantined before publication;
+- internal autonomous review gets a bounded mutation budget, invalidates prepared patch authority when the target/substitution changes, and must reread after stale races;
+- switching autonomous mode does not retroactively auto-apply a human/manual proposal;
+- scheduled collection review is one converged declaration per agent, removes duplicates/stale monitors, rechecks current authority between async mutations, and revocation cancels the active review before its final workspace write.
+
+Custodian behavior:
+- release-owned Custodian skills are visible only to the configured system/Custodian agent and absent from every non-Custodian discovery, snapshot, slash-command, sandbox and model-prompt surface;
+- ambiguous multi-agent configuration without a resolved system-agent owner yields no Custodian library rather than broadening visibility;
+- per-skill disable/agent filters still narrow the Custodian set;
+- local operator additions live in the Custodian workspace skill tier, not by mutating the release-owned package directory;
+- packaged Custodian files are accepted as package-owned content while ordinary Workshop/workspace roots retain strict path/symlink/hardlink containment rules.
+
+Masanawa destination:
+- `packages/skills` canonical draft/revision/certification/publication lifecycle;
+- `packages/security` proposal authority, current-authority assertion and approval;
+- `packages/workflows` for scheduled review occurrence/cancellation only;
+- system-agent operational playbooks as scoped skills, never a parallel administration authority.
+
+Disposition: **A/B**.
+
+Acceptance gate:
+- every skill mutation has one owning agent/principal, expected revision/baseline and immutable proposal revision;
+- proposal review/evaluation cannot publish by itself unless the canonical policy explicitly authorizes an auto-apply path for that exact proposal generation;
+- apply is crash-recoverable and idempotent from durable rollback/commit facts; recovery never infers a target or owner from ambiguous filesystem state;
+- stale target, owner loss, authority loss, tampering or unsafe support content fails closed before publication;
+- scheduled/autonomous review cannot outlive the authority generation that admitted it;
+- system/Custodian playbooks are discoverable only by their resolved owner and never grant extra tool/credential authority merely by being loaded;
+- local operator/system-agent customizations use higher-precedence canonical skill scopes instead of editing release-owned content.
+
+The Workshop/Custodian descendant gap is closed. Masanawa should preserve the proposal/recovery/current-authority semantics while implementing them behind its single `packages/skills` authority rather than inheriting OpenClaw's SQLite/filesystem ownership.
