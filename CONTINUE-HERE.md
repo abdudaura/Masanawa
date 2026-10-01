@@ -145,7 +145,11 @@ Security/approval PostgreSQL persistence is now implemented and PostgreSQL-18 ve
 
 The OpenTelemetry correlation foundation is now implemented: `packages/telemetry` owns W3C trace propagation, canonical request/correlation linkage, OpenTelemetry log correlation fields and a strict privacy-safe attribute allowlist; Gateway/Worker/Ops ingress normalize correlation without trusting public caller-supplied canonical IDs.
 
-The immediate unresolved foundation gap is service main/config/shutdown lifecycle. Replace test-only app factories with production entrypoints that parse explicit configuration, bind/listen safely, handle SIGTERM/SIGINT idempotently, stop accepting work before close, expose startup/shutdown failures without leaking secrets, and remain directly testable without binding real ports. Then continue `docs/PHASE-2-FOUNDATION.md` in order and do not begin product-domain migrations yet.
+The active implementation branch is `phase2-closure`. Production service lifecycle and PostgreSQL/schema readiness are already implemented; do not recreate them. The branch also contains provider-neutral authentication evidence in `packages/security` and deterministic fault/restart test support in `test/support/fault-injection.ts`.
+
+Immediate work: validate `phase2-closure` through the full Foundation CI gate, fix any real failures, then perform the Phase 2 shared-foundation closure audit. Do not begin identity/memory/world/product migrations until that audit proves the shared gate is closed.
+
+Two post-freeze donor candidates were evaluated at pinned public revisions without reopening Phase 0: MemPalace and Paperclip. See `docs/migration/POST-FREEZE-SUPPLEMENTAL-DONORS.md`. They are bounded donors only: MemPalace can strengthen memory evidence/retrieval/index safety behind `packages/memory`; Paperclip can strengthen workflow/agent/Ops governance, budgets, approvals, recovery, artifacts, secrets and sandbox operations behind existing Masanawa authorities. Neither may become a second canonical runtime or source of truth.
 
 
 ## World simulation comparison — completed

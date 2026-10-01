@@ -226,12 +226,37 @@ Gateway, Worker and Ops ingress now normalize and return correlation headers. Ga
 
 Implementation through commit `9be50cbdb25c426b3cfaaa33e288b6fab41ad34e`; latest Foundation CI validation for this slice was not observable through the current GitHub connector at handoff time.
 
+### Provider-neutral authentication evidence
+
+`packages/security` now defines authentication evidence separately from canonical identity:
+- stable issuer/subject evidence with explicit authentication method and strength;
+- bounded, normalized metadata that never becomes a canonical UserId by implication;
+- expiry/currentness validation that fails closed;
+- explicit linkage strength before evidence may resolve canonical identity.
+
+This keeps OAuth, channel transports, operator sessions, device keys and service credentials behind one security contract while preserving the rule that provider aliases are evidence, not identity truth.
+
+### Production service lifecycle and schema readiness
+
+The Node runtime adapter and all three foundation services now provide production entrypoints with:
+- explicit environment/config parsing and validated listen configuration;
+- idempotent SIGTERM/SIGINT handling;
+- draining before close and bounded graceful shutdown;
+- sanitized startup/shutdown failures;
+- direct testability without binding production ports.
+
+PostgreSQL service readiness now verifies connectivity, PostgreSQL 18, the package-owned migration ledger, expected migration hashes and schema currency. Missing ledgers, missing migrations and hash drift fail readiness closed.
+
+### Deterministic fault/restart test support
+
+`test/support/fault-injection.ts` now provides a test-only deterministic fault injector and bounded restart scenario harness. It can crash at exact named occurrences, recreate ephemeral runtime generations without resetting caller-owned durable state, refuse non-restartable failures by default, cap restart loops and preserve cleanup failures alongside the original runtime failure.
+
+This support stays outside production packages so fault controls cannot become a runtime dependency or alternate orchestration system.
+
 ## Active foundation gaps
 
-1. add service main/config/shutdown lifecycle;
-2. add DB/schema readiness probes;
-3. add fault-injection/restart test utilities;
-4. close Phase 2 shared-foundation gate before identity/memory/world/product migrations.
+1. validate the authentication + lifecycle/readiness + deterministic restart support together in Foundation CI;
+2. perform the Phase 2 shared-foundation closure audit and close any concrete gate failures before identity/memory/world/product migrations.
 
 ## Foundation rules
 
@@ -245,4 +270,4 @@ Implementation through commit `9be50cbdb25c426b3cfaaa33e288b6fab41ad34e`; latest
 
 ## Next work
 
-Continue from the first unresolved item above. Do not recreate completed workspace/packages or switch into product-domain features.
+Run the current `phase2-closure` branch through the full Foundation CI gate. Fix any typecheck, unit, PostgreSQL 18 integration or build failure rather than weakening the gate. When green, write the Phase 2 closure audit against the implemented repository and move forward only if no shared-foundation blocker remains.
