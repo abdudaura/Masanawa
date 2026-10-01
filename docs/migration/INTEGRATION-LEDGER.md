@@ -159,3 +159,10 @@ Auth, retry, idempotency and reconciliation fields still require source-by-sourc
 | I-OCL-003 | OpenClaw device/node protocol | OpenClaw | pairing/token rotation/node invocation | device commands/credential writes | highly sensitive | device-node adapter | analysed |
 | I-OCL-004 | OpenClaw operator approval store | OpenClaw | durable exec/operator approvals | authorization mutation/consume | highly sensitive | packages/security/workflows | analysed |
 | I-OCL-005 | OpenClaw managed skill library | OpenClaw | skill revisioning/sharing/session pinning | executable content publication | executable/content | packages/skills | analysed |
+
+
+| I-OCL-006 | OpenClaw provider plugin runtime | OpenClaw | model/auth/catalog/transport hooks | model calls, OAuth/credential refresh | prompts/secrets/provider state | packages/providers | analysed |
+| I-OCL-007 | OpenClaw memory-core/memory-host | OpenClaw | provenance, recall, dreaming, compaction | memory reads/writes | private memory | packages/memory behavior donor only | analysed; donor files/SQLite rejected as authority |
+| I-OCL-008 | OpenClaw cron/heartbeat | OpenClaw | schedules/proactive wakes | model/tool/message execution | task/session data | packages/workflows trigger/scheduler adapters | analysed; not canonical workflow engine |
+| I-OCL-009 | OpenClaw guarded HTTP/SSRF layer | OpenClaw | secure network fetch | outbound network | URLs/network metadata | packages/security HTTP policy | analysed |
+| I-OCL-010 | OpenClaw diagnostics/OTel/telemetry | OpenClaw | support/tracing/usage telemetry | telemetry/export | operational; optional private content | packages/telemetry | analysed; content opt-in |
