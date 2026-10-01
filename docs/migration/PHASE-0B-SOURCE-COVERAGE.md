@@ -22,7 +22,7 @@ Generated/dependency/build metadata roots may be excluded after inspection, but 
 |---|---|---|---|
 | ChatWithStars | apps, data, deploy, infra, packages, public, scripts, services, src, supabase | IDN/REL/HND/WLD/DEC/SKL/TOL/LRN/SEC/TSK/COM/SOC/STD/CHN/OPS/CALL + SUB/PRV/KNO/GRP/MSN/CRT/TEL/CVI/LEG/DEP/DAT | covered |
 | OpenJarvis | configs, deploy, desktop, examples, frontend, rust, src, tests | AGT/SKL/TOL/SCH/LRN + PRV/INT/CON/SBX/OBS/SES/SPH/CLI/RCP/RST | covered |
-| N.E.K.O | app, brain, config, deps, frontend, knowledge, launcher_core, local_server, main_logic, main_routers, memory, plugin, specs, tests, utils | MEM/PLG/PRO/PER/CUA rows | partial |
+| N.E.K.O | app, brain, config, deps, frontend, knowledge, launcher_core, local_server, main_logic, main_routers, memory, plugin, specs, tests, utils | MEM/PLG/PRO/PER/CUA + VOI/ACT/CFG/EXT/OBS/AST/AVT/MED/CHN | covered |
 | CyberVerse | frontend, inference, infra, models, proto, server, tests | RTC/AVT/TSK/WRK behavior/data/integration rows | partial; GPL clean-room |
 | AIRI | apps, bucket, engines, integrations, packages, plugins, server, services | DLF/AVT/PLG/RTC/CUA + integration rows | partial |
 | LiveKit Server | cmd, deploy, pkg, test | RTC transport/session integration + ADR-0006 | partial |
@@ -154,3 +154,40 @@ Pinned revision: `c4da16e1ca3d21f4cc1905d4200063e564104f0f`.
 ### OpenJarvis sweep result
 
 Every production module family and top-level root now has an explicit disposition. New cross-cutting coverage records provider engines, interoperability, connectors, sandboxing, observability, runtime sessions, speech/operator surfaces and the Rust/Python duplication boundary.
+
+## N.E.K.O root sweep
+
+Pinned revision: `48ac9243a9d8e75a37d7598548c29017df1c6d2e`.
+
+| Root/module family | Classification / ledger coverage | Canonical treatment | State |
+|---|---|---|---|
+| `app` | AGT/PLG/MEM + VOI/CFG | donor server/process split is not retained; capabilities enter canonical packages/services | covered |
+| `brain` | CUA/PER/PLG + tool execution | bounded computer/browser/plugin task adapters behind tools/security | covered |
+| `config` | IDN/PRO/provider settings + CFG-001 | typed config/import defaults only; prompt/character JSON is not canonical Character truth | covered |
+| `deps` | AST-001 | vendored wheels/OCR/models require independent provenance; no implicit reuse | covered |
+| `frontend/plugin-manager` | PLG-011/012 | plugin Ops/DX surface may be rebuilt; Vue UI is not canonical | covered |
+| `frontend/react-neko-chat` | DLF/AVT/VOI/EXT | client interaction reference only; no client-owned domain truth | covered |
+| `frontend/pngtuber-packs` | AVT-010/AST-001 | optional embodiment assets after provenance review | covered |
+| `knowledge` | AST-001 + memory/knowledge evidence | corpora are reference fixtures only; no bundled knowledge inherited automatically | covered |
+| `launcher_core` | CFG/OPS lifecycle | startup/bootstrap behavior only | covered |
+| `local_server/survey_server` | OBS-002 | optional consented feedback service; not core | covered |
+| `local_server/telemetry_server` | OBS-002 | canonical telemetry contract if retained; donor server not required | covered |
+| `main_logic/asr_client`, `voice_input`, `voice_turn`, `voice_identity*` | VOI-001/002 | presence/media provider pipeline; speaker signal not authentication | covered |
+| `main_logic/activity`, `proactive_chat`, `topic` | ACT-001 + PRO rows | perception -> policy-gated proactivity | covered |
+| `main_logic/core`, realtime/offline clients | agent/presence/provider behavior | canonical agent/presence/provider boundaries | covered |
+| `main_logic/watch_together`, mini-game/music/game helpers | EXT-001 | optional extension/plugin/skill experiences | covered |
+| `main_routers/characters_router` | IDN + AVT-010 + VOI-002 | imports/configuration feed `packages/identity`; router is not authority | covered |
+| `main_routers/game_router` and game/media routers | EXT-001 | optional extensions, not world kernel | covered |
+| `main_routers/system_router`, proactive/capture routes | PRO/PER/CUA/ACT | canonical perception/proactivity/security contracts | covered |
+| `memory` | MEM rows + ADR-0007 | cognitive lifecycle donor into sole `packages/memory` authority | covered |
+| `plugin` | PLG rows + PLG-011/012 | component packaging/isolation/DX donor behind `packages/plugins` | covered |
+| `specs` | launcher packaging | build/reference only | covered |
+| `tests` | parity evidence for all retained families | behavior evidence; not ignored | covered |
+| `utils/cloudsave_runtime`, config/storage | CFG-001 | canonical config/storage adapters | covered |
+| `utils/connection` | CHN-010 | Gateway channel adapters | covered |
+| `utils/tts`, image generation, audio/media | MED-001 | provider/media adapters only | covered |
+| remaining `utils` | security/network/document/storage/language helpers mapped to existing security/provider/knowledge/config families | reuse only behind canonical owners | covered |
+
+### N.E.K.O sweep result
+
+All top-level roots and major descendant families have an explicit disposition. The sweep adds voice-turn endpointing, speaker-evidence boundaries, activity sensing, config/cloud-save migration, plugin distribution/message-plane mechanics, optional experience extensions, telemetry feedback, embodiment/provider adapters and explicit third-party artifact licensing.
