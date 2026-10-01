@@ -130,6 +130,86 @@ Pinned Python package supports Python >=3.10,<3.14. It also contains a local Rus
 
 Masanawa does not inherit this language split. The architecture concepts are translated to TypeScript core and Python only where ML/media makes it useful.
 
+## Deep-mined behavior added in Pass 2
+
+### Skill parser/import safety
+Verified from source/tests:
+- required `name` and `description` fail strictly;
+- kebab-case/lowercase/length rules fail strictly;
+- known vendor fields are mapped through data-driven mappings instead of bespoke parser branches;
+- unknown vendor fields are preserved under provenance metadata rather than discarded;
+- imported scripts are skipped by default and require explicit opt-in;
+- references/assets/templates may import without enabling scripts;
+- symlinks inside copied directories are rejected before replacing an existing install;
+- external unreviewed skills requesting dangerous capabilities are refused unless explicitly confirmed;
+- provenance records source, source commit, translated/missing tools, script-import status, trust tier and dangerous capabilities;
+- tool names in external skill instructions can be translated to canonical platform tools.
+
+For Masanawa, confirmation alone is not sufficient for consequential production skills: import may succeed into quarantine, but certification/readiness policy must still gate use.
+
+### Skill graph/manager
+Verified:
+- explicit dependencies and subskill step references participate in the same graph;
+- cycles and dependency-depth excess are rejected;
+- transitive capability requirements can be computed;
+- one cyclic cluster can be pruned without discarding every healthy discovered skill;
+- first discovered skill name wins according to configured source precedence;
+- model-hidden skills are excluded from the agent-facing catalog/tools;
+- optimization overlays are load-time sidecars; bad overlays do not break base skill discovery;
+- a skill is wrapped as a normal Tool and tagged with skill/source/kind/step metadata for traces.
+
+Masanawa should preserve graceful isolation of bad extensions while using a database/versioned registry rather than filesystem precedence as production truth.
+
+### Inference engine discovery
+Verified:
+- engine health probes run independently/concurrently;
+- an explicitly selected engine is authoritative and is never silently substituted;
+- default-engine fallback may select another healthy engine, preferring the same local/cloud class;
+- model-aware selection verifies the engine can actually serve the requested model;
+- failed model-list lookup degrades to empty discovery rather than corrupting engine state;
+- tool calls from provider-specific response formats normalize to one representation;
+- asynchronous streaming is deliberately non-blocking and bounded by timeout;
+- transport errors become typed connection failures.
+
+Masanawa should preserve explicit-vs-default fallback semantics in ProviderRouter.
+
+### Agent execution guards
+Verified:
+- repeated identical tool calls can be blocked;
+- polling/tool-call budgets can stop runaway loops;
+- loop-guard triggers emit telemetry/events;
+- oversized context can be compressed while retaining bounded state;
+- agent cost/token budgets can move an agent execution into a budget-exceeded state;
+- potentially dangerous tools that require confirmation fail closed if no interactive confirmation mechanism is available or approval is denied.
+
+Masanawa should implement these as generic execution budgets/policies, with durable workflow rules taking precedence for consequential work.
+
+### Security references
+OpenJarvis tests cover SSRF, capability policy, file boundaries, credential/log sanitization, injection scanning, rate limiting, signing, webhook validation, taint propagation and sandboxing.
+
+Verified SSRF requirement: DNS resolution failure defaults to fail-closed, private/loopback/link-local/metadata/multicast and disguised mapped forms are blocked.
+
+### Learning/traces
+Verified:
+- trace collection captures generation, tool calls, retrieval and response steps;
+- collectors unsubscribe after a run so stray later events do not pollute the next trace;
+- per-skill optimization buckets only traces carrying explicit skill metadata;
+- skills below a minimum evidence count are skipped;
+- optimization writes a separate overlay (description/few-shot) rather than mutating the base skill artifact.
+
+Masanawa adds a stronger promotion gate: an optimized overlay is only a candidate until rehearsal/certification approves a new version.
+
+### Scheduler
+Verified:
+- once, interval and cron scheduling;
+- timezone-aware cron;
+- pause/resume/cancel lifecycle;
+- run result/error logs;
+- start/end events;
+- one-shot tasks complete and clear next-run after execution.
+
+Masanawa will absorb these concepts into durable workflows/proactivity rather than create a separate assistant scheduler truth.
+
 ## Phase 0 follow-up
 
 Deep-mine:
