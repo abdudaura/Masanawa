@@ -345,3 +345,14 @@ Deep behavior mining from tests remains required before Phase 0 completion.
 | B-RTC-063 | RTC-063 | Generated text/audio completion, playback start and playback completion are separate facts; transcript synchronization follows actual playout timing. | A | generation/transcription synchronizer tests | analysed |
 | B-PVD-020 | PVD-020 | Provider fallback after output has begun is policy-controlled; failure of one provider changes availability/recovery state but must not silently duplicate partial user-visible output unless explicitly permitted. | A/B | LLM/STT/TTS fallback adapter tests | analysed |
 | B-AVT-040 | AVT-040 | Avatar output is optional/recoverable; ambiguous remote startup or cleanup cannot destroy the underlying live session, and already-absent remote avatar state is idempotent cleanup. | A/B | avatar session tests | analysed |
+
+### Phase 0B LiveKit Agents Python parity/delta invariants
+
+| ID | Feature | Required behavior | Class | Evidence | Status |
+|---|---|---|---|---|---|
+| B-RTC-070 | RTC-070 | Realtime fallback candidates must agree on pipeline-shaping hard capabilities; soft capabilities expose only the intersection supported by every candidate. | A | realtime fallback adapter | analysed |
+| B-RTC-071 | RTC-070 | During realtime provider swap, interrupt current playout through the session, preserve user-heard chat context/instructions/tools, drop live audio arriving during swap rather than replaying stale audio, and reissue reply only under explicit policy. | A | realtime fallback adapter | analysed |
+| B-SPK-030 | SPK-030 | A diarization wrapper may identify/suppress background speakers, but speaker classification is conversational evidence only; wrapped-provider usage/metrics must not be counted twice. | A/B | multi-speaker adapter + tests | analysed |
+| B-EVL-030 | EVL-030 | Post-session evaluators run independently/concurrently; a failed judge does not invalidate other judgments, and evaluation output remains evidence rather than self-authorizing production changes. | A/B | eval JudgeGroup/evaluation code | analysed |
+| B-OBS-030 | OBS-030 | Conversational/tool payload PII is removed before unauthorized exporters receive telemetry; free-form exception descriptions are replaced while structured error type may remain. | A | telemetry pii filter | analysed |
+| B-EXP-001 | EXP-001 | Serialized execution frames are research evidence only and cannot become Masanawa durable workflow truth without version/hash compatibility, checkpoint semantics and a separate architecture decision. | B/C | livekit-durable registry/function implementation | selected |
