@@ -128,12 +128,24 @@ Features describe what exists; this ledger records observable and operational be
 | B-CWS-OPS-003 | OPS-005 | Emergency global pause/resume is a durable service-side operation and must not silently destroy individual per-group/user modes. | A | CWS group-kill-switch tests | analysed |
 | B-CWS-OPS-004 | OPS-006 | Manual financial adjustment requires allowed direction, bounded amount, reason and evidence/reference. | A | CWS financial-adjustments tests | analysed |
 | B-LRN-001 | LRN-003 | Learned/optimized skill changes are candidates and require evaluation/certification before consequential production promotion. | A | Masanawa decision from CWS+OpenJarvis | designed |
-| B-OC-CHN-001 | CHN-003 | Each configured agent has an isolated workspace/session store and explicit channel/account routing; a channel binding must not silently collapse agent identities. | B | OpenClaw agent + multi-agent docs | discovered |
-| B-OC-AGT-001 | AGT-008 | Mid-run steering is checked before unstarted tool launches/next model call; a running tool is not retroactively cancelled unless explicit interrupt semantics apply. | B | OpenClaw agent runtime docs | discovered |
-| B-OC-AGT-002 | AGT-008 | Sequential tool calls skipped because of a steer receive paired synthetic results so the model's tool-call protocol remains consistent. | B | OpenClaw agent runtime docs | discovered |
-| B-OC-SKL-001 | SKL-008 | Skill precedence is deterministic across scopes and invalid skills are skipped without preventing valid siblings from loading. | B | OpenClaw skills docs | discovered |
-| B-OC-SEC-001 | SEC-005 | A previously attested workspace that disappears is not silently reseeded as a fresh identity/workspace. | A | OpenClaw agent runtime docs | discovered |
-| B-OC-MEM-001 | MEM-013 | Pre-compaction memory flush uses private housekeeping context and must not leak housekeeping messages into later user turns. | A/B | OpenClaw memory docs | discovered |
-| B-OC-MEM-002 | MEM-013 | Memory maintenance requiring write access is skipped when sandbox/workspace policy is read-only rather than bypassing sandbox restrictions. | A | OpenClaw memory docs | discovered |
+| B-OC-CHN-001 | CHN-003 | Each configured agent has an isolated workspace/session store and explicit channel/account routing; a channel binding must not silently collapse agent identities. | B | OpenClaw agent + multi-agent docs | analysed |
+| B-OC-AGT-001 | AGT-008 | Mid-run steering is checked before unstarted tool launches/next model call; a running tool is not retroactively cancelled unless explicit interrupt semantics apply. | B | OpenClaw agent runtime docs | analysed |
+| B-OC-AGT-002 | AGT-008 | Sequential tool calls skipped because of a steer receive paired synthetic results so the model's tool-call protocol remains consistent. | B | OpenClaw agent runtime docs | analysed |
+| B-OC-SKL-001 | SKL-008 | Skill precedence is deterministic across scopes and invalid skills are skipped without preventing valid siblings from loading. | B | OpenClaw skills docs | analysed |
+| B-OC-SEC-001 | SEC-005 | A previously attested workspace that disappears is not silently reseeded as a fresh identity/workspace. | A | OpenClaw agent runtime docs | analysed |
+| B-OC-MEM-001 | MEM-013 | Pre-compaction memory flush uses private housekeeping context and must not leak housekeeping messages into later user turns. | A/B | OpenClaw memory docs | analysed |
+| B-OC-MEM-002 | MEM-013 | Memory maintenance requiring write access is skipped when sandbox/workspace policy is read-only rather than bypassing sandbox restrictions. | A | OpenClaw memory docs | analysed |
+| B-OC-GW-001 | GW-002 | Channel/account binding selects a destination only after channel admission; a binding must never itself grant sender access. | A | OpenClaw agent-bindings/access-control docs | analysed |
+| B-OC-GW-002 | SEC-006 | Session owner/participant visibility is not a security boundary; Masanawa must enforce tenant/user/relationship authorization independently. | A | OpenClaw multi-user/security docs | analysed |
+| B-OC-GW-003 | SEC-006 | Broad cross-session/cross-agent defaults from a trusted Gateway must not become Masanawa public-platform defaults. | A | OpenClaw sessions/subagents security config | analysed |
+| B-OC-DEV-001 | DEV-003 | Consumed pairing bootstrap credential with uncertain response delivery is recorded as delivery-uncertain and reconciled by setup ID before declaring success/expiry. | A | OpenClaw device pairing RPC docs | analysed |
+| B-OC-DEV-002 | DEV-004 | Remote node execution may retry only a recognized pre-execution not-ready rejection; disconnects/timeouts/failures after progress are not blindly replayed. | A | OpenClaw node invoke RPC docs | analysed |
+| B-OC-APR-001 | APR-001 | Approval resolution is first-answer-wins and waiters settle from the canonical recorded result. | A | OpenClaw approval RPC docs | analysed |
+| B-OC-APR-002 | APR-001 | Authority revoked before commit admission blocks a delayed mutation; disconnect alone does not revoke already admitted work. | A | OpenClaw approval/plugin SDK docs | analysed |
+| B-OC-SKL-002 | SKL-009 | Saving a managed skill produces an immutable content-derived revision; identical save is a no-op and stale edit conflicts rather than overwrites. | A/B | OpenClaw skills docs | analysed |
+| B-OC-SKL-003 | SKL-009 | Existing sessions retain selected skill IDs/revisions until explicit refresh/attachment; publishing a revision does not silently alter a running session. | A | OpenClaw skills docs | analysed |
+| B-OC-MEM-003 | MEM-017 | Active-memory recall can only use tools remaining after parent effective policy/sandbox/provider restrictions; it cannot gain authority the parent lacks. | A | OpenClaw active-memory docs | analysed |
+| B-OC-MEM-004 | MEM-017 | If recall tools are unavailable or recall fails, normal conversation continues without fabricated memory context. | A | OpenClaw active-memory docs | analysed |
+| B-OC-PLG-001 | PLG-007 | A delayed plugin mutation rechecks current authority after async preparation; a stale owner boolean is not sufficient authorization. | A | OpenClaw Plugin SDK docs | analysed |
 
 Deep behavior mining from tests remains required before Phase 0 completion.
