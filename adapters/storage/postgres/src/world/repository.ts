@@ -51,6 +51,7 @@ import {
   type WorldRepository,
 } from "@masanawa/world";
 import type { PoolClient } from "pg";
+import { publishWorldEvidenceRecorded } from "./evidence-publication.js";
 
 interface WorldRow {
   tenant_id: TenantId;
@@ -1357,7 +1358,9 @@ export async function appendWorldEvent(
       "World occurrence key was reused with different canon content",
     );
   }
-  return asWorldEvent(result.rows[0]);
+  const stored = asWorldEvent(result.rows[0]);
+  await publishWorldEvidenceRecorded(client, stored);
+  return stored;
 }
 
 export async function approveWorldEvent(
@@ -1671,6 +1674,7 @@ export async function appendWorldInteraction(
           "World interaction occurrence key was reused with different content",
         );
       }
+      await publishWorldEvidenceRecorded(client, existing);
       return existing;
     }
   }
@@ -1754,6 +1758,7 @@ export async function appendWorldInteraction(
         "World interaction occurrence key was reused with different content",
       );
     }
+    await publishWorldEvidenceRecorded(client, raced);
     return raced;
   }
 
@@ -1800,6 +1805,7 @@ export async function appendWorldInteraction(
   if (!stored) {
     throw new Error("World interaction disappeared after admission");
   }
+  await publishWorldEvidenceRecorded(client, stored);
   return stored;
 }
 
