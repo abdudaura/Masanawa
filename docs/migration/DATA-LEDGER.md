@@ -147,3 +147,19 @@ Phase 0 must continue mapping donor-specific stores/tables/files into these cano
 | D-WF-008 | WorkflowCheckpoint | Microsoft AF | workflow run | append/lineage | private/internal | workflows | canonical | committed state, executor/edge state, pending requests, iteration |
 | D-WF-009 | WorkflowHumanRequest | Microsoft AF | workflow run | pending->answered/expired | sensitive | workflows | canonical | approval/clarification/HITL request with durable response evidence |
 | D-WF-010 | SideEffectReceipt | CWS/OpenClaw | workflow operation | append/terminal/reconciled | sensitive | workflows/domain | canonical | idempotency key, provider ref, ambiguous/reconciled outcome |
+
+### Phase 0A canonical world/life-state additions
+
+| ID | Canonical concept | Source | Scope | Lifecycle | Sensitivity | Destination | Treatment | Notes |
+|---|---|---|---|---|---|---|---|---|
+| D-WLD-006 | World | AI Town + CWS + Masanawa | tenant/world | durable/versioned policy | shared/internal | world | canonical | stable world identity; not donor game document |
+| D-WLD-007 | WorldPolicy | Masanawa synthesis | world | versioned | internal/security-sensitive | world | canonical | simulation mode, catch-up, canon admission, spatial/proactivity policy |
+| D-WLD-008 | WorldActorState | AI Town + CWS | world+character | mutable projection | shared/internal | world | canonical projection | activity, availability, semantic/spatial location; identity remains external |
+| D-WLD-009 | WorldEvent | CWS + AI Town | tenant/world/character | append + governed lifecycle | public/shared/internal/private by policy | world | canonical | provenance, visibility, effective/recorded time, canon status |
+| D-WLD-010 | WorldInteraction | AI Town | world+actors | append | shared/internal | world | canonical evidence | encounter/conversation/activity evidence; not private relationship memory |
+| D-WLD-011 | SimulationInput | AI Town + Masanawa | world | ordered durable lifecycle | varies | world | canonical | monotonic sequence/idempotency key, admitted/rejected/completed outcome |
+| D-WLD-012 | WorldGeneration | AI Town | world | monotonic | internal | world | canonical concurrency token | CAS/lease authority for simulation commits |
+| D-WLD-013 | SimulationStep | AI Town | world+generation | append/transactional | internal | world | canonical evidence | from/to simulation time, processed input range, outcome/event refs |
+| D-WLD-014 | WorldSpace | AI Town | world | versioned | shared/internal | world | optional canonical module | map/scene/topology; absent for non-spatial worlds |
+| D-WLD-015 | LocationProjection | AI Town + CWS | actor/world | mutable + history | shared/internal | world | canonical projection | coordinate or semantic/coarse location with effective time |
+| D-WLD-016 | CanonAdmission | CWS + Masanawa | world event/proposal | draft->approved/retired or auto-policy | internal | world/ops | canonical | records authored/engine/model provenance and policy/approval evidence |
