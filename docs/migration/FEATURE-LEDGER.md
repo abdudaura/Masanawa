@@ -107,6 +107,12 @@ foundation, identity, relationships, memory, world, decisions, agents, skills, t
 | CHN-001 | channels | web/WhatsApp/Telegram share same character/runtime state | ChatWithStars | A | primary | gateway + channel adapters | analysed |
 | CHN-002 | channels | broad optional channel adapter ecosystem | OpenJarvis | C/B per channel | reference | gateway adapters | discovered |
 | OPS-001 | operations | provider/skill acceptance and operator control | ChatWithStars | A | primary | apps/ops | discovered |
+| CALL-001 | presence | call readiness state separates operational/degraded/action-required | ChatWithStars | A | secondary reliability | services/presence | analysed |
+| CALL-002 | presence | staged soft recovery before hard renderer/browser recovery | ChatWithStars | A | secondary reliability | services/presence | analysed |
+| CALL-003 | presence | incoming accept waits for provider call materialization | ChatWithStars | A | secondary reliability | services/presence | analysed |
+| CALL-004 | presence | reconnect preserves login while relink intentionally clears dedicated call profile | ChatWithStars | A | secondary operations | services/presence | analysed |
+| CALL-005 | presence | outbound timeout preserves provider/renderer diagnostics | ChatWithStars | B | secondary observability | services/presence + telemetry | analysed |
+| CALL-006 | presence | live audio normalization/peak limiting and graceful hangup tool | ChatWithStars | B | secondary UX | services/presence | analysed |
 | OPS-002 | operations | trace/evaluation visibility | OpenJarvis + ChatWithStars | B | combined | apps/ops + telemetry | discovered |
 
 This inventory is intentionally incomplete. Source-specific map documents identify the next deep-mining areas.
