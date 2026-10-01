@@ -316,3 +316,17 @@ This inventory is intentionally incomplete. Source-specific map documents identi
 | PRV-021 | providers | evidence-driven configured/ready/accepted lifecycle with dependency invalidation | ChatWithStars Flutterwave generalized | A/B | strong behavioral donor | packages/providers + apps/ops | selected |
 | PRV-022 | providers | ambiguous side-effect reconciliation before retry | ChatWithStars commerce + Telegram generalized | A | strong behavioral donor | packages/providers + workflows | selected |
 | PRV-023 | providers | normalized provider attempt/receipt/reconciliation evidence across payment/social/channel/media/model/compute | Masanawa synthesis | B | synthesized architecture | packages/providers + telemetry | selected |
+
+### Phase 0B OpenJarvis remediation additions
+
+| ID | Domain | Feature | Source | Class | Donor role | Masanawa destination | Status |
+|---|---|---|---|---|---|---|---|
+| LRN-020 | learning/evaluation | evidence-gated spec-search loop: diagnose -> plan -> risk-tier -> stage -> benchmark -> accept/review/rollback | OpenJarvis | B | strong learning-control donor | packages/telemetry + packages/skills + apps/ops | analysed |
+| CON-020 | connectors | resumable incremental connector sync with cursor checkpoint and success-watermark separation | OpenJarvis | A/B | strong connector ingestion donor | packages/connectors + packages/knowledge + workflows | analysed |
+| APR-020 | security | durable pending-action approval lifecycle plus optional remembered permission rule | OpenJarvis | B | secondary approval UX donor | packages/workflows + security | analysed |
+| SES-020 | runtime | cross-channel conversation session persistence and context consolidation separated from durable identity/memory truth | OpenJarvis | B | runtime-session donor | packages/agents + gateway | analysed |
+| SCH-020 | workflows | once/interval/timezone-aware cron trigger lifecycle with durable run log | OpenJarvis | B | trigger/scheduler donor | packages/workflows + proactivity | analysed |
+| WFL-020 | workflows | lightweight declarative agent/tool/condition/transform/loop graph | OpenJarvis | C/B | composition/reference donor | workflow definition import only; durable runtime remains packages/workflows | selected |
+| SEC-020 | security | dangerous-tool confirmation fails closed when interactivity/approval callback is unavailable | OpenJarvis | A | strong tool-safety behavior donor | packages/tools + security/workflows | analysed |
+| SEC-021 | security | SSRF guard blocks metadata/private/disguised IPs and fails closed on DNS resolution failure | OpenJarvis | A | strong network-tool safety donor | packages/security | analysed |
+| TRC-020 | telemetry | per-run event subscription trace collection with guaranteed unsubscribe and skill/tool metadata | OpenJarvis | A/B | primary trace donor | packages/telemetry | analysed |
