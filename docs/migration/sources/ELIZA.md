@@ -2,7 +2,7 @@
 
 Pinned: `cda43c762c605b69e4fcb9a791092508814bf6c4` (`develop`).
 
-Status: Phase 0B exhaustive coverage remediation **ACTIVE / PARTIAL**. Core runtime/plugin/service/task/model/evaluator/connector/access/host/SQL/view/device boundaries are recorded in `docs/migration/coverage/ELIZAOS.md`; remaining descendant families are listed there.
+Status: Phase 0B exhaustive coverage **COMPLETE** at the pinned revision. See `docs/migration/coverage/ELIZAOS.md` and `docs/migration/coverage/ELIZAOS-INVENTORY.md`.
 
 ## Executive result
 
