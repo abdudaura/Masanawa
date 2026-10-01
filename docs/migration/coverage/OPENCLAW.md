@@ -562,3 +562,119 @@ Acceptance gate:
 - raw prompt/tool content is opt-in in telemetry;
 - trace context is provenance only, never authorization;
 - external/caller trace headers cannot forge provider-side trust ancestry.
+
+
+## 20. Gateway handshake, RPC scopes and closed worker protocol
+
+Implementation/docs evidence:
+- `docs/gateway/protocol/handshake.md`;
+- Gateway method policy/operator-scope families;
+- node pairing authorization tests.
+
+Pinned behavior:
+- authenticated hello reports negotiated role/scopes separately from client capability claims;
+- capabilities describe presentation/runtime support, not authorization;
+- operator method scopes are closed/core-defined and some reserved method prefixes force administrator scope;
+- method scope is only the first gate; individual operations may impose stricter current-resource checks;
+- node pairing approval validates the pending node's declared commands/scopes at approval time;
+- node-declared capabilities/commands remain claims and are intersected with server-side policy;
+- worker mode uses a separate closed protocol and route that never dispatches general operator/node/plugin methods;
+- worker credential is bound to environment, bundle hash, owner epoch, RPC-set version, expiry and optional session;
+- transcript commits use owner-epoch fencing, gateway-owned session binding, base-leaf CAS and durable replay sequence;
+- each worker RPC rechecks ownership and expiry.
+
+Masanawa destination:
+- gateway protocol/security + worker/device execution adapters.
+
+Disposition: **A/B**.
+
+Acceptance gate:
+- capability advertisement never grants authorization;
+- method-scope policy and resource/current-authority checks compose, with the stricter rule winning;
+- worker/node protocol surfaces are closed allowlists;
+- worker transcript/state mutation is fenced by canonical run/session generation and CAS;
+- reusable credentials are bound to role/scope/device/environment and revocable.
+
+## 21. Agent bindings and routing are not authorization
+
+Evidence:
+- `docs/concepts/agent-bindings.md`;
+- channel routing/binding runtime.
+
+Pinned behavior:
+- a binding selects the agent only after the channel has already admitted the message;
+- it does not create channel accounts and does not grant sender access;
+- matching is deterministic by specificity, then config order within a tier;
+- an omitted account ID means the default account, while wildcard is explicit;
+- missing/ambiguous owner in explicit multi-agent mode returns an agent-selection error rather than silently falling back;
+- ACP persistent bindings have a distinct concrete conversation identity contract.
+
+Masanawa destination:
+- gateway routing -> canonical Agent/Character runtime binding after identity/channel authorization.
+
+Disposition: **A/B**.
+
+Acceptance gate:
+- routing selection never substitutes for sender/tenant/tool authorization;
+- ambiguous ownership fails closed instead of picking an arbitrary agent;
+- routing precedence is deterministic and observable;
+- route changes cannot rewrite historical canonical relationship identity.
+
+## 22. Session/subagent/ACP lineage and authority
+
+Implementation/test evidence:
+- `src/gateway/session-create-service.ts`;
+- `src/agents/subagents/spawn/subagent-spawn.ts`;
+- `src/agents/subagents/spawn/acp-spawn.authority.test.ts`;
+- `docs/plugins/sdk-agent-harness/sessions-and-results.md`;
+- session create/recovery/child-custody tests.
+
+Pinned behavior:
+- session creation is a lifecycle operation that resolves owner/agent/workspace/model selection, writes session/transcript state and publishes creation effects under one admitted operation;
+- parent-fork/session selection inheritance is explicit rather than reconstructed from an arbitrary child key;
+- subagents/ACP runs retain requester/parent/child lineage and admitted delegated authority;
+- spawn authority tests exercise real admitted-run delegated authority and Gateway tool caller identity rather than only string parent IDs;
+- persistent ACP/bound conversations are not authorized solely because a binding exists;
+- restart recovery requires retained assignments/requester identity/lifecycle/connection evidence; native lineage alone cannot reconstruct an unrecorded obligation.
+
+Masanawa destination:
+- `packages/agents` execution instances + `packages/workflows` child tasks/handoffs + canonical identity/relationship authorization.
+
+Disposition: **A/B for lineage/custody; C for OpenClaw session IDs as Character/relationship authority**.
+
+Acceptance gate:
+- child run records parent/requester/run generation and delegated authority explicitly;
+- stale parent/connection/generation cannot adopt a child completion;
+- spawning a child cannot expand authority beyond the delegating principal/run;
+- session creation and initial transcript publication are atomic/idempotent enough for retry/recovery;
+- provider/native session binding never becomes canonical user/Character identity.
+
+## 23. Outbound delivery idempotency and timeout reconciliation
+
+Implementation/docs evidence:
+- `docs/plugins/sdk-channel-outbound.md`;
+- `src/infra/outbound/message-action-execution.ts`;
+- channel-specific send paths/tests.
+
+Pinned behavior:
+- every gateway message action can carry a stable idempotency key;
+- delivery authority/current handoff is checked before attempts and after async preparation;
+- a caller-side timeout after request transmission does not prove the provider send failed;
+- timed-out sends reattach once to the same Gateway operation using the unchanged idempotency key instead of issuing a fresh send;
+- reconciliation has its own bounded wait;
+- confirmed pre-dispatch Gateway rejection may cancel a pending terminal receipt, while ambiguous provider/runtime failures preserve uncertainty;
+- partial delivery is typed and retains accepted receipt evidence;
+- queued delivery explicitly tells the caller that the Gateway owns retry/reconciliation and must not be resent;
+- terminal source-reply intent is made durable before send and reconciliation failure returns provider result without inviting model replay.
+
+Masanawa destination:
+- gateway outbox/delivery reconciliation + `packages/workflows` side-effect receipts.
+
+Disposition: **A**.
+
+Acceptance gate:
+- timeout after dispatch never causes a fresh non-idempotent provider send;
+- retry/join uses the same canonical delivery operation/idempotency key;
+- partial/queued/unknown/confirmed-rejected outcomes remain distinct;
+- current authorization is rechecked immediately before delivery;
+- provider acceptance/receipt survives local settlement failure so recovery can settle without duplicate visible delivery.
