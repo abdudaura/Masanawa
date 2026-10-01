@@ -17,7 +17,7 @@ Use TypeScript as the primary platform language for:
 - web/Ops applications;
 - provider adapters that do not require Python-native ML stacks.
 
-Baseline: TypeScript 6.x, strict mode, ESM.
+Baseline: TypeScript 7.0.x, strict mode, ESM. Phase 2 baseline accepted in ADR-0012.
 
 Why:
 - shared end-to-end contracts;
@@ -102,7 +102,7 @@ Introduce Redis/NATS/Kafka only when measured scale/latency requirements justify
 
 ## Package manager/build
 
-Use pnpm workspaces for JavaScript/TypeScript monorepo management.
+Use pnpm workspaces for JavaScript/TypeScript monorepo management. Phase 2 starts on pnpm 12.x with exact root pinning (ADR-0012).
 
 Use a task orchestrator only when the repository reaches enough packages to justify it; Turborepo is acceptable but not required for the first foundation.
 
@@ -110,7 +110,7 @@ Python dependency management: uv.
 
 ## Schemas/contracts
 
-Use runtime-validatable schemas at service boundaries. Preferred TypeScript baseline: TypeBox or Zod selected by the contracts ADR during Phase 2; schemas must generate/infer static types and validate untrusted input.
+Use runtime-validatable schemas at service boundaries. Phase 2 selects TypeBox 1.x as the canonical JSON Schema 2020-12/type-inference stack (ADR-0012). Schemas must generate/infer static types and validate untrusted input. OpenAPI is derived from these canonical schemas.
 
 OpenAPI should be generated from canonical service schemas rather than maintained independently.
 
