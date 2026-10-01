@@ -2,7 +2,7 @@
 
 Status: Phase 0 working document.
 
-Purpose: exhaustive inventory of every meaningful capability across the four pinned sources.
+Purpose: exhaustive inventory of every meaningful capability across the pinned reference source vault.
 
 ## Required fields
 
@@ -131,6 +131,29 @@ foundation, identity, relationships, memory, world, decisions, agents, skills, t
 | PER-003 | perception | restricted/sanitized computer-use action runtime with exclusive desktop lease | N.E.K.O | A/B | primary safety | packages/tools + perception | analysed |
 | VID-001 | security | optional speaker/owner voice identity activation and enrollment | N.E.K.O | B | primary | packages/security + services/presence | analysed |
 | EMB-001 | avatar | embodied interaction events with dedupe-ranked memory eligibility | N.E.K.O | B | primary | packages/perception + memory | analysed |
+| GW-001 | channels | unified local-first Gateway/control plane for sessions/tools/events/channels | OpenClaw | B | major candidate | services/gateway | discovered |
+| CHN-003 | channels | per-agent channel/account bindings and isolated workspaces/session stores | OpenClaw | B | major candidate | gateway + identity/runtime | discovered |
+| DEV-001 | perception | device nodes for voice/camera/screen/device-local actions | OpenClaw | B | major candidate | gateway + perception + tools | discovered |
+| SKL-008 | skills | scoped skill roots/precedence/gating/install/update/verify/workshop distribution | OpenClaw | B | major candidate | packages/skills | discovered |
+| MEM-013 | memory | action-sensitive memory + compaction flush + background dreaming | OpenClaw | B | secondary candidate | packages/memory | discovered |
+| MEM-014 | memory | pluggable memory engines and provenance-rich memory wiki | OpenClaw | B | secondary candidate | packages/memory + plugins | discovered |
+| AGT-008 | agents | active-run steer/followup/collect/interrupt queue semantics | OpenClaw | B | candidate | packages/agents + runtime | discovered |
+| SEC-005 | security | workspace attestation and fail-safe missing-workspace handling | OpenClaw | A/B | candidate | packages/security + runtime | discovered |
+| DLF-001 | avatar | persistent digital-life client across web/desktop/avatar/game contexts | AIRI | B | major candidate | apps/clients + avatar | discovered |
+| DLF-002 | avatar | Live2D/VRM embodied character runtime | AIRI | B | major candidate | avatar providers/clients | discovered |
+| RTC-006 | presence | AgentSession/Worker/job abstraction over production WebRTC | LiveKit Agents | B | major candidate | services/presence | discovered |
+| RTC-007 | presence | semantic turn detection and multi-provider STT/LLM/TTS/realtime/avatar plugins | LiveKit Agents | B | major candidate | presence + providers | discovered |
+| RTC-008 | presence | composable frame/pipeline processors for voice/video/control | Pipecat | B | major candidate | services/presence | discovered |
+| AGT-009 | agents | multi-agent handoff/fan-out/sidecar/shared-bus realtime composition | Pipecat | B | candidate | agents + presence | discovered |
+| MEM-015 | memory | persistent agent identity/experience across conversations + shared memory | Letta | B | major candidate | packages/memory + identity | discovered |
+| MEM-016 | memory | temporal/entity-aware multi-signal retrieval and memory evaluation | Mem0 | B | major candidate | packages/memory + telemetry | discovered |
+| WLD-004 | world | transactional shared-state simulation engine for autonomous characters | AI Town | B | major candidate | packages/world + workers | discovered |
+| AGT-010 | agents | TypeScript AgentRuntime with actions/providers/evaluators/services/events | elizaOS | B | major candidate | packages/agents + providers | discovered |
+| PLG-006 | plugins | TypeScript plugin model registering actions/providers/evaluators/services/routes/events/views | elizaOS | B | major candidate | plugin SDK/runtime | discovered |
+| DEV-002 | perception | native device bridges/browser/desktop automation behind permissions | elizaOS | B | candidate | perception + tools | discovered |
+| WF-005 | workflows | durable graph workflows with checkpoint/restart/time-travel/HITL | Microsoft Agent Framework | B | major candidate | packages/workflows | discovered |
+| AGT-011 | agents | sequential/concurrent/handoff/group multi-agent orchestration | Microsoft Agent Framework | B | candidate | packages/agents + workflows | discovered |
+| INT-001 | agents | A2A/MCP interoperability patterns | Microsoft Agent Framework + LiveKit/OpenClaw | B | reference | gateway + providers | discovered |
 | OPS-002 | operations | trace/evaluation visibility | OpenJarvis + ChatWithStars | B | combined | apps/ops + telemetry | discovered |
 
 This inventory is intentionally incomplete. Source-specific map documents identify the next deep-mining areas.
