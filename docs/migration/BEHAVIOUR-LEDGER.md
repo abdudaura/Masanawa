@@ -211,3 +211,18 @@ Deep behavior mining from tests remains required before Phase 0 completion.
 | B-WFL-003 | WFL-003 | Resume never treats captured authorization as permanently valid; current authority is revalidated immediately before consequential mutation. | A | OpenClaw current-authority + MAF restore + CWS side-effect policy | selected |
 | B-WFL-004 | WFL-003 | A restored or retried workflow checks durable side-effect receipts/reconciliation before reissuing a consequential provider call. | A | CWS idempotency/reconciliation + MAF checkpointing | selected |
 | B-WFL-005 | AGT-012 | Steering/cancellation may prevent unstarted work but cannot undo, duplicate or blindly replay a side effect already admitted or executed. | A | OpenClaw steering + Masanawa workflow boundary | selected |
+
+### Phase 0A world simulation comparison additions
+
+| ID | Feature | Invariant / expected behavior | Class | Evidence | Status |
+|---|---|---|---|---|---|
+| B-WLD-004 | WLD-005 | Simulation time is explicit and monotonic; wall-clock receipt time does not silently become canonical simulation time. | A | AI Town AbstractGame/engine schema | selected |
+| B-WLD-005 | WLD-006 | Two workers using the same world generation cannot both commit; a stale generation must reload/retry rather than overwrite newer truth. | A | AI Town generationNumber/loadEngine/applyEngineUpdate | selected |
+| B-WLD-006 | WLD-006 | A committed simulation transition records admitted input outcomes with the world transition so retries can distinguish completed from unprocessed input. | A/B | AI Town runStep/applyEngineUpdate | selected |
+| B-WLD-007 | WLD-009 | Approved shared canon is immutable except explicit retirement/replacement; model or simulation proposals do not silently rewrite it. | A | CWS life-event immutability + Star Constitution | selected |
+| B-WLD-008 | WLD-009 | Automatic life events require an active published valid complete Character identity and retain visibility/provenance/effective-time metadata. | A | CWS star-life-engine + RPC | selected |
+| B-WLD-009 | WLD-003/WLD-006 | Reprocessing the same deterministic routine/input occurrence cannot duplicate the authoritative world event. | A | CWS engine key + AI Town processed input semantics | selected |
+| B-WLD-010 | WLD-010 | Pause/restart behavior follows versioned WorldPolicy: skip, bounded catch-up, queued-input replay or operator reconciliation; no universal replay rule is assumed. | B | AI Town restart semantics + Masanawa synthesis | selected |
+| B-WLD-011 | WLD-008 | Spatial state is optional; disabling coordinates/pathfinding does not remove Character life state, routines or semantic locations. | A/B | AI Town spatial model + CWS coarse location | selected |
+| B-WLD-012 | WLD-011 | Private relationship memory may influence a private interaction but cannot silently mutate shared Character/world canon. | A | CWS privacy invariant + memory ADR | selected |
+| B-WLD-013 | WLD-011 | World events cross explicit typed boundaries to memory/workflows/presence; donor Agent/Player/session objects never become canonical world truth. | A | ADR-0009 | selected |
