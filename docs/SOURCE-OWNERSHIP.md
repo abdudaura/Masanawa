@@ -16,12 +16,12 @@ Masanawa owns the resulting architecture. Every repository under `references/sou
 | Shared world/life | ChatWithStars, AI Town | N.E.K.O | governed world truth + persistent simulation |
 | Memory lifecycle | **N.E.K.O (selected cognitive donor)** | Letta Code, OpenClaw | **packages/memory owns canonical type+scope records, evidence, lifecycle and persistence** |
 | Memory retrieval/evaluation | **Mem0 (selected specialist donor)** | N.E.K.O, OpenClaw, Letta Code | **packages/memory authorizes scope before hybrid retrieval; indexes are rebuildable** |
-| Agent execution | OpenJarvis, elizaOS | Microsoft Agent Framework, OpenClaw | character-aware execution envelope |
-| Skills | OpenJarvis, OpenClaw | Microsoft Agent Framework, ChatWithStars | CWS governance/certification/risk |
-| Tools/security | OpenJarvis, OpenClaw | ChatWithStars, elizaOS | provider-neutral capability/readiness + deterministic side-effect policy |
+| Agent execution | **OpenJarvis (selected structural donor)** + **elizaOS (selected TS component donor)** | OpenClaw, Microsoft Agent Framework | **packages/agents owns character-aware execution envelope, strategies and budgets** |
+| Skills | **OpenJarvis (selected structural donor)** | OpenClaw, Microsoft Agent Framework, ChatWithStars | **packages/skills owns canonical versions; CWS governance, OpenClaw revisions, MAF disclosure/security** |
+| Tools/security | **OpenJarvis (selected structural donor)** | OpenClaw, ChatWithStars, elizaOS | **packages/tools + security own atomic capabilities and deterministic side-effect policy** |
 | Learning/traces | OpenJarvis | ChatWithStars, Microsoft AF | gated candidate promotion |
 | Decision fabric | ChatWithStars JEV | Microsoft AF middleware/policies | bounded typed decisions only |
-| Durable workflows | ChatWithStars, Microsoft Agent Framework | Pipecat Flows, CyberVerse tasks | deterministic business state + restartability |
+| Durable workflows | **Microsoft Agent Framework (selected orchestration donor)** + **ChatWithStars (business-state donor)** | OpenClaw authority patterns, CyberVerse tasks | **packages/workflows owns durable graph/checkpoints/HITL; domain packages own business truth** |
 | Proactivity | N.E.K.O | OpenClaw, Letta, ChatWithStars world | permission/frequency/privacy/quiet-hours |
 | Perception | N.E.K.O, OpenClaw device nodes | AIRI, elizaOS, CyberVerse | canonical PerceptionEvent + permissions |
 | Gateway/channels | **OpenClaw (selected architectural donor)** | elizaOS, OpenJarvis channels | Masanawa-native multi-tenant Gateway; optional OpenClaw bridge |
@@ -33,24 +33,25 @@ Masanawa owns the resulting architecture. Every repository under `references/sou
 | Social | ChatWithStars | OpenClaw/eliza channel patterns | durable outbox/publish state |
 | Commerce | ChatWithStars | eliza approval patterns | deterministic ledger/reconciliation |
 | Studio | ChatWithStars | AIRI/CyberVerse media concepts | produced-media pipeline separate from live presence |
-| Plugin ecosystem | elizaOS, N.E.K.O, OpenClaw | OpenJarvis skills | plugins register canonical components only |
+| Plugin ecosystem | **elizaOS (selected component-model donor)** | OpenClaw, N.E.K.O | **packages/plugins owns manifests/components/capabilities/lifecycle; plugins register canonical components only** |
 | Ops/governance | ChatWithStars | OpenClaw control plane, Microsoft AF observability | unified operator control and readiness |
 
 ## Important candidate decisions
 
-### Skills
-OpenJarvis remains the strongest structural candidate because it separates manager, parser, dependency graph, executor, SkillTool adapter, importers, trust and learning overlays.
+### Agent runtime, skills, plugins and workflows — decision recorded
 
-OpenClaw must now be compared before we freeze the subsystem because it adds:
-- multi-scope skill roots and deterministic precedence;
-- per-agent/shared skill visibility;
-- config/env/binary gating;
-- install/update/verify flows;
-- workshop/managed skill promotion;
-- community distribution via ClawHub;
-- workspace snapshot/sandbox synchronization.
+Masanawa owns one execution fabric rather than adopting a donor kernel.
 
-ChatWithStars remains the governance donor for certification, readiness, risk, approval, pricing, idempotency and expertise.
+Selected composition:
+- OpenJarvis — primary structural donor for agent strategies/guards, tools and SkillManager/parser/dependency/executor/import/provenance;
+- elizaOS — primary TypeScript component/plugin runtime donor for typed actions/providers/evaluators/services/events and host-vs-kernel plugin loading;
+- Microsoft Agent Framework — primary durable workflow graph/checkpoint/HITL/restart donor plus middleware/observability/progressive-disclosure skill behavior;
+- OpenClaw — run steering/subagent/session policy, skill revision pinning/distribution and current-authority patterns;
+- ChatWithStars — deterministic business workflows, skill certification/readiness/risk and side-effect reconciliation.
+
+Canonical owners are `packages/agents`, `packages/skills`, `packages/plugins`, `packages/tools` and `packages/workflows`. Character identity, memory and world/business truth remain outside donor runtime objects.
+
+See ADR-0008 and `docs/migration/RUNTIME-SKILLS-WORKFLOW-ADOPTION-BOUNDARY.md`.
 
 ### Gateway, channels and devices — decision recorded
 
@@ -140,10 +141,8 @@ Do not make LiveKit Agent = Character, room metadata = durable business truth, o
 See ADR-0006 and `docs/migration/PRESENCE-ADOPTION-BOUNDARY.md`.
 
 ### Agent runtime
-OpenJarvis remains a strong skill/tool/strategy donor, but compare directly with:
-- elizaOS for a large TypeScript AgentRuntime/plugin/provider/service stack;
-- Microsoft Agent Framework for durable graph workflows, checkpointing, handoffs, human-in-loop and observability;
-- OpenClaw for integrated session/workspace/channel runtime boundaries.
+
+Decision recorded above and in ADR-0008. No donor Agent object becomes Character identity or durable workflow/business truth.
 
 ### World
 AI Town is the new external simulation donor. Compare its transactional shared-state/simulation patterns with ChatWithStars world/life requirements. Masanawa still needs stronger privacy, governance and non-game product semantics than AI Town provides.
