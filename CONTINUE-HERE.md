@@ -49,6 +49,7 @@ The earlier four-donor assumption has been intentionally reopened before archite
 - Realtime presence Phase 0A comparison complete: LiveKit Server selected for production WebRTC transport, LiveKit Agents TypeScript selected as the primary realtime-session donor, Pipecat retained as a secondary frame/pipeline donor, AIRI retained for embodiment clients, and CyberVerse retained as GPL-clean behavior reference for synchronization/race/audio-only/task UX. ADR-0006 fixes the boundary.
 - Memory Phase 0A comparison complete: `packages/memory` selected as sole canonical memory authority; N.E.K.O selected for cognitive lifecycle, Mem0 for extraction/retrieval/evaluation, Letta Code for bounded working context + revision/conflict semantics, and OpenClaw for action-sensitive/compaction/provenance behavior. Canonical PostgreSQL records precede rebuildable vector/lexical/entity/temporal projections. ADR-0007 fixes the boundary. The pinned `letta-ai/letta` repo is a landing/historical pointer; implementation evidence comes from Letta Code.
 - Agent runtime/skills/plugins/workflows Phase 0A comparison complete: OpenJarvis selected as structural agent/skills/tools donor, elizaOS as TypeScript component/plugin donor, Microsoft Agent Framework as durable graph/checkpoint/HITL workflow donor, OpenClaw for steering/revision/current-authority semantics, and ChatWithStars for certification plus deterministic business side-effect truth. ADR-0008 fixes canonical ownership in `packages/agents`, `packages/skills`, `packages/plugins`, `packages/tools` and `packages/workflows`.
+- AI Town + ChatWithStars world simulation comparison complete: AI Town selected as primary simulation-mechanics donor (ordered inputs, monotonic tick/step time, generation conflict rejection, transactional commits, autonomous/spatial mechanics, liveness); ChatWithStars selected as primary life/canon/governance donor (Constitution gating, routines/story arcs, provenance/visibility, immutable approved canon, tenant/privacy separation). `packages/world` is sole canonical world/life authority. ADR-0009 fixes the boundary.
 
 ### Reference source vault added
 
@@ -131,10 +132,22 @@ Donor Agent/runtime/checkpoint objects never become Character, memory or busines
 
 Do not return to the old four-source coverage-proof plan yet.
 
-1. **Next:** compare AI Town + ChatWithStars for world simulation and record the canonical world/life-state boundary.
-2. Produce any remaining explicit donor decisions/ADRs and freeze provisional subsystem ownership.
-3. Verify Phase 0A definition-of-done across all 17 source maps/licenses/primary conflicts.
+1. **Next:** run the Phase 0A definition-of-done audit across all 17 pinned sources: source-map completeness, license/provenance, major ledger coverage and unresolved primary-candidate conflicts.
+2. Produce any remaining explicit donor decisions/ADRs discovered by that audit and freeze provisional subsystem ownership.
+3. Verify `docs/SOURCE-OWNERSHIP.md` has no unresolved foundation primary-candidate conflicts.
 4. Only then continue Phase 0B exhaustive source coverage and A/B/C classification across the complete reference vault.
+
+## World simulation comparison — completed
+
+ADR-0009 and `docs/migration/WORLD-SIMULATION-ADOPTION-BOUNDARY.md` decide:
+- `packages/world` is the sole canonical world/life authority;
+- AI Town supplies simulation-engine mechanics, not canonical domain objects;
+- ChatWithStars supplies life-state/canon/governance semantics;
+- durable world generations/claims replace process-local overlap locking;
+- simulation time, wall-clock time, validity time and recorded time remain distinct;
+- spatial simulation is optional;
+- private relationship memory cannot mutate shared canon;
+- memory, workflows, identity and presence consume world contracts without becoming world authority.
 
 ## Memory comparison — completed
 
