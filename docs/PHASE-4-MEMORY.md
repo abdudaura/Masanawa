@@ -2,7 +2,7 @@
 
 Status: ACTIVE  
 Started: 2026-10-02  
-Active branch: `phase4-memory-deletion-context`
+Active branch: `phase4-memory-reflection-compaction`
 
 Phase 3 non-spatial Identity/World acceptance is closed by PR #28, merge
 `02c2c99153e904b4f9d2f403328a1e3b6effc3f1`. Optional spatial simulation remains
@@ -362,7 +362,8 @@ Validation evidence:
 - the complete `check` job passed frozen install, strict TypeScript, all unit tests,
   PostgreSQL 18 + pgvector migrations/integration fixtures and production builds;
 - PR #34 has no review threads or comments;
-- final documentation head must pass the same gate before merge.
+- final documentation head `dad3f5fe36a3fcda5c036e21035c26458e3446c9` passed Foundation CI run 306;
+- PR #34 merged as `09cb24218720040cc8e7ccbe59896c5380272b0e`.
 
 Rules:
 - tombstone is a canonical lifecycle transition, not physical purge;
@@ -387,6 +388,78 @@ After this slice:
    durable scoped memory work is admitted;
 4. prove reflection/consolidation/flush retries cannot widen scope or duplicate durable
    memories.
+
+## Seventh canonical slice — implementation gate passed
+
+Goal: evidence-backed retry-idempotent reflection/consolidation plus safe compaction
+flush admission.
+
+Implemented:
+- deterministic reflection identity binds tenant, exact MemoryScope, purpose, reflector
+  key/version and a sorted set of exact source MemoryRecord/MemoryRevision/content hashes;
+- generated reflection wording and caller-supplied target IDs are deliberately outside
+  retry identity, so model phrasing drift cannot create duplicate durable reflections;
+- current source snapshots can be converted into immutable replay descriptors only while
+  active and current;
+- reflection output is persisted as an ordinary canonical MemoryRecord of type
+  `reflection` with generated provenance tied to the reflection fingerprint;
+- PostgreSQL `memory.reflections` and `memory.reflection_sources` are immutable
+  derivation/audit tables bound to the canonical reflection record/revision;
+- first commit locks the exact sorted source set, revalidates current revision/content
+  hash and exact scope, then atomically creates the reflection record plus derivation
+  audit;
+- competing first commits serialize on source records and recheck the derivation audit,
+  preventing duplicate target records;
+- exact retries reuse the already-committed reflection before current-source validation,
+  so later source supersession/absorption does not invalidate immutable historical
+  provenance;
+- cross-Relationship first commit fails closed and source revision drift fails before
+  any reflection record/audit persists;
+- reflection→reflection consolidation uses the existing same-scope/type `absorbs`
+  lineage transition, preserving both source reflection revision/evidence and immutable
+  derivation audit;
+- reflection header/source audit rows reject update/delete mutation;
+- compaction flush admission is a thin wrapper over existing durable extraction custody,
+  preserving the same idempotency fingerprint, retry, lease and fence semantics;
+- `safeToCompact: true` is returned only after the PostgreSQL transaction that admitted
+  or reused exact-scope extraction custody has committed;
+- a repeated flush with harmless scheduling drift reuses the same extraction job, while
+  scope drift under the same flush key conflicts instead of widening authorization;
+- invalid source hashes fail before admission, so failed flush preparation never grants
+  permission to discard context.
+
+Validation evidence:
+- hardened implementation head `4b21258b6d3ea37d296157468952c2d9be8c22d2`
+  passed Foundation CI run 309;
+- the complete `check` job passed frozen install, strict TypeScript, all unit tests,
+  PostgreSQL 18 + pgvector migrations/integration fixtures and production builds;
+- PR #35 has no review threads or comments;
+- final documentation head must pass the same gate before merge.
+
+Rules:
+- reflection is a canonical MemoryRecord of type `reflection`, not a second storage
+  layer;
+- reflection identity is bound to exact source MemoryRecord/MemoryRevision evidence,
+  purpose and reflector identity so retry cannot create duplicate durable memory;
+- every reflection source must share the exact output MemoryScope; cross-scope
+  reflection fails closed and broader publication still requires the existing governed
+  scope-publication action;
+- reflection provenance remains queryable even after source lifecycle later changes;
+- consolidation/absorption uses existing canonical lifecycle lineage and never deletes
+  source revisions/evidence;
+- compaction flush reuses durable extraction custody and never invents a parallel
+  cognition queue;
+- compaction may proceed only after exact-scope durable memory work is successfully
+  admitted/reused;
+- retry/recovery cannot widen scope or silently change source evidence.
+
+After this slice:
+1. perform the Phase 4 acceptance closure audit against every canonical target and donor
+   boundary;
+2. close any remaining contradiction/temporal held-out or compaction acceptance gaps
+   found by that audit;
+3. if all targets are evidenced, close Phase 4 rather than inventing additional memory
+   features.
 
 ## Phase 4 acceptance targets
 

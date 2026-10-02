@@ -36,7 +36,7 @@ of architectural feature selection.
 
 **Phase 4 — Memory.**
 
-Current implementation branch: `phase4-memory-deletion-context`.
+Current implementation branch: `phase4-memory-reflection-compaction`.
 
 Phase 0A/0B, Phase 1 and Phase 2 are closed.
 
@@ -119,42 +119,39 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 
 ## Immediate work
 
-PR #34 is the active deletion/context slice on
-`phase4-memory-deletion-context`.
+PR #35 is the active reflection/consolidation + compaction-flush slice on
+`phase4-memory-reflection-compaction`.
 
-Hardened implementation head `7994de231a27f510cff09ad2db8fe3b71cc307b4`
-passed Foundation CI run 305. The complete gate passed frozen install, strict
+Hardened implementation head `4b21258b6d3ea37d296157468952c2d9be8c22d2`
+passed Foundation CI run 309. The complete gate passed frozen install, strict
 TypeScript, all unit tests, PostgreSQL 18 + pgvector migrations/integration fixtures and
-production builds. PR #34 has no review threads or comments.
+production builds. PR #35 has no review threads or comments.
 
 The branch now includes:
-- governed `memory.record.tombstone` prepare/execute with exact scope authority,
-  Operation identity and one-time Approval consumption;
-- immutable tombstone audit plus database lifecycle-CAS/orphan-audit/reactivation
-  guards;
-- stale-preparation rejection before approval consumption;
-- immediate lexical/vector/entity/temporal/hybrid suppression from canonical tombstone
-  state, before projection cleanup;
-- tombstone-only projection cleanup that preserves canonical revisions/evidence;
-- bounded deterministic context compilation with record/revision/scope provenance,
-  oversized-item skipping and conflicting-duplicate rejection;
-- one-snapshot read-only REPEATABLE READ hybrid retrieval→context compilation;
-- end-to-end fixtures proving raw unaudited transition rejection, replay safety,
-  preserved verbatim evidence and context disappearance after tombstone.
+- deterministic reflection identity from exact source record/revision/content-hash
+  evidence, exact scope, purpose and reflector identity;
+- canonical MemoryRecord(type=`reflection`) output plus immutable reflection/source
+  derivation audit;
+- serialized first commit with current source revision/hash/scope validation;
+- exact retry replay even after later source lifecycle absorption;
+- cross-scope and stale-source rejection before reflection persistence;
+- reflection→reflection consolidation through existing `absorbs` lineage with
+  provenance preservation;
+- compaction flush admission through the already-proven extraction queue rather than a
+  parallel worker system;
+- `safeToCompact` only after committed durable admission/reuse;
+- flush replay under schedule drift and fail-closed conflict on scope drift.
 
 Immediate next steps:
-1. verify the final documentation-head Foundation CI for PR #34;
-2. fix any real failure; if green, merge PR #34;
-3. create a fresh branch from merged `main` for reflection/consolidation and
-   compaction-flush custody;
-4. make reflection identity deterministic from exact source record/revision evidence so
-   retry cannot duplicate durable derived memory;
-5. keep reflection/consolidation inside the exact source MemoryScope unless a separate
-   governed scope-publication action is explicitly invoked;
-6. preserve source evidence through reflection and absorption, and use existing
-   lifecycle lineage rather than destructive replacement;
-7. make compaction/context-loss flush first admit durable memory work transactionally,
-   with replayable custody and fail-closed scope checks.
+1. verify final documentation-head Foundation CI for PR #35;
+2. fix any real failure; if green, merge PR #35;
+3. create a fresh branch from merged `main` for the Phase 4 acceptance closure audit;
+4. systematically verify every acceptance target in `docs/PHASE-4-MEMORY.md` against
+   code, migrations and CI fixtures;
+5. implement only concrete gaps found by the audit, especially contradiction/temporal
+   held-out coverage or compaction-flush scope proof if evidence is incomplete;
+6. close Phase 4 when all canonical targets are evidenced instead of expanding the
+   memory surface without a documented requirement.
 
 The requested post-freeze donor boundary remains unchanged: MemPalace contributes
 retrieval/evaluation/storage-contract behavior inside canonical Masanawa memory ports;
