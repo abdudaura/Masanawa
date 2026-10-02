@@ -189,9 +189,41 @@ Rules:
 - dead-lettered work is terminal and cannot stall later eligible extraction jobs;
 - every attempt remains auditable without storing raw provider/model errors.
 
-## Fourth canonical slice — active
+## Fourth canonical slice — implementation gate passed
 
 Goal: rebuildable projection generations plus authorization-first lexical retrieval.
+
+Implemented:
+- canonical projection-generation contracts for lexical/vector/entity/temporal signals;
+- immutable generation compatibility identity plus building/current/retired lifecycle;
+- vector compatibility metadata binds provider key, model key and dimension before any
+  vector signal is enabled;
+- non-empty explicit authorized MemoryScope predicates with adapter capability
+  fail-closed checks;
+- PostgreSQL lexical projections bound to exact canonical record/revision/type/scope,
+  canonical document text and a deterministic source-content hash;
+- database trigger rejects projection rows whose text/type/scope/revision diverges from
+  current active canonical memory;
+- generation activation refuses incomplete or stale builds and atomically retires the
+  previous current generation;
+- PostgreSQL lexical search applies exact authorized scopes before ranking, reads only
+  the current generation, revalidates canonical current revision/lifecycle/scope and
+  excludes expired revisions;
+- stale projections stop returning results immediately after canonical revision drift;
+- rebuild fixture proves a replacement generation reproduces the same authorized
+  Relationship result set before the old retired generation is deleted;
+- conformance fixture proves identical query text in two Relationship scopes never
+  crosses the explicit authorization predicate;
+- direct SQL forged projection text is rejected by PostgreSQL;
+- future vector-generation compatibility can be persisted, but vector activation/search
+  remains deliberately unsupported until its own tested slice.
+
+Validation evidence:
+- PR #32 implementation head `a3d4c1edf7df7e485381ac431ba867833f3a7383`
+  passed Foundation CI run 275;
+- the complete `check` job passed frozen install, strict TypeScript, unit tests,
+  PostgreSQL 18 migrations/integration fixtures and production builds;
+- final documentation head must pass the same gate before PR #32 merges.
 
 Rules:
 - canonical MemoryRecord/MemoryRevision remains the only retrieval truth;
