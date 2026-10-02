@@ -2,15 +2,23 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-const suites = Object.freeze([
+const futureSuites = Object.freeze([
   "contracts",
   "integration",
   "e2e",
   "parity",
+] as const);
+
+const requiredSuites = Object.freeze([
   "security",
   "recovery",
   "load",
   "chaos",
+] as const);
+
+const suites = Object.freeze([
+  ...futureSuites,
+  ...requiredSuites,
 ] as const);
 
 interface RootManifest {
@@ -63,9 +71,14 @@ describe("test topology", () => {
       "pnpm test:architecture",
     );
 
-    for (const suite of suites) {
+    for (const suite of futureSuites) {
       expect(manifest.scripts?.[`test:${suite}`]).toBe(
         `vitest run tests/${suite} --passWithNoTests`,
+      );
+    }
+    for (const suite of requiredSuites) {
+      expect(manifest.scripts?.[`test:${suite}`]).toBe(
+        `vitest run tests/${suite}`,
       );
     }
   });
@@ -81,13 +94,17 @@ describe("test topology", () => {
     expect(workflow).not.toContain("run: pnpm check");
   });
 
-  it("starts recovery and chaos with real deterministic evidence, not sentinels", () => {
-    expect(
-      fs.existsSync(path.resolve("tests/recovery/restart-scenario.test.ts")),
-    ).toBe(true);
-    expect(
-      fs.existsSync(path.resolve("tests/chaos/fault-injection.test.ts")),
-    ).toBe(true);
+  it("requires real security/recovery/load/chaos evidence, not sentinels", () => {
+    const requiredEvidence = [
+      "tests/security/credential-secrecy.test.ts",
+      "tests/recovery/restart-scenario.test.ts",
+      "tests/load/provider-registry-load.test.ts",
+      "tests/chaos/fault-injection.test.ts",
+    ];
+
+    for (const file of requiredEvidence) {
+      expect(fs.existsSync(path.resolve(file)), `missing ${file}`).toBe(true);
+    }
     expect(
       fs.existsSync(path.resolve("test/support/fault-injection.test.ts")),
     ).toBe(false);

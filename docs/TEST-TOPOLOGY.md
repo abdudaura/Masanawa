@@ -70,9 +70,15 @@ The root package exposes:
 - `test:load`;
 - `test:chaos`.
 
-Targeted commands are for focused local/CI diagnosis. Empty future suites use
-`--passWithNoTests`; emptiness is not evidence that a production gate has been
-satisfied. Later production tasks must add the real acceptance cases they own.
+Targeted commands are for focused local/CI diagnosis. Contracts/integration/e2e/parity
+may remain empty until their owning production task supplies real evidence and therefore
+use `--passWithNoTests`. Security/recovery/load/chaos are non-empty blocking suites and
+must not use that escape hatch.
+
+Task 056 seeds those required suites with cross-cutting evidence rather than copies of
+package tests: credential-secret serialization redaction, crash-after-side-effect receipt
+replay, a 2,000-provider deterministic registry load smoke, and deterministic injected
+fault-plan behavior.
 
 ## 5. Load and chaos discipline
 
