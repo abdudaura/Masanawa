@@ -154,4 +154,64 @@ describe("memory context compiler", () => {
       }),
     );
   });
+  it("orders by fusion score and rejects conflicting duplicate records", () => {
+    const tenantId = createCanonicalId("tenant");
+    const relationshipId = createCanonicalId("relationship");
+    const lower = hit({
+      tenantId,
+      relationshipId,
+      content: "lower",
+      score: 1,
+    });
+    const higher = hit({
+      tenantId,
+      relationshipId,
+      content: "higher",
+      score: 2,
+    });
+
+    const ordered = compileMemoryContext(
+      {
+        tenantId,
+        scopePredicate: createMemoryScopePredicate([
+          { kind: "relationship", relationshipId },
+        ]),
+        hits: [lower, higher],
+        maxItems: 5,
+        maxTokens: 100,
+      },
+      tokenCounter,
+    );
+    expect(ordered.items.map((item) => item.provenance.memoryRecordId)).toEqual([
+      higher.memoryRecordId,
+      lower.memoryRecordId,
+    ]);
+
+    const conflicting = {
+      ...higher,
+      memoryRecordId: lower.memoryRecordId,
+      memoryRevisionId: createCanonicalId("memory-revision"),
+      content: "conflicting revision",
+    } satisfies MemoryFusedHit;
+
+    expect(() =>
+      compileMemoryContext(
+        {
+          tenantId,
+          scopePredicate: createMemoryScopePredicate([
+            { kind: "relationship", relationshipId },
+          ]),
+          hits: [lower, conflicting],
+          maxItems: 5,
+          maxTokens: 100,
+        },
+        tokenCounter,
+      ),
+    ).toThrow(
+      expect.objectContaining({
+        code: "memory.context_canonical_mismatch",
+      }),
+    );
+  });
+
 });
