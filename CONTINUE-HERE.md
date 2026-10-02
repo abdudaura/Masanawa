@@ -137,7 +137,7 @@ Foundation CI run 379, PR #47 merged as
 `d0a198dbdec1af08e3c8f1378da0985db628eb6e`, and merged-main Foundation CI
 run 380 passed on that exact merge commit.
 
-**Current: Task 058 of 150 — Establish environment/config/deployment contract conventions and validate them with env-schema checks.**\n\nActive implementation branch: `task058-env-deployment-contracts`. Task 058 now has `docs/CONFIGURATION-DEPLOYMENT.md`, `config/production-env.json`, and architecture enforcement for registered production environment reads, secret classification, and package isolation from `process.env`. Acceptance/CI is pending; do not mark complete before green evidence and merge.
+**Current: Task 059 of 150 — Implement canonical Skill and immutable SkillVersion schemas.**\n\nTask 058 is closed on merged `main` at `0a8376a69a9410c8bee48ef03d0b939a31188da9`; Foundation CI run 398 passed on that exact merge commit. The configuration/deployment contract is canonical in `docs/CONFIGURATION-DEPLOYMENT.md`, with `config/production-env.json` and `test/architecture/environment-contracts.test.ts` enforcing it.\n\nTask 059 must reconcile the preserved `phase6-skills-foundation` work against current `main`; do not merge that stale branch wholesale because it diverged before Tasks 051-058 structure hardening.\n\nActive implementation branch: `task058-env-deployment-contracts`. Task 058 now has `docs/CONFIGURATION-DEPLOYMENT.md`, `config/production-env.json`, and architecture enforcement for registered production environment reads, secret classification, and package isolation from `process.env`. Acceptance/CI is pending; do not mark complete before green evidence and merge.
 
 Tasks 001-057 are merged complete.
 
