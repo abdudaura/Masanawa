@@ -23,25 +23,14 @@ export function createPostgresToolOperationStore(
       );
     },
 
-    load(operationId: OperationId): Promise<OperationRecord | null> {
-      return withTransaction(pool, async (client) => {
-        const tenant = await client.query<{
-          tenant_id: ToolOperationPrepareInput["tenantId"];
-        }>(
-          `SELECT tenant_id
-             FROM events.operations
-            WHERE operation_id = $1`,
-          [operationId],
-        );
-        const row = tenant.rows[0];
-        if (!row) {
-          return null;
-        }
-        return loadOperation(client, row.tenant_id, operationId);
-      });
+    load(tenantId, operationId: OperationId): Promise<OperationRecord | null> {
+      return withTransaction(pool, (client) =>
+        loadOperation(client, tenantId, operationId),
+      );
     },
 
     transition(
+      tenantId,
       operationId: OperationId,
       from: OperationState,
       to: OperationState,
@@ -49,6 +38,7 @@ export function createPostgresToolOperationStore(
       return withTransaction(pool, (client) =>
         transitionOperation(client, {
           operationId,
+          tenantId,
           from,
           to,
         }),
