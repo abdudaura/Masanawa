@@ -1,6 +1,7 @@
 import {
   PlatformError,
   isCanonicalId,
+  parseCanonicalId,
   type CredentialRefId,
   type OperationId,
 } from "@masanawa/contracts";
@@ -101,7 +102,10 @@ export async function withProviderCredential<T>(
       destinationKey: `provider:${provider.key}`,
       operationId: context.operationId,
       authorityContextId: context.authority.authorityContextId,
-      correlationId: context.authority.correlationId,
+      correlationId: parseCanonicalId(
+        "correlation",
+        context.authority.correlationId,
+      ),
       principalKey: principalKey(context.authority.principal),
     },
     use,
