@@ -119,17 +119,22 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 
 ## Immediate work
 
-1. open/validate the `phase4-memory-lifecycle` PR with the complete
-   Foundation CI/PostgreSQL 18 gate;
-2. fix every real typecheck, unit, migration, integration or build failure;
-3. when green, record CI evidence and merge the lifecycle/publication slice;
-4. continue Phase 4 with idempotent extraction queue/retry/dead-letter;
+1. verify the automatically triggered Foundation CI run on the final
+   documentation-only PR #30 head;
+2. fix any real failure; if green, merge PR #30;
+3. on a fresh branch from merged `main`, implement idempotent extraction
+   queue/retry/dead-letter with durable leases, bounded attempts and poison-item
+   isolation;
+4. run PostgreSQL 18 recovery/concurrency fixtures and merge when green;
 5. only after lifecycle/liveness is sound, add retrieval projections.
 
 The lifecycle/publication implementation now includes independent lifecycle CAS,
 immutable same-scope/type lineage, current-authority + one-time-approval publication,
 and PostgreSQL fixtures for stale writers, preserved old evidence, cross-scope
 rejection and source-scope immutability.
+
+Foundation CI run 253 passed the complete gate on implementation head
+`eb9c92db62d9a4d877bdcb6e92a8e35c93354619`.
 
 Do not skip directly to vector search. Retrieval quality cannot outrank canonical scope,
 provenance, correction, deletion or liveness.
