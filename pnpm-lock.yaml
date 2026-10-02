@@ -176,7 +176,7 @@ importers:
         specifier: 5.0.3
         version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
 
-  adapters/runtime/node:
+  infra/runtime/node:
     dependencies:
       '@masanawa/contracts':
         specifier: workspace:*
@@ -397,7 +397,7 @@ importers:
         version: link:../../packages/contracts
       '@masanawa/node-runtime':
         specifier: workspace:*
-        version: link:../../adapters/runtime/node
+        version: link:../../infra/runtime/node
       '@masanawa/postgres':
         specifier: workspace:*
         version: link:../../adapters/storage/postgres
@@ -425,7 +425,7 @@ importers:
         version: link:../../packages/contracts
       '@masanawa/node-runtime':
         specifier: workspace:*
-        version: link:../../adapters/runtime/node
+        version: link:../../infra/runtime/node
       '@masanawa/postgres':
         specifier: workspace:*
         version: link:../../adapters/storage/postgres
@@ -453,7 +453,7 @@ importers:
         version: link:../../packages/contracts
       '@masanawa/node-runtime':
         specifier: workspace:*
-        version: link:../../adapters/runtime/node
+        version: link:../../infra/runtime/node
       '@masanawa/postgres':
         specifier: workspace:*
         version: link:../../adapters/storage/postgres
