@@ -4,3 +4,4 @@ export * from "./repository.js";
 export * from "./governance.js";
 export * from "./extraction.js";
 export * from "./projection.js";
+export * from "./retrieval.js";
