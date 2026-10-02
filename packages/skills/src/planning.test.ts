@@ -119,10 +119,10 @@ describe("Skill execution planning", () => {
     );
 
     expect(plan.rootSkillVersionId).toBe(root.skillVersionId);
+    const middle = [left.skillVersionId, right.skillVersionId].sort();
     expect(plan.orderedSkillVersionIds).toEqual([
       shared.skillVersionId,
-      left.skillVersionId,
-      right.skillVersionId,
+      ...middle,
       root.skillVersionId,
     ]);
     expect(plan.steps.map((step) => step.ordinal)).toEqual([0, 1, 2, 3]);
