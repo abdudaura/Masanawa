@@ -141,6 +141,7 @@ export function createSkillRegistry(
   const byVersionId = new Map<SkillVersionId, RegisteredSkill>();
   const byKeyVersion = new Map<string, SkillVersionId>();
   const skillKeyById = new Map<SkillId, string>();
+  const skillIdByKey = new Map<string, SkillId>();
   const readiness = new Map<SkillVersionId, SkillReadiness>();
 
   function executionPlan(
@@ -271,6 +272,18 @@ export function createSkillRegistry(
           );
         }
 
+        const existingSkillId = skillIdByKey.get(definition.key);
+        if (
+          existingSkillId !== undefined &&
+          existingSkillId !== definition.skillId
+        ) {
+          throw skillError(
+            "skill.registration_skill_key_conflict",
+            "conflict",
+            "Skill key is already bound to a different SkillId",
+          );
+        }
+
         for (const other of newDefinitions) {
           if (
             other.skillId === definition.skillId &&
@@ -280,6 +293,16 @@ export function createSkillRegistry(
               "skill.registration_skill_id_conflict",
               "conflict",
               "SkillId cannot bind multiple skill keys in one batch",
+            );
+          }
+          if (
+            other.key === definition.key &&
+            other.skillId !== definition.skillId
+          ) {
+            throw skillError(
+              "skill.registration_skill_key_conflict",
+              "conflict",
+              "Skill key cannot bind multiple SkillIds in one batch",
             );
           }
         }
@@ -305,6 +328,7 @@ export function createSkillRegistry(
           definition.skillVersionId,
         );
         skillKeyById.set(definition.skillId, definition.key);
+        skillIdByKey.set(definition.key, definition.skillId);
       }
 
       return Object.freeze(
