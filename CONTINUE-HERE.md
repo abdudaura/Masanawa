@@ -139,12 +139,16 @@ run 380 passed on that exact merge commit.
 
 **Current: Task 057 of 150 — Establish repository-wide public API/versioning/deprecation conventions.**
 
+Active implementation branch: `task057-api-lifecycle`. Task 057 remains incomplete until its Contracts/typecheck/test/build evidence is green, merged, and verified on merged `main`.
+
 Tasks 001-056 are merged complete.
 
 Task 056 implementation head `b17d4ba53d23abb9abf40aa7800b1c461dc9fa90` passed
 Foundation CI run 386. PR #49 merged as
 `ed119581974cfb146da0b6e0a5e119eda8731df8`, and merged-main Foundation CI
-run 387 passed on that exact merge commit.
+run 387 passed. Supplemental Security/Load/Recovery hardening PR #50 merged as
+`b07565a315c35dc1ef840c89845ccfd2836c2da4`; merged-main Foundation CI run
+391 passed on that exact commit.
 
 Task 056 established:
 - canonical cross-cutting suites for contracts/integration/e2e/parity/security/recovery/load/chaos;
@@ -154,7 +158,16 @@ Task 056 established:
 - visible Foundation CI Typecheck/Test/Build stages;
 - architecture enforcement for suite directories, scripts, discovery and workflow wiring.
 
-Start Task 057 from current merged `main`; do not reuse the completed Task 056 branch.
+Implemented on Task 057 branch:
+- added one machine-readable API lifecycle manifest separating workspace SemVer, HTTP majors, schema versions and domain registry versions;
+- activated the Contracts suite as blocking evidence;
+- enforced root-only reusable workspace exports and repository-wide no-deep-import rules;
+- enforced supported HTTP major prefixes with only /healthz and /readyz unversioned;
+- added a machine-audited deprecation registry and required source annotations for deprecated workspace symbols;
+- documented immutable event/payload and Tool/Provider version semantics.
+
+Task 057 remains incomplete until the branch passes the complete gate, merges to main,
+and merged-main CI passes.
 
 The existing `phase6-skills-foundation` branch contains valid unmerged Phase 6 work
 based on pre-roadmap `main`. Preserve it, but do not merge it ahead of Tasks 054-058.

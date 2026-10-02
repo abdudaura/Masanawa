@@ -318,7 +318,21 @@ Architecture tests must:
 
 Exceptions require an ADR and an updated matrix before merge.
 
+## Public package API lifecycle
+
+Cross-workspace imports use only the package root public entrypoint. Deep
+`@masanawa/<package>/...` imports are forbidden across packages, adapters, infra,
+services and apps.
+
+Reusable workspace package metadata follows SemVer syntax and exposes only the canonical
+root export unless an explicitly reviewed public subpath is added. Public compatibility,
+version-domain separation and deprecation requirements are defined in
+`API-LIFECYCLE.md`, with structural enforcement in
+`test/architecture/public-api-lifecycle.test.ts` and release evidence in the Contracts
+suite.
 
 ## Production structure companion
 
-`docs/PRODUCT-PROJECT-STRUCTURE.md` records the production repository topology and refactor thresholds. `docs/PRODUCTION-MASTER-TASKS.md` is the canonical numbered completion ledger.
+`docs/PRODUCT-PROJECT-STRUCTURE.md` records the production repository topology and
+refactor thresholds. `docs/PRODUCTION-MASTER-TASKS.md` is the canonical numbered
+completion ledger.

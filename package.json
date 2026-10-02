@@ -17,7 +17,7 @@
     "build": "pnpm -r --if-present build",
     "test:ci": "vitest run",
     "test:architecture": "vitest run test/architecture",
-    "test:contracts": "vitest run tests/contracts --passWithNoTests",
+    "test:contracts": "vitest run tests/contracts",
     "test:integration": "vitest run tests/integration --passWithNoTests",
     "test:e2e": "vitest run tests/e2e --passWithNoTests",
     "test:parity": "vitest run tests/parity --passWithNoTests",

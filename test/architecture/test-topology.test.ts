@@ -3,13 +3,13 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 const futureSuites = Object.freeze([
-  "contracts",
   "integration",
   "e2e",
   "parity",
 ] as const);
 
 const requiredSuites = Object.freeze([
+  "contracts",
   "security",
   "recovery",
   "load",
@@ -96,6 +96,7 @@ describe("test topology", () => {
 
   it("requires real security/recovery/load/chaos evidence, not sentinels", () => {
     const requiredEvidence = [
+      "tests/contracts/public-api-lifecycle.test.ts",
       "tests/security/credential-secrecy.test.ts",
       "tests/recovery/restart-scenario.test.ts",
       "tests/load/provider-registry-load.test.ts",
