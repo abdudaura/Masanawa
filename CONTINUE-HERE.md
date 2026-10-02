@@ -139,6 +139,8 @@ run 380 passed on that exact merge commit.
 
 **Current: Task 066 of 150 — Implement risk/capability classification.**
 
+Active implementation branch: `task066-risk-capability-classification`. Task 066 adds immutable Skill risk/capability envelopes and fail-closed validation that referenced ToolVersions cannot hide stronger risk, side effects, sensitivity, or authority requirements. Acceptance/CI is pending.
+
 
 
 
