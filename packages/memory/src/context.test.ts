@@ -1,12 +1,12 @@
-import { createCanonicalId } from "@masanawa/contracts";
+import {\n  createCanonicalId,\n  type RelationshipId,\n  type TenantId,\n} from "@masanawa/contracts";
 import { describe, expect, it } from "vitest";
 import { compileMemoryContext } from "./context.js";
 import { createMemoryScopePredicate } from "./projection.js";
 import type { MemoryFusedHit } from "./fusion.js";
 
 function hit(input: {
-  tenantId: ReturnType<typeof createCanonicalId>;
-  relationshipId: ReturnType<typeof createCanonicalId>;
+  tenantId: TenantId;
+  relationshipId: RelationshipId;
   content: string;
   score: number;
 }): MemoryFusedHit {
@@ -23,7 +23,7 @@ function hit(input: {
     sourceContentHash: "a".repeat(64),
     fusionScore: input.score,
     contributions: [],
-  } as MemoryFusedHit;
+  };
 }
 
 describe("memory context compiler", () => {
