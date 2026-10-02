@@ -15,7 +15,7 @@ Lifecycle:
 
 ## Phase 0A — Landscape expansion and donor selection
 
-Status: complete. Phase 0B, Phase 1, Phase 2, the non-spatial Phase 3 core and Phase 4 Memory are closed; current active work is Phase 5 Tools and Providers.
+Status: complete. Phase 0B, Phase 1, Phase 2, the non-spatial Phase 3 core, Phase 4 Memory and Phase 5 Tools and Providers are closed; current active work is Phase 6 Skills.
 
 Inputs: all pinned submodules in `references/sources/` and `migration/SOURCE-LOCK.md`.
 
@@ -95,7 +95,7 @@ Final closure:
 
 ## Phase 5 — Tools and providers
 
-Status: active. Implementation record: `PHASE-5-TOOLS-PROVIDERS.md`.
+Status: complete. Closure audit: `PHASE-5-CLOSURE-AUDIT.md`. Implementation record: `PHASE-5-TOOLS-PROVIDERS.md`.
 
 Implement capability registry, Tool contract/executor, provider registry, credentials,
 readiness/health, idempotency/retry/reconciliation and execution security.
@@ -104,6 +104,8 @@ The first slice establishes canonical versioned Tool/Provider contracts and fail
 selection/readiness semantics before any external provider adapter is admitted.
 
 ## Phase 6 — Skills
+
+Status: active. Implementation record: `PHASE-6-SKILLS.md`.
 
 Implement the selected unified skill architecture after OpenJarvis/OpenClaw/MAF comparison: manifest/contract, manager, parser/import, dependencies, execution/SkillTool, provenance/trust, governance/certification/readiness and trace metadata.
 
