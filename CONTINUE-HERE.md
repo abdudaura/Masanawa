@@ -137,9 +137,21 @@ Foundation CI run 379, PR #47 merged as
 `d0a198dbdec1af08e3c8f1378da0985db628eb6e`, and merged-main Foundation CI
 run 380 passed on that exact merge commit.
 
-**Current: Task 058 of 150 — Establish environment/config/deployment contract conventions and validate them with env-schema checks.**\n\nActive implementation branch: `task058-env-deployment-contracts`. Task 058 now has `docs/CONFIGURATION-DEPLOYMENT.md`, `config/production-env.json`, and architecture enforcement for registered production environment reads, secret classification, and package isolation from `process.env`. Acceptance/CI is pending; do not mark complete before green evidence and merge.
+**Current: Task 059 of 150 — Implement canonical Skill and immutable SkillVersion schemas.**\n\n
+Tasks 001-058 are merged complete.
 
-Tasks 001-057 are merged complete.
+
+Task 058 implementation head `bc6fb045a57759c65531e54f35599d1b91b2b993` passed
+Foundation CI run 397. PR #52 merged as
+`0a8376a69a9410c8bee48ef03d0b939a31188da9`, and merged-main Foundation CI
+run 398 passed on that exact merge commit.
+
+Task 058 established:
+- machine-readable production environment registry and ownership/classification rules;
+- explicit composition-root-only environment access with domain packages isolated from `process.env`;
+- Security-aligned secret/bootstrap conventions without raw secret material in source-controlled manifests;
+- canonical coarse deployment topology for Gateway/Worker/Presence/Ops and vendor-neutral hosting;
+- architecture enforcement for registered production environment reads and secret classification.
 
 Task 057 implementation head `fbdd51b0b113f8d40c625086d0a851c3de60a7f0` passed
 Foundation CI run 394. PR #51 merged as
@@ -233,9 +245,8 @@ PostgreSQL 18 + pgvector integration suites and production builds.
 The Phase 5 acceptance audit is PASS and its final merge is green.
 
 Immediate next:
-1. implement Task 057 from current merged `main`: establish repository-wide public API/versioning/deprecation conventions and enforce them without inventing compatibility layers;
-2. then continue Task 058 in ledger order;
-3. only after Task 058 closes, reconcile the valid `phase6-skills-foundation` work onto current `main` and continue Task 059;
+1. reconcile the valid `phase6-skills-foundation` work onto current merged `main` without duplicating already-valid Skill work;
+2. continue Task 059 in ledger order and preserve provider-neutral Skill ownership;
 4. keep Skills provider-neutral so future assigned Android devices participate through the same Tool/Provider architecture;
 5. use Paperclip only as a bounded workflow/runtime/Ops behavior donor and preserve Masanawa Authority/Operation/Provider boundaries.
 
