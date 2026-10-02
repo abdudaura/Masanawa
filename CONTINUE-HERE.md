@@ -137,17 +137,28 @@ Foundation CI run 379, PR #47 merged as
 `d0a198dbdec1af08e3c8f1378da0985db628eb6e`, and merged-main Foundation CI
 run 380 passed on that exact merge commit.
 
-**Current: Task 062 of 150 — Implement Skill dependency graph and cycle/conflict validation.**
-
-Active implementation branch: `task062-skill-dependency-graph`. Existing registry graph logic is being hardened with atomic cycle/missing/depth validation tests and stable SkillId↔key conflict enforcement. Acceptance/CI is pending.
-
-
-
-Tasks 001-061 are merged complete.
+**Current: Task 063 of 150 — Implement Skill execution planning/composition.**
 
 
 
 
+Tasks 001-062 are merged complete.
+
+
+
+
+
+
+Task 062 implementation head `0610eccd5b58f8be00b12fa56706e4430fdb0406` passed
+Foundation CI run 415. PR #60 merged as
+`df1d9c4f1033e2b5f51611da68e183ad6d760edc`, and merged-main Foundation CI
+run 416 passed on that exact merge commit.
+
+Task 062 established:
+- atomic, order-independent validation of exact immutable SkillVersion dependency graphs before registry mutation;
+- fail-closed missing-dependency, cycle and configured-depth validation without partial registration;
+- exact-replay idempotency with changed-version, key/version and logical identity conflicts rejected;
+- one-to-one stable SkillId↔logical-key ownership across versions and within registration batches.
 
 Task 061 implementation head `6072e2ca40aea0f852f61b4c008a5b18d8251dae` passed
 Foundation CI run 411. PR #58 merged as
