@@ -181,8 +181,6 @@ This slice adds:
 - exact replay returns durable receipt evidence without re-dispatch;
 - PostgreSQL ToolOperationStore receipt admission/listing through canonical
   `events.external_receipts`;
-- stricter exact observation replay checks including payload reference and observation
-  timestamp;
 - unit and PostgreSQL acceptance coverage for durable receipt replay and persistence
   failure handling.
 
