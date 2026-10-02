@@ -108,9 +108,16 @@ Conversation transcript storage may be physically colocated or separately partit
 - principal/role assignments
 - policy revisions
 - approval records
-- device registrations
 - device credential generations
-- pairing state
+- pairing authorization/security state
+
+### devices-owned
+
+- device registrations/lifecycle
+- device capability publications/readiness
+- character_device_assignments
+- device health/last-seen projections required for provider selection
+- device operation custody/reference state; canonical consequential Operation truth remains events/operation-owned
 
 ### events-owned
 
