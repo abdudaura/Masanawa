@@ -36,7 +36,7 @@ of architectural feature selection.
 
 **Phase 5 — Tools and Providers.**
 
-Current implementation branch: `phase5-tool-execution-reconciliation`.
+Current implementation branch: `phase5-tool-receipts-replay`.
 
 Phase 0A/0B, Phase 1 and Phase 2 are closed.
 
@@ -120,12 +120,13 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 ## Immediate work
 
 Phase 5 — Tools and Providers is active on
-`phase5-tool-execution-reconciliation`.
+`phase5-tool-receipts-replay`.
 
 The registry foundation is merged to `main` as PR #37 at
 `b3f2e8ce33aeb4ed125bd40af78f10a454174bbd`.
 
-PR #38 is the active execution/reconciliation slice. Implemented on the branch:
+PR #38 merged to `main` as `21141266ab15e2111b8f78c6df365100a60a017a`.
+Its execution/reconciliation slice established:
 - provider credential bindings accept only canonical `CredentialRefId` values and
   fail closed on unknown/missing slots;
 - consequential Tool execution is pinned to the registered ToolVersion;
@@ -149,15 +150,30 @@ PostgreSQL 18 + pgvector integration suites and production builds. The PostgreSQ
 fixture proves durable exact replay, revoked/stale authority rejection, tenant-scoped
 operation reads and ambiguity-to-reconciliation with blind retry disabled.
 
-Final documentation head must pass the same Foundation CI gate before PR #38 merges.
+Final documentation head `8502b302aaeef0d2d0e79a7861cf4a53974d437f` passed Foundation CI run 331 before merge.
 
-After this slice is green:
-1. persist/verify external effect receipts needed for durable result recovery and
-   terminal replay responses;
-2. add typed provider adapter failure/readiness/cost/timeout telemetry without secrets;
-3. prove credential-reference scoping/resolution at the adapter edge without exposing
-   raw secret material to Tool contracts;
-4. finish the Phase 5 acceptance audit before advancing to Skills/Workflows.
+Active receipt/replay slice now implements:
+- canonical bounded external receipt evidence/record contracts in `packages/events`;
+- consequential adapters must return sanitized receipt evidence for known dispatched
+  outcomes before the operation may become locally successful/rejected/partial;
+- Tool execution persists receipt evidence before settlement;
+- receipt persistence failure becomes `unknown` -> reconciliation with blind retry
+  disabled;
+- exact replay loads durable receipts and does not redispatch;
+- PostgreSQL ToolOperationStore records/lists canonical external receipts;
+- receipt observation replay now compares payload reference and observation time as
+  well as status/hash/reference/version;
+- unit coverage includes receipt normalization, durable replay and receipt-store
+  failure reconciliation;
+- PostgreSQL integration coverage now expects durable receipt replay.
+
+Immediate next:
+1. run the full Foundation CI gate for this receipt/replay branch and fix any failures;
+2. if green, add/verify any missing PostgreSQL receipt-conflict acceptance coverage;
+3. merge the slice only after a green final documentation head;
+4. then add typed provider failure/readiness/cost/timeout telemetry without secrets;
+5. prove credential-reference scoping/resolution at the adapter edge;
+6. finish the Phase 5 acceptance audit before advancing to Skills/Workflows.
 
 The requested post-freeze donor boundary remains unchanged: MemPalace contributes
 retrieval/evaluation/storage-contract behavior inside canonical Masanawa memory ports;
