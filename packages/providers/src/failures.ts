@@ -98,11 +98,16 @@ export function providerFailureError(
     category:
       normalized.kind === "authentication"
         ? "authorization"
-        : normalized.kind === "readiness" ||
-            normalized.kind === "rate-limit" ||
-            normalized.kind === "cost-limit"
-          ? "conflict"
-          : "external",
+        : normalized.kind === "rate-limit"
+          ? "rate-limit"
+          : normalized.kind === "readiness" ||
+              normalized.kind === "cost-limit" ||
+              normalized.kind === "timeout" ||
+              normalized.kind === "transport"
+            ? "unavailable"
+            : normalized.kind === "invalid-response"
+              ? "ambiguous"
+              : "conflict",
     message: normalized.safeMessage,
     retryable: normalized.retryable,
     ...(operationId ? { operationId } : {}),
