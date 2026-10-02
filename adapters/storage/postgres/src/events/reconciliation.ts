@@ -7,6 +7,7 @@ import {
   type ReconciliationCaseId,
   type TenantId,
 } from "@masanawa/contracts";
+import { canonicalJson } from "@masanawa/security";
 import {
   assertReconciliationTransition,
   type OperationState,
@@ -253,7 +254,7 @@ export async function recordExternalReceipt(
       input.payloadRef ?? null,
       input.normalizedPayload === undefined
         ? null
-        : JSON.stringify(input.normalizedPayload),
+        : canonicalJson(input.normalizedPayload),
       input.observedAt,
       input.verificationMethod,
       input.providerVersion ?? null,
@@ -277,8 +278,8 @@ export async function recordExternalReceipt(
     row.provider_reference !== (input.providerReference ?? null) ||
     row.normalized_status !== input.normalizedStatus ||
     row.payload_hash !== (input.payloadHash ?? null) ||
-    JSON.stringify(row.normalized_payload) !==
-      JSON.stringify(input.normalizedPayload ?? null) ||
+    canonicalJson(row.normalized_payload) !==
+      canonicalJson(input.normalizedPayload ?? null) ||
     row.verification_method !== input.verificationMethod ||
     row.provider_version !== (input.providerVersion ?? null)
   ) {
