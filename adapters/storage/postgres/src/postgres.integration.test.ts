@@ -184,6 +184,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       "events/0002_inbox_leases.sql",
       "events/0003_receipt_reconciliation_integrity.sql",
       "events/0004_outbox_recovery.sql",
+      "events/0005_external_receipt_payload.sql",
       "identity/0001_identity_foundation.sql",
       "memory/0001_memory_foundation.sql",
       "memory/0002_memory_lifecycle.sql",
