@@ -5,7 +5,6 @@ import {
   normalizeSkillKey,
   normalizeSkillVersion,
   skillTrustTiers,
-  skillVisibilityStates,
   type SkillProvenance,
   type SkillTrustTier,
   type SkillVisibility,
