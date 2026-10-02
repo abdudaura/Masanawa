@@ -128,7 +128,19 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 
 ## Immediate work
 
-Phase 6 — Skills is the current implementation frontier. The canonical production ledger is `docs/PRODUCTION-MASTER-TASKS.md`: Tasks 001-050 are merged complete; this branch performs Tasks 051-053; after it merges, Task 054 of 150 is next.
+Phase 6 — Skills remains the product implementation phase, preceded by the production-structure hardening sequence in the canonical ledger.
+
+Tasks 001-053 are merged complete. PR #46 merged Tasks 051-053 as
+`6c030aa4c231b3675a91a8a38a57e200538c53f0`; Foundation CI run 375 passed on
+that exact merged `main` commit.
+
+**Current: Task 054 of 150 — Standardize package/service implementation templates and enforce them in architecture tests.**
+Active branch: `task054-implementation-templates`.
+
+The existing `phase6-skills-foundation` branch contains valid unmerged Phase 6 work
+based on pre-roadmap `main`. Preserve it, but do not merge it ahead of Tasks 054-058.
+After the structure-hardening sequence closes, reconcile/rebase its valid Skill work
+onto then-current `main` rather than duplicating that implementation.
 
 Before implementing the first Phase 6 slice, use `docs/PRODUCT-NORTH-STAR.md` as the
 product-priority check and preserve the device-provider direction in
@@ -179,15 +191,11 @@ PostgreSQL 18 + pgvector integration suites and production builds.
 The Phase 5 acceptance audit is PASS and its final merge is green.
 
 Immediate next:
-1. start Phase 6 Skills from current merged `main`;
-2. implement the canonical Skill manifest/version/dependency/execution boundary without
-   duplicating Tool/Provider authority;
-3. ensure Skill execution stays provider-neutral so future assigned Android devices can
-   participate as Providers;
-4. proceed into Agent runtime and durable Workflows with device operation custody,
-   receipts and recovery in mind rather than assuming cloud-only execution;
-5. use Paperclip only as a bounded workflow/runtime/Ops behavior donor and preserve
-   Masanawa's canonical Authority/Operation/Provider boundaries.
+1. finish Task 054 on `task054-implementation-templates`, prove its architecture/build gate and merge it;
+2. continue Tasks 055-058 in ledger order from merged `main`;
+3. only after Task 058 closes, reconcile the valid `phase6-skills-foundation` work onto current `main` and continue Task 059;
+4. keep Skills provider-neutral so future assigned Android devices participate through the same Tool/Provider architecture;
+5. use Paperclip only as a bounded workflow/runtime/Ops behavior donor and preserve Masanawa Authority/Operation/Provider boundaries.
 
 The requested post-freeze donor boundary remains unchanged: MemPalace contributes
 retrieval/evaluation/storage-contract behavior inside canonical Masanawa memory ports;

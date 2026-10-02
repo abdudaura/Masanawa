@@ -96,11 +96,11 @@ foundation, identity, relationships, memory, world, decisions, agents, skills, t
 | COM-002 | commerce | append-only ledger/derived balance model | ChatWithStars | A | primary | packages/commerce | analysed |
 | COM-003 | commerce | provider inbox/retry/cutover/acceptance controls | ChatWithStars | A | primary | commerce + ops | analysed |
 | COM-004 | commerce | production sandbox-provider rejection and retired-provider exclusion | ChatWithStars | A | primary | commerce + security | analysed |
-| SOC-001 | social | durable character social publishing | ChatWithStars | A | primary | services/social | analysed |
-| SOC-002 | social | scheduling/review/destination/token-vault automation | ChatWithStars | A | primary | services/social | discovered |
-| STD-001 | studio | produced media pipeline | ChatWithStars | A | primary | services/studio | analysed |
-| STD-002 | studio | identity/continuity/reference management | ChatWithStars | A | primary | services/studio + identity | discovered |
-| STD-003 | studio | provider-neutral render queue/adapters | ChatWithStars | B | primary | services/studio + providers | discovered |
+| SOC-001 | social | durable character social publishing | ChatWithStars | A | primary | worker + future social domain/adapters | analysed |
+| SOC-002 | social | scheduling/review/destination/token-vault automation | ChatWithStars | A | primary | worker + future social domain/adapters | discovered |
+| STD-001 | studio | produced media pipeline | ChatWithStars | A | primary | worker + future studio/media domain/adapters | analysed |
+| STD-002 | studio | identity/continuity/reference management | ChatWithStars | A | primary | worker + future studio/media domain/adapters + identity | discovered |
+| STD-003 | studio | provider-neutral render queue/adapters | ChatWithStars | B | primary | worker + future studio/media domain/adapters + providers | discovered |
 | AVT-001 | avatar | multi-form avatar abstraction | N.E.K.O | B | primary breadth | clients + providers | discovered |
 | AVT-002 | avatar | realtime generated-human renderer | CyberVerse | B | primary generated-human | services/presence + providers | analysed |
 | AVT-003 | avatar | avatar warmup/silent-idle/sync behavior | CyberVerse | A | primary behavior | services/presence | discovered |
@@ -140,12 +140,12 @@ foundation, identity, relationships, memory, world, decisions, agents, skills, t
 | AGT-008 | agents | role-isolated background worker context with allowlisted tools/skills/packages/env | CyberVerse | A/B | primary background-worker pattern | packages/agents + workers | analysed |
 | AGT-009 | agents | immediate foreground acknowledgment before background task execution | CyberVerse | B | primary UX | packages/agents + runtime | analysed |
 | AVT-004 | avatar | renderer warmup policy including distributed capability/timeout | CyberVerse | B | primary generated-human | services/presence + providers | analysed |
-| SOC-003 | social | tenant-scoped durable ingestion/publish queue with redeploy dedupe | ChatWithStars | A | primary | services/social + workflows | analysed |
-| SOC-004 | social | manual review/approve/reject workflow with cross-tenant isolation | ChatWithStars | A | primary | services/social + apps/ops | analysed |
-| SOC-005 | social | cadence/quiet-window/destination-specific scheduling policy | ChatWithStars | B | primary | services/social + proactivity | analysed |
-| STD-004 | studio | idempotent render queue with bounded regeneration and human review | ChatWithStars | A | primary | services/studio + workflows | analysed |
-| STD-005 | studio | continuity state derived from actual rendered output and prior-frame references | ChatWithStars | A/B | primary | services/studio + identity/world | analysed |
-| STD-006 | studio | explicit audio/voice/lipsync fit plan with provider-neutral backend stages | ChatWithStars | B | primary | services/studio + providers | analysed |
+| SOC-003 | social | tenant-scoped durable ingestion/publish queue with redeploy dedupe | ChatWithStars | A | primary | worker + future social domain/adapters + workflows | analysed |
+| SOC-004 | social | manual review/approve/reject workflow with cross-tenant isolation | ChatWithStars | A | primary | worker + future social domain/adapters + apps/ops | analysed |
+| SOC-005 | social | cadence/quiet-window/destination-specific scheduling policy | ChatWithStars | B | primary | worker + future social domain/adapters + proactivity | analysed |
+| STD-004 | studio | idempotent render queue with bounded regeneration and human review | ChatWithStars | A | primary | worker + future studio/media domain/adapters + workflows | analysed |
+| STD-005 | studio | continuity state derived from actual rendered output and prior-frame references | ChatWithStars | A/B | primary | worker + future studio/media domain/adapters + identity/world | analysed |
+| STD-006 | studio | explicit audio/voice/lipsync fit plan with provider-neutral backend stages | ChatWithStars | B | primary | worker + future studio/media domain/adapters + providers | analysed |
 | OPS-003 | operations | production acceptance-evidence state distinct from configuration/readiness | ChatWithStars | A | primary | apps/ops + telemetry | analysed |
 | OPS-004 | operations | privacy-safe operational incidents and JEV aggregate evidence | ChatWithStars | A | primary | apps/ops + telemetry | analysed |
 | OPS-005 | operations | durable emergency kill switches independent of browser state | ChatWithStars | A | primary | apps/ops + security | analysed |
@@ -304,7 +304,7 @@ This inventory is intentionally incomplete. Source-specific map documents identi
 | RTC-020 | presence | direct WebRTC RTP pacing/gap/audio-delay/negotiation behavior independent of LiveKit-room path | CyberVerse | C/B | GPL clean-room behavior reference | services/presence tests/specs | selected |
 | INF-001 | providers | typed gRPC inference service boundaries for ASR/LLM/RAG/TTS/avatar/realtime voice | CyberVerse | C/B | GPL clean-room interface reference | packages/providers/media contracts | selected |
 | RAG-001 | knowledge | vector/RAG service boundary and knowledge-source management | CyberVerse | C/B | GPL clean-room behavior reference | packages/knowledge + provider adapters | selected |
-| AVT-020 | embodiment | avatar warmup, silent/idle runtime, provider catalog and offline-video orchestration | CyberVerse | C/B | GPL clean-room behavior reference | clients/embodiment + services/studio/presence | selected |
+| AVT-020 | embodiment | avatar warmup, silent/idle runtime, provider catalog and offline-video orchestration | CyberVerse | C/B | GPL clean-room behavior reference | clients/embodiment + worker + future studio/media domain/adapters + presence | selected |
 | TSK-020 | workflows | reconnectable agent-task store/API with terminal artifact/event semantics | CyberVerse | C/B | GPL clean-room workflow reference | packages/workflows + events | selected |
 | MOD-001 | assets | embedded third-party avatar/lipsync/video model source trees require their own licenses and are not reusable through CyberVerse's GPL classification | CyberVerse | C | third-party model reference | no direct import; separate upstream evaluation | selected |
 

@@ -43,4 +43,4 @@ Post-freeze candidate assessments may exist without being admitted to the vault.
 
 Current phase: **Phase 6 — Skills**, preceded by the short production-structure hardening checkpoint tracked in `docs/PRODUCTION-MASTER-TASKS.md`.
 
-Phase 0 source selection/forensics, Phase 1 architecture, Phase 2 foundation, the non-spatial Phase 3 Identity/World core, Phase 4 Memory and Phase 5 Tools/Providers are closed. The canonical numbered production tracker records Tasks 001-050 as merged complete; Tasks 051-053 are the current structural/product-definition branch.
+Phase 0 source selection/forensics, Phase 1 architecture, Phase 2 foundation, the non-spatial Phase 3 Identity/World core, Phase 4 Memory and Phase 5 Tools/Providers are closed. The canonical numbered production tracker records Tasks 001-053 as merged complete. Current: Task 054 of 150 — Standardize package/service implementation templates and enforce them in architecture tests.

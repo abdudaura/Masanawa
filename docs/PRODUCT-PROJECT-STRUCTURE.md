@@ -26,6 +26,8 @@ Agent runtime is a package capability composed by services, not a fifth service 
 
 Production domain packages should converge on a recognizable shape when applicable: public `src/index.ts`, domain model, public contracts/ports, invariants, repository port, internal implementation folder, colocated unit tests, and package-owned migrations. Not every package needs every file; consistency of ownership matters more than ceremonial folders.
 
+`docs/IMPLEMENTATION-TEMPLATES.md` defines the executable package/service baseline, and the architecture suite enforces its non-optional parts.
+
 ### 4. Standardize adapter topology
 
 Target adapter families are `adapters/storage`, `adapters/providers`, `adapters/channels`, `adapters/devices`, `adapters/media`, and `adapters/inference`. Adapters implement canonical ports. Adapter-to-adapter hidden orchestration is forbidden.
@@ -34,7 +36,7 @@ Target adapter families are `adapters/storage`, `adapters/providers`, `adapters/
 
 Gateway owns ingress/admission/routing/device connection control. Worker owns durable workflows, background AgentRuns, schedules, dispatch and reconciliation. Presence owns realtime media/session transport. Ops owns approvals, audit, reconciliation, fleet/device health and operator controls.
 
-Do not turn each domain package into a network microservice.
+Do not turn each domain package into a network microservice. Empty noncanonical service placeholders are not reserved for future domains; a new deployable service requires an ADR and corresponding architecture-gate update.
 
 ### 6. Expand test topology before product complexity grows
 
