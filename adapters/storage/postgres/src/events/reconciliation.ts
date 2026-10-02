@@ -9,6 +9,8 @@ import {
 } from "@masanawa/contracts";
 import {
   assertReconciliationTransition,
+  normalizeExternalReceiptEvidence,
+  type ExternalReceiptRecord,
   type OperationState,
   type ReconciliationStatus,
 } from "@masanawa/events";
@@ -28,22 +30,6 @@ export interface RecordExternalReceiptInput {
   readonly observedAt: Instant;
   readonly verificationMethod: string;
   readonly providerVersion?: string;
-}
-
-export interface ExternalReceiptRecord {
-  readonly externalReceiptId: ExternalReceiptId;
-  readonly tenantId: TenantId;
-  readonly operationId: OperationId;
-  readonly provider: string;
-  readonly observationKey: string;
-  readonly providerReference: string | null;
-  readonly normalizedStatus: string;
-  readonly payloadHash: string | null;
-  readonly payloadRef: string | null;
-  readonly observedAt: Instant;
-  readonly verificationMethod: string;
-  readonly providerVersion: string | null;
-  readonly createdAt: Instant;
 }
 
 export interface RecordedExternalReceipt {
@@ -188,7 +174,7 @@ async function loadReceiptByObservation(
       WHERE tenant_id = $1
         AND provider = $2
         AND observation_key = $3`,
-    [input.tenantId, input.provider, input.observationKey],
+    [input.tenantId, evidence.provider, input.observationKey],
   );
   return result.rows[0] ?? null;
 }
@@ -197,10 +183,17 @@ export async function recordExternalReceipt(
   client: PoolClient,
   input: RecordExternalReceiptInput,
 ): Promise<RecordedExternalReceipt> {
-  requireNonEmpty(input.provider, "provider");
-  requireNonEmpty(input.observationKey, "observationKey");
-  requireNonEmpty(input.normalizedStatus, "normalizedStatus");
-  requireNonEmpty(input.verificationMethod, "verificationMethod");
+  const evidence = normalizeExternalReceiptEvidence({
+    provider: evidence.provider,
+    observationKey: evidence.observationKey,
+    providerReference: evidence.providerReference,
+    normalizedStatus: evidence.normalizedStatus,
+    payloadHash: evidence.payloadHash,
+    payloadRef: evidence.payloadRef,
+    observedAt: evidence.observedAt,
+    verificationMethod: evidence.verificationMethod,
+    providerVersion: evidence.providerVersion,
+  });
   await loadOperationState(client, input.tenantId, input.operationId);
 
   const externalReceiptId = createCanonicalId("external-receipt");
@@ -239,15 +232,15 @@ export async function recordExternalReceipt(
       externalReceiptId,
       input.operationId,
       input.tenantId,
-      input.provider,
-      input.observationKey,
-      input.providerReference ?? null,
-      input.normalizedStatus,
-      input.payloadHash ?? null,
-      input.payloadRef ?? null,
-      input.observedAt,
-      input.verificationMethod,
-      input.providerVersion ?? null,
+      evidence.provider,
+      evidence.observationKey,
+      evidence.providerReference,
+      evidence.normalizedStatus,
+      evidence.payloadHash,
+      evidence.payloadRef,
+      evidence.observedAt,
+      evidence.verificationMethod,
+      evidence.providerVersion,
     ],
   );
 
@@ -265,11 +258,11 @@ export async function recordExternalReceipt(
 
   if (
     row.operation_id !== input.operationId ||
-    row.provider_reference !== (input.providerReference ?? null) ||
-    row.normalized_status !== input.normalizedStatus ||
-    row.payload_hash !== (input.payloadHash ?? null) ||
-    row.verification_method !== input.verificationMethod ||
-    row.provider_version !== (input.providerVersion ?? null)
+    row.provider_reference !== evidence.providerReference ||
+    row.normalized_status !== evidence.normalizedStatus ||
+    row.payload_hash !== evidence.payloadHash ||
+    row.verification_method !== evidence.verificationMethod ||
+    row.provider_version !== evidence.providerVersion
   ) {
     throw new PlatformError({
       code: "external-receipt.observation_conflict",
@@ -277,7 +270,7 @@ export async function recordExternalReceipt(
       message: "External receipt observation key is bound to different evidence",
       retryable: false,
       operationId: input.operationId,
-      details: { provider: input.provider, observationKey: input.observationKey },
+      details: { provider: evidence.provider, observationKey: input.observationKey },
     });
   }
 
