@@ -214,16 +214,11 @@ function authorityScopeHash(
 function requestFingerprint(input: {
   readonly tool: ToolDefinition;
   readonly invocation: NormalizedToolInvocation;
-  readonly provider: ProviderSelection | null;
-  readonly credentials: ProviderCredentialBindings;
 }): string {
   return fingerprintCanonicalJson({
     toolVersionId: input.tool.toolVersionId,
     input: input.invocation.input,
-    providerId: input.provider?.provider.providerId ?? null,
-    providerKey: input.provider?.provider.key ?? null,
-    providerVersion: input.provider?.provider.version ?? null,
-    credentialBindings: input.credentials,
+    providerSelection: input.invocation.providerSelection,
   });
 }
 
@@ -272,28 +267,6 @@ export async function executeConsequentialTool(
     );
   }
 
-  const provider = selectProviderForTool(
-    tool,
-    dependencies.providers,
-    invocation.providerSelection ?? {},
-  );
-  let credentialBindings: ProviderCredentialBindings;
-  if (provider === null) {
-    if (Object.keys(input.credentialBindings).length > 0) {
-      throw executionError(
-        "tool.provider_credentials_not_applicable",
-        "validation",
-        "Provider-independent Tool invocation cannot carry provider credential bindings",
-      );
-    }
-    credentialBindings = Object.freeze({});
-  } else {
-    credentialBindings = normalizeProviderCredentialBindings(
-      provider.provider,
-      input.credentialBindings,
-    );
-  }
-
   const prepared = await dependencies.operations.prepare({
     tenantId: invocation.authority.tenantId,
     kind: `tool:${tool.key}@${tool.version}`,
@@ -302,8 +275,6 @@ export async function executeConsequentialTool(
     requestFingerprint: requestFingerprint({
       tool,
       invocation,
-      provider,
-      credentials: credentialBindings,
     }),
     expiresAt: input.idempotencyExpiresAt,
   });
@@ -361,6 +332,28 @@ export async function executeConsequentialTool(
       );
     }
     throw error;
+  }
+
+  const provider = selectProviderForTool(
+    tool,
+    dependencies.providers,
+    invocation.providerSelection ?? {},
+  );
+  let credentialBindings: ProviderCredentialBindings;
+  if (provider === null) {
+    if (Object.keys(input.credentialBindings).length > 0) {
+      throw executionError(
+        "tool.provider_credentials_not_applicable",
+        "validation",
+        "Provider-independent Tool invocation cannot carry provider credential bindings",
+      );
+    }
+    credentialBindings = Object.freeze({});
+  } else {
+    credentialBindings = normalizeProviderCredentialBindings(
+      provider.provider,
+      input.credentialBindings,
+    );
   }
 
   if (operation.state === "prepared") {
