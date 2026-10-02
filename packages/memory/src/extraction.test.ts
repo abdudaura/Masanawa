@@ -41,7 +41,7 @@ describe("memory extraction custody contracts", () => {
     ]);
   });
 
-  it("fingerprints scope, source, extractor, attempts and schedule", () => {
+  it("fingerprints semantic scope/source/extractor policy but not retry-time schedule", () => {
     const input = request();
     const fingerprint = memoryExtractionRequestFingerprint(input);
 
@@ -61,6 +61,13 @@ describe("memory extraction custody contracts", () => {
         maxAttempts: 4,
       }),
     ).not.toBe(fingerprint);
+
+    expect(
+      memoryExtractionRequestFingerprint({
+        ...input,
+        availableAt: toInstant("2026-10-02T06:10:00Z"),
+      }),
+    ).toBe(fingerprint);
   });
 
   it("rejects invalid hashes and unbounded retry policy", () => {
