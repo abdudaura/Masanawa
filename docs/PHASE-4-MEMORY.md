@@ -2,7 +2,7 @@
 
 Status: ACTIVE  
 Started: 2026-10-02  
-Active branch: `phase4-memory-candidate-assessment`
+Active branch: `phase4-memory-lifecycle`
 
 Phase 3 non-spatial Identity/World acceptance is closed by PR #28, merge
 `02c2c99153e904b4f9d2f403328a1e3b6effc3f1`. Optional spatial simulation remains
@@ -67,8 +67,9 @@ Validation evidence:
   `fd8e20bf7d589393d017338af89502fa4ca3ae6b`;
 - frozen install, strict typecheck, unit tests, PostgreSQL 18 integration tests and
   production builds all passed;
-- the final documentation-only closure head must pass the same workflow before PR #29
-  merges.
+- final documentation head `08d7685048ee27145937dbe204b4a8ea6deae09e` passed
+  Foundation CI run 251;
+- PR #29 merged as `f99c42157401728a5ca3b4f91d5732382f57c865`.
 
 ## MemPalace-derived improvements deliberately included
 
@@ -84,13 +85,27 @@ The first slice incorporates only behaviors that strengthen the canonical archit
 
 No Palace/Wing/Room/Drawer concept is canonical.
 
-## Immediate acceptance work
+## Second canonical slice — active
 
-1. run Foundation CI on the final documentation-only PR #29 head;
-2. fix any real failure; if green, merge PR #29;
-3. continue Phase 4 with governed correction/supersession/lifecycle plus extraction
-   queue/idempotency/dead-letter before adding retrieval projections;
-4. then implement projection compatibility metadata and authorized lexical/vector/
+Goal: governed correction/supersession/lifecycle and explicit scope publication.
+
+Rules:
+- correction inside the same semantic MemoryRecord appends a new immutable revision;
+- contradiction/replacement across records creates explicit lineage and transitions the
+  predecessor to `superseded` or `absorbed`;
+- lifecycle transitions are compare-and-set and preserve prior revision/evidence;
+- scope never mutates in place;
+- publication from Relationship/Character-private/Session/Task into Character-shared,
+  World or Organization creates a new target MemoryRecord plus immutable publication
+  evidence;
+- publication requires explicit current authority/resource scope and, when policy
+  demands it, a bound approval at the service/security boundary;
+- the private source remains private and is referenced only by canonical IDs in the
+  publication audit row, never copied wholesale into a public/shared event.
+
+After this slice:
+1. add idempotent extraction queue/retry/dead-letter;
+2. then implement projection compatibility metadata and authorized lexical/vector/
    entity/temporal retrieval with rebuild/evaluation fixtures.
 
 ## Phase 4 acceptance targets
