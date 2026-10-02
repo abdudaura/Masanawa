@@ -3808,14 +3808,6 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
         content: "A deliberately approved shared summary.",
         extractionMethod: "publication-fixture",
         observedAt: now,
-        evidence: [
-          {
-            sourceKind: "operator" as const,
-            sourceReference: "fixture:publication:approved-summary",
-            sourceContentHash: "f".repeat(64),
-            observedAt: now,
-          },
-        ],
       },
       reason: "Explicitly approved for shared world continuity.",
     } as const;
@@ -3903,6 +3895,13 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
     expect(published.target.currentRevision.content).toBe(
       "A deliberately approved shared summary.",
     );
+    expect(published.target.currentRevision.evidence).toHaveLength(1);
+    expect(published.target.currentRevision.evidence[0]).toMatchObject({
+      sourceKind: "operator",
+      sourceReference: `memory-publication:${prepared.operation.operationId}`,
+      verbatimText: null,
+    });
+    expect(published.target.currentRevision.evidence[0]?.sourceContentHash).toHaveLength(64);
 
     const replay = await executeMemoryScopePublication(pool, {
       ...target,
