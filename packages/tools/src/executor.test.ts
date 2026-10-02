@@ -6,6 +6,7 @@ import {
 } from "@masanawa/contracts";
 import {
   assertOperationTransition,
+  type ExternalReceiptRecord,
   type OperationRecord,
   type OperationState,
 } from "@masanawa/events";
@@ -24,6 +25,7 @@ import {
 function memoryOperationStore(): ToolOperationStore {
   const operations = new Map<OperationId, OperationRecord>();
   const idempotency = new Map<string, OperationId>();
+  const receipts = new Map<OperationId, ExternalReceiptRecord[]>();
 
   return {
     async prepare(input: ToolOperationPrepareInput) {
@@ -86,7 +88,39 @@ function memoryOperationStore(): ToolOperationStore {
         operations.set(input.operationId, next);
       }
     },
+    async recordReceipt(input) {
+      const record: ExternalReceiptRecord = {
+        externalReceiptId: createCanonicalId("external-receipt"),
+        tenantId: input.tenantId,
+        operationId: input.operationId,
+        ...input.evidence,
+        createdAt: toInstant("2026-10-02T10:00:03Z"),
+      };
+      const existing = receipts.get(input.operationId) ?? [];
+      existing.push(record);
+      receipts.set(input.operationId, existing);
+      return record;
+    },
+    async listReceipts(tenantId, operationId) {
+      const operation = operations.get(operationId);
+      if (!operation || operation.tenantId !== tenantId) {
+        return Object.freeze([]);
+      }
+      return Object.freeze([...(receipts.get(operationId) ?? [])]);
+    },
   };
+}
+
+function dispatchReceipt(normalizedStatus = "succeeded") {
+  return {
+    observationKey: `provider-observation-${normalizedStatus}`,
+    providerReference: "provider-charge-1",
+    normalizedStatus,
+    payloadHash: "sha256:receipt",
+    payloadRef: null,
+    observedAt: toInstant("2026-10-02T10:00:03Z"),
+    verificationMethod: "provider-response",
+  } as const;
 }
 
 function fixture() {
@@ -189,6 +223,7 @@ describe("consequential Tool executor", () => {
           return {
             status: "succeeded" as const,
             output: { chargeId: "charge_1" },
+            receipt: dispatchReceipt(),
           };
         },
       }),
@@ -220,6 +255,13 @@ describe("consequential Tool executor", () => {
     expect(replay.operation.state).toBe("succeeded");
     expect(replay.reused).toBe(true);
     expect(replay.dispatched).toBe(false);
+    expect(first.receipts).toHaveLength(1);
+    expect(replay.receipts).toEqual(first.receipts);
+    expect(replay.receipts[0]).toMatchObject({
+      provider: "payments",
+      normalizedStatus: "succeeded",
+      providerReference: "provider-charge-1",
+    });
     expect(dispatches).toBe(1);
   });
 
@@ -243,6 +285,7 @@ describe("consequential Tool executor", () => {
               return {
                 status: "succeeded" as const,
                 output: {},
+                receipt: dispatchReceipt(),
               };
             },
           }),
@@ -321,7 +364,11 @@ describe("consequential Tool executor", () => {
           operations,
           resolveAdapter: () => ({
             async dispatch() {
-              return { status: "succeeded" as const, output: {} };
+              return {
+                status: "succeeded" as const,
+                output: {},
+                receipt: dispatchReceipt(),
+              };
             },
           }),
         },
