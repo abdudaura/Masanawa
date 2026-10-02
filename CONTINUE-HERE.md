@@ -13,30 +13,37 @@ Do not recreate donor project boundaries. The repository is the source of truth.
 
 1. `README.md`
 2. `docs/VISION.md`
-3. `docs/ARCHITECTURE.md`
-4. `docs/TECHNOLOGY.md`
-5. `docs/SOURCE-OWNERSHIP.md`
-6. `docs/REWRITE-PLAN.md`
-7. `docs/migration/LANDSCAPE-EXPANSION.md`
-8. `docs/migration/SOURCE-LOCK.md`
-9. `references/README.md`
-10. `references/SOURCES.md`
-11. `docs/migration/FORENSICS-METHOD.md`
-12. `docs/migration/FEATURE-LEDGER.md`
-13. `docs/migration/BEHAVIOUR-LEDGER.md`
-14. `docs/migration/DATA-LEDGER.md`
-15. `docs/migration/INTEGRATION-LEDGER.md`
-16. relevant files under `docs/migration/sources/`
-17. the active phase implementation record named below.
+3. `docs/PRODUCT-NORTH-STAR.md`
+4. `docs/ARCHITECTURE.md`
+5. `docs/AGENT-PHONE-EMBODIMENT.md`
+6. `docs/TECHNOLOGY.md`
+7. `docs/SOURCE-OWNERSHIP.md`
+8. `docs/REWRITE-PLAN.md`
+9. `docs/migration/LANDSCAPE-EXPANSION.md`
+10. `docs/migration/SOURCE-LOCK.md`
+11. `references/README.md`
+12. `references/SOURCES.md`
+13. `docs/migration/FORENSICS-METHOD.md`
+14. `docs/migration/FEATURE-LEDGER.md`
+15. `docs/migration/BEHAVIOUR-LEDGER.md`
+16. `docs/migration/DATA-LEDGER.md`
+17. `docs/migration/INTEGRATION-LEDGER.md`
+18. relevant files under `docs/migration/sources/`
+19. the active phase implementation record named below.
 
 `docs/migration/LICENSE-LEDGER.md` is compliance/provenance metadata and is **not** part
 of architectural feature selection.
 
 ## Current phase
 
-**Phase 5 — Tools and Providers.**
+**Phase 6 — Skills.**
 
-Current implementation branch: `phase5-credential-custody`.
+Phase 5 is closed on merged `main` at
+`0fe123e18a9163386c4ab10331139265ce26b64e`; Foundation CI run 369 passed on
+that exact merge commit.
+
+The next implementation branch must start from current merged `main`, not from an
+older Phase 5 branch.
 
 Phase 0A/0B, Phase 1 and Phase 2 are closed.
 
@@ -119,8 +126,13 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 
 ## Immediate work
 
-Phase 5 — Tools and Providers is active on
-`phase5-credential-custody`.
+Phase 6 — Skills is the current implementation frontier.
+
+Before implementing the first Phase 6 slice, use `docs/PRODUCT-NORTH-STAR.md` as the
+product-priority check and preserve the device-provider direction in
+`docs/AGENT-PHONE-EMBODIMENT.md`. Skills must be capable of resolving Tools through
+both cloud Providers and future Device Providers without embedding either execution
+path in Skill definitions.
 
 Merged Phase 5 history:
 - registry foundation PR #37:
@@ -132,7 +144,12 @@ Merged Phase 5 history:
 - typed Provider failures/privacy-safe telemetry PR #42:
   `be814fee91b8b551b00e2d9900d2970680297b3d`.
 
-PR #45 is the active credential-custody slice.
+PR #45 merged as `0fe123e18a9163386c4ab10331139265ce26b64e`.
+Foundation CI run 369 passed on the merged `main` commit. Phase 5 is therefore closed.
+
+PR #44 is an older, still-open alternative credential-resolution branch based on the
+pre-#45 history. Treat it as stale/superseded unless a later reconciliation finds a
+missing behavior not already preserved in the merged credential-custody design.
 
 Implemented on the branch:
 - Security-owned CredentialRefId resolution binds tenant, Provider, Operation and slot;
@@ -157,16 +174,18 @@ Hardened implementation head
 The complete gate passed frozen install, strict TypeScript, unit/architecture tests,
 PostgreSQL 18 + pgvector integration suites and production builds.
 
-The Phase 5 acceptance audit is now PASS. Do not merge PR #45 until the final
-documentation head containing that PASS declaration also passes Foundation CI.
+The Phase 5 acceptance audit is PASS and its final merge is green.
 
 Immediate next:
-1. wait for the final documentation-head Foundation CI and fix any real failure;
-2. merge PR #45 if that exact head is green;
-3. verify merged `main` and its push CI;
-4. start Phase 6 Skills/Workflows from merged `main`, using Paperclip only as a
-   bounded workflow/runtime/Ops behavior donor and preserving Masanawa's canonical
-   Authority/Operation/Provider boundaries.
+1. start Phase 6 Skills from current merged `main`;
+2. implement the canonical Skill manifest/version/dependency/execution boundary without
+   duplicating Tool/Provider authority;
+3. ensure Skill execution stays provider-neutral so future assigned Android devices can
+   participate as Providers;
+4. proceed into Agent runtime and durable Workflows with device operation custody,
+   receipts and recovery in mind rather than assuming cloud-only execution;
+5. use Paperclip only as a bounded workflow/runtime/Ops behavior donor and preserve
+   Masanawa's canonical Authority/Operation/Provider boundaries.
 
 The requested post-freeze donor boundary remains unchanged: MemPalace contributes
 retrieval/evaluation/storage-contract behavior inside canonical Masanawa memory ports;
