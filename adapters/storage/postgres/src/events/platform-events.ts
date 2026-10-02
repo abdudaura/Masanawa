@@ -1,5 +1,5 @@
 import type { Instant, OutboxEventId } from "@masanawa/contracts";
-import type { PlatformEvent } from "@masanawa/events";
+import type { AuditEvent, PlatformEvent } from "@masanawa/events";
 import type { Pool, PoolClient } from "pg";
 import { withTransaction } from "../transaction.js";
 import { enqueueOutbox } from "./outbox.js";
@@ -16,6 +16,50 @@ export interface PlatformEventWithOutboxInput<
 > {
   readonly event: PlatformEvent<TEventPayload>;
   readonly outbox: EventOutboxInput<TOutboxPayload>;
+}
+
+export async function appendAuditEvent<TPayload>(
+  client: PoolClient,
+  event: AuditEvent<TPayload>,
+): Promise<void> {
+  await client.query(
+    `INSERT INTO events.audit_events (
+       audit_event_id,
+       tenant_id,
+       event_type,
+       schema_version,
+       aggregate_type,
+       aggregate_id,
+       occurred_at,
+       recorded_at,
+       actor,
+       authority_ref,
+       correlation_id,
+       causation_event_id,
+       sensitivity,
+       payload
+     )
+     VALUES (
+       $1, $2, $3, $4, $5, $6, $7, $8,
+       $9::jsonb, $10, $11, $12, $13, $14::jsonb
+     )`,
+    [
+      event.auditEventId,
+      event.tenantId,
+      event.eventType,
+      event.schemaVersion,
+      event.aggregate.type,
+      event.aggregate.id,
+      event.occurredAt,
+      event.recordedAt,
+      event.actor === null ? null : JSON.stringify(event.actor),
+      event.authorityRef,
+      event.correlationId,
+      event.causationId,
+      event.sensitivity,
+      JSON.stringify(event.payload),
+    ],
+  );
 }
 
 export async function appendPlatformEvent<TPayload>(
