@@ -40,6 +40,11 @@ export interface ToolOperationPrepareInput {
   readonly expiresAt: Instant;
 }
 
+export interface ToolEffectReceipt {
+  readonly normalizedStatus: string;
+  readonly normalizedPayload: CanonicalJson | null;
+}
+
 export interface ToolOperationStore {
   prepare(input: ToolOperationPrepareInput): Promise<{
     readonly operation: OperationRecord;
@@ -62,6 +67,21 @@ export interface ToolOperationStore {
     readonly safeRetry: boolean;
     readonly nextAction: string | null;
   }): Promise<void>;
+  recordEffectReceipt(input: {
+    readonly tenantId: NormalizedToolInvocation["authority"]["tenantId"];
+    readonly operationId: OperationId;
+    readonly provider: string;
+    readonly providerVersion: string | null;
+    readonly normalizedStatus: string;
+    readonly normalizedPayload: CanonicalJson | null;
+    readonly payloadHash: string | null;
+    readonly observationKey: string;
+    readonly observedAt: Instant;
+  }): Promise<void>;
+  loadEffectReceipts(
+    tenantId: NormalizedToolInvocation["authority"]["tenantId"],
+    operationId: OperationId,
+  ): Promise<readonly ToolEffectReceipt[]>;
 }
 
 export interface ToolDispatchContext {
@@ -295,10 +315,34 @@ export async function executeConsequentialTool(
     operation.state !== "prepared" &&
     operation.state !== "authorized"
   ) {
+    const receipts = await dependencies.operations.loadEffectReceipts(
+      invocation.authority.tenantId,
+      operation.operationId,
+    );
+    const terminal = [...receipts]
+      .reverse()
+      .find(
+        (receipt) =>
+          receipt.normalizedStatus === "succeeded" &&
+          receipt.normalizedPayload !== null,
+      );
+
+    if (terminal && operation.state === "accepted") {
+      operation = await transitionIfCurrent(
+        dependencies.operations,
+        operation,
+        "succeeded",
+      );
+    }
+
     return {
       operation,
       reused: true,
       dispatched: false,
+      ...(terminal?.normalizedPayload !== null &&
+      terminal?.normalizedPayload !== undefined
+        ? { output: terminal.normalizedPayload }
+        : {}),
     };
   }
 
@@ -492,6 +536,23 @@ export async function executeConsequentialTool(
       ...(outcome.output !== undefined ? { output: outcome.output } : {}),
     };
   }
+
+  const receiptProvider =
+    provider === null ? `tool:${tool.key}` : provider.provider.key;
+  const receiptProviderVersion =
+    provider === null ? tool.version : provider.provider.version;
+
+  await dependencies.operations.recordEffectReceipt({
+    tenantId: invocation.authority.tenantId,
+    operationId: operation.operationId,
+    provider: receiptProvider,
+    providerVersion: receiptProviderVersion,
+    normalizedStatus: "succeeded",
+    normalizedPayload: outcome.output,
+    payloadHash: fingerprintCanonicalJson(outcome.output),
+    observationKey: `tool-terminal:${operation.operationId}:succeeded`,
+    observedAt: operation.updatedAt,
+  });
 
   operation = await transitionIfCurrent(
     dependencies.operations,
