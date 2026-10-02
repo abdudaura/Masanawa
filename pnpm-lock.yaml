@@ -311,6 +311,9 @@ importers:
       '@masanawa/security':
         specifier: workspace:*
         version: link:../security
+      '@masanawa/telemetry':
+        specifier: workspace:*
+        version: link:../telemetry
     devDependencies:
       vitest:
         specifier: 5.0.3
