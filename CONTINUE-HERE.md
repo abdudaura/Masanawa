@@ -119,29 +119,39 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 
 ## Immediate work
 
-PR #34 merged as `09cb24218720040cc8e7ccbe59896c5380272b0e`.
-Hardened implementation head `7994de231a27f510cff09ad2db8fe3b71cc307b4`
-passed Foundation CI run 305; final documentation head
-`dad3f5fe36a3fcda5c036e21035c26458e3446c9` passed run 306.
-
-Current work is the reflection/consolidation + compaction-flush slice on
+PR #35 is the active reflection/consolidation + compaction-flush slice on
 `phase4-memory-reflection-compaction`.
 
+Hardened implementation head `4b21258b6d3ea37d296157468952c2d9be8c22d2`
+passed Foundation CI run 309. The complete gate passed frozen install, strict
+TypeScript, all unit tests, PostgreSQL 18 + pgvector migrations/integration fixtures and
+production builds. PR #35 has no review threads or comments.
+
+The branch now includes:
+- deterministic reflection identity from exact source record/revision/content-hash
+  evidence, exact scope, purpose and reflector identity;
+- canonical MemoryRecord(type=`reflection`) output plus immutable reflection/source
+  derivation audit;
+- serialized first commit with current source revision/hash/scope validation;
+- exact retry replay even after later source lifecycle absorption;
+- cross-scope and stale-source rejection before reflection persistence;
+- reflection→reflection consolidation through existing `absorbs` lineage with
+  provenance preservation;
+- compaction flush admission through the already-proven extraction queue rather than a
+  parallel worker system;
+- `safeToCompact` only after committed durable admission/reuse;
+- flush replay under schedule drift and fail-closed conflict on scope drift.
+
 Immediate next steps:
-1. implement retry-idempotent reflection admission/commit from exact canonical source
-   MemoryRecord/MemoryRevision evidence;
-2. require every reflection source to share the exact target MemoryScope and preserve
-   immutable source provenance;
-3. represent reflection output as an ordinary canonical MemoryRecord of type
-   `reflection`, never a second memory store;
-4. support explicit consolidation/absorption using existing lifecycle lineage while
-   retaining the source revisions/evidence;
-5. reuse existing extraction custody for compaction/context-loss flush admission rather
-   than creating a second worker queue;
-6. make flush admission idempotent and exact-scope, and prove context may be discarded
-   only after durable extraction work is admitted;
-7. add PostgreSQL fixtures for retry replay, cross-scope rejection, source-revision
-   drift, absorption preservation and compaction-flush scope safety.
+1. verify final documentation-head Foundation CI for PR #35;
+2. fix any real failure; if green, merge PR #35;
+3. create a fresh branch from merged `main` for the Phase 4 acceptance closure audit;
+4. systematically verify every acceptance target in `docs/PHASE-4-MEMORY.md` against
+   code, migrations and CI fixtures;
+5. implement only concrete gaps found by the audit, especially contradiction/temporal
+   held-out coverage or compaction-flush scope proof if evidence is incomplete;
+6. close Phase 4 when all canonical targets are evidenced instead of expanding the
+   memory surface without a documented requirement.
 
 The requested post-freeze donor boundary remains unchanged: MemPalace contributes
 retrieval/evaluation/storage-contract behavior inside canonical Masanawa memory ports;
