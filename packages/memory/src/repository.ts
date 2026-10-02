@@ -10,10 +10,7 @@ import type {
   MemoryScope,
   MemoryType,
 } from "./model.js";
-import type {
-  MemoryEvidenceInput,
-  MemoryRevisionContentInput,
-} from "./invariants.js";
+import type { MemoryRevisionContentInput } from "./invariants.js";
 
 export interface CreateMemoryRecordInput extends MemoryRevisionContentInput {
   readonly tenantId: TenantId;
