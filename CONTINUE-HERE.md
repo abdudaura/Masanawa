@@ -36,7 +36,7 @@ of architectural feature selection.
 
 **Phase 4 — Memory.**
 
-Current implementation branch: `phase4-memory-candidate-assessment`.
+Current implementation branch: `phase4-memory-lifecycle`.
 
 Phase 0A/0B, Phase 1 and Phase 2 are closed.
 
@@ -109,23 +109,25 @@ Implemented on the current branch:
 - PostgreSQL fixture for cross-Relationship non-disclosure, revision CAS/replay and
   database immutability;
 - Foundation CI run 250 passed the complete check gate on implementation head
-  `fd8e20bf7d589393d017338af89502fa4ca3ae6b`.
+  `fd8e20bf7d589393d017338af89502fa4ca3ae6b`;
+- final documentation head `08d7685048ee27145937dbe204b4a8ea6deae09e`
+  passed Foundation CI run 251;
+- PR #29 merged as `f99c42157401728a5ca3b4f91d5732382f57c865`.
 
 The MemPalace-inspired behavior used here is deliberately structural: extracted
 MemoryRecords never replace their immutable/verbatim source evidence.
 
 ## Immediate work
 
-1. verify the automatically triggered Foundation CI run on the final
-   documentation-only PR #29 head;
-2. fix any real failure; if green, merge PR #29;
-3. on a fresh branch from merged `main`, continue Phase 4 with governed
-   lifecycle/correction/supersession and explicit private→shared/world/organization
-   publication semantics;
-4. then add idempotent extraction queue/retry/dead-letter;
-5. only after canonical lifecycle/liveness is sound, add vector/lexical/entity/temporal
-   projections with embedding identity/dimension/source-hash compatibility and
-   cross-scope conformance tests.
+1. implement governed correction/supersession/lifecycle on
+   `phase4-memory-lifecycle`;
+2. make scope immutable in-place and implement private→shared/world/organization
+   publication as creation of a new target record with immutable lineage/audit
+   evidence;
+3. add PostgreSQL fixtures proving stale lifecycle writers lose, old evidence remains
+   readable to authorized audit paths, and source scope never widens;
+4. run the complete Foundation CI/PostgreSQL 18 gate and merge the slice when green;
+5. then add idempotent extraction queue/retry/dead-letter before retrieval projections.
 
 Do not skip directly to vector search. Retrieval quality cannot outrank canonical scope,
 provenance, correction, deletion or liveness.
