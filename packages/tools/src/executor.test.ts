@@ -349,6 +349,76 @@ describe("consequential Tool executor", () => {
     expect(dispatches).toBe(1);
   });
 
+  it("reconciles replay after a crash between receipt persistence and dispatch settlement", async () => {
+    const f = fixture();
+    const baseOperations = memoryOperationStore();
+    let failSettlementOnce = true;
+    const operations: ToolOperationStore = {
+      ...baseOperations,
+      async transition(tenantId, operationId, from, to) {
+        if (
+          failSettlementOnce &&
+          from === "dispatching" &&
+          to === "dispatched"
+        ) {
+          failSettlementOnce = false;
+          throw new Error("simulated crash after durable receipt");
+        }
+        return baseOperations.transition(tenantId, operationId, from, to);
+      },
+    };
+    let dispatches = 0;
+
+    const dependencies = {
+      tools: f.tools,
+      providers: f.providers,
+      authoritySource: {
+        getPolicyRevision: () => "policy-1",
+      },
+      operations,
+      resolveAdapter: () => ({
+        async dispatch() {
+          dispatches += 1;
+          return {
+            status: "succeeded" as const,
+            output: { chargeId: "charge_crash" },
+            receipt: dispatchReceipt(),
+          };
+        },
+      }),
+    };
+
+    const invocation = {
+      toolVersionId: f.toolVersionId,
+      authority: f.authority,
+      input: { amount: 1000 },
+      idempotencyKey: "charge-request-crash-after-receipt",
+      providerSelection: null,
+    } as const;
+    const executionInput = {
+      invocation,
+      credentialBindings: {
+        "api-key": createCanonicalId("credential-ref"),
+      },
+      idempotencyExpiresAt: toInstant("2026-10-03T10:00:00Z"),
+    };
+
+    await expect(
+      executeConsequentialTool(dependencies, executionInput),
+    ).rejects.toThrow(/simulated crash/u);
+
+    const replay = await executeConsequentialTool(
+      dependencies,
+      executionInput,
+    );
+
+    expect(replay.operation.state).toBe("reconciling");
+    expect(replay.reused).toBe(true);
+    expect(replay.dispatched).toBe(false);
+    expect(replay.receipts).toHaveLength(1);
+    expect(dispatches).toBe(1);
+  });
+
   it("moves receipt persistence failure to reconciliation instead of success", async () => {
     const f = fixture();
     const baseOperations = memoryOperationStore();
