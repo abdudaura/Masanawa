@@ -166,6 +166,15 @@ importers:
 
   .:
     devDependencies:
+      '@masanawa/contracts':
+        specifier: workspace:*
+        version: link:packages/contracts
+      '@masanawa/providers':
+        specifier: workspace:*
+        version: link:packages/providers
+      '@masanawa/security':
+        specifier: workspace:*
+        version: link:packages/security
       '@types/node':
         specifier: 24.13.6
         version: 24.13.6
