@@ -10,8 +10,31 @@ either upstream repository a Masanawa runtime dependency.
 Repositories inspected at:
 - MemPalace `mempalace/mempalace` default branch `develop`, head
   `5ea40d30caf0ed2ff6e49623e386a0863b28edaa`;
-- Paperclip `paperclipai/paperclip` default branch `master`, head
-  `261c24ccf96b911e3006cccec934a588ebc84058`.
+- Paperclip `paperclipai/paperclip` default branch `master`, refreshed head
+  `c83df091b1a5207375eaf23466bb5c62e4e1518e`.
+
+## 2026-10-02 upstream refresh
+
+MemPalace remains at the originally assessed head, so its storage/retrieval findings are
+unchanged. Its accepted storage-backend RFC still requires explicit capability
+reporting, rejection rather than silent dropping of unsupported filters/namespaces, and
+strict embedding dimension/model identity compatibility.
+
+Paperclip advanced after the first assessment. The current execution semantics still
+separate checkout ownership from the live execution run, refuse stale-lock adoption
+while a holder is non-terminal, model blockers separately from task ancestry, and
+re-check execution gates before dispatch. Recent commit
+`4e524632036af370da2008f1edcb4b89a4ff2b00` also adds recovery from stalled
+external-runtime log streams by switching observation paths without redispatching the
+command, preserving output deduplication and requiring verified command exit before
+completion. This is useful later for Masanawa runtime adapters and reconciliation, not
+a reason to import Paperclip as a control plane.
+
+The previously cited Paperclip issues #12482 (single-consumption authorization) and
+#11852 (persisted run-context validation consistency) were rechecked on 2026-10-02 and
+remain open. Masanawa therefore keeps its stricter one-time Approval consumption,
+AuthorityContext and Operation/effect semantics rather than inheriting Paperclip
+approval state directly.
 
 ## Decision summary
 
