@@ -252,15 +252,25 @@ Shared query/read models belong in explicit projection packages/services, not ad
 
 ## Adapter rule
 
-Concrete adapters live outside canonical domain packages when they bind external technology, for example:
+Concrete adapters live outside canonical domain packages only under the canonical external-edge families:
 
+- `adapters/storage/*`
 - `adapters/providers/*`
 - `adapters/channels/*`
 - `adapters/devices/*`
-- `adapters/storage/*`
 - `adapters/media/*`
+- `adapters/inference/*`
 
-Exact folder naming may be finalized in Phase 2, but dependency direction is fixed: adapters depend on canonical ports.
+Every implemented adapter declares explicit registration metadata in `adapter.json`.
+Adapters depend inward on canonical `packages/*` public ports plus their external SDKs.
+An adapter may not depend on another adapter, service, app or infra workspace, and may
+not escape its workspace through relative imports. Cross-edge orchestration belongs in
+services/workflows/canonical package ports, never in adapter-to-adapter calls.
+
+Shared Node service lifecycle/process hosting is infrastructure at
+`infra/runtime/node`, not an adapter family.
+
+See `ADAPTER-TOPOLOGY.md` for the enforced topology/registration contract.
 
 ## Plugin rule
 

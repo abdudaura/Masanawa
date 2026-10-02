@@ -19,7 +19,7 @@ function walk(root: string): string[] {
 
 describe("reference vault isolation", () => {
   it("production code never imports references/sources", () => {
-    const productionRoots = ["packages", "services", "apps", "adapters"];
+    const productionRoots = ["packages", "services", "apps", "adapters", "infra"];
     const offenders: string[] = [];
 
     for (const root of productionRoots) {

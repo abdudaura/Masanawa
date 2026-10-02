@@ -12,6 +12,8 @@ Merged `main` satisfies Tasks **001-054**.
 
 **Current: Task 055 of 150 — Standardize adapter topology/registration and prohibit adapter-to-adapter hidden orchestration.**
 
+Active implementation branch: `task055-adapter-topology`. The task remains incomplete until its architecture/build/integration acceptance evidence is green and merged to `main`.
+
 Task 054 merged through PR #47 as `d0a198dbdec1af08e3c8f1378da0985db628eb6e`; Foundation CI run 380 passed on that exact merged `main` commit.
 
 Status: `[x]` COMPLETE, `[ ]` PLANNED.

@@ -119,9 +119,16 @@ If worker disappears, canonical job remains recoverable.
 
 ## 7. Adapter placement
 
-Provider/channel/device/storage adapters can run in Gateway, Worker, Presence, or specialized worker according to operational needs.
+Provider/channel/device/storage/media/inference adapters can run in Gateway, Worker,
+Presence, or a justified specialized worker according to operational needs.
 
-Their process location never changes domain ownership.
+Registration is explicit at the service/owner composition boundary. An adapter never
+discovers or directly orchestrates another adapter; coordination goes through canonical
+ports, Provider/Tool selection or durable Workflows.
+
+Their process location never changes domain ownership. The machine-enforced topology
+and registration rules are in `ADAPTER-TOPOLOGY.md`. Shared Node process hosting is
+`infra/runtime/node`, not an adapter.
 
 ## 8. Sync vs async calls
 
