@@ -21,6 +21,7 @@ export const canonicalIdKinds = [
   "workflow-run",
   "memory-record",
   "memory-revision",
+  "memory-extraction",
   "skill",
   "skill-version",
   "tool",
@@ -126,6 +127,7 @@ export type WorkflowVersionId = CanonicalId<"workflow-version">;
 export type WorkflowRunId = CanonicalId<"workflow-run">;
 export type MemoryRecordId = CanonicalId<"memory-record">;
 export type MemoryRevisionId = CanonicalId<"memory-revision">;
+export type MemoryExtractionId = CanonicalId<"memory-extraction">;
 export type SkillId = CanonicalId<"skill">;
 export type SkillVersionId = CanonicalId<"skill-version">;
 export type ToolId = CanonicalId<"tool">;
