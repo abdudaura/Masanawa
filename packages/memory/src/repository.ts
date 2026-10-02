@@ -33,6 +33,12 @@ export interface AppendMemoryRevisionInput extends MemoryRevisionContentInput {
   readonly updatedAt: Instant;
 }
 
+export interface GetMemoryRecordInScopeInput {
+  readonly tenantId: TenantId;
+  readonly memoryRecordId: MemoryRecordId;
+  readonly scope: MemoryScope;
+}
+
 export interface ListMemoryRecordsByScopesInput {
   readonly tenantId: TenantId;
   readonly scopes: readonly MemoryScope[];
@@ -47,9 +53,8 @@ export interface MemoryRepository {
   appendMemoryRevision(
     input: AppendMemoryRevisionInput,
   ): Promise<MemoryRecordSnapshot>;
-  getMemoryRecord(
-    tenantId: TenantId,
-    memoryRecordId: MemoryRecordId,
+  getMemoryRecordInScope(
+    input: GetMemoryRecordInScopeInput,
   ): Promise<MemoryRecordSnapshot | null>;
   listMemoryRecordsByScopes(
     input: ListMemoryRecordsByScopesInput,
