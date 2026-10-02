@@ -161,8 +161,6 @@ Active receipt/replay slice now implements:
   disabled;
 - exact replay loads durable receipts and does not redispatch;
 - PostgreSQL ToolOperationStore records/lists canonical external receipts;
-- receipt observation replay now compares payload reference and observation time as
-  well as status/hash/reference/version;
 - unit coverage includes receipt normalization, durable replay and receipt-store
   failure reconciliation;
 - PostgreSQL integration coverage now expects durable receipt replay.
