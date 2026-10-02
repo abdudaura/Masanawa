@@ -8,13 +8,11 @@ Masanawa production is tracked as **150 numbered milestone tasks**. Tasks are no
 
 ## Current position
 
-Merged `main` satisfies Tasks **001-054**.
+Merged `main` satisfies Tasks **001-055**.
 
-**Current: Task 055 of 150 — Standardize adapter topology/registration and prohibit adapter-to-adapter hidden orchestration.**
+**Current: Task 056 of 150 — Expand test taxonomy with security/recovery/load/chaos suites and CI gate conventions.**
 
-Active implementation branch: `task055-adapter-topology`. The task remains incomplete until its architecture/build/integration acceptance evidence is green and merged to `main`.
-
-Task 054 merged through PR #47 as `d0a198dbdec1af08e3c8f1378da0985db628eb6e`; Foundation CI run 380 passed on that exact merged `main` commit.
+Task 055 implementation head `931fef83ae1a014c6872d0e5bfc0cab815307e44` passed Foundation CI run 383. PR #48 merged as `434f64c6ff0ca1061d3e8ecd163daf4b591962d0`; merged-main Foundation CI run 384 passed on that exact merge commit.
 
 Status: `[x]` COMPLETE, `[ ]` PLANNED.
 
@@ -89,7 +87,7 @@ Status: `[x]` COMPLETE, `[ ]` PLANNED.
 - [x] **052** Introduce first-class canonical Devices ownership for Device/Capability/Character assignment contracts.
 - [x] **053** Remove ambiguous empty service ownership placeholders and reaffirm Gateway/Worker/Presence/Ops topology.
 - [x] **054** Standardize package/service implementation templates and enforce them in architecture tests.
-- [ ] **055** Standardize adapter topology/registration and prohibit adapter-to-adapter hidden orchestration.
+- [x] **055** Standardize adapter topology/registration and prohibit adapter-to-adapter hidden orchestration.
 - [ ] **056** Expand test taxonomy with security/recovery/load/chaos suites and CI gate conventions.
 - [ ] **057** Establish repository-wide public API/versioning/deprecation conventions.
 - [ ] **058** Establish production configuration/environment schema, secret-reference and deployment-layout conventions.

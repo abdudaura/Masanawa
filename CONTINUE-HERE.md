@@ -137,17 +137,24 @@ Foundation CI run 379, PR #47 merged as
 `d0a198dbdec1af08e3c8f1378da0985db628eb6e`, and merged-main Foundation CI
 run 380 passed on that exact merge commit.
 
-**Current: Task 055 of 150 — Standardize adapter topology/registration and prohibit adapter-to-adapter hidden orchestration.**
-Active implementation branch: `task055-adapter-topology`, based on current merged `main`.
+**Current: Task 056 of 150 — Expand test taxonomy with security/recovery/load/chaos suites and CI gate conventions.**
 
-Implemented on the branch:
-- relocated the shared `@masanawa/node-runtime` process host from the noncanonical `adapters/runtime/node` family to `infra/runtime/node` without changing its public package API;
-- kept infra runtime tests inside the normal Vitest gate and reference-vault isolation scan;
-- standardized adapter implementations under exactly storage/providers/channels/devices/media/inference;
-- added `adapter.json` explicit-registration metadata to PostgreSQL;
-- added a workspace-graph architecture test that forbids adapter dependencies/imports on services, apps, infra or other adapters and forbids relative package escape;
-- documented explicit composition-root registration and the Android/OmniSIP device boundary.
-- Foundation CI run 382 exposed an over-broad test-isolation assertion: PostgreSQL integration tests legitimately use `test/support/fault-injection`; the gate now permits only test-file imports into `test/support` while production adapter code still cannot escape its workspace.
+Tasks 001-055 are merged complete.
+
+Task 055 implementation head `931fef83ae1a014c6872d0e5bfc0cab815307e44` passed
+Foundation CI run 383. PR #48 merged as
+`434f64c6ff0ca1061d3e8ecd163daf4b591962d0`, and merged-main Foundation CI
+run 384 passed on that exact merge commit.
+
+Task 055 established:
+- canonical adapter families: storage/providers/channels/devices/media/inference;
+- explicit `adapter.json` registration metadata;
+- adapter leaf dependency enforcement preventing adapter-to-adapter/service/app/infra dependencies;
+- production relative-import confinement with a test-only exception for `test/support`;
+- shared Node process hosting at `infra/runtime/node`, outside adapter selection;
+- explicit composition-root registration and preserved Android/OmniSIP device boundary.
+
+Start Task 056 from current merged `main`; do not reuse the completed Task 055 branch.
 
 The existing `phase6-skills-foundation` branch contains valid unmerged Phase 6 work
 based on pre-roadmap `main`. Preserve it, but do not merge it ahead of Tasks 054-058.
@@ -203,8 +210,8 @@ PostgreSQL 18 + pgvector integration suites and production builds.
 The Phase 5 acceptance audit is PASS and its final merge is green.
 
 Immediate next:
-1. run the full Task 055 CI gate on `task055-adapter-topology`, fix any real failure, merge the exact green head, and verify merged-main CI;
-2. then continue Tasks 056-058 in ledger order;
+1. implement Task 056 from current merged `main`: establish security/recovery/load/chaos suite topology and CI gate conventions without duplicating package-local unit/integration tests;
+2. then continue Tasks 057-058 in ledger order;
 3. only after Task 058 closes, reconcile the valid `phase6-skills-foundation` work onto current `main` and continue Task 059;
 4. keep Skills provider-neutral so future assigned Android devices participate through the same Tool/Provider architecture;
 5. use Paperclip only as a bounded workflow/runtime/Ops behavior donor and preserve Masanawa Authority/Operation/Provider boundaries.
