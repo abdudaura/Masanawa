@@ -4,6 +4,8 @@ import {
   type OperationId,
 } from "@masanawa/contracts";
 import {
+  type ExternalReceiptEvidence,
+  type ExternalReceiptRecord,
   type OperationRecord,
   type OperationState,
 } from "@masanawa/events";
@@ -62,6 +64,15 @@ export interface ToolOperationStore {
     readonly safeRetry: boolean;
     readonly nextAction: string | null;
   }): Promise<void>;
+  recordReceipt(input: {
+    readonly tenantId: NormalizedToolInvocation["authority"]["tenantId"];
+    readonly operationId: OperationId;
+    readonly evidence: ExternalReceiptEvidence;
+  }): Promise<ExternalReceiptRecord>;
+  listReceipts(
+    tenantId: NormalizedToolInvocation["authority"]["tenantId"],
+    operationId: OperationId,
+  ): Promise<readonly ExternalReceiptRecord[]>;
 }
 
 export interface ToolDispatchContext {
@@ -72,27 +83,42 @@ export interface ToolDispatchContext {
   readonly credentialBindings: ProviderCredentialBindings;
 }
 
+export interface ToolDispatchReceipt {
+  readonly observationKey: string;
+  readonly providerReference: string | null;
+  readonly normalizedStatus: string;
+  readonly payloadHash: string | null;
+  readonly payloadRef: string | null;
+  readonly observedAt: Instant;
+  readonly verificationMethod: string;
+}
+
 export type ToolDispatchOutcome =
   | {
       readonly status: "succeeded";
       readonly output: CanonicalJson;
+      readonly receipt: ToolDispatchReceipt;
     }
   | {
       readonly status: "accepted";
       readonly output?: CanonicalJson;
+      readonly receipt: ToolDispatchReceipt;
     }
   | {
       readonly status: "rejected";
       readonly errorCode: string;
+      readonly receipt: ToolDispatchReceipt;
     }
   | {
       readonly status: "partial";
       readonly reasonCode: string;
       readonly output?: CanonicalJson;
+      readonly receipt: ToolDispatchReceipt;
     }
   | {
       readonly status: "unknown";
       readonly reasonCode: string;
+      readonly receipt?: ToolDispatchReceipt;
     }
   | {
       readonly status: "not-dispatched";
@@ -126,6 +152,7 @@ export interface ConsequentialToolExecutionResult {
   readonly operation: OperationRecord;
   readonly reused: boolean;
   readonly dispatched: boolean;
+  readonly receipts: readonly ExternalReceiptRecord[];
   readonly output?: CanonicalJson;
 }
 
@@ -220,6 +247,45 @@ async function transitionIfCurrent(
   );
 }
 
+function toReceiptEvidence(
+  tool: ToolDefinition,
+  provider: ProviderSelection | null,
+  receipt: ToolDispatchReceipt,
+): ExternalReceiptEvidence {
+  return Object.freeze({
+    provider: provider?.provider.key ?? `tool:${tool.key}`,
+    observationKey: receipt.observationKey,
+    providerReference: receipt.providerReference,
+    normalizedStatus: receipt.normalizedStatus,
+    payloadHash: receipt.payloadHash,
+    payloadRef: receipt.payloadRef,
+    observedAt: receipt.observedAt,
+    verificationMethod: receipt.verificationMethod,
+    providerVersion: provider?.provider.version ?? tool.version,
+  });
+}
+
+async function reconcileUnknown(
+  operations: ToolOperationStore,
+  operation: OperationRecord,
+  reasonCode: string,
+): Promise<OperationRecord> {
+  let current = operation;
+  if (current.state !== "unknown" && current.state !== "reconciling") {
+    current = await transitionIfCurrent(operations, current, "unknown");
+  }
+  await operations.beginReconciliation({
+    tenantId: current.tenantId,
+    operationId: current.operationId,
+    reasonCode,
+    safeRetry: false,
+    nextAction: "reconcile-provider-state",
+  });
+  return (
+    (await operations.load(current.tenantId, current.operationId)) ?? current
+  );
+}
+
 export async function executeConsequentialTool(
   dependencies: ConsequentialToolExecutionDependencies,
   input: ConsequentialToolExecutionInput,
@@ -292,6 +358,26 @@ export async function executeConsequentialTool(
 
   if (
     prepared.reused &&
+    (operation.state === "dispatching" || operation.state === "dispatched")
+  ) {
+    operation = await reconcileUnknown(
+      dependencies.operations,
+      operation,
+      "tool.replay_incomplete_dispatch",
+    );
+    return {
+      operation,
+      reused: true,
+      dispatched: false,
+      receipts: await dependencies.operations.listReceipts(
+        invocation.authority.tenantId,
+        operation.operationId,
+      ),
+    };
+  }
+
+  if (
+    prepared.reused &&
     operation.state !== "prepared" &&
     operation.state !== "authorized"
   ) {
@@ -299,6 +385,10 @@ export async function executeConsequentialTool(
       operation,
       reused: true,
       dispatched: false,
+      receipts: await dependencies.operations.listReceipts(
+        invocation.authority.tenantId,
+        operation.operationId,
+      ),
     };
   }
 
@@ -332,6 +422,10 @@ export async function executeConsequentialTool(
       operation,
       reused: prepared.reused,
       dispatched: false,
+      receipts: await dependencies.operations.listReceipts(
+        invocation.authority.tenantId,
+        operation.operationId,
+      ),
     };
   }
 
@@ -352,27 +446,66 @@ export async function executeConsequentialTool(
       credentialBindings,
     });
   } catch {
-    operation = await transitionIfCurrent(
+    const latest = await reconcileUnknown(
       dependencies.operations,
       operation,
-      "unknown",
+      "tool.dispatch_exception",
     );
-    await dependencies.operations.beginReconciliation({
-      tenantId: invocation.authority.tenantId,
-      operationId: operation.operationId,
-      reasonCode: "tool.dispatch_exception",
-      safeRetry: false,
-      nextAction: "reconcile-provider-state",
-    });
-    const latest =
-      (await dependencies.operations.load(
-        invocation.authority.tenantId,
-        operation.operationId,
-      )) ?? operation;
     return {
       operation: latest,
       reused: prepared.reused,
       dispatched: true,
+      receipts: await dependencies.operations.listReceipts(
+        invocation.authority.tenantId,
+        operation.operationId,
+      ),
+    };
+  }
+
+  let receipt: ExternalReceiptRecord | null = null;
+  if (outcome.status !== "not-dispatched" && outcome.receipt !== undefined) {
+    try {
+      receipt = await dependencies.operations.recordReceipt({
+        tenantId: invocation.authority.tenantId,
+        operationId: operation.operationId,
+        evidence: toReceiptEvidence(tool, provider, outcome.receipt),
+      });
+    } catch {
+      const latest = await reconcileUnknown(
+        dependencies.operations,
+        operation,
+        "tool.receipt_persist_failed",
+      );
+      return {
+        operation: latest,
+        reused: prepared.reused,
+        dispatched: true,
+        receipts: await dependencies.operations.listReceipts(
+          invocation.authority.tenantId,
+          operation.operationId,
+        ),
+      };
+    }
+  }
+
+  if (
+    outcome.status !== "not-dispatched" &&
+    outcome.status !== "unknown" &&
+    receipt === null
+  ) {
+    const latest = await reconcileUnknown(
+      dependencies.operations,
+      operation,
+      "tool.receipt_missing",
+    );
+    return {
+      operation: latest,
+      reused: prepared.reused,
+      dispatched: true,
+      receipts: await dependencies.operations.listReceipts(
+        invocation.authority.tenantId,
+        operation.operationId,
+      ),
     };
   }
 
@@ -386,6 +519,7 @@ export async function executeConsequentialTool(
       operation,
       reused: prepared.reused,
       dispatched: false,
+      receipts: Object.freeze([]),
     };
   }
 
@@ -399,31 +533,27 @@ export async function executeConsequentialTool(
       operation,
       reused: prepared.reused,
       dispatched: true,
+      receipts: await dependencies.operations.listReceipts(
+        invocation.authority.tenantId,
+        operation.operationId,
+      ),
     };
   }
 
   if (outcome.status === "unknown") {
-    operation = await transitionIfCurrent(
+    const latest = await reconcileUnknown(
       dependencies.operations,
       operation,
-      "unknown",
+      outcome.reasonCode,
     );
-    await dependencies.operations.beginReconciliation({
-      tenantId: invocation.authority.tenantId,
-      operationId: operation.operationId,
-      reasonCode: outcome.reasonCode,
-      safeRetry: false,
-      nextAction: "reconcile-provider-state",
-    });
-    const latest =
-      (await dependencies.operations.load(
-        invocation.authority.tenantId,
-        operation.operationId,
-      )) ?? operation;
     return {
       operation: latest,
       reused: prepared.reused,
       dispatched: true,
+      receipts: await dependencies.operations.listReceipts(
+        invocation.authority.tenantId,
+        operation.operationId,
+      ),
     };
   }
 
@@ -455,6 +585,10 @@ export async function executeConsequentialTool(
       operation: latest,
       reused: prepared.reused,
       dispatched: true,
+      receipts: await dependencies.operations.listReceipts(
+        invocation.authority.tenantId,
+        operation.operationId,
+      ),
       ...(outcome.output !== undefined ? { output: outcome.output } : {}),
     };
   }
@@ -489,6 +623,10 @@ export async function executeConsequentialTool(
       operation: latest,
       reused: prepared.reused,
       dispatched: true,
+      receipts: await dependencies.operations.listReceipts(
+        invocation.authority.tenantId,
+        operation.operationId,
+      ),
       ...(outcome.output !== undefined ? { output: outcome.output } : {}),
     };
   }
@@ -502,6 +640,10 @@ export async function executeConsequentialTool(
     operation,
     reused: prepared.reused,
     dispatched: true,
+    receipts: await dependencies.operations.listReceipts(
+      invocation.authority.tenantId,
+      operation.operationId,
+    ),
     output: outcome.output,
   };
 }

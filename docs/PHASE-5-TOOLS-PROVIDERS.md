@@ -161,3 +161,36 @@ Validation:
   ambiguous dispatch creates a durable reconciliation case with `safe_retry = false`.
 
 Final documentation head must pass the same gate before PR #38 merge.
+
+
+## Third canonical slice — durable receipts and replay in progress
+
+Active branch: `phase5-tool-receipts-replay`.
+
+PR #38 merged the consequential execution/reconciliation slice as
+`21141266ab15e2111b8f78c6df365100a60a017a` after implementation run 330 and
+final documentation run 331 passed.
+
+This slice adds:
+- canonical `ExternalReceiptEvidence` and `ExternalReceiptRecord` under Events
+  ownership;
+- bounded sanitized receipt metadata only; no raw provider payload field;
+- Tool adapter receipt requirements for known dispatched outcomes;
+- receipt persistence before local operation settlement;
+- receipt-persistence failure -> `unknown` -> reconciliation, never optimistic success;
+- exact replay returns durable receipt evidence without re-dispatch;
+- PostgreSQL ToolOperationStore receipt admission/listing through canonical
+  `events.external_receipts`;
+- unit and PostgreSQL acceptance coverage for durable receipt replay and persistence
+  failure handling.
+
+Validation:
+- receipt/replay head `f223d12335189591608f2a6c444668df02dc0b9d` passed
+  Foundation CI run 336;
+- the full gate passed strict TypeScript, unit/architecture tests, PostgreSQL 18 +
+  pgvector integration suites and production builds;
+- the existing receipt observation fixture confirmed that duplicate delivery may carry
+  a new local payload locator/arrival timestamp while the stable observation identity
+  remains idempotent; changed business evidence still conflicts.
+
+Final documentation head must pass the same gate before PR #39 merges.

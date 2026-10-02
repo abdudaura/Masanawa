@@ -6,6 +6,7 @@ import {
 } from "@masanawa/contracts";
 import {
   assertOperationTransition,
+  type ExternalReceiptRecord,
   type OperationRecord,
   type OperationState,
 } from "@masanawa/events";
@@ -24,6 +25,7 @@ import {
 function memoryOperationStore(): ToolOperationStore {
   const operations = new Map<OperationId, OperationRecord>();
   const idempotency = new Map<string, OperationId>();
+  const receipts = new Map<OperationId, ExternalReceiptRecord[]>();
 
   return {
     async prepare(input: ToolOperationPrepareInput) {
@@ -86,7 +88,39 @@ function memoryOperationStore(): ToolOperationStore {
         operations.set(input.operationId, next);
       }
     },
+    async recordReceipt(input) {
+      const record: ExternalReceiptRecord = {
+        externalReceiptId: createCanonicalId("external-receipt"),
+        tenantId: input.tenantId,
+        operationId: input.operationId,
+        ...input.evidence,
+        createdAt: toInstant("2026-10-02T10:00:03Z"),
+      };
+      const existing = receipts.get(input.operationId) ?? [];
+      existing.push(record);
+      receipts.set(input.operationId, existing);
+      return record;
+    },
+    async listReceipts(tenantId, operationId) {
+      const operation = operations.get(operationId);
+      if (!operation || operation.tenantId !== tenantId) {
+        return Object.freeze([]);
+      }
+      return Object.freeze([...(receipts.get(operationId) ?? [])]);
+    },
   };
+}
+
+function dispatchReceipt(normalizedStatus = "succeeded") {
+  return {
+    observationKey: `provider-observation-${normalizedStatus}`,
+    providerReference: "provider-charge-1",
+    normalizedStatus,
+    payloadHash: "sha256:receipt",
+    payloadRef: null,
+    observedAt: toInstant("2026-10-02T10:00:03Z"),
+    verificationMethod: "provider-response",
+  } as const;
 }
 
 function fixture() {
@@ -189,6 +223,7 @@ describe("consequential Tool executor", () => {
           return {
             status: "succeeded" as const,
             output: { chargeId: "charge_1" },
+            receipt: dispatchReceipt(),
           };
         },
       }),
@@ -220,6 +255,13 @@ describe("consequential Tool executor", () => {
     expect(replay.operation.state).toBe("succeeded");
     expect(replay.reused).toBe(true);
     expect(replay.dispatched).toBe(false);
+    expect(first.receipts).toHaveLength(1);
+    expect(replay.receipts).toEqual(first.receipts);
+    expect(replay.receipts[0]).toMatchObject({
+      provider: "payments",
+      normalizedStatus: "succeeded",
+      providerReference: "provider-charge-1",
+    });
     expect(dispatches).toBe(1);
   });
 
@@ -243,6 +285,7 @@ describe("consequential Tool executor", () => {
               return {
                 status: "succeeded" as const,
                 output: {},
+                receipt: dispatchReceipt(),
               };
             },
           }),
@@ -306,6 +349,126 @@ describe("consequential Tool executor", () => {
     expect(dispatches).toBe(1);
   });
 
+  it("reconciles replay after a crash between receipt persistence and dispatch settlement", async () => {
+    const f = fixture();
+    const baseOperations = memoryOperationStore();
+    let failSettlementOnce = true;
+    const operations: ToolOperationStore = {
+      ...baseOperations,
+      async transition(tenantId, operationId, from, to) {
+        if (
+          failSettlementOnce &&
+          from === "dispatching" &&
+          to === "dispatched"
+        ) {
+          failSettlementOnce = false;
+          throw new Error("simulated crash after durable receipt");
+        }
+        return baseOperations.transition(tenantId, operationId, from, to);
+      },
+    };
+    let dispatches = 0;
+
+    const dependencies = {
+      tools: f.tools,
+      providers: f.providers,
+      authoritySource: {
+        getPolicyRevision: () => "policy-1",
+      },
+      operations,
+      resolveAdapter: () => ({
+        async dispatch() {
+          dispatches += 1;
+          return {
+            status: "succeeded" as const,
+            output: { chargeId: "charge_crash" },
+            receipt: dispatchReceipt(),
+          };
+        },
+      }),
+    };
+
+    const invocation = {
+      toolVersionId: f.toolVersionId,
+      authority: f.authority,
+      input: { amount: 1000 },
+      idempotencyKey: "charge-request-crash-after-receipt",
+      providerSelection: null,
+    } as const;
+    const executionInput = {
+      invocation,
+      credentialBindings: {
+        "api-key": createCanonicalId("credential-ref"),
+      },
+      idempotencyExpiresAt: toInstant("2026-10-03T10:00:00Z"),
+    };
+
+    await expect(
+      executeConsequentialTool(dependencies, executionInput),
+    ).rejects.toThrow(/simulated crash/u);
+
+    const replay = await executeConsequentialTool(
+      dependencies,
+      executionInput,
+    );
+
+    expect(replay.operation.state).toBe("reconciling");
+    expect(replay.reused).toBe(true);
+    expect(replay.dispatched).toBe(false);
+    expect(replay.receipts).toHaveLength(1);
+    expect(dispatches).toBe(1);
+  });
+
+  it("moves receipt persistence failure to reconciliation instead of success", async () => {
+    const f = fixture();
+    const baseOperations = memoryOperationStore();
+    const operations: ToolOperationStore = {
+      ...baseOperations,
+      async recordReceipt() {
+        throw new Error("receipt store unavailable");
+      },
+    };
+    let dispatches = 0;
+
+    const result = await executeConsequentialTool(
+      {
+        tools: f.tools,
+        providers: f.providers,
+        authoritySource: {
+          getPolicyRevision: () => "policy-1",
+        },
+        operations,
+        resolveAdapter: () => ({
+          async dispatch() {
+            dispatches += 1;
+            return {
+              status: "succeeded" as const,
+              output: { chargeId: "charge_receipt_failure" },
+              receipt: dispatchReceipt(),
+            };
+          },
+        }),
+      },
+      {
+        invocation: {
+          toolVersionId: f.toolVersionId,
+          authority: f.authority,
+          input: { amount: 1000 },
+          idempotencyKey: "charge-request-receipt-failure",
+          providerSelection: null,
+        },
+        credentialBindings: {
+          "api-key": createCanonicalId("credential-ref"),
+        },
+        idempotencyExpiresAt: toInstant("2026-10-03T10:00:00Z"),
+      },
+    );
+
+    expect(result.operation.state).toBe("reconciling");
+    expect(result.receipts).toEqual([]);
+    expect(dispatches).toBe(1);
+  });
+
   it("rejects missing or non-canonical credential bindings before dispatch", async () => {
     const f = fixture();
     const operations = memoryOperationStore();
@@ -321,7 +484,11 @@ describe("consequential Tool executor", () => {
           operations,
           resolveAdapter: () => ({
             async dispatch() {
-              return { status: "succeeded" as const, output: {} };
+              return {
+                status: "succeeded" as const,
+                output: {},
+                receipt: dispatchReceipt(),
+              };
             },
           }),
         },

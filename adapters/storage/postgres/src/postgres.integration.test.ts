@@ -3310,6 +3310,15 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
             return {
               status: "succeeded" as const,
               output: { providerReference: "charge-1" },
+              receipt: {
+                observationKey: "provider-response:charge-1",
+                providerReference: "charge-1",
+                normalizedStatus: "succeeded",
+                payloadHash: "sha256:provider-response-charge-1",
+                payloadRef: null,
+                observedAt: now,
+                verificationMethod: "provider-response",
+              },
             };
           },
         }),
@@ -3338,6 +3347,14 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       expect(replay.operation.operationId).toBe(first.operation.operationId);
       expect(replay.reused).toBe(true);
       expect(replay.dispatched).toBe(false);
+      expect(first.receipts).toHaveLength(1);
+      expect(replay.receipts).toEqual(first.receipts);
+      expect(replay.receipts[0]).toMatchObject({
+        provider: "payment-fixture",
+        providerReference: "charge-1",
+        normalizedStatus: "succeeded",
+        verificationMethod: "provider-response",
+      });
       expect(dispatches).toBe(1);
 
       await expect(
