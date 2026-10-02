@@ -119,42 +119,37 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 
 ## Immediate work
 
-Phase 4 Memory is closed:
-- acceptance implementation head `d48b17ff9c4bcb91d51d88bf78da7a1e6c9f597a`
-  passed Foundation CI run 313;
-- final closure documentation head `d67c9332431a7a8ce428e426f93ea61f34b7d798`
-  passed Foundation CI run 316;
-- PR #36 merged as `e960b3f5dfe4d7b7470ddea604187420451498ce`;
-- `docs/PHASE-4-MEMORY-ACCEPTANCE.md` is PASS with every row closed.
-
-Current work is Phase 5 — Tools and Providers on
+Phase 5 — Tools and Providers is active on
 `phase5-tools-providers-foundation`.
 
-Repository truth for this phase:
-- `packages/tools` and `packages/providers` are empty canonical placeholders;
-- `packages/providers` may depend only on contracts/security/telemetry;
-- `packages/tools` may depend only on contracts/security/events/providers;
-- Tools are atomic capabilities; Skills will compose them later;
-- consequential commits must be deterministic, authority-checked, idempotent and
-  evidence-bearing;
-- explicit provider selection must never silently fall back;
-- raw provider credentials must not enter Tool/Provider public contracts.
+First-slice implementation head `1f2e9d69b9adc312c06e8b3b5e12978a6c3e7074`
+passed Foundation CI run 318. The complete gate passed frozen install, strict
+TypeScript, Tool/Provider unit and architecture tests, all existing PostgreSQL 18 +
+pgvector suites and production builds. PR #37 has no review threads or comments.
+
+Implemented in the first slice:
+- shared canonical `CapabilityKey`;
+- real `@masanawa/providers` package with immutable definitions and separate readiness;
+- deterministic ready-only default selection and fail-closed explicit Provider selection;
+- exact-replay registration plus identity-conflict rejection;
+- real `@masanawa/tools` package with version-pinned capability/Tool registry;
+- schema/risk/side-effect/timeout/rate/cost/idempotency/reconciliation declarations;
+- registration-time rejection of unsafe consequential Tool definitions;
+- Provider-backed Tool resolution with no silent explicit fallback;
+- authority-bound canonical Tool invocation envelope;
+- production build + frozen workspace lockfile wiring.
 
 Immediate next steps:
-1. create real `@masanawa/providers` and `@masanawa/tools` packages using the
-   repository's strict TypeScript/build conventions;
-2. define immutable Provider identity/capability/readiness contracts and a deterministic
-   registry/selection function that fails closed for unavailable explicit providers;
-3. define versioned Tool/capability contracts including schemas, risk/side-effect class,
-   timeout/rate/cost metadata and declared idempotency/reconciliation semantics;
-4. ensure execution authority remains `AuthorityContext` from `packages/security`
-   rather than a Tool-owned authorization model;
-5. add unit/architecture acceptance fixtures before introducing any external provider
-   adapter;
-6. then extend toward credentials and consequential Tool execution through existing
-   Operation/reconciliation primitives.
-
-Primary Phase 5 record: `docs/PHASE-5-TOOLS-PROVIDERS.md`.
+1. verify final documentation-head Foundation CI for PR #37;
+2. fix any real failure; if green, merge PR #37;
+3. create a fresh Phase 5 execution branch from merged `main`;
+4. add credential bindings using only canonical `CredentialRefId` references;
+5. implement consequential Tool prepare/execute using existing `events.operations`,
+   current-authority revalidation and deterministic request/authority fingerprints;
+6. classify post-dispatch ambiguity as `unknown` and require reconciliation instead of
+   blind provider retry;
+7. prove exact replay, stale policy/revocation rejection and explicit-provider
+   no-fallback in PostgreSQL-backed execution fixtures.
 
 The requested post-freeze donor boundary remains unchanged: MemPalace contributes
 retrieval/evaluation/storage-contract behavior inside canonical Masanawa memory ports;
