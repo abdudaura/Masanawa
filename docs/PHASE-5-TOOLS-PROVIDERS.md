@@ -161,3 +161,31 @@ Validation:
   ambiguous dispatch creates a durable reconciliation case with `safe_retry = false`.
 
 Final documentation head must pass the same gate before PR #38 merge.
+
+
+## Third canonical slice — durable effect receipts and terminal replay
+
+Active branch: `phase5-tool-effect-receipts`  
+Active PR: #40
+
+Goal: make successful consequential Tool results restart-safe and replayable from
+canonical effect evidence, without adding a Tool-owned result database.
+
+Implemented:
+- new Events migration adds nullable `normalized_payload jsonb` to
+  `events.external_receipts`;
+- normalized payloads are canonical-JSON validated on write and canonically compared on
+  immutable observation replay;
+- successful Tool outcomes record one deterministic terminal receipt before
+  `accepted -> succeeded`;
+- terminal exact replay reads canonical receipts and returns the stored result without
+  provider redispatch;
+- an interrupted settle after receipt commit can be completed by replay from the same
+  durable Operation + receipt evidence;
+- PostgreSQL ToolOperationStore adapts receipt writes/reads through the existing Events
+  APIs;
+- unit coverage simulates a crash after receipt commit and proves one provider dispatch
+  plus recovered output.
+
+Validation: Foundation CI run 339 is pending on the latest PR #40 head. This is not a
+closure record until the complete gate is green.
