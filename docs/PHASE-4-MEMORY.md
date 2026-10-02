@@ -85,9 +85,31 @@ The first slice incorporates only behaviors that strengthen the canonical archit
 
 No Palace/Wing/Room/Drawer concept is canonical.
 
-## Second canonical slice — active
+## Second canonical slice — implemented, awaiting full CI
 
 Goal: governed correction/supersession/lifecycle and explicit scope publication.
+
+Implemented:
+- independent `lifecycleRevision` CAS so lifecycle mutation does not corrupt the
+  current immutable MemoryRevision pointer;
+- `memory.record_links` for immutable same-scope/type `supersedes` / `absorbs`
+  lineage;
+- atomic deterministic row locking for source/target lineage transitions;
+- exact replay of an already-committed lineage operation is idempotent;
+- stale lifecycle writers lose;
+- cross-scope and cross-memory-type lineage is rejected in repository code and by
+  PostgreSQL trigger invariants;
+- old source revisions/evidence remain intact and retrievable under the original
+  authorized scope after supersession;
+- `memory.scope_publications` immutable audit;
+- publication source restricted to Relationship, Character-private, Session or Task;
+- publication target restricted to Character-shared, World or Organization;
+- explicit `memory.scope.publish` capability plus exact source/target resource scope;
+- prepare/execute publication uses current authority, idempotent Operation binding,
+  exact one-time Approval consumption and transactionally creates the target record;
+- publication never mutates source scope/lifecycle and never copies private verbatim
+  source text into its audit row;
+- unit governance tests and PostgreSQL lifecycle/publication fixtures.
 
 Rules:
 - correction inside the same semantic MemoryRecord appends a new immutable revision;
@@ -103,10 +125,14 @@ Rules:
 - the private source remains private and is referenced only by canonical IDs in the
   publication audit row, never copied wholesale into a public/shared event.
 
-After this slice:
-1. add idempotent extraction queue/retry/dead-letter;
-2. then implement projection compatibility metadata and authorized lexical/vector/
-   entity/temporal retrieval with rebuild/evaluation fixtures.
+Immediate acceptance:
+1. open a PR from `phase4-memory-lifecycle`;
+2. run the complete Foundation CI/PostgreSQL 18 gate and fix every real failure;
+3. once green, record CI evidence and merge;
+4. then add idempotent extraction queue/retry/dead-letter;
+5. only after lifecycle/liveness is sound, implement projection compatibility metadata
+   and authorized lexical/vector/entity/temporal retrieval with rebuild/evaluation
+   fixtures.
 
 ## Phase 4 acceptance targets
 
