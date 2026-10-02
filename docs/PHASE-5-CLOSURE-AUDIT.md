@@ -1,8 +1,8 @@
 # Phase 5 Tools and Providers Closure Audit
 
-Status: **PENDING** — implementation evidence is strong, but the current provider
-failure/telemetry/credential-custody head still requires a complete Foundation CI gate
-and final adapter-boundary review before Phase 5 can close.
+Status: **PASS** — Phase 5 implementation acceptance is closed on the current
+credential-custody implementation. The final documentation head must still pass
+Foundation CI before PR #45 merges.
 
 Scope: canonical Tool/Provider registry, readiness/selection, consequential execution,
 credentials, external receipts/reconciliation, provider failure typing and telemetry.
@@ -87,9 +87,9 @@ Evidence:
 - receipt persistence failure also reconciles rather than optimistically succeeding;
 - PostgreSQL fixture proves a durable reconciliation case is created.
 
-### 7. Credentials are referenced, scoped and excluded from public execution data — PENDING FINAL GATE
+### 7. Credentials are referenced, scoped and excluded from public execution data — PASS
 
-Implemented on PR #45:
+Evidence from PR #45:
 - Provider definitions expose slot metadata only;
 - Tool invocation/fingerprints carry canonical CredentialRefId bindings, never plaintext;
 - Security resolution request binds tenant, Provider, Operation and slot identity;
@@ -104,8 +104,11 @@ Implemented on PR #45:
 - inaccessible/out-of-scope/decrypt-failed references all fail through a safe
   `credential.unavailable` authorization surface.
 
-Required before PASS:
-- exact latest PR #45 head must pass PostgreSQL integration + production build.
+Validation:
+- hardened implementation head `7d53562fe29f5aae6a3e69c495757ce22658df3a`
+  passed Foundation CI run 365;
+- the complete gate passed frozen install, strict TypeScript, unit/architecture tests,
+  PostgreSQL 18 + pgvector integration suites and production builds.
 
 ### 8. Timeout/rate/cost/readiness failures are typed — PASS
 
@@ -147,20 +150,35 @@ Evidence:
 
 Future provider adapters remain required to enter through these same canonical ports.
 
-## Reliability and privacy gates
+## Reliability and privacy gates — PASS
 
-Already PASS from merged slices:
 - tenant-scoped Operation reads/transitions;
 - immutable receipt observation identity;
 - external receipts precede local settlement;
 - unknown/partial states are durable and reconcilable;
 - receipt-store failure is not converted into success;
 - telemetry sink failure is non-authoritative;
-- raw credential decrypt errors are redacted at the Security boundary.
+- raw credential decrypt errors are redacted at the Security boundary;
+- credential resolution requires a real Operation in the same tenant;
+- credential plaintext is absent from PostgreSQL persistence;
+- credential rotation is generation-CAS protected and revocation is fail closed;
+- repository-wide adapter/service scan found no alternate external Provider execution
+  path outside the canonical Tool executor.
 
-Pending:
-- PR #45 exact-head Foundation CI for encrypted credential custody;
-- final documentation-head CI after this audit is changed to PASS.
+## Closure evidence
+
+Merged implementation chain:
+- PR #37 registry foundation;
+- PR #38 consequential execution/reconciliation;
+- PR #39 durable receipts/replay;
+- PR #42 typed Provider failures/privacy-safe telemetry.
+
+PR #45 hardened credential-custody implementation head
+`7d53562fe29f5aae6a3e69c495757ce22658df3a` passed Foundation CI run 365.
+
+All Phase 5 acceptance matrix items are PASS. The final documentation head containing
+this closure declaration must pass the same Foundation CI workflow before PR #45 is
+merged.
 
 ## Closure rule
 
