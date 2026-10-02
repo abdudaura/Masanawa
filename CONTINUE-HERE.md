@@ -143,14 +143,20 @@ PR #38 is the active execution/reconciliation slice. Implemented on the branch:
 - unit tests cover exact replay, stale-policy rejection, ambiguous dispatch and required
   credential references.
 
-Foundation CI run 324 is the current validation gate for the latest PR #38 head.
-Do not merge PR #38 until that gate passes; fix any real failure on this branch first.
+Implementation head `c6c86f6b0521d408cdf2fcd8938df481353e8d48` passed Foundation CI run 330.
+The complete gate included frozen install, strict TypeScript, unit/architecture tests,
+PostgreSQL 18 + pgvector integration suites and production builds. The PostgreSQL
+fixture proves durable exact replay, revoked/stale authority rejection, tenant-scoped
+operation reads and ambiguity-to-reconciliation with blind retry disabled.
+
+Final documentation head must pass the same Foundation CI gate before PR #38 merges.
 
 After this slice is green:
-1. add PostgreSQL-backed acceptance fixtures for exact replay, stale/revoked authority,
-   tenant isolation and reconciliation;
-2. persist/verify external effect receipts needed for durable result recovery;
-3. add typed provider adapter failure/readiness/cost/timeout telemetry without secrets;
+1. persist/verify external effect receipts needed for durable result recovery and
+   terminal replay responses;
+2. add typed provider adapter failure/readiness/cost/timeout telemetry without secrets;
+3. prove credential-reference scoping/resolution at the adapter edge without exposing
+   raw secret material to Tool contracts;
 4. finish the Phase 5 acceptance audit before advancing to Skills/Workflows.
 
 The requested post-freeze donor boundary remains unchanged: MemPalace contributes
