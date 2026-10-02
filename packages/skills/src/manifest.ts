@@ -69,7 +69,12 @@ const maxInstructionsLength = 262_144;
 const SkillManifestResourceSchema = Type.Object(
   {
     path: Type.String({ minLength: 1, maxLength: 512 }),
-    kind: Type.Union([\n      Type.Literal("reference"),\n      Type.Literal("asset"),\n      Type.Literal("template"),\n      Type.Literal("script"),\n    ]),
+    kind: Type.Union([
+      Type.Literal("reference"),
+      Type.Literal("asset"),
+      Type.Literal("template"),
+      Type.Literal("script"),
+    ]),
   },
   { additionalProperties: false },
 );
