@@ -34,9 +34,9 @@ of architectural feature selection.
 
 ## Current phase
 
-**Phase 5 — Tools and Providers.**
+**Phase 6 — Skills.**
 
-Current implementation branch: `phase5-credential-custody`.
+Current implementation branch: `phase6-skills-foundation`.
 
 Phase 0A/0B, Phase 1 and Phase 2 are closed.
 
@@ -119,54 +119,41 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 
 ## Immediate work
 
-Phase 5 — Tools and Providers is active on
-`phase5-credential-custody`.
-
-Merged Phase 5 history:
-- registry foundation PR #37:
+Phase 5 Tools and Providers is closed:
+- PR #37 registry foundation:
   `b3f2e8ce33aeb4ed125bd40af78f10a454174bbd`;
-- consequential execution/reconciliation PR #38:
+- PR #38 consequential execution/reconciliation:
   `21141266ab15e2111b8f78c6df365100a60a017a`;
-- durable receipt/replay PR #39:
+- PR #39 durable receipts/replay:
   `8d531188e2f9d7c38f50cc883e3425096b5408ad`;
-- typed Provider failures/privacy-safe telemetry PR #42:
-  `be814fee91b8b551b00e2d9900d2970680297b3d`.
+- PR #42 typed Provider failures/privacy-safe telemetry:
+  `be814fee91b8b551b00e2d9900d2970680297b3d`;
+- PR #45 encrypted credential custody:
+  `0fe123e18a9163386c4ab10331139265ce26b64e`.
+- Phase 5 closure audit is PASS;
+- implementation run 365, final documentation run 368 and merged-main run 369 all
+  passed Foundation CI.
 
-PR #45 is the active credential-custody slice.
+Phase 6 — Skills is active on `phase6-skills-foundation`.
 
-Implemented on the branch:
-- Security-owned CredentialRefId resolution binds tenant, Provider, Operation and slot;
-- raw credential material is available only through `CredentialSecret.use(...)`;
-- CredentialSecret string/JSON surfaces are always `[REDACTED]`;
-- encrypted credential envelopes are crypto/KMS-neutral contracts rather than a
-  hard-coded provider;
-- PostgreSQL `security.credential_refs` stores only encrypted envelope material plus
-  tenant/provider/slot/generation/active metadata;
-- create is conflict-safe; rotation uses expected-generation CAS; revocation disables
-  subsequent resolution;
-- provider adapter-edge helpers resolve only validated Provider credential slots;
-- wrong tenant/provider/slot, missing/ref-revoked credentials and decrypt/KMS failures
-  all fail through one non-disclosing `credential.unavailable` authorization surface;
-- PostgreSQL integration coverage proves ciphertext-at-rest, scope isolation,
-  generation rotation/stale rejection, revocation and decrypt-error redaction.
+Primary record: `docs/PHASE-6-SKILLS.md`.
 
-Foundation CI run 356 found an implicit-any issue and later hardening added a real
-same-tenant Operation requirement plus a genuine pre-revocation decrypt-error test.
-Hardened implementation head
-`7d53562fe29f5aae6a3e69c495757ce22658df3a` passed Foundation CI run 365.
-The complete gate passed frozen install, strict TypeScript, unit/architecture tests,
-PostgreSQL 18 + pgvector integration suites and production builds.
+Immediate first slice:
+1. implement real `@masanawa/skills` package;
+2. production registry accepts immutable certified SkillVersions only;
+3. exact SkillVersion dependency graph uses atomic batch validation, missing/cyclic
+   rejection and bounded depth;
+4. separate immutable certification/provenance from mutable readiness;
+5. model visibility is separate from execution/dependency eligibility;
+6. declare aggregate Tool capabilities and consequential/billing governance without
+   duplicating Tool authorization;
+7. add tests for exact replay/conflicts, certification, cycles, missing dependencies,
+   depth and readiness;
+8. add PostgreSQL-backed canonical Skill/SkillVersion persistence before import/parser
+   candidates can become production-capable.
 
-The Phase 5 acceptance audit is now PASS. Do not merge PR #45 until the final
-documentation head containing that PASS declaration also passes Foundation CI.
-
-Immediate next:
-1. wait for the final documentation-head Foundation CI and fix any real failure;
-2. merge PR #45 if that exact head is green;
-3. verify merged `main` and its push CI;
-4. start Phase 6 Skills/Workflows from merged `main`, using Paperclip only as a
-   bounded workflow/runtime/Ops behavior donor and preserving Masanawa's canonical
-   Authority/Operation/Provider boundaries.
+Do not pull Phase 8 durable Workflow ownership into this slice. Skills may later
+reference workflow definition primitives only after their canonical boundary exists.
 
 The requested post-freeze donor boundary remains unchanged: MemPalace contributes
 retrieval/evaluation/storage-contract behavior inside canonical Masanawa memory ports;
