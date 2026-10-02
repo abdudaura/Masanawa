@@ -11,7 +11,11 @@ import {
   prepareOperation,
   transitionOperation,
 } from "../events/operations.js";
-import { beginReconciliation } from "../events/reconciliation.js";
+import {
+  beginReconciliation,
+  listExternalReceiptsForOperation,
+  recordExternalReceipt,
+} from "../events/reconciliation.js";
 
 export function createPostgresToolOperationStore(
   pool: Pool,
@@ -47,6 +51,39 @@ export function createPostgresToolOperationStore(
 
     async beginReconciliation(input: Parameters<ToolOperationStore["beginReconciliation"]>[0]): Promise<void> {
       await beginReconciliation(pool, input);
+    },
+
+    recordReceipt(input: Parameters<ToolOperationStore["recordReceipt"]>[0]) {
+      return withTransaction(pool, async (client) => {
+        const recorded = await recordExternalReceipt(client, {
+          tenantId: input.tenantId,
+          operationId: input.operationId,
+          provider: input.evidence.provider,
+          observationKey: input.evidence.observationKey,
+          ...(input.evidence.providerReference !== null
+            ? { providerReference: input.evidence.providerReference }
+            : {}),
+          normalizedStatus: input.evidence.normalizedStatus,
+          ...(input.evidence.payloadHash !== null
+            ? { payloadHash: input.evidence.payloadHash }
+            : {}),
+          ...(input.evidence.payloadRef !== null
+            ? { payloadRef: input.evidence.payloadRef }
+            : {}),
+          observedAt: input.evidence.observedAt,
+          verificationMethod: input.evidence.verificationMethod,
+          ...(input.evidence.providerVersion !== null
+            ? { providerVersion: input.evidence.providerVersion }
+            : {}),
+        });
+        return recorded.receipt;
+      });
+    },
+
+    listReceipts(tenantId: TenantId, operationId: OperationId) {
+      return withTransaction(pool, (client) =>
+        listExternalReceiptsForOperation(client, tenantId, operationId),
+      );
     },
   });
 }
