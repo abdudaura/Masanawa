@@ -140,10 +140,40 @@ Rules:
 - the private source remains private and is referenced only by canonical IDs in the
   publication audit row, never copied wholesale into a public/shared event.
 
-## Third canonical slice — active
+## Third canonical slice — implementation gate passed
 
 Goal: idempotent asynchronous extraction custody with bounded retry, durable leases,
 attempt history, poison-input dead-letter and forward progress.
+
+Implemented:
+- canonical `memory-extraction` identity and typed extraction custody contracts;
+- normalized scope/source/extractor inputs with SHA-256 source evidence;
+- queue state stores source kind/reference/hash, never raw source text;
+- semantic idempotency fingerprint binds tenant, key, scope, source, extractor and
+  retry policy while operational `availableAt` remains outside request identity;
+- PostgreSQL `memory.extraction_jobs` and immutable/auditable attempt history;
+- database-enforced queue state machine, terminal immutability and monotonic
+  attempt/fence progression;
+- `FOR UPDATE SKIP LOCKED` claims with durable worker leases and fences;
+- claim renewal uses PostgreSQL clock, not worker process clock;
+- expired lease recovery records `lease-expired`, requeues bounded work and
+  dead-letters the final expired attempt;
+- retryable failures requeue only below `maxAttempts`;
+- permanent/repeated failures dead-letter with bounded safe error codes only;
+- settled attempts are immutable while active attempts may only renew lease or settle;
+- stale workers cannot settle a reclaimed job;
+- poison-input PostgreSQL fixture proves a dead-lettered extraction does not block
+  healthy or later eligible jobs;
+- idempotent enqueue fixture proves harmless schedule drift reuses the original
+  admitted job while changed source evidence conflicts;
+- the canonical MemoryScope storage codec is shared by records and extraction custody,
+  eliminating duplicate privacy-sensitive scope decoding logic.
+
+Validation evidence:
+- Foundation CI run 271 passed frozen install, strict TypeScript, unit tests,
+  PostgreSQL 18 migrations/recovery/concurrency fixtures and production builds on
+  implementation head `2a423ac1480b9c094b602e0d0e846bf882ff1992`;
+- the final documentation-only head must pass the same gate before PR #31 merges.
 
 Rules:
 - foreground/source persistence is independent of extraction success;
