@@ -64,6 +64,12 @@ CREATE TABLE memory.extraction_jobs (
     OR
     (scope_kind <> 'organization' AND scope_ref_id IS NOT NULL)
   ),
+  CHECK (attempt <= max_attempts),
+  CHECK (
+    (state = 'queued' AND attempt = 0 AND fence = 0)
+    OR
+    (state <> 'queued' AND attempt > 0 AND fence > 0)
+  ),
   CHECK (
     (
       state = 'processing'
@@ -79,6 +85,17 @@ CREATE TABLE memory.extraction_jobs (
   ),
   CHECK (
     (
+      state IN ('retry-scheduled', 'dead-letter')
+      AND safe_error_code IS NOT NULL
+    )
+    OR
+    (
+      state NOT IN ('retry-scheduled', 'dead-letter')
+      AND safe_error_code IS NULL
+    )
+  ),
+  CHECK (
+    (
       state IN ('completed', 'no-facts', 'dead-letter')
       AND terminal_at IS NOT NULL
     )
@@ -89,6 +106,67 @@ CREATE TABLE memory.extraction_jobs (
     )
   )
 );
+
+CREATE OR REPLACE FUNCTION memory.protect_extraction_job()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $
+BEGIN
+  IF NEW.tenant_id IS DISTINCT FROM OLD.tenant_id
+     OR NEW.memory_extraction_id IS DISTINCT FROM OLD.memory_extraction_id
+     OR NEW.idempotency_key IS DISTINCT FROM OLD.idempotency_key
+     OR NEW.request_fingerprint IS DISTINCT FROM OLD.request_fingerprint
+     OR NEW.scope_kind IS DISTINCT FROM OLD.scope_kind
+     OR NEW.scope_ref_id IS DISTINCT FROM OLD.scope_ref_id
+     OR NEW.source_kind IS DISTINCT FROM OLD.source_kind
+     OR NEW.source_reference IS DISTINCT FROM OLD.source_reference
+     OR NEW.source_content_hash IS DISTINCT FROM OLD.source_content_hash
+     OR NEW.extractor_key IS DISTINCT FROM OLD.extractor_key
+     OR NEW.extractor_version IS DISTINCT FROM OLD.extractor_version
+     OR NEW.max_attempts IS DISTINCT FROM OLD.max_attempts
+     OR NEW.created_at IS DISTINCT FROM OLD.created_at THEN
+    RAISE EXCEPTION 'Memory extraction admission identity is immutable'
+      USING ERRCODE = '23514';
+  END IF;
+
+  IF OLD.state IN ('completed', 'no-facts', 'dead-letter') THEN
+    RAISE EXCEPTION 'Terminal memory extraction job is immutable'
+      USING ERRCODE = '23514';
+  END IF;
+
+  IF NEW.attempt < OLD.attempt OR NEW.fence < OLD.fence THEN
+    RAISE EXCEPTION 'Memory extraction attempt/fence cannot move backward'
+      USING ERRCODE = '23514';
+  END IF;
+
+  IF NOT (
+    (OLD.state = 'queued' AND NEW.state IN ('queued', 'processing'))
+    OR
+    (OLD.state = 'retry-scheduled' AND NEW.state IN ('retry-scheduled', 'processing'))
+    OR
+    (
+      OLD.state = 'processing'
+      AND NEW.state IN (
+        'processing',
+        'retry-scheduled',
+        'completed',
+        'no-facts',
+        'dead-letter'
+      )
+    )
+  ) THEN
+    RAISE EXCEPTION 'Invalid memory extraction state transition'
+      USING ERRCODE = '23514';
+  END IF;
+
+  RETURN NEW;
+END;
+$;
+
+CREATE TRIGGER memory_extraction_job_guard
+BEFORE UPDATE ON memory.extraction_jobs
+FOR EACH ROW
+EXECUTE FUNCTION memory.protect_extraction_job();
 
 CREATE INDEX memory_extraction_claim_idx
   ON memory.extraction_jobs (
