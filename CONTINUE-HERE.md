@@ -36,7 +36,7 @@ of architectural feature selection.
 
 **Phase 4 — Memory.**
 
-Current implementation branch: `phase4-memory-deletion-context`.
+Current implementation branch: `phase4-memory-reflection-compaction`.
 
 Phase 0A/0B, Phase 1 and Phase 2 are closed.
 
@@ -119,42 +119,29 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 
 ## Immediate work
 
-PR #34 is the active deletion/context slice on
-`phase4-memory-deletion-context`.
-
+PR #34 merged as `09cb24218720040cc8e7ccbe59896c5380272b0e`.
 Hardened implementation head `7994de231a27f510cff09ad2db8fe3b71cc307b4`
-passed Foundation CI run 305. The complete gate passed frozen install, strict
-TypeScript, all unit tests, PostgreSQL 18 + pgvector migrations/integration fixtures and
-production builds. PR #34 has no review threads or comments.
+passed Foundation CI run 305; final documentation head
+`dad3f5fe36a3fcda5c036e21035c26458e3446c9` passed run 306.
 
-The branch now includes:
-- governed `memory.record.tombstone` prepare/execute with exact scope authority,
-  Operation identity and one-time Approval consumption;
-- immutable tombstone audit plus database lifecycle-CAS/orphan-audit/reactivation
-  guards;
-- stale-preparation rejection before approval consumption;
-- immediate lexical/vector/entity/temporal/hybrid suppression from canonical tombstone
-  state, before projection cleanup;
-- tombstone-only projection cleanup that preserves canonical revisions/evidence;
-- bounded deterministic context compilation with record/revision/scope provenance,
-  oversized-item skipping and conflicting-duplicate rejection;
-- one-snapshot read-only REPEATABLE READ hybrid retrieval→context compilation;
-- end-to-end fixtures proving raw unaudited transition rejection, replay safety,
-  preserved verbatim evidence and context disappearance after tombstone.
+Current work is the reflection/consolidation + compaction-flush slice on
+`phase4-memory-reflection-compaction`.
 
 Immediate next steps:
-1. verify the final documentation-head Foundation CI for PR #34;
-2. fix any real failure; if green, merge PR #34;
-3. create a fresh branch from merged `main` for reflection/consolidation and
-   compaction-flush custody;
-4. make reflection identity deterministic from exact source record/revision evidence so
-   retry cannot duplicate durable derived memory;
-5. keep reflection/consolidation inside the exact source MemoryScope unless a separate
-   governed scope-publication action is explicitly invoked;
-6. preserve source evidence through reflection and absorption, and use existing
-   lifecycle lineage rather than destructive replacement;
-7. make compaction/context-loss flush first admit durable memory work transactionally,
-   with replayable custody and fail-closed scope checks.
+1. implement retry-idempotent reflection admission/commit from exact canonical source
+   MemoryRecord/MemoryRevision evidence;
+2. require every reflection source to share the exact target MemoryScope and preserve
+   immutable source provenance;
+3. represent reflection output as an ordinary canonical MemoryRecord of type
+   `reflection`, never a second memory store;
+4. support explicit consolidation/absorption using existing lifecycle lineage while
+   retaining the source revisions/evidence;
+5. reuse existing extraction custody for compaction/context-loss flush admission rather
+   than creating a second worker queue;
+6. make flush admission idempotent and exact-scope, and prove context may be discarded
+   only after durable extraction work is admitted;
+7. add PostgreSQL fixtures for retry replay, cross-scope rejection, source-revision
+   drift, absorption preservation and compaction-flush scope safety.
 
 The requested post-freeze donor boundary remains unchanged: MemPalace contributes
 retrieval/evaluation/storage-contract behavior inside canonical Masanawa memory ports;
