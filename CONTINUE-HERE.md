@@ -36,7 +36,7 @@ of architectural feature selection.
 
 **Phase 4 — Memory.**
 
-Current implementation branch: `phase4-memory-lifecycle`.
+Current implementation branch: `phase4-memory-extraction-liveness`.
 
 Phase 0A/0B, Phase 1 and Phase 2 are closed.
 
@@ -119,14 +119,15 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 
 ## Immediate work
 
-1. verify the automatically triggered Foundation CI run on the final
-   documentation-only PR #30 head;
-2. fix any real failure; if green, merge PR #30;
-3. on a fresh branch from merged `main`, implement idempotent extraction
-   queue/retry/dead-letter with durable leases, bounded attempts and poison-item
-   isolation;
-4. run PostgreSQL 18 recovery/concurrency fixtures and merge when green;
-5. only after lifecycle/liveness is sound, add retrieval projections.
+1. implement the canonical memory extraction queue on
+   `phase4-memory-extraction-liveness`;
+2. bind idempotent enqueue to normalized scope/source/extractor inputs without storing
+   raw source text in queue state;
+3. add lease/fence claim + renew + settlement, bounded retries, expired-lease recovery,
+   permanent/repeated-failure dead-letter and durable per-attempt evidence;
+4. prove with PostgreSQL 18 fixtures that stale workers lose and poison inputs do not
+   block later jobs;
+5. run the complete CI gate and merge before starting retrieval projections.
 
 The lifecycle/publication implementation now includes independent lifecycle CAS,
 immutable same-scope/type lineage, current-authority + one-time-approval publication,
@@ -136,7 +137,9 @@ races, and generated sanitized publication provenance that cannot carry caller-i
 private verbatim evidence.
 
 Foundation CI run 261 passed the complete gate on hardened implementation head
-`f5777a0d32fdc57b84d8fd415bb4ddb5de57a972`.
+`f5777a0d32fdc57b84d8fd415bb4ddb5de57a972`; final documentation head
+`061ab25d85b5100120c73d1442984cff8cf922e8` passed run 262; PR #30 merged as
+`b3cc9e75fe32ded30dc51dc2b116a38b454b46a9`.
 
 Do not skip directly to vector search. Retrieval quality cannot outrank canonical scope,
 provenance, correction, deletion or liveness.
