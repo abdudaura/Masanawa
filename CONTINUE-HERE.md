@@ -36,7 +36,7 @@ of architectural feature selection.
 
 **Phase 5 — Tools and Providers.**
 
-Current implementation branch: `phase5-tool-receipts-replay`.
+Current implementation branch: `phase5-provider-telemetry-errors`.
 
 Phase 0A/0B, Phase 1 and Phase 2 are closed.
 
@@ -120,61 +120,54 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 ## Immediate work
 
 Phase 5 — Tools and Providers is active on
-`phase5-tool-receipts-replay`.
+`phase5-provider-telemetry-errors`.
 
-The registry foundation is merged to `main` as PR #37 at
-`b3f2e8ce33aeb4ed125bd40af78f10a454174bbd`.
+Merged Phase 5 history:
+- registry foundation PR #37 merged as
+  `b3f2e8ce33aeb4ed125bd40af78f10a454174bbd`;
+- consequential execution/reconciliation PR #38 merged as
+  `21141266ab15e2111b8f78c6df365100a60a017a`;
+- durable receipt/replay PR #39 merged as
+  `8d531188e2f9d7c38f50cc883e3425096b5408ad`.
 
-PR #38 merged to `main` as `21141266ab15e2111b8f78c6df365100a60a017a`.
-Its execution/reconciliation slice established:
-- provider credential bindings accept only canonical `CredentialRefId` values and
-  fail closed on unknown/missing slots;
-- consequential Tool execution is pinned to the registered ToolVersion;
-- required authority capabilities are checked and current authority is revalidated
-  immediately before dispatch;
-- deterministic authority-scope/request fingerprints bind operation idempotency;
-- exact replay of a settled or in-flight operation does not redispatch;
-- explicit provider selection continues to use the canonical no-fallback registry;
-- dispatch exceptions/unknown outcomes become `unknown` and immediately enter
-  reconciliation with `safeRetry=false`;
-- known-not-dispatched failures may fail without claiming an external side effect;
-- PostgreSQL adapts the canonical Tool operation port onto existing
-  `events.operations` and reconciliation storage;
-- Tool operation reads/transitions are tenant-scoped;
-- unit tests cover exact replay, stale-policy rejection, ambiguous dispatch and required
-  credential references.
+PR #42 is the active provider failure/telemetry slice.
 
-Implementation head `c6c86f6b0521d408cdf2fcd8938df481353e8d48` passed Foundation CI run 330.
-The complete gate included frozen install, strict TypeScript, unit/architecture tests,
-PostgreSQL 18 + pgvector integration suites and production builds. The PostgreSQL
-fixture proves durable exact replay, revoked/stale authority rejection, tenant-scoped
-operation reads and ambiguity-to-reconciliation with blind retry disabled.
+Implemented on the branch:
+- typed Provider failure kind/phase/dispatch-certainty contracts;
+- post-dispatch failures are forced to `unknown` certainty and pre-dispatch failures
+  must be certified `not-dispatched`;
+- ambiguous failures are never exposed as immediately retryable;
+- typed timeout/rate-limit/unavailable/authentication/cost/transport failure mapping to
+  canonical `PlatformError` categories;
+- bounded Provider usage for cost/input/output units and latency;
+- privacy-safe Provider readiness and execution telemetry attributes through the
+  canonical Telemetry allowlist;
+- arbitrary provider keys such as credential/API-key fields remain rejected from the
+  default telemetry surface;
+- optional Provider telemetry sink is observational only and cannot change Tool truth;
+- consequential Tool execution treats certified not-dispatched Provider failures as
+  locally failed without reconciliation, while unknown post-dispatch failures enter
+  reconciliation with blind retry disabled;
+- success/failure telemetry carries Provider, capability, ToolVersion and Operation
+  identity without request input, result payload, receipt bodies or CredentialRefIds;
+- production build order now compiles Telemetry before Providers.
 
-Final documentation head `8502b302aaeef0d2d0e79a7861cf4a53974d437f` passed Foundation CI run 331 before merge.
-
-Active receipt/replay slice now implements:
-- canonical bounded external receipt evidence/record contracts in `packages/events`;
-- consequential adapters must return sanitized receipt evidence for known dispatched
-  outcomes before the operation may become locally successful/rejected/partial;
-- Tool execution persists receipt evidence before settlement;
-- receipt persistence failure becomes `unknown` -> reconciliation with blind retry
-  disabled;
-- exact replay loads durable receipts and does not redispatch;
-- PostgreSQL ToolOperationStore records/lists canonical external receipts;
-- unit coverage includes receipt normalization, durable replay and receipt-store
-  failure reconciliation;
-- PostgreSQL integration coverage now expects durable receipt replay.
-
-Receipt/replay implementation head `f223d12335189591608f2a6c444668df02dc0b9d`
-passed Foundation CI run 336 after preserving the established receipt-observation
-idempotency contract. The gate passed strict TypeScript, all unit/architecture tests,
-PostgreSQL 18 + pgvector integration suites and production builds.
+Validation:
+- implementation head `3de2dcc749409b6be680fa5d7f01e820bd967792`
+  passed Foundation CI run 346;
+- the complete gate passed frozen install, strict TypeScript, unit/architecture tests,
+  PostgreSQL 18 + pgvector suites and production builds;
+- unit coverage proves one-shot success usage telemetry across idempotent replay,
+  certified pre-dispatch timeout handling, ambiguous post-dispatch reconciliation,
+  dispatch-certainty invariants and telemetry allowlist rejection of secret-like keys.
 
 Immediate next:
-1. require a green final documentation-head Foundation CI and merge PR #39;
-2. create the next clean Phase 5 branch from merged `main`;
-3. add typed provider failure/readiness/cost/timeout telemetry without secrets;
-4. prove credential-reference scoping/resolution at the adapter edge;
+1. require a green final documentation-head Foundation CI and merge PR #42;
+2. create a clean branch from merged `main`;
+3. implement CredentialRef metadata/scoping and adapter-edge secret resolution without
+   exposing raw secret values to Tool/Provider contracts, logs, telemetry or receipts;
+4. add revocation/scope/tenant/provider-slot acceptance coverage for credential
+   resolution;
 5. finish the Phase 5 acceptance audit before advancing to Skills/Workflows.
 
 The requested post-freeze donor boundary remains unchanged: MemPalace contributes
