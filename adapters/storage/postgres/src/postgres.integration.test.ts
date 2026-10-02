@@ -195,6 +195,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       "security/0001_security_foundation.sql",
       "security/0002_approval_operation_integrity.sql",
       "security/0003_service_credentials.sql",
+      "security/0004_credential_refs.sql",
       "world/0001_world_foundation.sql",
       "world/0002_world_canon.sql",
       "world/0003_world_routines_story_arcs.sql",
