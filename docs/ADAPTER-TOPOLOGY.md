@@ -47,8 +47,9 @@ The folder family/name, package name and metadata must agree.
 
 Adapters are leaves at the external edge. They may depend on canonical `packages/*`
 public entrypoints and the external SDK/library they adapt. They must not depend on
-another adapter, a service, an app or an infra workspace. Relative imports must remain
-inside the adapter workspace.
+another adapter, a service, an app or an infra workspace. Production relative imports
+must remain inside the adapter workspace. Adapter test files may import the repository's
+sanctioned shared `test/support` harness; that exception never applies to production code.
 
 If behavior spans two external edges, orchestration belongs in a service, Workflow or
 canonical package port. An Android telephony adapter therefore never calls a cloud

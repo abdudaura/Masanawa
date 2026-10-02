@@ -206,11 +206,19 @@ describe("adapter architecture", () => {
             const specifier = match[1]!;
             if (specifier.startsWith(".")) {
               const resolved = path.resolve(path.dirname(file), specifier);
-              expect(
+              const insideAdapter =
                 resolved === adapter.root ||
-                  resolved.startsWith(`${adapter.root}${path.sep}`),
-                `${path.relative(process.cwd(), file)} must not escape its adapter package via ${specifier}`,
-              ).toBe(true);
+                resolved.startsWith(`${adapter.root}${path.sep}`);
+              if (!insideAdapter) {
+                const isTestFile = /\.(?:test|spec)\.[cm]?[jt]sx?$/u.test(file);
+                const sharedTestSupport = path.resolve("test/support");
+                expect(
+                  isTestFile &&
+                    (resolved === sharedTestSupport ||
+                      resolved.startsWith(`${sharedTestSupport}${path.sep}`)),
+                  `${path.relative(process.cwd(), file)} must not escape its adapter package via ${specifier}`,
+                ).toBe(true);
+              }
               continue;
             }
 

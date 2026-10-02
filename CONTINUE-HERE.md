@@ -147,6 +147,7 @@ Implemented on the branch:
 - added `adapter.json` explicit-registration metadata to PostgreSQL;
 - added a workspace-graph architecture test that forbids adapter dependencies/imports on services, apps, infra or other adapters and forbids relative package escape;
 - documented explicit composition-root registration and the Android/OmniSIP device boundary.
+- Foundation CI run 382 exposed an over-broad test-isolation assertion: PostgreSQL integration tests legitimately use `test/support/fault-injection`; the gate now permits only test-file imports into `test/support` while production adapter code still cannot escape its workspace.
 
 The existing `phase6-skills-foundation` branch contains valid unmerged Phase 6 work
 based on pre-roadmap `main`. Preserve it, but do not merge it ahead of Tasks 054-058.
