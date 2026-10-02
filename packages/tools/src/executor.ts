@@ -248,25 +248,22 @@ export async function executeConsequentialTool(
     dependencies.providers,
     invocation.providerSelection ?? {},
   );
-  const credentialBindings =
-    provider === null
-      ? normalizeProviderCredentialBindings(
-          {
-            providerId:
-              "provider_00000000-0000-7000-8000-000000000000" as never,
-            key: "provider-independent",
-            version: "v1",
-            displayName: "Provider independent",
-            capabilities: tool.capabilities,
-            selectionPriority: 0,
-            credentialSlots: [],
-          },
-          input.credentialBindings,
-        )
-      : normalizeProviderCredentialBindings(
-          provider.provider,
-          input.credentialBindings,
-        );
+  let credentialBindings: ProviderCredentialBindings;
+  if (provider === null) {
+    if (Object.keys(input.credentialBindings).length > 0) {
+      throw executionError(
+        "tool.provider_credentials_not_applicable",
+        "validation",
+        "Provider-independent Tool invocation cannot carry provider credential bindings",
+      );
+    }
+    credentialBindings = Object.freeze({});
+  } else {
+    credentialBindings = normalizeProviderCredentialBindings(
+      provider.provider,
+      input.credentialBindings,
+    );
+  }
 
   const prepared = await dependencies.operations.prepare({
     tenantId: invocation.authority.tenantId,
