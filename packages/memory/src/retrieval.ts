@@ -111,14 +111,23 @@ export function normalizeMemoryEntityKey(value: string): string {
   return normalized;
 }
 
+export function normalizeMemoryEntityProjectionKeys(
+  values: readonly string[],
+): readonly string[] {
+  if (!Array.isArray(values) || values.length > 256) {
+    throw new RangeError("entity projection accepts at most 256 entity keys");
+  }
+  const normalized = [...new Set(values.map(normalizeMemoryEntityKey))].sort();
+  return Object.freeze(normalized);
+}
+
 export function normalizeMemoryEntityKeys(
   values: readonly string[],
 ): readonly string[] {
   if (!Array.isArray(values) || values.length < 1 || values.length > 64) {
     throw new RangeError("entity retrieval requires between 1 and 64 entity keys");
   }
-  const normalized = [...new Set(values.map(normalizeMemoryEntityKey))].sort();
-  return Object.freeze(normalized);
+  return Object.freeze([...normalizeMemoryEntityProjectionKeys(values)]);
 }
 
 export function normalizeMemoryVectorSearchInput(
@@ -143,12 +152,17 @@ export function normalizeMemoryVectorSearchInput(
       "queryVector length must exactly match compatibility.dimension",
     );
   }
+  let squaredNorm = 0;
   const queryVector = input.queryVector.map((value) => {
     if (typeof value !== "number" || !Number.isFinite(value)) {
       throw new TypeError("queryVector values must be finite numbers");
     }
+    squaredNorm += value * value;
     return value;
   });
+  if (!Number.isFinite(squaredNorm) || squaredNorm <= 0) {
+    throw new RangeError("queryVector must have a finite non-zero norm");
+  }
 
   return Object.freeze({
     tenantId: input.tenantId,
