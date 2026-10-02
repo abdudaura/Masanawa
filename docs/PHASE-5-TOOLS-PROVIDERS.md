@@ -126,3 +126,31 @@ After this slice:
    reconciliation rather than blind retry;
 4. prove exact idempotent replay, stale-authority rejection and explicit-provider
    no-fallback through PostgreSQL-backed execution fixtures.
+
+
+## Second canonical slice — execution/reconciliation in progress
+
+Active branch: `phase5-tool-execution-reconciliation`  
+Active PR: #38
+
+Implemented:
+- canonical provider credential-slot binding by opaque `CredentialRefId` only;
+- no raw secret material enters Provider definitions, Tool invocations or execution
+  results;
+- consequential Tool executor over existing Security AuthorityContext and Events
+  Operation semantics;
+- current-policy/revocation revalidation immediately before dispatch;
+- deterministic authority-scope and request fingerprints for operation-bound
+  idempotency;
+- exact replay suppression once an operation has advanced beyond safe pre-dispatch
+  states;
+- ambiguous adapter exceptions/outcomes transition to `unknown` and reconciliation
+  with blind retry disabled;
+- provider-independent Tools reject provider credential bindings;
+- PostgreSQL ToolOperationStore adapter over `events.operations` and reconciliation;
+- tenant-scoped operation reads/transitions;
+- unit coverage for exact replay, stale policy, dispatch ambiguity and credential-slot
+  enforcement.
+
+Validation: Foundation CI run 324 is pending on the latest PR #38 head. This section is
+not an acceptance closure until CI and PostgreSQL-backed execution fixtures pass.
