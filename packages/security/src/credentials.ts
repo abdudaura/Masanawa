@@ -1,4 +1,5 @@
 import {
+  PlatformError,
   isCanonicalId,
   type CredentialRefId,
   type OperationId,
@@ -91,7 +92,13 @@ export async function resolveCredentialSecret(
   const request = normalizeCredentialResolutionRequest(input);
   const secret = await source.resolve(request);
   if (secret === null) {
-    throw new Error("credential reference is unavailable for requested scope");
+    throw new PlatformError({
+      code: "credential.unavailable",
+      category: "authorization",
+      message: "Credential reference is unavailable for requested scope",
+      retryable: false,
+      operationId: request.operationId,
+    });
   }
   return secret;
 }
