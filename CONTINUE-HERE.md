@@ -36,7 +36,7 @@ of architectural feature selection.
 
 **Phase 4 — Memory.**
 
-Current implementation branch: `phase4-memory-retrieval-projections`.
+Current implementation branch: `phase4-memory-multisignal-retrieval`.
 
 Phase 0A/0B, Phase 1 and Phase 2 are closed.
 
@@ -119,33 +119,42 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 
 ## Immediate work
 
-PR #32 implements the authorization-first lexical projection slice. Implementation head
-`a3d4c1edf7df7e485381ac431ba867833f3a7383` passed Foundation CI run 275,
-including frozen install, strict TypeScript, unit tests, PostgreSQL 18 integration
-fixtures and production builds. There are no PR review threads or comments.
+PR #33 is the active multisignal retrieval slice on
+`phase4-memory-multisignal-retrieval`.
 
-1. verify the Foundation CI run triggered by the final documentation-only PR #32 head;
-2. fix any real failure; if green, merge PR #32;
-3. on a fresh branch from merged `main`, add vector/entity/temporal signals behind the
-   same explicit authorized-scope and immutable projection-generation contract;
-4. vector work must bind provider/model/dimension to one generation and reject mixed or
-   incompatible vector spaces before query execution;
-5. add multi-signal fusion/reranking plus held-out retrieval evaluation that reports
-   scope leakage separately and requires it to remain zero;
-6. then continue to bounded context compilation, reflection/consolidation and deletion
-   propagation without reopening canonical memory ownership.
+Implementation/fusion head `c938e23e576c98a8eb0efd61fea10e91c0fcd737`
+passed Foundation CI run 293. The full check gate passed frozen install, strict
+TypeScript, unit tests, PostgreSQL 18 + pgvector integration/migrations and production
+builds. PR #33 has no review threads or comments.
 
-The lexical slice now includes activation completeness checks, exact canonical
-revision/type/scope/text validation, current-canonical revalidation at query time,
-stale-revision suppression, cross-Relationship conformance, rebuild equivalence and
-future vector compatibility metadata without prematurely enabling vector retrieval.
+The branch now includes:
+- pinned PostgreSQL 18 + pgvector CI;
+- vector/entity/temporal disposable projection storage with canonical-source validation;
+- uniform complete-generation activation;
+- exact authorized-scope vector/entity/temporal retrieval;
+- provider/model/dimension compatibility enforcement;
+- stale-current-revision suppression before rebuild;
+- deterministic reciprocal-rank fusion;
+- read-only REPEATABLE READ hybrid retrieval;
+- held-out recall/precision/MRR metrics plus an independent zero-leakage hard gate;
+- cross-Relationship conformance fixtures across every new signal and fusion.
 
-The requested post-freeze donor refresh is current as of 2026-10-02: MemPalace remains
-at the previously inspected head; Paperclip advanced to
-`c83df091b1a5207375eaf23466bb5c62e4e1518e`. Newer Paperclip execution-recovery work
-reinforces the existing decision to adopt its reliability/checkout/wake/Ops behaviors
-later through canonical Masanawa workflow/agent ports rather than installing a parallel
-Paperclip control plane.
+Immediate next steps:
+1. verify the final documentation-head Foundation CI for PR #33;
+2. fix any real failure; if green, merge PR #33;
+3. create a fresh branch from merged `main` for canonical tombstone/deletion
+   propagation plus bounded context compilation;
+4. prove tombstoned/deleted canonical records disappear from lexical/vector/entity/
+   temporal/hybrid retrieval without requiring model-side filtering;
+5. compile bounded working context only from already-authorized current memory and keep
+   every rendered context item mapped to MemoryRecord/MemoryRevision provenance;
+6. then implement reflection/consolidation and compaction-flush semantics without
+   widening scope or creating a second durable memory truth.
+
+The requested post-freeze donor boundary remains unchanged: MemPalace contributes
+retrieval/evaluation/storage-contract behavior inside canonical Masanawa memory ports;
+Paperclip contributes later workflow/runtime recovery and Ops behavior inside canonical
+Masanawa workflow/agent ports. Neither becomes a production runtime authority.
 
 The lifecycle/publication implementation now includes independent lifecycle CAS,
 immutable same-scope/type lineage, current-authority + one-time-approval publication,

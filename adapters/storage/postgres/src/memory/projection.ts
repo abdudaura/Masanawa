@@ -85,9 +85,9 @@ export interface ActivateMemoryProjectionGenerationInput {
 export const postgresMemoryRetrievalCapabilities = Object.freeze({
   exactScopeFiltering: true,
   lexical: true,
-  vector: false,
-  entity: false,
-  temporal: false,
+  vector: true,
+  entity: true,
+  temporal: true,
 });
 
 function conflict(code: string, message: string): PlatformError {
@@ -407,11 +407,56 @@ export async function indexMemoryLexicalSnapshot(
   });
 }
 
-async function assertCompleteLexicalGeneration(
+function projectionTableForKind(kind: MemoryProjectionKind): string {
+  switch (kind) {
+    case "lexical":
+      return "lexical_projections";
+    case "vector":
+      return "vector_projections";
+    case "entity":
+      return "entity_projections";
+    case "temporal":
+      return "temporal_projections";
+  }
+}
+
+function projectionCurrentMatchSql(kind: MemoryProjectionKind): string {
+  if (kind === "lexical") {
+    return "AND p.document_text = v.content";
+  }
+  if (kind === "temporal") {
+    return `AND p.event_time IS NOT DISTINCT FROM v.event_time
+            AND p.observed_at IS NOT DISTINCT FROM v.observed_at
+            AND p.valid_from IS NOT DISTINCT FROM v.valid_from
+            AND p.valid_to IS NOT DISTINCT FROM v.valid_to
+            AND p.expires_at IS NOT DISTINCT FROM v.expires_at`;
+  }
+  return "";
+}
+
+function projectionStaleSql(kind: MemoryProjectionKind): string {
+  if (kind === "lexical") {
+    return "OR v.content IS DISTINCT FROM p.document_text";
+  }
+  if (kind === "temporal") {
+    return `OR v.event_time IS DISTINCT FROM p.event_time
+              OR v.observed_at IS DISTINCT FROM p.observed_at
+              OR v.valid_from IS DISTINCT FROM p.valid_from
+              OR v.valid_to IS DISTINCT FROM p.valid_to
+              OR v.expires_at IS DISTINCT FROM p.expires_at`;
+  }
+  return "";
+}
+
+async function assertCompleteProjectionGeneration(
   client: PoolClient,
   tenantId: TenantId,
   memoryProjectionGenerationId: MemoryProjectionGenerationId,
+  kind: MemoryProjectionKind,
 ): Promise<void> {
+  const table = projectionTableForKind(kind);
+  const currentMatch = projectionCurrentMatchSql(kind);
+  const staleMatch = projectionStaleSql(kind);
   const result = await client.query<{ missing: string; stale: string }>(
     `SELECT
        (
@@ -425,7 +470,7 @@ async function assertCompleteLexicalGeneration(
             AND r.lifecycle_state = 'active'
             AND NOT EXISTS (
               SELECT 1
-                FROM memory.lexical_projections p
+                FROM memory.${table} p
                WHERE p.tenant_id = r.tenant_id
                  AND p.memory_projection_generation_id = $2
                  AND p.memory_record_id = r.memory_record_id
@@ -433,12 +478,12 @@ async function assertCompleteLexicalGeneration(
                  AND p.memory_type = r.memory_type
                  AND p.scope_kind = r.scope_kind
                  AND p.scope_ref_id IS NOT DISTINCT FROM r.scope_ref_id
-                 AND p.document_text = v.content
+                 ${currentMatch}
             )
        ) AS missing,
        (
          SELECT count(*)::text
-           FROM memory.lexical_projections p
+           FROM memory.${table} p
            LEFT JOIN memory.records r
              ON r.tenant_id = p.tenant_id
             AND r.memory_record_id = p.memory_record_id
@@ -455,7 +500,7 @@ async function assertCompleteLexicalGeneration(
               OR r.memory_type IS DISTINCT FROM p.memory_type
               OR r.scope_kind IS DISTINCT FROM p.scope_kind
               OR r.scope_ref_id IS DISTINCT FROM p.scope_ref_id
-              OR v.content IS DISTINCT FROM p.document_text
+              ${staleMatch}
             )
        ) AS stale`,
     [tenantId, memoryProjectionGenerationId],
@@ -511,13 +556,6 @@ export async function activateMemoryProjectionGeneration(
           "A retired projection generation cannot become current again",
         );
       }
-      if (generation.kind !== "lexical") {
-        throw conflict(
-          "memory.projection_signal_unsupported",
-          "Only lexical projection activation is implemented in the current Phase 4 slice",
-        );
-      }
-
       await client.query(
         "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
         [`memory-projection:${input.tenantId}:${generation.kind}`],
@@ -542,10 +580,11 @@ export async function activateMemoryProjectionGeneration(
         );
       }
 
-      await assertCompleteLexicalGeneration(
+      await assertCompleteProjectionGeneration(
         client,
         input.tenantId,
         input.memoryProjectionGenerationId,
+        generation.kind,
       );
 
       await client.query(
