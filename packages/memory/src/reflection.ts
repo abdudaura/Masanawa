@@ -39,7 +39,7 @@ export interface CommitMemoryReflectionInput {
   readonly scope: MemoryScope;
   readonly purposeKey: string;
   readonly reflector: MemoryReflectorIdentity;
-  readonly sources: readonly MemoryRecordSnapshot[];
+  readonly sources: readonly MemoryReflectionSource[];
   readonly revision: MemoryReflectionRevisionInput;
   readonly createdAt: Instant;
 }
@@ -79,6 +79,29 @@ function bounded(
   return normalized;
 }
 
+
+export function memoryReflectionSourceFromSnapshot(
+  snapshot: MemoryRecordSnapshot,
+): MemoryReflectionSource {
+  if (snapshot.record.lifecycleState !== "active") {
+    throw new TypeError("reflection source must be active");
+  }
+  if (
+    snapshot.record.currentRevisionId !==
+      snapshot.currentRevision.memoryRevisionId ||
+    snapshot.record.revision !== snapshot.currentRevision.revisionNumber
+  ) {
+    throw new TypeError(
+      "reflection source snapshot must be its canonical current revision",
+    );
+  }
+  return Object.freeze({
+    memoryRecordId: snapshot.record.memoryRecordId,
+    memoryRevisionId: snapshot.currentRevision.memoryRevisionId,
+    sourceContentHash: memoryProjectionSourceContentHash(snapshot),
+  });
+}
+
 export function normalizeMemoryReflectionIdentity(
   input: Pick<
     CommitMemoryReflectionInput,
@@ -94,40 +117,29 @@ export function normalizeMemoryReflectionIdentity(
   }
 
   const scope = normalizeMemoryScope(input.scope);
-  const expectedScopeKey = memoryScopeKey(scope);
   const seenRecords = new Set<MemoryRecordId>();
-  const sources = input.sources.map((snapshot) => {
-    if (snapshot.record.tenantId !== input.tenantId) {
-      throw new TypeError("reflection source belongs to a different tenant");
-    }
-    if (memoryScopeKey(snapshot.record.scope) !== expectedScopeKey) {
-      throw new TypeError(
-        "reflection sources must share the exact output MemoryScope",
-      );
-    }
-    if (snapshot.record.lifecycleState !== "active") {
-      throw new TypeError("reflection source must be active");
-    }
-    if (
-      snapshot.record.currentRevisionId !==
-        snapshot.currentRevision.memoryRevisionId ||
-      snapshot.record.revision !== snapshot.currentRevision.revisionNumber
-    ) {
-      throw new TypeError(
-        "reflection source snapshot must be its canonical current revision",
-      );
-    }
-    if (seenRecords.has(snapshot.record.memoryRecordId)) {
+  const sha256Pattern = /^[0-9a-f]{64}$/u;
+  const sources = input.sources.map((source) => {
+    if (seenRecords.has(source.memoryRecordId)) {
       throw new TypeError(
         "reflection source MemoryRecord IDs must be unique",
       );
     }
-    seenRecords.add(snapshot.record.memoryRecordId);
-
+    seenRecords.add(source.memoryRecordId);
+    const sourceContentHash = bounded(
+      source.sourceContentHash,
+      "source.sourceContentHash",
+      64,
+    ).toLowerCase();
+    if (!sha256Pattern.test(sourceContentHash)) {
+      throw new TypeError(
+        "reflection source content hash must be SHA-256 hex",
+      );
+    }
     return Object.freeze({
-      memoryRecordId: snapshot.record.memoryRecordId,
-      memoryRevisionId: snapshot.currentRevision.memoryRevisionId,
-      sourceContentHash: memoryProjectionSourceContentHash(snapshot),
+      memoryRecordId: source.memoryRecordId,
+      memoryRevisionId: source.memoryRevisionId,
+      sourceContentHash,
     });
   });
 
@@ -171,7 +183,7 @@ export function assertMemoryReflectionTargetIsDistinct(
   if (
     input.sources.some(
       (source) =>
-        source.record.memoryRecordId === input.reflectionMemoryRecordId,
+        source.memoryRecordId === input.reflectionMemoryRecordId,
     )
   ) {
     throw new TypeError(
