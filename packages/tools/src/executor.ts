@@ -358,6 +358,26 @@ export async function executeConsequentialTool(
 
   if (
     prepared.reused &&
+    (operation.state === "dispatching" || operation.state === "dispatched")
+  ) {
+    operation = await reconcileUnknown(
+      dependencies.operations,
+      operation,
+      "tool.replay_incomplete_dispatch",
+    );
+    return {
+      operation,
+      reused: true,
+      dispatched: false,
+      receipts: await dependencies.operations.listReceipts(
+        invocation.authority.tenantId,
+        operation.operationId,
+      ),
+    };
+  }
+
+  if (
+    prepared.reused &&
     operation.state !== "prepared" &&
     operation.state !== "authorized"
   ) {
