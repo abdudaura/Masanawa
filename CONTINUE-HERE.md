@@ -36,7 +36,7 @@ of architectural feature selection.
 
 **Phase 5 — Tools and Providers.**
 
-Current implementation branch: `phase5-tool-receipts-replay`.
+Current implementation branch: `phase5-provider-failures-telemetry`.
 
 Phase 0A/0B, Phase 1 and Phase 2 are closed.
 
@@ -120,62 +120,53 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 ## Immediate work
 
 Phase 5 — Tools and Providers is active on
-`phase5-tool-receipts-replay`.
+`phase5-provider-failures-telemetry`.
 
-The registry foundation is merged to `main` as PR #37 at
-`b3f2e8ce33aeb4ed125bd40af78f10a454174bbd`.
+Merged Phase 5 history:
+- Tool/Provider registry foundation: PR #37,
+  `b3f2e8ce33aeb4ed125bd40af78f10a454174bbd`;
+- consequential execution/reconciliation: PR #38,
+  `21141266ab15e2111b8f78c6df365100a60a017a`;
+- durable receipt/replay: PR #39,
+  `8d531188e2f9d7c38f50cc883e3425096b5408ad`.
 
-PR #38 merged to `main` as `21141266ab15e2111b8f78c6df365100a60a017a`.
-Its execution/reconciliation slice established:
-- provider credential bindings accept only canonical `CredentialRefId` values and
-  fail closed on unknown/missing slots;
-- consequential Tool execution is pinned to the registered ToolVersion;
-- required authority capabilities are checked and current authority is revalidated
-  immediately before dispatch;
-- deterministic authority-scope/request fingerprints bind operation idempotency;
-- exact replay of a settled or in-flight operation does not redispatch;
-- explicit provider selection continues to use the canonical no-fallback registry;
-- dispatch exceptions/unknown outcomes become `unknown` and immediately enter
-  reconciliation with `safeRetry=false`;
-- known-not-dispatched failures may fail without claiming an external side effect;
-- PostgreSQL adapts the canonical Tool operation port onto existing
-  `events.operations` and reconciliation storage;
-- Tool operation reads/transitions are tenant-scoped;
-- unit tests cover exact replay, stale-policy rejection, ambiguous dispatch and required
-  credential references.
+PR #43 is the active provider failure/telemetry/credential-edge slice.
 
-Implementation head `c6c86f6b0521d408cdf2fcd8938df481353e8d48` passed Foundation CI run 330.
-The complete gate included frozen install, strict TypeScript, unit/architecture tests,
-PostgreSQL 18 + pgvector integration suites and production builds. The PostgreSQL
-fixture proves durable exact replay, revoked/stale authority rejection, tenant-scoped
-operation reads and ambiguity-to-reconciliation with blind retry disabled.
+Implemented on the branch:
+- canonical Provider execution failure kinds for readiness, timeout, rate limit,
+  cost limit, authentication, transport, provider rejection and invalid response;
+- failure normalization maps into existing Masanawa PlatformError categories instead
+  of inventing a parallel error system;
+- privacy-safe Provider execution telemetry carries only provider identity/version,
+  capability, outcome, duration/cost units, typed failure class/retryability and
+  operation identity;
+- the Telemetry allowlist was extended narrowly for those fields only;
+- Tool execution can emit Provider observations through an optional Provider-owned
+  observer without importing Telemetry directly;
+- adapters may attach typed ProviderExecutionFailure metadata while existing outcome
+  contracts remain backward-compatible during migration;
+- Security now owns scoped CredentialRefId resolution requests carrying tenant,
+  provider, operation and slot identity;
+- raw secret material is wrapped in CredentialSecret, whose string/JSON
+  representation is always `[REDACTED]`;
+- Providers resolve validated credential slots only at the adapter edge through the
+  Security credential source;
+- inaccessible/missing/out-of-scope credential refs fail uniformly as
+  `credential.unavailable` authorization errors without existence disclosure;
+- unit coverage proves failure normalization, privacy-safe telemetry, scoped credential
+  resolution/redaction and Tool executor observation boundaries.
 
-Final documentation head `8502b302aaeef0d2d0e79a7861cf4a53974d437f` passed Foundation CI run 331 before merge.
+Foundation CI run 349 passed the first provider failure/telemetry head. The latest
+credential-edge + executor-observer head is still awaiting its current Foundation CI
+gate. Do not merge PR #43 until the latest head passes the full gate.
 
-Active receipt/replay slice now implements:
-- canonical bounded external receipt evidence/record contracts in `packages/events`;
-- consequential adapters must return sanitized receipt evidence for known dispatched
-  outcomes before the operation may become locally successful/rejected/partial;
-- Tool execution persists receipt evidence before settlement;
-- receipt persistence failure becomes `unknown` -> reconciliation with blind retry
-  disabled;
-- exact replay loads durable receipts and does not redispatch;
-- PostgreSQL ToolOperationStore records/lists canonical external receipts;
-- unit coverage includes receipt normalization, durable replay and receipt-store
-  failure reconciliation;
-- PostgreSQL integration coverage now expects durable receipt replay.
-
-Receipt/replay implementation head `f223d12335189591608f2a6c444668df02dc0b9d`
-passed Foundation CI run 336 after preserving the established receipt-observation
-idempotency contract. The gate passed strict TypeScript, all unit/architecture tests,
-PostgreSQL 18 + pgvector integration suites and production builds.
-
-Immediate next:
-1. require a green final documentation-head Foundation CI and merge PR #39;
-2. create the next clean Phase 5 branch from merged `main`;
-3. add typed provider failure/readiness/cost/timeout telemetry without secrets;
-4. prove credential-reference scoping/resolution at the adapter edge;
-5. finish the Phase 5 acceptance audit before advancing to Skills/Workflows.
+After this slice is green:
+1. add a concrete encrypted credential persistence/resolution adapter with tenant/provider
+   scope and rotation/revocation metadata;
+2. require concrete provider adapters to use typed ProviderExecutionFailure instead of
+   legacy free-form errorCode-only failures;
+3. add readiness/timeout/rate/cost counters/alerts in the service telemetry wiring;
+4. finish the Phase 5 acceptance audit before advancing to Skills/Workflows.
 
 The requested post-freeze donor boundary remains unchanged: MemPalace contributes
 retrieval/evaluation/storage-contract behavior inside canonical Masanawa memory ports;
