@@ -14,7 +14,7 @@ jobs:
     timeout-minutes: 15
     services:
       postgres:
-        image: postgres:18
+        image: pgvector/pgvector:0.8.6-pg18
         env:
           POSTGRES_DB: masanawa_test
           POSTGRES_USER: postgres
