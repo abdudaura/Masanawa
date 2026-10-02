@@ -39,7 +39,7 @@ The active implementation line remains `phase2-closure` until PR #16 is merged. 
 
 ## Immediate next work
 
-Phase 3 is active.
+Phase 3 is active. The non-spatial Identity/World core has passed its closure acceptance gate.
 
 Merged Phase 3 slices:
 - canonical identity: PR #17, merge `75549800445842f8ff1db54e06529c075ed34ea4`;
@@ -49,31 +49,30 @@ Merged Phase 3 slices:
 - reconciled routines/story arcs: PR #23, merge `4bd9a3a8b2504617291d7e18e992d5f56856886d`;
 - authority-bound WorldEvent canon governance: PR #24, merge `9f2574b9d3932079a834c5c2976ee89e2fdcf2cc`;
 - canonical WorldInteraction evidence: PR #25, merge `ed186608248659654cdcf23ab8b793dd426fa7ef`;
-- executable pause/restart/catch-up recovery: PR #26, merge `bcfe597bd8aa7cb6191bb34fb5c626bbe5884ee0`.
+- executable pause/restart/catch-up recovery: PR #26, merge `bcfe597bd8aa7cb6191bb34fb5c626bbe5884ee0`;
+- typed World evidence→events/outbox integration: PR #27, merge `426a6689f0839aad3077754a9f947f2abe0ba8d6`.
 
-Current implementation branch: `phase3-world-evidence-integrations`.
+Current implementation branch: `phase3-nonspatial-closure` (PR #28).
 
-Current branch closes the non-spatial World evidence integration boundary:
-- `packages/memory` and `packages/workflows` remain canonical placeholder boundaries and are not imported/mutated by World;
-- World owns a typed `world.evidence.recorded` payload for WorldEvent and WorldInteraction evidence;
-- evidence carries canonical IDs, content, provenance, visibility, canon state, occurrence identity and effective/recorded time;
-- one durable publication receipt exists per tenant/evidence/publication kind;
-- WorldEvent/WorldInteraction admission automatically attempts publication in the same PostgreSQL transaction;
-- replay of the same deterministic evidence occurrence reuses the receipt and does not create duplicate downstream events;
-- one canonical PlatformEvent is appended through the existing events adapter;
-- the event fans out through the existing transactional outbox to `memory.world-evidence` and `workflows.world-evidence`;
-- visibility maps to PlatformEvent sensitivity (public→public, private→private, shared/internal→internal);
-- World never writes memory/workflow tables and no alternate event bus is introduced;
-- PostgreSQL acceptance proves two evidence records + their replays produce exactly two PlatformEvents and four destination outbox rows.
+PR #28 closes the last concrete non-spatial acceptance gap discovered by audit:
+- generic World JSON/text could otherwise carry private User/Relationship/Memory/session identifiers even though the public contracts did not accept Relationship objects directly;
+- `packages/world` now owns a recursive shared-state privacy invariant;
+- canonical User, Relationship, MemoryRecord/MemoryRevision, private session/account/credential/device IDs are rejected anywhere in World payload text, including embedded IDs inside longer strings;
+- reserved private-reference JSON field names are rejected even when they contain non-canonical external values;
+- the invariant is enforced at SimulationInput, Routine, CharacterLifeState, StoryArc, WorldEvent and WorldInteraction ingress;
+- unit tests cover nested, reserved-field and embedded-ID detection;
+- PostgreSQL integration proves rejected private references leave no shared World rows behind;
+- `docs/PHASE-3-NONSPATIAL-CLOSURE-AUDIT.md` maps every ADR-0009 non-spatial acceptance target to implementation/test evidence;
+- Foundation CI run 245 passed the complete gate on implementation head `b56039533bdb4e45a2b27a19621d160394f3b56c`.
 
 Immediate work:
-1. run the complete PostgreSQL 18 CI gate for `phase3-world-evidence-integrations` and fix every real failure;
-2. merge only when frozen install, strict typecheck, tests and production builds are green;
-3. audit Phase 3 non-spatial acceptance targets against the repository and close any remaining concrete gap;
-4. if non-spatial acceptance is complete, record the Phase 3 non-spatial closure boundary before optional spatial work;
-5. only then begin optional WorldSpace/location/pathing mechanics if still selected by current repository guidance.
+1. verify the automatically triggered Foundation CI run on the final documentation-only PR #28 head;
+2. fix any real failure; if green, merge PR #28;
+3. after merge, treat non-spatial Phase 3 as closed and do not reopen canonical identity/life/canon ownership without contradictory evidence and an ADR;
+4. evaluate the newly proposed post-freeze candidates `mempalace/mempalace` and `paperclipai/paperclip` against canonical Masanawa boundaries before admitting or integrating anything;
+5. then choose the next repository-backed priority: optional WorldSpace/location/pathing behind `WorldPolicy.spatialEnabled`, or the next scheduled phase where the candidate review materially changes the design.
 
-Do not create direct World→Memory or World→Workflow persistence. Those domains consume typed events/outbox deliveries and retain their own canonical authority.
+Do not interpret non-spatial closure as completion of optional spatial simulation. Do not weaken the private Relationship→World boundary.
 
 ## World simulation comparison — completed
 

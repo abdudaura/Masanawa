@@ -14,6 +14,8 @@ import { fingerprintCanonicalJson } from "@masanawa/security";
 import {
   assertRoutineScheduledTime,
   assertSimulationTimeDoesNotMoveBackward,
+  assertWorldPayloadHasNoPrivateReferences,
+  assertWorldTextsHaveNoPrivateReferences,
   assertStoryArcTransition,
   normalizeIanaTimezone,
   normalizeLocalTime,
@@ -461,6 +463,7 @@ export async function admitSimulationInput(
 ): Promise<SimulationInput> {
   const idempotencyKey = normalizeSimulationInputKey(input.idempotencyKey);
   const kind = normalizeSimulationInputKind(input.kind);
+  assertWorldPayloadHasNoPrivateReferences(input.payload);
 
   const result = await client.query<InputRow>(
     `INSERT INTO world.simulation_inputs (
@@ -1104,6 +1107,14 @@ export async function putCharacterLifeState(
     );
   }
 
+  assertWorldTextsHaveNoPrivateReferences({
+    availability: input.availability,
+    narrativeState: input.narrativeState,
+    activeGoal: input.activeGoal,
+    storyArc: input.storyArc,
+    coarseLocation: input.coarseLocation,
+  });
+
   const values = [
     nullableText(input.availability, "availability", 1000),
     nullableText(input.narrativeState, "narrativeState", 4000),
@@ -1245,6 +1256,7 @@ export async function appendWorldEvent(
   input: AppendWorldEventInput,
 ): Promise<WorldEvent> {
   const eventKind = boundedText(input.eventKind, "eventKind", 128);
+  assertWorldPayloadHasNoPrivateReferences(input.payload);
   const occurrenceKey =
     input.occurrenceKey === null
       ? null
@@ -1597,6 +1609,10 @@ export async function appendWorldInteraction(
     "interactionKind",
     128,
   );
+  assertWorldPayloadHasNoPrivateReferences(input.payload);
+  for (const participant of input.participants) {
+    assertWorldTextsHaveNoPrivateReferences({ role: participant.role });
+  }
   const occurrenceKey =
     input.occurrenceKey === null
       ? null
@@ -1834,6 +1850,7 @@ export async function putRoutine(
   input: PutRoutineInput,
 ): Promise<Routine> {
   const routineKey = normalizeRoutineKey(input.routineKey);
+  assertWorldPayloadHasNoPrivateReferences(input.inputPayload);
   const timezone = normalizeIanaTimezone(input.timezone);
   const localTime = normalizeLocalTime(input.localTime);
   const inputKind = normalizeSimulationInputKind(input.inputKind);
@@ -2021,6 +2038,10 @@ export async function putStoryArc(
   input: PutStoryArcInput,
 ): Promise<StoryArc> {
   const storyArcKey = boundedText(input.storyArcKey, "storyArcKey", 128);
+  assertWorldTextsHaveNoPrivateReferences({
+    title: input.title,
+    summary: input.summary,
+  });
   const title = boundedText(input.title, "title", 500);
   const summary = input.summary.trim();
   if (summary.length > 10_000) {

@@ -215,9 +215,9 @@ Next after green CI:
 - optional spatial mechanics only after those gates pass.
 
 
-## World evidence integrations — implemented, awaiting CI
+## World evidence integrations — merged and validated
 
-Current branch: `phase3-world-evidence-integrations`.
+Merged through PR #27 at `426a6689f0839aad3077754a9f947f2abe0ba8d6` after the complete PostgreSQL 18 CI gate passed.
 
 The memory and workflow packages are still canonical boundaries rather than implemented repositories. World therefore integrates through the existing canonical events/outbox infrastructure instead of importing either subsystem.
 
@@ -238,3 +238,26 @@ Next after green CI:
 - audit all non-spatial Phase 3 acceptance targets;
 - record non-spatial Phase 3 closure if all are proven;
 - optional spatial mechanics only after that closure checkpoint.
+
+
+## Non-spatial closure audit — validated
+
+PR #28 implementation head `b56039533bdb4e45a2b27a19621d160394f3b56c` passed Foundation CI run 245.
+
+A fresh ADR-0009 acceptance audit found one remaining implementation gap: generic
+World JSON/text could embed private User/Relationship/Memory/session references even
+though World did not expose Relationship objects in its repository contracts.
+
+The closure slice adds:
+- recursive package-owned private-reference detection;
+- reserved private-field detection;
+- embedded canonical-ID detection inside longer text;
+- enforcement at SimulationInput, Routine, CharacterLifeState, StoryArc, WorldEvent
+  and WorldInteraction ingress;
+- unit fixtures plus PostgreSQL leakage/no-row persistence proof;
+- `docs/PHASE-3-NONSPATIAL-CLOSURE-AUDIT.md` mapping every non-spatial acceptance
+  target to concrete code/test evidence.
+
+The complete CI gate passed, so the non-spatial Phase 3 acceptance boundary is closed.
+The final documentation-only head must rerun green before PR #28 merges. Optional spatial
+mechanics remain separate and must stay behind `WorldPolicy.spatialEnabled`.
