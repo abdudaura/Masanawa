@@ -3634,6 +3634,32 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       code: "credential.unavailable",
       category: "authorization",
     });
+
+    const failingCipher: CredentialEnvelopeCipher = {
+      ...cipher,
+      async open() {
+        throw new Error("kms secret diagnostic that must not escape");
+      },
+    };
+    await withTransaction(pool, async (client) => {
+      const source = createPostgresCredentialMaterialSource(
+        client,
+        failingCipher,
+      );
+      await expect(
+        resolveCredentialSecret(source, {
+          tenantId,
+          credentialRefId,
+          providerId,
+          operationId,
+          slotKey: "api-key",
+        }),
+      ).rejects.toMatchObject({
+        code: "credential.unavailable",
+        category: "authorization",
+        message: "Credential reference is unavailable for requested scope",
+      });
+    });
   });
 
   it("preserves one operation across restart-safe idempotent admission", async () => {
