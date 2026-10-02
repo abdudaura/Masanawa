@@ -39,6 +39,17 @@ const defaultSafeAttributeKeys = new Set([
   "masanawa.task.id",
   "masanawa.workflow_run.id",
   "masanawa.character_session.id",
+  "masanawa.provider.id",
+  "masanawa.provider.key",
+  "masanawa.provider.version",
+  "masanawa.provider.capability",
+  "masanawa.provider.outcome",
+  "masanawa.provider.duration_ms",
+  "masanawa.provider.cost_units",
+  "masanawa.provider.failure_kind",
+  "masanawa.provider.retryable",
+  "masanawa.provider.dispatched",
+  "masanawa.provider.retry_after_ms",
 ]);
 
 export function correlationAttributes(
