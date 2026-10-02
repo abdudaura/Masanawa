@@ -246,7 +246,6 @@ async function executeMemoryScopePublicationInTransaction(
     createPostgresCurrentAuthoritySource(client),
     input.publishedAt,
   );
-  await requireCurrentSource(client, input);
 
   const operation = await loadOperation(
     client,
@@ -307,6 +306,11 @@ async function executeMemoryScopePublicationInTransaction(
       details: { state: operation.state },
     });
   }
+
+  // A completed publication must remain replayable even if the private source is
+  // later superseded/absorbed. Only a not-yet-executed publication revalidates that
+  // its source revision is still current and active before consuming authority.
+  await requireCurrentSource(client, input);
 
   const binding = createMemoryScopePublicationApprovalBinding({
     ...input,
