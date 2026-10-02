@@ -137,7 +137,9 @@ Foundation CI run 379, PR #47 merged as
 `d0a198dbdec1af08e3c8f1378da0985db628eb6e`, and merged-main Foundation CI
 run 380 passed on that exact merge commit.
 
-**Current: Task 059 of 150 — Implement canonical Skill and immutable SkillVersion schemas.**\n\n
+**Current: Task 059 of 150 — Implement canonical Skill and immutable SkillVersion schemas.**
+
+Active implementation branch: `task059-skill-schemas`. The valid `phase6-skills-foundation` package work has been selectively reconciled onto the post-Task-058 history rather than merging its stale branch. Task 059 now has distinct canonical Skill identity and immutable SkillVersion contracts plus focused invariants tests; acceptance/CI remains pending.\n\n
 Tasks 001-058 are merged complete.
 
 
