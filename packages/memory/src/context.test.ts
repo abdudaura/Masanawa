@@ -1,4 +1,8 @@
-import {\n  createCanonicalId,\n  type RelationshipId,\n  type TenantId,\n} from "@masanawa/contracts";
+import {
+  createCanonicalId,
+  type RelationshipId,
+  type TenantId,
+} from "@masanawa/contracts";
 import { describe, expect, it } from "vitest";
 import { compileMemoryContext } from "./context.js";
 import { createMemoryScopePredicate } from "./projection.js";
