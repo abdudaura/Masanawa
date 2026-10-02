@@ -8,9 +8,11 @@ Masanawa production is tracked as **150 numbered milestone tasks**. Tasks are no
 
 ## Current position
 
-Merged `main` satisfies Tasks **001-053**. **Task 054 of 150 — Standardize package/service implementation templates and enforce them in architecture tests** is active on `task054-implementation-templates`. It becomes complete only when its acceptance evidence is green and merged to `main`.
+Merged `main` satisfies Tasks **001-054**.
 
-After Task 054 closes, the next task is **Task 055 of 150 — Standardize adapter topology/registration and prohibit adapter-to-adapter hidden orchestration.**
+**Current: Task 055 of 150 — Standardize adapter topology/registration and prohibit adapter-to-adapter hidden orchestration.**
+
+Task 054 merged through PR #47 as `d0a198dbdec1af08e3c8f1378da0985db628eb6e`; Foundation CI run 380 passed on that exact merged `main` commit.
 
 Status: `[x]` COMPLETE, `[ ]` PLANNED.
 
@@ -84,7 +86,7 @@ Status: `[x]` COMPLETE, `[ ]` PLANNED.
 - [x] **051** Audit repository topology against the Product North Star and lock the production target structure.
 - [x] **052** Introduce first-class canonical Devices ownership for Device/Capability/Character assignment contracts.
 - [x] **053** Remove ambiguous empty service ownership placeholders and reaffirm Gateway/Worker/Presence/Ops topology.
-- [ ] **054** Standardize package/service implementation templates and enforce them in architecture tests.
+- [x] **054** Standardize package/service implementation templates and enforce them in architecture tests.
 - [ ] **055** Standardize adapter topology/registration and prohibit adapter-to-adapter hidden orchestration.
 - [ ] **056** Expand test taxonomy with security/recovery/load/chaos suites and CI gate conventions.
 - [ ] **057** Establish repository-wide public API/versioning/deprecation conventions.

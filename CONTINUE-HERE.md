@@ -130,12 +130,15 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 
 Phase 6 — Skills remains the product implementation phase, preceded by the production-structure hardening sequence in the canonical ledger.
 
-Tasks 001-053 are merged complete. PR #46 merged Tasks 051-053 as
-`6c030aa4c231b3675a91a8a38a57e200538c53f0`; Foundation CI run 375 passed on
-that exact merged `main` commit.
+Tasks 001-054 are merged complete.
 
-**Current: Task 054 of 150 — Standardize package/service implementation templates and enforce them in architecture tests.**
-Active branch: `task054-implementation-templates`.
+Task 054 implementation head `3a0a6251a551ffcfd852d3f4f80063195257ece6` passed
+Foundation CI run 379, PR #47 merged as
+`d0a198dbdec1af08e3c8f1378da0985db628eb6e`, and merged-main Foundation CI
+run 380 passed on that exact merge commit.
+
+**Current: Task 055 of 150 — Standardize adapter topology/registration and prohibit adapter-to-adapter hidden orchestration.**
+Start Task 055 from current merged `main`; do not reuse the completed Task 054 branch.
 
 The existing `phase6-skills-foundation` branch contains valid unmerged Phase 6 work
 based on pre-roadmap `main`. Preserve it, but do not merge it ahead of Tasks 054-058.
@@ -191,8 +194,8 @@ PostgreSQL 18 + pgvector integration suites and production builds.
 The Phase 5 acceptance audit is PASS and its final merge is green.
 
 Immediate next:
-1. finish Task 054 on `task054-implementation-templates`, prove its architecture/build gate and merge it;
-2. continue Tasks 055-058 in ledger order from merged `main`;
+1. implement Task 055 from current merged `main`: standardize adapter topology/registration and prohibit adapter-to-adapter hidden orchestration;
+2. then continue Tasks 056-058 in ledger order;
 3. only after Task 058 closes, reconcile the valid `phase6-skills-foundation` work onto current `main` and continue Task 059;
 4. keep Skills provider-neutral so future assigned Android devices participate through the same Tool/Provider architecture;
 5. use Paperclip only as a bounded workflow/runtime/Ops behavior donor and preserve Masanawa Authority/Operation/Provider boundaries.
