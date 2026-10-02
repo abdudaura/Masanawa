@@ -472,21 +472,26 @@ export async function executeConsequentialTool(
 
   if (provider !== null && dependencies.providerObserver) {
     const finishedAt = (dependencies.nowMs ?? Date.now)();
-    await dependencies.providerObserver.observe({
-      operationId: operation.operationId,
-      providerId: provider.provider.providerId,
-      providerKey: provider.provider.key,
-      providerVersion: provider.provider.version,
-      capability:
-        tool.providerRequirement?.capability ?? tool.capabilities[0]!,
-      outcome: outcome.status,
-      failure:
-        "failure" in outcome && outcome.failure !== undefined
-          ? outcome.failure
-          : null,
-      durationMs: Math.max(0, finishedAt - dispatchStartedAt),
-      costUnits: null,
-    });
+    try {
+      await dependencies.providerObserver.observe({
+        operationId: operation.operationId,
+        providerId: provider.provider.providerId,
+        providerKey: provider.provider.key,
+        providerVersion: provider.provider.version,
+        capability:
+          tool.providerRequirement?.capability ?? tool.capabilities[0]!,
+        outcome: outcome.status,
+        failure:
+          "failure" in outcome && outcome.failure !== undefined
+            ? outcome.failure
+            : null,
+        durationMs: Math.max(0, finishedAt - dispatchStartedAt),
+        costUnits: null,
+      });
+    } catch {
+      // Telemetry is observational only. A sink failure must never change
+      // provider side-effect truth or force a duplicate/reconciliation path.
+    }
   }
 
   let receipt: ExternalReceiptRecord | null = null;
