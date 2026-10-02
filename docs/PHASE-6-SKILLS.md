@@ -2,7 +2,7 @@
 
 Status: ACTIVE  
 Started: 2026-10-02  
-Active branch: `task059-skill-schemas`
+Active branch: `task060-skill-manifest-import`
 
 Phase 5 Tools and Providers is closed by PR #45, merge
 `0fe123e18a9163386c4ab10331139265ce26b64e`.
@@ -68,6 +68,11 @@ Reject:
 ## Task 059 — canonical Skill / SkillVersion schema
 
 The preserved pre-roadmap foundation was reconciled rather than merged wholesale. Task 059 separates stable logical `Skill` identity (`SkillId`, key, creation time) from immutable normalized `SkillVersion` content (`SkillVersionId`, exact version, activation/governance/schema/provenance/certification fields). Version-owned nested content is frozen after canonical normalization. The preserved dependency-aware registry remains useful groundwork for later Skills tasks but does not make Tasks 060-070 complete.
+
+
+## Task 060 — Skill manifest validation and import format
+
+Task 060 introduces a versioned native manifest validated with the repository's TypeBox stack and a bounded `SKILL.md` compatibility importer. Source files remain untrusted authoring evidence: successful import produces a quarantined candidate with deterministic content fingerprint and provenance, not a canonical/certified SkillVersion. Resource paths are relative-POSIX and traversal-safe; scripts are skipped by default and require explicit import opt-in, which still does not authorize execution. Capability/Tool requirement semantics remain Task 061 and dependency-graph semantics remain Task 062.
 
 ## First canonical slice
 

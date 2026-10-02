@@ -139,6 +139,8 @@ run 380 passed on that exact merge commit.
 
 **Current: Task 060 of 150 — Implement Skill manifest validation and import format.**
 
+Active implementation branch: `task060-skill-manifest-import`. Task 060 now defines `docs/SKILL-IMPORT.md`, a TypeBox-validated native manifest v1, bounded `SKILL.md` import compatibility, deterministic provenance fingerprints, traversal-safe resource paths, scripts-off-by-default behavior and explicit quarantine. Acceptance/CI is pending.
+
 Tasks 001-059 are merged complete.
 
 

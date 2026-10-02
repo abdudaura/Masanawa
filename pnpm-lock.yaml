@@ -384,6 +384,9 @@ importers:
       '@masanawa/tools':
         specifier: workspace:*
         version: link:../tools
+      typebox:
+        specifier: 1.3.34
+        version: 1.3.34
     devDependencies:
       vitest:
         specifier: 5.0.3
