@@ -36,7 +36,7 @@ of architectural feature selection.
 
 **Phase 4 — Memory.**
 
-Current implementation branch: `phase4-memory-retrieval-projections`.
+Current implementation branch: `phase4-memory-multisignal-retrieval`.
 
 Phase 0A/0B, Phase 1 and Phase 2 are closed.
 
@@ -119,33 +119,30 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 
 ## Immediate work
 
-PR #32 implements the authorization-first lexical projection slice. Implementation head
-`a3d4c1edf7df7e485381ac431ba867833f3a7383` passed Foundation CI run 275,
-including frozen install, strict TypeScript, unit tests, PostgreSQL 18 integration
-fixtures and production builds. There are no PR review threads or comments.
+PR #32 merged as `a0b8092d78e6e87647020b729fe2e02b27e455cf`.
+Implementation head `a3d4c1edf7df7e485381ac431ba867833f3a7383` passed
+Foundation CI run 275; final documentation/status head
+`608e7c86ea36d0a524cb434f5732f90206702406` passed run 279.
 
-1. verify the Foundation CI run triggered by the final documentation-only PR #32 head;
-2. fix any real failure; if green, merge PR #32;
-3. on a fresh branch from merged `main`, add vector/entity/temporal signals behind the
-   same explicit authorized-scope and immutable projection-generation contract;
-4. vector work must bind provider/model/dimension to one generation and reject mixed or
-   incompatible vector spaces before query execution;
-5. add multi-signal fusion/reranking plus held-out retrieval evaluation that reports
-   scope leakage separately and requires it to remain zero;
-6. then continue to bounded context compilation, reflection/consolidation and deletion
-   propagation without reopening canonical memory ownership.
+Current work is the next Phase 4 retrieval slice on
+`phase4-memory-multisignal-retrieval`:
 
-The lexical slice now includes activation completeness checks, exact canonical
-revision/type/scope/text validation, current-canonical revalidation at query time,
-stale-revision suppression, cross-Relationship conformance, rebuild equivalence and
-future vector compatibility metadata without prematurely enabling vector retrieval.
+1. add vector/entity/temporal signals behind the existing explicit authorized-scope and
+   immutable projection-generation contract;
+2. keep lexical retrieval as the baseline and canonical MemoryRecord/MemoryRevision as
+   the only truth;
+3. vector generations must bind provider/model/dimension and reject incompatible query
+   embeddings or mixed spaces before ranking;
+4. entity and temporal rows must trace to exact canonical revision/source-content hash
+   and disappear from ordinary results immediately when canonical state becomes stale;
+5. add adapter conformance fixtures proving zero cross-Relationship leakage for every
+   new signal;
+6. then add deterministic multi-signal fusion/reranking plus held-out evaluation with
+   privacy leakage reported as a separate hard-fail metric.
 
-The requested post-freeze donor refresh is current as of 2026-10-02: MemPalace remains
-at the previously inspected head; Paperclip advanced to
-`c83df091b1a5207375eaf23466bb5c62e4e1518e`. Newer Paperclip execution-recovery work
-reinforces the existing decision to adopt its reliability/checkout/wake/Ops behaviors
-later through canonical Masanawa workflow/agent ports rather than installing a parallel
-Paperclip control plane.
+Do not import MemPalace as a Python/Chroma memory service and do not introduce
+Paperclip as a parallel control plane. Their approved contributions remain behavioral
+contracts implemented inside canonical Masanawa packages/adapters.
 
 The lifecycle/publication implementation now includes independent lifecycle CAS,
 immutable same-scope/type lineage, current-authority + one-time-approval publication,
