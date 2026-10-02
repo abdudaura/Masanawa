@@ -36,7 +36,7 @@ of architectural feature selection.
 
 **Phase 5 — Tools and Providers.**
 
-Current implementation branch: `phase5-provider-telemetry-errors`.
+Current implementation branch: `phase5-credential-custody`.
 
 Phase 0A/0B, Phase 1 and Phase 2 are closed.
 
@@ -120,55 +120,53 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 ## Immediate work
 
 Phase 5 — Tools and Providers is active on
-`phase5-provider-telemetry-errors`.
+`phase5-credential-custody`.
 
 Merged Phase 5 history:
-- registry foundation PR #37 merged as
+- registry foundation PR #37:
   `b3f2e8ce33aeb4ed125bd40af78f10a454174bbd`;
-- consequential execution/reconciliation PR #38 merged as
+- consequential execution/reconciliation PR #38:
   `21141266ab15e2111b8f78c6df365100a60a017a`;
-- durable receipt/replay PR #39 merged as
-  `8d531188e2f9d7c38f50cc883e3425096b5408ad`.
+- durable receipt/replay PR #39:
+  `8d531188e2f9d7c38f50cc883e3425096b5408ad`;
+- typed Provider failures/privacy-safe telemetry PR #42:
+  `be814fee91b8b551b00e2d9900d2970680297b3d`.
 
-PR #42 is the active provider failure/telemetry slice.
+PR #45 is the active credential-custody slice.
 
 Implemented on the branch:
-- typed Provider failure kind/phase/dispatch-certainty contracts;
-- post-dispatch failures are forced to `unknown` certainty and pre-dispatch failures
-  must be certified `not-dispatched`;
-- ambiguous failures are never exposed as immediately retryable;
-- typed timeout/rate-limit/unavailable/authentication/cost/transport failure mapping to
-  canonical `PlatformError` categories;
-- bounded Provider usage for cost/input/output units and latency;
-- privacy-safe Provider readiness and execution telemetry attributes through the
-  canonical Telemetry allowlist;
-- arbitrary provider keys such as credential/API-key fields remain rejected from the
-  default telemetry surface;
-- optional Provider telemetry sink is observational only and cannot change Tool truth;
-- consequential Tool execution treats certified not-dispatched Provider failures as
-  locally failed without reconciliation, while unknown post-dispatch failures enter
-  reconciliation with blind retry disabled;
-- success/failure telemetry carries Provider, capability, ToolVersion and Operation
-  identity without request input, result payload, receipt bodies or CredentialRefIds;
-- production build order now compiles Telemetry before Providers.
+- Security-owned CredentialRefId resolution binds tenant, Provider, Operation and slot;
+- raw credential material is available only through `CredentialSecret.use(...)`;
+- CredentialSecret string/JSON surfaces are always `[REDACTED]`;
+- encrypted credential envelopes are crypto/KMS-neutral contracts rather than a
+  hard-coded provider;
+- PostgreSQL `security.credential_refs` stores only encrypted envelope material plus
+  tenant/provider/slot/generation/active metadata;
+- create is conflict-safe; rotation uses expected-generation CAS; revocation disables
+  subsequent resolution;
+- provider adapter-edge helpers resolve only validated Provider credential slots;
+- wrong tenant/provider/slot, missing/ref-revoked credentials and decrypt/KMS failures
+  all fail through one non-disclosing `credential.unavailable` authorization surface;
+- PostgreSQL integration coverage proves ciphertext-at-rest, scope isolation,
+  generation rotation/stale rejection, revocation and decrypt-error redaction.
 
-Validation:
-- implementation head `3de2dcc749409b6be680fa5d7f01e820bd967792`
-  passed Foundation CI run 346;
-- the complete gate passed frozen install, strict TypeScript, unit/architecture tests,
-  PostgreSQL 18 + pgvector suites and production builds;
-- unit coverage proves one-shot success usage telemetry across idempotent replay,
-  certified pre-dispatch timeout handling, ambiguous post-dispatch reconciliation,
-  dispatch-certainty invariants and telemetry allowlist rejection of secret-like keys.
+Foundation CI run 356 found an implicit-any issue and later hardening added a real
+same-tenant Operation requirement plus a genuine pre-revocation decrypt-error test.
+Hardened implementation head
+`7d53562fe29f5aae6a3e69c495757ce22658df3a` passed Foundation CI run 365.
+The complete gate passed frozen install, strict TypeScript, unit/architecture tests,
+PostgreSQL 18 + pgvector integration suites and production builds.
+
+The Phase 5 acceptance audit is now PASS. Do not merge PR #45 until the final
+documentation head containing that PASS declaration also passes Foundation CI.
 
 Immediate next:
-1. require a green final documentation-head Foundation CI and merge PR #42;
-2. create a clean branch from merged `main`;
-3. implement CredentialRef metadata/scoping and adapter-edge secret resolution without
-   exposing raw secret values to Tool/Provider contracts, logs, telemetry or receipts;
-4. add revocation/scope/tenant/provider-slot acceptance coverage for credential
-   resolution;
-5. finish the Phase 5 acceptance audit before advancing to Skills/Workflows.
+1. wait for the final documentation-head Foundation CI and fix any real failure;
+2. merge PR #45 if that exact head is green;
+3. verify merged `main` and its push CI;
+4. start Phase 6 Skills/Workflows from merged `main`, using Paperclip only as a
+   bounded workflow/runtime/Ops behavior donor and preserving Masanawa's canonical
+   Authority/Operation/Provider boundaries.
 
 The requested post-freeze donor boundary remains unchanged: MemPalace contributes
 retrieval/evaluation/storage-contract behavior inside canonical Masanawa memory ports;

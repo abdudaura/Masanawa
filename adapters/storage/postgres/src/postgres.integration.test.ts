@@ -16,7 +16,10 @@ import {
   assertCurrentAuthority,
   createAuthorityContext,
   createPendingApproval,
+  CredentialSecret,
   issueServiceCredential,
+  resolveCredentialSecret,
+  type CredentialEnvelopeCipher,
   verifyServiceCredential,
   type ApprovalBinding,
 } from "@masanawa/security";
@@ -73,6 +76,10 @@ import {
   putServiceVerificationKey,
   deactivateServiceVerificationKey,
   createPostgresServiceCredentialKeySource,
+  createProviderCredentialRef,
+  rotateProviderCredentialRef,
+  revokeProviderCredentialRef,
+  createPostgresCredentialMaterialSource,
   settlePendingApproval,
   setPolicyRevision,
   revokeAuthorityContext,
@@ -195,6 +202,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       "security/0001_security_foundation.sql",
       "security/0002_approval_operation_integrity.sql",
       "security/0003_service_credentials.sql",
+      "security/0004_provider_credentials.sql",
       "world/0001_world_foundation.sql",
       "world/0002_world_canon.sql",
       "world/0003_world_routines_story_arcs.sql",
@@ -3475,6 +3483,216 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
     } finally {
       authorityClient.release();
     }
+  });
+
+  it("stores provider credentials encrypted, scoped, rotatable and revocable", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const otherTenantId = createCanonicalId("tenant");
+    const providerId = createCanonicalId("provider");
+    const otherProviderId = createCanonicalId("provider");
+    const credentialRefId = createCanonicalId("credential-ref");
+
+    const cipher: CredentialEnvelopeCipher = {
+      async seal(input) {
+        return {
+          algorithm: "integration-test-envelope",
+          keyId: "test-key-v1",
+          ciphertext: Buffer.from(
+            `g${input.generation}:${input.plaintext}`,
+            "utf8",
+          ).toString("base64"),
+          nonce: null,
+        };
+      },
+      async open(input) {
+        const decoded = Buffer.from(
+          input.envelope.ciphertext,
+          "base64",
+        ).toString("utf8");
+        const prefix = `g${input.generation}:`;
+        if (!decoded.startsWith(prefix)) {
+          throw new Error("credential generation mismatch");
+        }
+        return CredentialSecret.fromString(decoded.slice(prefix.length));
+      },
+    };
+
+    await withTransaction(pool, async (client) => {
+      await createTenant(client, {
+        tenantId,
+        createdAt: toInstant("2026-10-02T10:00:00Z"),
+      });
+      await createTenant(client, {
+        tenantId: otherTenantId,
+        createdAt: toInstant("2026-10-02T10:00:00Z"),
+      });
+
+      await createProviderCredentialRef(client, cipher, {
+        tenantId,
+        credentialRefId,
+        providerId,
+        slotKey: "api-key",
+        plaintext: "first-secret",
+      });
+    });
+
+    const preparedCredentialOperation = await withTransaction(
+      pool,
+      (client) =>
+        prepareOperation(client, {
+          tenantId,
+          kind: "provider.credential-resolution-test",
+          idempotencyKey: "credential-resolution-operation",
+          authorityScopeHash: "credential-test-authority",
+          requestFingerprint: "credential-test-request",
+          expiresAt: toInstant("2099-01-01T00:00:00Z"),
+        }),
+    );
+    const operationId = preparedCredentialOperation.operation.operationId;
+
+    const persisted = await pool.query<{
+      generation: number;
+      ciphertext: string;
+      active: boolean;
+    }>(
+      `SELECT generation, ciphertext, active
+         FROM security.credential_refs
+        WHERE tenant_id = $1 AND credential_ref_id = $2`,
+      [tenantId, credentialRefId],
+    );
+    expect(persisted.rows[0]).toMatchObject({
+      generation: 1,
+      active: true,
+    });
+    expect(persisted.rows[0]?.ciphertext).not.toContain("first-secret");
+
+    const resolve = async (
+      requestTenantId = tenantId,
+      requestProviderId = providerId,
+      slotKey = "api-key",
+    ) =>
+      withTransaction(pool, (client) =>
+        resolveCredentialSecret(
+          createPostgresCredentialMaterialSource(client, cipher),
+          {
+            tenantId: requestTenantId,
+            credentialRefId,
+            providerId: requestProviderId,
+            operationId,
+            slotKey,
+          },
+        ),
+      );
+
+    await expect(
+      resolve().then((secret) => secret.use((value) => value)),
+    ).resolves.toBe("first-secret");
+
+    await expect(resolve(otherTenantId)).rejects.toMatchObject({
+      code: "credential.unavailable",
+      category: "authorization",
+    });
+    await expect(resolve(tenantId, otherProviderId)).rejects.toMatchObject({
+      code: "credential.unavailable",
+      category: "authorization",
+    });
+    await expect(
+      resolve(tenantId, providerId, "other-slot"),
+    ).rejects.toMatchObject({
+      code: "credential.unavailable",
+      category: "authorization",
+    });
+
+    await expect(
+      withTransaction(pool, (client) =>
+        resolveCredentialSecret(
+          createPostgresCredentialMaterialSource(client, cipher),
+          {
+            tenantId,
+            credentialRefId,
+            providerId,
+            operationId: createCanonicalId("operation"),
+            slotKey: "api-key",
+          },
+        ),
+      ),
+    ).rejects.toMatchObject({
+      code: "credential.unavailable",
+      category: "authorization",
+    });
+
+    const generation = await withTransaction(pool, (client) =>
+      rotateProviderCredentialRef(client, cipher, {
+        tenantId,
+        credentialRefId,
+        providerId,
+        slotKey: "api-key",
+        expectedGeneration: 1,
+        plaintext: "second-secret",
+      }),
+    );
+    expect(generation).toBe(2);
+    await expect(
+      resolve().then((secret) => secret.use((value) => value)),
+    ).resolves.toBe("second-secret");
+
+    await expect(
+      withTransaction(pool, (client) =>
+        rotateProviderCredentialRef(client, cipher, {
+          tenantId,
+          credentialRefId,
+          providerId,
+          slotKey: "api-key",
+          expectedGeneration: 1,
+          plaintext: "stale-secret",
+        }),
+      ),
+    ).rejects.toMatchObject({
+      code: "credential.rotation_conflict",
+      category: "conflict",
+    });
+
+    const failingCipher: CredentialEnvelopeCipher = {
+      ...cipher,
+      async open() {
+        throw new Error("kms secret diagnostic that must not escape");
+      },
+    };
+    await withTransaction(pool, async (client) => {
+      const source = createPostgresCredentialMaterialSource(
+        client,
+        failingCipher,
+      );
+      await expect(
+        resolveCredentialSecret(source, {
+          tenantId,
+          credentialRefId,
+          providerId,
+          operationId,
+          slotKey: "api-key",
+        }),
+      ).rejects.toMatchObject({
+        code: "credential.unavailable",
+        category: "authorization",
+        message: "Credential reference is unavailable for requested scope",
+      });
+    });
+
+    await expect(
+      withTransaction(pool, (client) =>
+        revokeProviderCredentialRef(client, {
+          tenantId,
+          credentialRefId,
+          providerId,
+          slotKey: "api-key",
+        }),
+      ),
+    ).resolves.toBe(true);
+
+    await expect(resolve()).rejects.toMatchObject({
+      code: "credential.unavailable",
+      category: "authorization",
+    });
   });
 
   it("preserves one operation across restart-safe idempotent admission", async () => {

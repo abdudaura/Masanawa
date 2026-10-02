@@ -199,8 +199,8 @@ after its final documentation gate passed.
 
 ## Fourth canonical slice — typed Provider failures and privacy-safe telemetry
 
-Active branch: `phase5-provider-telemetry-errors`  
-Active PR: #42
+Merged branch: `phase5-provider-telemetry-errors`  
+Merged PR: #42
 
 Implemented:
 - typed Provider failure kinds, phases and dispatch certainty;
@@ -228,4 +228,51 @@ Validation:
   PostgreSQL 18 + pgvector integration suites and production builds;
 - PR #42 has no review threads at the implementation gate.
 
-Final documentation head must pass the same gate before merge.
+PR #42 merged as `be814fee91b8b551b00e2d9900d2970680297b3d` after its final gate passed.
+
+
+## Fifth canonical slice — encrypted credential custody
+
+Active branch: `phase5-credential-custody`  
+Active PR: #45
+
+Goal: make Provider credential references production-usable without allowing plaintext
+secrets into Tool/Provider definitions, execution fingerprints, telemetry, receipts or
+general persistence.
+
+Implemented:
+- Security-owned scoped CredentialRefId resolution request carries tenant, Provider,
+  Operation and slot identity;
+- CredentialSecret provides callback-only plaintext access and redacts string/JSON
+  serialization;
+- pluggable encrypted-envelope cipher contract separates canonical custody semantics
+  from any particular KMS/crypto implementation;
+- PostgreSQL `security.credential_refs` stores encrypted envelope data, generation,
+  scope binding and active state only;
+- credential creation fails on identity conflict;
+- rotation is expected-generation CAS and reseals under the requested next generation;
+- revocation disables future resolution;
+- PostgreSQL material source requires the exact tenant/ref/provider/slot binding;
+- decrypt/cipher failures are converted to the same non-disclosing
+  `credential.unavailable` result as missing/out-of-scope refs;
+- Provider adapter-edge resolution maps validated credential slots to Security-owned
+  secret wrappers;
+- PostgreSQL acceptance coverage proves ciphertext-at-rest, tenant/provider/slot
+  isolation, successful rotation, stale-generation rejection, revocation and
+  decrypt-error redaction.
+
+Validation:
+- run 356 found an implicit-any issue in the PostgreSQL material source and the branch
+  was repaired rather than weakening the contract;
+- operation-scoped resolution was then hardened to require a real
+  `events.operations` row in the same tenant;
+- the decrypt-error fixture was corrected to exercise the cipher failure before
+  revocation;
+- hardened implementation head
+  `7d53562fe29f5aae6a3e69c495757ce22658df3a` passed Foundation CI run 365;
+- the full gate passed frozen install, strict TypeScript, unit/architecture tests,
+  PostgreSQL 18 + pgvector integration suites and production builds.
+
+The Phase 5 acceptance matrix is now PASS in
+`docs/PHASE-5-CLOSURE-AUDIT.md`. This documentation head still requires its final
+Foundation CI before PR #45 merges.
