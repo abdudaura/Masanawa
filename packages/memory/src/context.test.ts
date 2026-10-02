@@ -63,7 +63,7 @@ describe("memory context compiler", () => {
         ]),
         hits: [first, second, third],
         maxItems: 2,
-        maxTokens: 11,
+        maxTokens: 10,
       },
       tokenCounter,
     );
