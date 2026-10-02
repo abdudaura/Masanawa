@@ -24,6 +24,10 @@ import {
 function memoryOperationStore(): ToolOperationStore {
   const operations = new Map<OperationId, OperationRecord>();
   const idempotency = new Map<string, OperationId>();
+  const receipts = new Map<
+    OperationId,
+    Array<{ normalizedStatus: string; normalizedPayload: import("@masanawa/security").CanonicalJson | null }>
+  >();
 
   return {
     async prepare(input: ToolOperationPrepareInput) {
@@ -85,6 +89,26 @@ function memoryOperationStore(): ToolOperationStore {
         };
         operations.set(input.operationId, next);
       }
+    },
+    async recordEffectReceipt(input) {
+      const existing = receipts.get(input.operationId) ?? [];
+      const duplicate = existing.find(
+        (receipt) => receipt.normalizedStatus === input.normalizedStatus,
+      );
+      if (!duplicate) {
+        existing.push({
+          normalizedStatus: input.normalizedStatus,
+          normalizedPayload: input.normalizedPayload,
+        });
+        receipts.set(input.operationId, existing);
+      }
+    },
+    async loadEffectReceipts(tenantId, operationId) {
+      const operation = operations.get(operationId);
+      if (!operation || operation.tenantId !== tenantId) {
+        return [];
+      }
+      return receipts.get(operationId) ?? [];
     },
   };
 }
@@ -218,6 +242,74 @@ describe("consequential Tool executor", () => {
 
     expect(first.operation.state).toBe("succeeded");
     expect(replay.operation.state).toBe("succeeded");
+    expect(replay.reused).toBe(true);
+    expect(replay.dispatched).toBe(false);
+    expect(dispatches).toBe(1);
+  });
+
+  it("recovers a durable terminal receipt without redispatch after an interrupted settle", async () => {
+    const f = fixture();
+    const base = memoryOperationStore();
+    let dispatches = 0;
+    let interruptOnce = true;
+
+    const operations: ToolOperationStore = {
+      ...base,
+      async transition(tenantId, operationId, from, to) {
+        if (from === "accepted" && to === "succeeded" && interruptOnce) {
+          interruptOnce = false;
+          throw new Error("simulated crash after receipt commit");
+        }
+        return base.transition(tenantId, operationId, from, to);
+      },
+    };
+
+    const invocation = {
+      toolVersionId: f.toolVersionId,
+      authority: f.authority,
+      input: { amount: 1000 },
+      idempotencyKey: "charge-request-recover",
+      providerSelection: null,
+    } as const;
+
+    const dependencies = {
+      tools: f.tools,
+      providers: f.providers,
+      authoritySource: {
+        getPolicyRevision: () => "policy-1",
+      },
+      operations,
+      resolveAdapter: () => ({
+        async dispatch() {
+          dispatches += 1;
+          return {
+            status: "succeeded" as const,
+            output: { chargeId: "charge_recovered" },
+          };
+        },
+      }),
+    };
+
+    await expect(
+      executeConsequentialTool(dependencies, {
+        invocation,
+        credentialBindings: {
+          "api-key": createCanonicalId("credential-ref"),
+        },
+        idempotencyExpiresAt: toInstant("2026-10-03T10:00:00Z"),
+      }),
+    ).rejects.toThrow(/simulated crash/u);
+
+    const replay = await executeConsequentialTool(dependencies, {
+      invocation,
+      credentialBindings: {
+        "api-key": createCanonicalId("credential-ref"),
+      },
+      idempotencyExpiresAt: toInstant("2026-10-03T10:00:00Z"),
+    });
+
+    expect(replay.operation.state).toBe("succeeded");
+    expect(replay.output).toEqual({ chargeId: "charge_recovered" });
     expect(replay.reused).toBe(true);
     expect(replay.dispatched).toBe(false);
     expect(dispatches).toBe(1);
