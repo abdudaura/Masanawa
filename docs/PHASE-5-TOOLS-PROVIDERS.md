@@ -43,10 +43,50 @@ Reject:
 - plugin/package loading as implicit Tool registration;
 - conversational history as side-effect truth.
 
-## First canonical slice — active
+## First canonical slice — implementation gate passed
 
 Goal: versioned Tool/Provider contracts plus deterministic in-process registries and
 fail-closed provider selection.
+
+Implemented:
+- branded normalized `CapabilityKey` lives in shared contracts so Provider and Tool
+  packages share one capability identity without a dependency cycle;
+- real `@masanawa/providers` package with immutable versioned Provider definitions,
+  explicit credential-slot metadata and readiness observations stored separately from
+  definition identity;
+- provider registration is exact-replay idempotent while ProviderId or key/version
+  rebinding to different definitions fails closed;
+- default provider selection considers only exact-capability providers whose current
+  readiness state is `ready`, with deterministic priority/key/version/ID ordering;
+- explicit ProviderId or exact key/version selection never falls back to another
+  provider when missing, unsupported, degraded, unavailable or disabled;
+- stale readiness observations cannot overwrite newer readiness state;
+- real `@masanawa/tools` package with canonical capability definitions and immutable
+  ToolId/ToolVersionId contracts;
+- Tool lookup is version-pinned; there is intentionally no implicit latest-version
+  resolution;
+- Tool registration is exact-replay idempotent and rejects ToolId/key/version conflicts
+  or unregistered capability references;
+- Tool definitions carry canonical JSON input/output schemas, required authority
+  capabilities, risk/side-effect/sensitivity, timeout/rate/cost metadata,
+  idempotency/reconciliation declarations and optional Provider capability requirement;
+- consequential/restricted Tool definitions are rejected unless they use
+  operation-bound idempotency and non-none reconciliation semantics;
+- Provider-backed Tool resolution delegates to the canonical fail-closed Provider
+  registry, preserving explicit no-fallback behavior;
+- Tool invocation envelope carries the canonical external `AuthorityContext`, validates
+  canonical data, freezes model input and bounds idempotency/explicit-provider metadata
+  without inventing a Tool-owned authority model;
+- packages are wired into the production build and frozen pnpm workspace lockfile.
+
+Validation evidence:
+- implementation head `1f2e9d69b9adc312c06e8b3b5e12978a6c3e7074` passed
+  Foundation CI run 318;
+- the complete `check` job passed frozen install, strict TypeScript, unit and
+  architecture tests, existing PostgreSQL 18 + pgvector integration suites and
+  production builds;
+- PR #37 has no review threads or comments;
+- final documentation head must pass the same gate before merge.
 
 Rules:
 - Tool and Provider IDs use canonical UUIDv7-backed Masanawa IDs;
@@ -77,3 +117,12 @@ Before Phase 5 closes, repository evidence must eventually prove:
 - timeout/rate/cost/readiness failures are typed;
 - Tool and Provider telemetry carries correlation/operation identity without secret data;
 - adapters cannot bypass canonical Tool/Provider registries or security policy.
+
+After this slice:
+1. bind credentials by canonical `CredentialRefId` only, never raw secret values;
+2. add consequential Tool prepare/execute around existing Operation + current-authority
+   primitives;
+3. classify provider dispatch outcomes so ambiguous post-dispatch state transitions to
+   reconciliation rather than blind retry;
+4. prove exact idempotent replay, stale-authority rejection and explicit-provider
+   no-fallback through PostgreSQL-backed execution fixtures.
