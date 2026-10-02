@@ -197,7 +197,6 @@ export function memoryExtractionRequestFingerprint(
     source: normalized.source,
     extractor: normalized.extractor,
     maxAttempts: normalized.maxAttempts,
-    availableAt: normalized.availableAt,
   });
 }
 
