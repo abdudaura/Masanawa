@@ -36,7 +36,7 @@ of architectural feature selection.
 
 **Phase 4 — Memory.**
 
-Current implementation branch: `phase4-memory-multisignal-retrieval`.
+Current implementation branch: `phase4-memory-deletion-context`.
 
 Phase 0A/0B, Phase 1 and Phase 2 are closed.
 
@@ -119,13 +119,10 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 
 ## Immediate work
 
-PR #33 is the active multisignal retrieval slice on
-`phase4-memory-multisignal-retrieval`.
-
+PR #33 merged as `69ed518df450415ae30fc66a800e2ee674da4cee`.
 Implementation/fusion head `c938e23e576c98a8eb0efd61fea10e91c0fcd737`
-passed Foundation CI run 293. The full check gate passed frozen install, strict
-TypeScript, unit tests, PostgreSQL 18 + pgvector integration/migrations and production
-builds. PR #33 has no review threads or comments.
+passed Foundation CI run 293; final documentation head
+`0b61670a5a9512ff4532c270619a45604019aeb3` passed run 294.
 
 The branch now includes:
 - pinned PostgreSQL 18 + pgvector CI;
@@ -139,16 +136,17 @@ The branch now includes:
 - held-out recall/precision/MRR metrics plus an independent zero-leakage hard gate;
 - cross-Relationship conformance fixtures across every new signal and fusion.
 
-Immediate next steps:
-1. verify the final documentation-head Foundation CI for PR #33;
-2. fix any real failure; if green, merge PR #33;
-3. create a fresh branch from merged `main` for canonical tombstone/deletion
-   propagation plus bounded context compilation;
-4. prove tombstoned/deleted canonical records disappear from lexical/vector/entity/
-   temporal/hybrid retrieval without requiring model-side filtering;
-5. compile bounded working context only from already-authorized current memory and keep
-   every rendered context item mapped to MemoryRecord/MemoryRevision provenance;
-6. then implement reflection/consolidation and compaction-flush semantics without
+Immediate next steps on `phase4-memory-deletion-context`:
+1. add a canonical lifecycle transition for explicit tombstone/deletion with
+   lifecycle-revision CAS and immutable audit evidence;
+2. prove tombstoned canonical records disappear from lexical/vector/entity/temporal/
+   hybrid retrieval immediately, before projection cleanup;
+3. add projection cleanup/reconciliation for tombstoned records without deleting
+   canonical revision/evidence history;
+4. implement bounded context compilation only from already-authorized current memory,
+   with deterministic item/token budgets and MemoryRecord/MemoryRevision provenance on
+   every rendered item;
+5. then implement reflection/consolidation and compaction-flush semantics without
    widening scope or creating a second durable memory truth.
 
 The requested post-freeze donor boundary remains unchanged: MemPalace contributes
