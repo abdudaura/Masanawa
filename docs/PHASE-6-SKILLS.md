@@ -1,0 +1,99 @@
+# Phase 6 — Skills
+
+Status: ACTIVE  
+Started: 2026-10-02  
+Active branch: `phase6-skills-foundation`
+
+Phase 5 Tools and Providers is closed by PR #45, merge
+`0fe123e18a9163386c4ab10331139265ce26b64e`.
+Credential-custody implementation head
+`7d53562fe29f5aae6a3e69c495757ce22658df3a` passed Foundation CI run 365,
+the final Phase 5 documentation head
+`b6e5e1cdfddc9c7c9f2da8411c58c8f03c4785d4` passed run 368, and merged-main
+run 369 passed the complete Foundation CI gate.
+
+## Canonical ownership
+
+- `packages/skills` is the sole canonical Skill/SkillVersion authority.
+- `packages/tools` remains the atomic execution authority; Skills compose Tools and
+  subskills but do not bypass Tool security/idempotency/reconciliation.
+- `packages/security` remains the authority/approval owner.
+- `packages/workflows` is Phase 8 durable multi-step business state and is not pulled
+  forward into the Phase 6 foundation merely to implement Skills.
+- source Markdown/files/repositories are authoring/import formats and candidate
+  evidence, never production truth.
+- production SkillVersion state is versioned/certified canonical state.
+
+## Donor boundary
+
+Primary structural donor: OpenJarvis.
+
+Adopt:
+- manifest/normalization discipline;
+- catalog/manager;
+- exact dependency/subskill graph;
+- SkillTool adapter later in Phase 6;
+- provenance/trust metadata;
+- invalid/cyclic skill isolation;
+- trace metadata;
+- optimization overlays only as non-authoritative candidates.
+
+OpenClaw contributes:
+- immutable managed revisions;
+- content-derived revision evidence;
+- deterministic source precedence for import candidates;
+- visibility and exact revision pinning;
+- stale-edit conflict behavior.
+
+Microsoft Agent Framework contributes:
+- progressive disclosure;
+- composable skill sources;
+- safe resource/script boundaries and traversal defense;
+- interoperability concepts.
+
+ChatWithStars contributes:
+- certification/readiness;
+- activation and negative examples;
+- risk/approval/pricing/idempotency/reconciliation policy;
+- Character expertise binds certified SkillVersions only.
+
+Reject:
+- filesystem discovery order as production truth;
+- donor runtime ownership;
+- imported skill activation without certification;
+- implicit latest-version selection where reproducibility matters;
+- skill text/model intent as authorization;
+- workflows hidden inside conversational skill state.
+
+## First canonical slice
+
+Goal: establish the production SkillVersion identity/catalog/governance boundary before
+parser/import/executor work.
+
+Planned invariants:
+- `SkillId` is stable logical identity and `SkillVersionId` is exact immutable
+  certified revision identity;
+- production registration requires certification evidence and positive + negative
+  activation examples;
+- definitions declare capabilities, exact SkillVersion dependencies, required Tool
+  capabilities, schemas, authority requirements, risk/side-effect/sensitivity,
+  billing/confirmation, idempotency/reconciliation and provenance/trust;
+- consequential Skills inherit operation-bound idempotency/reconciliation constraints;
+- user-billed Skills require explicit confirmation policy;
+- registration is exact-replay idempotent and identity conflicts fail closed;
+- batch registration validates the full dependency graph atomically, so missing/cyclic
+  dependencies cannot partially activate healthy state;
+- dependency depth is bounded;
+- readiness/blocked/disabled state is mutable operational state separate from immutable
+  SkillVersion content;
+- model-hidden Skills may be exact dependencies but are never advertised to the model;
+- advertised/executable Skills require ready dependencies;
+- no implicit latest-version resolver exists in this slice.
+
+Acceptance before moving deeper into Phase 6:
+- strict TypeScript/unit/architecture/build gate;
+- graph cycle/missing/depth/conflict tests;
+- certification/governance tests;
+- readiness/dependency eligibility tests;
+- PostgreSQL-backed canonical Skill/SkillVersion persistence before source import is
+  considered production-capable.
