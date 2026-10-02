@@ -173,14 +173,22 @@ Never force clients to parse error strings for workflow truth.
 
 ## 11. API versioning
 
-Internal/public APIs use schema versioning.
+Operational probes `/healthz` and `/readyz` are intentionally unversioned. All
+product/public/internal HTTP contract routes use a supported major prefix such as
+`/v1/...`, with supported majors declared in `API-LIFECYCLE.json`.
 
 Breaking contract changes require:
-- new endpoint/version or compatibility layer;
-- migration window;
-- contract tests.
+- a new supported HTTP major or explicit compatibility layer;
+- a migration/deprecation window;
+- Contracts-suite evidence.
 
-Database schema is not an API. Repository-wide lifecycle, breaking-change and deprecation rules are canonicalized in `API-LIFECYCLE.md`.
+Event and durable payload `schemaVersion` values are independent of HTTP and package
+versions. Tool/Provider versions are immutable domain registry identities. Package
+versions use SemVer syntax. These version domains must not be conflated.
+
+Database schema is not an API.
+
+See `API-LIFECYCLE.md` for repository-wide compatibility/deprecation rules. Repository-wide lifecycle, breaking-change and deprecation rules are canonicalized in `API-LIFECYCLE.md`.
 
 ## 12. Readiness
 

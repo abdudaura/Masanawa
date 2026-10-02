@@ -1,135 +1,122 @@
-# Public API, Versioning and Deprecation Conventions
+# Public API, Versioning and Deprecation Lifecycle
 
-Status: canonical production-structure contract.
+Status: canonical repository-wide compatibility contract.
 
-This document defines the repository-wide API lifecycle established by production Task 057.
-It applies to canonical TypeScript package APIs, service/network contracts, events, persisted
-job/message schemas and adapter-facing contracts. It does not turn private workspaces into
-independently published products and it does not create compatibility layers without a real
-consumer requirement.
+This document defines the public compatibility rules established by production Task
+057. The machine-readable policy is `docs/API-LIFECYCLE.json`; blocking contract
+evidence lives in `tests/contracts/public-api-lifecycle.test.ts`.
 
-## 1. Public TypeScript package surface
+Masanawa has several distinct version domains. They must not be collapsed into one
+number.
 
-Every implemented canonical package under `packages/*` has exactly one supported package
-entrypoint: `@masanawa/<package>`.
+## 1. Workspace package API
 
-The root entrypoint is owned by `src/index.ts`. Cross-workspace consumers must import from
-that package root. Imports of `@masanawa/<package>/src/*`, `internal/*`, repository
-implementations, migrations, generated build paths or any other deep subpath are unsupported.
+A reusable workspace under `packages/*`, `adapters/*/*` or `infra/*/*` exposes
+only its package root unless an explicitly reviewed compatibility surface is added.
 
-Package `exports` therefore expose only `.` with:
-- TypeScript source for the `types` and development/default conditions;
-- built JavaScript for the `production` condition.
+Rules:
+- cross-workspace imports use `@masanawa/<package>`, never deep
+  `@masanawa/<package>/...` paths;
+- `src/index.ts` is the public TypeScript boundary;
+- the package `exports` map exposes only `.` using the canonical
+  types/production/default targets;
+- every workspace package version is valid SemVer;
+- private greenfield workspaces may remain at `0.0.0` while unpublished, but that
+  does not permit unreviewed breaking changes between owners;
+- once a package is externally published, normal SemVer applies: PATCH for compatible
+  fixes, MINOR for compatible additions, MAJOR for breaking public changes.
 
-A new public subpath is an architectural API decision, not a convenience for bypassing the
-owner's root surface. Add one only with documented ownership and architecture-test changes.
+Adding a public subpath export is an API decision, not a folder convenience. It requires
+updating this lifecycle contract and compatibility tests.
 
-## 2. Workspace package version is not contract version
+## 2. HTTP API versions
 
-The repository is a private coordinated monorepo. The current `0.0.0` workspace package
-version is deliberately not used as a promise of independently deployable semantic versions.
+Operational probes are intentionally unversioned:
+- `/healthz`;
+- `/readyz`.
 
-Compatibility is versioned at the contract that crosses a durable or independently deployed
-boundary. Examples include:
-- HTTP/RPC request and response schemas;
-- event/outbox envelopes and event payloads;
-- workflow/job/checkpoint payloads;
-- Provider/device protocol messages;
-- persisted import/export formats.
+All product/public/internal HTTP contract routes use a major prefix such as
+`/v1/...`. The supported major list is declared in `API-LIFECYCLE.json`.
 
-Database schema version/migration order is storage evolution, not a public API version.
+Compatible request/response additions may stay within a major only when existing clients
+remain valid. A breaking route/schema/semantic change requires a new supported major or
+an explicit compatibility layer. Old and new majors may coexist during migration.
 
-## 3. Contract versioning
+The URL major is an API contract version. It is not the database migration version and
+not the package.json version.
 
-A durable or network contract must carry or resolve an explicit version before more than one
-incompatible representation can exist.
+## 3. Event and durable payload schema versions
 
-Compatible additive evolution may remain within a version when old consumers can safely
-ignore the addition and existing required semantics do not change.
+`PlatformEvent.eventType + schemaVersion` identifies an event wire schema.
 
-A breaking change requires a new explicit contract version. Breaking changes include:
-- removing or renaming a field/symbol required by consumers;
-- changing a field's meaning, type, units or requiredness incompatibly;
-- changing error/result semantics so an existing consumer can misinterpret the outcome;
-- changing idempotency, authority, privacy or reconciliation semantics;
-- reusing an existing event/job/schema version for an incompatible payload.
+For event and durable payload `schemaVersion` values:
+- versions are positive integers;
+- the same version must never be reinterpreted with incompatible meaning;
+- incompatible shape/semantic changes require a new schema version;
+- readers must explicitly support the versions they consume;
+- migrations/upcasters may translate old data, but the original durable evidence stays
+  attributable to its original version.
 
-Do not create a V2 merely because implementation internals changed.
+A TypeScript interface edit alone does not migrate durable data.
 
-## 4. Deprecation
+## 4. Tool, Provider and other domain versions
 
-Deprecation is a migration state, not deletion.
+Tool and Provider `key + version` values are immutable registry identities. Once a
+version is registered or durably referenced, its behavior/contract must not be silently
+redefined. Incompatible behavior uses a new version and normal registry selection.
 
-A deprecated public TypeScript symbol must use JSDoc `@deprecated` and include all three
-labels in the same comment:
-- `Since:` the contract/release milestone where deprecation began;
-- `Use:` the supported replacement or explicit statement that there is none;
-- `Remove:` the objective removal gate (a contract version, production task or dated
-  migration gate).
+CharacterVersion, WorkflowVersion, SkillVersion and similar domain-version entities are
+also domain history, not package SemVer or HTTP versions.
 
-Example:
+## 5. Deprecation registry
+
+Deprecation is explicit and machine-auditable. `API-LIFECYCLE.json` owns the registry.
+
+Every entry contains:
+- stable `id`;
+- `surfaceKind`: one of `workspace-symbol`, `http-route`, `event-schema`,
+  `payload-schema`, `tool-version`, `provider-version`;
+- concrete `surface`;
+- `deprecatedIn`;
+- `removalTarget`;
+- `replacement`;
+- `reason`.
+
+For code symbols, the source JSDoc must use:
 
 ```ts
-/**
- * @deprecated Since: api-v2. Use: createCharacterV2. Remove: after api-v1 consumer audit.
- */
+/** @deprecated masanawa:<deprecation-id> use the replacement surface */
 ```
 
-Do not add a forwarding alias, dual-write path, compatibility endpoint or legacy translation
-layer solely to satisfy this convention. Such mechanisms require an identified consumer,
-bounded migration window, tests and an explicit deletion gate.
+A plain ad-hoc `@deprecated` without a registry ID fails the contract suite. A
+workspace-symbol registry entry without a matching source annotation also fails.
 
-## 5. Removal gate
+HTTP/schema/domain-version deprecations may be registry-only because their source of
+truth is not necessarily one TypeScript symbol.
 
-A deprecated contract may be removed only when:
-1. repository consumers have migrated;
-2. known independently deployed consumers are inside the declared migration window or have
-   migrated;
-3. persisted/in-flight payload compatibility has been addressed;
-4. contract/acceptance tests prove the supported path;
-5. the declared removal gate is satisfied.
+## 6. Removal rule
 
-Security fixes may require accelerated removal. Record the exception and migration impact
-rather than silently changing old semantics.
+Deprecation is not removal permission by itself.
 
-## 6. Service/API conventions
+Before removal:
+1. the replacement must exist;
+2. migration/compatibility evidence must exist;
+3. dependent Masanawa workspaces must have moved;
+4. the declared removal target must be reached;
+5. the change must pass Contracts plus the normal repository gate.
 
-Public and internal service APIs use explicit schema versions. A breaking service contract
-uses a new endpoint/protocol/schema version or a deliberately bounded compatibility adapter.
+No compatibility shim may become a second source of durable truth.
 
-Typed errors retain stable machine-readable codes and ambiguity/reconciliation identifiers
-across compatible revisions. Clients must not parse human-readable error text as contract
-state.
+## 7. Database and implementation details
 
-Internal service authentication, tenant context and end-user authority remain required across
-versions; a new API version never weakens the security boundary.
+Database tables, internal files, repository implementation classes, adapter SDK objects
+and service-local helpers are not public APIs merely because code can reach them.
 
-## 7. Events, jobs and durable messages
+Database schema is durable storage truth and is governed by migrations. Public service
+and package contracts remain above it.
 
-Durable messages are immutable historical evidence. Producers never rewrite the meaning of an
-already emitted version.
+## 8. Change rule
 
-Consumers must reject unsupported versions deterministically or route them through an explicit,
-tested migration adapter. Unknown versions must not be guessed from payload shape.
-
-A compatibility adapter translates at the boundary; it does not become a second domain source
-of truth.
-
-## 8. Enforcement
-
-`test/architecture/public-api-lifecycle.test.ts` enforces the structural rules that can be
-proved repository-wide today:
-- canonical packages expose one root entrypoint;
-- root exports keep the production/source condition contract;
-- canonical packages remain private coordinated workspaces;
-- cross-workspace TypeScript imports cannot deep-import another Masanawa workspace;
-- any production `@deprecated` marker carries `Since:`, `Use:` and `Remove:` metadata.
-
-Cross-cutting compatibility evidence belongs in `tests/contracts` as versioned network,
-event, job and schema contracts are implemented.
-
-## 9. Change rule
-
-A change to public API/version/deprecation policy must update this document and its structural
-enforcement in the same reviewed change. Exceptions require an ADR when they alter canonical
-ownership or create a long-lived compatibility boundary.
+A change to supported HTTP majors, root export policy, or a deprecation record must
+update `API-LIFECYCLE.json`, this document and the relevant compatibility evidence in
+the same reviewed change.

@@ -322,3 +322,15 @@ Exceptions require an ADR and an updated matrix before merge.\n\nRepository-wide
 ## Production structure companion
 
 `docs/PRODUCT-PROJECT-STRUCTURE.md` records the production repository topology and refactor thresholds. `docs/PRODUCTION-MASTER-TASKS.md` is the canonical numbered completion ledger.
+
+
+## Public package API lifecycle
+
+Cross-workspace imports use only the package root public entrypoint. Deep
+`@masanawa/<package>/...` imports are forbidden across packages, adapters, infra,
+services and apps.
+
+Reusable workspace package metadata follows SemVer syntax and exposes only the canonical
+root export unless an explicitly reviewed public subpath is added. Public compatibility,
+version-domain separation and deprecation requirements are defined in
+`API-LIFECYCLE.md` and enforced by the Contracts suite.

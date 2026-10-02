@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "workspace": {
+    "versionScheme": "semver",
+    "reusableExportPolicy": "root-only",
+    "preReleaseVersion": "0.0.0"
+  },
+  "http": {
+    "currentMajor": 1,
+    "supportedMajors": [
+      1
+    ],
+    "operationalUnversionedPaths": [
+      "/healthz",
+      "/readyz"
+    ]
+  },
+  "deprecations": []
+}

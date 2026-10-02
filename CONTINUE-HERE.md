@@ -137,7 +137,9 @@ Foundation CI run 379, PR #47 merged as
 `d0a198dbdec1af08e3c8f1378da0985db628eb6e`, and merged-main Foundation CI
 run 380 passed on that exact merge commit.
 
-**Current: Task 057 of 150 — Establish repository-wide public API/versioning/deprecation conventions.**\n\nActive implementation branch: `task057-api-lifecycle`. Task 057 now defines `docs/API-LIFECYCLE.md` and machine-enforces canonical package root exports, repository-wide no-deep-import rules and actionable deprecation metadata. Acceptance/CI is still pending; do not mark Task 057 complete until its evidence is green and merged.
+**Current: Task 057 of 150 — Establish repository-wide public API/versioning/deprecation conventions.**
+
+Active implementation branch: `task057-api-lifecycle`.\n\nActive implementation branch: `task057-api-lifecycle`. Task 057 now defines `docs/API-LIFECYCLE.md` and machine-enforces canonical package root exports, repository-wide no-deep-import rules and actionable deprecation metadata. Acceptance/CI is still pending; do not mark Task 057 complete until its evidence is green and merged.
 
 Tasks 001-056 are merged complete.
 
@@ -154,7 +156,16 @@ Task 056 established:
 - visible Foundation CI Typecheck/Test/Build stages;
 - architecture enforcement for suite directories, scripts, discovery and workflow wiring.
 
-Start Task 057 from current merged `main`; do not reuse the completed Task 056 branch.
+Implemented on Task 057 branch:
+- added one machine-readable API lifecycle manifest separating workspace SemVer, HTTP majors, schema versions and domain registry versions;
+- activated the Contracts suite as blocking evidence;
+- enforced root-only reusable workspace exports and repository-wide no-deep-import rules;
+- enforced supported HTTP major prefixes with only /healthz and /readyz unversioned;
+- added a machine-audited deprecation registry and required source annotations for deprecated workspace symbols;
+- documented immutable event/payload and Tool/Provider version semantics.
+
+Task 057 remains incomplete until the branch passes the complete gate, merges to main,
+and merged-main CI passes.
 
 The existing `phase6-skills-foundation` branch contains valid unmerged Phase 6 work
 based on pre-roadmap `main`. Preserve it, but do not merge it ahead of Tasks 054-058.
