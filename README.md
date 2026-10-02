@@ -37,8 +37,14 @@ Post-freeze candidate assessments may exist without being admitted to the vault.
 
 ## Status
 
-Current phase: **Phase 3 — Identity and world**.
+Current phase: **Phase 4 — Memory**.
 
-Phase 0 source selection/forensics, Phase 1 architecture specification and Phase 2 shared foundation are closed. Phase 2 closure evidence is in `docs/PHASE-2-CLOSURE-AUDIT.md`.
+Phase 0 source selection/forensics, Phase 1 architecture specification, Phase 2 shared
+foundation and the non-spatial Phase 3 Identity/World boundary are closed. Phase 3
+closure evidence is in `docs/PHASE-3-NONSPATIAL-CLOSURE-AUDIT.md`.
 
-Phase 3 now implements canonical Character/Relationship identity plus world/life state on top of the shared contracts, persistence, security, recovery and service foundations.
+Phase 4 now implements canonical scoped memory, provenance, lifecycle/publication,
+background extraction custody and authorization-first rebuildable retrieval projections
+on top of the shared contracts, persistence, security, recovery and service foundations.
+See `CONTINUE-HERE.md` and `docs/PHASE-4-MEMORY.md` for the exact active slice and
+validation evidence.
