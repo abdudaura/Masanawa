@@ -2,7 +2,7 @@
 
 Status: ACTIVE  
 Started: 2026-10-02  
-Active branch: `phase4-memory-lifecycle`
+Active branch: `phase4-memory-extraction-liveness`
 
 Phase 3 non-spatial Identity/World acceptance is closed by PR #28, merge
 `02c2c99153e904b4f9d2f403328a1e3b6effc3f1`. Optional spatial simulation remains
@@ -122,7 +122,9 @@ Validation evidence:
 - Foundation CI run 261 passed the complete frozen-install, strict TypeScript, unit,
   PostgreSQL 18 integration and production-build gate on hardened implementation head
   `f5777a0d32fdc57b84d8fd415bb4ddb5de57a972`;
-- the final documentation-only head must pass the same workflow before PR #30 merges.
+- final documentation head `061ab25d85b5100120c73d1442984cff8cf922e8`
+  passed Foundation CI run 262;
+- PR #30 merged as `b3cc9e75fe32ded30dc51dc2b116a38b454b46a9`.
 
 Rules:
 - correction inside the same semantic MemoryRecord appends a new immutable revision;
@@ -138,13 +140,57 @@ Rules:
 - the private source remains private and is referenced only by canonical IDs in the
   publication audit row, never copied wholesale into a public/shared event.
 
-Immediate acceptance:
-1. run Foundation CI on the final documentation-only PR #30 head;
-2. fix any real failure; if green, merge PR #30;
-3. then add idempotent extraction queue/retry/dead-letter;
-4. only after lifecycle/liveness is sound, implement projection compatibility metadata
-   and authorized lexical/vector/entity/temporal retrieval with rebuild/evaluation
-   fixtures.
+## Third canonical slice — implementation gate passed
+
+Goal: idempotent asynchronous extraction custody with bounded retry, durable leases,
+attempt history, poison-input dead-letter and forward progress.
+
+Implemented:
+- canonical `memory-extraction` identity and typed extraction custody contracts;
+- normalized scope/source/extractor inputs with SHA-256 source evidence;
+- queue state stores source kind/reference/hash, never raw source text;
+- semantic idempotency fingerprint binds tenant, key, scope, source, extractor and
+  retry policy while operational `availableAt` remains outside request identity;
+- PostgreSQL `memory.extraction_jobs` and immutable/auditable attempt history;
+- database-enforced queue state machine, terminal immutability and monotonic
+  attempt/fence progression;
+- `FOR UPDATE SKIP LOCKED` claims with durable worker leases and fences;
+- claim renewal uses PostgreSQL clock, not worker process clock;
+- expired lease recovery records `lease-expired`, requeues bounded work and
+  dead-letters the final expired attempt;
+- retryable failures requeue only below `maxAttempts`;
+- permanent/repeated failures dead-letter with bounded safe error codes only;
+- settled attempts are immutable while active attempts may only renew lease or settle;
+- stale workers cannot settle a reclaimed job;
+- poison-input PostgreSQL fixture proves a dead-lettered extraction does not block
+  healthy or later eligible jobs;
+- idempotent enqueue fixture proves harmless schedule drift reuses the original
+  admitted job while changed source evidence conflicts;
+- the canonical MemoryScope storage codec is shared by records and extraction custody,
+  eliminating duplicate privacy-sensitive scope decoding logic.
+
+Validation evidence:
+- Foundation CI run 271 passed frozen install, strict TypeScript, unit tests,
+  PostgreSQL 18 migrations/recovery/concurrency fixtures and production builds on
+  implementation head `2a423ac1480b9c094b602e0d0e846bf882ff1992`;
+- the final documentation-only head must pass the same gate before PR #31 merges.
+
+Rules:
+- foreground/source persistence is independent of extraction success;
+- enqueue stores only canonical scope + source reference/hash, never raw source text;
+- idempotency keys bind to an exact normalized extraction request;
+- claims use durable leases + monotonically increasing fences;
+- expired leases are recoverable and stale workers cannot settle newer work;
+- retryable failures are bounded by `maxAttempts`;
+- a final expired or failed attempt dead-letters deterministically;
+- permanent failures may dead-letter immediately with a safe error code;
+- dead-lettered work is terminal and cannot stall later eligible extraction jobs;
+- every attempt remains auditable without storing raw provider/model errors.
+
+After this slice:
+1. implement projection compatibility metadata and authorized lexical/vector/entity/
+   temporal retrieval with rebuild/evaluation fixtures;
+2. then bounded context compilation/reflection/consolidation/deletion propagation.
 
 ## Phase 4 acceptance targets
 

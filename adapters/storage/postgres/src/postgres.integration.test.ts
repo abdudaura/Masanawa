@@ -41,6 +41,12 @@ import {
   linkMemoryRecords,
   getMemoryRecordInScope,
   listMemoryRecordsByScopes,
+  enqueueMemoryExtraction,
+  claimMemoryExtractionBatch,
+  renewMemoryExtractionClaim,
+  settleMemoryExtractionClaim,
+  getMemoryExtractionJob,
+  listMemoryExtractionAttempts,
   prepareMemoryScopePublication,
   executeMemoryScopePublication,
   createWorld,
@@ -174,6 +180,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       "identity/0001_identity_foundation.sql",
       "memory/0001_memory_foundation.sql",
       "memory/0002_memory_lifecycle.sql",
+      "memory/0003_memory_extraction_liveness.sql",
       "security/0001_security_foundation.sql",
       "security/0002_approval_operation_integrity.sql",
       "security/0003_service_credentials.sql",
@@ -4036,6 +4043,393 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
         [worldId, tenantId, sourceMemoryRecordId],
       ),
     ).rejects.toMatchObject({ code: "23514" });
+  });
+
+
+  it("admits memory extraction idempotently and binds the key to exact scoped source evidence", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const relationshipId = createCanonicalId("relationship");
+    const now = toInstant("2026-10-01T00:00:00Z");
+    const input = {
+      tenantId,
+      idempotencyKey: "turn:memory-extraction:1",
+      scope: { kind: "relationship", relationshipId } as const,
+      source: {
+        kind: "message" as const,
+        reference: "message:memory-extraction:1",
+        contentHash: "2".repeat(64),
+      },
+      extractor: {
+        key: "default-facts",
+        version: "1",
+      },
+      maxAttempts: 3,
+      availableAt: now,
+    } as const;
+
+    const first = await withTransaction(pool, (client) =>
+      enqueueMemoryExtraction(client, input),
+    );
+    expect(first.reused).toBe(false);
+    expect(first.job.state).toBe("queued");
+    expect(first.job.scope).toEqual(input.scope);
+    expect(first.job.source).toEqual(input.source);
+    expect(first.job.requestFingerprint).toHaveLength(64);
+
+    const replay = await withTransaction(pool, (client) =>
+      enqueueMemoryExtraction(client, {
+        ...input,
+        availableAt: toInstant("2026-10-01T00:10:00Z"),
+      }),
+    );
+    expect(replay.reused).toBe(true);
+    expect(replay.job.memoryExtractionId).toBe(first.job.memoryExtractionId);
+
+    await expect(
+      withTransaction(pool, (client) =>
+        enqueueMemoryExtraction(client, {
+          ...input,
+          source: {
+            ...input.source,
+            contentHash: "3".repeat(64),
+          },
+        }),
+      ),
+    ).rejects.toMatchObject({
+      code: "memory.extraction_idempotency_conflict",
+    });
+  });
+
+  it("dead-letters poison extraction without blocking later eligible jobs", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const relationshipId = createCanonicalId("relationship");
+    const now = toInstant("2026-10-01T00:00:00Z");
+
+    const enqueue = async (
+      key: string,
+      sourceHash: string,
+      maxAttempts: number,
+    ) =>
+      withTransaction(pool, (client) =>
+        enqueueMemoryExtraction(client, {
+          tenantId,
+          idempotencyKey: key,
+          scope: { kind: "relationship", relationshipId },
+          source: {
+            kind: "message",
+            reference: `message:${key}`,
+            contentHash: sourceHash,
+          },
+          extractor: { key: "default-facts", version: "1" },
+          maxAttempts,
+          availableAt: now,
+        }),
+      );
+
+    const poison = await enqueue(
+      "extract:poison",
+      "4".repeat(64),
+      2,
+    );
+    const healthy = await enqueue(
+      "extract:healthy",
+      "5".repeat(64),
+      3,
+    );
+
+    const [firstClaim] = await claimMemoryExtractionBatch(pool, {
+      tenantId,
+      workerId: "memory-worker-a",
+      limit: 1,
+      leaseMs: 60_000,
+    });
+    expect(firstClaim?.memoryExtractionId).toBe(
+      poison.job.memoryExtractionId,
+    );
+    expect(firstClaim?.attempt).toBe(1);
+
+    const firstFailure = await settleMemoryExtractionClaim(pool, {
+      tenantId,
+      memoryExtractionId: poison.job.memoryExtractionId,
+      workerId: "memory-worker-a",
+      fence: firstClaim!.fence,
+      settlement: {
+        outcome: "retryable-failure",
+        safeErrorCode: "extractor.malformed_output",
+        retryAt: now,
+      },
+    });
+    expect(firstFailure.state).toBe("retry-scheduled");
+
+    const secondClaims = await claimMemoryExtractionBatch(pool, {
+      tenantId,
+      workerId: "memory-worker-b",
+      limit: 2,
+      leaseMs: 60_000,
+    });
+    expect(secondClaims).toHaveLength(2);
+
+    const poisonClaim = secondClaims.find(
+      (claim) =>
+        claim.memoryExtractionId === poison.job.memoryExtractionId,
+    );
+    const healthyClaim = secondClaims.find(
+      (claim) =>
+        claim.memoryExtractionId === healthy.job.memoryExtractionId,
+    );
+    expect(poisonClaim?.attempt).toBe(2);
+    expect(healthyClaim?.attempt).toBe(1);
+
+    const poisonTerminal = await settleMemoryExtractionClaim(pool, {
+      tenantId,
+      memoryExtractionId: poison.job.memoryExtractionId,
+      workerId: "memory-worker-b",
+      fence: poisonClaim!.fence,
+      settlement: {
+        outcome: "retryable-failure",
+        safeErrorCode: "extractor.malformed_output",
+        retryAt: now,
+      },
+    });
+    expect(poisonTerminal.state).toBe("dead-letter");
+    expect(poisonTerminal.safeErrorCode).toBe(
+      "extractor.malformed_output",
+    );
+
+    const healthyTerminal = await settleMemoryExtractionClaim(pool, {
+      tenantId,
+      memoryExtractionId: healthy.job.memoryExtractionId,
+      workerId: "memory-worker-b",
+      fence: healthyClaim!.fence,
+      settlement: { outcome: "completed" },
+    });
+    expect(healthyTerminal.state).toBe("completed");
+
+    const later = await enqueue(
+      "extract:later",
+      "6".repeat(64),
+      2,
+    );
+    const [laterClaim] = await claimMemoryExtractionBatch(pool, {
+      tenantId,
+      workerId: "memory-worker-c",
+      limit: 1,
+      leaseMs: 60_000,
+    });
+    expect(laterClaim?.memoryExtractionId).toBe(
+      later.job.memoryExtractionId,
+    );
+    await settleMemoryExtractionClaim(pool, {
+      tenantId,
+      memoryExtractionId: later.job.memoryExtractionId,
+      workerId: "memory-worker-c",
+      fence: laterClaim!.fence,
+      settlement: { outcome: "no-facts" },
+    });
+
+    await withTransaction(pool, async (client) => {
+      const poisonJob = await getMemoryExtractionJob(
+        client,
+        tenantId,
+        poison.job.memoryExtractionId,
+      );
+      expect(poisonJob?.state).toBe("dead-letter");
+
+      const poisonAttempts = await listMemoryExtractionAttempts(
+        client,
+        tenantId,
+        poison.job.memoryExtractionId,
+      );
+      expect(poisonAttempts.map((attempt) => attempt.outcome)).toEqual([
+        "retry-scheduled",
+        "dead-letter",
+      ]);
+
+      const laterJob = await getMemoryExtractionJob(
+        client,
+        tenantId,
+        later.job.memoryExtractionId,
+      );
+      expect(laterJob?.state).toBe("no-facts");
+    });
+  });
+
+  it("reclaims an expired extraction lease and fences the stale worker", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const now = toInstant("2026-10-01T00:00:00Z");
+    const admitted = await withTransaction(pool, (client) =>
+      enqueueMemoryExtraction(client, {
+        tenantId,
+        idempotencyKey: "extract:lease-recovery",
+        scope: { kind: "organization" },
+        source: {
+          kind: "platform-event",
+          reference: "event:lease-recovery",
+          contentHash: "7".repeat(64),
+        },
+        extractor: { key: "default-facts", version: "1" },
+        maxAttempts: 2,
+        availableAt: now,
+      }),
+    );
+
+    const [first] = await claimMemoryExtractionBatch(pool, {
+      tenantId,
+      workerId: "memory-worker-stale",
+      limit: 1,
+      leaseMs: 60_000,
+    });
+    expect(first?.attempt).toBe(1);
+
+    const renewed = await renewMemoryExtractionClaim(pool, {
+      tenantId,
+      memoryExtractionId: admitted.job.memoryExtractionId,
+      workerId: "memory-worker-stale",
+      fence: first!.fence,
+      leaseMs: 120_000,
+    });
+    expect(renewed.fence).toBe(first!.fence);
+
+    await withTransaction(pool, async (client) => {
+      await client.query(
+        `UPDATE memory.extraction_jobs
+            SET lease_expires_at = clock_timestamp() - interval '1 second'
+          WHERE tenant_id = $1
+            AND memory_extraction_id = $2`,
+        [tenantId, admitted.job.memoryExtractionId],
+      );
+      await client.query(
+        `UPDATE memory.extraction_attempts
+            SET lease_expires_at = clock_timestamp() - interval '1 second'
+          WHERE tenant_id = $1
+            AND memory_extraction_id = $2
+            AND attempt = 1`,
+        [tenantId, admitted.job.memoryExtractionId],
+      );
+    });
+
+    const [reclaimed] = await claimMemoryExtractionBatch(pool, {
+      tenantId,
+      workerId: "memory-worker-recovery",
+      limit: 1,
+      leaseMs: 60_000,
+    });
+    expect(reclaimed?.memoryExtractionId).toBe(
+      admitted.job.memoryExtractionId,
+    );
+    expect(reclaimed?.attempt).toBe(2);
+    expect(reclaimed!.fence).toBeGreaterThan(first!.fence);
+
+    await expect(
+      settleMemoryExtractionClaim(pool, {
+        tenantId,
+        memoryExtractionId: admitted.job.memoryExtractionId,
+        workerId: "memory-worker-stale",
+        fence: first!.fence,
+        settlement: { outcome: "completed" },
+      }),
+    ).rejects.toMatchObject({
+      code: "memory.extraction_stale_claim",
+    });
+
+    await settleMemoryExtractionClaim(pool, {
+      tenantId,
+      memoryExtractionId: admitted.job.memoryExtractionId,
+      workerId: "memory-worker-recovery",
+      fence: reclaimed!.fence,
+      settlement: { outcome: "completed" },
+    });
+
+    await withTransaction(pool, async (client) => {
+      const attempts = await listMemoryExtractionAttempts(
+        client,
+        tenantId,
+        admitted.job.memoryExtractionId,
+      );
+      expect(attempts.map((attempt) => attempt.outcome)).toEqual([
+        "lease-expired",
+        "completed",
+      ]);
+    });
+  });
+
+  it("dead-letters a final crashed extraction attempt instead of reclaiming forever", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const now = toInstant("2026-10-01T00:00:00Z");
+    const admitted = await withTransaction(pool, (client) =>
+      enqueueMemoryExtraction(client, {
+        tenantId,
+        idempotencyKey: "extract:final-expired",
+        scope: { kind: "organization" },
+        source: {
+          kind: "platform-event",
+          reference: "event:final-expired",
+          contentHash: "8".repeat(64),
+        },
+        extractor: { key: "default-facts", version: "1" },
+        maxAttempts: 1,
+        availableAt: now,
+      }),
+    );
+
+    await claimMemoryExtractionBatch(pool, {
+      tenantId,
+      workerId: "memory-worker-final",
+      limit: 1,
+      leaseMs: 60_000,
+    });
+
+    await withTransaction(pool, async (client) => {
+      await client.query(
+        `UPDATE memory.extraction_jobs
+            SET lease_expires_at = clock_timestamp() - interval '1 second'
+          WHERE tenant_id = $1
+            AND memory_extraction_id = $2`,
+        [tenantId, admitted.job.memoryExtractionId],
+      );
+      await client.query(
+        `UPDATE memory.extraction_attempts
+            SET lease_expires_at = clock_timestamp() - interval '1 second'
+          WHERE tenant_id = $1
+            AND memory_extraction_id = $2
+            AND attempt = 1`,
+        [tenantId, admitted.job.memoryExtractionId],
+      );
+    });
+
+    await expect(
+      claimMemoryExtractionBatch(pool, {
+        tenantId,
+        workerId: "memory-worker-should-not-reclaim",
+        limit: 1,
+        leaseMs: 60_000,
+      }),
+    ).resolves.toEqual([]);
+
+    await withTransaction(pool, async (client) => {
+      const job = await getMemoryExtractionJob(
+        client,
+        tenantId,
+        admitted.job.memoryExtractionId,
+      );
+      expect(job).toMatchObject({
+        state: "dead-letter",
+        attempt: 1,
+        safeErrorCode: "memory.extraction.lease_expired",
+      });
+      expect(job?.terminalAt).not.toBeNull();
+
+      const attempts = await listMemoryExtractionAttempts(
+        client,
+        tenantId,
+        admitted.job.memoryExtractionId,
+      );
+      expect(attempts).toHaveLength(1);
+      expect(attempts[0]).toMatchObject({
+        outcome: "lease-expired",
+        safeErrorCode: "memory.extraction.lease_expired",
+      });
+    });
   });
 
 });

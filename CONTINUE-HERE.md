@@ -36,7 +36,7 @@ of architectural feature selection.
 
 **Phase 4 — Memory.**
 
-Current implementation branch: `phase4-memory-lifecycle`.
+Current implementation branch: `phase4-memory-extraction-liveness`.
 
 Phase 0A/0B, Phase 1 and Phase 2 are closed.
 
@@ -119,14 +119,20 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 
 ## Immediate work
 
-1. verify the automatically triggered Foundation CI run on the final
-   documentation-only PR #30 head;
-2. fix any real failure; if green, merge PR #30;
-3. on a fresh branch from merged `main`, implement idempotent extraction
-   queue/retry/dead-letter with durable leases, bounded attempts and poison-item
-   isolation;
-4. run PostgreSQL 18 recovery/concurrency fixtures and merge when green;
-5. only after lifecycle/liveness is sound, add retrieval projections.
+PR #31 implements the extraction-liveness slice and Foundation CI run 271 passed the
+complete gate on implementation head
+`2a423ac1480b9c094b602e0d0e846bf882ff1992`.
+
+1. verify the automatically triggered Foundation CI run on the final documentation-only
+   PR #31 head;
+2. fix any real failure; if green, merge PR #31;
+3. on a fresh branch from merged `main`, implement projection generation metadata
+   and authorization-first lexical retrieval before adding vector/entity/temporal
+   signals;
+4. require embedding/provider identity, vector dimension, source revision/content hash
+   and projection generation so incompatible vector spaces can never silently mix;
+5. add adapter conformance fixtures proving every retrieval backend fails closed on
+   unsupported scope filters and cross-Relationship leakage remains zero.
 
 The lifecycle/publication implementation now includes independent lifecycle CAS,
 immutable same-scope/type lineage, current-authority + one-time-approval publication,
@@ -136,7 +142,9 @@ races, and generated sanitized publication provenance that cannot carry caller-i
 private verbatim evidence.
 
 Foundation CI run 261 passed the complete gate on hardened implementation head
-`f5777a0d32fdc57b84d8fd415bb4ddb5de57a972`.
+`f5777a0d32fdc57b84d8fd415bb4ddb5de57a972`; final documentation head
+`061ab25d85b5100120c73d1442984cff8cf922e8` passed run 262; PR #30 merged as
+`b3cc9e75fe32ded30dc51dc2b116a38b454b46a9`.
 
 Do not skip directly to vector search. Retrieval quality cannot outrank canonical scope,
 provenance, correction, deletion or liveness.
