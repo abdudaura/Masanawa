@@ -11,6 +11,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Pool } from "pg";
 import {
   activateMemoryProjectionGeneration,
+  appendMemoryRevision,
   cleanupTombstonedMemoryProjections,
   createMemoryProjectionGeneration,
   createMemoryRecord,
@@ -615,4 +616,183 @@ describePostgres("PostgreSQL memory tombstone propagation", () => {
       ),
     ).rejects.toMatchObject({ code: "23514" });
   });
+
+  it("rejects stale prepared tombstones before approval consumption", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const relationshipA = createCanonicalId("relationship");
+    const relationshipB = createCanonicalId("relationship");
+    const memoryRecordId = createCanonicalId("memory-record");
+    const revision1 = createCanonicalId("memory-revision");
+    const revision2 = createCanonicalId("memory-revision");
+    const now = toInstant("2026-10-02T10:00:00Z");
+    const expiresAt = toInstant("2026-10-03T10:00:00Z");
+
+    await withTransaction(pool, async (client) => {
+      await createTenant(client, { tenantId, createdAt: now });
+      await setPolicyRevision(client, tenantId, "policy-1");
+      await createMemoryRecord(client, {
+        tenantId,
+        memoryRecordId,
+        memoryRevisionId: revision1,
+        memoryType: "fact",
+        scope: { kind: "relationship", relationshipId: relationshipA },
+        content: "Revision one.",
+        extractionMethod: "fixture",
+        observedAt: now,
+        evidence: [
+          {
+            sourceKind: "message",
+            sourceReference: "message:tombstone:stale:1",
+            sourceContentHash: "c".repeat(64),
+            observedAt: now,
+          },
+        ],
+        createdAt: now,
+      });
+    });
+
+    const principal = {
+      kind: "system",
+      systemKind: "memory-tombstone-stale-test",
+    } as const;
+    const target = {
+      tenantId,
+      memoryRecordId,
+      memoryRevisionId: revision1,
+      scope: { kind: "relationship", relationshipId: relationshipA } as const,
+      expectedLifecycleRevision: 1,
+      reason: "Delete the prepared revision.",
+    } as const;
+
+    const wrongScopeAuthority = createAuthorityContext({
+      tenantId,
+      principal,
+      scopes: [],
+      capabilities: ["memory.record.tombstone"],
+      resourceScope: { relationshipIds: [relationshipB] },
+      policyRevision: "policy-1",
+      approvalIds: [],
+      delegationChain: [],
+      expiresAt,
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+    });
+    await expect(
+      prepareMemoryRecordTombstone(pool, {
+        ...target,
+        authority: wrongScopeAuthority,
+        idempotencyKey: "memory-tombstone-wrong-scope",
+        expiresAt,
+      }),
+    ).rejects.toMatchObject({
+      code: "memory.tombstone_scope_mismatch",
+    });
+
+    const baseAuthority = createAuthorityContext({
+      tenantId,
+      principal,
+      scopes: [],
+      capabilities: ["memory.record.tombstone"],
+      resourceScope: { relationshipIds: [relationshipA] },
+      policyRevision: "policy-1",
+      approvalIds: [],
+      delegationChain: [],
+      expiresAt,
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+    });
+    const prepared = await prepareMemoryRecordTombstone(pool, {
+      ...target,
+      authority: baseAuthority,
+      idempotencyKey: "memory-tombstone-stale",
+      expiresAt,
+    });
+
+    const approval = createPendingApproval({
+      kind: "once",
+      binding: prepared.binding,
+      policyRevision: "policy-1",
+      requestedAt: now,
+      expiresAt,
+    });
+    await withTransaction(pool, async (client) => {
+      await persistPendingApproval(client, approval);
+      await settlePendingApproval(client, {
+        tenantId,
+        approvalId: approval.approvalId,
+        decision: "approved",
+        approverKey: "operator:memory-tombstone-stale-test",
+        decidedAt: now,
+      });
+      await appendMemoryRevision(client, {
+        tenantId,
+        memoryRecordId,
+        memoryRevisionId: revision2,
+        expectedRevision: 1,
+        content: "Revision two supersedes the prepared tombstone input.",
+        extractionMethod: "fixture",
+        observedAt: toInstant("2026-10-02T10:01:00Z"),
+        evidence: [
+          {
+            sourceKind: "message",
+            sourceReference: "message:tombstone:stale:2",
+            sourceContentHash: "d".repeat(64),
+            observedAt: toInstant("2026-10-02T10:01:00Z"),
+          },
+        ],
+        updatedAt: toInstant("2026-10-02T10:01:00Z"),
+      });
+    });
+
+    const executeAuthority = createAuthorityContext({
+      tenantId,
+      principal,
+      scopes: [],
+      capabilities: ["memory.record.tombstone"],
+      resourceScope: { relationshipIds: [relationshipA] },
+      policyRevision: "policy-1",
+      approvalIds: [approval.approvalId],
+      delegationChain: [],
+      expiresAt,
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+    });
+
+    await expect(
+      executeMemoryRecordTombstone(pool, {
+        ...target,
+        authority: executeAuthority,
+        operationId: prepared.operation.operationId,
+        approvalId: approval.approvalId,
+        tombstonedAt: toInstant("2026-10-02T10:02:00Z"),
+      }),
+    ).rejects.toMatchObject({
+      code: "memory.tombstone_revision_changed",
+    });
+
+    const state = await pool.query<{
+      approval_state: string;
+      lifecycle_state: string;
+      revision: string;
+      tombstones: string;
+    }>(
+      `SELECT
+         (SELECT state FROM security.approvals
+           WHERE tenant_id = $1 AND approval_id = $2) AS approval_state,
+         (SELECT lifecycle_state FROM memory.records
+           WHERE tenant_id = $1 AND memory_record_id = $3) AS lifecycle_state,
+         (SELECT revision::text FROM memory.records
+           WHERE tenant_id = $1 AND memory_record_id = $3) AS revision,
+         (SELECT count(*)::text FROM memory.record_tombstones
+           WHERE tenant_id = $1 AND memory_record_id = $3) AS tombstones`,
+      [tenantId, approval.approvalId, memoryRecordId],
+    );
+    expect(state.rows[0]).toEqual({
+      approval_state: "approved",
+      lifecycle_state: "active",
+      revision: "2",
+      tombstones: "0",
+    });
+  });
+
 });
