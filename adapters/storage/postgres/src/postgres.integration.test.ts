@@ -3491,7 +3491,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
     const providerId = createCanonicalId("provider");
     const otherProviderId = createCanonicalId("provider");
     const credentialRefId = createCanonicalId("credential-ref");
-    const operationId = createCanonicalId("operation");
+    let operationId: OperationId;
 
     const cipher: CredentialEnvelopeCipher = {
       async seal(input) {
@@ -3535,6 +3535,15 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
         slotKey: "api-key",
         plaintext: "first-secret",
       });
+      const prepared = await prepareOperation(client, {
+        tenantId,
+        kind: "provider.credential-resolution-test",
+        idempotencyKey: "credential-resolution-operation",
+        authorityScopeHash: "credential-test-authority",
+        requestFingerprint: "credential-test-request",
+        expiresAt: toInstant("2099-01-01T00:00:00Z"),
+      });
+      operationId = prepared.operation.operationId;
     });
 
     const persisted = await pool.query<{
@@ -3585,6 +3594,24 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
     });
     await expect(
       resolve(tenantId, providerId, "other-slot"),
+    ).rejects.toMatchObject({
+      code: "credential.unavailable",
+      category: "authorization",
+    });
+
+    await expect(
+      withTransaction(pool, (client) =>
+        resolveCredentialSecret(
+          createPostgresCredentialMaterialSource(client, cipher),
+          {
+            tenantId,
+            credentialRefId,
+            providerId,
+            operationId: createCanonicalId("operation"),
+            slotKey: "api-key",
+          },
+        ),
+      ),
     ).rejects.toMatchObject({
       code: "credential.unavailable",
       category: "authorization",
