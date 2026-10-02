@@ -86,7 +86,7 @@ Decision:
   canonical workflows or Masanawa Authority/Approval/Operation semantics;
 - neither candidate is currently admitted as a pinned source-vault submodule.
 
-## Phase 4 first slice — implemented, awaiting PR CI
+## Phase 4 first slice — implementation gate passed
 
 Primary record: `docs/PHASE-4-MEMORY.md`.
 
@@ -107,23 +107,23 @@ Implemented on the current branch:
 - workspace/build/lockfile/PostgreSQL adapter wiring;
 - unit tests for scope/evidence/temporal invariants;
 - PostgreSQL fixture for cross-Relationship non-disclosure, revision CAS/replay and
-  database immutability.
+  database immutability;
+- Foundation CI run 250 passed the complete check gate on implementation head
+  `fd8e20bf7d589393d017338af89502fa4ca3ae6b`.
 
 The MemPalace-inspired behavior used here is deliberately structural: extracted
 MemoryRecords never replace their immutable/verbatim source evidence.
 
 ## Immediate work
 
-1. open a PR from `phase4-memory-candidate-assessment` and run the complete
-   Foundation CI/PostgreSQL 18 gate;
-2. fix every real typecheck, unit, migration, integration or production-build failure;
-3. inspect the final first-slice diff for privacy or transaction gaps;
-4. once fully green, update `docs/PHASE-4-MEMORY.md` and this handoff with CI evidence
-   and merge;
-5. continue Phase 4 with governed lifecycle/correction/supersession and explicit
-   private→shared/world/organization publication semantics;
-6. then add idempotent extraction queue/retry/dead-letter;
-7. only after canonical lifecycle/liveness is sound, add vector/lexical/entity/temporal
+1. verify the automatically triggered Foundation CI run on the final
+   documentation-only PR #29 head;
+2. fix any real failure; if green, merge PR #29;
+3. on a fresh branch from merged `main`, continue Phase 4 with governed
+   lifecycle/correction/supersession and explicit private→shared/world/organization
+   publication semantics;
+4. then add idempotent extraction queue/retry/dead-letter;
+5. only after canonical lifecycle/liveness is sound, add vector/lexical/entity/temporal
    projections with embedding identity/dimension/source-hash compatibility and
    cross-scope conformance tests.
 
