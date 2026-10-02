@@ -34,9 +34,9 @@ of architectural feature selection.
 
 ## Current phase
 
-**Phase 4 — Memory.**
+**Phase 5 — Tools and Providers.**
 
-Current implementation branch: `phase4-memory-acceptance-closure`.
+Current implementation branch: `phase5-tools-providers-foundation`.
 
 Phase 0A/0B, Phase 1 and Phase 2 are closed.
 
@@ -119,31 +119,42 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 
 ## Immediate work
 
-PR #36 is the Phase 4 acceptance-closure PR on
-`phase4-memory-acceptance-closure`.
+Phase 4 Memory is closed:
+- acceptance implementation head `d48b17ff9c4bcb91d51d88bf78da7a1e6c9f597a`
+  passed Foundation CI run 313;
+- final closure documentation head `d67c9332431a7a8ce428e426f93ea61f34b7d798`
+  passed Foundation CI run 316;
+- PR #36 merged as `e960b3f5dfe4d7b7470ddea604187420451498ce`;
+- `docs/PHASE-4-MEMORY-ACCEPTANCE.md` is PASS with every row closed.
 
-Acceptance implementation head `d48b17ff9c4bcb91d51d88bf78da7a1e6c9f597a`
-passed Foundation CI run 313. The complete gate passed frozen install, strict
-TypeScript, all unit tests, PostgreSQL 18 + pgvector migrations/integration fixtures and
-production builds. PR #36 has no review threads or comments.
+Current work is Phase 5 — Tools and Providers on
+`phase5-tools-providers-foundation`.
 
-The acceptance matrix in `docs/PHASE-4-MEMORY-ACCEPTANCE.md` is now all PASS.
-The last gap was closed by a held-out contradiction/current-view fixture proving:
-- corrected current truth is selected by entity, temporal and hybrid retrieval;
-- the superseded predecessor is explicitly forbidden and never returned;
-- predecessor revision/evidence remains intact;
-- held-out recall, precision and MRR are 1 with zero leakage.
+Repository truth for this phase:
+- `packages/tools` and `packages/providers` are empty canonical placeholders;
+- `packages/providers` may depend only on contracts/security/telemetry;
+- `packages/tools` may depend only on contracts/security/events/providers;
+- Tools are atomic capabilities; Skills will compose them later;
+- consequential commits must be deterministic, authority-checked, idempotent and
+  evidence-bearing;
+- explicit provider selection must never silently fall back;
+- raw provider credentials must not enter Tool/Provider public contracts.
 
 Immediate next steps:
-1. verify the final closure-documentation head in Foundation CI;
-2. fix any real failure; if green, merge PR #36;
-3. create a fresh Phase 5 branch from merged `main`;
-4. update the rewrite plan/handoff with the final Phase 4 closure run and mark
-   Phase 5 — Tools and Providers active;
-5. recover Phase 5 canonical contracts and donor boundaries from Architecture,
-   Source Ownership and the ledgers before implementing the first production slice;
-6. do not reopen Memory unless a later integration exposes a documented acceptance
-   regression.
+1. create real `@masanawa/providers` and `@masanawa/tools` packages using the
+   repository's strict TypeScript/build conventions;
+2. define immutable Provider identity/capability/readiness contracts and a deterministic
+   registry/selection function that fails closed for unavailable explicit providers;
+3. define versioned Tool/capability contracts including schemas, risk/side-effect class,
+   timeout/rate/cost metadata and declared idempotency/reconciliation semantics;
+4. ensure execution authority remains `AuthorityContext` from `packages/security`
+   rather than a Tool-owned authorization model;
+5. add unit/architecture acceptance fixtures before introducing any external provider
+   adapter;
+6. then extend toward credentials and consequential Tool execution through existing
+   Operation/reconciliation primitives.
+
+Primary Phase 5 record: `docs/PHASE-5-TOOLS-PROVIDERS.md`.
 
 The requested post-freeze donor boundary remains unchanged: MemPalace contributes
 retrieval/evaluation/storage-contract behavior inside canonical Masanawa memory ports;
