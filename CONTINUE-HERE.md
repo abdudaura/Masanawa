@@ -139,6 +139,8 @@ run 380 passed on that exact merge commit.
 
 **Current: Task 056 of 150 — Expand test taxonomy with security/recovery/load/chaos suites and CI gate conventions.**
 
+Active implementation branch: `task056-test-taxonomy`, based on green merged `main` `80a6bf25129b4feb37a4295be34065c878666beb` (Foundation CI run 385 PASS).
+
 Tasks 001-055 are merged complete.
 
 Task 055 implementation head `931fef83ae1a014c6872d0e5bfc0cab815307e44` passed
@@ -154,7 +156,16 @@ Task 055 established:
 - shared Node process hosting at `infra/runtime/node`, outside adapter selection;
 - explicit composition-root registration and preserved Android/OmniSIP device boundary.
 
-Start Task 056 from current merged `main`; do not reuse the completed Task 055 branch.
+Implemented on Task 056 branch:
+- activated the full cross-cutting suite tree: contracts/integration/e2e/parity/security/recovery/load/chaos;
+- added root targeted suite commands plus one all-tests `test:ci` merge gate;
+- added `tests/**` to strict TypeScript and default Vitest discovery;
+- split the existing deterministic fault-harness assertions into real Chaos and Recovery tests without duplicate coverage;
+- documented colocated-vs-cross-cutting ownership and bounded load/chaos rules;
+- changed Foundation CI from one opaque Check step to visible Typecheck/Test/Build stages with the same blocking sequence;
+- added architecture enforcement for suite directories, scripts, discovery and CI workflow wiring.
+
+Task 056 remains incomplete until this branch passes the complete gate and merges to `main`.
 
 The existing `phase6-skills-foundation` branch contains valid unmerged Phase 6 work
 based on pre-roadmap `main`. Preserve it, but do not merge it ahead of Tasks 054-058.
@@ -210,7 +221,7 @@ PostgreSQL 18 + pgvector integration suites and production builds.
 The Phase 5 acceptance audit is PASS and its final merge is green.
 
 Immediate next:
-1. implement Task 056 from current merged `main`: establish security/recovery/load/chaos suite topology and CI gate conventions without duplicating package-local unit/integration tests;
+1. run the complete Task 056 gate on `task056-test-taxonomy`, fix any real failure, merge the exact green head, and verify merged-main CI;
 2. then continue Tasks 057-058 in ledger order;
 3. only after Task 058 closes, reconcile the valid `phase6-skills-foundation` work onto current `main` and continue Task 059;
 4. keep Skills provider-neutral so future assigned Android devices participate through the same Tool/Provider architecture;
