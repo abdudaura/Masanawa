@@ -3621,22 +3621,6 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       category: "conflict",
     });
 
-    await expect(
-      withTransaction(pool, (client) =>
-        revokeProviderCredentialRef(client, {
-          tenantId,
-          credentialRefId,
-          providerId,
-          slotKey: "api-key",
-        }),
-      ),
-    ).resolves.toBe(true);
-
-    await expect(resolve()).rejects.toMatchObject({
-      code: "credential.unavailable",
-      category: "authorization",
-    });
-
     const failingCipher: CredentialEnvelopeCipher = {
       ...cipher,
       async open() {
@@ -3661,6 +3645,22 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
         category: "authorization",
         message: "Credential reference is unavailable for requested scope",
       });
+    });
+
+    await expect(
+      withTransaction(pool, (client) =>
+        revokeProviderCredentialRef(client, {
+          tenantId,
+          credentialRefId,
+          providerId,
+          slotKey: "api-key",
+        }),
+      ),
+    ).resolves.toBe(true);
+
+    await expect(resolve()).rejects.toMatchObject({
+      code: "credential.unavailable",
+      category: "authorization",
     });
   });
 
