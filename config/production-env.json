@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "variables": [
+    {"name":"NODE_ENV","owner":"runtime","classification":"public","requiredIn":[],"description":"Node runtime environment selector."},
+    {"name":"HOST","owner":"runtime","classification":"public","requiredIn":[],"description":"Deployment-host compatibility bind address."},
+    {"name":"PORT","owner":"runtime","classification":"public","requiredIn":[],"description":"Deployment-host compatibility listen port."},
+    {"name":"MASANAWA_SHUTDOWN_TIMEOUT_MS","owner":"runtime","classification":"public","requiredIn":[],"description":"Bounded graceful shutdown timeout."},
+    {"name":"MASANAWA_DATABASE_URL","owner":"security/bootstrap","classification":"secret","requiredIn":["production"],"description":"Canonical PostgreSQL bootstrap connection secret for deployable services."},
+    {"name":"DATABASE_URL","owner":"runtime","classification":"secret","requiredIn":[],"description":"Deployment-host compatibility alias for MASANAWA_DATABASE_URL."},
+    {"name":"MASANAWA_GATEWAY_HOST","owner":"gateway","classification":"public","requiredIn":[],"description":"Gateway bind address override."},
+    {"name":"MASANAWA_GATEWAY_PORT","owner":"gateway","classification":"public","requiredIn":[],"description":"Gateway listen port override."},
+    {"name":"MASANAWA_WORKER_HOST","owner":"worker","classification":"public","requiredIn":[],"description":"Worker bind address override."},
+    {"name":"MASANAWA_WORKER_PORT","owner":"worker","classification":"public","requiredIn":[],"description":"Worker listen port override."},
+    {"name":"MASANAWA_OPS_HOST","owner":"ops","classification":"public","requiredIn":[],"description":"Ops bind address override."},
+    {"name":"MASANAWA_OPS_PORT","owner":"ops","classification":"public","requiredIn":[],"description":"Ops listen port override."},
+    {"name":"MASANAWA_TEST_DATABASE_URL","owner":"test","classification":"secret","requiredIn":["test"],"description":"Test-only PostgreSQL connection used by integration acceptance."}
+  ]
+}
