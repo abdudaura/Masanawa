@@ -91,7 +91,7 @@ ownership requires them. It also does not dictate file length or split modules m
 for aesthetics.
 
 Adapter shape/registration is defined by `docs/ADAPTER-TOPOLOGY.md` and enforced by
-`test/architecture/adapter-boundaries.test.ts`. Test-suite taxonomy and CI classes are handled by Task 056. Public API version/deprecation rules are Task 057,
+`test/architecture/adapter-boundaries.test.ts`. Cross-cutting suite taxonomy and CI gate conventions are defined by `docs/TEST-TOPOLOGY.md` and enforced by `test/architecture/test-topology.test.ts`. Public API version/deprecation rules are Task 057,
 and production environment/deployment conventions are Task 058.
 
 ## 4. Change rule
