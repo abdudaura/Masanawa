@@ -34,6 +34,19 @@ export interface CredentialRefMetadataSource {
   ): Promise<CredentialRefRecord | null>;
 }
 
+export interface CredentialRefRepository
+  extends CredentialRefMetadataSource {
+  create(record: CredentialRefRecord): Promise<{
+    readonly record: CredentialRefRecord;
+    readonly reused: boolean;
+  }>;
+  revoke(
+    tenantId: TenantId,
+    credentialRefId: CredentialRefId,
+    revokedAt: Instant,
+  ): Promise<CredentialRefRecord>;
+}
+
 export interface CredentialSecretLease {
   withSecret<T>(
     use: (secret: string) => T | Promise<T>,
