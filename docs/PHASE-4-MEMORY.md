@@ -85,7 +85,7 @@ The first slice incorporates only behaviors that strengthen the canonical archit
 
 No Palace/Wing/Room/Drawer concept is canonical.
 
-## Second canonical slice — implemented, awaiting full CI
+## Second canonical slice — implementation gate passed
 
 Goal: governed correction/supersession/lifecycle and explicit scope publication.
 
@@ -111,6 +111,12 @@ Implemented:
   source text into its audit row;
 - unit governance tests and PostgreSQL lifecycle/publication fixtures.
 
+Validation evidence:
+- Foundation CI run 253 passed the complete frozen-install, strict TypeScript, unit,
+  PostgreSQL 18 integration and production-build gate on implementation head
+  `eb9c92db62d9a4d877bdcb6e92a8e35c93354619`;
+- the final documentation-only head must pass the same workflow before PR #30 merges.
+
 Rules:
 - correction inside the same semantic MemoryRecord appends a new immutable revision;
 - contradiction/replacement across records creates explicit lineage and transitions the
@@ -126,11 +132,10 @@ Rules:
   publication audit row, never copied wholesale into a public/shared event.
 
 Immediate acceptance:
-1. open a PR from `phase4-memory-lifecycle`;
-2. run the complete Foundation CI/PostgreSQL 18 gate and fix every real failure;
-3. once green, record CI evidence and merge;
-4. then add idempotent extraction queue/retry/dead-letter;
-5. only after lifecycle/liveness is sound, implement projection compatibility metadata
+1. run Foundation CI on the final documentation-only PR #30 head;
+2. fix any real failure; if green, merge PR #30;
+3. then add idempotent extraction queue/retry/dead-letter;
+4. only after lifecycle/liveness is sound, implement projection compatibility metadata
    and authorized lexical/vector/entity/temporal retrieval with rebuild/evaluation
    fixtures.
 
