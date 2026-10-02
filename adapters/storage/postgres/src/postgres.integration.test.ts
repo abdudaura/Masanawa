@@ -3522,4 +3522,458 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
     ).rejects.toMatchObject({ code: "23514" });
   });
 
+
+  it("records same-scope memory supersession with lifecycle CAS and preserved evidence", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const firstUserId = createCanonicalId("user");
+    const secondUserId = createCanonicalId("user");
+    const characterId = createCanonicalId("character");
+    const firstRelationshipId = createCanonicalId("relationship");
+    const secondRelationshipId = createCanonicalId("relationship");
+    const sourceId = createCanonicalId("memory-record");
+    const targetId = createCanonicalId("memory-record");
+    const staleSourceId = createCanonicalId("memory-record");
+    const crossTargetId = createCanonicalId("memory-record");
+    const now = toInstant("2026-10-02T05:00:00Z");
+    const later = toInstant("2026-10-02T05:01:00Z");
+    const sourceHash = "d".repeat(64);
+
+    await withTransaction(pool, async (client) => {
+      await createTenant(client, { tenantId, createdAt: now });
+      await createUser(client, {
+        tenantId,
+        userId: firstUserId,
+        createdAt: now,
+      });
+      await createUser(client, {
+        tenantId,
+        userId: secondUserId,
+        createdAt: now,
+      });
+      await createCharacter(client, {
+        tenantId,
+        characterId,
+        createdAt: now,
+      });
+      await getOrCreateRelationship(client, {
+        tenantId,
+        relationshipId: firstRelationshipId,
+        userId: firstUserId,
+        characterId,
+        createdAt: now,
+      });
+      await getOrCreateRelationship(client, {
+        tenantId,
+        relationshipId: secondRelationshipId,
+        userId: secondUserId,
+        characterId,
+        createdAt: now,
+      });
+
+      const createPreference = async (
+        memoryRecordId: typeof sourceId,
+        relationshipId: typeof firstRelationshipId,
+        content: string,
+        reference: string,
+      ) =>
+        createMemoryRecord(client, {
+          tenantId,
+          memoryRecordId,
+          memoryRevisionId: createCanonicalId("memory-revision"),
+          memoryType: "preference",
+          scope: { kind: "relationship", relationshipId },
+          content,
+          extractionMethod: "fixture",
+          observedAt: now,
+          evidence: [
+            {
+              sourceKind: "message",
+              sourceReference: reference,
+              sourceContentHash: sourceHash,
+              verbatimText: `verbatim:${reference}`,
+              observedAt: now,
+            },
+          ],
+          createdAt: now,
+        });
+
+      await createPreference(
+        sourceId,
+        firstRelationshipId,
+        "Prefers a 7am reminder.",
+        "fixture:lineage:source",
+      );
+      await createPreference(
+        targetId,
+        firstRelationshipId,
+        "Prefers an 8am reminder.",
+        "fixture:lineage:target",
+      );
+      await createPreference(
+        staleSourceId,
+        firstRelationshipId,
+        "Temporary reminder preference.",
+        "fixture:lineage:stale",
+      );
+      await createPreference(
+        crossTargetId,
+        secondRelationshipId,
+        "A different user's preference.",
+        "fixture:lineage:cross-target",
+      );
+
+      const linked = await linkMemoryRecords(client, {
+        tenantId,
+        sourceMemoryRecordId: sourceId,
+        expectedSourceLifecycleRevision: 1,
+        targetMemoryRecordId: targetId,
+        kind: "supersedes",
+        reason: "User explicitly corrected the reminder time.",
+        transitionedAt: later,
+      });
+
+      expect(linked.reused).toBe(false);
+      expect(linked.source.record.lifecycleState).toBe("superseded");
+      expect(linked.source.record.lifecycleRevision).toBe(2);
+      expect(linked.target.record.lifecycleState).toBe("active");
+      expect(linked.link.sourceMemoryRevisionId).toBe(
+        linked.source.currentRevision.memoryRevisionId,
+      );
+      expect(linked.link.targetMemoryRevisionId).toBe(
+        linked.target.currentRevision.memoryRevisionId,
+      );
+
+      const replay = await linkMemoryRecords(client, {
+        tenantId,
+        sourceMemoryRecordId: sourceId,
+        expectedSourceLifecycleRevision: 1,
+        targetMemoryRecordId: targetId,
+        kind: "supersedes",
+        reason: "User explicitly corrected the reminder time.",
+        transitionedAt: later,
+      });
+      expect(replay.reused).toBe(true);
+      expect(replay.source.record.lifecycleRevision).toBe(2);
+
+      await expect(
+        linkMemoryRecords(client, {
+          tenantId,
+          sourceMemoryRecordId: staleSourceId,
+          expectedSourceLifecycleRevision: 2,
+          targetMemoryRecordId: targetId,
+          kind: "supersedes",
+          reason: "Stale writer must lose.",
+          transitionedAt: later,
+        }),
+      ).rejects.toMatchObject({
+        code: "memory.lifecycle_revision_conflict",
+      });
+
+      await expect(
+        linkMemoryRecords(client, {
+          tenantId,
+          sourceMemoryRecordId: staleSourceId,
+          expectedSourceLifecycleRevision: 1,
+          targetMemoryRecordId: crossTargetId,
+          kind: "supersedes",
+          reason: "Must not cross relationship scope.",
+          transitionedAt: later,
+        }),
+      ).rejects.toMatchObject({
+        code: "memory.lineage_scope_mismatch",
+      });
+
+      const historical = await getMemoryRecordInScope(client, {
+        tenantId,
+        memoryRecordId: sourceId,
+        scope: {
+          kind: "relationship",
+          relationshipId: firstRelationshipId,
+        },
+      });
+      expect(historical?.record.lifecycleState).toBe("superseded");
+      expect(historical?.currentRevision.content).toBe(
+        "Prefers a 7am reminder.",
+      );
+      expect(historical?.currentRevision.evidence[0]?.verbatimText).toBe(
+        "verbatim:fixture:lineage:source",
+      );
+    });
+
+    await expect(
+      pool.query(
+        `UPDATE memory.record_links
+            SET reason = 'rewritten lineage'
+          WHERE tenant_id = $1
+            AND source_memory_record_id = $2`,
+        [tenantId, sourceId],
+      ),
+    ).rejects.toMatchObject({ code: "23514" });
+  });
+
+  it("publishes private memory only through current scoped authority and one-time approval", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const userId = createCanonicalId("user");
+    const characterId = createCanonicalId("character");
+    const relationshipId = createCanonicalId("relationship");
+    const worldId = createCanonicalId("world");
+    const sourceMemoryRecordId = createCanonicalId("memory-record");
+    const sourceMemoryRevisionId = createCanonicalId("memory-revision");
+    const targetMemoryRecordId = createCanonicalId("memory-record");
+    const targetMemoryRevisionId = createCanonicalId("memory-revision");
+    const now = toInstant("2026-10-02T06:00:00Z");
+    const expiresAt = toInstant("2099-01-01T00:00:00Z");
+    const sourceHash = "e".repeat(64);
+    const privateVerbatim = "PRIVATE: user said seven, not eight.";
+
+    await withTransaction(pool, async (client) => {
+      await createTenant(client, { tenantId, createdAt: now });
+      await createUser(client, { tenantId, userId, createdAt: now });
+      await createCharacter(client, {
+        tenantId,
+        characterId,
+        createdAt: now,
+      });
+      await getOrCreateRelationship(client, {
+        tenantId,
+        relationshipId,
+        userId,
+        characterId,
+        createdAt: now,
+      });
+      await createWorld(client, {
+        tenantId,
+        worldId,
+        initialGenerationId: createCanonicalId("world-generation"),
+        policy: testWorldPolicy(),
+        simulationTime: now,
+        createdAt: now,
+      });
+      await setPolicyRevision(client, tenantId, "policy-1");
+      await createMemoryRecord(client, {
+        tenantId,
+        memoryRecordId: sourceMemoryRecordId,
+        memoryRevisionId: sourceMemoryRevisionId,
+        memoryType: "fact",
+        scope: { kind: "relationship", relationshipId },
+        content: "The user's private preference may support a shared summary.",
+        extractionMethod: "fixture",
+        observedAt: now,
+        evidence: [
+          {
+            sourceKind: "message",
+            sourceReference: "fixture:publication:private-source",
+            sourceContentHash: sourceHash,
+            verbatimText: privateVerbatim,
+            observedAt: now,
+          },
+        ],
+        createdAt: now,
+      });
+    });
+
+    const principal = {
+      kind: "system",
+      systemKind: "memory-publication-test",
+    } as const;
+    const baseAuthority = createAuthorityContext({
+      tenantId,
+      principal,
+      scopes: [],
+      capabilities: ["memory.scope.publish"],
+      resourceScope: {
+        relationshipIds: [relationshipId],
+        worldIds: [worldId],
+      },
+      policyRevision: "policy-1",
+      approvalIds: [],
+      delegationChain: [],
+      expiresAt,
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+    });
+
+    const target = {
+      tenantId,
+      sourceMemoryRecordId,
+      sourceMemoryRevisionId,
+      sourceScope: { kind: "relationship", relationshipId } as const,
+      targetMemoryRecordId,
+      targetMemoryRevisionId,
+      targetMemoryType: "fact" as const,
+      targetScope: { kind: "world", worldId } as const,
+      targetRevision: {
+        content: "A deliberately approved shared summary.",
+        extractionMethod: "publication-fixture",
+        observedAt: now,
+        evidence: [
+          {
+            sourceKind: "operator" as const,
+            sourceReference: "fixture:publication:approved-summary",
+            sourceContentHash: "f".repeat(64),
+            observedAt: now,
+          },
+        ],
+      },
+      reason: "Explicitly approved for shared world continuity.",
+    } as const;
+
+    const unscopedAuthority = createAuthorityContext({
+      tenantId,
+      principal,
+      scopes: [],
+      capabilities: ["memory.scope.publish"],
+      resourceScope: { worldIds: [worldId] },
+      policyRevision: "policy-1",
+      approvalIds: [],
+      delegationChain: [],
+      expiresAt,
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+    });
+    await expect(
+      prepareMemoryScopePublication(pool, {
+        ...target,
+        authority: unscopedAuthority,
+        idempotencyKey: "memory-publish-unscoped",
+        expiresAt,
+      }),
+    ).rejects.toMatchObject({
+      code: "memory.publication_source_scope_mismatch",
+    });
+
+    const prepared = await prepareMemoryScopePublication(pool, {
+      ...target,
+      authority: baseAuthority,
+      idempotencyKey: "memory-publish-1",
+      expiresAt,
+    });
+    expect(prepared.reused).toBe(false);
+
+    const approval = createPendingApproval({
+      kind: "once",
+      binding: prepared.binding,
+      policyRevision: "policy-1",
+      requestedAt: now,
+      expiresAt,
+    });
+    await withTransaction(pool, async (client) => {
+      await persistPendingApproval(client, approval);
+      await settlePendingApproval(client, {
+        tenantId,
+        approvalId: approval.approvalId,
+        decision: "approved",
+        approverKey: "operator:memory-publication-test",
+        decidedAt: now,
+      });
+    });
+
+    const executeAuthority = createAuthorityContext({
+      tenantId,
+      principal,
+      scopes: [],
+      capabilities: ["memory.scope.publish"],
+      resourceScope: {
+        relationshipIds: [relationshipId],
+        worldIds: [worldId],
+      },
+      policyRevision: "policy-1",
+      approvalIds: [approval.approvalId],
+      delegationChain: [],
+      expiresAt,
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+    });
+
+    const published = await executeMemoryScopePublication(pool, {
+      ...target,
+      authority: executeAuthority,
+      operationId: prepared.operation.operationId,
+      approvalId: approval.approvalId,
+      publishedAt: now,
+    });
+    expect(published.reused).toBe(false);
+    expect(published.operation.state).toBe("succeeded");
+    expect(published.target.record.scope).toEqual({
+      kind: "world",
+      worldId,
+    });
+    expect(published.target.currentRevision.content).toBe(
+      "A deliberately approved shared summary.",
+    );
+
+    const replay = await executeMemoryScopePublication(pool, {
+      ...target,
+      authority: executeAuthority,
+      operationId: prepared.operation.operationId,
+      approvalId: approval.approvalId,
+      publishedAt: now,
+    });
+    expect(replay.reused).toBe(true);
+
+    await withTransaction(pool, async (client) => {
+      const source = await getMemoryRecordInScope(client, {
+        tenantId,
+        memoryRecordId: sourceMemoryRecordId,
+        scope: { kind: "relationship", relationshipId },
+      });
+      expect(source?.record.lifecycleState).toBe("active");
+      expect(source?.record.scope).toEqual({
+        kind: "relationship",
+        relationshipId,
+      });
+      expect(source?.currentRevision.evidence[0]?.verbatimText).toBe(
+        privateVerbatim,
+      );
+
+      await expect(
+        getMemoryRecordInScope(client, {
+          tenantId,
+          memoryRecordId: targetMemoryRecordId,
+          scope: { kind: "relationship", relationshipId },
+        }),
+      ).resolves.toBeNull();
+    });
+
+    const audit = await pool.query<Record<string, unknown>>(
+      `SELECT to_jsonb(publication) AS publication
+         FROM memory.scope_publications publication
+        WHERE tenant_id = $1
+          AND operation_id = $2`,
+      [tenantId, prepared.operation.operationId],
+    );
+    expect(audit.rowCount).toBe(1);
+    expect(JSON.stringify(audit.rows[0])).not.toContain(privateVerbatim);
+
+    const approvalState = await pool.query<{ state: string }>(
+      `SELECT state
+         FROM security.approvals
+        WHERE tenant_id = $1
+          AND approval_id = $2`,
+      [tenantId, approval.approvalId],
+    );
+    expect(approvalState.rows[0]?.state).toBe("consumed");
+
+    await expect(
+      pool.query(
+        `UPDATE memory.scope_publications
+            SET reason = 'rewritten publication'
+          WHERE tenant_id = $1
+            AND operation_id = $2`,
+        [tenantId, prepared.operation.operationId],
+      ),
+    ).rejects.toMatchObject({ code: "23514" });
+
+    await expect(
+      pool.query(
+        `UPDATE memory.records
+            SET scope_kind = 'world',
+                scope_ref_id = $1
+          WHERE tenant_id = $2
+            AND memory_record_id = $3`,
+        [worldId, tenantId, sourceMemoryRecordId],
+      ),
+    ).rejects.toMatchObject({ code: "23514" });
+  });
+
 });
