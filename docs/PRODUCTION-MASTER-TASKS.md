@@ -102,7 +102,7 @@ Status: `[x]` COMPLETE, `[ ]` PLANNED.
 - [x] **060** Implement Skill manifest validation and import format.
 - [x] **061** Implement capability requirements and Tool references.
 - [x] **062** Implement Skill dependency graph and cycle/conflict validation.
-- [ ] **063** Implement Skill execution planning/composition.
+- [x] **063** Implement Skill execution planning/composition.
 - [ ] **064** Implement SkillTool/subskill execution boundaries.
 - [ ] **065** Implement Skill provenance, trust and publisher metadata.
 - [ ] **066** Implement risk/capability classification.
