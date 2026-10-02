@@ -34,9 +34,9 @@ of architectural feature selection.
 
 ## Current phase
 
-**Phase 4 — Memory.**
+**Phase 5 — Tools and Providers.**
 
-Current implementation branch: `phase4-memory-acceptance-closure`.
+Current implementation branch: `phase5-tools-providers-foundation`.
 
 Phase 0A/0B, Phase 1 and Phase 2 are closed.
 
@@ -119,31 +119,37 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 
 ## Immediate work
 
-PR #36 is the Phase 4 acceptance-closure PR on
-`phase4-memory-acceptance-closure`.
+Phase 5 — Tools and Providers is active on
+`phase5-tools-providers-foundation`.
 
-Acceptance implementation head `d48b17ff9c4bcb91d51d88bf78da7a1e6c9f597a`
-passed Foundation CI run 313. The complete gate passed frozen install, strict
-TypeScript, all unit tests, PostgreSQL 18 + pgvector migrations/integration fixtures and
-production builds. PR #36 has no review threads or comments.
+First-slice implementation head `1f2e9d69b9adc312c06e8b3b5e12978a6c3e7074`
+passed Foundation CI run 318. The complete gate passed frozen install, strict
+TypeScript, Tool/Provider unit and architecture tests, all existing PostgreSQL 18 +
+pgvector suites and production builds. PR #37 has no review threads or comments.
 
-The acceptance matrix in `docs/PHASE-4-MEMORY-ACCEPTANCE.md` is now all PASS.
-The last gap was closed by a held-out contradiction/current-view fixture proving:
-- corrected current truth is selected by entity, temporal and hybrid retrieval;
-- the superseded predecessor is explicitly forbidden and never returned;
-- predecessor revision/evidence remains intact;
-- held-out recall, precision and MRR are 1 with zero leakage.
+Implemented in the first slice:
+- shared canonical `CapabilityKey`;
+- real `@masanawa/providers` package with immutable definitions and separate readiness;
+- deterministic ready-only default selection and fail-closed explicit Provider selection;
+- exact-replay registration plus identity-conflict rejection;
+- real `@masanawa/tools` package with version-pinned capability/Tool registry;
+- schema/risk/side-effect/timeout/rate/cost/idempotency/reconciliation declarations;
+- registration-time rejection of unsafe consequential Tool definitions;
+- Provider-backed Tool resolution with no silent explicit fallback;
+- authority-bound canonical Tool invocation envelope;
+- production build + frozen workspace lockfile wiring.
 
 Immediate next steps:
-1. verify the final closure-documentation head in Foundation CI;
-2. fix any real failure; if green, merge PR #36;
-3. create a fresh Phase 5 branch from merged `main`;
-4. update the rewrite plan/handoff with the final Phase 4 closure run and mark
-   Phase 5 — Tools and Providers active;
-5. recover Phase 5 canonical contracts and donor boundaries from Architecture,
-   Source Ownership and the ledgers before implementing the first production slice;
-6. do not reopen Memory unless a later integration exposes a documented acceptance
-   regression.
+1. verify final documentation-head Foundation CI for PR #37;
+2. fix any real failure; if green, merge PR #37;
+3. create a fresh Phase 5 execution branch from merged `main`;
+4. add credential bindings using only canonical `CredentialRefId` references;
+5. implement consequential Tool prepare/execute using existing `events.operations`,
+   current-authority revalidation and deterministic request/authority fingerprints;
+6. classify post-dispatch ambiguity as `unknown` and require reconciliation instead of
+   blind provider retry;
+7. prove exact replay, stale policy/revocation rejection and explicit-provider
+   no-fallback in PostgreSQL-backed execution fixtures.
 
 The requested post-freeze donor boundary remains unchanged: MemPalace contributes
 retrieval/evaluation/storage-contract behavior inside canonical Masanawa memory ports;

@@ -15,7 +15,7 @@ Lifecycle:
 
 ## Phase 0A — Landscape expansion and donor selection
 
-Status: complete. Phase 0B, Phase 1, Phase 2 and the non-spatial Phase 3 core are closed; current active work is Phase 4 memory.
+Status: complete. Phase 0B, Phase 1, Phase 2, the non-spatial Phase 3 core and Phase 4 Memory are closed; current active work is Phase 5 Tools and Providers.
 
 Inputs: all pinned submodules in `references/sources/` and `migration/SOURCE-LOCK.md`.
 
@@ -78,15 +78,30 @@ Gate passed against CWS + selected world-simulation donor behaviors for the non-
 
 ## Phase 4 — Memory
 
-Status: active. Implementation record: `PHASE-4-MEMORY.md`.
+Status: complete. Implementation record: `PHASE-4-MEMORY.md`. Closure audit:
+`PHASE-4-MEMORY-ACCEPTANCE.md`.
 
-Implement type+scope memory, lifecycle, retrieval, evidence/reflection, correction/supersession, compaction, privacy isolation and liveness/dead-letter behavior.
+Canonical scoped memory, lifecycle/revision/evidence, governed publication/tombstone,
+durable extraction custody, rebuildable lexical/vector/entity/temporal retrieval,
+held-out evaluation, bounded context compilation, reflection/consolidation and
+compaction-flush admission are implemented and acceptance-gated.
 
-Gate against CWS privacy plus selected N.E.K.O/Letta/Mem0/OpenClaw behaviors. The post-freeze MemPalace assessment adds verbatim-evidence, retrieval-isolation, projection-compatibility and benchmark-discipline improvements without changing canonical ownership.
+Final closure:
+- acceptance implementation head `d48b17ff9c4bcb91d51d88bf78da7a1e6c9f597a`
+  passed Foundation CI run 313;
+- final closure documentation head `d67c9332431a7a8ce428e426f93ea61f34b7d798`
+  passed Foundation CI run 316;
+- PR #36 merged as `e960b3f5dfe4d7b7470ddea604187420451498ce`.
 
 ## Phase 5 — Tools and providers
 
-Implement capability registry, Tool contract/executor, provider registry, credentials, readiness/health, idempotency/retry/reconciliation and execution security.
+Status: active. Implementation record: `PHASE-5-TOOLS-PROVIDERS.md`.
+
+Implement capability registry, Tool contract/executor, provider registry, credentials,
+readiness/health, idempotency/retry/reconciliation and execution security.
+
+The first slice establishes canonical versioned Tool/Provider contracts and fail-closed
+selection/readiness semantics before any external provider adapter is admitted.
 
 ## Phase 6 — Skills
 

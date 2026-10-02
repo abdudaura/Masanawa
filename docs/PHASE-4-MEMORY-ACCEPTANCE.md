@@ -1,6 +1,6 @@
 # Phase 4 Memory Acceptance Closure
 
-Status: PASS — final closure documentation gate pending  
+Status: PASS — CLOSED  
 Branch: `phase4-memory-acceptance-closure`  
 Base merge: PR #35 `5ff2cc4f3b79d725d898ecfe0e92a3600f510a88`
 
@@ -34,6 +34,10 @@ Implementation/acceptance evidence is complete:
 - every acceptance-matrix row is PASS;
 - PR #36 has no review threads or comments.
 
-Only the final closure-documentation head remains to pass the same Foundation CI gate.
-After that, PR #36 may merge and Phase 5 — Tools and Providers must begin from merged
-`main` according to `docs/REWRITE-PLAN.md`.
+Final closure completed:
+- final closure-documentation head `d67c9332431a7a8ce428e426f93ea61f34b7d798`
+  passed Foundation CI run 316;
+- PR #36 merged as `e960b3f5dfe4d7b7470ddea604187420451498ce`.
+
+Phase 4 is closed. Phase 5 — Tools and Providers begins from the merged state according
+to `docs/REWRITE-PLAN.md`.
