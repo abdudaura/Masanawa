@@ -63,11 +63,15 @@ export function createPostgresToolOperationStore(
           provider: input.provider,
           observationKey: input.observationKey,
           normalizedStatus: input.normalizedStatus,
-          payloadHash: input.payloadHash ?? undefined,
           normalizedPayload: input.normalizedPayload,
           observedAt: input.observedAt,
           verificationMethod: "tool-adapter-normalized-result",
-          providerVersion: input.providerVersion ?? undefined,
+          ...(input.payloadHash !== null
+            ? { payloadHash: input.payloadHash }
+            : {}),
+          ...(input.providerVersion !== null
+            ? { providerVersion: input.providerVersion }
+            : {}),
         });
       });
     },
