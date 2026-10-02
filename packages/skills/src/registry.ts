@@ -6,16 +6,16 @@ import {
 } from "@masanawa/contracts";
 import { fingerprintCanonicalJson } from "@masanawa/security";
 import {
-  normalizeSkillDefinition,
+  normalizeSkillVersionDefinition,
   normalizeSkillKey,
   normalizeSkillReadiness,
   normalizeSkillVersion,
-  type SkillDefinition,
+  type SkillVersion,
   type SkillReadiness,
 } from "./model.js";
 
 export interface SkillRegistration {
-  readonly skill: SkillDefinition;
+  readonly skill: SkillVersion;
   readonly reused: boolean;
 }
 
@@ -24,26 +24,26 @@ export interface SkillRegistryOptions {
 }
 
 export interface SkillRegistry {
-  register(definition: SkillDefinition): SkillRegistration;
+  register(definition: SkillVersion): SkillRegistration;
   registerBatch(
-    definitions: readonly SkillDefinition[],
+    definitions: readonly SkillVersion[],
   ): readonly SkillRegistration[];
   setReadiness(readiness: SkillReadiness): SkillReadiness;
-  getVersion(skillVersionId: SkillVersionId): SkillDefinition | null;
-  getByKeyVersion(key: string, version: string): SkillDefinition | null;
+  getVersion(skillVersionId: SkillVersionId): SkillVersion | null;
+  getByKeyVersion(key: string, version: string): SkillVersion | null;
   getReadiness(skillVersionId: SkillVersionId): SkillReadiness | null;
-  listVersions(): readonly SkillDefinition[];
-  listAdvertised(): readonly SkillDefinition[];
+  listVersions(): readonly SkillVersion[];
+  listAdvertised(): readonly SkillVersion[];
   resolveExecutionPlan(
     skillVersionId: SkillVersionId,
-  ): readonly SkillDefinition[];
+  ): readonly SkillVersion[];
   requiredToolCapabilities(
     skillVersionId: SkillVersionId,
   ): readonly CapabilityKey[];
 }
 
 interface RegisteredSkill {
-  readonly definition: SkillDefinition;
+  readonly definition: SkillVersion;
   readonly fingerprint: string;
 }
 
@@ -64,12 +64,12 @@ function keyVersion(key: string, version: string): string {
   return `${key}@${version}`;
 }
 
-function definitionFingerprint(definition: SkillDefinition): string {
+function definitionFingerprint(definition: SkillVersion): string {
   return fingerprintCanonicalJson(definition);
 }
 
 function validateGraph(
-  definitions: ReadonlyMap<SkillVersionId, SkillDefinition>,
+  definitions: ReadonlyMap<SkillVersionId, SkillVersion>,
   roots: readonly SkillVersionId[],
   maxDependencyDepth: number,
 ): void {
@@ -146,7 +146,7 @@ export function createSkillRegistry(
   function executionPlan(
     skillVersionId: SkillVersionId,
     requireReady: boolean,
-  ): readonly SkillDefinition[] {
+  ): readonly SkillVersion[] {
     const target = byVersionId.get(skillVersionId)?.definition;
     if (!target) {
       throw skillError(
@@ -157,7 +157,7 @@ export function createSkillRegistry(
     }
 
     const visited = new Set<SkillVersionId>();
-    const plan: SkillDefinition[] = [];
+    const plan: SkillVersion[] = [];
 
     function visit(versionId: SkillVersionId): void {
       if (visited.has(versionId)) {
@@ -193,18 +193,18 @@ export function createSkillRegistry(
   }
 
   return Object.freeze({
-    register(input: SkillDefinition): SkillRegistration {
+    register(input: SkillVersion): SkillRegistration {
       return this.registerBatch([input])[0]!;
     },
 
     registerBatch(
-      inputs: readonly SkillDefinition[],
+      inputs: readonly SkillVersion[],
     ): readonly SkillRegistration[] {
       if (!Array.isArray(inputs) || inputs.length < 1 || inputs.length > 512) {
         throw new RangeError("skill registration batch is invalid");
       }
 
-      const definitions = inputs.map(normalizeSkillDefinition);
+      const definitions = inputs.map(normalizeSkillVersionDefinition);
       const seenVersionIds = new Set<SkillVersionId>();
       const seenKeyVersions = new Set<string>();
 
@@ -229,12 +229,12 @@ export function createSkillRegistry(
         seenKeyVersions.add(kv);
       }
 
-      const candidate = new Map<SkillVersionId, SkillDefinition>();
+      const candidate = new Map<SkillVersionId, SkillVersion>();
       for (const [versionId, registered] of byVersionId) {
         candidate.set(versionId, registered.definition);
       }
 
-      const newDefinitions: SkillDefinition[] = [];
+      const newDefinitions: SkillVersion[] = [];
       for (const definition of definitions) {
         const fingerprint = definitionFingerprint(definition);
         const existingByVersion = byVersionId.get(definition.skillVersionId);
@@ -356,11 +356,11 @@ export function createSkillRegistry(
       return normalized;
     },
 
-    getVersion(skillVersionId: SkillVersionId): SkillDefinition | null {
+    getVersion(skillVersionId: SkillVersionId): SkillVersion | null {
       return byVersionId.get(skillVersionId)?.definition ?? null;
     },
 
-    getByKeyVersion(key: string, version: string): SkillDefinition | null {
+    getByKeyVersion(key: string, version: string): SkillVersion | null {
       const id = byKeyVersion.get(
         keyVersion(normalizeSkillKey(key), normalizeSkillVersion(version)),
       );
@@ -371,7 +371,7 @@ export function createSkillRegistry(
       return readiness.get(skillVersionId) ?? null;
     },
 
-    listVersions(): readonly SkillDefinition[] {
+    listVersions(): readonly SkillVersion[] {
       return Object.freeze(
         [...byVersionId.values()]
           .map((entry) => entry.definition)
@@ -384,7 +384,7 @@ export function createSkillRegistry(
       );
     },
 
-    listAdvertised(): readonly SkillDefinition[] {
+    listAdvertised(): readonly SkillVersion[] {
       return Object.freeze(
         [...byVersionId.values()]
           .map((entry) => entry.definition)
@@ -416,7 +416,7 @@ export function createSkillRegistry(
 
     resolveExecutionPlan(
       skillVersionId: SkillVersionId,
-    ): readonly SkillDefinition[] {
+    ): readonly SkillVersion[] {
       return executionPlan(skillVersionId, true);
     },
 
