@@ -28,9 +28,13 @@ credentials, external receipts/reconciliation, provider failure typing and telem
 | Tool/Provider registries and deterministic selection | #37 | `b3f2e8ce33aeb4ed125bd40af78f10a454174bbd` |
 | Consequential execution and reconciliation | #38 | `21141266ab15e2111b8f78c6df365100a60a017a` |
 | Durable external receipts and replay | #39 | `8d531188e2f9d7c38f50cc883e3425096b5408ad` |
+| Typed Provider failures and privacy-safe telemetry | #42 | `be814fee91b8b551b00e2d9900d2970680297b3d` |
 
-Active hardening slice: PR #43, branch
-`phase5-provider-failures-telemetry`.
+Merged Provider failure/telemetry slice: PR #42, merge
+`be814fee91b8b551b00e2d9900d2970680297b3d`.
+
+Active credential-custody slice: PR #45, branch
+`phase5-credential-custody`.
 
 ## Phase 5 acceptance matrix
 
@@ -85,7 +89,7 @@ Evidence:
 
 ### 7. Credentials are referenced, scoped and excluded from public execution data — PENDING FINAL GATE
 
-Implemented on PR #43:
+Implemented on PR #45:
 - Provider definitions expose slot metadata only;
 - Tool invocation/fingerprints carry canonical CredentialRefId bindings, never plaintext;
 - Security resolution request binds tenant, Provider, Operation and slot identity;
@@ -101,33 +105,31 @@ Implemented on PR #43:
   `credential.unavailable` authorization surface.
 
 Required before PASS:
-- latest PR #43 head must pass PostgreSQL integration + production build.
+- exact latest PR #45 head must pass PostgreSQL integration + production build.
 
-### 8. Timeout/rate/cost/readiness failures are typed — PENDING FINAL GATE
+### 8. Timeout/rate/cost/readiness failures are typed — PASS
 
-Implemented on PR #43:
-- canonical failure kinds: readiness, timeout, rate-limit, cost-limit, authentication,
-  transport, provider-rejected and invalid-response;
-- normalized failure codes/retryability/dispatched semantics;
-- canonical PlatformError category mapping;
-- Tool adapter outcomes may carry ProviderExecutionFailure during migration.
+Evidence:
+- PR #42 defines typed Provider failure kind/phase/dispatch-certainty contracts;
+- post-dispatch failures cannot claim safe not-dispatched certainty;
+- timeout, rate-limit, availability, authentication, cost and transport failures map
+  to canonical PlatformError categories;
+- Provider usage is bounded and normalized;
+- implementation head `3de2dcc749409b6be680fa5d7f01e820bd967792` passed
+  Foundation CI run 346 and PR #42 merged as
+  `be814fee91b8b551b00e2d9900d2970680297b3d`.
 
-Required before PASS:
-- latest head CI;
-- final scan for concrete Provider adapters still emitting free-form failure-only
-  semantics.
+### 9. Tool/Provider telemetry has correlation identity without secret data — PASS
 
-### 9. Tool/Provider telemetry has correlation identity without secret data — PENDING FINAL GATE
-
-Implemented on PR #43:
-- ProviderExecutionObserver carries Operation + Provider + capability + outcome identity;
-- telemetry attribute allowlist admits only normalized provider metadata, timing,
-  cost units and typed failure flags;
-- no prompt, payload, response, credential or secret fields are allowlisted;
-- observer failure is explicitly non-authoritative and cannot alter side-effect truth.
-
-Required before PASS:
-- latest head CI and final telemetry wiring review.
+Evidence:
+- Provider execution telemetry carries Provider, capability, ToolVersion and Operation
+  identity plus bounded usage/failure metadata;
+- Telemetry's privacy-safe allowlist rejects arbitrary provider keys including
+  credential/API-key fields;
+- invocation payloads, outputs, receipt bodies, raw exceptions and CredentialRefIds are
+  not telemetry fields;
+- telemetry sink failure is observational only and cannot change Tool truth;
+- PR #42 implementation passed Foundation CI run 346 and is merged.
 
 ### 10. Adapters cannot bypass canonical registry/security policy — PASS
 
@@ -157,12 +159,11 @@ Already PASS from merged slices:
 - raw credential decrypt errors are redacted at the Security boundary.
 
 Pending:
-- PR #43 exact-head Foundation CI;
-- final repository-wide adapter bypass scan;
+- PR #45 exact-head Foundation CI for encrypted credential custody;
 - final documentation-head CI after this audit is changed to PASS.
 
 ## Closure rule
 
 Do not advance to Skills/Workflows until every matrix item above is PASS and the final
-documentation head passes Foundation CI. If PR #43 reveals a real failure, fix the
+documentation head passes Foundation CI. If PR #45 reveals a real failure, fix the
 implementation first; do not weaken these acceptance statements.
