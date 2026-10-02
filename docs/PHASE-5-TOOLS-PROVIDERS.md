@@ -262,8 +262,17 @@ Implemented:
   decrypt-error redaction.
 
 Validation:
-- run 356 reached strict TypeScript and found one implicit-any parameter in the new
-  PostgreSQL material source;
-- commit `ee84b2fc6565e622682f0497889034af46048757` fixes it;
-- Foundation CI run 357 is the current exact-head gate and must pass before this slice
-  can be accepted.
+- run 356 found an implicit-any issue in the PostgreSQL material source and the branch
+  was repaired rather than weakening the contract;
+- operation-scoped resolution was then hardened to require a real
+  `events.operations` row in the same tenant;
+- the decrypt-error fixture was corrected to exercise the cipher failure before
+  revocation;
+- hardened implementation head
+  `7d53562fe29f5aae6a3e69c495757ce22658df3a` passed Foundation CI run 365;
+- the full gate passed frozen install, strict TypeScript, unit/architecture tests,
+  PostgreSQL 18 + pgvector integration suites and production builds.
+
+The Phase 5 acceptance matrix is now PASS in
+`docs/PHASE-5-CLOSURE-AUDIT.md`. This documentation head still requires its final
+Foundation CI before PR #45 merges.
