@@ -119,15 +119,20 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 
 ## Immediate work
 
-1. implement the canonical memory extraction queue on
-   `phase4-memory-extraction-liveness`;
-2. bind idempotent enqueue to normalized scope/source/extractor inputs without storing
-   raw source text in queue state;
-3. add lease/fence claim + renew + settlement, bounded retries, expired-lease recovery,
-   permanent/repeated-failure dead-letter and durable per-attempt evidence;
-4. prove with PostgreSQL 18 fixtures that stale workers lose and poison inputs do not
-   block later jobs;
-5. run the complete CI gate and merge before starting retrieval projections.
+PR #31 implements the extraction-liveness slice and Foundation CI run 271 passed the
+complete gate on implementation head
+`2a423ac1480b9c094b602e0d0e846bf882ff1992`.
+
+1. verify the automatically triggered Foundation CI run on the final documentation-only
+   PR #31 head;
+2. fix any real failure; if green, merge PR #31;
+3. on a fresh branch from merged `main`, implement projection generation metadata
+   and authorization-first lexical retrieval before adding vector/entity/temporal
+   signals;
+4. require embedding/provider identity, vector dimension, source revision/content hash
+   and projection generation so incompatible vector spaces can never silently mix;
+5. add adapter conformance fixtures proving every retrieval backend fails closed on
+   unsupported scope filters and cross-Relationship leakage remains zero.
 
 The lifecycle/publication implementation now includes independent lifecycle CAS,
 immutable same-scope/type lineage, current-authority + one-time-approval publication,
