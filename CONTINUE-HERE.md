@@ -137,13 +137,25 @@ Foundation CI run 379, PR #47 merged as
 `d0a198dbdec1af08e3c8f1378da0985db628eb6e`, and merged-main Foundation CI
 run 380 passed on that exact merge commit.
 
-**Current: Task 060 of 150 — Implement Skill manifest validation and import format.**
-
-Active implementation branch: `task060-skill-manifest-import`. Task 060 now defines `docs/SKILL-IMPORT.md`, a TypeBox-validated native manifest v1, bounded `SKILL.md` import compatibility, deterministic provenance fingerprints, traversal-safe resource paths, scripts-off-by-default behavior and explicit quarantine. Acceptance/CI is pending.
-
-Tasks 001-059 are merged complete.
+**Current: Task 061 of 150 — Implement capability requirements and Tool references.**
 
 
+Tasks 001-060 are merged complete.
+
+
+
+
+Task 060 implementation head `f5f939f7fb6999fa901d1538ab2a37ef50b04579` passed
+Foundation CI run 407. PR #56 merged as
+`c4cf2ce319bc1365387ec3ebcd510916ac9de579`, and merged-main Foundation CI
+run 408 passed on that exact merge commit.
+
+Task 060 established:
+- TypeBox-validated native Skill manifest v1 with bounded fields and fail-closed unknown versions/properties;
+- bounded `SKILL.md` compatibility import for routing metadata without introducing a general YAML runtime;
+- relative-POSIX resource containment rules with traversal/ambiguous path rejection;
+- scripts skipped by default and requiring explicit import opt-in that still grants no execution authority;
+- deterministic normalized-content provenance fingerprints and explicit quarantined import candidates with no canonical IDs/certification/readiness.
 
 Task 059 implementation head `3755dbf7b32f3eaa4e84db32e26749e21c110ef9` passed
 Foundation CI run 402. PR #54 merged as
