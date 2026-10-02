@@ -94,7 +94,7 @@ Status: `[x]` COMPLETE, `[ ]` PLANNED.
 - [x] **055** Standardize adapter topology/registration and prohibit adapter-to-adapter hidden orchestration.
 - [x] **056** Expand test taxonomy with security/recovery/load/chaos suites and CI gate conventions.
 - [x] **057** Establish repository-wide public API/versioning/deprecation conventions.
-- [ ] **058** Establish production configuration/environment schema, secret-reference and deployment-layout conventions.
+- [x] **058** Establish production configuration/environment schema, secret-reference and deployment-layout conventions.
 
 ## Tasks 059-070 — Skills
 
