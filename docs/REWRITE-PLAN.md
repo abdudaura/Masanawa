@@ -15,7 +15,7 @@ Lifecycle:
 
 ## Phase 0A — Landscape expansion and donor selection
 
-Status: complete. Phase 0B, Phase 1, Phase 2, the non-spatial Phase 3 core and Phase 4 Memory are closed; current active work is Phase 5 Tools and Providers.
+Status: complete. Phase 0B, Phase 1, Phase 2, the non-spatial Phase 3 core, Phase 4 Memory and Phase 5 Tools/Providers are closed; current active work is Phase 6 Skills.
 
 Inputs: all pinned submodules in `references/sources/` and `migration/SOURCE-LOCK.md`.
 
@@ -95,17 +95,27 @@ Final closure:
 
 ## Phase 5 — Tools and providers
 
-Status: active. Implementation record: `PHASE-5-TOOLS-PROVIDERS.md`.
+Status: complete. Implementation record: `PHASE-5-TOOLS-PROVIDERS.md`.
 
-Implement capability registry, Tool contract/executor, provider registry, credentials,
-readiness/health, idempotency/retry/reconciliation and execution security.
+Implemented capability registry, versioned Tool/Provider contracts, fail-closed
+selection/readiness, consequential execution, durable Operation reconciliation,
+receipts/replay, typed Provider failures, privacy-safe telemetry and encrypted scoped
+provider credential custody.
 
-The first slice establishes canonical versioned Tool/Provider contracts and fail-closed
-selection/readiness semantics before any external provider adapter is admitted.
+Final merge:
+- PR #45 merged as `0fe123e18a9163386c4ab10331139265ce26b64e`;
+- Foundation CI run 369 passed on that exact merged `main` commit.
 
 ## Phase 6 — Skills
 
+Status: active.
+
 Implement the selected unified skill architecture after OpenJarvis/OpenClaw/MAF comparison: manifest/contract, manager, parser/import, dependencies, execution/SkillTool, provenance/trust, governance/certification/readiness and trace metadata.
+
+Product constraint: Skill definitions remain execution-edge neutral. A Skill asks for
+Tools/capabilities and must not hard-code a cloud API or Android path; future Device
+Providers described in `AGENT-PHONE-EMBODIMENT.md` must be selectable through the same
+Tool/Provider architecture.
 
 ## Phase 7 — Agent runtime
 
@@ -117,7 +127,10 @@ Rebuild JEV plus deterministic workflow framework, approvals, checkpoint/restart
 
 ## Phase 9 — Gateway and channels
 
-Implement canonical gateway/channel routing using the selected OpenClaw/eliza/CWS patterns. Web, WhatsApp, Telegram and later device/channel adapters all resolve into one identity/runtime/memory/task system.
+Implement canonical gateway/channel routing using the selected OpenClaw/eliza/CWS patterns. Web, WhatsApp, Telegram and device/channel adapters all resolve into one identity/runtime/memory/task system.
+
+This phase must include canonical Device registration/pairing, capability publication and
+Character-to-Device assignment contracts required by the Agent Phone direction.
 
 ## Phase 10 — Proactivity and perception
 
@@ -126,6 +139,10 @@ Implement schedules/routines/promises/intents, trigger engine, quiet-hours/frequ
 ## Phase 11 — Realtime presence and embodiment
 
 Implement selected LiveKit/Pipecat/CyberVerse/AIRI architecture: WebRTC, full-duplex audio/video, turn detection/barge-in, realtime model/STT/TTS adapters, avatar provider and foreground persona/background work.
+
+Implement the Android Agent Device runtime and admit device capabilities through the
+canonical Provider path. Integrate OmniSIP behind the telephony DeviceCapability
+boundary rather than making it a second runtime or identity system.
 
 ## Phase 12 — Commerce, social and studio
 
@@ -161,6 +178,10 @@ Only then retire ChatWithStars as an active platform implementation.
 10. Studio project -> identity-consistent media -> review -> publish.
 11. Device/node perception -> explicit permission -> bounded observation -> safe action.
 12. Agent/workflow crash/restart -> durable recovery without duplicate side effects.
+13. Assigned Agent Phone -> real inbound/outbound cellular call -> same Character and
+    relationship continuity -> canonical Operation receipt/reconciliation.
+14. Cloud/device Provider choice -> same Skill/Tool contract -> no duplicated identity,
+    memory or workflow truth.
 
 ## Reference rule
 
