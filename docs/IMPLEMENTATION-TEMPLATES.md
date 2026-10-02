@@ -9,7 +9,8 @@ suite enforces the non-optional parts in
 
 The templates are deliberately small. They standardize public boundaries, build
 behavior and service ownership without forcing every domain to contain ceremonial
-files it does not need.
+files it does not need. The root production build is recursive, so adding an implemented
+workspace package cannot silently leave it outside the normal build gate.
 
 ## 1. Domain package template
 

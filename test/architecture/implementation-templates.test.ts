@@ -54,6 +54,11 @@ function expectBaseTsConfig(componentRoot: string): void {
 }
 
 describe("production implementation templates", () => {
+  it("runs every implemented workspace build through the root production gate", () => {
+    const rootManifest = readJson<PackageManifest>(path.resolve("package.json"));
+    expect(rootManifest.scripts?.build).toBe("pnpm -r --if-present build");
+  });
+
   it("keeps the service topology coarse and canonical", () => {
     expect(directories(serviceRoot)).toEqual([...canonicalServices]);
   });
