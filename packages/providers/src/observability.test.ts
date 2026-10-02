@@ -81,7 +81,21 @@ describe("provider observability", () => {
       retryAfterMs: null,
     });
     expect(typed.failure.dispatchCertainty).toBe("unknown");
+    expect(typed.failure.retryable).toBe(false);
     expect(typed.message).toBe("connection-reset");
+
+    expect(
+      () =>
+        new ProviderExecutionError({
+          kind: "transport",
+          code: "unsafe-certainty",
+          phase: "post-dispatch",
+          dispatchCertainty: "not-dispatched",
+          retryable: true,
+          timeoutMs: null,
+          retryAfterMs: null,
+        }),
+    ).toThrow(/post-dispatch provider failure must have unknown/u);
   });
 
   it("emits only bounded privacy-safe provider readiness attributes", () => {
