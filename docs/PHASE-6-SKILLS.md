@@ -2,7 +2,7 @@
 
 Status: ACTIVE  
 Started: 2026-10-02  
-Active branch: `task061-capability-tool-references`
+Active branch: `task062-skill-dependency-graph`
 
 Phase 5 Tools and Providers is closed by PR #45, merge
 `0fe123e18a9163386c4ab10331139265ce26b64e`.
@@ -77,6 +77,10 @@ Task 060 introduces a versioned native manifest validated with the repository's 
 ## Task 061 — capability requirements and Tool references
 
 SkillVersions now declare provider-neutral required Tool capabilities and explicit named Tool references. A reference may remain capability-bound for runtime selection or pin an exact immutable `ToolVersionId`; it never pins a Provider. Normalization requires every Tool reference capability to be declared and every declared Tool requirement to have a reference. Resolution is fail-closed against the canonical Tool registry when capabilities are unknown, no matching ToolVersion exists, or an exact ToolVersion pin does not provide the declared capability. Provider selection remains owned by the Tool/Provider runtime boundary.
+
+## Task 062 — Skill dependency graph and conflict validation
+
+The canonical Skill registry validates exact immutable SkillVersion dependency graphs before mutating registry state. Batch registration is order-independent and atomic: missing dependencies, cycles, configured depth overflow, duplicate identity/version bindings and logical Skill identity conflicts all fail closed without partially activating the batch. Logical Skill keys and stable `SkillId` values are one-to-one across versions, preventing a key from silently changing identity or an identity from changing keys. Exact replay of an unchanged SkillVersion remains idempotent.
 
 ## First canonical slice
 
