@@ -110,7 +110,7 @@ CREATE TABLE memory.extraction_jobs (
 CREATE OR REPLACE FUNCTION memory.protect_extraction_job()
 RETURNS trigger
 LANGUAGE plpgsql
-AS $
+AS $memory_job$
 BEGIN
   IF NEW.tenant_id IS DISTINCT FROM OLD.tenant_id
      OR NEW.memory_extraction_id IS DISTINCT FROM OLD.memory_extraction_id
@@ -161,7 +161,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$;
+$memory_job$;
 
 CREATE TRIGGER memory_extraction_job_guard
 BEFORE UPDATE ON memory.extraction_jobs
