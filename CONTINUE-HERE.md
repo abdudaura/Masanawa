@@ -139,14 +139,16 @@ run 380 passed on that exact merge commit.
 
 **Current: Task 057 of 150 — Establish repository-wide public API/versioning/deprecation conventions.**
 
-Active implementation branch: `task057-api-lifecycle`.\n\nActive implementation branch: `task057-api-lifecycle`. Task 057 now defines `docs/API-LIFECYCLE.md` and machine-enforces canonical package root exports, repository-wide no-deep-import rules and actionable deprecation metadata. Acceptance/CI is still pending; do not mark Task 057 complete until its evidence is green and merged.
+Active implementation branch: `task057-api-lifecycle`. Task 057 remains incomplete until its Contracts/typecheck/test/build evidence is green, merged, and verified on merged `main`.
 
 Tasks 001-056 are merged complete.
 
 Task 056 implementation head `b17d4ba53d23abb9abf40aa7800b1c461dc9fa90` passed
 Foundation CI run 386. PR #49 merged as
 `ed119581974cfb146da0b6e0a5e119eda8731df8`, and merged-main Foundation CI
-run 387 passed on that exact merge commit.
+run 387 passed. Supplemental Security/Load/Recovery hardening PR #50 merged as
+`b07565a315c35dc1ef840c89845ccfd2836c2da4`; merged-main Foundation CI run
+391 passed on that exact commit.
 
 Task 056 established:
 - canonical cross-cutting suites for contracts/integration/e2e/parity/security/recovery/load/chaos;

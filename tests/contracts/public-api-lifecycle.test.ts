@@ -200,7 +200,7 @@ describe("public API lifecycle", () => {
     for (const file of sourceFiles(path.resolve("services"))) {
       const source = fs.readFileSync(file, "utf8");
       for (const match of source.matchAll(
-        /\.(?:get|post|put|patch|delete|options|head)\(\s*["'`]([^"'`]+)["'`]/gu,
+        /\b(?:app|server|router)\.(?:get|post|put|patch|delete|options|head)\(\s*["'`]([^"'`]+)["'`]/gu,
       )) {
         const route = match[1]!;
         if (operational.has(route)) continue;

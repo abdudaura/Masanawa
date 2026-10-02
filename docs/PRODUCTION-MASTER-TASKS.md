@@ -14,7 +14,7 @@ Merged `main` satisfies Tasks **001-056**.
 
 Active implementation branch: `task057-api-lifecycle`. Task 057 remains incomplete until Contracts/typecheck/test/build acceptance evidence is green, merged, and verified on merged `main`.
 
-Task 056 implementation head `b17d4ba53d23abb9abf40aa7800b1c461dc9fa90` passed Foundation CI run 386. PR #49 merged as `ed119581974cfb146da0b6e0a5e119eda8731df8`; merged-main Foundation CI run 387 passed on that exact merge commit.
+Task 056 implementation head `b17d4ba53d23abb9abf40aa7800b1c461dc9fa90` passed Foundation CI run 386. PR #49 merged as `ed119581974cfb146da0b6e0a5e119eda8731df8`; merged-main run 387 passed. Supplemental acceptance hardening PR #50 merged as `b07565a315c35dc1ef840c89845ccfd2836c2da4`; merged-main run 391 passed.
 
 Task 055 implementation head `931fef83ae1a014c6872d0e5bfc0cab815307e44` passed Foundation CI run 383. PR #48 merged as `434f64c6ff0ca1061d3e8ecd163daf4b591962d0`; merged-main Foundation CI run 384 passed on that exact merge commit.
 

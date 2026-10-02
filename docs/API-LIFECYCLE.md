@@ -4,7 +4,7 @@ Status: canonical repository-wide compatibility contract.
 
 This document defines the public compatibility rules established by production Task
 057. The machine-readable policy is `docs/API-LIFECYCLE.json`; blocking contract
-evidence lives in `tests/contracts/public-api-lifecycle.test.ts`.
+evidence lives in `tests/contracts/public-api-lifecycle.test.ts`. Structural root-entrypoint and deep-import isolation is also enforced by `test/architecture/public-api-lifecycle.test.ts`.
 
 Masanawa has several distinct version domains. They must not be collapsed into one
 number.

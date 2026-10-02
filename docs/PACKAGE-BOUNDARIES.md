@@ -316,13 +316,7 @@ Architecture tests must:
 - reject apps importing database repositories;
 - require public package entrypoints for cross-package use.
 
-Exceptions require an ADR and an updated matrix before merge.\n\nRepository-wide package entrypoint, contract-versioning and deprecation policy is defined in\n`API-LIFECYCLE.md` and enforced by `test/architecture/public-api-lifecycle.test.ts`.
-
-
-## Production structure companion
-
-`docs/PRODUCT-PROJECT-STRUCTURE.md` records the production repository topology and refactor thresholds. `docs/PRODUCTION-MASTER-TASKS.md` is the canonical numbered completion ledger.
-
+Exceptions require an ADR and an updated matrix before merge.
 
 ## Public package API lifecycle
 
@@ -333,4 +327,12 @@ services and apps.
 Reusable workspace package metadata follows SemVer syntax and exposes only the canonical
 root export unless an explicitly reviewed public subpath is added. Public compatibility,
 version-domain separation and deprecation requirements are defined in
-`API-LIFECYCLE.md` and enforced by the Contracts suite.
+`API-LIFECYCLE.md`, with structural enforcement in
+`test/architecture/public-api-lifecycle.test.ts` and release evidence in the Contracts
+suite.
+
+## Production structure companion
+
+`docs/PRODUCT-PROJECT-STRUCTURE.md` records the production repository topology and
+refactor thresholds. `docs/PRODUCTION-MASTER-TASKS.md` is the canonical numbered
+completion ledger.

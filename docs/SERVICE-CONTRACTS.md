@@ -188,7 +188,7 @@ versions use SemVer syntax. These version domains must not be conflated.
 
 Database schema is not an API.
 
-See `API-LIFECYCLE.md` for repository-wide compatibility/deprecation rules. Repository-wide lifecycle, breaking-change and deprecation rules are canonicalized in `API-LIFECYCLE.md`.
+See `API-LIFECYCLE.md` for repository-wide compatibility, breaking-change and deprecation rules.
 
 ## 12. Readiness
 

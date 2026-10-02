@@ -44,11 +44,18 @@ Target suites: `tests/contracts`, `tests/integration`, `tests/e2e`, `tests/parit
 
 Production gates must eventually cover dependency architecture, schema compatibility, tenant isolation, restart/recovery, idempotency/reconciliation, provider/device ambiguity, security abuse cases, load/backpressure, realtime latency and all golden journeys.
 
-### 7. Keep infrastructure vendor-neutral
+### 7. Keep public compatibility explicit
+
+Workspace root APIs, HTTP major versions, durable/event schema versions and Tool/Provider
+domain versions are separate compatibility domains. `docs/API-LIFECYCLE.md` defines
+their lifecycle. Architecture tests prevent deep imports; the Contracts suite validates
+repository-wide version/deprecation policy.
+
+### 8. Keep infrastructure vendor-neutral
 
 `infra/*` contains deployment composition, environment schemas and runbooks, never business behavior. Vendor-specific manifests may have explicit subfolders, but domain packages never import them.
 
-### 8. Treat runbooks as production artifacts
+### 9. Treat runbooks as production artifacts
 
 Before cutover the repository must contain deployment/rollback, backup/restore, credential rotation, provider outage, device loss/revocation, stuck workflow/reconciliation, incident response, data export/deletion and SLO/alert runbooks.
 

@@ -4,7 +4,6 @@ import { describe, expect, it } from "vitest";
 
 interface PackageManifest {
   readonly name?: string;
-  readonly version?: string;
   readonly private?: boolean;
   readonly exports?: Readonly<Record<string, unknown>>;
 }
@@ -34,31 +33,45 @@ function sourceFiles(root: string): string[] {
 }
 
 function imports(source: string): string[] {
-  return [...source.matchAll(/(?:from\s+|import\s*\()\s*["'](@masanawa\/[^"']+)["']/gu)]
+  return [...source.matchAll(
+    /(?:from\s+|import\s*\(\s*|import\s+)(?:["'])(@masanawa\/[^"']+)["']/gu,
+  )]
     .map((match) => match[1]!)
     .sort();
 }
 
-describe("public API lifecycle", () => {
+describe("public API architecture", () => {
   const canonicalPackages = directories(path.resolve("packages")).sort();
-  const allWorkspaces = workspaceRoots.flatMap((root) => directories(path.resolve(root))).sort();
+  const allWorkspaces = workspaceRoots
+    .flatMap((root) => directories(path.resolve(root)))
+    .sort();
 
-  it("keeps canonical packages private and exposes one supported root entrypoint", () => {
+  it("keeps canonical packages private behind one supported root entrypoint", () => {
     for (const root of canonicalPackages) {
       const manifest = JSON.parse(
         fs.readFileSync(path.join(root, "package.json"), "utf8"),
       ) as PackageManifest;
 
-      expect(manifest.name, path.relative(process.cwd(), root)).toMatch(/^@masanawa\/[a-z0-9-]+$/u);
-      expect(manifest.private, `${manifest.name} must remain a coordinated private workspace`).toBe(true);
-      expect(manifest.version, `${manifest.name} workspace version is not a contract version`).toBe("0.0.0");
-      expect(Object.keys(manifest.exports ?? {}), `${manifest.name} must expose only its root API`).toEqual(["."]);
+      expect(manifest.name, path.relative(process.cwd(), root)).toMatch(
+        /^@masanawa\/[a-z0-9-]+$/u,
+      );
+      expect(
+        manifest.private,
+        `${manifest.name} must remain a coordinated private workspace`,
+      ).toBe(true);
+      expect(
+        Object.keys(manifest.exports ?? {}),
+        `${manifest.name} must expose only its root API`,
+      ).toEqual(["."]);
       expect(manifest.exports?.["."]).toEqual({
         types: "./src/index.ts",
         production: "./dist/index.js",
         default: "./src/index.ts",
       });
-      expect(fs.existsSync(path.join(root, "src/index.ts")), `${manifest.name} needs src/index.ts`).toBe(true);
+      expect(
+        fs.existsSync(path.join(root, "src/index.ts")),
+        `${manifest.name} needs src/index.ts`,
+      ).toBe(true);
     }
   });
 
@@ -70,20 +83,6 @@ describe("public API lifecycle", () => {
             /^@masanawa\/[a-z0-9-]+$/u.test(specifier),
             `${path.relative(process.cwd(), file)} must import a Masanawa owner through its public root, not ${specifier}`,
           ).toBe(true);
-        }
-      }
-    }
-  });
-
-  it("requires actionable lifecycle metadata on production deprecations", () => {
-    for (const workspace of allWorkspaces) {
-      for (const file of sourceFiles(workspace)) {
-        const source = fs.readFileSync(file, "utf8");
-        for (const match of source.matchAll(/\/\*\*[\s\S]*?@deprecated[\s\S]*?\*\//gu)) {
-          const comment = match[0];
-          expect(comment, `${path.relative(process.cwd(), file)} deprecated API needs Since:`).toMatch(/\bSince:\s*\S+/u);
-          expect(comment, `${path.relative(process.cwd(), file)} deprecated API needs Use:`).toMatch(/\bUse:\s*\S+/u);
-          expect(comment, `${path.relative(process.cwd(), file)} deprecated API needs Remove:`).toMatch(/\bRemove:\s*\S+/u);
         }
       }
     }
