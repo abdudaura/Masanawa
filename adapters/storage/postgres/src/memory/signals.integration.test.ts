@@ -151,6 +151,9 @@ describePostgres("PostgreSQL multisignal memory retrieval conformance", () => {
       });
 
     const snapshots = await loadSnapshots();
+    const lexicalGeneration = createCanonicalId(
+      "memory-projection-generation",
+    );
     const vectorGeneration = createCanonicalId(
       "memory-projection-generation",
     );
@@ -163,6 +166,14 @@ describePostgres("PostgreSQL multisignal memory retrieval conformance", () => {
     const builtAt = toInstant("2026-10-02T08:10:00Z");
 
     await withTransaction(pool, async (client) => {
+      await createMemoryProjectionGeneration(client, {
+        tenantId,
+        memoryProjectionGenerationId: lexicalGeneration,
+        kind: "lexical",
+        implementationKey: "postgres-simple-tsvector",
+        schemaVersion: 1,
+        createdAt: builtAt,
+      });
       await createMemoryProjectionGeneration(client, {
         tenantId,
         memoryProjectionGenerationId: vectorGeneration,
@@ -193,6 +204,11 @@ describePostgres("PostgreSQL multisignal memory retrieval conformance", () => {
         createdAt: builtAt,
       });
 
+      await indexMemoryLexicalSnapshot(client, {
+        memoryProjectionGenerationId: lexicalGeneration,
+        snapshot: snapshots.alpha,
+        builtAt,
+      });
       await indexMemoryVectorSnapshot(client, {
         memoryProjectionGenerationId: vectorGeneration,
         snapshot: snapshots.alpha,
@@ -223,6 +239,11 @@ describePostgres("PostgreSQL multisignal memory retrieval conformance", () => {
     });
 
     await withTransaction(pool, async (client) => {
+      await indexMemoryLexicalSnapshot(client, {
+        memoryProjectionGenerationId: lexicalGeneration,
+        snapshot: snapshots.beta,
+        builtAt,
+      });
       await indexMemoryVectorSnapshot(client, {
         memoryProjectionGenerationId: vectorGeneration,
         snapshot: snapshots.beta,
@@ -242,6 +263,11 @@ describePostgres("PostgreSQL multisignal memory retrieval conformance", () => {
       });
     });
 
+    await activateMemoryProjectionGeneration(pool, {
+      tenantId,
+      memoryProjectionGenerationId: lexicalGeneration,
+      activatedAt: toInstant("2026-10-02T08:11:59Z"),
+    });
     await activateMemoryProjectionGeneration(pool, {
       tenantId,
       memoryProjectionGenerationId: vectorGeneration,
