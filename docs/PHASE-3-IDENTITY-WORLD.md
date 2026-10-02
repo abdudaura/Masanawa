@@ -240,15 +240,15 @@ Next after green CI:
 - optional spatial mechanics only after that closure checkpoint.
 
 
-## Non-spatial closure audit — candidate
+## Non-spatial closure audit — validated
 
-Current branch: `phase3-nonspatial-closure`.
+PR #28 implementation head `b56039533bdb4e45a2b27a19621d160394f3b56c` passed Foundation CI run 245.
 
 A fresh ADR-0009 acceptance audit found one remaining implementation gap: generic
 World JSON/text could embed private User/Relationship/Memory/session references even
 though World did not expose Relationship objects in its repository contracts.
 
-Current branch adds:
+The closure slice adds:
 - recursive package-owned private-reference detection;
 - reserved private-field detection;
 - embedded canonical-ID detection inside longer text;
@@ -258,5 +258,6 @@ Current branch adds:
 - `docs/PHASE-3-NONSPATIAL-CLOSURE-AUDIT.md` mapping every non-spatial acceptance
   target to concrete code/test evidence.
 
-If the full CI gate passes, non-spatial Phase 3 can close. Optional spatial mechanics
-remain separate and must stay behind `WorldPolicy.spatialEnabled`.
+The complete CI gate passed, so the non-spatial Phase 3 acceptance boundary is closed.
+The final documentation-only head must rerun green before PR #28 merges. Optional spatial
+mechanics remain separate and must stay behind `WorldPolicy.spatialEnabled`.
