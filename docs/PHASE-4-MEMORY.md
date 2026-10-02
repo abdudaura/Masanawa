@@ -32,7 +32,7 @@ Decision:
 - it is not a Phase 4 dependency and must not replace Masanawa security/approval,
   Tenant/Character identity or workflow truth.
 
-## First canonical slice — implemented, awaiting full CI
+## First canonical slice — implementation gate passed
 
 Implemented:
 - real `@masanawa/memory` TypeScript package and production build wiring;
@@ -62,6 +62,14 @@ Implemented:
   by exact ID or list under Relationship B;
 - PostgreSQL fixture proves raw SQL cannot silently rewrite scope or revision content.
 
+Validation evidence:
+- Foundation CI run 250 passed the complete `check` step on implementation head
+  `fd8e20bf7d589393d017338af89502fa4ca3ae6b`;
+- frozen install, strict typecheck, unit tests, PostgreSQL 18 integration tests and
+  production builds all passed;
+- the final documentation-only closure head must pass the same workflow before PR #29
+  merges.
+
 ## MemPalace-derived improvements deliberately included
 
 The first slice incorporates only behaviors that strengthen the canonical architecture:
@@ -78,13 +86,11 @@ No Palace/Wing/Room/Drawer concept is canonical.
 
 ## Immediate acceptance work
 
-1. open a PR and run the complete Foundation CI gate on PostgreSQL 18;
-2. fix every real type/test/build/migration failure;
-3. after green CI, close any first-slice audit gaps;
-4. merge the slice;
-5. continue Phase 4 with governed correction/supersession/lifecycle plus extraction
+1. run Foundation CI on the final documentation-only PR #29 head;
+2. fix any real failure; if green, merge PR #29;
+3. continue Phase 4 with governed correction/supersession/lifecycle plus extraction
    queue/idempotency/dead-letter before adding retrieval projections;
-6. then implement projection compatibility metadata and authorized lexical/vector/
+4. then implement projection compatibility metadata and authorized lexical/vector/
    entity/temporal retrieval with rebuild/evaluation fixtures.
 
 ## Phase 4 acceptance targets
