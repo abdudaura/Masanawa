@@ -184,4 +184,13 @@ This slice adds:
 - unit and PostgreSQL acceptance coverage for durable receipt replay and persistence
   failure handling.
 
-Acceptance is pending the full Foundation CI gate on this branch.
+Validation:
+- receipt/replay head `f223d12335189591608f2a6c444668df02dc0b9d` passed
+  Foundation CI run 336;
+- the full gate passed strict TypeScript, unit/architecture tests, PostgreSQL 18 +
+  pgvector integration suites and production builds;
+- the existing receipt observation fixture confirmed that duplicate delivery may carry
+  a new local payload locator/arrival timestamp while the stable observation identity
+  remains idempotent; changed business evidence still conflicts.
+
+Final documentation head must pass the same gate before PR #39 merges.
