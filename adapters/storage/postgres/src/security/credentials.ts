@@ -268,18 +268,28 @@ export function createPostgresCredentialMaterialSource(
         return null;
       }
 
-      const secret = await cipher.open({
-        envelope: toEnvelope(row),
-        tenantId: row.tenant_id,
-        credentialRefId: row.credential_ref_id,
-        providerId: row.provider_id,
-        slotKey: row.slot_key,
-        generation: row.generation,
-      });
-      if (!(secret instanceof CredentialSecret)) {
-        throw new TypeError("credential cipher returned invalid secret wrapper");
+      try {
+        const secret = await cipher.open({
+          envelope: toEnvelope(row),
+          tenantId: row.tenant_id,
+          credentialRefId: row.credential_ref_id,
+          providerId: row.provider_id,
+          slotKey: row.slot_key,
+          generation: row.generation,
+        });
+        if (!(secret instanceof CredentialSecret)) {
+          throw new TypeError("credential cipher returned invalid secret wrapper");
+        }
+        return secret;
+      } catch {
+        throw new PlatformError({
+          code: "credential.unavailable",
+          category: "authorization",
+          message: "Credential reference is unavailable for requested scope",
+          retryable: false,
+          operationId: request.operationId,
+        });
       }
-      return secret;
     },
   });
 }
