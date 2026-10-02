@@ -143,6 +143,50 @@ export function normalizeMemoryScope(scope: MemoryScope): MemoryScope {
   }
 }
 
+export function memoryScopeFromStorage(
+  kind: MemoryScopeKind,
+  referenceId: string | null,
+): MemoryScope {
+  switch (kind) {
+    case "organization":
+      if (referenceId !== null) {
+        throw new TypeError("Organization memory scope cannot have a reference");
+      }
+      return Object.freeze({ kind });
+    case "relationship":
+      if (referenceId === null) throw new TypeError("Relationship scope reference missing");
+      return Object.freeze({
+        kind,
+        relationshipId: parseCanonicalId("relationship", referenceId),
+      });
+    case "character-private":
+    case "character-shared":
+      if (referenceId === null) throw new TypeError("Character scope reference missing");
+      return Object.freeze({
+        kind,
+        characterId: parseCanonicalId("character", referenceId),
+      });
+    case "world":
+      if (referenceId === null) throw new TypeError("World scope reference missing");
+      return Object.freeze({
+        kind,
+        worldId: parseCanonicalId("world", referenceId),
+      });
+    case "session":
+      if (referenceId === null) throw new TypeError("Session scope reference missing");
+      return Object.freeze({
+        kind,
+        characterSessionId: parseCanonicalId("character-session", referenceId),
+      });
+    case "task":
+      if (referenceId === null) throw new TypeError("Task scope reference missing");
+      return Object.freeze({
+        kind,
+        taskId: parseCanonicalId("task", referenceId),
+      });
+  }
+}
+
 export function memoryScopeStorage(scope: MemoryScope): MemoryScopeStorage {
   const normalized = normalizeMemoryScope(scope);
   switch (normalized.kind) {
