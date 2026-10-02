@@ -54,6 +54,29 @@ export interface MemoryFusedHit {
   readonly contributions: readonly MemoryFusionContribution[];
 }
 
+export interface MemoryHybridVectorQuery {
+  readonly compatibility: import("./projection.js").MemoryVectorCompatibility;
+  readonly queryVector: readonly number[];
+}
+
+export interface MemoryHybridTemporalQuery {
+  readonly fromInclusive: import("@masanawa/contracts").Instant;
+  readonly toExclusive: import("@masanawa/contracts").Instant;
+  readonly asOf?: import("@masanawa/contracts").Instant | null;
+}
+
+export interface MemoryHybridSearchInput {
+  readonly tenantId: TenantId;
+  readonly scopePredicate: MemoryScopePredicate;
+  readonly lexicalQuery?: string;
+  readonly vector?: MemoryHybridVectorQuery;
+  readonly entityKeys?: readonly string[];
+  readonly temporal?: MemoryHybridTemporalQuery;
+  readonly limit: number;
+  readonly candidateLimit?: number;
+  readonly reciprocalRankConstant?: number;
+}
+
 export interface FuseMemorySignalHitsInput {
   readonly tenantId: TenantId;
   readonly scopePredicate: MemoryScopePredicate;
