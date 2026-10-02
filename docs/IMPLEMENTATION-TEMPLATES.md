@@ -90,8 +90,8 @@ The gate does not require every package to contain `model.ts`, `repository.ts`,
 ownership requires them. It also does not dictate file length or split modules merely
 for aesthetics.
 
-Adapter shape is handled separately by production Task 055. Test-suite taxonomy and
-CI classes are handled by Task 056. Public API version/deprecation rules are Task 057,
+Adapter shape/registration is defined by `docs/ADAPTER-TOPOLOGY.md` and enforced by
+`test/architecture/adapter-boundaries.test.ts`. Test-suite taxonomy and CI classes are handled by Task 056. Public API version/deprecation rules are Task 057,
 and production environment/deployment conventions are Task 058.
 
 ## 4. Change rule

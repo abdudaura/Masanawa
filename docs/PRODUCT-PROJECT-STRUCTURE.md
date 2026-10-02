@@ -30,7 +30,7 @@ Production domain packages should converge on a recognizable shape when applicab
 
 ### 4. Standardize adapter topology
 
-Target adapter families are `adapters/storage`, `adapters/providers`, `adapters/channels`, `adapters/devices`, `adapters/media`, and `adapters/inference`. Adapters implement canonical ports. Adapter-to-adapter hidden orchestration is forbidden.
+Target adapter families are `adapters/storage`, `adapters/providers`, `adapters/channels`, `adapters/devices`, `adapters/media`, and `adapters/inference`. Adapters implement canonical ports. Adapter-to-adapter hidden orchestration is forbidden. `docs/ADAPTER-TOPOLOGY.md` defines the executable registration/dependency contract. Shared Node process hosting lives under `infra/runtime/node`, not in the adapter tree.
 
 ### 5. Preserve coarse services
 
