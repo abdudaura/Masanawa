@@ -243,6 +243,42 @@ describePostgres("PostgreSQL memory reflection and compaction custody", () => {
       input.revision.content,
     );
 
+    const consolidatedReflection = await commitMemoryReflection(pool, {
+      tenantId,
+      reflectionMemoryRecordId: createCanonicalId("memory-record"),
+      reflectionMemoryRevisionId: createCanonicalId("memory-revision"),
+      scope: { kind: "relationship", relationshipId },
+      purposeKey: "workspace-preference-consolidated",
+      reflector: {
+        key: "fixture-reflector",
+        version: "v1",
+      },
+      sources: [sources[1]!],
+      revision: {
+        content:
+          "Quiet work environments are a durable preference for focused tasks.",
+        extractionMethod: "reflection-fixture",
+        observedAt: toInstant("2026-10-02T11:05:00Z"),
+      },
+      createdAt: toInstant("2026-10-02T11:05:00Z"),
+    });
+    const reflectionAbsorption = await withTransaction(pool, (client) =>
+      linkMemoryRecords(client, {
+        tenantId,
+        sourceMemoryRecordId: reflectionId,
+        targetMemoryRecordId:
+          consolidatedReflection.reflection.reflectionMemoryRecordId,
+        expectedSourceLifecycleRevision: 1,
+        kind: "absorbs",
+        reason: "Consolidated a narrower reflection into the durable reflection.",
+        transitionedAt: toInstant("2026-10-02T11:10:00Z"),
+      }),
+    );
+    expect(reflectionAbsorption.source.record.memoryType).toBe("reflection");
+    expect(reflectionAbsorption.source.record.lifecycleState).toBe("absorbed");
+    expect(reflectionAbsorption.target.record.memoryType).toBe("reflection");
+    expect(reflectionAbsorption.target.record.lifecycleState).toBe("active");
+
     const persisted = await pool.query<{
       source_count: string;
       source_a_state: string;
@@ -287,6 +323,16 @@ describePostgres("PostgreSQL memory reflection and compaction custody", () => {
       source_a_evidence_count: "1",
       reflection_count: "1",
     });
+
+    await expect(
+      pool.query(
+        `UPDATE memory.reflections
+            SET purpose_key = 'rewritten'
+          WHERE tenant_id = $1
+            AND reflection_fingerprint = $2`,
+        [tenantId, committed.reflection.reflectionFingerprint],
+      ),
+    ).rejects.toMatchObject({ code: "23514" });
 
     await expect(
       pool.query(
