@@ -36,7 +36,7 @@ of architectural feature selection.
 
 **Phase 4 — Memory.**
 
-Current implementation branch: `phase4-memory-reflection-compaction`.
+Current implementation branch: `phase4-memory-acceptance-closure`.
 
 Phase 0A/0B, Phase 1 and Phase 2 are closed.
 
@@ -119,39 +119,31 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 
 ## Immediate work
 
-PR #35 is the active reflection/consolidation + compaction-flush slice on
-`phase4-memory-reflection-compaction`.
+PR #36 is the Phase 4 acceptance-closure PR on
+`phase4-memory-acceptance-closure`.
 
-Hardened implementation head `4b21258b6d3ea37d296157468952c2d9be8c22d2`
-passed Foundation CI run 309. The complete gate passed frozen install, strict
+Acceptance implementation head `d48b17ff9c4bcb91d51d88bf78da7a1e6c9f597a`
+passed Foundation CI run 313. The complete gate passed frozen install, strict
 TypeScript, all unit tests, PostgreSQL 18 + pgvector migrations/integration fixtures and
-production builds. PR #35 has no review threads or comments.
+production builds. PR #36 has no review threads or comments.
 
-The branch now includes:
-- deterministic reflection identity from exact source record/revision/content-hash
-  evidence, exact scope, purpose and reflector identity;
-- canonical MemoryRecord(type=`reflection`) output plus immutable reflection/source
-  derivation audit;
-- serialized first commit with current source revision/hash/scope validation;
-- exact retry replay even after later source lifecycle absorption;
-- cross-scope and stale-source rejection before reflection persistence;
-- reflection→reflection consolidation through existing `absorbs` lineage with
-  provenance preservation;
-- compaction flush admission through the already-proven extraction queue rather than a
-  parallel worker system;
-- `safeToCompact` only after committed durable admission/reuse;
-- flush replay under schedule drift and fail-closed conflict on scope drift.
+The acceptance matrix in `docs/PHASE-4-MEMORY-ACCEPTANCE.md` is now all PASS.
+The last gap was closed by a held-out contradiction/current-view fixture proving:
+- corrected current truth is selected by entity, temporal and hybrid retrieval;
+- the superseded predecessor is explicitly forbidden and never returned;
+- predecessor revision/evidence remains intact;
+- held-out recall, precision and MRR are 1 with zero leakage.
 
 Immediate next steps:
-1. verify final documentation-head Foundation CI for PR #35;
-2. fix any real failure; if green, merge PR #35;
-3. create a fresh branch from merged `main` for the Phase 4 acceptance closure audit;
-4. systematically verify every acceptance target in `docs/PHASE-4-MEMORY.md` against
-   code, migrations and CI fixtures;
-5. implement only concrete gaps found by the audit, especially contradiction/temporal
-   held-out coverage or compaction-flush scope proof if evidence is incomplete;
-6. close Phase 4 when all canonical targets are evidenced instead of expanding the
-   memory surface without a documented requirement.
+1. verify the final closure-documentation head in Foundation CI;
+2. fix any real failure; if green, merge PR #36;
+3. create a fresh Phase 5 branch from merged `main`;
+4. update the rewrite plan/handoff with the final Phase 4 closure run and mark
+   Phase 5 — Tools and Providers active;
+5. recover Phase 5 canonical contracts and donor boundaries from Architecture,
+   Source Ownership and the ledgers before implementing the first production slice;
+6. do not reopen Memory unless a later integration exposes a documented acceptance
+   regression.
 
 The requested post-freeze donor boundary remains unchanged: MemPalace contributes
 retrieval/evaluation/storage-contract behavior inside canonical Masanawa memory ports;

@@ -2,7 +2,7 @@
 
 Status: ACTIVE  
 Started: 2026-10-02  
-Active branch: `phase4-memory-reflection-compaction`
+Active branch: `phase4-memory-acceptance-closure`
 
 Phase 3 non-spatial Identity/World acceptance is closed by PR #28, merge
 `02c2c99153e904b4f9d2f403328a1e3b6effc3f1`. Optional spatial simulation remains
@@ -434,7 +434,8 @@ Validation evidence:
 - the complete `check` job passed frozen install, strict TypeScript, all unit tests,
   PostgreSQL 18 + pgvector migrations/integration fixtures and production builds;
 - PR #35 has no review threads or comments;
-- final documentation head must pass the same gate before merge.
+- final documentation head `aeec21641f6881e32f4aa62b5d3069f8ab15948b` passed Foundation CI run 311;
+- PR #35 merged as `5ff2cc4f3b79d725d898ecfe0e92a3600f510a88`.
 
 Rules:
 - reflection is a canonical MemoryRecord of type `reflection`, not a second storage
@@ -460,6 +461,31 @@ After this slice:
    found by that audit;
 3. if all targets are evidenced, close Phase 4 rather than inventing additional memory
    features.
+
+## Phase 4 closure audit — implementation gate passed
+
+Primary closure record: `docs/PHASE-4-MEMORY-ACCEPTANCE.md`.
+
+The audit found one evidence gap rather than an architecture gap: entity and temporal
+retrieval were already held-out evaluated, and lifecycle supersession was already
+tested, but the acceptance wording required a dedicated held-out contradiction/current
+view fixture.
+
+Implemented closure proof:
+- two contradictory same-scope preference records are indexed while both are active;
+- canonical `supersedes` transitions the predecessor without deleting its revision or
+  verbatim evidence;
+- entity, temporal and fused hybrid retrieval each return only the corrected active
+  record even though stale predecessor projection rows remain;
+- each result is evaluated as a held-out set with the predecessor explicitly forbidden;
+- recall, precision and MRR are all 1 and forbidden leakage is zero;
+- implementation/acceptance head `d48b17ff9c4bcb91d51d88bf78da7a1e6c9f597a`
+  passed Foundation CI run 313;
+- PR #36 has no review threads or comments.
+
+Every Phase 4 acceptance target now has repository evidence. Final closure documentation
+must pass the same gate before merge; no new Memory subsystem is authorized by this
+audit.
 
 ## Phase 4 acceptance targets
 
