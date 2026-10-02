@@ -139,6 +139,8 @@ run 380 passed on that exact merge commit.
 
 **Current: Task 061 of 150 — Implement capability requirements and Tool references.**
 
+Active implementation branch: `task061-capability-tool-references`. Existing work adds provider-neutral Skill Tool references, optional exact ToolVersion pins, canonical requirement normalization, and fail-closed resolution against the Tool registry. Acceptance/CI is pending.
+
 
 Tasks 001-060 are merged complete.
 

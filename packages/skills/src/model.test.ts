@@ -24,6 +24,13 @@ function version(overrides: Partial<SkillVersion> = {}): SkillVersion {
     negativeActivationExamples: ["Do not browse"],
     capabilities: [normalizeCapabilityKey("research.web")],
     requiredToolCapabilities: [normalizeCapabilityKey("web.search")],
+    toolReferences: [
+      {
+        referenceKey: "search",
+        capability: normalizeCapabilityKey("web.search"),
+        toolVersionId: null,
+      },
+    ],
     requiredAuthorityCapabilities: [],
     dependencies: [],
     inputSchema: { type: "object" },
@@ -83,9 +90,32 @@ describe("immutable SkillVersion schema", () => {
     expect(Object.isFrozen(normalized)).toBe(true);
     expect(Object.isFrozen(normalized.activationExamples)).toBe(true);
     expect(Object.isFrozen(normalized.capabilities)).toBe(true);
+    expect(Object.isFrozen(normalized.toolReferences)).toBe(true);
     expect(Object.isFrozen(normalized.inputSchema)).toBe(true);
     expect(Object.isFrozen(normalized.provenance)).toBe(true);
     expect(Object.isFrozen(normalized.certification)).toBe(true);
+  });
+
+  it("keeps Tool references consistent with declared capability requirements", () => {
+    expect(() =>
+      normalizeSkillVersionDefinition(
+        version({
+          toolReferences: [
+            {
+              referenceKey: "send",
+              capability: normalizeCapabilityKey("messages.send"),
+              toolVersionId: null,
+            },
+          ],
+        }),
+      ),
+    ).toThrow("must be declared as required");
+
+    expect(() =>
+      normalizeSkillVersionDefinition(
+        version({ toolReferences: [] }),
+      ),
+    ).toThrow("each required Tool capability");
   });
 
   it("rejects a SkillVersion whose identity is not canonical", () => {

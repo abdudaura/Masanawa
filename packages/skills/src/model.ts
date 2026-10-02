@@ -6,6 +6,7 @@ import {
   type Instant,
   type SkillId,
   type SkillVersionId,
+  type ToolVersionId,
 } from "@masanawa/contracts";
 import {
   canonicalJson,
@@ -99,6 +100,12 @@ export interface Skill {
   readonly createdAt: Instant;
 }
 
+export interface SkillToolReference {
+  readonly referenceKey: string;
+  readonly capability: CapabilityKey;
+  readonly toolVersionId: ToolVersionId | null;
+}
+
 export interface SkillVersion {
   readonly skillId: SkillId;
   readonly skillVersionId: SkillVersionId;
@@ -110,6 +117,7 @@ export interface SkillVersion {
   readonly negativeActivationExamples: readonly string[];
   readonly capabilities: readonly CapabilityKey[];
   readonly requiredToolCapabilities: readonly CapabilityKey[];
+  readonly toolReferences: readonly SkillToolReference[];
   readonly requiredAuthorityCapabilities: readonly CapabilityKey[];
   readonly dependencies: readonly SkillVersionId[];
   readonly inputSchema: SkillJsonSchema;
@@ -247,6 +255,51 @@ function normalizeExamples(
     throw new TypeError(`${name} must be unique`);
   }
   return Object.freeze(normalized);
+}
+
+const skillToolReferenceKeyPattern =
+  /^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u;
+
+export function normalizeSkillToolReferences(
+  values: readonly SkillToolReference[],
+): readonly SkillToolReference[] {
+  if (!Array.isArray(values) || values.length > 256) {
+    throw new RangeError("skill.toolReferences is invalid");
+  }
+
+  const normalized = values.map((value) => {
+    const referenceKey = bounded(
+      value.referenceKey,
+      "skill.toolReferences.referenceKey",
+      128,
+    ).toLowerCase();
+    if (!skillToolReferenceKeyPattern.test(referenceKey)) {
+      throw new TypeError("skill Tool reference key is invalid");
+    }
+    const capability = normalizeCapabilityKey(value.capability);
+    if (
+      value.toolVersionId !== null &&
+      !isCanonicalId("tool-version", value.toolVersionId)
+    ) {
+      throw new TypeError("skill Tool reference ToolVersionId is invalid");
+    }
+    return Object.freeze({
+      referenceKey,
+      capability,
+      toolVersionId: value.toolVersionId,
+    });
+  });
+
+  const keys = normalized.map((value) => value.referenceKey);
+  if (new Set(keys).size !== keys.length) {
+    throw new TypeError("skill Tool reference keys must be unique");
+  }
+
+  return Object.freeze(
+    normalized.sort((left, right) =>
+      left.referenceKey.localeCompare(right.referenceKey),
+    ),
+  );
 }
 
 function normalizeDependencies(
@@ -433,6 +486,28 @@ export function normalizeSkillVersionDefinition(
     );
   }
 
+  const requiredToolCapabilities = normalizeCapabilities(
+    input.requiredToolCapabilities,
+    "skill.requiredToolCapabilities",
+    true,
+  );
+  const toolReferences = normalizeSkillToolReferences(input.toolReferences);
+  const requiredToolCapabilitySet = new Set(requiredToolCapabilities);
+  for (const reference of toolReferences) {
+    if (!requiredToolCapabilitySet.has(reference.capability)) {
+      throw new TypeError(
+        "skill Tool reference capability must be declared as required",
+      );
+    }
+  }
+  for (const capability of requiredToolCapabilities) {
+    if (!toolReferences.some((reference) => reference.capability === capability)) {
+      throw new TypeError(
+        "each required Tool capability must have a Skill Tool reference",
+      );
+    }
+  }
+
   return Object.freeze({
     skillId: input.skillId,
     skillVersionId: input.skillVersionId,
@@ -453,11 +528,8 @@ export function normalizeSkillVersionDefinition(
       "skill.capabilities",
       false,
     ),
-    requiredToolCapabilities: normalizeCapabilities(
-      input.requiredToolCapabilities,
-      "skill.requiredToolCapabilities",
-      true,
-    ),
+    requiredToolCapabilities,
+    toolReferences,
     requiredAuthorityCapabilities: normalizeCapabilities(
       input.requiredAuthorityCapabilities,
       "skill.requiredAuthorityCapabilities",
