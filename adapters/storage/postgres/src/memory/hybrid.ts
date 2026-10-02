@@ -1,6 +1,9 @@
-import type { Pool } from "pg";
+import type { Pool, PoolClient } from "pg";
 import {
+  compileMemoryContext,
   fuseMemorySignalHits,
+  type CompiledMemoryContext,
+  type MemoryContextTokenCounter,
   type MemoryFusedHit,
   type MemoryHybridSearchInput,
   type MemorySignalResult,
@@ -12,6 +15,12 @@ import {
   searchMemoryTemporal,
   searchMemoryVector,
 } from "./signals.js";
+
+export interface CompileMemoryHybridContextInput {
+  readonly retrieval: MemoryHybridSearchInput;
+  readonly maxItems: number;
+  readonly maxTokens: number;
+}
 
 function boundedCandidateLimit(input: MemoryHybridSearchInput): number {
   if (!Number.isSafeInteger(input.limit) || input.limit < 1 || input.limit > 100) {
@@ -40,82 +49,116 @@ function requestedSignalCount(input: MemoryHybridSearchInput): number {
   );
 }
 
-export async function searchMemoryHybrid(
-  pool: Pool,
+async function searchMemoryHybridWithClient(
+  client: PoolClient,
   input: MemoryHybridSearchInput,
 ): Promise<readonly MemoryFusedHit[]> {
   if (requestedSignalCount(input) < 1) {
     throw new RangeError("hybrid retrieval requires at least one signal");
   }
   const candidateLimit = boundedCandidateLimit(input);
+  const signalResults: MemorySignalResult[] = [];
 
+  if (input.lexicalQuery !== undefined) {
+    signalResults.push({
+      signal: "lexical",
+      hits: await searchMemoryLexical(client, {
+        tenantId: input.tenantId,
+        scopePredicate: input.scopePredicate,
+        query: input.lexicalQuery,
+        limit: candidateLimit,
+      }),
+    });
+  }
+
+  if (input.vector !== undefined) {
+    signalResults.push({
+      signal: "vector",
+      hits: await searchMemoryVector(client, {
+        tenantId: input.tenantId,
+        scopePredicate: input.scopePredicate,
+        compatibility: input.vector.compatibility,
+        queryVector: input.vector.queryVector,
+        limit: candidateLimit,
+      }),
+    });
+  }
+
+  if (input.entityKeys !== undefined) {
+    signalResults.push({
+      signal: "entity",
+      hits: await searchMemoryEntity(client, {
+        tenantId: input.tenantId,
+        scopePredicate: input.scopePredicate,
+        entityKeys: input.entityKeys,
+        limit: candidateLimit,
+      }),
+    });
+  }
+
+  if (input.temporal !== undefined) {
+    signalResults.push({
+      signal: "temporal",
+      hits: await searchMemoryTemporal(client, {
+        tenantId: input.tenantId,
+        scopePredicate: input.scopePredicate,
+        fromInclusive: input.temporal.fromInclusive,
+        toExclusive: input.temporal.toExclusive,
+        ...(input.temporal.asOf !== undefined
+          ? { asOf: input.temporal.asOf }
+          : {}),
+        limit: candidateLimit,
+      }),
+    });
+  }
+
+  return fuseMemorySignalHits({
+    tenantId: input.tenantId,
+    scopePredicate: input.scopePredicate,
+    signalResults,
+    limit: input.limit,
+    ...(input.reciprocalRankConstant !== undefined
+      ? { reciprocalRankConstant: input.reciprocalRankConstant }
+      : {}),
+  });
+}
+
+export async function searchMemoryHybrid(
+  pool: Pool,
+  input: MemoryHybridSearchInput,
+): Promise<readonly MemoryFusedHit[]> {
+  return withTransaction(
+    pool,
+    (client) => searchMemoryHybridWithClient(client, input),
+    {
+      isolation: "repeatable read",
+      readOnly: true,
+    },
+  );
+}
+
+export async function compileMemoryHybridContext(
+  pool: Pool,
+  input: CompileMemoryHybridContextInput,
+  tokenCounter: MemoryContextTokenCounter,
+): Promise<CompiledMemoryContext> {
   return withTransaction(
     pool,
     async (client) => {
-      const signalResults: MemorySignalResult[] = [];
-
-      if (input.lexicalQuery !== undefined) {
-        signalResults.push({
-          signal: "lexical",
-          hits: await searchMemoryLexical(client, {
-            tenantId: input.tenantId,
-            scopePredicate: input.scopePredicate,
-            query: input.lexicalQuery,
-            limit: candidateLimit,
-          }),
-        });
-      }
-
-      if (input.vector !== undefined) {
-        signalResults.push({
-          signal: "vector",
-          hits: await searchMemoryVector(client, {
-            tenantId: input.tenantId,
-            scopePredicate: input.scopePredicate,
-            compatibility: input.vector.compatibility,
-            queryVector: input.vector.queryVector,
-            limit: candidateLimit,
-          }),
-        });
-      }
-
-      if (input.entityKeys !== undefined) {
-        signalResults.push({
-          signal: "entity",
-          hits: await searchMemoryEntity(client, {
-            tenantId: input.tenantId,
-            scopePredicate: input.scopePredicate,
-            entityKeys: input.entityKeys,
-            limit: candidateLimit,
-          }),
-        });
-      }
-
-      if (input.temporal !== undefined) {
-        signalResults.push({
-          signal: "temporal",
-          hits: await searchMemoryTemporal(client, {
-            tenantId: input.tenantId,
-            scopePredicate: input.scopePredicate,
-            fromInclusive: input.temporal.fromInclusive,
-            toExclusive: input.temporal.toExclusive,
-            ...(input.temporal.asOf !== undefined
-              ? { asOf: input.temporal.asOf }
-              : {}),
-            limit: candidateLimit,
-          }),
-        });
-      }
-
-      return fuseMemorySignalHits({
-        tenantId: input.tenantId,
-        scopePredicate: input.scopePredicate,
-        signalResults,
-        limit: input.limit,
-        ...(input.reciprocalRankConstant !== undefined
-          ? { reciprocalRankConstant: input.reciprocalRankConstant }
-          : {}),
-      });
+      const hits = await searchMemoryHybridWithClient(
+        client,
+        input.retrieval,
+      );
+      return compileMemoryContext(
+        {
+          tenantId: input.retrieval.tenantId,
+          scopePredicate: input.retrieval.scopePredicate,
+          hits,
+          maxItems: input.maxItems,
+          maxTokens: input.maxTokens,
+        },
+        tokenCounter,
+      );
     },
     {
       isolation: "repeatable read",

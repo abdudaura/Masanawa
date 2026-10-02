@@ -2,7 +2,7 @@
 
 Status: ACTIVE  
 Started: 2026-10-02  
-Active branch: `phase4-memory-multisignal-retrieval`
+Active branch: `phase4-memory-deletion-context`
 
 Phase 3 non-spatial Identity/World acceptance is closed by PR #28, merge
 `02c2c99153e904b4f9d2f403328a1e3b6effc3f1`. Optional spatial simulation remains
@@ -291,7 +291,8 @@ Validation evidence:
 - the complete `check` job passed frozen install, strict TypeScript, unit tests,
   PostgreSQL 18 + pgvector migrations/integration fixtures and production builds;
 - PR #33 has no review threads or comments;
-- final documentation head must pass the same gate before merge.
+- final documentation head `0b61670a5a9512ff4532c270619a45604019aeb3` passed Foundation CI run 294;
+- PR #33 merged as `69ed518df450415ae30fc66a800e2ee674da4cee`.
 
 Rules:
 - no signal may query outside the caller's explicit authorized MemoryScope predicate;
@@ -313,6 +314,79 @@ After this slice:
 2. implement bounded context compilation with token/item budgets and provenance mapping;
 3. then reflection/consolidation with scope-preserving evidence and compaction-flush
    rules.
+
+## Sixth canonical slice — implementation gate passed
+
+Goal: explicit tombstone/deletion propagation plus bounded provenance-preserving context
+compilation.
+
+Implemented:
+- canonical `memory.record.tombstone` consequential action with exact tenant/scope
+  authority, request fingerprint, Operation binding and one-time Approval binding;
+- tombstone prepare/execute rechecks current AuthorityContext and locks the exact
+  MemoryRecord before current revision/lifecycle validation;
+- execution rejects a record whose revision or lifecycle changed after preparation
+  before approval consumption, leaving the approval reusable for a newly prepared
+  request;
+- PostgreSQL `memory.record_tombstones` stores immutable operation/authority/approval/
+  policy/principal/revision/lifecycle/reason/time evidence;
+- database triggers require a matching tombstone audit for lifecycle transition, require
+  exact lifecycle +1, reject orphan tombstone audit commits and prevent reactivation;
+- stale/unapproved raw lifecycle mutation cannot silently tombstone a record;
+- all lexical/vector/entity/temporal/hybrid retrieval stops surfacing a tombstoned
+  record immediately even while its old projection rows remain;
+- projection cleanup is an explicit tombstone-only reconciliation step that deletes
+  lexical/vector/entity/temporal rows but preserves canonical MemoryRecord,
+  MemoryRevision, evidence and verbatim source text;
+- exact replay of a succeeded tombstone reuses the canonical audit/state instead of
+  consuming approval again;
+- shared MemoryScope authority checks preserve established publication-specific error
+  semantics while avoiding duplicate privacy-sensitive authorization logic;
+- pure context compiler rechecks tenant/scope, deterministically orders by fused score
+  and MemoryRecord ID, rejects conflicting duplicate canonical revisions and retains
+  record/revision/type/scope/content-hash provenance per rendered item;
+- item and token budgets are explicit; one oversized memory is skipped without blocking
+  later eligible memories;
+- the canonical PostgreSQL hybrid→context path performs retrieval and compilation inside
+  one read-only REPEATABLE READ snapshot so normal callers do not compile an arbitrary
+  stale result list;
+- integration coverage proves context includes exact record/revision provenance before
+  tombstone and excludes the record immediately after tombstone, before projection
+  cleanup;
+- stale prepared tombstone coverage proves revision drift blocks execution, preserves
+  active lifecycle and does not consume the approved one-time authorization.
+
+Validation evidence:
+- hardened implementation head `7994de231a27f510cff09ad2db8fe3b71cc307b4`
+  passed Foundation CI run 305;
+- the complete `check` job passed frozen install, strict TypeScript, all unit tests,
+  PostgreSQL 18 + pgvector migrations/integration fixtures and production builds;
+- PR #34 has no review threads or comments;
+- final documentation head must pass the same gate before merge.
+
+Rules:
+- tombstone is a canonical lifecycle transition, not physical purge;
+- lifecycle mutation uses compare-and-set and immutable audit evidence;
+- canonical revisions/evidence remain intact after tombstone until a separately governed
+  purge exists;
+- all retrieval signals must exclude tombstoned records immediately even when stale
+  projection rows remain;
+- projection cleanup is reconciliation/space recovery, not the privacy enforcement
+  boundary;
+- context compilation consumes only already-authorized current retrieval results;
+- every compiled item retains MemoryRecord/MemoryRevision/scope provenance;
+- item/token budgets are deterministic and cannot be bypassed by one oversized memory;
+- compilation cannot promote private memory into a broader scope.
+
+After this slice:
+1. implement evidence-backed, retry-idempotent reflection/consolidation candidates in the
+   same MemoryScope;
+2. preserve exact source MemoryRecord/MemoryRevision provenance through reflection and
+   absorption;
+3. implement compaction-flush admission so context/session loss cannot occur before
+   durable scoped memory work is admitted;
+4. prove reflection/consolidation/flush retries cannot widen scope or duplicate durable
+   memories.
 
 ## Phase 4 acceptance targets
 

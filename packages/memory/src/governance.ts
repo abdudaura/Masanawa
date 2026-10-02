@@ -49,55 +49,128 @@ function requiredResource(
   authority: AuthorityContext,
   resource: string,
   errorCode: string,
+  scopeDescription?: string,
 ): void {
   if (!authority.resourceScope.resourceKeys?.includes(resource)) {
     throw new PlatformError({
       code: errorCode,
       category: "authorization",
-      message: `Authority is not explicitly scoped to ${resource}`,
+      message:
+        scopeDescription === undefined
+          ? `Authority is not explicitly scoped to ${resource}`
+          : `Authority is not explicitly scoped to ${scopeDescription}`,
       retryable: false,
     });
   }
 }
 
-function assertSourceScopeAuthority(
+export function assertMemoryScopeAuthority(
   authority: AuthorityContext,
+  tenantId: TenantId,
   scope: MemoryScope,
+  errorCode = "memory.scope_authority_mismatch",
+  scopeDescription?: string,
 ): void {
+  if (authority.tenantId !== tenantId) {
+    throw new PlatformError({
+      code: "memory.scope_tenant_mismatch",
+      category: "authorization",
+      message: "Authority belongs to a different tenant",
+      retryable: false,
+    });
+  }
+
   switch (scope.kind) {
+    case "organization":
+      requiredResource(
+        authority,
+        `organization:${tenantId}`,
+        errorCode,
+        scopeDescription,
+      );
+      return;
     case "relationship":
       if (!authority.resourceScope.relationshipIds?.includes(scope.relationshipId)) {
         throw new PlatformError({
-          code: "memory.publication_source_scope_mismatch",
+          code: errorCode,
           category: "authorization",
-          message: "Authority is not explicitly scoped to the source Relationship",
+          message:
+            scopeDescription === undefined
+              ? "Authority is not explicitly scoped to the Relationship"
+              : `Authority is not explicitly scoped to ${scopeDescription}`,
           retryable: false,
         });
       }
       return;
     case "character-private":
+    case "character-shared":
       requiredResource(
         authority,
         `character:${scope.characterId}`,
-        "memory.publication_source_scope_mismatch",
+        errorCode,
+        scopeDescription,
       );
+      return;
+    case "world":
+      if (!authority.resourceScope.worldIds?.includes(scope.worldId)) {
+        throw new PlatformError({
+          code: errorCode,
+          category: "authorization",
+          message:
+            scopeDescription === undefined
+              ? "Authority is not explicitly scoped to the World"
+              : `Authority is not explicitly scoped to ${scopeDescription}`,
+          retryable: false,
+        });
+      }
       return;
     case "session":
       requiredResource(
         authority,
         `character-session:${scope.characterSessionId}`,
-        "memory.publication_source_scope_mismatch",
+        errorCode,
+        scopeDescription,
       );
       return;
     case "task":
       if (!authority.resourceScope.taskIds?.includes(scope.taskId)) {
         throw new PlatformError({
-          code: "memory.publication_source_scope_mismatch",
+          code: errorCode,
           category: "authorization",
-          message: "Authority is not explicitly scoped to the source Task",
+          message:
+            scopeDescription === undefined
+              ? "Authority is not explicitly scoped to the Task"
+              : `Authority is not explicitly scoped to ${scopeDescription}`,
           retryable: false,
         });
       }
+      return;
+  }
+}
+
+function assertSourceScopeAuthority(
+  authority: AuthorityContext,
+  tenantId: TenantId,
+  scope: MemoryScope,
+): void {
+  switch (scope.kind) {
+    case "relationship":
+    case "character-private":
+    case "session":
+    case "task":
+      assertMemoryScopeAuthority(
+        authority,
+        tenantId,
+        scope,
+        "memory.publication_source_scope_mismatch",
+        scope.kind === "relationship"
+          ? "the source Relationship"
+          : scope.kind === "character-private"
+            ? "the source Character"
+            : scope.kind === "session"
+              ? "the source Session"
+              : "the source Task",
+      );
       return;
     case "organization":
     case "character-shared":
@@ -118,27 +191,18 @@ function assertTargetScopeAuthority(
 ): void {
   switch (scope.kind) {
     case "character-shared":
-      requiredResource(
-        authority,
-        `character:${scope.characterId}`,
-        "memory.publication_target_scope_mismatch",
-      );
-      return;
     case "world":
-      if (!authority.resourceScope.worldIds?.includes(scope.worldId)) {
-        throw new PlatformError({
-          code: "memory.publication_target_scope_mismatch",
-          category: "authorization",
-          message: "Authority is not explicitly scoped to the target World",
-          retryable: false,
-        });
-      }
-      return;
     case "organization":
-      requiredResource(
+      assertMemoryScopeAuthority(
         authority,
-        `organization:${tenantId}`,
+        tenantId,
+        scope,
         "memory.publication_target_scope_mismatch",
+        scope.kind === "character-shared"
+          ? "the target Character"
+          : scope.kind === "world"
+            ? "the target World"
+            : "the target Organization",
       );
       return;
     case "relationship":
@@ -207,7 +271,7 @@ export function assertMemoryScopePublicationAuthority(
   }
   boundedReason(target.reason);
   assertTargetRevisionHasNoCallerEvidence(target.targetRevision);
-  assertSourceScopeAuthority(authority, target.sourceScope);
+  assertSourceScopeAuthority(authority, target.tenantId, target.sourceScope);
   assertTargetScopeAuthority(authority, target.tenantId, target.targetScope);
 
   if (approvalId && !authority.approvalIds.includes(approvalId)) {
