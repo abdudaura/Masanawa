@@ -2375,6 +2375,10 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       }),
     );
     expect(first.reused).toBe(false);
+    expect(first.receipt.normalizedPayload).toEqual({
+      providerReference: "txn-900",
+      status: "pending",
+    });
     expect(first.state).toBe("admitted");
 
     const duplicate = await withTransaction(pool, (client) =>
@@ -2750,6 +2754,10 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
         normalizedStatus: "pending",
         payloadHash: "sha256:pending",
         payloadRef: "blob://pending",
+        normalizedPayload: {
+          providerReference: "txn-900",
+          status: "pending",
+        },
         observedAt,
         verificationMethod: "signed-webhook",
         providerVersion: "2026-10",
@@ -2767,6 +2775,10 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
         normalizedStatus: "pending",
         payloadHash: "sha256:pending",
         payloadRef: "blob://pending-copy",
+        normalizedPayload: {
+          status: "pending",
+          providerReference: "txn-900",
+        },
         observedAt: toInstant(new Date(Date.now() + 1_000)),
         verificationMethod: "signed-webhook",
         providerVersion: "2026-10",
@@ -2786,6 +2798,10 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
         providerReference: "txn-900",
         normalizedStatus: "succeeded",
         payloadHash: "sha256:succeeded",
+        normalizedPayload: {
+          providerReference: "txn-900",
+          status: "succeeded",
+        },
         observedAt: toInstant(new Date(Date.now() + 2_000)),
         verificationMethod: "authenticated-status-query",
         providerVersion: "2026-10",
@@ -2820,6 +2836,10 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
           providerReference: "txn-900",
           normalizedStatus: "succeeded",
           payloadHash: "sha256:changed",
+          normalizedPayload: {
+            providerReference: "txn-900",
+            status: "succeeded",
+          },
           observedAt,
           verificationMethod: "signed-webhook",
           providerVersion: "2026-10",
