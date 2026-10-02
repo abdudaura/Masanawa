@@ -4,3 +4,4 @@ export * from "./extraction.js";
 export * from "./projection.js";
 export * from "./signals.js";
 export * from "./hybrid.js";
+export * from "./tombstone.js";
