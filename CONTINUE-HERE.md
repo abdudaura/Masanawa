@@ -137,19 +137,29 @@ Foundation CI run 379, PR #47 merged as
 `d0a198dbdec1af08e3c8f1378da0985db628eb6e`, and merged-main Foundation CI
 run 380 passed on that exact merge commit.
 
-**Current: Task 063 of 150 — Implement Skill execution planning/composition.**
-
-Active implementation branch: `task063-skill-execution-planning`. Task 063 adds deterministic immutable dependency-first plan composition over the canonical Skill registry, deduplicated exact SkillVersion DAG steps, readiness gating, and aggregate Tool capability requirements without Provider selection or execution. Acceptance/CI is pending.
-
-
-
-
-Tasks 001-062 are merged complete.
+**Current: Task 064 of 150 — Implement SkillTool/subskill execution boundaries.**
 
 
 
 
 
+Tasks 001-063 are merged complete.
+
+
+
+
+
+
+Task 063 implementation head `1e1c15b40933dde74019b332731c3a311a72d52e` passed
+Foundation CI before merge. PR #62 merged as
+`2fac8cf608984106c35115b6513aa545baadf91c`, and merged-main Foundation CI
+run 420 passed on that exact merge commit.
+
+Task 063 established:
+- deterministic immutable dependency-first execution plans over the canonical Skill registry;
+- exact SkillVersion DAG step deduplication and readiness gating before plan publication;
+- aggregate Tool capability requirements without selecting Providers or performing execution;
+- composition semantics that keep execution planning separate from Task 064 SkillTool/subskill execution boundaries.
 
 Task 062 implementation head `0610eccd5b58f8be00b12fa56706e4430fdb0406` passed
 Foundation CI run 415. PR #60 merged as
