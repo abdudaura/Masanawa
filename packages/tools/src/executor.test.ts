@@ -57,12 +57,13 @@ function memoryOperationStore(): ToolOperationStore {
       idempotency.set(key, operation.operationId);
       return { operation, reused: false };
     },
-    async load(operationId) {
-      return operations.get(operationId) ?? null;
+    async load(tenantId, operationId) {
+      const operation = operations.get(operationId) ?? null;
+      return operation?.tenantId === tenantId ? operation : null;
     },
-    async transition(operationId, from, to) {
+    async transition(tenantId, operationId, from, to) {
       const prior = operations.get(operationId);
-      if (!prior || prior.state !== from) {
+      if (!prior || prior.tenantId !== tenantId || prior.state !== from) {
         throw new Error("stale transition");
       }
       assertOperationTransition(from, to);
