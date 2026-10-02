@@ -13,6 +13,7 @@ import {
   activateMemoryProjectionGeneration,
   appendMemoryRevision,
   cleanupTombstonedMemoryProjections,
+  compileMemoryHybridContext,
   createMemoryProjectionGeneration,
   createMemoryRecord,
   createPostgresPool,
@@ -293,6 +294,42 @@ describePostgres("PostgreSQL memory tombstone propagation", () => {
     });
     expect(before.map((hit) => hit.memoryRecordId)).toContain(memoryRecordId);
 
+    const contextBefore = await compileMemoryHybridContext(
+      pool,
+      {
+        retrieval: {
+          tenantId,
+          scopePredicate,
+          lexicalQuery: "orchid",
+          vector: {
+            compatibility: vectorCompatibility,
+            queryVector: [1, 0, 0],
+          },
+          entityKeys: ["orchid"],
+          temporal: {
+            fromInclusive: toInstant("2026-10-02T08:00:00Z"),
+            toExclusive: toInstant("2026-10-02T09:00:00Z"),
+          },
+          limit: 10,
+        },
+        maxItems: 5,
+        maxTokens: 1000,
+      },
+      {
+        count(text: string): number {
+          return text.length;
+        },
+      },
+    );
+    expect(
+      contextBefore.items.map((item) => item.provenance.memoryRecordId),
+    ).toContain(memoryRecordId);
+    expect(contextBefore.items[0]?.provenance).toMatchObject({
+      memoryRecordId,
+      memoryRevisionId,
+      scope: { kind: "relationship", relationshipId },
+    });
+
     await expect(
       pool.query(
         `UPDATE memory.records
@@ -495,6 +532,37 @@ describePostgres("PostgreSQL memory tombstone propagation", () => {
     expect(after.map((hit) => hit.memoryRecordId)).not.toContain(
       memoryRecordId,
     );
+
+    const contextAfter = await compileMemoryHybridContext(
+      pool,
+      {
+        retrieval: {
+          tenantId,
+          scopePredicate,
+          lexicalQuery: "orchid",
+          vector: {
+            compatibility: vectorCompatibility,
+            queryVector: [1, 0, 0],
+          },
+          entityKeys: ["orchid"],
+          temporal: {
+            fromInclusive: toInstant("2026-10-02T08:00:00Z"),
+            toExclusive: toInstant("2026-10-02T09:00:00Z"),
+          },
+          limit: 10,
+        },
+        maxItems: 5,
+        maxTokens: 1000,
+      },
+      {
+        count(text: string): number {
+          return text.length;
+        },
+      },
+    );
+    expect(
+      contextAfter.items.map((item) => item.provenance.memoryRecordId),
+    ).not.toContain(memoryRecordId);
 
     const projectionCountsBeforeCleanup = await pool.query<{
       lexical: string;
