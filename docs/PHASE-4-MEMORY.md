@@ -462,18 +462,30 @@ After this slice:
 3. if all targets are evidenced, close Phase 4 rather than inventing additional memory
    features.
 
-## Phase 4 closure audit — active
+## Phase 4 closure audit — implementation gate passed
 
 Primary closure record: `docs/PHASE-4-MEMORY-ACCEPTANCE.md`.
 
 The audit found one evidence gap rather than an architecture gap: entity and temporal
 retrieval were already held-out evaluated, and lifecycle supersession was already
-tested, but the acceptance wording requires a dedicated held-out contradiction/current
-view fixture. The closure branch adds that fixture across entity, temporal and fused
-hybrid retrieval while preserving the contradicted predecessor as historical evidence.
+tested, but the acceptance wording required a dedicated held-out contradiction/current
+view fixture.
 
-No new memory subsystem is authorized by this closure audit. Any additional work must be
-traceable to an unmet acceptance target below.
+Implemented closure proof:
+- two contradictory same-scope preference records are indexed while both are active;
+- canonical `supersedes` transitions the predecessor without deleting its revision or
+  verbatim evidence;
+- entity, temporal and fused hybrid retrieval each return only the corrected active
+  record even though stale predecessor projection rows remain;
+- each result is evaluated as a held-out set with the predecessor explicitly forbidden;
+- recall, precision and MRR are all 1 and forbidden leakage is zero;
+- implementation/acceptance head `d48b17ff9c4bcb91d51d88bf78da7a1e6c9f597a`
+  passed Foundation CI run 313;
+- PR #36 has no review threads or comments.
+
+Every Phase 4 acceptance target now has repository evidence. Final closure documentation
+must pass the same gate before merge; no new Memory subsystem is authorized by this
+audit.
 
 ## Phase 4 acceptance targets
 
