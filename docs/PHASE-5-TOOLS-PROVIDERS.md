@@ -194,3 +194,27 @@ Validation:
   remains idempotent; changed business evidence still conflicts.
 
 Final documentation head must pass the same gate before PR #39 merges.
+
+
+## Fourth canonical slice — provider failures, telemetry and credential edge
+
+Active branch: `phase5-provider-failures-telemetry`  
+Active PR: #43
+
+Implemented:
+- canonical typed Provider failure taxonomy;
+- canonical PlatformError mapping with retryability and dispatched/not-dispatched
+  semantics;
+- privacy-safe Provider execution telemetry attribute builder and strict allowlist;
+- optional Tool executor ProviderExecutionObserver hook;
+- scoped Security-owned CredentialRefId resolution contract;
+- redacting CredentialSecret wrapper for adapter-only raw material access;
+- Provider adapter-edge resolution by tenant/provider/operation/slot scope;
+- fail-closed credential unavailability without reference-existence disclosure;
+- unit coverage for telemetry privacy, failure typing, scoped resolution and executor
+  observation.
+
+Validation:
+- Foundation CI run 349 passed the provider failure/telemetry portion;
+- the latest head adds credential-edge and executor-observer coverage and still requires
+  its final complete Foundation CI gate before merge.
