@@ -279,14 +279,19 @@ export async function enqueueMemoryExtraction(
     ],
   );
 
-  const existing =
-    inserted.rows[0] ??
-    (await loadMemoryExtractionByIdempotency(
-      client,
-      normalized.tenantId,
-      normalized.idempotencyKey,
-    ));
+  const insertedRow = inserted.rows[0];
+  if (insertedRow) {
+    return Object.freeze({
+      job: jobFromRow(insertedRow),
+      reused: false,
+    });
+  }
 
+  const existing = await loadMemoryExtractionByIdempotency(
+    client,
+    normalized.tenantId,
+    normalized.idempotencyKey,
+  );
   if (!existing) {
     throw new PlatformError({
       code: "memory.extraction_admission_conflict",
@@ -296,8 +301,7 @@ export async function enqueueMemoryExtraction(
     });
   }
 
-  const job = inserted.rows[0] ? jobFromRow(inserted.rows[0]) : existing;
-  if (job.requestFingerprint !== requestFingerprint) {
+  if (existing.requestFingerprint !== requestFingerprint) {
     throw new PlatformError({
       code: "memory.extraction_idempotency_conflict",
       category: "conflict",
@@ -308,8 +312,8 @@ export async function enqueueMemoryExtraction(
   }
 
   return Object.freeze({
-    job,
-    reused: inserted.rowCount === 0,
+    job: existing,
+    reused: true,
   });
 }
 
