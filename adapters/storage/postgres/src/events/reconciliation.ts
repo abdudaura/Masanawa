@@ -261,8 +261,6 @@ export async function recordExternalReceipt(
     row.provider_reference !== evidence.providerReference ||
     row.normalized_status !== evidence.normalizedStatus ||
     row.payload_hash !== evidence.payloadHash ||
-    row.payload_ref !== evidence.payloadRef ||
-    row.observed_at.toISOString() !== evidence.observedAt ||
     row.verification_method !== evidence.verificationMethod ||
     row.provider_version !== evidence.providerVersion
   ) {
