@@ -100,14 +100,28 @@ export function compileMemoryContext(
   }
 
   const included: CompiledMemoryContextItem[] = [];
-  const seenRecords = new Set<MemoryRecordId>();
+  const seenRecords = new Map<
+    MemoryRecordId,
+    {
+      readonly memoryRevisionId: MemoryRevisionId;
+      readonly memoryType: MemoryType;
+      readonly scopeKey: string;
+      readonly sourceContentHash: string;
+      readonly content: string;
+    }
+  >();
+  const rankedHits = [...input.hits].sort(
+    (left, right) =>
+      right.fusionScore - left.fusionScore ||
+      left.memoryRecordId.localeCompare(right.memoryRecordId),
+  );
   let combinedText = "";
   let usedTokens = 0;
   let skippedDuplicateCount = 0;
   let skippedOversizeCount = 0;
   let skippedBudgetCount = 0;
 
-  for (const hit of input.hits) {
+  for (const hit of rankedHits) {
     if (hit.tenantId !== input.tenantId) {
       throw authorizationError(
         "Context candidate belongs to a different tenant",
@@ -119,11 +133,36 @@ export function compileMemoryContext(
         "Context candidate is outside the authorized memory scopes",
       );
     }
-    if (seenRecords.has(hit.memoryRecordId)) {
+    const prior = seenRecords.get(hit.memoryRecordId);
+    if (prior) {
+      if (
+        prior.memoryRevisionId !== hit.memoryRevisionId ||
+        prior.memoryType !== hit.memoryType ||
+        prior.scopeKey !== scopeKey ||
+        prior.sourceContentHash !== hit.sourceContentHash ||
+        prior.content !== hit.content
+      ) {
+        throw new PlatformError({
+          code: "memory.context_canonical_mismatch",
+          category: "internal",
+          message:
+            "Context candidates disagreed about the canonical current memory revision",
+          retryable: false,
+        });
+      }
       skippedDuplicateCount += 1;
       continue;
     }
-    seenRecords.add(hit.memoryRecordId);
+    seenRecords.set(
+      hit.memoryRecordId,
+      Object.freeze({
+        memoryRevisionId: hit.memoryRevisionId,
+        memoryType: hit.memoryType,
+        scopeKey,
+        sourceContentHash: hit.sourceContentHash,
+        content: hit.content,
+      }),
+    );
 
     if (included.length >= maxItems) {
       skippedBudgetCount += 1;
