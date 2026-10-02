@@ -25,6 +25,7 @@ export interface RecordExternalReceiptInput {
   readonly normalizedStatus: string;
   readonly payloadHash?: string;
   readonly payloadRef?: string;
+  readonly normalizedPayload?: unknown;
   readonly observedAt: Instant;
   readonly verificationMethod: string;
   readonly providerVersion?: string;
@@ -40,6 +41,7 @@ export interface ExternalReceiptRecord {
   readonly normalizedStatus: string;
   readonly payloadHash: string | null;
   readonly payloadRef: string | null;
+  readonly normalizedPayload: unknown | null;
   readonly observedAt: Instant;
   readonly verificationMethod: string;
   readonly providerVersion: string | null;
@@ -79,6 +81,7 @@ interface ReceiptRow {
   normalized_status: string;
   payload_hash: string | null;
   payload_ref: string | null;
+  normalized_payload: unknown | null;
   observed_at: Date;
   verification_method: string;
   provider_version: string | null;
@@ -115,6 +118,7 @@ function toReceipt(row: ReceiptRow): ExternalReceiptRecord {
     normalizedStatus: row.normalized_status,
     payloadHash: row.payload_hash,
     payloadRef: row.payload_ref,
+    normalizedPayload: row.normalized_payload,
     observedAt: row.observed_at.toISOString() as Instant,
     verificationMethod: row.verification_method,
     providerVersion: row.provider_version,
@@ -180,6 +184,7 @@ async function loadReceiptByObservation(
             normalized_status,
             payload_hash,
             payload_ref,
+            normalized_payload,
             observed_at,
             verification_method,
             provider_version,
@@ -215,11 +220,12 @@ export async function recordExternalReceipt(
        normalized_status,
        payload_hash,
        payload_ref,
+       normalized_payload,
        observed_at,
        verification_method,
        provider_version
      )
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11, $12, $13)
      ON CONFLICT (tenant_id, provider, observation_key)
      DO NOTHING
      RETURNING external_receipt_id,
@@ -245,6 +251,9 @@ export async function recordExternalReceipt(
       input.normalizedStatus,
       input.payloadHash ?? null,
       input.payloadRef ?? null,
+      input.normalizedPayload === undefined
+        ? null
+        : JSON.stringify(input.normalizedPayload),
       input.observedAt,
       input.verificationMethod,
       input.providerVersion ?? null,
@@ -268,6 +277,8 @@ export async function recordExternalReceipt(
     row.provider_reference !== (input.providerReference ?? null) ||
     row.normalized_status !== input.normalizedStatus ||
     row.payload_hash !== (input.payloadHash ?? null) ||
+    JSON.stringify(row.normalized_payload) !==
+      JSON.stringify(input.normalizedPayload ?? null) ||
     row.verification_method !== input.verificationMethod ||
     row.provider_version !== (input.providerVersion ?? null)
   ) {
@@ -303,6 +314,7 @@ export async function listExternalReceiptsForOperation(
             normalized_status,
             payload_hash,
             payload_ref,
+            normalized_payload,
             observed_at,
             verification_method,
             provider_version,
