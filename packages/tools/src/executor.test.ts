@@ -212,6 +212,7 @@ describe("consequential Tool executor", () => {
     const f = fixture();
     const operations = memoryOperationStore();
     let dispatches = 0;
+    const telemetry: Array<Readonly<Record<string, string | number | boolean>>> = [];
 
     const dependencies = {
       tools: f.tools,
@@ -220,6 +221,15 @@ describe("consequential Tool executor", () => {
         getPolicyRevision: () => "policy-1",
       },
       operations,
+      providerTelemetry: {
+        record(attributes) {
+          telemetry.push(attributes);
+        },
+      },
+      nowMs: (() => {
+        const clock = [5_000, 5_075];
+        return () => clock.shift() ?? 5_075;
+      })(),
       resolveAdapter: () => ({
         async dispatch() {
           dispatches += 1;
@@ -227,6 +237,11 @@ describe("consequential Tool executor", () => {
             status: "succeeded" as const,
             output: { chargeId: "charge_1" },
             receipt: dispatchReceipt(),
+            usage: {
+              costMicros: 42_000,
+              inputUnits: 300,
+              outputUnits: 55,
+            },
           };
         },
       }),
@@ -266,6 +281,14 @@ describe("consequential Tool executor", () => {
       providerReference: "provider-charge-1",
     });
     expect(dispatches).toBe(1);
+    expect(telemetry).toHaveLength(1);
+    expect(telemetry[0]).toMatchObject({
+      "masanawa.provider.outcome": "succeeded",
+      "masanawa.provider.latency_ms": 75,
+      "masanawa.provider.cost_micros": 42_000,
+      "masanawa.provider.input_units": 300,
+      "masanawa.provider.output_units": 55,
+    });
   });
 
   it("revalidates current authority before dispatch", async () => {
