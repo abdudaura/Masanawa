@@ -2,7 +2,7 @@
 
 Status: ACTIVE  
 Started: 2026-10-02  
-Active branch: `phase4-memory-multisignal-retrieval`
+Active branch: `phase4-memory-deletion-context`
 
 Phase 3 non-spatial Identity/World acceptance is closed by PR #28, merge
 `02c2c99153e904b4f9d2f403328a1e3b6effc3f1`. Optional spatial simulation remains
@@ -291,7 +291,8 @@ Validation evidence:
 - the complete `check` job passed frozen install, strict TypeScript, unit tests,
   PostgreSQL 18 + pgvector migrations/integration fixtures and production builds;
 - PR #33 has no review threads or comments;
-- final documentation head must pass the same gate before merge.
+- final documentation head `0b61670a5a9512ff4532c270619a45604019aeb3` passed Foundation CI run 294;
+- PR #33 merged as `69ed518df450415ae30fc66a800e2ee674da4cee`.
 
 Rules:
 - no signal may query outside the caller's explicit authorized MemoryScope predicate;
@@ -313,6 +314,25 @@ After this slice:
 2. implement bounded context compilation with token/item budgets and provenance mapping;
 3. then reflection/consolidation with scope-preserving evidence and compaction-flush
    rules.
+
+## Sixth canonical slice — active
+
+Goal: explicit tombstone/deletion propagation plus bounded provenance-preserving context
+compilation.
+
+Rules:
+- tombstone is a canonical lifecycle transition, not physical purge;
+- lifecycle mutation uses compare-and-set and immutable audit evidence;
+- canonical revisions/evidence remain intact after tombstone until a separately governed
+  purge exists;
+- all retrieval signals must exclude tombstoned records immediately even when stale
+  projection rows remain;
+- projection cleanup is reconciliation/space recovery, not the privacy enforcement
+  boundary;
+- context compilation consumes only already-authorized current retrieval results;
+- every compiled item retains MemoryRecord/MemoryRevision/scope provenance;
+- item/token budgets are deterministic and cannot be bypassed by one oversized memory;
+- compilation cannot promote private memory into a broader scope.
 
 ## Phase 4 acceptance targets
 
