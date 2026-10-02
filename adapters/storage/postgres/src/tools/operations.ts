@@ -11,7 +11,11 @@ import {
   prepareOperation,
   transitionOperation,
 } from "../events/operations.js";
-import { beginReconciliation } from "../events/reconciliation.js";
+import {
+  beginReconciliation,
+  listExternalReceiptsForOperation,
+  recordExternalReceipt,
+} from "../events/reconciliation.js";
 
 export function createPostgresToolOperationStore(
   pool: Pool,
@@ -47,6 +51,47 @@ export function createPostgresToolOperationStore(
 
     async beginReconciliation(input: Parameters<ToolOperationStore["beginReconciliation"]>[0]): Promise<void> {
       await beginReconciliation(pool, input);
+    },
+
+    async recordEffectReceipt(
+      input: Parameters<ToolOperationStore["recordEffectReceipt"]>[0],
+    ): Promise<void> {
+      await withTransaction(pool, async (client) => {
+        await recordExternalReceipt(client, {
+          tenantId: input.tenantId,
+          operationId: input.operationId,
+          provider: input.provider,
+          observationKey: input.observationKey,
+          normalizedStatus: input.normalizedStatus,
+          payloadHash: input.payloadHash ?? undefined,
+          normalizedPayload: input.normalizedPayload,
+          observedAt: input.observedAt,
+          verificationMethod: "tool-adapter-normalized-result",
+          providerVersion: input.providerVersion ?? undefined,
+        });
+      });
+    },
+
+    loadEffectReceipts(
+      tenantId: TenantId,
+      operationId: OperationId,
+    ) {
+      return withTransaction(pool, async (client) => {
+        const receipts = await listExternalReceiptsForOperation(
+          client,
+          tenantId,
+          operationId,
+        );
+        return Object.freeze(
+          receipts.map((receipt) =>
+            Object.freeze({
+              normalizedStatus: receipt.normalizedStatus,
+              normalizedPayload:
+                receipt.normalizedPayload as import("@masanawa/security").CanonicalJson | null,
+            }),
+          ),
+        );
+      });
     },
   });
 }
