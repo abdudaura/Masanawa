@@ -4049,7 +4049,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
   it("admits memory extraction idempotently and binds the key to exact scoped source evidence", async () => {
     const tenantId = createCanonicalId("tenant");
     const relationshipId = createCanonicalId("relationship");
-    const now = toInstant("2026-10-02T06:30:00Z");
+    const now = toInstant("2026-10-01T00:00:00Z");
     const input = {
       tenantId,
       idempotencyKey: "turn:memory-extraction:1",
@@ -4100,7 +4100,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
   it("dead-letters poison extraction without blocking later eligible jobs", async () => {
     const tenantId = createCanonicalId("tenant");
     const relationshipId = createCanonicalId("relationship");
-    const now = toInstant("2026-10-02T06:35:00Z");
+    const now = toInstant("2026-10-01T00:00:00Z");
 
     const enqueue = async (
       key: string,
@@ -4253,7 +4253,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
 
   it("reclaims an expired extraction lease and fences the stale worker", async () => {
     const tenantId = createCanonicalId("tenant");
-    const now = toInstant("2026-10-02T06:40:00Z");
+    const now = toInstant("2026-10-01T00:00:00Z");
     const admitted = await withTransaction(pool, (client) =>
       enqueueMemoryExtraction(client, {
         tenantId,
@@ -4352,7 +4352,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
 
   it("dead-letters a final crashed extraction attempt instead of reclaiming forever", async () => {
     const tenantId = createCanonicalId("tenant");
-    const now = toInstant("2026-10-02T06:45:00Z");
+    const now = toInstant("2026-10-01T00:00:00Z");
     const admitted = await withTransaction(pool, (client) =>
       enqueueMemoryExtraction(client, {
         tenantId,
