@@ -15,10 +15,8 @@ import {
   type ApprovalBinding,
   type AuthorityContext,
 } from "@masanawa/security";
-import {
-  assertMemoryScopeAuthority,
-  memoryScopeKey,
-} from "./governance.js";
+import { assertMemoryScopeAuthority } from "./governance.js";
+import { memoryScopeKey } from "./invariants.js";
 import type { MemoryScope } from "./model.js";
 
 export const memoryRecordTombstoneCapability = "memory.record.tombstone";
