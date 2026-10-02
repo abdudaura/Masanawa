@@ -241,27 +241,31 @@ export function createPostgresCredentialMaterialSource(
     async resolve(input: CredentialResolutionRequest) {
       const request = normalizeCredentialResolutionRequest(input);
       const result = await client.query<CredentialRow>(
-        `SELECT tenant_id,
-                credential_ref_id,
-                provider_id,
-                slot_key,
-                generation,
-                algorithm,
-                key_id,
-                ciphertext,
-                nonce,
-                active
-           FROM security.credential_refs
-          WHERE tenant_id = $1
-            AND credential_ref_id = $2
-            AND provider_id = $3
-            AND slot_key = $4
-            AND active = true`,
+        `SELECT c.tenant_id,
+                c.credential_ref_id,
+                c.provider_id,
+                c.slot_key,
+                c.generation,
+                c.algorithm,
+                c.key_id,
+                c.ciphertext,
+                c.nonce,
+                c.active
+           FROM security.credential_refs AS c
+           JOIN events.operations AS o
+             ON o.tenant_id = c.tenant_id
+            AND o.operation_id = $5
+          WHERE c.tenant_id = $1
+            AND c.credential_ref_id = $2
+            AND c.provider_id = $3
+            AND c.slot_key = $4
+            AND c.active = true`,
         [
           request.tenantId,
           request.credentialRefId,
           request.providerId,
           request.slotKey,
+          request.operationId,
         ],
       );
       const row = result.rows[0];
