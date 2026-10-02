@@ -345,7 +345,7 @@ function normalizeDependencies(
   return Object.freeze([...values].sort());
 }
 
-function normalizeProvenance(
+export function normalizeSkillProvenance(
   input: SkillProvenance,
 ): SkillProvenance {
   if (!(skillSourceKinds as readonly string[]).includes(input.sourceKind)) {
@@ -627,7 +627,7 @@ export function normalizeSkillVersionDefinition(
     idempotencyMode: input.idempotencyMode,
     reconciliationMode: input.reconciliationMode,
     timeoutMs: input.timeoutMs,
-    provenance: normalizeProvenance(input.provenance),
+    provenance: normalizeSkillProvenance(input.provenance),
     certification: normalizeCertification(input.certification),
   });
 }
