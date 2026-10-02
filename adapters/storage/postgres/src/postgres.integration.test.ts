@@ -2375,10 +2375,6 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       }),
     );
     expect(first.reused).toBe(false);
-    expect(first.receipt.normalizedPayload).toEqual({
-      providerReference: "txn-900",
-      status: "pending",
-    });
     expect(first.state).toBe("admitted");
 
     const duplicate = await withTransaction(pool, (client) =>
@@ -2764,6 +2760,10 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       }),
     );
     expect(first.reused).toBe(false);
+    expect(first.receipt.normalizedPayload).toEqual({
+      providerReference: "txn-900",
+      status: "pending",
+    });
 
     const duplicate = await withTransaction(pool, (client) =>
       recordExternalReceipt(client, {
