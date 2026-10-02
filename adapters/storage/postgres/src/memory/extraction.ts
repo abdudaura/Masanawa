@@ -590,8 +590,7 @@ export async function settleMemoryExtractionClaim(
       row.state !== "processing" ||
       row.lease_owner !== input.workerId.trim() ||
       safeInteger(row.fence, "memory extraction fence") !== input.fence ||
-      row.lease_expires_at === null ||
-      row.lease_expires_at.getTime() <= Date.now()
+      row.lease_expires_at === null
     ) {
       throw staleMemoryExtractionClaim();
     }
