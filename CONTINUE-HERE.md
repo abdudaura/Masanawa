@@ -139,6 +139,8 @@ run 380 passed on that exact merge commit.
 
 **Current: Task 062 of 150 — Implement Skill dependency graph and cycle/conflict validation.**
 
+Active implementation branch: `task062-skill-dependency-graph`. Existing registry graph logic is being hardened with atomic cycle/missing/depth validation tests and stable SkillId↔key conflict enforcement. Acceptance/CI is pending.
+
 
 
 Tasks 001-061 are merged complete.
