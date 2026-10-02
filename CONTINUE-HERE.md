@@ -36,7 +36,7 @@ of architectural feature selection.
 
 **Phase 5 — Tools and Providers.**
 
-Current implementation branch: `phase5-tool-execution-reconciliation`.
+Current implementation branch: `phase5-tool-effect-receipts`.
 
 Phase 0A/0B, Phase 1 and Phase 2 are closed.
 
@@ -120,43 +120,43 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 ## Immediate work
 
 Phase 5 — Tools and Providers is active on
-`phase5-tool-execution-reconciliation`.
+`phase5-tool-effect-receipts`.
 
-The registry foundation is merged to `main` as PR #37 at
-`b3f2e8ce33aeb4ed125bd40af78f10a454174bbd`.
+Merged Phase 5 history:
+- registry foundation PR #37 merged as
+  `b3f2e8ce33aeb4ed125bd40af78f10a454174bbd`;
+- consequential execution/reconciliation PR #38 merged as
+  `21141266ab15e2111b8f78c6df365100a60a017a`.
 
-PR #38 is the active execution/reconciliation slice. Implemented on the branch:
-- provider credential bindings accept only canonical `CredentialRefId` values and
-  fail closed on unknown/missing slots;
-- consequential Tool execution is pinned to the registered ToolVersion;
-- required authority capabilities are checked and current authority is revalidated
-  immediately before dispatch;
-- deterministic authority-scope/request fingerprints bind operation idempotency;
-- exact replay of a settled or in-flight operation does not redispatch;
-- explicit provider selection continues to use the canonical no-fallback registry;
-- dispatch exceptions/unknown outcomes become `unknown` and immediately enter
-  reconciliation with `safeRetry=false`;
-- known-not-dispatched failures may fail without claiming an external side effect;
-- PostgreSQL adapts the canonical Tool operation port onto existing
-  `events.operations` and reconciliation storage;
-- Tool operation reads/transitions are tenant-scoped;
-- unit tests cover exact replay, stale-policy rejection, ambiguous dispatch and required
-  credential references.
+PR #40 is the active durable effect-receipt/replay slice.
 
-Implementation head `c6c86f6b0521d408cdf2fcd8938df481353e8d48` passed Foundation CI run 330.
-The complete gate included frozen install, strict TypeScript, unit/architecture tests,
-PostgreSQL 18 + pgvector integration suites and production builds. The PostgreSQL
-fixture proves durable exact replay, revoked/stale authority rejection, tenant-scoped
-operation reads and ambiguity-to-reconciliation with blind retry disabled.
+Implemented on the branch:
+- `events.external_receipts` gains a normalized JSON payload column owned by the
+  existing Events effect/evidence boundary rather than a parallel Tool result store;
+- payloads are canonical-JSON validated before persistence and compared canonically on
+  exact receipt replay, avoiding false conflicts from PostgreSQL jsonb key reordering;
+- successful consequential Tool outcomes persist a deterministic immutable receipt
+  before the operation transitions from `accepted` to `succeeded`;
+- exact replay loads terminal receipts and returns the same canonical output without
+  redispatch;
+- if a process dies after receipt commit but before terminal transition, replay
+  advances the same `accepted` operation to `succeeded` from durable evidence;
+- the PostgreSQL Tool operation adapter records/loads effect receipts through existing
+  `events.external_receipts` APIs;
+- migration and executor tests cover normalized receipt storage and simulated
+  crash-after-receipt recovery.
 
-Final documentation head must pass the same Foundation CI gate before PR #38 merges.
+Foundation CI run 339 is the current gate for PR #40. Do not merge until the latest
+head passes the complete frozen-install/typecheck/unit/architecture/PostgreSQL/build
+gate; fix any real failure on this branch first.
 
 After this slice is green:
-1. persist/verify external effect receipts needed for durable result recovery and
-   terminal replay responses;
-2. add typed provider adapter failure/readiness/cost/timeout telemetry without secrets;
-3. prove credential-reference scoping/resolution at the adapter edge without exposing
-   raw secret material to Tool contracts;
+1. add typed provider adapter failure/readiness/timeout/rate/cost outcomes and telemetry
+   without secret material;
+2. add credential-reference resolution at the adapter edge, with scope checking and no
+   raw-secret exposure to Tool/Provider contracts or logs;
+3. add explicit effect-receipt verification/reconciliation helpers for provider webhook
+   or poll evidence;
 4. finish the Phase 5 acceptance audit before advancing to Skills/Workflows.
 
 The requested post-freeze donor boundary remains unchanged: MemPalace contributes
