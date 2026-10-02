@@ -2,7 +2,7 @@
 
 Status: ACTIVE  
 Started: 2026-10-02  
-Active branch: `task064-skilltool-subskill-boundaries`
+Active branch: `task065-skill-provenance-trust-publisher`
 
 Phase 5 Tools and Providers is closed by PR #45, merge
 `0fe123e18a9163386c4ab10331139265ce26b64e`.
@@ -89,6 +89,10 @@ The Skills package now composes a deterministic immutable execution-plan snapsho
 ## Task 064 — SkillTool and subskill execution boundaries
 
 The Skills package now exposes fail-closed execution bindings rather than a second execution engine. A Skill step may bind only a Tool reference declared by its exact SkillVersion; capability-bound references must resolve to an exact registered ToolVersion at execution time, exact pins cannot be overridden, and the resulting canonical ToolInvocation deliberately carries no Provider selection so authorization/idempotency/provider handling remain owned by packages/tools. Subskill calls may target only exact direct SkillVersion dependencies represented by earlier steps in the already-validated execution plan; arbitrary, sibling, unrelated or transitive bypass dispatch is rejected. Authority context is propagated unchanged and boundary inputs are canonical immutable JSON.
+
+## Task 065 — Skill provenance, trust and publisher metadata
+
+Canonical Skill provenance now preserves exact source-system/reference/revision/content-hash evidence together with normalized publisher identity and a separately attributed trust verdict. Imported Skills require an exact source revision rather than an implicit latest/unknown source. Publisher metadata records a stable publisher key, display name, publisher kind and optional evidence reference. Trust verdicts record tier, evaluator, evaluation time and normalized reason codes; they are descriptive admission evidence only and do not grant Tool, Provider, authority or subskill execution rights. Imported bundles carry this metadata into quarantine unchanged in meaning and normalize it before candidate publication.
 
 ## First canonical slice
 
