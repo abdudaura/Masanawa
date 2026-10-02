@@ -150,20 +150,23 @@ Implemented on the branch:
 - PostgreSQL integration coverage proves ciphertext-at-rest, scope isolation,
   generation rotation/stale rejection, revocation and decrypt-error redaction.
 
-Foundation CI run 356 failed only on an implicit-any type in the new PostgreSQL
-credential source. Commit `ee84b2fc6565e622682f0497889034af46048757` fixes that
-typing issue. Foundation CI run 357 is the current exact-head validation gate.
+Foundation CI run 356 found an implicit-any issue and later hardening added a real
+same-tenant Operation requirement plus a genuine pre-revocation decrypt-error test.
+Hardened implementation head
+`7d53562fe29f5aae6a3e69c495757ce22658df3a` passed Foundation CI run 365.
+The complete gate passed frozen install, strict TypeScript, unit/architecture tests,
+PostgreSQL 18 + pgvector integration suites and production builds.
 
-Do not merge PR #45 until the exact latest head passes the full frozen-install,
-strict-TypeScript, unit/architecture, PostgreSQL 18 + pgvector and production-build gate.
+The Phase 5 acceptance audit is now PASS. Do not merge PR #45 until the final
+documentation head containing that PASS declaration also passes Foundation CI.
 
-After PR #45 is green:
-1. update `docs/PHASE-5-CLOSURE-AUDIT.md` so credential custody becomes PASS;
-2. run the final documentation-head Foundation CI;
-3. merge PR #45;
-4. re-read merged `main` and close Phase 5 only if every acceptance item is PASS;
-5. then begin Skills/Workflows from merged `main`, using Paperclip only as a bounded
-   workflow/runtime/Ops behavior donor.
+Immediate next:
+1. wait for the final documentation-head Foundation CI and fix any real failure;
+2. merge PR #45 if that exact head is green;
+3. verify merged `main` and its push CI;
+4. start Phase 6 Skills/Workflows from merged `main`, using Paperclip only as a
+   bounded workflow/runtime/Ops behavior donor and preserving Masanawa's canonical
+   Authority/Operation/Provider boundaries.
 
 The requested post-freeze donor boundary remains unchanged: MemPalace contributes
 retrieval/evaluation/storage-contract behavior inside canonical Masanawa memory ports;
