@@ -71,6 +71,18 @@ export const providerExecutionOutcomes = [
 export type ProviderExecutionOutcome =
   (typeof providerExecutionOutcomes)[number];
 
+export interface ProviderUsage {
+  readonly costMicros: number | null;
+  readonly inputUnits: number | null;
+  readonly outputUnits: number | null;
+}
+
+export interface ProviderTelemetrySink {
+  record(
+    attributes: PrivacySafeTelemetryAttributes,
+  ): void | Promise<void>;
+}
+
 export interface ProviderExecutionTelemetry {
   readonly providerId: ProviderId;
   readonly providerKey: string;
@@ -249,6 +261,25 @@ export function providerReadinessTelemetryAttributes(
     ...(readiness.reasonCode !== null
       ? { "masanawa.provider.reason_code": readiness.reasonCode }
       : {}),
+  });
+}
+
+export function normalizeProviderUsage(
+  input: ProviderUsage,
+): ProviderUsage {
+  return Object.freeze({
+    costMicros: nullableCounter(
+      input.costMicros,
+      "provider usage costMicros",
+    ),
+    inputUnits: nullableCounter(
+      input.inputUnits,
+      "provider usage inputUnits",
+    ),
+    outputUnits: nullableCounter(
+      input.outputUnits,
+      "provider usage outputUnits",
+    ),
   });
 }
 
