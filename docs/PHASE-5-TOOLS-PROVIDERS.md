@@ -152,5 +152,12 @@ Implemented:
 - unit coverage for exact replay, stale policy, dispatch ambiguity and credential-slot
   enforcement.
 
-Validation: Foundation CI run 324 is pending on the latest PR #38 head. This section is
-not an acceptance closure until CI and PostgreSQL-backed execution fixtures pass.
+Validation:
+- implementation head `c6c86f6b0521d408cdf2fcd8938df481353e8d48` passed Foundation CI run 330;
+- the complete gate passed frozen install, strict TypeScript, unit/architecture tests,
+  PostgreSQL 18 + pgvector integration suites and production builds;
+- PostgreSQL acceptance coverage proves exact replay does not redispatch, revoked and
+  stale-policy authority stop dispatch, cross-tenant operation reads fail closed, and
+  ambiguous dispatch creates a durable reconciliation case with `safe_retry = false`.
+
+Final documentation head must pass the same gate before PR #38 merge.
