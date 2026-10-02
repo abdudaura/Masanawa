@@ -521,27 +521,19 @@ export async function executeConsequentialTool(
   }
 
   if (outcome.status === "unknown") {
-    operation = await transitionIfCurrent(
+    const latest = await reconcileUnknown(
       dependencies.operations,
       operation,
-      "unknown",
+      outcome.reasonCode,
     );
-    await dependencies.operations.beginReconciliation({
-      tenantId: invocation.authority.tenantId,
-      operationId: operation.operationId,
-      reasonCode: outcome.reasonCode,
-      safeRetry: false,
-      nextAction: "reconcile-provider-state",
-    });
-    const latest =
-      (await dependencies.operations.load(
-        invocation.authority.tenantId,
-        operation.operationId,
-      )) ?? operation;
     return {
       operation: latest,
       reused: prepared.reused,
       dispatched: true,
+      receipts: await dependencies.operations.listReceipts(
+        invocation.authority.tenantId,
+        operation.operationId,
+      ),
     };
   }
 
