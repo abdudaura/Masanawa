@@ -130,11 +130,13 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 
 The lifecycle/publication implementation now includes independent lifecycle CAS,
 immutable same-scope/type lineage, current-authority + one-time-approval publication,
-and PostgreSQL fixtures for stale writers, preserved old evidence, cross-scope
-rejection and source-scope immutability.
+PostgreSQL fixtures for stale writers/preserved evidence/cross-scope rejection, stable
+replay after later source supersession, source-row locking against concurrent revision
+races, and generated sanitized publication provenance that cannot carry caller-injected
+private verbatim evidence.
 
-Foundation CI run 253 passed the complete gate on implementation head
-`eb9c92db62d9a4d877bdcb6e92a8e35c93354619`.
+Foundation CI run 261 passed the complete gate on hardened implementation head
+`f5777a0d32fdc57b84d8fd415bb4ddb5de57a972`.
 
 Do not skip directly to vector search. Retrieval quality cannot outrank canonical scope,
 provenance, correction, deletion or liveness.
