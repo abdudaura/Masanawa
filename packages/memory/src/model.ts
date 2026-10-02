@@ -128,6 +128,7 @@ export interface MemoryRecord {
   readonly lifecycleState: MemoryLifecycleState;
   readonly currentRevisionId: MemoryRevisionId;
   readonly revision: number;
+  readonly lifecycleRevision: number;
   readonly createdAt: Instant;
   readonly updatedAt: Instant;
 }
@@ -135,4 +136,34 @@ export interface MemoryRecord {
 export interface MemoryRecordSnapshot {
   readonly record: MemoryRecord;
   readonly currentRevision: MemoryRevision;
+}
+
+
+export const memoryRecordLinkKinds = ["supersedes", "absorbs"] as const;
+export type MemoryRecordLinkKind = (typeof memoryRecordLinkKinds)[number];
+
+export interface MemoryRecordLink {
+  readonly tenantId: TenantId;
+  readonly sourceMemoryRecordId: MemoryRecordId;
+  readonly sourceMemoryRevisionId: MemoryRevisionId;
+  readonly targetMemoryRecordId: MemoryRecordId;
+  readonly targetMemoryRevisionId: MemoryRevisionId;
+  readonly kind: MemoryRecordLinkKind;
+  readonly reason: string;
+  readonly createdAt: Instant;
+}
+
+export interface MemoryScopePublication {
+  readonly tenantId: TenantId;
+  readonly sourceMemoryRecordId: MemoryRecordId;
+  readonly sourceMemoryRevisionId: MemoryRevisionId;
+  readonly targetMemoryRecordId: MemoryRecordId;
+  readonly targetMemoryRevisionId: MemoryRevisionId;
+  readonly operationId: import("@masanawa/contracts").OperationId;
+  readonly authorityContextId: import("@masanawa/contracts").AuthorityContextId;
+  readonly approvalId: import("@masanawa/contracts").ApprovalId;
+  readonly policyRevision: string;
+  readonly principalKey: string;
+  readonly reason: string;
+  readonly publishedAt: Instant;
 }
