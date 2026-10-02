@@ -70,7 +70,7 @@ const maxInstructionsLength = 262_144;
 const SkillManifestResourceSchema = Type.Object(
   {
     path: Type.String({ minLength: 1, maxLength: 512 }),
-    kind: Type.Union(skillManifestResourceKinds.map((kind) => Type.Literal(kind))),
+    kind: Type.Union([\n      Type.Literal("reference"),\n      Type.Literal("asset"),\n      Type.Literal("template"),\n      Type.Literal("script"),\n    ]),
   },
   { additionalProperties: false },
 );
@@ -84,7 +84,7 @@ export const SkillManifestV1Schema = Type.Object(
     description: Type.String({ minLength: 1, maxLength: 2_000 }),
     entrypoint: Type.Literal("SKILL.md"),
     visibility: Type.Optional(
-      Type.Union(skillVisibilityStates.map((state) => Type.Literal(state))),
+      Type.Union([Type.Literal("model-visible"), Type.Literal("model-hidden")]),
     ),
     activationExamples: Type.Optional(
       Type.Array(Type.String({ minLength: 1, maxLength: 1_000 }), {
