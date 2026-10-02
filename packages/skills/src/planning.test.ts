@@ -61,7 +61,18 @@ function skillVersion(
       sourceReference: `skills/${key}`,
       sourceRevision: "1.0.0",
       sourceContentHash: `sha256:${"d".repeat(64)}`,
-      trustTier: "first-party",
+      publisher: {
+        publisherKey: "masanawa",
+        displayName: "Masanawa",
+        kind: "first-party",
+        reference: null,
+      },
+      trust: {
+        tier: "first-party",
+        evaluatorKey: "masanawa.skill-admission",
+        evaluatedAt: toInstant("2026-10-02T00:00:00.000Z"),
+        reasonCodes: ["publisher.first-party"],
+      },
     },
     certification: {
       profile: "foundation",
