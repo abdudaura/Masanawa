@@ -496,6 +496,55 @@ describe("consequential Tool executor", () => {
     expect(JSON.stringify(observations)).not.toContain("api-key");
   });
 
+  it("does not let telemetry sink failure change provider side-effect truth", async () => {
+    const f = fixture();
+    const operations = memoryOperationStore();
+
+    const result = await executeConsequentialTool(
+      {
+        tools: f.tools,
+        providers: f.providers,
+        authoritySource: {
+          getPolicyRevision: () => "policy-1",
+        },
+        operations,
+        providerObserver: {
+          observe() {
+            throw new Error("telemetry backend unavailable");
+          },
+        },
+        resolveAdapter: () => ({
+          async dispatch() {
+            return {
+              status: "succeeded" as const,
+              output: { chargeId: "charge_observer_failure" },
+              receipt: dispatchReceipt(),
+            };
+          },
+        }),
+      },
+      {
+        invocation: {
+          toolVersionId: f.toolVersionId,
+          authority: f.authority,
+          input: { amount: 1000 },
+          idempotencyKey: "charge-request-observer-failure",
+          providerSelection: null,
+        },
+        credentialBindings: {
+          "api-key": createCanonicalId("credential-ref"),
+        },
+        idempotencyExpiresAt: toInstant("2026-10-03T10:00:00Z"),
+      },
+    );
+
+    expect(result.operation.state).toBe("succeeded");
+    expect(result.output).toEqual({
+      chargeId: "charge_observer_failure",
+    });
+    expect(result.receipts).toHaveLength(1);
+  });
+
   it("moves receipt persistence failure to reconciliation instead of success", async () => {
     const f = fixture();
     const baseOperations = memoryOperationStore();
