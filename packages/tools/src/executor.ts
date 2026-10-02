@@ -45,8 +45,12 @@ export interface ToolOperationStore {
     readonly operation: OperationRecord;
     readonly reused: boolean;
   }>;
-  load(operationId: OperationId): Promise<OperationRecord | null>;
+  load(
+    tenantId: NormalizedToolInvocation["authority"]["tenantId"],
+    operationId: OperationId,
+  ): Promise<OperationRecord | null>;
   transition(
+    tenantId: NormalizedToolInvocation["authority"]["tenantId"],
     operationId: OperationId,
     from: OperationState,
     to: OperationState,
@@ -208,7 +212,12 @@ async function transitionIfCurrent(
   operation: OperationRecord,
   to: OperationState,
 ): Promise<OperationRecord> {
-  return operations.transition(operation.operationId, operation.state, to);
+  return operations.transition(
+    operation.tenantId,
+    operation.operationId,
+    operation.state,
+    to,
+  );
 }
 
 export async function executeConsequentialTool(
@@ -356,7 +365,10 @@ export async function executeConsequentialTool(
       nextAction: "reconcile-provider-state",
     });
     const latest =
-      (await dependencies.operations.load(operation.operationId)) ?? operation;
+      (await dependencies.operations.load(
+        invocation.authority.tenantId,
+        operation.operationId,
+      )) ?? operation;
     return {
       operation: latest,
       reused: prepared.reused,
@@ -404,7 +416,10 @@ export async function executeConsequentialTool(
       nextAction: "reconcile-provider-state",
     });
     const latest =
-      (await dependencies.operations.load(operation.operationId)) ?? operation;
+      (await dependencies.operations.load(
+        invocation.authority.tenantId,
+        operation.operationId,
+      )) ?? operation;
     return {
       operation: latest,
       reused: prepared.reused,
@@ -432,7 +447,10 @@ export async function executeConsequentialTool(
       nextAction: "reconcile-provider-state",
     });
     const latest =
-      (await dependencies.operations.load(operation.operationId)) ?? operation;
+      (await dependencies.operations.load(
+        invocation.authority.tenantId,
+        operation.operationId,
+      )) ?? operation;
     return {
       operation: latest,
       reused: prepared.reused,
@@ -463,7 +481,10 @@ export async function executeConsequentialTool(
       });
     }
     const latest =
-      (await dependencies.operations.load(operation.operationId)) ?? operation;
+      (await dependencies.operations.load(
+        invocation.authority.tenantId,
+        operation.operationId,
+      )) ?? operation;
     return {
       operation: latest,
       reused: prepared.reused,
