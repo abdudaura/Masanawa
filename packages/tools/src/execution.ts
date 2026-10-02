@@ -1,6 +1,5 @@
 import {
-  normalizeCapabilityKey,
-  type CanonicalId,
+  isCanonicalId,
   type ToolVersionId,
 } from "@masanawa/contracts";
 import type { ProviderSelectionRequest } from "@masanawa/providers";
@@ -54,6 +53,11 @@ export function normalizeToolInvocation(
   // executable/non-data values before an adapter ever sees the payload.
   const parsed = JSON.parse(canonicalJson(input.input)) as CanonicalJson;
 
+  if (!isCanonicalId("tool-version", input.toolVersionId)) {
+    throw new TypeError("toolVersionId is invalid");
+  }
+
+  let providerSelection: NormalizedToolInvocation["providerSelection"] = null;
   if (input.providerSelection !== null) {
     if (
       input.providerSelection.providerId === undefined &&
@@ -64,12 +68,17 @@ export function normalizeToolInvocation(
         "providerSelection must identify an explicit provider",
       );
     }
-  }
-
-  // Touch required authority capabilities only through the canonical security
-  // contract. The executor will compare them with the Tool definition.
-  for (const capability of input.authority.capabilities) {
-    normalizeCapabilityKey(capability);
+    providerSelection = Object.freeze({
+      ...(input.providerSelection.providerId !== undefined
+        ? { providerId: input.providerSelection.providerId }
+        : {}),
+      ...(input.providerSelection.providerKey !== undefined
+        ? { providerKey: input.providerSelection.providerKey.trim() }
+        : {}),
+      ...(input.providerSelection.providerVersion !== undefined
+        ? { providerVersion: input.providerSelection.providerVersion.trim() }
+        : {}),
+    });
   }
 
   return Object.freeze({
@@ -80,6 +89,6 @@ export function normalizeToolInvocation(
       input.idempotencyKey === null
         ? null
         : boundedIdempotencyKey(input.idempotencyKey),
-    providerSelection: input.providerSelection,
+    providerSelection,
   });
 }
