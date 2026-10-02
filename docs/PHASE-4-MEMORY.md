@@ -249,11 +249,49 @@ After this slice:
 2. add multi-signal fusion/reranking and held-out evaluation;
 3. then bounded context compilation/reflection/consolidation/deletion propagation.
 
-## Fifth canonical slice — active
+## Fifth canonical slice — implementation gate passed
 
 Goal: authorization-first vector/entity/temporal retrieval behind the same rebuildable
 projection contract, followed by deterministic multi-signal fusion and held-out
 evaluation.
+
+Implemented:
+- PostgreSQL 18 CI now uses pinned `pgvector/pgvector:0.8.6-pg18`;
+- vector/entity/temporal projection tables remain disposable and bind exact tenant,
+  generation, MemoryRecord, MemoryRevision, memory type, MemoryScope and source-content
+  hash;
+- vector rows additionally enforce non-zero vectors and generation-bound
+  provider/model/dimension compatibility before indexing and query ranking;
+- entity rows normalize/deduplicate/sort bounded entity keys and use GIN-backed overlap
+  lookup;
+- temporal rows preserve canonical event/observed/validity/expiry fields and expose a
+  deterministic temporal anchor;
+- all signal projection rows are immutable and can only enter a matching building
+  generation from a current active canonical revision;
+- generation completeness/activation now works uniformly across lexical, vector,
+  entity and temporal projections;
+- vector/entity/temporal queries apply explicit authorized MemoryScopes before signal
+  ranking and revalidate canonical current revision/lifecycle/type/scope/expiry;
+- incompatible vector provider/model/dimension queries fail before distance ranking;
+- stale projections stop returning results immediately after a canonical revision
+  change even before rebuild;
+- reciprocal-rank fusion independently rechecks tenant/scope and rejects conflicting
+  canonical revisions for the same MemoryRecord;
+- hybrid retrieval executes selected lexical/vector/entity/temporal signals inside one
+  read-only REPEATABLE READ transaction;
+- held-out evaluation reports recall, precision and MRR separately from forbidden-record
+  leakage and exposes a hard zero-leakage assertion;
+- PostgreSQL fixtures prove Relationship A/B non-disclosure independently across vector,
+  entity, temporal and fused hybrid retrieval, wrong vector dimensions are rejected,
+  model mismatch fails closed and stale revisions vanish from all signals.
+
+Validation evidence:
+- implementation/fusion head `c938e23e576c98a8eb0efd61fea10e91c0fcd737`
+  passed Foundation CI run 293;
+- the complete `check` job passed frozen install, strict TypeScript, unit tests,
+  PostgreSQL 18 + pgvector migrations/integration fixtures and production builds;
+- PR #33 has no review threads or comments;
+- final documentation head must pass the same gate before merge.
 
 Rules:
 - no signal may query outside the caller's explicit authorized MemoryScope predicate;
@@ -267,7 +305,14 @@ Rules:
   fusion is allowed;
 - fusion may improve ranking but can never broaden authorization or compensate for a
   failed privacy check;
-- held-out evaluation reports leakage independently from recall/precision/latency.
+- held-out evaluation reports leakage independently from retrieval-quality metrics.
+
+After this slice:
+1. implement explicit tombstone/deletion propagation and prove searchable projections
+   stop surfacing deleted canonical memory;
+2. implement bounded context compilation with token/item budgets and provenance mapping;
+3. then reflection/consolidation with scope-preserving evidence and compaction-flush
+   rules.
 
 ## Phase 4 acceptance targets
 
