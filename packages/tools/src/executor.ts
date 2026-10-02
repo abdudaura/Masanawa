@@ -12,6 +12,8 @@ import {
 import {
   normalizeProviderCredentialBindings,
   type ProviderCredentialBindings,
+  type ProviderExecutionFailure,
+  type ProviderExecutionObserver,
   type ProviderRegistry,
   type ProviderSelection,
 } from "@masanawa/providers";
@@ -107,6 +109,7 @@ export type ToolDispatchOutcome =
   | {
       readonly status: "rejected";
       readonly errorCode: string;
+      readonly failure?: ProviderExecutionFailure;
       readonly receipt: ToolDispatchReceipt;
     }
   | {
@@ -118,11 +121,13 @@ export type ToolDispatchOutcome =
   | {
       readonly status: "unknown";
       readonly reasonCode: string;
+      readonly failure?: ProviderExecutionFailure;
       readonly receipt?: ToolDispatchReceipt;
     }
   | {
       readonly status: "not-dispatched";
       readonly errorCode: string;
+      readonly failure?: ProviderExecutionFailure;
     };
 
 export interface ToolDispatchAdapter {
@@ -138,6 +143,8 @@ export interface ConsequentialToolExecutionDependencies {
     tool: ToolDefinition,
     provider: ProviderSelection | null,
   ) => ToolDispatchAdapter;
+  readonly providerObserver?: ProviderExecutionObserver;
+  readonly nowMs?: () => number;
 }
 
 export interface ConsequentialToolExecutionInput {
@@ -436,6 +443,7 @@ export async function executeConsequentialTool(
   );
 
   const adapter = dependencies.resolveAdapter(tool, provider);
+  const dispatchStartedAt = (dependencies.nowMs ?? Date.now)();
   let outcome: ToolDispatchOutcome;
   try {
     outcome = await adapter.dispatch({
@@ -460,6 +468,25 @@ export async function executeConsequentialTool(
         operation.operationId,
       ),
     };
+  }
+
+  if (provider !== null && dependencies.providerObserver) {
+    const finishedAt = (dependencies.nowMs ?? Date.now)();
+    await dependencies.providerObserver.observe({
+      operationId: operation.operationId,
+      providerId: provider.provider.providerId,
+      providerKey: provider.provider.key,
+      providerVersion: provider.provider.version,
+      capability:
+        tool.providerRequirement?.capability ?? tool.capabilities[0]!,
+      outcome: outcome.status,
+      failure:
+        "failure" in outcome && outcome.failure !== undefined
+          ? outcome.failure
+          : null,
+      durationMs: Math.max(0, finishedAt - dispatchStartedAt),
+      costUnits: null,
+    });
   }
 
   let receipt: ExternalReceiptRecord | null = null;
