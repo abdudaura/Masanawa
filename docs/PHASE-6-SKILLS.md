@@ -2,7 +2,7 @@
 
 Status: ACTIVE  
 Started: 2026-10-02  
-Active branch: `phase6-skills-foundation`
+Active branch: `task059-skill-schemas`
 
 Phase 5 Tools and Providers is closed by PR #45, merge
 `0fe123e18a9163386c4ab10331139265ce26b64e`.
@@ -64,6 +64,10 @@ Reject:
 - implicit latest-version selection where reproducibility matters;
 - skill text/model intent as authorization;
 - workflows hidden inside conversational skill state.
+
+## Task 059 — canonical Skill / SkillVersion schema
+
+The preserved pre-roadmap foundation was reconciled rather than merged wholesale. Task 059 separates stable logical `Skill` identity (`SkillId`, key, creation time) from immutable normalized `SkillVersion` content (`SkillVersionId`, exact version, activation/governance/schema/provenance/certification fields). Version-owned nested content is frozen after canonical normalization. The preserved dependency-aware registry remains useful groundwork for later Skills tasks but does not make Tasks 060-070 complete.
 
 ## First canonical slice
 
