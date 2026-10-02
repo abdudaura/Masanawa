@@ -137,11 +137,23 @@ Foundation CI run 379, PR #47 merged as
 `d0a198dbdec1af08e3c8f1378da0985db628eb6e`, and merged-main Foundation CI
 run 380 passed on that exact merge commit.
 
-**Current: Task 059 of 150 — Implement canonical Skill and immutable SkillVersion schemas.**
+**Current: Task 060 of 150 — Implement Skill manifest validation and import format.**
 
-Active implementation branch: `task059-skill-schemas`. The valid `phase6-skills-foundation` package work has been selectively reconciled onto the post-Task-058 history rather than merging its stale branch. Task 059 now has distinct canonical Skill identity and immutable SkillVersion contracts plus focused invariants tests; acceptance/CI remains pending.\n\n
-Tasks 001-058 are merged complete.
+Tasks 001-059 are merged complete.
 
+
+
+Task 059 implementation head `3755dbf7b32f3eaa4e84db32e26749e21c110ef9` passed
+Foundation CI run 402. PR #54 merged as
+`631076323f075f07a9c67ea5902f17070d859e22`, and merged-main Foundation CI
+run 403 passed on that exact merge commit.
+
+Task 059 established:
+- canonical private `@masanawa/skills` workspace integrated into frozen-install/build gates;
+- stable logical Skill identity separated from immutable exact SkillVersion content;
+- canonical normalization and recursive freezing for SkillVersion-owned schemas, examples, capabilities, provenance and certification evidence;
+- fail-closed certification, consequential idempotency/reconciliation and billed-confirmation invariants;
+- preserved dependency-aware registry work as bounded groundwork only, without claiming Tasks 060-070 complete.
 
 Task 058 implementation head `bc6fb045a57759c65531e54f35599d1b91b2b993` passed
 Foundation CI run 397. PR #52 merged as
