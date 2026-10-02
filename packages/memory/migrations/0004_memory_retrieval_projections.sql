@@ -142,6 +142,7 @@ DECLARE
   canonical_scope_ref text;
   canonical_revision_id text;
   canonical_lifecycle text;
+  canonical_content text;
 BEGIN
   SELECT kind, state
     INTO generation_kind, generation_state
@@ -161,12 +162,14 @@ BEGIN
          r.scope_kind,
          r.scope_ref_id,
          r.lifecycle_state,
-         v.memory_revision_id
+         v.memory_revision_id,
+         v.content
     INTO canonical_type,
          canonical_scope_kind,
          canonical_scope_ref,
          canonical_lifecycle,
-         canonical_revision_id
+         canonical_revision_id,
+         canonical_content
     FROM memory.records r
     JOIN memory.revisions v
       ON v.tenant_id = r.tenant_id
@@ -185,7 +188,8 @@ BEGIN
      OR canonical_revision_id IS DISTINCT FROM NEW.memory_revision_id
      OR canonical_type IS DISTINCT FROM NEW.memory_type
      OR canonical_scope_kind IS DISTINCT FROM NEW.scope_kind
-     OR canonical_scope_ref IS DISTINCT FROM NEW.scope_ref_id THEN
+     OR canonical_scope_ref IS DISTINCT FROM NEW.scope_ref_id
+     OR canonical_content IS DISTINCT FROM NEW.document_text THEN
     RAISE EXCEPTION 'Lexical projection does not match current canonical memory'
       USING ERRCODE = '23514';
   END IF;
