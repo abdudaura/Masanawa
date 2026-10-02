@@ -29,14 +29,6 @@ function publicationTarget() {
         content: "A deliberately published shared fact.",
         extractionMethod: "governance-test",
         observedAt,
-        evidence: [
-          {
-            sourceKind: "operator" as const,
-            sourceReference: "fixture:publication",
-            sourceContentHash: "c".repeat(64),
-            observedAt,
-          },
-        ],
       },
       reason: "Explicitly approved publication for shared continuity.",
     },
@@ -121,6 +113,43 @@ describe("memory scope publication governance", () => {
         reason: "Changed governance reason.",
       }),
     );
+  });
+
+  it("rejects caller-supplied target evidence on cross-scope publication", () => {
+    const { tenantId, relationshipId, worldId, target } = publicationTarget();
+    const authority = createAuthorityContext({
+      tenantId,
+      principal: { kind: "system", systemKind: "memory-governance-test" },
+      scopes: [],
+      capabilities: ["memory.scope.publish"],
+      resourceScope: {
+        relationshipIds: [relationshipId],
+        worldIds: [worldId],
+      },
+      policyRevision: "policy-1",
+      approvalIds: [],
+      delegationChain: [],
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+    });
+
+    expect(() =>
+      assertMemoryScopePublicationAuthority(authority, {
+        ...target,
+        targetRevision: {
+          ...target.targetRevision,
+          evidence: [
+            {
+              sourceKind: "message",
+              sourceReference: "private-message:1",
+              sourceContentHash: "a".repeat(64),
+              verbatimText: "private verbatim text",
+              observedAt: target.targetRevision.observedAt,
+            },
+          ],
+        } as never,
+      }),
+    ).toThrow(/target evidence is generated/u);
   });
 
   it("forbids using lineage-style publication into another private scope", () => {
