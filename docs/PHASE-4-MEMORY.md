@@ -2,7 +2,7 @@
 
 Status: ACTIVE  
 Started: 2026-10-02  
-Active branch: `phase4-memory-extraction-liveness`
+Active branch: `phase4-memory-retrieval-projections`
 
 Phase 3 non-spatial Identity/World acceptance is closed by PR #28, merge
 `02c2c99153e904b4f9d2f403328a1e3b6effc3f1`. Optional spatial simulation remains
@@ -173,7 +173,9 @@ Validation evidence:
 - Foundation CI run 271 passed frozen install, strict TypeScript, unit tests,
   PostgreSQL 18 migrations/recovery/concurrency fixtures and production builds on
   implementation head `2a423ac1480b9c094b602e0d0e846bf882ff1992`;
-- the final documentation-only head must pass the same gate before PR #31 merges.
+- final documentation head `a4a9872763b94aa4b9473c5ca19c1d8b72c82559` passed
+  Foundation CI run 273;
+- PR #31 merged as `f0f516b9ebf10ee40d3e27474e98085efaf8b913`.
 
 Rules:
 - foreground/source persistence is independent of extraction success;
@@ -187,10 +189,64 @@ Rules:
 - dead-lettered work is terminal and cannot stall later eligible extraction jobs;
 - every attempt remains auditable without storing raw provider/model errors.
 
+## Fourth canonical slice — implementation gate passed
+
+Goal: rebuildable projection generations plus authorization-first lexical retrieval.
+
+Implemented:
+- canonical projection-generation contracts for lexical/vector/entity/temporal signals;
+- immutable generation compatibility identity plus building/current/retired lifecycle;
+- vector compatibility metadata binds provider key, model key and dimension before any
+  vector signal is enabled;
+- non-empty explicit authorized MemoryScope predicates with adapter capability
+  fail-closed checks;
+- PostgreSQL lexical projections bound to exact canonical record/revision/type/scope,
+  canonical document text and a deterministic source-content hash;
+- database trigger rejects projection rows whose text/type/scope/revision diverges from
+  current active canonical memory;
+- generation activation refuses incomplete or stale builds and atomically retires the
+  previous current generation;
+- PostgreSQL lexical search applies exact authorized scopes before ranking, reads only
+  the current generation, revalidates canonical current revision/lifecycle/scope and
+  excludes expired revisions;
+- stale projections stop returning results immediately after canonical revision drift;
+- rebuild fixture proves a replacement generation reproduces the same authorized
+  Relationship result set before the old retired generation is deleted;
+- conformance fixture proves identical query text in two Relationship scopes never
+  crosses the explicit authorization predicate;
+- direct SQL forged projection text is rejected by PostgreSQL;
+- future vector-generation compatibility can be persisted, but vector activation/search
+  remains deliberately unsupported until its own tested slice.
+
+Validation evidence:
+- PR #32 implementation head `a3d4c1edf7df7e485381ac431ba867833f3a7383`
+  passed Foundation CI run 275;
+- the complete `check` job passed frozen install, strict TypeScript, unit tests,
+  PostgreSQL 18 migrations/integration fixtures and production builds;
+- final documentation head must pass the same gate before PR #32 merges.
+
+Rules:
+- canonical MemoryRecord/MemoryRevision remains the only retrieval truth;
+- every projection row points to an exact canonical revision and source-content hash;
+- every query supplies explicit authorized MemoryScopes before any retrieval signal is
+  evaluated;
+- an adapter that cannot enforce the requested scope predicate fails closed;
+- lexical retrieval is implemented first in PostgreSQL and serves as the baseline
+  retrieval signal;
+- vector compatibility metadata includes provider/model identity, dimension and
+  generation; incompatible vector spaces can never be mixed;
+- projection generations are immutable once sealed and can be rebuilt/superseded
+  without changing canonical memory identity;
+- stale/superseded/expired/tombstoned canonical records are excluded from ordinary
+  retrieval even if a stale projection row exists;
+- deletion of a projection and rebuild from canonical records must reproduce the same
+  authorized lexical result set.
+
 After this slice:
-1. implement projection compatibility metadata and authorized lexical/vector/entity/
-   temporal retrieval with rebuild/evaluation fixtures;
-2. then bounded context compilation/reflection/consolidation/deletion propagation.
+1. add vector/entity/temporal signals behind the same projection/generation and scope
+   contract;
+2. add multi-signal fusion/reranking and held-out evaluation;
+3. then bounded context compilation/reflection/consolidation/deletion propagation.
 
 ## Phase 4 acceptance targets
 
