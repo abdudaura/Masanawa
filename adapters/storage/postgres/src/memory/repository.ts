@@ -1,6 +1,5 @@
 import {
   PlatformError,
-  parseCanonicalId,
   toInstant,
   type MemoryRecordId,
   type MemoryRevisionId,
@@ -8,6 +7,7 @@ import {
 } from "@masanawa/contracts";
 import {
   memoryLifecycleStates,
+  memoryScopeFromStorage,
   memoryScopeKey,
   memoryScopeStorage,
   normalizeMemoryRevisionContent,
@@ -111,50 +111,6 @@ function positiveRevision(value: string): number {
   return parsed;
 }
 
-function scopeFromStorage(
-  kind: MemoryScopeKind,
-  referenceId: string | null,
-): MemoryScope {
-  switch (kind) {
-    case "organization":
-      if (referenceId !== null) {
-        throw new Error("Organization memory scope unexpectedly has a reference");
-      }
-      return Object.freeze({ kind });
-    case "relationship":
-      if (referenceId === null) throw new Error("Relationship scope reference missing");
-      return Object.freeze({
-        kind,
-        relationshipId: parseCanonicalId("relationship", referenceId),
-      });
-    case "character-private":
-    case "character-shared":
-      if (referenceId === null) throw new Error("Character scope reference missing");
-      return Object.freeze({
-        kind,
-        characterId: parseCanonicalId("character", referenceId),
-      });
-    case "world":
-      if (referenceId === null) throw new Error("World scope reference missing");
-      return Object.freeze({
-        kind,
-        worldId: parseCanonicalId("world", referenceId),
-      });
-    case "session":
-      if (referenceId === null) throw new Error("Session scope reference missing");
-      return Object.freeze({
-        kind,
-        characterSessionId: parseCanonicalId("character-session", referenceId),
-      });
-    case "task":
-      if (referenceId === null) throw new Error("Task scope reference missing");
-      return Object.freeze({
-        kind,
-        taskId: parseCanonicalId("task", referenceId),
-      });
-  }
-}
-
 function evidenceFromRow(row: EvidenceRow): MemoryEvidence {
   return Object.freeze({
     ordinal: row.ordinal,
@@ -226,7 +182,7 @@ async function snapshotsFromRows(
         tenantId: row.tenant_id,
         memoryRecordId: row.memory_record_id,
         memoryType: row.memory_type,
-        scope: scopeFromStorage(row.scope_kind, row.scope_ref_id),
+        scope: memoryScopeFromStorage(row.scope_kind, row.scope_ref_id),
         lifecycleState: row.lifecycle_state,
         currentRevisionId: row.memory_revision_id,
         revision: positiveRevision(row.record_revision),
