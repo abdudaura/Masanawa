@@ -3903,6 +3903,22 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
     });
     expect(published.target.currentRevision.evidence[0]?.sourceContentHash).toHaveLength(64);
 
+    await withTransaction(pool, async (client) => {
+      const sourceImmediatelyAfterPublication = await getMemoryRecordInScope(client, {
+        tenantId,
+        memoryRecordId: sourceMemoryRecordId,
+        scope: { kind: "relationship", relationshipId },
+      });
+      expect(sourceImmediatelyAfterPublication?.record.lifecycleState).toBe("active");
+      expect(sourceImmediatelyAfterPublication?.record.scope).toEqual({
+        kind: "relationship",
+        relationshipId,
+      });
+      expect(
+        sourceImmediatelyAfterPublication?.currentRevision.evidence[0]?.verbatimText,
+      ).toBe(privateVerbatim);
+    });
+
     const replay = await executeMemoryScopePublication(pool, {
       ...target,
       authority: executeAuthority,
@@ -3963,7 +3979,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
         memoryRecordId: sourceMemoryRecordId,
         scope: { kind: "relationship", relationshipId },
       });
-      expect(source?.record.lifecycleState).toBe("active");
+      expect(source?.record.lifecycleState).toBe("superseded");
       expect(source?.record.scope).toEqual({
         kind: "relationship",
         relationshipId,
