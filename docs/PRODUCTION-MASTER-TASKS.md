@@ -8,9 +8,11 @@ Masanawa production is tracked as **150 numbered milestone tasks**. Tasks are no
 
 ## Current position
 
-Merged `main` satisfies Tasks **001-050**. This structural/product-definition branch performs Tasks **051-053**. After this branch is merged and green, the next task is **Task 054 of 150 — Standardize package/service implementation templates and enforce them in architecture tests.**
+Merged `main` satisfies Tasks **001-053**. **Task 054 of 150 — Standardize package/service implementation templates and enforce them in architecture tests** is active on `task054-implementation-templates`. It becomes complete only when its acceptance evidence is green and merged to `main`.
 
-Status: `[x]` COMPLETE, `[ ]` PLANNED. Tasks 051-053 count as complete only after this branch is merged.
+After Task 054 closes, the next task is **Task 055 of 150 — Standardize adapter topology/registration and prohibit adapter-to-adapter hidden orchestration.**
+
+Status: `[x]` COMPLETE, `[ ]` PLANNED.
 
 ## Tasks 001-010 — Product, source and architecture truth
 
