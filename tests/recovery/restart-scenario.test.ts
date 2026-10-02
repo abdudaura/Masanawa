@@ -6,32 +6,50 @@ import {
 } from "../../test/support/fault-injection.js";
 
 describe("restart scenarios", () => {
-  it("recreates ephemeral runtime while caller-owned durable state survives", async () => {
-    const faults = createFaultInjector({ "after-durable-write": 1 });
-    const durable = { writes: 0 };
-    const created: number[] = [];
-    const disposed: number[] = [];
+  it("replays a durable receipt after a crash without duplicating the side effect", async () => {
+    const faults = createFaultInjector({ "after-side-effect-before-ack": 1 });
+    const durable = {
+      receipt: null as string | null,
+      sideEffectCount: 0,
+    };
+    const generations: number[] = [];
 
     const result = await runRestartScenario({
       maxRestarts: 2,
       createRuntime(generation) {
-        created.push(generation);
+        generations.push(generation);
         return { generation };
       },
       run(runtime) {
-        durable.writes += 1;
-        faults.checkpoint("after-durable-write");
-        return { generation: runtime.generation, writes: durable.writes };
+        if (durable.receipt !== null) {
+          return {
+            generation: runtime.generation,
+            receipt: durable.receipt,
+            replayed: true,
+          };
+        }
+
+        durable.sideEffectCount += 1;
+        durable.receipt = "external-receipt-1";
+        faults.checkpoint("after-side-effect-before-ack");
+
+        return {
+          generation: runtime.generation,
+          receipt: durable.receipt,
+          replayed: false,
+        };
       },
-      dispose(runtime) {
-        disposed.push(runtime.generation);
-      },
+      dispose() {},
     });
 
-    expect(result).toEqual({ generation: 1, writes: 2 });
-    expect(created).toEqual([0, 1]);
-    expect(disposed).toEqual([0, 1]);
-    expect(durable.writes).toBe(2);
+    expect(result).toEqual({
+      generation: 1,
+      receipt: "external-receipt-1",
+      replayed: true,
+    });
+    expect(generations).toEqual([0, 1]);
+    expect(durable.sideEffectCount).toBe(1);
+    expect(faults.hits("after-side-effect-before-ack")).toBe(1);
   });
 
   it("does not restart ordinary permanent failures", async () => {
