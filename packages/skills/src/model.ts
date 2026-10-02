@@ -93,7 +93,13 @@ export interface SkillCertification {
   readonly passedTestCaseCount: number;
 }
 
-export interface SkillDefinition {
+export interface Skill {
+  readonly skillId: SkillId;
+  readonly key: string;
+  readonly createdAt: Instant;
+}
+
+export interface SkillVersion {
   readonly skillId: SkillId;
   readonly skillVersionId: SkillVersionId;
   readonly key: string;
@@ -160,6 +166,17 @@ export function normalizeSkillKey(value: string): string {
     throw new TypeError("skill.key is invalid");
   }
   return normalized;
+}
+
+export function normalizeSkill(input: Skill): Skill {
+  if (!isCanonicalId("skill", input.skillId)) {
+    throw new TypeError("skillId is invalid");
+  }
+  return Object.freeze({
+    skillId: input.skillId,
+    key: normalizeSkillKey(input.key),
+    createdAt: toInstant(input.createdAt),
+  });
 }
 
 export function normalizeSkillVersion(value: string): string {
@@ -329,9 +346,9 @@ function normalizeCertification(
   });
 }
 
-export function normalizeSkillDefinition(
-  input: SkillDefinition,
-): SkillDefinition {
+export function normalizeSkillVersionDefinition(
+  input: SkillVersion,
+): SkillVersion {
   if (!isCanonicalId("skill", input.skillId)) {
     throw new TypeError("skillId is invalid");
   }
