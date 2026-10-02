@@ -174,7 +174,7 @@ async function loadReceiptByObservation(
       WHERE tenant_id = $1
         AND provider = $2
         AND observation_key = $3`,
-    [input.tenantId, evidence.provider, input.observationKey],
+    [input.tenantId, input.provider, input.observationKey],
   );
   return result.rows[0] ?? null;
 }
@@ -184,15 +184,15 @@ export async function recordExternalReceipt(
   input: RecordExternalReceiptInput,
 ): Promise<RecordedExternalReceipt> {
   const evidence = normalizeExternalReceiptEvidence({
-    provider: evidence.provider,
-    observationKey: evidence.observationKey,
-    providerReference: evidence.providerReference,
-    normalizedStatus: evidence.normalizedStatus,
-    payloadHash: evidence.payloadHash,
-    payloadRef: evidence.payloadRef,
-    observedAt: evidence.observedAt,
-    verificationMethod: evidence.verificationMethod,
-    providerVersion: evidence.providerVersion,
+    provider: input.provider,
+    observationKey: input.observationKey,
+    providerReference: input.providerReference ?? null,
+    normalizedStatus: input.normalizedStatus,
+    payloadHash: input.payloadHash ?? null,
+    payloadRef: input.payloadRef ?? null,
+    observedAt: input.observedAt,
+    verificationMethod: input.verificationMethod,
+    providerVersion: input.providerVersion ?? null,
   });
   await loadOperationState(client, input.tenantId, input.operationId);
 
