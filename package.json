@@ -14,7 +14,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "architecture:check": "vitest run test/architecture",
-    "build": "pnpm --filter @masanawa/contracts build && pnpm --filter @masanawa/events build && pnpm --filter @masanawa/security build && pnpm --filter @masanawa/providers build && pnpm --filter @masanawa/tools build && pnpm --filter @masanawa/identity build && pnpm --filter @masanawa/world build && pnpm --filter @masanawa/memory build && pnpm --filter @masanawa/telemetry build && pnpm --filter @masanawa/postgres build && pnpm --filter @masanawa/node-runtime build && pnpm --filter @masanawa/gateway-service build && pnpm --filter @masanawa/worker-service build && pnpm --filter @masanawa/ops-service build && pnpm --filter @masanawa/web-app build && pnpm --filter @masanawa/ops-app build"
+    "build": "pnpm --filter @masanawa/contracts build && pnpm --filter @masanawa/events build && pnpm --filter @masanawa/telemetry build && pnpm --filter @masanawa/security build && pnpm --filter @masanawa/providers build && pnpm --filter @masanawa/tools build && pnpm --filter @masanawa/identity build && pnpm --filter @masanawa/world build && pnpm --filter @masanawa/memory build && pnpm --filter @masanawa/postgres build && pnpm --filter @masanawa/node-runtime build && pnpm --filter @masanawa/gateway-service build && pnpm --filter @masanawa/worker-service build && pnpm --filter @masanawa/ops-service build && pnpm --filter @masanawa/web-app build && pnpm --filter @masanawa/ops-app build"
   },
   "devDependencies": {
     "@types/node": "24.13.6",
