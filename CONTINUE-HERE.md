@@ -154,19 +154,31 @@ Implemented on the branch:
 - inaccessible/missing/out-of-scope credential refs fail uniformly as
   `credential.unavailable` authorization errors without existence disclosure;
 - unit coverage proves failure normalization, privacy-safe telemetry, scoped credential
-  resolution/redaction and Tool executor observation boundaries.
+  resolution/redaction and Tool executor observation boundaries;
+- Security/PostgreSQL now provide encrypted credential envelope custody with
+  tenant/provider/slot binding, generation-CAS rotation and revocation;
+- PostgreSQL integration coverage verifies plaintext is absent at rest, wrong
+  tenant/provider/slot resolution fails closed, stale rotation conflicts, revocation
+  blocks resolution, and cipher errors are redacted;
+- telemetry observer failures are explicitly non-authoritative and cannot change Tool
+  settlement;
+- repository-wide adapter/service scan found no external provider execution path outside
+  the canonical Tool executor.
 
-Foundation CI run 349 passed the first provider failure/telemetry head. The latest
-credential-edge + executor-observer head is still awaiting its current Foundation CI
-gate. Do not merge PR #43 until the latest head passes the full gate.
+Foundation CI runs 349–352 passed the provider failure/telemetry and initial
+credential-resolution heads. GitHub Actions has not emitted a new pull_request run for
+the later encrypted-custody/integration-test heads despite synchronize/reopen events.
+Do not merge PR #43 until a complete Foundation CI gate is attached to the exact latest
+head and passes.
 
 After this slice is green:
-1. add a concrete encrypted credential persistence/resolution adapter with tenant/provider
-   scope and rotation/revocation metadata;
-2. require concrete provider adapters to use typed ProviderExecutionFailure instead of
-   legacy free-form errorCode-only failures;
-3. add readiness/timeout/rate/cost counters/alerts in the service telemetry wiring;
-4. finish the Phase 5 acceptance audit before advancing to Skills/Workflows.
+1. require future concrete provider adapters to use typed ProviderExecutionFailure
+   rather than legacy free-form errorCode-only failures;
+2. add readiness/timeout/rate/cost counters/alerts in service telemetry wiring when
+   real provider adapters are introduced;
+3. convert `docs/PHASE-5-CLOSURE-AUDIT.md` from PENDING to PASS only after exact-head
+   CI and final review;
+4. then advance to Skills/Workflows from merged `main`.
 
 The requested post-freeze donor boundary remains unchanged: MemPalace contributes
 retrieval/evaluation/storage-contract behavior inside canonical Masanawa memory ports;
