@@ -36,6 +36,10 @@ import {
   publishCharacterVersion,
   activateCharacterVersion,
   getOrCreateRelationship,
+  createMemoryRecord,
+  appendMemoryRevision,
+  getMemoryRecordInScope,
+  listMemoryRecordsByScopes,
   createWorld,
   getWorld,
   admitSimulationInput,
@@ -85,12 +89,16 @@ const securityMigrationDirectory = fileURLToPath(
 const identityMigrationDirectory = fileURLToPath(
   new URL("../../../../packages/identity/migrations", import.meta.url),
 );
+const memoryMigrationDirectory = fileURLToPath(
+  new URL("../../../../packages/memory/migrations", import.meta.url),
+);
 const worldMigrationDirectory = fileURLToPath(
   new URL("../../../../packages/world/migrations", import.meta.url),
 );
 const foundationMigrationRootsForTest = [
   { owner: "events", directory: eventMigrationDirectory },
   { owner: "identity", directory: identityMigrationDirectory },
+  { owner: "memory", directory: memoryMigrationDirectory },
   { owner: "security", directory: securityMigrationDirectory },
   { owner: "world", directory: worldMigrationDirectory },
 ] as const;
@@ -140,6 +148,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
 
   beforeEach(async () => {
     await pool.query("DROP SCHEMA IF EXISTS world CASCADE");
+    await pool.query("DROP SCHEMA IF EXISTS memory CASCADE");
     await pool.query("DROP SCHEMA IF EXISTS identity CASCADE");
     await pool.query("DROP SCHEMA IF EXISTS security CASCADE");
     await pool.query("DROP SCHEMA IF EXISTS events CASCADE");
@@ -150,6 +159,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
     const applied = await runMigrations(pool, [
       { owner: "events", directory: eventMigrationDirectory },
       { owner: "identity", directory: identityMigrationDirectory },
+      { owner: "memory", directory: memoryMigrationDirectory },
       { owner: "security", directory: securityMigrationDirectory },
       { owner: "world", directory: worldMigrationDirectory },
     ]);
@@ -159,6 +169,7 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       "events/0003_receipt_reconciliation_integrity.sql",
       "events/0004_outbox_recovery.sql",
       "identity/0001_identity_foundation.sql",
+      "memory/0001_memory_foundation.sql",
       "security/0001_security_foundation.sql",
       "security/0002_approval_operation_integrity.sql",
       "security/0003_service_credentials.sql",
@@ -3322,4 +3333,189 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       terminal_receipt_ref: "receipt:test",
     });
   });
+  it("keeps canonical memory relationship-scoped with atomic immutable revisions", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const firstUserId = createCanonicalId("user");
+    const secondUserId = createCanonicalId("user");
+    const characterId = createCanonicalId("character");
+    const firstRelationshipId = createCanonicalId("relationship");
+    const secondRelationshipId = createCanonicalId("relationship");
+    const memoryRecordId = createCanonicalId("memory-record");
+    const firstRevisionId = createCanonicalId("memory-revision");
+    const secondRevisionId = createCanonicalId("memory-revision");
+    const now = toInstant("2026-10-02T04:00:00Z");
+    const later = toInstant("2026-10-02T04:01:00Z");
+    const sourceHash = "b".repeat(64);
+
+    await withTransaction(pool, async (client) => {
+      await createTenant(client, { tenantId, createdAt: now });
+      await createUser(client, {
+        tenantId,
+        userId: firstUserId,
+        createdAt: now,
+      });
+      await createUser(client, {
+        tenantId,
+        userId: secondUserId,
+        createdAt: now,
+      });
+      await createCharacter(client, {
+        tenantId,
+        characterId,
+        createdAt: now,
+      });
+      await getOrCreateRelationship(client, {
+        tenantId,
+        relationshipId: firstRelationshipId,
+        userId: firstUserId,
+        characterId,
+        createdAt: now,
+      });
+      await getOrCreateRelationship(client, {
+        tenantId,
+        relationshipId: secondRelationshipId,
+        userId: secondUserId,
+        characterId,
+        createdAt: now,
+      });
+
+      const created = await createMemoryRecord(client, {
+        tenantId,
+        memoryRecordId,
+        memoryRevisionId: firstRevisionId,
+        memoryType: "preference",
+        scope: {
+          kind: "relationship",
+          relationshipId: firstRelationshipId,
+        },
+        content: "Prefers morning reminders.",
+        confidence: 0.95,
+        extractionMethod: "fixture",
+        observedAt: now,
+        evidence: [
+          {
+            sourceKind: "message",
+            sourceReference: "fixture:message:1",
+            sourceContentHash: sourceHash,
+            verbatimText: "  Please remind me in the morning.\n",
+            observedAt: now,
+          },
+        ],
+        createdAt: now,
+      });
+
+      expect(created.record.revision).toBe(1);
+      expect(created.currentRevision.evidence[0]?.verbatimText).toBe(
+        "  Please remind me in the morning.\n",
+      );
+
+      await expect(
+        getMemoryRecordInScope(client, {
+          tenantId,
+          memoryRecordId,
+          scope: {
+            kind: "relationship",
+            relationshipId: firstRelationshipId,
+          },
+        }),
+      ).resolves.toMatchObject({
+        record: { memoryRecordId, revision: 1 },
+      });
+
+      await expect(
+        getMemoryRecordInScope(client, {
+          tenantId,
+          memoryRecordId,
+          scope: {
+            kind: "relationship",
+            relationshipId: secondRelationshipId,
+          },
+        }),
+      ).resolves.toBeNull();
+
+      await expect(
+        listMemoryRecordsByScopes(client, {
+          tenantId,
+          scopes: [
+            {
+              kind: "relationship",
+              relationshipId: secondRelationshipId,
+            },
+          ],
+        }),
+      ).resolves.toHaveLength(0);
+
+      await expect(
+        listMemoryRecordsByScopes(client, {
+          tenantId,
+          scopes: [
+            {
+              kind: "relationship",
+              relationshipId: firstRelationshipId,
+            },
+          ],
+        }),
+      ).resolves.toHaveLength(1);
+
+      const appendInput = {
+        tenantId,
+        memoryRecordId,
+        memoryRevisionId: secondRevisionId,
+        expectedRevision: 1,
+        content: "Prefers reminders early in the morning.",
+        payload: { localTime: "07:00" },
+        confidence: 0.98,
+        extractionMethod: "fixture",
+        observedAt: later,
+        evidence: [
+          {
+            sourceKind: "message" as const,
+            sourceReference: "fixture:message:2",
+            sourceContentHash: sourceHash,
+            verbatimText: "Make that seven in the morning.",
+            observedAt: later,
+          },
+        ],
+        updatedAt: later,
+      } as const;
+
+      const revised = await appendMemoryRevision(client, appendInput);
+      expect(revised.record.revision).toBe(2);
+      expect(revised.currentRevision.memoryRevisionId).toBe(secondRevisionId);
+      expect(revised.currentRevision.payload).toEqual({ localTime: "07:00" });
+
+      const replayed = await appendMemoryRevision(client, appendInput);
+      expect(replayed.record.revision).toBe(2);
+      expect(replayed.currentRevision.memoryRevisionId).toBe(secondRevisionId);
+
+      await expect(
+        appendMemoryRevision(client, {
+          ...appendInput,
+          memoryRevisionId: createCanonicalId("memory-revision"),
+          content: "A conflicting stale write.",
+        }),
+      ).rejects.toMatchObject({
+        code: "memory.revision_conflict",
+      });
+    });
+
+    await expect(
+      pool.query(
+        `UPDATE memory.records
+            SET scope_ref_id = $1
+          WHERE tenant_id = $2 AND memory_record_id = $3`,
+        [secondRelationshipId, tenantId, memoryRecordId],
+      ),
+    ).rejects.toMatchObject({ code: "23514" });
+
+    await expect(
+      pool.query(
+        `UPDATE memory.revisions
+            SET content = 'silently rewritten'
+          WHERE tenant_id = $1 AND memory_revision_id = $2`,
+        [tenantId, secondRevisionId],
+      ),
+    ).rejects.toMatchObject({ code: "23514" });
+  });
+
 });
