@@ -17,10 +17,13 @@ import {
   type CreateMemoryRecordInput,
   type GetMemoryRecordInScopeInput,
   type JsonObject,
+  type LinkMemoryRecordsInput,
+  type LinkedMemoryRecords,
   type ListMemoryRecordsByScopesInput,
   type MemoryEvidence,
   type MemoryLifecycleState,
   type MemoryRecord,
+  type MemoryRecordLink,
   type MemoryRecordSnapshot,
   type MemoryRepository,
   type MemoryRevision,
@@ -40,6 +43,7 @@ interface SnapshotRow {
   scope_ref_id: string | null;
   lifecycle_state: MemoryLifecycleState;
   record_revision: string;
+  lifecycle_revision: string;
   record_created_at: Date;
   record_updated_at: Date;
   memory_revision_id: MemoryRevisionId;
@@ -55,6 +59,17 @@ interface SnapshotRow {
   valid_to: Date | null;
   expires_at: Date | null;
   revision_created_at: Date;
+}
+
+interface RecordLinkRow {
+  tenant_id: TenantId;
+  source_memory_record_id: MemoryRecordId;
+  source_memory_revision_id: MemoryRevisionId;
+  target_memory_record_id: MemoryRecordId;
+  target_memory_revision_id: MemoryRevisionId;
+  link_kind: MemoryRecordLink["kind"];
+  reason: string;
+  created_at: Date;
 }
 
 interface EvidenceRow {
@@ -215,6 +230,7 @@ async function snapshotsFromRows(
         lifecycleState: row.lifecycle_state,
         currentRevisionId: row.memory_revision_id,
         revision: positiveRevision(row.record_revision),
+        lifecycleRevision: positiveRevision(row.lifecycle_revision),
         createdAt: toInstant(row.record_created_at),
         updatedAt: toInstant(row.record_updated_at),
       });
@@ -257,6 +273,7 @@ const snapshotSelect = `
     r.scope_ref_id,
     r.lifecycle_state,
     r.revision::text AS record_revision,
+    r.lifecycle_revision::text AS lifecycle_revision,
     r.created_at AS record_created_at,
     r.updated_at AS record_updated_at,
     v.memory_revision_id,
@@ -660,6 +677,232 @@ export async function appendMemoryRevision(
   return snapshot;
 }
 
+function recordLinkFromRow(row: RecordLinkRow): MemoryRecordLink {
+  return Object.freeze({
+    tenantId: row.tenant_id,
+    sourceMemoryRecordId: row.source_memory_record_id,
+    sourceMemoryRevisionId: row.source_memory_revision_id,
+    targetMemoryRecordId: row.target_memory_record_id,
+    targetMemoryRevisionId: row.target_memory_revision_id,
+    kind: row.link_kind,
+    reason: row.reason,
+    createdAt: toInstant(row.created_at),
+  });
+}
+
+async function loadRecordLink(
+  client: PoolClient,
+  tenantId: TenantId,
+  sourceMemoryRecordId: MemoryRecordId,
+): Promise<MemoryRecordLink | null> {
+  const result = await client.query<RecordLinkRow>(
+    `SELECT tenant_id,
+            source_memory_record_id,
+            source_memory_revision_id,
+            target_memory_record_id,
+            target_memory_revision_id,
+            link_kind,
+            reason,
+            created_at
+       FROM memory.record_links
+      WHERE tenant_id = $1
+        AND source_memory_record_id = $2`,
+    [tenantId, sourceMemoryRecordId],
+  );
+  return result.rows[0] ? recordLinkFromRow(result.rows[0]) : null;
+}
+
+export async function linkMemoryRecords(
+  client: PoolClient,
+  input: LinkMemoryRecordsInput,
+): Promise<LinkedMemoryRecords> {
+  if (
+    !Number.isSafeInteger(input.expectedSourceLifecycleRevision) ||
+    input.expectedSourceLifecycleRevision < 1
+  ) {
+    throw new RangeError(
+      "expectedSourceLifecycleRevision must be a positive safe integer",
+    );
+  }
+  if (input.sourceMemoryRecordId === input.targetMemoryRecordId) {
+    throw conflict(
+      "memory.lineage_self_reference",
+      "MemoryRecord cannot supersede or absorb itself",
+    );
+  }
+
+  const reason = input.reason.trim();
+  if (reason.length < 1 || reason.length > 2000) {
+    throw new TypeError("lineage reason is invalid");
+  }
+  const transitionedAt = toInstant(input.transitionedAt);
+  const desiredState =
+    input.kind === "supersedes" ? "superseded" : "absorbed";
+
+  const result = await client.query<{ updated: string }>(
+    `WITH locked_records AS MATERIALIZED (
+       SELECT tenant_id,
+              memory_record_id,
+              memory_type,
+              scope_kind,
+              scope_ref_id,
+              lifecycle_state,
+              revision,
+              lifecycle_revision
+         FROM memory.records
+        WHERE tenant_id = $1
+          AND memory_record_id = ANY($2::text[])
+        ORDER BY memory_record_id
+        FOR UPDATE
+     ),
+     eligible AS (
+       SELECT source.tenant_id,
+              source.memory_record_id AS source_memory_record_id,
+              source.revision AS source_revision_number,
+              target.memory_record_id AS target_memory_record_id,
+              target.revision AS target_revision_number
+         FROM locked_records source
+         JOIN locked_records target
+           ON target.tenant_id = source.tenant_id
+        WHERE source.memory_record_id = $3
+          AND target.memory_record_id = $4
+          AND source.lifecycle_state = 'active'
+          AND target.lifecycle_state = 'active'
+          AND source.lifecycle_revision = $5
+          AND source.scope_kind = target.scope_kind
+          AND source.scope_ref_id IS NOT DISTINCT FROM target.scope_ref_id
+          AND source.memory_type = target.memory_type
+     ),
+     inserted_link AS (
+       INSERT INTO memory.record_links (
+         tenant_id,
+         source_memory_record_id,
+         source_memory_revision_id,
+         target_memory_record_id,
+         target_memory_revision_id,
+         link_kind,
+         reason,
+         created_at
+       )
+       SELECT eligible.tenant_id,
+              eligible.source_memory_record_id,
+              source_revision.memory_revision_id,
+              eligible.target_memory_record_id,
+              target_revision.memory_revision_id,
+              $6,
+              $7,
+              $8
+         FROM eligible
+         JOIN memory.revisions source_revision
+           ON source_revision.tenant_id = eligible.tenant_id
+          AND source_revision.memory_record_id = eligible.source_memory_record_id
+          AND source_revision.revision_number = eligible.source_revision_number
+         JOIN memory.revisions target_revision
+           ON target_revision.tenant_id = eligible.tenant_id
+          AND target_revision.memory_record_id = eligible.target_memory_record_id
+          AND target_revision.revision_number = eligible.target_revision_number
+       ON CONFLICT (tenant_id, source_memory_record_id) DO NOTHING
+       RETURNING tenant_id, source_memory_record_id
+     ),
+     updated_source AS (
+       UPDATE memory.records source
+          SET lifecycle_state = $9,
+              lifecycle_revision = lifecycle_revision + 1,
+              updated_at = $8
+         FROM inserted_link
+        WHERE source.tenant_id = inserted_link.tenant_id
+          AND source.memory_record_id = inserted_link.source_memory_record_id
+          AND source.lifecycle_state = 'active'
+          AND source.lifecycle_revision = $5
+       RETURNING source.memory_record_id
+     )
+     SELECT count(*)::text AS updated
+       FROM updated_source`,
+    [
+      input.tenantId,
+      [input.sourceMemoryRecordId, input.targetMemoryRecordId],
+      input.sourceMemoryRecordId,
+      input.targetMemoryRecordId,
+      input.expectedSourceLifecycleRevision,
+      input.kind,
+      reason,
+      transitionedAt,
+      desiredState,
+    ],
+  );
+
+  const [source, target, link] = await Promise.all([
+    loadSnapshot(client, input.tenantId, input.sourceMemoryRecordId),
+    loadSnapshot(client, input.tenantId, input.targetMemoryRecordId),
+    loadRecordLink(client, input.tenantId, input.sourceMemoryRecordId),
+  ]);
+
+  if (!source) {
+    throw missing("memory.lineage_source_not_found", "Source MemoryRecord was not found");
+  }
+  if (!target) {
+    throw missing("memory.lineage_target_not_found", "Target MemoryRecord was not found");
+  }
+
+  if (result.rows[0]?.updated === "1") {
+    if (!link) {
+      throw new Error("Memory lineage update completed without lineage evidence");
+    }
+    return Object.freeze({
+      link,
+      source,
+      target,
+      reused: false,
+    });
+  }
+
+  if (
+    link &&
+    link.targetMemoryRecordId === input.targetMemoryRecordId &&
+    link.kind === input.kind &&
+    link.reason === reason &&
+    source.record.lifecycleState === desiredState
+  ) {
+    return Object.freeze({
+      link,
+      source,
+      target,
+      reused: true,
+    });
+  }
+
+  if (
+    memoryScopeKey(source.record.scope) !== memoryScopeKey(target.record.scope)
+  ) {
+    throw conflict(
+      "memory.lineage_scope_mismatch",
+      "Memory lineage cannot cross scope",
+    );
+  }
+  if (source.record.memoryType !== target.record.memoryType) {
+    throw conflict(
+      "memory.lineage_type_mismatch",
+      "Memory lineage cannot change memory type",
+    );
+  }
+  if (source.record.lifecycleState !== "active") {
+    throw conflict(
+      "memory.lineage_source_not_active",
+      "Source MemoryRecord is no longer active",
+    );
+  }
+  if (target.record.lifecycleState !== "active") {
+    throw conflict(
+      "memory.lineage_target_not_active",
+      "Target MemoryRecord must be active",
+    );
+  }
+  throw conflict(
+    "memory.lifecycle_revision_conflict",
+    "MemoryRecord lifecycle revision is stale",
+  );
+}
+
 export async function getMemoryRecordInScope(
   client: PoolClient,
   input: GetMemoryRecordInScopeInput,
@@ -749,6 +992,8 @@ export function createPostgresMemoryRepository(
       createMemoryRecord(client, input),
     appendMemoryRevision: (input: AppendMemoryRevisionInput) =>
       appendMemoryRevision(client, input),
+    linkMemoryRecords: (input: LinkMemoryRecordsInput) =>
+      linkMemoryRecords(client, input),
     getMemoryRecordInScope: (input: GetMemoryRecordInScopeInput) =>
       getMemoryRecordInScope(client, input),
     listMemoryRecordsByScopes: (input: ListMemoryRecordsByScopesInput) =>

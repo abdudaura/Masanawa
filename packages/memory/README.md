@@ -14,10 +14,17 @@ Implemented in the first Phase 4 slice:
 - PostgreSQL canonical persistence;
 - immutable record type/scope identity at the database layer;
 - immutable revisions/evidence;
-- atomic expected-revision append and exact replay handling.
+- atomic expected-revision append and exact replay handling;
+- independent lifecycle CAS revision;
+- immutable same-scope supersedes/absorbs lineage;
+- governed private/bounded → Character-shared/World/Organization publication;
+- publication through current AuthorityContext, exact Operation binding and consumed
+  one-time Approval;
+- immutable publication audit that references private source IDs without widening or
+  rewriting the source scope.
 
 Still to implement behind this same boundary:
-- governed lifecycle transitions and supersession/correction links;
+- expiration/tombstone lifecycle commands and physical-purge governance;
 - extraction queues, retry/dead-letter and idempotent candidate admission;
 - projection generations for vector/lexical/entity/temporal retrieval;
 - embedding identity/dimension/source-hash compatibility metadata;

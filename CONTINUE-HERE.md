@@ -36,7 +36,7 @@ of architectural feature selection.
 
 **Phase 4 — Memory.**
 
-Current implementation branch: `phase4-memory-candidate-assessment`.
+Current implementation branch: `phase4-memory-lifecycle`.
 
 Phase 0A/0B, Phase 1 and Phase 2 are closed.
 
@@ -109,7 +109,10 @@ Implemented on the current branch:
 - PostgreSQL fixture for cross-Relationship non-disclosure, revision CAS/replay and
   database immutability;
 - Foundation CI run 250 passed the complete check gate on implementation head
-  `fd8e20bf7d589393d017338af89502fa4ca3ae6b`.
+  `fd8e20bf7d589393d017338af89502fa4ca3ae6b`;
+- final documentation head `08d7685048ee27145937dbe204b4a8ea6deae09e`
+  passed Foundation CI run 251;
+- PR #29 merged as `f99c42157401728a5ca3b4f91d5732382f57c865`.
 
 The MemPalace-inspired behavior used here is deliberately structural: extracted
 MemoryRecords never replace their immutable/verbatim source evidence.
@@ -117,15 +120,23 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 ## Immediate work
 
 1. verify the automatically triggered Foundation CI run on the final
-   documentation-only PR #29 head;
-2. fix any real failure; if green, merge PR #29;
-3. on a fresh branch from merged `main`, continue Phase 4 with governed
-   lifecycle/correction/supersession and explicit private→shared/world/organization
-   publication semantics;
-4. then add idempotent extraction queue/retry/dead-letter;
-5. only after canonical lifecycle/liveness is sound, add vector/lexical/entity/temporal
-   projections with embedding identity/dimension/source-hash compatibility and
-   cross-scope conformance tests.
+   documentation-only PR #30 head;
+2. fix any real failure; if green, merge PR #30;
+3. on a fresh branch from merged `main`, implement idempotent extraction
+   queue/retry/dead-letter with durable leases, bounded attempts and poison-item
+   isolation;
+4. run PostgreSQL 18 recovery/concurrency fixtures and merge when green;
+5. only after lifecycle/liveness is sound, add retrieval projections.
+
+The lifecycle/publication implementation now includes independent lifecycle CAS,
+immutable same-scope/type lineage, current-authority + one-time-approval publication,
+PostgreSQL fixtures for stale writers/preserved evidence/cross-scope rejection, stable
+replay after later source supersession, source-row locking against concurrent revision
+races, and generated sanitized publication provenance that cannot carry caller-injected
+private verbatim evidence.
+
+Foundation CI run 261 passed the complete gate on hardened implementation head
+`f5777a0d32fdc57b84d8fd415bb4ddb5de57a972`.
 
 Do not skip directly to vector search. Retrieval quality cannot outrank canonical scope,
 provenance, correction, deletion or liveness.
