@@ -119,35 +119,31 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 
 ## Immediate work
 
-PR #35 merged as `5ff2cc4f3b79d725d898ecfe0e92a3600f510a88`.
-Hardened implementation head `4b21258b6d3ea37d296157468952c2d9be8c22d2`
-passed Foundation CI run 309; final documentation head
-`aeec21641f6881e32f4aa62b5d3069f8ab15948b` passed run 311.
-
-Current work is the Phase 4 acceptance closure on
+PR #36 is the Phase 4 acceptance-closure PR on
 `phase4-memory-acceptance-closure`.
 
-The closure audit found one concrete evidence gap:
-- entity/temporal held-out retrieval and canonical supersession were each already
-  covered, but there was no dedicated held-out fixture proving contradictory predecessor
-  suppression and corrected-current selection together.
+Acceptance implementation head `d48b17ff9c4bcb91d51d88bf78da7a1e6c9f597a`
+passed Foundation CI run 313. The complete gate passed frozen install, strict
+TypeScript, all unit tests, PostgreSQL 18 + pgvector migrations/integration fixtures and
+production builds. PR #36 has no review threads or comments.
 
-The branch now adds
-`adapters/storage/postgres/src/memory/acceptance.integration.test.ts`, which:
-- creates two contradictory same-scope preference records;
-- indexes both while active;
-- supersedes the predecessor without deleting its revision/evidence;
-- proves entity, temporal and hybrid retrieval return only the corrected active record;
-- evaluates each result as a held-out set with the predecessor explicitly forbidden;
-- requires recall/precision/MRR = 1 and zero forbidden leakage.
+The acceptance matrix in `docs/PHASE-4-MEMORY-ACCEPTANCE.md` is now all PASS.
+The last gap was closed by a held-out contradiction/current-view fixture proving:
+- corrected current truth is selected by entity, temporal and hybrid retrieval;
+- the superseded predecessor is explicitly forbidden and never returned;
+- predecessor revision/evidence remains intact;
+- held-out recall, precision and MRR are 1 with zero leakage.
 
 Immediate next steps:
-1. run the full Foundation CI gate on the closure fixture;
-2. fix any real failure;
-3. complete `docs/PHASE-4-MEMORY-ACCEPTANCE.md` with target-by-target evidence;
-4. if every acceptance target is evidenced, mark Phase 4 closed, update this handoff to
-   the next canonical phase from the repository rewrite plan, and merge the closure PR;
-5. do not invent additional Memory features merely to extend Phase 4.
+1. verify the final closure-documentation head in Foundation CI;
+2. fix any real failure; if green, merge PR #36;
+3. create a fresh Phase 5 branch from merged `main`;
+4. update the rewrite plan/handoff with the final Phase 4 closure run and mark
+   Phase 5 — Tools and Providers active;
+5. recover Phase 5 canonical contracts and donor boundaries from Architecture,
+   Source Ownership and the ledgers before implementing the first production slice;
+6. do not reopen Memory unless a later integration exposes a documented acceptance
+   regression.
 
 The requested post-freeze donor boundary remains unchanged: MemPalace contributes
 retrieval/evaluation/storage-contract behavior inside canonical Masanawa memory ports;
