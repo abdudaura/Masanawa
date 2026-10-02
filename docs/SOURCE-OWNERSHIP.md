@@ -30,9 +30,9 @@ Masanawa owns the resulting architecture. Every repository under `references/sou
 | Realtime pipeline/turn-taking | **LiveKit Agents TS (selected primary)** | Pipecat, CyberVerse | interruption, frame/processor seams, multimodal composition |
 | Digital-life/embodiment | **AIRI (selected architectural donor)** | N.E.K.O | Masanawa-owned Character contracts across web/desktop/mobile/avatar contexts |
 | Avatars | **AIRI renderer architecture** + LiveKit avatar ecosystem | CyberVerse, N.E.K.O | one renderer-neutral AvatarProvider tied to canonical identity |
-| Social | **ChatWithStars (selected domain donor)** | OpenClaw/eliza channel patterns | **services/social owns durable outbox/publish state** |
+| Social | **ChatWithStars (selected domain donor)** | OpenClaw/eliza channel patterns | **future ADR-owned social domain + Worker orchestration**; adapters own external delivery, and no standalone social service is canonical |
 | Commerce | **ChatWithStars (selected domain donor)** | eliza approval patterns | **packages/commerce owns deterministic ledger/reconciliation** |
-| Studio | **ChatWithStars (selected domain donor)** | AIRI/CyberVerse media concepts | **services/studio owns produced-media pipeline separate from live presence** |
+| Studio | **ChatWithStars (selected domain donor)** | AIRI/CyberVerse media concepts | **future ADR-owned studio/media domain + Worker or justified specialist media worker**; no standalone studio service is canonical |
 | Plugin ecosystem | **elizaOS (selected component-model donor)** | OpenClaw, N.E.K.O | **packages/plugins owns manifests/components/capabilities/lifecycle; plugins register canonical components only** |
 | Ops/governance | **ChatWithStars (selected domain/governance donor)** | OpenClaw control plane, Microsoft AF observability | **apps/ops + security/telemetry own unified operator control and readiness** |
 
