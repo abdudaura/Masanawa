@@ -1,8 +1,8 @@
 # Phase 4 — Memory
 
-Status: ACTIVE  
+Status: COMPLETE  
 Started: 2026-10-02  
-Active branch: `phase4-memory-acceptance-closure`
+Closure branch: `phase4-memory-acceptance-closure`
 
 Phase 3 non-spatial Identity/World acceptance is closed by PR #28, merge
 `02c2c99153e904b4f9d2f403328a1e3b6effc3f1`. Optional spatial simulation remains
@@ -483,9 +483,12 @@ Implemented closure proof:
   passed Foundation CI run 313;
 - PR #36 has no review threads or comments.
 
-Every Phase 4 acceptance target now has repository evidence. Final closure documentation
-must pass the same gate before merge; no new Memory subsystem is authorized by this
-audit.
+Every Phase 4 acceptance target has repository evidence. Final closure documentation
+head `d67c9332431a7a8ce428e426f93ea61f34b7d798` passed Foundation CI run 316 and
+PR #36 merged as `e960b3f5dfe4d7b7470ddea604187420451498ce`.
+
+Phase 4 is complete. No new Memory subsystem is authorized absent a later documented
+acceptance regression.
 
 ## Phase 4 acceptance targets
 
