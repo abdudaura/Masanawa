@@ -1,6 +1,9 @@
 import {
   isCanonicalId,
   type CredentialRefId,
+  type OperationId,
+  type ProviderId,
+  type TenantId,
 } from "@masanawa/contracts";
 import type { ProviderDefinition } from "./model.js";
 
@@ -51,12 +54,6 @@ export function normalizeProviderCredentialBindings(
   return Object.freeze(normalized);
 }
 
-
-import type {
-  OperationId,
-  ProviderId,
-  TenantId,
-} from "@masanawa/contracts";
 
 export interface ProviderCredentialAccessRequest {
   readonly tenantId: TenantId;
