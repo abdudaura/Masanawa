@@ -99,7 +99,9 @@ export async function searchMemoryHybrid(
             scopePredicate: input.scopePredicate,
             fromInclusive: input.temporal.fromInclusive,
             toExclusive: input.temporal.toExclusive,
-            asOf: input.temporal.asOf,
+            ...(input.temporal.asOf !== undefined
+              ? { asOf: input.temporal.asOf }
+              : {}),
             limit: candidateLimit,
           }),
         });
@@ -110,7 +112,9 @@ export async function searchMemoryHybrid(
         scopePredicate: input.scopePredicate,
         signalResults,
         limit: input.limit,
-        reciprocalRankConstant: input.reciprocalRankConstant,
+        ...(input.reciprocalRankConstant !== undefined
+          ? { reciprocalRankConstant: input.reciprocalRankConstant }
+          : {}),
       });
     },
     {
