@@ -14,22 +14,24 @@ Do not recreate donor project boundaries. The repository is the source of truth.
 1. `README.md`
 2. `docs/VISION.md`
 3. `docs/PRODUCT-NORTH-STAR.md`
-4. `docs/ARCHITECTURE.md`
-5. `docs/AGENT-PHONE-EMBODIMENT.md`
-6. `docs/TECHNOLOGY.md`
-7. `docs/SOURCE-OWNERSHIP.md`
-8. `docs/REWRITE-PLAN.md`
-9. `docs/migration/LANDSCAPE-EXPANSION.md`
-10. `docs/migration/SOURCE-LOCK.md`
-11. `references/README.md`
-12. `references/SOURCES.md`
-13. `docs/migration/FORENSICS-METHOD.md`
-14. `docs/migration/FEATURE-LEDGER.md`
-15. `docs/migration/BEHAVIOUR-LEDGER.md`
-16. `docs/migration/DATA-LEDGER.md`
-17. `docs/migration/INTEGRATION-LEDGER.md`
-18. relevant files under `docs/migration/sources/`
-19. the active phase implementation record named below.
+4. `docs/PRODUCT-PROJECT-STRUCTURE.md`
+5. `docs/PRODUCTION-MASTER-TASKS.md`
+6. `docs/ARCHITECTURE.md`
+7. `docs/AGENT-PHONE-EMBODIMENT.md`
+8. `docs/TECHNOLOGY.md`
+9. `docs/SOURCE-OWNERSHIP.md`
+10. `docs/REWRITE-PLAN.md`
+11. `docs/migration/LANDSCAPE-EXPANSION.md`
+12. `docs/migration/SOURCE-LOCK.md`
+13. `references/README.md`
+14. `references/SOURCES.md`
+15. `docs/migration/FORENSICS-METHOD.md`
+16. `docs/migration/FEATURE-LEDGER.md`
+17. `docs/migration/BEHAVIOUR-LEDGER.md`
+18. `docs/migration/DATA-LEDGER.md`
+19. `docs/migration/INTEGRATION-LEDGER.md`
+20. relevant files under `docs/migration/sources/`
+21. the active phase implementation record named below.
 
 `docs/migration/LICENSE-LEDGER.md` is compliance/provenance metadata and is **not** part
 of architectural feature selection.
@@ -126,7 +128,7 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 
 ## Immediate work
 
-Phase 6 — Skills is the current implementation frontier.
+Phase 6 — Skills is the current implementation frontier. The canonical production ledger is `docs/PRODUCTION-MASTER-TASKS.md`: Tasks 001-050 are merged complete; this branch performs Tasks 051-053; after it merges, Task 054 of 150 is next.
 
 Before implementing the first Phase 6 slice, use `docs/PRODUCT-NORTH-STAR.md` as the
 product-priority check and preserve the device-provider direction in
