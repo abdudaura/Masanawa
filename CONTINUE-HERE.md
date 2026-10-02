@@ -39,7 +39,7 @@ The active implementation line remains `phase2-closure` until PR #16 is merged. 
 
 ## Immediate next work
 
-Phase 3 is active. The non-spatial core is at closure-candidate stage.
+Phase 3 is active. The non-spatial Identity/World core has passed its closure acceptance gate.
 
 Merged Phase 3 slices:
 - canonical identity: PR #17, merge `75549800445842f8ff1db54e06529c075ed34ea4`;
@@ -52,9 +52,9 @@ Merged Phase 3 slices:
 - executable pause/restart/catch-up recovery: PR #26, merge `bcfe597bd8aa7cb6191bb34fb5c626bbe5884ee0`;
 - typed World evidence→events/outbox integration: PR #27, merge `426a6689f0839aad3077754a9f947f2abe0ba8d6`.
 
-Current implementation branch: `phase3-nonspatial-closure`.
+Current implementation branch: `phase3-nonspatial-closure` (PR #28).
 
-Current branch closes the last concrete non-spatial acceptance gap discovered by audit:
+PR #28 closes the last concrete non-spatial acceptance gap discovered by audit:
 - generic World JSON/text could otherwise carry private User/Relationship/Memory/session identifiers even though the public contracts did not accept Relationship objects directly;
 - `packages/world` now owns a recursive shared-state privacy invariant;
 - canonical User, Relationship, MemoryRecord/MemoryRevision, private session/account/credential/device IDs are rejected anywhere in World payload text, including embedded IDs inside longer strings;
@@ -62,14 +62,15 @@ Current branch closes the last concrete non-spatial acceptance gap discovered by
 - the invariant is enforced at SimulationInput, Routine, CharacterLifeState, StoryArc, WorldEvent and WorldInteraction ingress;
 - unit tests cover nested, reserved-field and embedded-ID detection;
 - PostgreSQL integration proves rejected private references leave no shared World rows behind;
-- `docs/PHASE-3-NONSPATIAL-CLOSURE-AUDIT.md` maps every ADR-0009 non-spatial acceptance target to implementation/test evidence.
+- `docs/PHASE-3-NONSPATIAL-CLOSURE-AUDIT.md` maps every ADR-0009 non-spatial acceptance target to implementation/test evidence;
+- Foundation CI run 245 passed the complete gate on implementation head `b56039533bdb4e45a2b27a19621d160394f3b56c`.
 
 Immediate work:
-1. run the complete PostgreSQL 18 CI gate for `phase3-nonspatial-closure`;
-2. fix every real failure;
-3. once green, update the closure audit with final CI evidence and mark non-spatial Phase 3 PASS;
-4. rerun the gate on that final documentation head and merge;
-5. after non-spatial closure, optional WorldSpace/location/pathing mechanics may begin behind `WorldPolicy.spatialEnabled`, without reopening canonical identity/life/canon ownership.
+1. verify the automatically triggered Foundation CI run on the final documentation-only PR #28 head;
+2. fix any real failure; if green, merge PR #28;
+3. after merge, treat non-spatial Phase 3 as closed and do not reopen canonical identity/life/canon ownership without contradictory evidence and an ADR;
+4. evaluate the newly proposed post-freeze candidates `mempalace/mempalace` and `paperclipai/paperclip` against canonical Masanawa boundaries before admitting or integrating anything;
+5. then choose the next repository-backed priority: optional WorldSpace/location/pathing behind `WorldPolicy.spatialEnabled`, or the next scheduled phase where the candidate review materially changes the design.
 
 Do not interpret non-spatial closure as completion of optional spatial simulation. Do not weaken the private Relationship→World boundary.
 
