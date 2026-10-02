@@ -2,7 +2,7 @@
 
 Status: ACTIVE  
 Started: 2026-10-02  
-Active branch: `task063-skill-execution-planning`
+Active branch: `task064-skilltool-subskill-boundaries`
 
 Phase 5 Tools and Providers is closed by PR #45, merge
 `0fe123e18a9163386c4ab10331139265ce26b64e`.
@@ -85,6 +85,10 @@ The canonical Skill registry validates exact immutable SkillVersion dependency g
 ## Task 063 — Skill execution planning and composition
 
 The Skills package now composes a deterministic immutable execution-plan snapshot from the canonical registry. Planning reuses the already-validated exact SkillVersion DAG: dependencies appear before dependants, shared dependencies are included once, the requested root is last, and every direct dependency is represented by an earlier step ordinal. Planning is fail-closed on readiness for the root and every exact dependency, while ready model-hidden SkillVersions may participate as dependencies without becoming advertised. The plan aggregates required Tool capabilities but does not select Providers or execute Tool/subskill calls; those remain later execution-boundary work.
+
+## Task 064 — SkillTool and subskill execution boundaries
+
+The Skills package now exposes fail-closed execution bindings rather than a second execution engine. A Skill step may bind only a Tool reference declared by its exact SkillVersion; capability-bound references must resolve to an exact registered ToolVersion at execution time, exact pins cannot be overridden, and the resulting canonical ToolInvocation deliberately carries no Provider selection so authorization/idempotency/provider handling remain owned by packages/tools. Subskill calls may target only exact direct SkillVersion dependencies represented by earlier steps in the already-validated execution plan; arbitrary, sibling, unrelated or transitive bypass dispatch is rejected. Authority context is propagated unchanged and boundary inputs are canonical immutable JSON.
 
 ## First canonical slice
 

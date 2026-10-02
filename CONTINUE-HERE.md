@@ -139,6 +139,8 @@ run 380 passed on that exact merge commit.
 
 **Current: Task 064 of 150 — Implement SkillTool/subskill execution boundaries.**
 
+Active implementation branch: `task064-skilltool-subskill-boundaries`. Task 064 adds fail-closed declared-Tool binding to canonical ToolInvocation without Provider selection, plus exact direct-subskill binding constrained to earlier execution-plan steps. Acceptance/CI is pending.
+
 
 
 
