@@ -98,7 +98,7 @@ Status: `[x]` COMPLETE, `[ ]` PLANNED.
 
 ## Tasks 059-070 — Skills
 
-- [ ] **059** Implement canonical Skill and immutable SkillVersion schemas.
+- [x] **059** Implement canonical Skill and immutable SkillVersion schemas.
 - [ ] **060** Implement Skill manifest validation and import format.
 - [ ] **061** Implement capability requirements and Tool references.
 - [ ] **062** Implement Skill dependency graph and cycle/conflict validation.
