@@ -568,17 +568,24 @@ export async function settleMemoryExtractionClaim(
     throw new RangeError("fence must be a positive safe integer");
   }
 
-  const safeErrorCode =
-    input.settlement.outcome === "completed" ||
-    input.settlement.outcome === "no-facts"
-      ? null
-      : normalizeMemoryExtractionSafeErrorCode(
-          input.settlement.safeErrorCode,
-        );
-  const retryAt =
-    input.settlement.outcome === "retryable-failure"
-      ? toInstant(input.settlement.retryAt)
-      : null;
+  let safeErrorCode: string | null = null;
+  let retryAt: Instant | null = null;
+  switch (input.settlement.outcome) {
+    case "completed":
+    case "no-facts":
+      break;
+    case "retryable-failure":
+      safeErrorCode = normalizeMemoryExtractionSafeErrorCode(
+        input.settlement.safeErrorCode,
+      );
+      retryAt = toInstant(input.settlement.retryAt);
+      break;
+    case "permanent-failure":
+      safeErrorCode = normalizeMemoryExtractionSafeErrorCode(
+        input.settlement.safeErrorCode,
+      );
+      break;
+  }
 
   return withTransaction(pool, async (client) => {
     const current = await client.query<ExtractionJobRow>(
