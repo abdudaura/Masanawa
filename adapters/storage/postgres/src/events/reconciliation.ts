@@ -261,6 +261,8 @@ export async function recordExternalReceipt(
     row.provider_reference !== evidence.providerReference ||
     row.normalized_status !== evidence.normalizedStatus ||
     row.payload_hash !== evidence.payloadHash ||
+    row.payload_ref !== evidence.payloadRef ||
+    row.observed_at.toISOString() !== evidence.observedAt ||
     row.verification_method !== evidence.verificationMethod ||
     row.provider_version !== evidence.providerVersion
   ) {
@@ -270,7 +272,7 @@ export async function recordExternalReceipt(
       message: "External receipt observation key is bound to different evidence",
       retryable: false,
       operationId: input.operationId,
-      details: { provider: evidence.provider, observationKey: input.observationKey },
+      details: { provider: evidence.provider, observationKey: evidence.observationKey },
     });
   }
 
