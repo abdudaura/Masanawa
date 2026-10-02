@@ -17,6 +17,8 @@ import {
   type CreateMemoryRecordInput,
   type GetMemoryRecordInScopeInput,
   type JsonObject,
+  type LinkMemoryRecordsInput,
+  type LinkedMemoryRecords,
   type ListMemoryRecordsByScopesInput,
   type MemoryEvidence,
   type MemoryLifecycleState,
@@ -40,6 +42,7 @@ interface SnapshotRow {
   scope_ref_id: string | null;
   lifecycle_state: MemoryLifecycleState;
   record_revision: string;
+  lifecycle_revision: string;
   record_created_at: Date;
   record_updated_at: Date;
   memory_revision_id: MemoryRevisionId;
@@ -215,6 +218,7 @@ async function snapshotsFromRows(
         lifecycleState: row.lifecycle_state,
         currentRevisionId: row.memory_revision_id,
         revision: positiveRevision(row.record_revision),
+        lifecycleRevision: positiveRevision(row.lifecycle_revision),
         createdAt: toInstant(row.record_created_at),
         updatedAt: toInstant(row.record_updated_at),
       });
@@ -257,6 +261,7 @@ const snapshotSelect = `
     r.scope_ref_id,
     r.lifecycle_state,
     r.revision::text AS record_revision,
+    r.lifecycle_revision::text AS lifecycle_revision,
     r.created_at AS record_created_at,
     r.updated_at AS record_updated_at,
     v.memory_revision_id,
