@@ -373,6 +373,22 @@ importers:
         specifier: 5.0.3
         version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
 
+  packages/skills:
+    dependencies:
+      '@masanawa/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@masanawa/security':
+        specifier: workspace:*
+        version: link:../security
+      '@masanawa/tools':
+        specifier: workspace:*
+        version: link:../tools
+    devDependencies:
+      vitest:
+        specifier: 5.0.3
+        version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
+
   packages/security:
     dependencies:
       '@masanawa/contracts':
