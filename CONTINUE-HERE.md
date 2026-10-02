@@ -119,30 +119,42 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 
 ## Immediate work
 
-PR #32 merged as `a0b8092d78e6e87647020b729fe2e02b27e455cf`.
-Implementation head `a3d4c1edf7df7e485381ac431ba867833f3a7383` passed
-Foundation CI run 275; final documentation/status head
-`608e7c86ea36d0a524cb434f5732f90206702406` passed run 279.
+PR #33 is the active multisignal retrieval slice on
+`phase4-memory-multisignal-retrieval`.
 
-Current work is the next Phase 4 retrieval slice on
-`phase4-memory-multisignal-retrieval`:
+Implementation/fusion head `c938e23e576c98a8eb0efd61fea10e91c0fcd737`
+passed Foundation CI run 293. The full check gate passed frozen install, strict
+TypeScript, unit tests, PostgreSQL 18 + pgvector integration/migrations and production
+builds. PR #33 has no review threads or comments.
 
-1. add vector/entity/temporal signals behind the existing explicit authorized-scope and
-   immutable projection-generation contract;
-2. keep lexical retrieval as the baseline and canonical MemoryRecord/MemoryRevision as
-   the only truth;
-3. vector generations must bind provider/model/dimension and reject incompatible query
-   embeddings or mixed spaces before ranking;
-4. entity and temporal rows must trace to exact canonical revision/source-content hash
-   and disappear from ordinary results immediately when canonical state becomes stale;
-5. add adapter conformance fixtures proving zero cross-Relationship leakage for every
-   new signal;
-6. then add deterministic multi-signal fusion/reranking plus held-out evaluation with
-   privacy leakage reported as a separate hard-fail metric.
+The branch now includes:
+- pinned PostgreSQL 18 + pgvector CI;
+- vector/entity/temporal disposable projection storage with canonical-source validation;
+- uniform complete-generation activation;
+- exact authorized-scope vector/entity/temporal retrieval;
+- provider/model/dimension compatibility enforcement;
+- stale-current-revision suppression before rebuild;
+- deterministic reciprocal-rank fusion;
+- read-only REPEATABLE READ hybrid retrieval;
+- held-out recall/precision/MRR metrics plus an independent zero-leakage hard gate;
+- cross-Relationship conformance fixtures across every new signal and fusion.
 
-Do not import MemPalace as a Python/Chroma memory service and do not introduce
-Paperclip as a parallel control plane. Their approved contributions remain behavioral
-contracts implemented inside canonical Masanawa packages/adapters.
+Immediate next steps:
+1. verify the final documentation-head Foundation CI for PR #33;
+2. fix any real failure; if green, merge PR #33;
+3. create a fresh branch from merged `main` for canonical tombstone/deletion
+   propagation plus bounded context compilation;
+4. prove tombstoned/deleted canonical records disappear from lexical/vector/entity/
+   temporal/hybrid retrieval without requiring model-side filtering;
+5. compile bounded working context only from already-authorized current memory and keep
+   every rendered context item mapped to MemoryRecord/MemoryRevision provenance;
+6. then implement reflection/consolidation and compaction-flush semantics without
+   widening scope or creating a second durable memory truth.
+
+The requested post-freeze donor boundary remains unchanged: MemPalace contributes
+retrieval/evaluation/storage-contract behavior inside canonical Masanawa memory ports;
+Paperclip contributes later workflow/runtime recovery and Ops behavior inside canonical
+Masanawa workflow/agent ports. Neither becomes a production runtime authority.
 
 The lifecycle/publication implementation now includes independent lifecycle CAS,
 immutable same-scope/type lineage, current-authority + one-time-approval publication,
