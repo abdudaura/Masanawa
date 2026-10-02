@@ -8,11 +8,11 @@ Masanawa production is tracked as **150 numbered milestone tasks**. Tasks are no
 
 ## Current position
 
-Merged `main` satisfies Tasks **001-055**.
+Merged `main` satisfies Tasks **001-056**.
 
-**Current: Task 056 of 150 — Expand test taxonomy with security/recovery/load/chaos suites and CI gate conventions.**
+**Current: Task 057 of 150 — Establish repository-wide public API/versioning/deprecation conventions.**
 
-Active implementation branch: `task056-test-taxonomy`. The task remains incomplete until its typecheck/test/build acceptance evidence is green and merged to `main`.
+Task 056 implementation head `b17d4ba53d23abb9abf40aa7800b1c461dc9fa90` passed Foundation CI run 386. PR #49 merged as `ed119581974cfb146da0b6e0a5e119eda8731df8`; merged-main Foundation CI run 387 passed on that exact merge commit.
 
 Task 055 implementation head `931fef83ae1a014c6872d0e5bfc0cab815307e44` passed Foundation CI run 383. PR #48 merged as `434f64c6ff0ca1061d3e8ecd163daf4b591962d0`; merged-main Foundation CI run 384 passed on that exact merge commit.
 
@@ -90,7 +90,7 @@ Status: `[x]` COMPLETE, `[ ]` PLANNED.
 - [x] **053** Remove ambiguous empty service ownership placeholders and reaffirm Gateway/Worker/Presence/Ops topology.
 - [x] **054** Standardize package/service implementation templates and enforce them in architecture tests.
 - [x] **055** Standardize adapter topology/registration and prohibit adapter-to-adapter hidden orchestration.
-- [ ] **056** Expand test taxonomy with security/recovery/load/chaos suites and CI gate conventions.
+- [x] **056** Expand test taxonomy with security/recovery/load/chaos suites and CI gate conventions.
 - [ ] **057** Establish repository-wide public API/versioning/deprecation conventions.
 - [ ] **058** Establish production configuration/environment schema, secret-reference and deployment-layout conventions.
 

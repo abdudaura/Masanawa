@@ -43,4 +43,4 @@ Post-freeze candidate assessments may exist without being admitted to the vault.
 
 Current phase: **Phase 6 — Skills**, preceded by the short production-structure hardening checkpoint tracked in `docs/PRODUCTION-MASTER-TASKS.md`.
 
-Phase 0 source selection/forensics, Phase 1 architecture, Phase 2 foundation, the non-spatial Phase 3 Identity/World core, Phase 4 Memory and Phase 5 Tools/Providers are closed. The canonical numbered production tracker records Tasks 001-055 as merged complete. Current: Task 056 of 150 — Expand test taxonomy with security/recovery/load/chaos suites and CI gate conventions.
+Phase 0 source selection/forensics, Phase 1 architecture, Phase 2 foundation, the non-spatial Phase 3 Identity/World core, Phase 4 Memory and Phase 5 Tools/Providers are closed. The canonical numbered production tracker records Tasks 001-056 as merged complete. Current: Task 057 of 150 — Establish repository-wide public API/versioning/deprecation conventions.

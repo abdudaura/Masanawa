@@ -137,35 +137,24 @@ Foundation CI run 379, PR #47 merged as
 `d0a198dbdec1af08e3c8f1378da0985db628eb6e`, and merged-main Foundation CI
 run 380 passed on that exact merge commit.
 
-**Current: Task 056 of 150 — Expand test taxonomy with security/recovery/load/chaos suites and CI gate conventions.**
+**Current: Task 057 of 150 — Establish repository-wide public API/versioning/deprecation conventions.**
 
-Active implementation branch: `task056-test-taxonomy`, based on green merged `main` `80a6bf25129b4feb37a4295be34065c878666beb` (Foundation CI run 385 PASS).
+Tasks 001-056 are merged complete.
 
-Tasks 001-055 are merged complete.
+Task 056 implementation head `b17d4ba53d23abb9abf40aa7800b1c461dc9fa90` passed
+Foundation CI run 386. PR #49 merged as
+`ed119581974cfb146da0b6e0a5e119eda8731df8`, and merged-main Foundation CI
+run 387 passed on that exact merge commit.
 
-Task 055 implementation head `931fef83ae1a014c6872d0e5bfc0cab815307e44` passed
-Foundation CI run 383. PR #48 merged as
-`434f64c6ff0ca1061d3e8ecd163daf4b591962d0`, and merged-main Foundation CI
-run 384 passed on that exact merge commit.
+Task 056 established:
+- canonical cross-cutting suites for contracts/integration/e2e/parity/security/recovery/load/chaos;
+- strict TypeScript and default Vitest discovery for `tests/**`;
+- deterministic Recovery and Chaos evidence using the shared fault-injection harness without duplicate tests;
+- targeted suite commands plus one all-tests `test:ci` merge gate;
+- visible Foundation CI Typecheck/Test/Build stages;
+- architecture enforcement for suite directories, scripts, discovery and workflow wiring.
 
-Task 055 established:
-- canonical adapter families: storage/providers/channels/devices/media/inference;
-- explicit `adapter.json` registration metadata;
-- adapter leaf dependency enforcement preventing adapter-to-adapter/service/app/infra dependencies;
-- production relative-import confinement with a test-only exception for `test/support`;
-- shared Node process hosting at `infra/runtime/node`, outside adapter selection;
-- explicit composition-root registration and preserved Android/OmniSIP device boundary.
-
-Implemented on Task 056 branch:
-- activated the full cross-cutting suite tree: contracts/integration/e2e/parity/security/recovery/load/chaos;
-- added root targeted suite commands plus one all-tests `test:ci` merge gate;
-- added `tests/**` to strict TypeScript and default Vitest discovery;
-- split the existing deterministic fault-harness assertions into real Chaos and Recovery tests without duplicate coverage;
-- documented colocated-vs-cross-cutting ownership and bounded load/chaos rules;
-- changed Foundation CI from one opaque Check step to visible Typecheck/Test/Build stages with the same blocking sequence;
-- added architecture enforcement for suite directories, scripts, discovery and CI workflow wiring.
-
-Task 056 remains incomplete until this branch passes the complete gate and merges to `main`.
+Start Task 057 from current merged `main`; do not reuse the completed Task 056 branch.
 
 The existing `phase6-skills-foundation` branch contains valid unmerged Phase 6 work
 based on pre-roadmap `main`. Preserve it, but do not merge it ahead of Tasks 054-058.
@@ -221,8 +210,8 @@ PostgreSQL 18 + pgvector integration suites and production builds.
 The Phase 5 acceptance audit is PASS and its final merge is green.
 
 Immediate next:
-1. run the complete Task 056 gate on `task056-test-taxonomy`, fix any real failure, merge the exact green head, and verify merged-main CI;
-2. then continue Tasks 057-058 in ledger order;
+1. implement Task 057 from current merged `main`: establish repository-wide public API/versioning/deprecation conventions and enforce them without inventing compatibility layers;
+2. then continue Task 058 in ledger order;
 3. only after Task 058 closes, reconcile the valid `phase6-skills-foundation` work onto current `main` and continue Task 059;
 4. keep Skills provider-neutral so future assigned Android devices participate through the same Tool/Provider architecture;
 5. use Paperclip only as a bounded workflow/runtime/Ops behavior donor and preserve Masanawa Authority/Operation/Provider boundaries.
