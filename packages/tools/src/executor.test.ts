@@ -234,6 +234,14 @@ describe("consequential Tool executor", () => {
       credentialBindings,
       idempotencyExpiresAt: toInstant("2026-10-03T10:00:00Z"),
     });
+
+    f.providers.setReadiness({
+      providerId: f.providers.list()[0]!.providerId,
+      state: "unavailable",
+      reasonCode: "provider.outage",
+      checkedAt: toInstant("2026-10-02T10:01:00Z"),
+    });
+
     const replay = await executeConsequentialTool(dependencies, {
       invocation,
       credentialBindings,
@@ -242,6 +250,7 @@ describe("consequential Tool executor", () => {
 
     expect(first.operation.state).toBe("succeeded");
     expect(replay.operation.state).toBe("succeeded");
+    expect(replay.output).toEqual({ chargeId: "charge_1" });
     expect(replay.reused).toBe(true);
     expect(replay.dispatched).toBe(false);
     expect(dispatches).toBe(1);
