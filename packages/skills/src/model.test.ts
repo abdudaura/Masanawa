@@ -104,6 +104,11 @@ describe("immutable SkillVersion schema", () => {
     expect(Object.isFrozen(normalized.toolReferences)).toBe(true);
     expect(Object.isFrozen(normalized.inputSchema)).toBe(true);
     expect(Object.isFrozen(normalized.provenance)).toBe(true);
+    expect(Object.isFrozen(normalized.provenance.publisher)).toBe(true);
+    expect(Object.isFrozen(normalized.provenance.trust)).toBe(true);
+    expect(Object.isFrozen(normalized.provenance.trust.reasonCodes)).toBe(true);
+    expect(normalized.provenance.publisher.publisherKey).toBe("masanawa");
+    expect(normalized.provenance.trust.tier).toBe("first-party");
     expect(Object.isFrozen(normalized.certification)).toBe(true);
   });
 
@@ -127,6 +132,36 @@ describe("immutable SkillVersion schema", () => {
         version({ toolReferences: [] }),
       ),
     ).toThrow("each required Tool capability");
+  });
+
+  it("fails closed on malformed publisher identity and trust verdict evidence", () => {
+    const base = version();
+
+    expect(() =>
+      normalizeSkillVersionDefinition({
+        ...base,
+        provenance: {
+          ...base.provenance,
+          publisher: {
+            ...base.provenance.publisher,
+            publisherKey: "Bad Publisher!",
+          },
+        },
+      }),
+    ).toThrow("publisherKey is invalid");
+
+    expect(() =>
+      normalizeSkillVersionDefinition({
+        ...base,
+        provenance: {
+          ...base.provenance,
+          trust: {
+            ...base.provenance.trust,
+            reasonCodes: ["bad reason!"],
+          },
+        },
+      }),
+    ).toThrow("trust reasonCode is invalid");
   });
 
   it("rejects a SkillVersion whose identity is not canonical", () => {
