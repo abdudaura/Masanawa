@@ -56,6 +56,22 @@ BEGIN
     RAISE EXCEPTION 'credential ref binding is immutable'
       USING ERRCODE = '23514';
   END IF;
+
+  IF OLD.state = 'revoked'
+     AND (
+       NEW.state <> 'revoked'
+       OR NEW.revoked_at IS DISTINCT FROM OLD.revoked_at
+     ) THEN
+    RAISE EXCEPTION 'credential ref revocation is terminal'
+      USING ERRCODE = '23514';
+  END IF;
+
+  IF NEW.revoked_at IS NOT NULL
+     AND NEW.revoked_at < NEW.created_at THEN
+    RAISE EXCEPTION 'credential ref revocation cannot precede creation'
+      USING ERRCODE = '23514';
+  END IF;
+
   RETURN NEW;
 END
 $$;
