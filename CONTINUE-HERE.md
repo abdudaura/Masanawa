@@ -36,7 +36,7 @@ of architectural feature selection.
 
 **Phase 4 — Memory.**
 
-Current implementation branch: `phase4-memory-extraction-liveness`.
+Current implementation branch: `phase4-memory-retrieval-projections`.
 
 Phase 0A/0B, Phase 1 and Phase 2 are closed.
 
@@ -119,20 +119,21 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 
 ## Immediate work
 
-PR #31 implements the extraction-liveness slice and Foundation CI run 271 passed the
-complete gate on implementation head
-`2a423ac1480b9c094b602e0d0e846bf882ff1992`.
+PR #31 merged as `f0f516b9ebf10ee40d3e27474e98085efaf8b913`; implementation
+head `2a423ac1480b9c094b602e0d0e846bf882ff1992` passed Foundation CI run 271 and
+final documentation head `a4a9872763b94aa4b9473c5ca19c1d8b72c82559` passed run 273.
 
-1. verify the automatically triggered Foundation CI run on the final documentation-only
-   PR #31 head;
-2. fix any real failure; if green, merge PR #31;
-3. on a fresh branch from merged `main`, implement projection generation metadata
-   and authorization-first lexical retrieval before adding vector/entity/temporal
-   signals;
-4. require embedding/provider identity, vector dimension, source revision/content hash
-   and projection generation so incompatible vector spaces can never silently mix;
-5. add adapter conformance fixtures proving every retrieval backend fails closed on
-   unsupported scope filters and cross-Relationship leakage remains zero.
+1. implement projection generation metadata and authorization-first lexical retrieval
+   on `phase4-memory-retrieval-projections`;
+2. bind every projection to canonical revision/content hash and explicit MemoryScope;
+3. require every retrieval request to supply non-empty authorized scopes and fail
+   closed when an adapter cannot enforce them;
+4. add embedding/provider/model/dimension compatibility metadata for future vector
+   generations without adding vector truth yet;
+5. prove cross-Relationship leakage remains zero and lexical projection deletion/rebuild
+   reproduces the same authorized result set;
+6. run the complete PostgreSQL 18 CI gate and merge before adding vector/entity/temporal
+   signals.
 
 The lifecycle/publication implementation now includes independent lifecycle CAS,
 immutable same-scope/type lineage, current-authority + one-time-approval publication,
