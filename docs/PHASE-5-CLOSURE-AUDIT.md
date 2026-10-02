@@ -94,6 +94,9 @@ Implemented on PR #43:
 - plaintext is passed only into an injected cipher and never persisted;
 - exact scope is required for resolution;
 - generation-CAS rotation and revocation are implemented;
+- PostgreSQL integration coverage verifies ciphertext-at-rest, tenant/provider/slot
+  isolation, stale-generation rejection, rotation and revocation;
+- cipher/KMS failure is redacted to the same safe credential-unavailable surface;
 - inaccessible/out-of-scope/decrypt-failed references all fail through a safe
   `credential.unavailable` authorization surface.
 
@@ -126,19 +129,21 @@ Implemented on PR #43:
 Required before PASS:
 - latest head CI and final telemetry wiring review.
 
-### 10. Adapters cannot bypass canonical registry/security policy — PENDING REVIEW
+### 10. Adapters cannot bypass canonical registry/security policy — PASS
 
-Current evidence:
+Evidence:
 - package architecture forbids alternate Tool/Provider ownership;
 - consequential execution resolves exact registered Tool/Provider before dispatch;
 - credential material is available only through scoped Security resolution;
 - PostgreSQL adapters implement canonical ports rather than their own Tool/Provider
-  registry.
+  registry;
+- repository-wide scan of adapters/runtime, services/gateway, services/worker,
+  services/ops and PostgreSQL composition found no concrete external provider SDK
+  execution path outside the canonical Tool executor;
+- current services expose health/readiness/database composition only, so there is no
+  hidden alternate provider runtime to preserve.
 
-Required before PASS:
-- scan all concrete provider/tool adapters and service composition points for direct
-  external execution paths that bypass registry selection, AuthorityContext or
-  Operation custody.
+Future provider adapters remain required to enter through these same canonical ports.
 
 ## Reliability and privacy gates
 
