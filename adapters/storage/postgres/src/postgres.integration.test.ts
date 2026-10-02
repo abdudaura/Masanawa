@@ -3721,6 +3721,8 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
     const sourceMemoryRevisionId = createCanonicalId("memory-revision");
     const targetMemoryRecordId = createCanonicalId("memory-record");
     const targetMemoryRevisionId = createCanonicalId("memory-revision");
+    const replacementMemoryRecordId = createCanonicalId("memory-record");
+    const replacementMemoryRevisionId = createCanonicalId("memory-revision");
     const now = toInstant("2026-10-02T06:00:00Z");
     const expiresAt = toInstant("2099-01-01T00:00:00Z");
     const sourceHash = "e".repeat(64);
@@ -3910,6 +3912,51 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       publishedAt: now,
     });
     expect(replay.reused).toBe(true);
+
+    await withTransaction(pool, async (client) => {
+      await createMemoryRecord(client, {
+        tenantId,
+        memoryRecordId: replacementMemoryRecordId,
+        memoryRevisionId: replacementMemoryRevisionId,
+        memoryType: "fact",
+        scope: { kind: "relationship", relationshipId },
+        content: "A later private correction supersedes the original source.",
+        extractionMethod: "fixture",
+        observedAt: now,
+        evidence: [
+          {
+            sourceKind: "message",
+            sourceReference: "fixture:publication:later-correction",
+            sourceContentHash: "1".repeat(64),
+            observedAt: now,
+          },
+        ],
+        createdAt: now,
+      });
+      await linkMemoryRecords(client, {
+        tenantId,
+        sourceMemoryRecordId,
+        expectedSourceLifecycleRevision: 1,
+        targetMemoryRecordId: replacementMemoryRecordId,
+        kind: "supersedes",
+        reason: "Later private evidence superseded the publication source.",
+        transitionedAt: now,
+      });
+    });
+
+    // The already-succeeded publication is a receipt, not a fresh mutation. It must
+    // remain replayable after the private source lifecycle advances.
+    const replayAfterSupersession = await executeMemoryScopePublication(pool, {
+      ...target,
+      authority: executeAuthority,
+      operationId: prepared.operation.operationId,
+      approvalId: approval.approvalId,
+      publishedAt: now,
+    });
+    expect(replayAfterSupersession.reused).toBe(true);
+    expect(replayAfterSupersession.target.record.memoryRecordId).toBe(
+      targetMemoryRecordId,
+    );
 
     await withTransaction(pool, async (client) => {
       const source = await getMemoryRecordInScope(client, {
