@@ -87,7 +87,18 @@ function skill(
       sourceReference: "skills/research.web",
       sourceRevision: "1",
       sourceContentHash: `sha256:${"b".repeat(64)}`,
-      trustTier: "first-party",
+      publisher: {
+        publisherKey: "masanawa",
+        displayName: "Masanawa",
+        kind: "first-party",
+        reference: null,
+      },
+      trust: {
+        tier: "first-party",
+        evaluatorKey: "masanawa.skill-admission",
+        evaluatedAt: toInstant("2026-10-02T00:00:00.000Z"),
+        reasonCodes: ["publisher.first-party"],
+      },
     },
     certification: {
       profile: "foundation",
