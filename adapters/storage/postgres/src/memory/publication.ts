@@ -18,6 +18,7 @@ import {
   memoryScopePublicationAuthorityScopeHash,
   memoryScopePublicationRequestFingerprint,
   memoryScopePublishCapability,
+  memoryScopeStorage,
   type MemoryRecordSnapshot,
   type MemoryScopePublication,
   type MemoryScopePublicationTarget,
@@ -165,18 +166,38 @@ async function requireCurrentSource(
   client: PoolClient,
   target: MemoryScopePublicationTarget,
 ): Promise<MemoryRecordSnapshot> {
-  const source = await getMemoryRecordInScope(client, {
-    tenantId: target.tenantId,
-    memoryRecordId: target.sourceMemoryRecordId,
-    scope: target.sourceScope,
-  });
-  if (!source) {
+  const scope = memoryScopeStorage(target.sourceScope);
+  const locked = await client.query(
+    `SELECT 1
+       FROM memory.records
+      WHERE tenant_id = $1
+        AND memory_record_id = $2
+        AND scope_kind = $3
+        AND scope_ref_id IS NOT DISTINCT FROM $4
+      FOR UPDATE`,
+    [
+      target.tenantId,
+      target.sourceMemoryRecordId,
+      scope.kind,
+      scope.referenceId,
+    ],
+  );
+  if (locked.rowCount !== 1) {
     throw new PlatformError({
       code: "memory.publication_source_not_found",
       category: "not-found",
       message: "Source MemoryRecord does not exist in the authorized source scope",
       retryable: false,
     });
+  }
+
+  const source = await getMemoryRecordInScope(client, {
+    tenantId: target.tenantId,
+    memoryRecordId: target.sourceMemoryRecordId,
+    scope: target.sourceScope,
+  });
+  if (!source) {
+    throw new Error("Locked MemoryRecord disappeared before publication validation");
   }
   if (
     source.currentRevision.memoryRevisionId !== target.sourceMemoryRevisionId
