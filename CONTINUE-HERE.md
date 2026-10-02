@@ -137,7 +137,7 @@ Foundation CI run 379, PR #47 merged as
 `d0a198dbdec1af08e3c8f1378da0985db628eb6e`, and merged-main Foundation CI
 run 380 passed on that exact merge commit.
 
-**Current: Task 057 of 150 — Establish repository-wide public API/versioning/deprecation conventions.**
+**Current: Task 057 of 150 — Establish repository-wide public API/versioning/deprecation conventions.**\n\nActive implementation branch: `task057-api-lifecycle`. Task 057 now defines `docs/API-LIFECYCLE.md` and machine-enforces canonical package root exports, repository-wide no-deep-import rules and actionable deprecation metadata. Acceptance/CI is still pending; do not mark Task 057 complete until its evidence is green and merged.
 
 Tasks 001-056 are merged complete.
 
