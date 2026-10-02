@@ -100,7 +100,7 @@ Status: `[x]` COMPLETE, `[ ]` PLANNED.
 
 - [x] **059** Implement canonical Skill and immutable SkillVersion schemas.
 - [x] **060** Implement Skill manifest validation and import format.
-- [ ] **061** Implement capability requirements and Tool references.
+- [x] **061** Implement capability requirements and Tool references.
 - [ ] **062** Implement Skill dependency graph and cycle/conflict validation.
 - [ ] **063** Implement Skill execution planning/composition.
 - [ ] **064** Implement SkillTool/subskill execution boundaries.

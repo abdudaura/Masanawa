@@ -137,15 +137,26 @@ Foundation CI run 379, PR #47 merged as
 `d0a198dbdec1af08e3c8f1378da0985db628eb6e`, and merged-main Foundation CI
 run 380 passed on that exact merge commit.
 
-**Current: Task 061 of 150 — Implement capability requirements and Tool references.**
-
-Active implementation branch: `task061-capability-tool-references`. Existing work adds provider-neutral Skill Tool references, optional exact ToolVersion pins, canonical requirement normalization, and fail-closed resolution against the Tool registry. Acceptance/CI is pending.
-
-
-Tasks 001-060 are merged complete.
+**Current: Task 062 of 150 — Implement Skill dependency graph and cycle/conflict validation.**
 
 
 
+Tasks 001-061 are merged complete.
+
+
+
+
+
+Task 061 implementation head `6072e2ca40aea0f852f61b4c008a5b18d8251dae` passed
+Foundation CI run 411. PR #58 merged as
+`7e1fc2576979823a0cb859ac9a6bd7ea21d0f522`, and merged-main Foundation CI
+run 412 passed on that exact merge commit.
+
+Task 061 established:
+- provider-neutral required Tool capability declarations on immutable SkillVersions;
+- named Tool references that may remain capability-bound or pin an exact ToolVersionId without pinning a Provider;
+- fail-closed normalization requiring complete capability/reference coverage;
+- fail-closed resolution against the canonical Tool registry for missing capabilities, missing candidates and exact-pin capability mismatches.
 
 Task 060 implementation head `f5f939f7fb6999fa901d1538ab2a37ef50b04579` passed
 Foundation CI run 407. PR #56 merged as
