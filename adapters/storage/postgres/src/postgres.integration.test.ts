@@ -4077,7 +4077,10 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
     expect(first.job.requestFingerprint).toHaveLength(64);
 
     const replay = await withTransaction(pool, (client) =>
-      enqueueMemoryExtraction(client, input),
+      enqueueMemoryExtraction(client, {
+        ...input,
+        availableAt: toInstant("2026-10-01T00:10:00Z"),
+      }),
     );
     expect(replay.reused).toBe(true);
     expect(replay.job.memoryExtractionId).toBe(first.job.memoryExtractionId);
