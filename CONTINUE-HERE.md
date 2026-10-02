@@ -165,13 +165,17 @@ Active receipt/replay slice now implements:
   failure reconciliation;
 - PostgreSQL integration coverage now expects durable receipt replay.
 
+Receipt/replay implementation head `f223d12335189591608f2a6c444668df02dc0b9d`
+passed Foundation CI run 336 after preserving the established receipt-observation
+idempotency contract. The gate passed strict TypeScript, all unit/architecture tests,
+PostgreSQL 18 + pgvector integration suites and production builds.
+
 Immediate next:
-1. run the full Foundation CI gate for this receipt/replay branch and fix any failures;
-2. if green, add/verify any missing PostgreSQL receipt-conflict acceptance coverage;
-3. merge the slice only after a green final documentation head;
-4. then add typed provider failure/readiness/cost/timeout telemetry without secrets;
-5. prove credential-reference scoping/resolution at the adapter edge;
-6. finish the Phase 5 acceptance audit before advancing to Skills/Workflows.
+1. require a green final documentation-head Foundation CI and merge PR #39;
+2. create the next clean Phase 5 branch from merged `main`;
+3. add typed provider failure/readiness/cost/timeout telemetry without secrets;
+4. prove credential-reference scoping/resolution at the adapter edge;
+5. finish the Phase 5 acceptance audit before advancing to Skills/Workflows.
 
 The requested post-freeze donor boundary remains unchanged: MemPalace contributes
 retrieval/evaluation/storage-contract behavior inside canonical Masanawa memory ports;
