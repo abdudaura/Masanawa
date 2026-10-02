@@ -138,7 +138,15 @@ Foundation CI run 379, PR #47 merged as
 run 380 passed on that exact merge commit.
 
 **Current: Task 055 of 150 — Standardize adapter topology/registration and prohibit adapter-to-adapter hidden orchestration.**
-Start Task 055 from current merged `main`; do not reuse the completed Task 054 branch.
+Active implementation branch: `task055-adapter-topology`, based on current merged `main`.
+
+Implemented on the branch:
+- relocated the shared `@masanawa/node-runtime` process host from the noncanonical `adapters/runtime/node` family to `infra/runtime/node` without changing its public package API;
+- kept infra runtime tests inside the normal Vitest gate and reference-vault isolation scan;
+- standardized adapter implementations under exactly storage/providers/channels/devices/media/inference;
+- added `adapter.json` explicit-registration metadata to PostgreSQL;
+- added a workspace-graph architecture test that forbids adapter dependencies/imports on services, apps, infra or other adapters and forbids relative package escape;
+- documented explicit composition-root registration and the Android/OmniSIP device boundary.
 
 The existing `phase6-skills-foundation` branch contains valid unmerged Phase 6 work
 based on pre-roadmap `main`. Preserve it, but do not merge it ahead of Tasks 054-058.
@@ -194,7 +202,7 @@ PostgreSQL 18 + pgvector integration suites and production builds.
 The Phase 5 acceptance audit is PASS and its final merge is green.
 
 Immediate next:
-1. implement Task 055 from current merged `main`: standardize adapter topology/registration and prohibit adapter-to-adapter hidden orchestration;
+1. run the full Task 055 CI gate on `task055-adapter-topology`, fix any real failure, merge the exact green head, and verify merged-main CI;
 2. then continue Tasks 056-058 in ledger order;
 3. only after Task 058 closes, reconcile the valid `phase6-skills-foundation` work onto current `main` and continue Task 059;
 4. keep Skills provider-neutral so future assigned Android devices participate through the same Tool/Provider architecture;
