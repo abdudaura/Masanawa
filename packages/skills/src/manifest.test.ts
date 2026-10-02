@@ -138,6 +138,17 @@ describe("Skill imports", () => {
         instructions: "Use public sources.",
         source: {
           ...source,
+          sourceRevision: null,
+        },
+      }),
+    ).toThrow("requires an exact sourceRevision");
+
+    expect(() =>
+      importSkillBundle({
+        manifest: manifest(),
+        instructions: "Use public sources.",
+        source: {
+          ...source,
           publisher: { ...source.publisher, publisherKey: "Not Valid!" },
         },
       }),
