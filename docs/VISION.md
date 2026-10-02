@@ -8,6 +8,10 @@ It supports persistent AI beings that can maintain identity and relationships, p
 
 ChatWithStars is one product/world that can run on Masanawa; it is not the platform boundary.
 
+The product-level definition of a Masanawa Agent and the capability priorities used to
+judge implementation work are canonicalized in `PRODUCT-NORTH-STAR.md`. The dedicated
+Android-device/phone embodiment direction is defined in `AGENT-PHONE-EMBODIMENT.md`.
+
 ## Complete target capability
 
 The target is defined by capabilities, not by donor repositories.
@@ -47,6 +51,8 @@ Masanawa must provide:
 - one control plane for web, messaging, voice and future channels;
 - account/channel routing to the correct character;
 - device nodes for microphone/camera/screen/local actions;
+- assignable Android Agent Phones with real SIM/phone identities where useful;
+- cloud Providers and Device Providers behind the same Tool boundary;
 - local-first or cloud-connected operation;
 - cross-channel task/session continuity;
 - strong permission/sandbox boundaries.
@@ -99,6 +105,8 @@ While the person is offline, the character may continue its permitted fictional 
 - Workflows own durable business state.
 - Models reason; deterministic systems own permissions, money and execution truth.
 - Channels/device nodes are adapters, not alternate brains.
+- A phone/device is an embodiment and execution node; canonical Character identity,
+  memory, World, workflow and business truth remain platform-owned.
 - Realtime presence and produced media share identity but remain separate execution paths.
 - Learning creates candidates and never silently mutates production.
 - Every consequential side effect is traceable, idempotent/reconcilable and operable.

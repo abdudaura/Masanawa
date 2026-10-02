@@ -9,11 +9,15 @@ The platform is a clean implementation of validated capabilities. Donor projects
 Every implementation session MUST read:
 1. `CONTINUE-HERE.md`
 2. `docs/VISION.md`
-3. `docs/ARCHITECTURE.md`
-4. `docs/TECHNOLOGY.md`
-5. `docs/SOURCE-OWNERSHIP.md`
-6. `docs/REWRITE-PLAN.md`
-7. active files under `docs/migration/`.
+3. `docs/PRODUCT-NORTH-STAR.md`
+4. `docs/PRODUCT-PROJECT-STRUCTURE.md`
+5. `docs/PRODUCTION-MASTER-TASKS.md`
+6. `docs/ARCHITECTURE.md`
+7. `docs/AGENT-PHONE-EMBODIMENT.md`
+8. `docs/TECHNOLOGY.md`
+9. `docs/SOURCE-OWNERSHIP.md`
+10. `docs/REWRITE-PLAN.md`
+11. active files under `docs/migration/`.
 
 ## Reference source vault
 
@@ -37,10 +41,6 @@ Post-freeze candidate assessments may exist without being admitted to the vault.
 
 ## Status
 
-Current phase: **Phase 5 — Tools and Providers**.
+Current phase: **Phase 6 — Skills**, preceded by the short production-structure hardening checkpoint tracked in `docs/PRODUCTION-MASTER-TASKS.md`.
 
-Phase 0 source selection/forensics, Phase 1 architecture specification, Phase 2 shared
-foundation and the non-spatial Phase 3 Identity/World boundary are closed. Phase 3
-closure evidence is in `docs/PHASE-3-NONSPATIAL-CLOSURE-AUDIT.md`.
-
-Phase 4 canonical memory is closed through its accepted lifecycle/retrieval slices. Phase 5 now implements canonical Tool/Provider registries and the authorized, operation-bound execution/reconciliation path for consequential side effects. See `CONTINUE-HERE.md` and `docs/PHASE-5-TOOLS-PROVIDERS.md` for the exact active slice and validation evidence.
+Phase 0 source selection/forensics, Phase 1 architecture, Phase 2 foundation, the non-spatial Phase 3 Identity/World core, Phase 4 Memory and Phase 5 Tools/Providers are closed. The canonical numbered production tracker records Tasks 001-050 as merged complete; Tasks 051-053 are the current structural/product-definition branch.

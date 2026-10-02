@@ -283,21 +283,24 @@ It is routing evidence only.
 
 ### Device
 
-`DeviceId` is a canonical registered physical/logical node.
+`DeviceId` is a canonical registered physical/logical execution node.
 
-It owns:
-- pairing state;
-- public/device identity;
-- capabilities;
-- approved command scopes;
-- credential generations;
-- revocation state.
+The Devices domain owns:
+- durable Device identity and lifecycle;
+- runtime capability declarations and readiness facts;
+- Character-to-Device assignments and capability policy references;
+- health/last-seen state required for routing/provider selection;
+- device-operation custody references that compose canonical Operation IDs.
 
-Device-advertised capabilities are claims intersected with server policy.
+Security owns pairing authorization, credential generations, revocation authorization and bearer material. Device-advertised capabilities are claims intersected with server policy and must never be trusted merely because an app version exposes an API.
+
+### CharacterDeviceAssignment
+
+A durable, revocable authorization binding a Character to a Device with role, validity window and capability policy. Replacing or revoking a Device never replaces the Character.
 
 ### DeviceCredential
 
-`DeviceCredentialId` identifies a credential generation. Bearer material is never ordinary domain content.
+`DeviceCredentialId` identifies a Security-owned credential generation for a Device principal. Bearer material is never ordinary domain content.
 
 ## Security identity
 
