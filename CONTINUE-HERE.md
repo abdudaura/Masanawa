@@ -36,7 +36,7 @@ of architectural feature selection.
 
 **Phase 5 — Tools and Providers.**
 
-Current implementation branch: `phase5-tools-providers-foundation`.
+Current implementation branch: `phase5-tool-execution-reconciliation`.
 
 Phase 0A/0B, Phase 1 and Phase 2 are closed.
 
@@ -120,36 +120,44 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 ## Immediate work
 
 Phase 5 — Tools and Providers is active on
-`phase5-tools-providers-foundation`.
+`phase5-tool-execution-reconciliation`.
 
-First-slice implementation head `1f2e9d69b9adc312c06e8b3b5e12978a6c3e7074`
-passed Foundation CI run 318. The complete gate passed frozen install, strict
-TypeScript, Tool/Provider unit and architecture tests, all existing PostgreSQL 18 +
-pgvector suites and production builds. PR #37 has no review threads or comments.
+The registry foundation is merged to `main` as PR #37 at
+`b3f2e8ce33aeb4ed125bd40af78f10a454174bbd`.
 
-Implemented in the first slice:
-- shared canonical `CapabilityKey`;
-- real `@masanawa/providers` package with immutable definitions and separate readiness;
-- deterministic ready-only default selection and fail-closed explicit Provider selection;
-- exact-replay registration plus identity-conflict rejection;
-- real `@masanawa/tools` package with version-pinned capability/Tool registry;
-- schema/risk/side-effect/timeout/rate/cost/idempotency/reconciliation declarations;
-- registration-time rejection of unsafe consequential Tool definitions;
-- Provider-backed Tool resolution with no silent explicit fallback;
-- authority-bound canonical Tool invocation envelope;
-- production build + frozen workspace lockfile wiring.
+PR #38 is the active execution/reconciliation slice. Implemented on the branch:
+- provider credential bindings accept only canonical `CredentialRefId` values and
+  fail closed on unknown/missing slots;
+- consequential Tool execution is pinned to the registered ToolVersion;
+- required authority capabilities are checked and current authority is revalidated
+  immediately before dispatch;
+- deterministic authority-scope/request fingerprints bind operation idempotency;
+- exact replay of a settled or in-flight operation does not redispatch;
+- explicit provider selection continues to use the canonical no-fallback registry;
+- dispatch exceptions/unknown outcomes become `unknown` and immediately enter
+  reconciliation with `safeRetry=false`;
+- known-not-dispatched failures may fail without claiming an external side effect;
+- PostgreSQL adapts the canonical Tool operation port onto existing
+  `events.operations` and reconciliation storage;
+- Tool operation reads/transitions are tenant-scoped;
+- unit tests cover exact replay, stale-policy rejection, ambiguous dispatch and required
+  credential references.
 
-Immediate next steps:
-1. verify final documentation-head Foundation CI for PR #37;
-2. fix any real failure; if green, merge PR #37;
-3. create a fresh Phase 5 execution branch from merged `main`;
-4. add credential bindings using only canonical `CredentialRefId` references;
-5. implement consequential Tool prepare/execute using existing `events.operations`,
-   current-authority revalidation and deterministic request/authority fingerprints;
-6. classify post-dispatch ambiguity as `unknown` and require reconciliation instead of
-   blind provider retry;
-7. prove exact replay, stale policy/revocation rejection and explicit-provider
-   no-fallback in PostgreSQL-backed execution fixtures.
+Implementation head `c6c86f6b0521d408cdf2fcd8938df481353e8d48` passed Foundation CI run 330.
+The complete gate included frozen install, strict TypeScript, unit/architecture tests,
+PostgreSQL 18 + pgvector integration suites and production builds. The PostgreSQL
+fixture proves durable exact replay, revoked/stale authority rejection, tenant-scoped
+operation reads and ambiguity-to-reconciliation with blind retry disabled.
+
+Final documentation head must pass the same Foundation CI gate before PR #38 merges.
+
+After this slice is green:
+1. persist/verify external effect receipts needed for durable result recovery and
+   terminal replay responses;
+2. add typed provider adapter failure/readiness/cost/timeout telemetry without secrets;
+3. prove credential-reference scoping/resolution at the adapter edge without exposing
+   raw secret material to Tool contracts;
+4. finish the Phase 5 acceptance audit before advancing to Skills/Workflows.
 
 The requested post-freeze donor boundary remains unchanged: MemPalace contributes
 retrieval/evaluation/storage-contract behavior inside canonical Masanawa memory ports;

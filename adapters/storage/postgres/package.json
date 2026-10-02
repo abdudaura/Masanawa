@@ -19,7 +19,9 @@
     "@masanawa/events": "workspace:*",
     "@masanawa/identity": "workspace:*",
     "@masanawa/memory": "workspace:*",
+    "@masanawa/providers": "workspace:*",
     "@masanawa/security": "workspace:*",
+    "@masanawa/tools": "workspace:*",
     "@masanawa/world": "workspace:*",
     "pg": "8.23.0"
   },

@@ -37,14 +37,10 @@ Post-freeze candidate assessments may exist without being admitted to the vault.
 
 ## Status
 
-Current phase: **Phase 4 — Memory**.
+Current phase: **Phase 5 — Tools and Providers**.
 
 Phase 0 source selection/forensics, Phase 1 architecture specification, Phase 2 shared
 foundation and the non-spatial Phase 3 Identity/World boundary are closed. Phase 3
 closure evidence is in `docs/PHASE-3-NONSPATIAL-CLOSURE-AUDIT.md`.
 
-Phase 4 now implements canonical scoped memory, provenance, lifecycle/publication,
-background extraction custody and authorization-first rebuildable retrieval projections
-on top of the shared contracts, persistence, security, recovery and service foundations.
-See `CONTINUE-HERE.md` and `docs/PHASE-4-MEMORY.md` for the exact active slice and
-validation evidence.
+Phase 4 canonical memory is closed through its accepted lifecycle/retrieval slices. Phase 5 now implements canonical Tool/Provider registries and the authorized, operation-bound execution/reconciliation path for consequential side effects. See `CONTINUE-HERE.md` and `docs/PHASE-5-TOOLS-PROVIDERS.md` for the exact active slice and validation evidence.

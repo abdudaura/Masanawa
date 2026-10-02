@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@masanawa/contracts": "workspace:*",
+    "@masanawa/events": "workspace:*",
     "@masanawa/providers": "workspace:*",
     "@masanawa/security": "workspace:*"
   },

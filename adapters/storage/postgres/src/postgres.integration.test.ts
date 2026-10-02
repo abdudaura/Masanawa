@@ -2,10 +2,16 @@ import { generateKeyPairSync } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import {
   createCanonicalId,
+  normalizeCapabilityKey,
   toInstant,
   type OperationId,
 } from "@masanawa/contracts";
 import type { PlatformEvent } from "@masanawa/events";
+import { createProviderRegistry } from "@masanawa/providers";
+import {
+  createToolRegistry,
+  executeConsequentialTool,
+} from "@masanawa/tools";
 import {
   assertCurrentAuthority,
   createAuthorityContext,
@@ -72,6 +78,7 @@ import {
   revokeAuthorityContext,
   persistPendingApproval,
   createPostgresCurrentAuthoritySource,
+  createPostgresToolOperationStore,
   consumeOnceApproval,
   enqueueOutbox,
   listExternalReceiptsForOperation,
@@ -3199,6 +3206,258 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
         ),
       ).rejects.toMatchObject({ code: "authority.stale_policy" });
     });
+  });
+
+  it("executes consequential Tools durably with replay, authority and reconciliation gates", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const otherTenantId = createCanonicalId("tenant");
+    const now = toInstant("2026-10-02T10:00:00Z");
+    const capability = normalizeCapabilityKey("payments.charge");
+
+    await withTransaction(pool, async (client) => {
+      await createTenant(client, { tenantId, createdAt: now });
+      await createTenant(client, { tenantId: otherTenantId, createdAt: now });
+      await setPolicyRevision(client, tenantId, "policy-1");
+      await setPolicyRevision(client, otherTenantId, "policy-1");
+    });
+
+    const tools = createToolRegistry();
+    tools.registerCapability({
+      key: capability,
+      description: "Create an externally observable payment charge.",
+    });
+    const toolVersionId = createCanonicalId("tool-version");
+    tools.registerTool({
+      toolId: createCanonicalId("tool"),
+      toolVersionId,
+      key: "payment-charge",
+      version: "v1",
+      displayName: "Payment charge",
+      description: "Create one idempotent external charge.",
+      capabilities: [capability],
+      inputSchema: { type: "object" },
+      outputSchema: { type: "object" },
+      requiredAuthorityCapabilities: [capability],
+      riskClass: "consequential",
+      sideEffectClass: "external-consequential",
+      sensitivity: "sensitive",
+      timeoutMs: 30_000,
+      rateLimit: null,
+      costClass: "external",
+      idempotencyMode: "operation-bound",
+      reconciliationMode: "on-unknown",
+      providerRequirement: { capability },
+    });
+
+    const providers = createProviderRegistry();
+    const providerId = createCanonicalId("provider");
+    providers.register({
+      providerId,
+      key: "payment-fixture",
+      version: "v1",
+      displayName: "Payment fixture",
+      capabilities: [capability],
+      selectionPriority: 1,
+      credentialSlots: [
+        {
+          key: "api-key",
+          required: true,
+          description: "Opaque provider credential reference.",
+        },
+      ],
+    });
+    providers.setReadiness({
+      providerId,
+      state: "ready",
+      reasonCode: null,
+      checkedAt: now,
+    });
+
+    const credentialBindings = {
+      "api-key": createCanonicalId("credential-ref"),
+    };
+    const operations = createPostgresToolOperationStore(pool);
+    const authorityClient = await pool.connect();
+    try {
+      const authoritySource =
+        createPostgresCurrentAuthoritySource(authorityClient);
+      const authority = createAuthorityContext({
+        tenantId,
+        principal: {
+          kind: "system",
+          systemKind: "tool-execution-integration",
+        },
+        scopes: [],
+        capabilities: [capability],
+        resourceScope: {},
+        policyRevision: "policy-1",
+        approvalIds: [],
+        delegationChain: [],
+        expiresAt: toInstant("2099-01-01T00:00:00Z"),
+        requestId: createCanonicalId("request"),
+        correlationId: createCanonicalId("correlation"),
+      });
+
+      let dispatches = 0;
+      const successfulDependencies = {
+        tools,
+        providers,
+        authoritySource,
+        operations,
+        resolveAdapter: () => ({
+          async dispatch() {
+            dispatches += 1;
+            return {
+              status: "succeeded" as const,
+              output: { providerReference: "charge-1" },
+            };
+          },
+        }),
+      };
+
+      const invocation = {
+        toolVersionId,
+        authority,
+        input: { amountMinor: 1000, currency: "NGN" },
+        idempotencyKey: "postgres-charge-1",
+        providerSelection: null,
+      } as const;
+
+      const first = await executeConsequentialTool(successfulDependencies, {
+        invocation,
+        credentialBindings,
+        idempotencyExpiresAt: toInstant("2099-01-02T00:00:00Z"),
+      });
+      const replay = await executeConsequentialTool(successfulDependencies, {
+        invocation,
+        credentialBindings,
+        idempotencyExpiresAt: toInstant("2099-01-02T00:00:00Z"),
+      });
+
+      expect(first.operation.state).toBe("succeeded");
+      expect(replay.operation.operationId).toBe(first.operation.operationId);
+      expect(replay.reused).toBe(true);
+      expect(replay.dispatched).toBe(false);
+      expect(dispatches).toBe(1);
+
+      await expect(
+        operations.load(otherTenantId, first.operation.operationId),
+      ).resolves.toBeNull();
+
+      await withTransaction(pool, (client) =>
+        revokeAuthorityContext(client, {
+          tenantId,
+          authorityContextId: authority.authorityContextId,
+          reasonCode: "integration-revoked",
+        }),
+      );
+
+      await expect(
+        executeConsequentialTool(successfulDependencies, {
+          invocation: {
+            ...invocation,
+            idempotencyKey: "postgres-charge-revoked",
+          },
+          credentialBindings,
+          idempotencyExpiresAt: toInstant("2099-01-02T00:00:00Z"),
+        }),
+      ).rejects.toMatchObject({ code: "authority.revoked" });
+      expect(dispatches).toBe(1);
+
+      const staleAuthority = createAuthorityContext({
+        tenantId,
+        principal: {
+          kind: "system",
+          systemKind: "tool-execution-integration",
+        },
+        scopes: [],
+        capabilities: [capability],
+        resourceScope: {},
+        policyRevision: "policy-1",
+        approvalIds: [],
+        delegationChain: [],
+        expiresAt: toInstant("2099-01-01T00:00:00Z"),
+        requestId: createCanonicalId("request"),
+        correlationId: createCanonicalId("correlation"),
+      });
+      await withTransaction(pool, (client) =>
+        setPolicyRevision(client, tenantId, "policy-2"),
+      );
+
+      await expect(
+        executeConsequentialTool(successfulDependencies, {
+          invocation: {
+            ...invocation,
+            authority: staleAuthority,
+            idempotencyKey: "postgres-charge-stale",
+          },
+          credentialBindings,
+          idempotencyExpiresAt: toInstant("2099-01-02T00:00:00Z"),
+        }),
+      ).rejects.toMatchObject({ code: "authority.stale_policy" });
+      expect(dispatches).toBe(1);
+
+      const currentAuthority = createAuthorityContext({
+        tenantId,
+        principal: {
+          kind: "system",
+          systemKind: "tool-execution-integration",
+        },
+        scopes: [],
+        capabilities: [capability],
+        resourceScope: {},
+        policyRevision: "policy-2",
+        approvalIds: [],
+        delegationChain: [],
+        expiresAt: toInstant("2099-01-01T00:00:00Z"),
+        requestId: createCanonicalId("request"),
+        correlationId: createCanonicalId("correlation"),
+      });
+
+      const ambiguous = await executeConsequentialTool(
+        {
+          tools,
+          providers,
+          authoritySource,
+          operations,
+          resolveAdapter: () => ({
+            async dispatch() {
+              throw new Error(
+                "transport closed after the provider may have accepted the request",
+              );
+            },
+          }),
+        },
+        {
+          invocation: {
+            ...invocation,
+            authority: currentAuthority,
+            idempotencyKey: "postgres-charge-ambiguous",
+          },
+          credentialBindings,
+          idempotencyExpiresAt: toInstant("2099-01-02T00:00:00Z"),
+        },
+      );
+
+      expect(ambiguous.operation.state).toBe("reconciling");
+      const reconciliation = await pool.query<{
+        status: string;
+        safe_retry: boolean;
+      }>(
+        `SELECT status, safe_retry
+           FROM events.reconciliation_cases
+          WHERE tenant_id = $1 AND operation_id = $2`,
+        [tenantId, ambiguous.operation.operationId],
+      );
+      expect(reconciliation.rows).toEqual([
+        {
+          status: "open",
+          safe_retry: false,
+        },
+      ]);
+    } finally {
+      authorityClient.release();
+    }
   });
 
   it("preserves one operation across restart-safe idempotent admission", async () => {

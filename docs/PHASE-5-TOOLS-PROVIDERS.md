@@ -126,3 +126,38 @@ After this slice:
    reconciliation rather than blind retry;
 4. prove exact idempotent replay, stale-authority rejection and explicit-provider
    no-fallback through PostgreSQL-backed execution fixtures.
+
+
+## Second canonical slice — execution/reconciliation in progress
+
+Active branch: `phase5-tool-execution-reconciliation`  
+Active PR: #38
+
+Implemented:
+- canonical provider credential-slot binding by opaque `CredentialRefId` only;
+- no raw secret material enters Provider definitions, Tool invocations or execution
+  results;
+- consequential Tool executor over existing Security AuthorityContext and Events
+  Operation semantics;
+- current-policy/revocation revalidation immediately before dispatch;
+- deterministic authority-scope and request fingerprints for operation-bound
+  idempotency;
+- exact replay suppression once an operation has advanced beyond safe pre-dispatch
+  states;
+- ambiguous adapter exceptions/outcomes transition to `unknown` and reconciliation
+  with blind retry disabled;
+- provider-independent Tools reject provider credential bindings;
+- PostgreSQL ToolOperationStore adapter over `events.operations` and reconciliation;
+- tenant-scoped operation reads/transitions;
+- unit coverage for exact replay, stale policy, dispatch ambiguity and credential-slot
+  enforcement.
+
+Validation:
+- implementation head `c6c86f6b0521d408cdf2fcd8938df481353e8d48` passed Foundation CI run 330;
+- the complete gate passed frozen install, strict TypeScript, unit/architecture tests,
+  PostgreSQL 18 + pgvector integration suites and production builds;
+- PostgreSQL acceptance coverage proves exact replay does not redispatch, revoked and
+  stale-policy authority stop dispatch, cross-tenant operation reads fail closed, and
+  ambiguous dispatch creates a durable reconciliation case with `safe_retry = false`.
+
+Final documentation head must pass the same gate before PR #38 merge.

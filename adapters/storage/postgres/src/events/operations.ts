@@ -231,6 +231,7 @@ export async function transitionOperation(
   client: PoolClient,
   input: {
     readonly operationId: OperationId;
+    readonly tenantId?: TenantId;
     readonly from: OperationState;
     readonly to: OperationState;
     readonly expectedFence?: number;
@@ -238,19 +239,14 @@ export async function transitionOperation(
 ): Promise<OperationRecord> {
   assertOperationTransition(input.from, input.to);
 
-  const params: unknown[] = [input.operationId, input.from, input.to];
-  const fenceClause =
-    input.expectedFence === undefined
-      ? ""
-      : ` AND fence = $${params.push(input.expectedFence)}`;
-
   const result = await client.query<OperationRow>(
     `UPDATE events.operations
         SET state = $3,
             updated_at = clock_timestamp()
       WHERE operation_id = $1
         AND state = $2
-        ${fenceClause}
+        AND ($4::text IS NULL OR tenant_id = $4)
+        AND ($5::bigint IS NULL OR fence = $5)
       RETURNING operation_id,
                 tenant_id,
                 kind,
@@ -260,7 +256,13 @@ export async function transitionOperation(
                 state,
                 created_at,
                 updated_at`,
-    params,
+    [
+      input.operationId,
+      input.from,
+      input.to,
+      input.tenantId ?? null,
+      input.expectedFence ?? null,
+    ],
   );
 
   const row = result.rows[0];
@@ -268,7 +270,7 @@ export async function transitionOperation(
     throw new PlatformError({
       code: "operation.stale_transition",
       category: "conflict",
-      message: "Operation state or fence changed before transition",
+      message: "Operation state, tenant or fence changed before transition",
       retryable: false,
       operationId: input.operationId,
       details: {
