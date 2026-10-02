@@ -21,6 +21,74 @@ export interface CredentialMaterialSource {
   ): Promise<CredentialSecret | null>;
 }
 
+export interface EncryptedCredentialEnvelope {
+  readonly algorithm: string;
+  readonly keyId: string;
+  readonly ciphertext: string;
+  readonly nonce: string | null;
+}
+
+export interface CredentialEnvelopeCipher {
+  seal(input: {
+    readonly plaintext: string;
+    readonly tenantId: TenantId;
+    readonly credentialRefId: CredentialRefId;
+    readonly providerId: ProviderId;
+    readonly slotKey: string;
+    readonly generation: number;
+  }): Promise<EncryptedCredentialEnvelope>;
+  open(input: {
+    readonly envelope: EncryptedCredentialEnvelope;
+    readonly tenantId: TenantId;
+    readonly credentialRefId: CredentialRefId;
+    readonly providerId: ProviderId;
+    readonly slotKey: string;
+    readonly generation: number;
+  }): Promise<CredentialSecret>;
+}
+
+function boundedEnvelopeField(
+  value: string,
+  name: string,
+  maxLength: number,
+): string {
+  const normalized = value.trim();
+  if (!normalized || normalized.length > maxLength) {
+    throw new TypeError(`${name} is invalid`);
+  }
+  return normalized;
+}
+
+export function normalizeEncryptedCredentialEnvelope(
+  input: EncryptedCredentialEnvelope,
+): EncryptedCredentialEnvelope {
+  return Object.freeze({
+    algorithm: boundedEnvelopeField(
+      input.algorithm,
+      "credential envelope algorithm",
+      128,
+    ),
+    keyId: boundedEnvelopeField(
+      input.keyId,
+      "credential envelope keyId",
+      256,
+    ),
+    ciphertext: boundedEnvelopeField(
+      input.ciphertext,
+      "credential envelope ciphertext",
+      131072,
+    ),
+    nonce:
+      input.nonce === null
+        ? null
+        : boundedEnvelopeField(
+            input.nonce,
+            "credential envelope nonce",
+            4096,
+          ),
+  });
+}
+
 function boundedSlotKey(value: string): string {
   const normalized = value.trim().toLowerCase();
   if (
