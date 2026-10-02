@@ -222,7 +222,7 @@ describe("consequential Tool executor", () => {
       },
       operations,
       providerTelemetry: {
-        record(attributes) {
+        record(attributes: Readonly<Record<string, string | number | boolean>>) {
           telemetry.push(attributes);
         },
       },
@@ -351,7 +351,7 @@ describe("consequential Tool executor", () => {
         },
         operations,
         providerTelemetry: {
-          record(attributes) {
+          record(attributes: Readonly<Record<string, string | number | boolean>>) {
             telemetry.push(attributes);
           },
         },
@@ -420,7 +420,7 @@ describe("consequential Tool executor", () => {
         },
         operations,
         providerTelemetry: {
-          record(attributes) {
+          record(attributes: Readonly<Record<string, string | number | boolean>>) {
             telemetry.push(attributes);
           },
         },
