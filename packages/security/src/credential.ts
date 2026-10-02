@@ -1,6 +1,7 @@
 import {
   PlatformError,
   isCanonicalId,
+  toInstant,
   type AuthorityContextId,
   type CorrelationId,
   type CredentialRefId,
@@ -136,7 +137,7 @@ function normalizedLocator(value: string): string {
   if (
     normalized.length < 1 ||
     normalized.length > 1000 ||
-    /[\r\n\0]/u.test(normalized)
+    /[\r\n\0\s?#]/u.test(normalized)
   ) {
     throw new TypeError("credential vaultLocator is invalid");
   }
@@ -180,6 +181,13 @@ export function normalizeCredentialRefRecord(
     throw new TypeError("revoked credential requires revokedAt");
   }
 
+  const createdAt = toInstant(input.createdAt);
+  const revokedAt =
+    input.revokedAt === null ? null : toInstant(input.revokedAt);
+  if (revokedAt !== null && revokedAt < createdAt) {
+    throw new TypeError("credential revokedAt cannot precede createdAt");
+  }
+
   return Object.freeze({
     credentialRefId: input.credentialRefId,
     tenantId: input.tenantId,
@@ -193,8 +201,8 @@ export function normalizeCredentialRefRecord(
     vaultLocator: normalizedLocator(input.vaultLocator),
     generation: input.generation,
     state: input.state,
-    createdAt: input.createdAt,
-    revokedAt: input.revokedAt,
+    createdAt,
+    revokedAt,
   });
 }
 
