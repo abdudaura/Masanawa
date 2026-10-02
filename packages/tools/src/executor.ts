@@ -316,10 +316,7 @@ async function emitProviderExecutionTelemetry(
         providerId: input.provider.provider.providerId,
         providerKey: input.provider.provider.key,
         providerVersion: input.provider.provider.version,
-        capability: input.provider.readiness.providerId ===
-          input.provider.provider.providerId
-          ? input.tool.providerRequirement!.capability
-          : input.tool.capabilities[0]!,
+        capability: input.tool.providerRequirement!.capability,
         toolVersionId: input.tool.toolVersionId,
         operationId: input.operation.operationId,
         outcome: input.outcome,
