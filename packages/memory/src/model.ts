@@ -1,9 +1,12 @@
 import type {
+  ApprovalId,
+  AuthorityContextId,
   CharacterId,
   CharacterSessionId,
   Instant,
   MemoryRecordId,
   MemoryRevisionId,
+  OperationId,
   RelationshipId,
   TaskId,
   TenantId,
@@ -159,9 +162,9 @@ export interface MemoryScopePublication {
   readonly sourceMemoryRevisionId: MemoryRevisionId;
   readonly targetMemoryRecordId: MemoryRecordId;
   readonly targetMemoryRevisionId: MemoryRevisionId;
-  readonly operationId: import("@masanawa/contracts").OperationId;
-  readonly authorityContextId: import("@masanawa/contracts").AuthorityContextId;
-  readonly approvalId: import("@masanawa/contracts").ApprovalId;
+  readonly operationId: OperationId;
+  readonly authorityContextId: AuthorityContextId;
+  readonly approvalId: ApprovalId;
   readonly policyRevision: string;
   readonly principalKey: string;
   readonly reason: string;
