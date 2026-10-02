@@ -10,7 +10,10 @@ import {
   type OperationRecord,
   type OperationState,
 } from "@masanawa/events";
-import { createProviderRegistry } from "@masanawa/providers";
+import {
+  ProviderExecutionError,
+  createProviderRegistry,
+} from "@masanawa/providers";
 import {
   createAuthorityContext,
 } from "@masanawa/security";
@@ -209,6 +212,7 @@ describe("consequential Tool executor", () => {
     const f = fixture();
     const operations = memoryOperationStore();
     let dispatches = 0;
+    const telemetry: Array<Readonly<Record<string, string | number | boolean>>> = [];
 
     const dependencies = {
       tools: f.tools,
@@ -217,6 +221,15 @@ describe("consequential Tool executor", () => {
         getPolicyRevision: () => "policy-1",
       },
       operations,
+      providerTelemetry: {
+        record(attributes: Readonly<Record<string, string | number | boolean>>) {
+          telemetry.push(attributes);
+        },
+      },
+      nowMs: (() => {
+        const clock = [5_000, 5_075];
+        return () => clock.shift() ?? 5_075;
+      })(),
       resolveAdapter: () => ({
         async dispatch() {
           dispatches += 1;
@@ -224,6 +237,11 @@ describe("consequential Tool executor", () => {
             status: "succeeded" as const,
             output: { chargeId: "charge_1" },
             receipt: dispatchReceipt(),
+            usage: {
+              costMicros: 42_000,
+              inputUnits: 300,
+              outputUnits: 55,
+            },
           };
         },
       }),
@@ -263,6 +281,14 @@ describe("consequential Tool executor", () => {
       providerReference: "provider-charge-1",
     });
     expect(dispatches).toBe(1);
+    expect(telemetry).toHaveLength(1);
+    expect(telemetry[0]).toMatchObject({
+      "masanawa.provider.outcome": "succeeded",
+      "masanawa.provider.latency_ms": 75,
+      "masanawa.provider.cost_micros": 42_000,
+      "masanawa.provider.input_units": 300,
+      "masanawa.provider.output_units": 55,
+    });
   });
 
   it("revalidates current authority before dispatch", async () => {
@@ -308,6 +334,141 @@ describe("consequential Tool executor", () => {
       code: "authority.stale_policy",
     });
     expect(dispatches).toBe(0);
+  });
+
+  it("treats a certified not-dispatched provider timeout as a typed safe failure", async () => {
+    const f = fixture();
+    const operations = memoryOperationStore();
+    const telemetry: Array<Readonly<Record<string, string | number | boolean>>> = [];
+    const clock = [1_000, 3_500];
+
+    const result = await executeConsequentialTool(
+      {
+        tools: f.tools,
+        providers: f.providers,
+        authoritySource: {
+          getPolicyRevision: () => "policy-1",
+        },
+        operations,
+        providerTelemetry: {
+          record(attributes: Readonly<Record<string, string | number | boolean>>) {
+            telemetry.push(attributes);
+          },
+        },
+        nowMs: () => clock.shift() ?? 3_500,
+        resolveAdapter: () => ({
+          async dispatch() {
+            throw new ProviderExecutionError({
+              kind: "timeout",
+              code: "request-timeout",
+              phase: "pre-dispatch",
+              dispatchCertainty: "not-dispatched",
+              retryable: true,
+              timeoutMs: 2_000,
+              retryAfterMs: null,
+            });
+          },
+        }),
+      },
+      {
+        invocation: {
+          toolVersionId: f.toolVersionId,
+          authority: f.authority,
+          input: { amount: 1000 },
+          idempotencyKey: "charge-request-provider-timeout",
+          providerSelection: null,
+        },
+        credentialBindings: {
+          "api-key": createCanonicalId("credential-ref"),
+        },
+        idempotencyExpiresAt: toInstant("2026-10-03T10:00:00Z"),
+      },
+    );
+
+    expect(result.operation.state).toBe("failed");
+    expect(result.dispatched).toBe(false);
+    expect(result.providerFailure).toMatchObject({
+      kind: "timeout",
+      dispatchCertainty: "not-dispatched",
+    });
+    expect(result.receipts).toEqual([]);
+    expect(telemetry).toHaveLength(1);
+    expect(telemetry[0]).toMatchObject({
+      "masanawa.provider.key": "payments",
+      "masanawa.provider.outcome": "failed",
+      "masanawa.provider.latency_ms": 2_500,
+      "masanawa.provider.failure_kind": "timeout",
+      "masanawa.provider.dispatch_certainty": "not-dispatched",
+      "masanawa.provider.timeout_ms": 2_000,
+    });
+    expect(Object.keys(telemetry[0]!)).not.toContain(
+      "masanawa.provider.api_key",
+    );
+  });
+
+  it("forces typed ambiguous provider transport failure into reconciliation", async () => {
+    const f = fixture();
+    const operations = memoryOperationStore();
+    const telemetry: Array<Readonly<Record<string, string | number | boolean>>> = [];
+
+    const result = await executeConsequentialTool(
+      {
+        tools: f.tools,
+        providers: f.providers,
+        authoritySource: {
+          getPolicyRevision: () => "policy-1",
+        },
+        operations,
+        providerTelemetry: {
+          record(attributes: Readonly<Record<string, string | number | boolean>>) {
+            telemetry.push(attributes);
+          },
+        },
+        nowMs: (() => {
+          const clock = [10_000, 10_125];
+          return () => clock.shift() ?? 10_125;
+        })(),
+        resolveAdapter: () => ({
+          async dispatch() {
+            throw new ProviderExecutionError({
+              kind: "transport",
+              code: "connection-reset",
+              phase: "post-dispatch",
+              dispatchCertainty: "unknown",
+              retryable: true,
+              timeoutMs: null,
+              retryAfterMs: null,
+            });
+          },
+        }),
+      },
+      {
+        invocation: {
+          toolVersionId: f.toolVersionId,
+          authority: f.authority,
+          input: { amount: 1000 },
+          idempotencyKey: "charge-request-provider-ambiguous",
+          providerSelection: null,
+        },
+        credentialBindings: {
+          "api-key": createCanonicalId("credential-ref"),
+        },
+        idempotencyExpiresAt: toInstant("2026-10-03T10:00:00Z"),
+      },
+    );
+
+    expect(result.operation.state).toBe("reconciling");
+    expect(result.dispatched).toBe(true);
+    expect(result.providerFailure).toMatchObject({
+      kind: "transport",
+      dispatchCertainty: "unknown",
+    });
+    expect(telemetry[0]).toMatchObject({
+      "masanawa.provider.outcome": "failed",
+      "masanawa.provider.latency_ms": 125,
+      "masanawa.provider.failure_kind": "transport",
+      "masanawa.provider.dispatch_certainty": "unknown",
+    });
   });
 
   it("turns dispatch ambiguity into reconciliation and never blind-retries", async () => {

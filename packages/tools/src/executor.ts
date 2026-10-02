@@ -10,10 +10,16 @@ import {
   type OperationState,
 } from "@masanawa/events";
 import {
+  isProviderExecutionError,
   normalizeProviderCredentialBindings,
+  normalizeProviderUsage,
+  providerExecutionTelemetryAttributes,
   type ProviderCredentialBindings,
+  type ProviderFailure,
   type ProviderRegistry,
   type ProviderSelection,
+  type ProviderTelemetrySink,
+  type ProviderUsage,
 } from "@masanawa/providers";
 import {
   assertCurrentAuthority,
@@ -93,7 +99,7 @@ export interface ToolDispatchReceipt {
   readonly verificationMethod: string;
 }
 
-export type ToolDispatchOutcome =
+export type ToolDispatchOutcome = (
   | {
       readonly status: "succeeded";
       readonly output: CanonicalJson;
@@ -123,7 +129,10 @@ export type ToolDispatchOutcome =
   | {
       readonly status: "not-dispatched";
       readonly errorCode: string;
-    };
+    }
+) & {
+  readonly usage?: ProviderUsage;
+};
 
 export interface ToolDispatchAdapter {
   dispatch(context: ToolDispatchContext): Promise<ToolDispatchOutcome>;
@@ -138,6 +147,8 @@ export interface ConsequentialToolExecutionDependencies {
     tool: ToolDefinition,
     provider: ProviderSelection | null,
   ) => ToolDispatchAdapter;
+  readonly providerTelemetry?: ProviderTelemetrySink;
+  readonly nowMs?: () => number;
 }
 
 export interface ConsequentialToolExecutionInput {
@@ -153,6 +164,7 @@ export interface ConsequentialToolExecutionResult {
   readonly reused: boolean;
   readonly dispatched: boolean;
   readonly receipts: readonly ExternalReceiptRecord[];
+  readonly providerFailure?: ProviderFailure;
   readonly output?: CanonicalJson;
 }
 
@@ -263,6 +275,61 @@ function toReceiptEvidence(
     verificationMethod: receipt.verificationMethod,
     providerVersion: provider?.provider.version ?? tool.version,
   });
+}
+
+async function emitProviderExecutionTelemetry(
+  dependencies: ConsequentialToolExecutionDependencies,
+  input: {
+    readonly provider: ProviderSelection | null;
+    readonly tool: ToolDefinition;
+    readonly operation: OperationRecord;
+    readonly outcome:
+      | "succeeded"
+      | "accepted"
+      | "rejected"
+      | "partial"
+      | "unknown"
+      | "failed";
+    readonly latencyMs: number;
+    readonly usage: ProviderUsage | undefined;
+    readonly failure: ProviderFailure | null;
+  },
+): Promise<void> {
+  if (
+    dependencies.providerTelemetry === undefined ||
+    input.provider === null
+  ) {
+    return;
+  }
+
+  const usage = normalizeProviderUsage(
+    input.usage ?? {
+      costMicros: null,
+      inputUnits: null,
+      outputUnits: null,
+    },
+  );
+
+  try {
+    await dependencies.providerTelemetry.record(
+      providerExecutionTelemetryAttributes({
+        providerId: input.provider.provider.providerId,
+        providerKey: input.provider.provider.key,
+        providerVersion: input.provider.provider.version,
+        capability: input.tool.providerRequirement!.capability,
+        toolVersionId: input.tool.toolVersionId,
+        operationId: input.operation.operationId,
+        outcome: input.outcome,
+        latencyMs: input.latencyMs,
+        costMicros: usage.costMicros,
+        inputUnits: usage.inputUnits,
+        outputUnits: usage.outputUnits,
+        failure: input.failure,
+      }),
+    );
+  } catch {
+    // Telemetry is observational only and must never alter Tool truth.
+  }
 }
 
 async function reconcileUnknown(
@@ -436,6 +503,8 @@ export async function executeConsequentialTool(
   );
 
   const adapter = dependencies.resolveAdapter(tool, provider);
+  const nowMs = dependencies.nowMs ?? Date.now;
+  const dispatchStartedAt = nowMs();
   let outcome: ToolDispatchOutcome;
   try {
     outcome = await adapter.dispatch({
@@ -445,7 +514,51 @@ export async function executeConsequentialTool(
       provider,
       credentialBindings,
     });
-  } catch {
+  } catch (error) {
+    const latencyMs = Math.max(0, nowMs() - dispatchStartedAt);
+    if (isProviderExecutionError(error)) {
+      await emitProviderExecutionTelemetry(dependencies, {
+        provider,
+        tool,
+        operation,
+        outcome: "failed",
+        latencyMs,
+        usage: undefined,
+        failure: error.failure,
+      });
+
+      if (error.failure.dispatchCertainty === "not-dispatched") {
+        operation = await transitionIfCurrent(
+          dependencies.operations,
+          operation,
+          "failed",
+        );
+        return {
+          operation,
+          reused: prepared.reused,
+          dispatched: false,
+          receipts: Object.freeze([]),
+          providerFailure: error.failure,
+        };
+      }
+
+      const latest = await reconcileUnknown(
+        dependencies.operations,
+        operation,
+        `provider.${error.failure.code}`,
+      );
+      return {
+        operation: latest,
+        reused: prepared.reused,
+        dispatched: true,
+        receipts: await dependencies.operations.listReceipts(
+          invocation.authority.tenantId,
+          operation.operationId,
+        ),
+        providerFailure: error.failure,
+      };
+    }
+
     const latest = await reconcileUnknown(
       dependencies.operations,
       operation,
@@ -461,6 +574,19 @@ export async function executeConsequentialTool(
       ),
     };
   }
+
+  await emitProviderExecutionTelemetry(dependencies, {
+    provider,
+    tool,
+    operation,
+    outcome:
+      outcome.status === "not-dispatched"
+        ? "failed"
+        : outcome.status,
+    latencyMs: Math.max(0, nowMs() - dispatchStartedAt),
+    usage: outcome.usage,
+    failure: null,
+  });
 
   let receipt: ExternalReceiptRecord | null = null;
   if (outcome.status !== "not-dispatched" && outcome.receipt !== undefined) {

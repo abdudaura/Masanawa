@@ -193,4 +193,39 @@ Validation:
   a new local payload locator/arrival timestamp while the stable observation identity
   remains idempotent; changed business evidence still conflicts.
 
-Final documentation head must pass the same gate before PR #39 merges.
+PR #39 merged as `8d531188e2f9d7c38f50cc883e3425096b5408ad`
+after its final documentation gate passed.
+
+
+## Fourth canonical slice — typed Provider failures and privacy-safe telemetry
+
+Active branch: `phase5-provider-telemetry-errors`  
+Active PR: #42
+
+Implemented:
+- typed Provider failure kinds, phases and dispatch certainty;
+- safety invariants prevent post-dispatch failures from claiming `not-dispatched` and
+  suppress immediate retryability for `unknown` outcomes;
+- typed timeout, rate-limit, availability, authentication, cost, response, transport
+  and internal failures map to canonical PlatformError categories;
+- bounded Provider usage metadata for latency, cost micros and input/output units;
+- Provider readiness/execution telemetry uses the canonical Telemetry privacy-safe
+  allowlist;
+- telemetry includes only normalized Provider/capability/ToolVersion/Operation IDs,
+  state/codes and bounded counters, never invocation payloads, outputs, receipt bodies,
+  raw exceptions or CredentialRefIds;
+- telemetry sink failures are observational and cannot alter durable Tool state;
+- consequential execution distinguishes certified pre-dispatch failures from ambiguous
+  post-dispatch failures while preserving reconciliation semantics;
+- successful idempotent replay emits no second Provider execution telemetry because no
+  second provider call occurs;
+- root production build order reflects Providers -> Telemetry dependency.
+
+Validation:
+- implementation head `3de2dcc749409b6be680fa5d7f01e820bd967792`
+  passed Foundation CI run 346;
+- the complete gate passed frozen install, strict TypeScript, unit/architecture tests,
+  PostgreSQL 18 + pgvector integration suites and production builds;
+- PR #42 has no review threads at the implementation gate.
+
+Final documentation head must pass the same gate before merge.
