@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   createCanonicalId,
+  normalizeCapabilityKey,
   toInstant,
   type SkillId,
 } from "@masanawa/contracts";
@@ -21,8 +22,8 @@ function version(overrides: Partial<SkillVersion> = {}): SkillVersion {
     description: "Researches public sources through provider-neutral tools.",
     activationExamples: ["Research this topic"],
     negativeActivationExamples: ["Do not browse"],
-    capabilities: ["research.web"],
-    requiredToolCapabilities: ["web.search"],
+    capabilities: [normalizeCapabilityKey("research.web")],
+    requiredToolCapabilities: [normalizeCapabilityKey("web.search")],
     requiredAuthorityCapabilities: [],
     dependencies: [],
     inputSchema: { type: "object" },
