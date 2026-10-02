@@ -2,7 +2,7 @@
 
 Status: ACTIVE  
 Started: 2026-10-02  
-Active branch: `task062-skill-dependency-graph`
+Active branch: `task063-skill-execution-planning`
 
 Phase 5 Tools and Providers is closed by PR #45, merge
 `0fe123e18a9163386c4ab10331139265ce26b64e`.
@@ -81,6 +81,10 @@ SkillVersions now declare provider-neutral required Tool capabilities and explic
 ## Task 062 — Skill dependency graph and conflict validation
 
 The canonical Skill registry validates exact immutable SkillVersion dependency graphs before mutating registry state. Batch registration is order-independent and atomic: missing dependencies, cycles, configured depth overflow, duplicate identity/version bindings and logical Skill identity conflicts all fail closed without partially activating the batch. Logical Skill keys and stable `SkillId` values are one-to-one across versions, preventing a key from silently changing identity or an identity from changing keys. Exact replay of an unchanged SkillVersion remains idempotent.
+
+## Task 063 — Skill execution planning and composition
+
+The Skills package now composes a deterministic immutable execution-plan snapshot from the canonical registry. Planning reuses the already-validated exact SkillVersion DAG: dependencies appear before dependants, shared dependencies are included once, the requested root is last, and every direct dependency is represented by an earlier step ordinal. Planning is fail-closed on readiness for the root and every exact dependency, while ready model-hidden SkillVersions may participate as dependencies without becoming advertised. The plan aggregates required Tool capabilities but does not select Providers or execute Tool/subskill calls; those remain later execution-boundary work.
 
 ## First canonical slice
 

@@ -139,6 +139,8 @@ run 380 passed on that exact merge commit.
 
 **Current: Task 063 of 150 — Implement Skill execution planning/composition.**
 
+Active implementation branch: `task063-skill-execution-planning`. Task 063 adds deterministic immutable dependency-first plan composition over the canonical Skill registry, deduplicated exact SkillVersion DAG steps, readiness gating, and aggregate Tool capability requirements without Provider selection or execution. Acceptance/CI is pending.
+
 
 
 
