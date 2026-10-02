@@ -1,6 +1,6 @@
 # Phase 3 Non-Spatial Closure Audit
 
-Status: CANDIDATE — requires the full CI gate on `phase3-nonspatial-closure`.
+Status: PASS — non-spatial Phase 3 acceptance is closed.
 
 Scope: canonical Identity + non-spatial World/life/canon/recovery/evidence integration.
 
@@ -86,9 +86,9 @@ Evidence:
 - `manual` fails closed for operator reconciliation;
 - PostgreSQL tests cover all three modes and multi-batch bounded recovery.
 
-### 5. Private Relationship data never leaks into shared World state/evidence — CANDIDATE
+### 5. Private Relationship data never leaks into shared World state/evidence — PASS
 
-Current closure branch adds a package-owned recursive privacy invariant that rejects:
+The implementation includes a package-owned recursive privacy invariant that rejects:
 - canonical User IDs;
 - Relationship IDs;
 - MemoryRecord/MemoryRevision IDs;
@@ -108,7 +108,7 @@ Unit tests prove recursive/embedded detection. PostgreSQL integration tests prov
 rejected private references leave no simulation-input/event/routine/life-state/story-arc
 rows behind.
 
-This target becomes PASS only after the current branch passes the full CI gate.
+Foundation CI run 245 passed this invariant and the PostgreSQL no-row leakage fixture on head `b56039533bdb4e45a2b27a19621d160394f3b56c`.
 
 ### 6. Invalid/unapproved Character identity cannot drive automatic canon — PASS
 
@@ -169,10 +169,15 @@ Beyond ADR-0009's explicit list:
 - migrations are readiness/hash tracked;
 - Foundation CI exercises PostgreSQL 18, strict TypeScript, tests and production builds.
 
-## Closure condition
+## Closure evidence
 
-Non-spatial Phase 3 closes only when this branch passes the complete Foundation CI
-gate with the new privacy invariant and PostgreSQL leakage fixture.
+Foundation CI run 245 completed successfully on `phase3-nonspatial-closure` head
+`b56039533bdb4e45a2b27a19621d160394f3b56c`. The `check` job completed frozen install,
+the complete repository check gate, PostgreSQL 18-backed tests and production builds
+with the privacy invariant and PostgreSQL leakage fixture present.
+
+The non-spatial Phase 3 acceptance boundary is therefore closed. The documentation-only
+closure commit must still pass the same CI workflow before PR #28 is merged.
 
 After closure:
 1. do not reopen the non-spatial ownership model without contradictory evidence and
