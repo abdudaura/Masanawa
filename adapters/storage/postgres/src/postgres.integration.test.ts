@@ -2281,20 +2281,6 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       },
     });
 
-    const preparedCredentialOperation = await withTransaction(
-      pool,
-      (client) =>
-        prepareOperation(client, {
-          tenantId,
-          kind: "provider.credential-resolution-test",
-          idempotencyKey: "credential-resolution-operation",
-          authorityScopeHash: "credential-test-authority",
-          requestFingerprint: "credential-test-request",
-          expiresAt: toInstant("2099-01-01T00:00:00Z"),
-        }),
-    );
-    const operationId = preparedCredentialOperation.operation.operationId;
-
     const persisted = await pool.query<{
       event_id: string;
       outbox_event_id: string;
@@ -3549,6 +3535,20 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
         plaintext: "first-secret",
       });
     });
+
+    const preparedCredentialOperation = await withTransaction(
+      pool,
+      (client) =>
+        prepareOperation(client, {
+          tenantId,
+          kind: "provider.credential-resolution-test",
+          idempotencyKey: "credential-resolution-operation",
+          authorityScopeHash: "credential-test-authority",
+          requestFingerprint: "credential-test-request",
+          expiresAt: toInstant("2099-01-01T00:00:00Z"),
+        }),
+    );
+    const operationId = preparedCredentialOperation.operation.operationId;
 
     const persisted = await pool.query<{
       generation: number;
