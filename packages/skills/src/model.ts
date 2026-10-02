@@ -385,6 +385,34 @@ export function normalizeSkillProvenance(
     throw new TypeError("skill provenance publisherKey is invalid");
   }
 
+  if (
+    input.sourceKind === "imported" &&
+    input.sourceRevision === null
+  ) {
+    throw new TypeError(
+      "imported Skill provenance requires an exact sourceRevision",
+    );
+  }
+
+  if (
+    !Array.isArray(input.trust.reasonCodes) ||
+    input.trust.reasonCodes.length < 1 ||
+    input.trust.reasonCodes.length > 32
+  ) {
+    throw new TypeError(
+      "skill provenance trust reasonCodes are invalid",
+    );
+  }
+
+  const evaluatorKey = bounded(
+    input.trust.evaluatorKey,
+    "skill.provenance.trust.evaluatorKey",
+    128,
+  ).toLowerCase();
+  if (!sourceSystemPattern.test(evaluatorKey)) {
+    throw new TypeError("skill provenance trust evaluatorKey is invalid");
+  }
+
   const reasonCodes = input.trust.reasonCodes.map((value) => {
     const normalized = bounded(
       value,
@@ -436,11 +464,7 @@ export function normalizeSkillProvenance(
     }),
     trust: Object.freeze({
       tier: input.trust.tier,
-      evaluatorKey: bounded(
-        input.trust.evaluatorKey,
-        "skill.provenance.trust.evaluatorKey",
-        256,
-      ),
+      evaluatorKey,
       evaluatedAt: toInstant(input.trust.evaluatedAt),
       reasonCodes: Object.freeze([...reasonCodes].sort()),
     }),
