@@ -11,6 +11,7 @@ import {
   normalizeEncryptedCredentialEnvelope,
   type CredentialEnvelopeCipher,
   type CredentialMaterialSource,
+  type CredentialResolutionRequest,
   type EncryptedCredentialEnvelope,
 } from "@masanawa/security";
 import type { PoolClient } from "pg";
@@ -237,7 +238,7 @@ export function createPostgresCredentialMaterialSource(
   cipher: CredentialEnvelopeCipher,
 ): CredentialMaterialSource {
   return Object.freeze({
-    async resolve(input) {
+    async resolve(input: CredentialResolutionRequest) {
       const request = normalizeCredentialResolutionRequest(input);
       const result = await client.query<CredentialRow>(
         `SELECT tenant_id,
