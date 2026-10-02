@@ -2,7 +2,7 @@
 
 Status: ACTIVE  
 Started: 2026-10-02  
-Active branch: `phase4-memory-retrieval-projections`
+Active branch: `phase4-memory-multisignal-retrieval`
 
 Phase 3 non-spatial Identity/World acceptance is closed by PR #28, merge
 `02c2c99153e904b4f9d2f403328a1e3b6effc3f1`. Optional spatial simulation remains
@@ -223,7 +223,8 @@ Validation evidence:
   passed Foundation CI run 275;
 - the complete `check` job passed frozen install, strict TypeScript, unit tests,
   PostgreSQL 18 migrations/integration fixtures and production builds;
-- final documentation head must pass the same gate before PR #32 merges.
+- final documentation/status head `608e7c86ea36d0a524cb434f5732f90206702406` passed Foundation CI run 279;
+- PR #32 merged as `a0b8092d78e6e87647020b729fe2e02b27e455cf`.
 
 Rules:
 - canonical MemoryRecord/MemoryRevision remains the only retrieval truth;
@@ -247,6 +248,26 @@ After this slice:
    contract;
 2. add multi-signal fusion/reranking and held-out evaluation;
 3. then bounded context compilation/reflection/consolidation/deletion propagation.
+
+## Fifth canonical slice — active
+
+Goal: authorization-first vector/entity/temporal retrieval behind the same rebuildable
+projection contract, followed by deterministic multi-signal fusion and held-out
+evaluation.
+
+Rules:
+- no signal may query outside the caller's explicit authorized MemoryScope predicate;
+- vector query compatibility must exactly match the current vector generation's
+  provider/model/dimension contract before any distance calculation;
+- entity/temporal projections are derived indexes tied to exact canonical
+  MemoryRecord/MemoryRevision/source-content hash;
+- current canonical lifecycle/revision/scope/expiry is revalidated at query time, so
+  stale projection rows cannot resurrect old truth;
+- each signal must pass cross-Relationship non-disclosure fixtures independently before
+  fusion is allowed;
+- fusion may improve ranking but can never broaden authorization or compensate for a
+  failed privacy check;
+- held-out evaluation reports leakage independently from recall/precision/latency.
 
 ## Phase 4 acceptance targets
 
