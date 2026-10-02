@@ -80,17 +80,19 @@ AS $$
 DECLARE
   source_kind text;
   source_ref text;
+  source_type text;
   target_kind text;
   target_ref text;
+  target_type text;
 BEGIN
-  SELECT scope_kind, scope_ref_id
-    INTO source_kind, source_ref
+  SELECT scope_kind, scope_ref_id, memory_type
+    INTO source_kind, source_ref, source_type
     FROM memory.records
    WHERE tenant_id = NEW.tenant_id
      AND memory_record_id = NEW.source_memory_record_id;
 
-  SELECT scope_kind, scope_ref_id
-    INTO target_kind, target_ref
+  SELECT scope_kind, scope_ref_id, memory_type
+    INTO target_kind, target_ref, target_type
     FROM memory.records
    WHERE tenant_id = NEW.tenant_id
      AND memory_record_id = NEW.target_memory_record_id;
@@ -103,6 +105,11 @@ BEGIN
   IF source_kind IS DISTINCT FROM target_kind
      OR source_ref IS DISTINCT FROM target_ref THEN
     RAISE EXCEPTION 'Memory lineage cannot cross scope'
+      USING ERRCODE = '23514';
+  END IF;
+
+  IF source_type IS DISTINCT FROM target_type THEN
+    RAISE EXCEPTION 'Memory lineage cannot change memory type'
       USING ERRCODE = '23514';
   END IF;
 
