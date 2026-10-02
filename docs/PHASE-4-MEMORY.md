@@ -2,7 +2,7 @@
 
 Status: ACTIVE  
 Started: 2026-10-02  
-Active branch: `phase4-memory-deletion-context`
+Active branch: `phase4-memory-reflection-compaction`
 
 Phase 3 non-spatial Identity/World acceptance is closed by PR #28, merge
 `02c2c99153e904b4f9d2f403328a1e3b6effc3f1`. Optional spatial simulation remains
@@ -362,7 +362,8 @@ Validation evidence:
 - the complete `check` job passed frozen install, strict TypeScript, all unit tests,
   PostgreSQL 18 + pgvector migrations/integration fixtures and production builds;
 - PR #34 has no review threads or comments;
-- final documentation head must pass the same gate before merge.
+- final documentation head `dad3f5fe36a3fcda5c036e21035c26458e3446c9` passed Foundation CI run 306;
+- PR #34 merged as `09cb24218720040cc8e7ccbe59896c5380272b0e`.
 
 Rules:
 - tombstone is a canonical lifecycle transition, not physical purge;
@@ -387,6 +388,28 @@ After this slice:
    durable scoped memory work is admitted;
 4. prove reflection/consolidation/flush retries cannot widen scope or duplicate durable
    memories.
+
+## Seventh canonical slice — active
+
+Goal: evidence-backed retry-idempotent reflection/consolidation plus safe compaction
+flush admission.
+
+Rules:
+- reflection is a canonical MemoryRecord of type `reflection`, not a second storage
+  layer;
+- reflection identity is bound to exact source MemoryRecord/MemoryRevision evidence,
+  purpose and reflector identity so retry cannot create duplicate durable memory;
+- every reflection source must share the exact output MemoryScope; cross-scope
+  reflection fails closed and broader publication still requires the existing governed
+  scope-publication action;
+- reflection provenance remains queryable even after source lifecycle later changes;
+- consolidation/absorption uses existing canonical lifecycle lineage and never deletes
+  source revisions/evidence;
+- compaction flush reuses durable extraction custody and never invents a parallel
+  cognition queue;
+- compaction may proceed only after exact-scope durable memory work is successfully
+  admitted/reused;
+- retry/recovery cannot widen scope or silently change source evidence.
 
 ## Phase 4 acceptance targets
 
