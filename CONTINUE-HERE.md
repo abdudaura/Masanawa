@@ -119,35 +119,42 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 
 ## Immediate work
 
-PR #33 merged as `69ed518df450415ae30fc66a800e2ee674da4cee`.
-Implementation/fusion head `c938e23e576c98a8eb0efd61fea10e91c0fcd737`
-passed Foundation CI run 293; final documentation head
-`0b61670a5a9512ff4532c270619a45604019aeb3` passed run 294.
+PR #34 is the active deletion/context slice on
+`phase4-memory-deletion-context`.
+
+Hardened implementation head `7994de231a27f510cff09ad2db8fe3b71cc307b4`
+passed Foundation CI run 305. The complete gate passed frozen install, strict
+TypeScript, all unit tests, PostgreSQL 18 + pgvector migrations/integration fixtures and
+production builds. PR #34 has no review threads or comments.
 
 The branch now includes:
-- pinned PostgreSQL 18 + pgvector CI;
-- vector/entity/temporal disposable projection storage with canonical-source validation;
-- uniform complete-generation activation;
-- exact authorized-scope vector/entity/temporal retrieval;
-- provider/model/dimension compatibility enforcement;
-- stale-current-revision suppression before rebuild;
-- deterministic reciprocal-rank fusion;
-- read-only REPEATABLE READ hybrid retrieval;
-- held-out recall/precision/MRR metrics plus an independent zero-leakage hard gate;
-- cross-Relationship conformance fixtures across every new signal and fusion.
+- governed `memory.record.tombstone` prepare/execute with exact scope authority,
+  Operation identity and one-time Approval consumption;
+- immutable tombstone audit plus database lifecycle-CAS/orphan-audit/reactivation
+  guards;
+- stale-preparation rejection before approval consumption;
+- immediate lexical/vector/entity/temporal/hybrid suppression from canonical tombstone
+  state, before projection cleanup;
+- tombstone-only projection cleanup that preserves canonical revisions/evidence;
+- bounded deterministic context compilation with record/revision/scope provenance,
+  oversized-item skipping and conflicting-duplicate rejection;
+- one-snapshot read-only REPEATABLE READ hybrid retrieval→context compilation;
+- end-to-end fixtures proving raw unaudited transition rejection, replay safety,
+  preserved verbatim evidence and context disappearance after tombstone.
 
-Immediate next steps on `phase4-memory-deletion-context`:
-1. add a canonical lifecycle transition for explicit tombstone/deletion with
-   lifecycle-revision CAS and immutable audit evidence;
-2. prove tombstoned canonical records disappear from lexical/vector/entity/temporal/
-   hybrid retrieval immediately, before projection cleanup;
-3. add projection cleanup/reconciliation for tombstoned records without deleting
-   canonical revision/evidence history;
-4. implement bounded context compilation only from already-authorized current memory,
-   with deterministic item/token budgets and MemoryRecord/MemoryRevision provenance on
-   every rendered item;
-5. then implement reflection/consolidation and compaction-flush semantics without
-   widening scope or creating a second durable memory truth.
+Immediate next steps:
+1. verify the final documentation-head Foundation CI for PR #34;
+2. fix any real failure; if green, merge PR #34;
+3. create a fresh branch from merged `main` for reflection/consolidation and
+   compaction-flush custody;
+4. make reflection identity deterministic from exact source record/revision evidence so
+   retry cannot duplicate durable derived memory;
+5. keep reflection/consolidation inside the exact source MemoryScope unless a separate
+   governed scope-publication action is explicitly invoked;
+6. preserve source evidence through reflection and absorption, and use existing
+   lifecycle lineage rather than destructive replacement;
+7. make compaction/context-loss flush first admit durable memory work transactionally,
+   with replayable custody and fail-closed scope checks.
 
 The requested post-freeze donor boundary remains unchanged: MemPalace contributes
 retrieval/evaluation/storage-contract behavior inside canonical Masanawa memory ports;
