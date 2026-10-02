@@ -9,12 +9,22 @@
     "pnpm": ">=12 <13"
   },
   "scripts": {
-    "check": "pnpm typecheck && pnpm test && pnpm build",
+    "check": "pnpm typecheck && pnpm test:ci && pnpm build",
     "typecheck": "tsc -p tsconfig.json && pnpm -r --if-present typecheck",
-    "test": "vitest run",
+    "test": "pnpm test:ci",
     "test:watch": "vitest",
-    "architecture:check": "vitest run test/architecture",
-    "build": "pnpm -r --if-present build"
+    "architecture:check": "pnpm test:architecture",
+    "build": "pnpm -r --if-present build",
+    "test:ci": "vitest run",
+    "test:architecture": "vitest run test/architecture",
+    "test:contracts": "vitest run tests/contracts --passWithNoTests",
+    "test:integration": "vitest run tests/integration --passWithNoTests",
+    "test:e2e": "vitest run tests/e2e --passWithNoTests",
+    "test:parity": "vitest run tests/parity --passWithNoTests",
+    "test:security": "vitest run tests/security --passWithNoTests",
+    "test:recovery": "vitest run tests/recovery --passWithNoTests",
+    "test:load": "vitest run tests/load --passWithNoTests",
+    "test:chaos": "vitest run tests/chaos --passWithNoTests"
   },
   "devDependencies": {
     "@types/node": "24.13.6",
