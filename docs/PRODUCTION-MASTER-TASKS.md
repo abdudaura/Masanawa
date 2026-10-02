@@ -12,6 +12,8 @@ Merged `main` satisfies Tasks **001-055**.
 
 **Current: Task 056 of 150 — Expand test taxonomy with security/recovery/load/chaos suites and CI gate conventions.**
 
+Active implementation branch: `task056-test-taxonomy`. The task remains incomplete until its typecheck/test/build acceptance evidence is green and merged to `main`.
+
 Task 055 implementation head `931fef83ae1a014c6872d0e5bfc0cab815307e44` passed Foundation CI run 383. PR #48 merged as `434f64c6ff0ca1061d3e8ecd163daf4b591962d0`; merged-main Foundation CI run 384 passed on that exact merge commit.
 
 Status: `[x]` COMPLETE, `[ ]` PLANNED.

@@ -40,7 +40,7 @@ Do not turn each domain package into a network microservice. Empty noncanonical 
 
 ### 6. Expand test topology before product complexity grows
 
-Target suites: `tests/contracts`, `tests/integration`, `tests/e2e`, `tests/parity`, `tests/security`, `tests/recovery`, `tests/load`, and `tests/chaos`. Package-local unit tests remain beside source.
+Target suites: `tests/contracts`, `tests/integration`, `tests/e2e`, `tests/parity`, `tests/security`, `tests/recovery`, `tests/load`, and `tests/chaos`. Package-local unit tests remain beside source. `docs/TEST-TOPOLOGY.md` defines the ownership and CI-gate convention, enforced by `test/architecture/test-topology.test.ts`.
 
 Production gates must eventually cover dependency architecture, schema compatibility, tenant isolation, restart/recovery, idempotency/reconciliation, provider/device ambiguity, security abuse cases, load/backpressure, realtime latency and all golden journeys.
 

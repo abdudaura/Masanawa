@@ -9,6 +9,7 @@ export default defineConfig({
       "services/**/*.test.ts",
       "apps/**/*.test.ts",
       "test/**/*.test.ts",
+      "tests/**/*.test.ts",
     ],
     environment: "node",
     passWithNoTests: false,
