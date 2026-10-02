@@ -1,17 +1,20 @@
 import {
   createCanonicalId,
   toInstant,
+  type RelationshipId,
+  type TenantId,
 } from "@masanawa/contracts";
 import { describe, expect, it } from "vitest";
 import type { MemoryRecordSnapshot } from "./model.js";
 import {
   memoryReflectionFingerprint,
+  memoryReflectionSourceFromSnapshot,
   normalizeMemoryReflectionIdentity,
 } from "./reflection.js";
 
 function snapshot(input: {
-  tenantId: ReturnType<typeof createCanonicalId<"tenant">>;
-  relationshipId: ReturnType<typeof createCanonicalId<"relationship">>;
+  tenantId: TenantId;
+  relationshipId: RelationshipId;
   content: string;
 }): MemoryRecordSnapshot {
   const memoryRecordId = createCanonicalId("memory-record");
@@ -63,19 +66,15 @@ function snapshot(input: {
 }
 
 describe("memory reflection identity", () => {
-  it("is stable across source order and excludes generated output variability", () => {
+  it("is stable across source order and generated output variability", () => {
     const tenantId = createCanonicalId("tenant");
     const relationshipId = createCanonicalId("relationship");
-    const first = snapshot({
-      tenantId,
-      relationshipId,
-      content: "Fact one",
-    });
-    const second = snapshot({
-      tenantId,
-      relationshipId,
-      content: "Fact two",
-    });
+    const first = memoryReflectionSourceFromSnapshot(
+      snapshot({ tenantId, relationshipId, content: "Fact one" }),
+    );
+    const second = memoryReflectionSourceFromSnapshot(
+      snapshot({ tenantId, relationshipId, content: "Fact two" }),
+    );
     const base = {
       tenantId,
       scope: { kind: "relationship", relationshipId } as const,
@@ -103,47 +102,62 @@ describe("memory reflection identity", () => {
     expect(changedPurpose).not.toBe(forward);
   });
 
-  it("rejects cross-scope and stale source snapshots", () => {
+  it("validates current source snapshots before converting them to replay descriptors", () => {
     const tenantId = createCanonicalId("tenant");
-    const relationshipA = createCanonicalId("relationship");
-    const relationshipB = createCanonicalId("relationship");
+    const relationshipId = createCanonicalId("relationship");
     const alpha = snapshot({
       tenantId,
-      relationshipId: relationshipA,
+      relationshipId,
       content: "Alpha",
     });
-    const beta = snapshot({
-      tenantId,
-      relationshipId: relationshipB,
-      content: "Beta",
-    });
 
     expect(() =>
-      normalizeMemoryReflectionIdentity({
-        tenantId,
-        scope: { kind: "relationship", relationshipId: relationshipA },
-        purposeKey: "cross-scope",
-        reflector: { key: "fixture", version: "v1" },
-        sources: [alpha, beta],
-      }),
-    ).toThrow(/exact output MemoryScope/u);
-
-    expect(() =>
-      normalizeMemoryReflectionIdentity({
-        tenantId,
-        scope: { kind: "relationship", relationshipId: relationshipA },
-        purposeKey: "stale-source",
-        reflector: { key: "fixture", version: "v1" },
-        sources: [
-          {
-            ...alpha,
-            record: {
-              ...alpha.record,
-              lifecycleState: "superseded",
-            },
-          },
-        ],
+      memoryReflectionSourceFromSnapshot({
+        ...alpha,
+        record: {
+          ...alpha.record,
+          lifecycleState: "superseded",
+        },
       }),
     ).toThrow(/must be active/u);
+
+    const source = memoryReflectionSourceFromSnapshot(alpha);
+    expect(
+      normalizeMemoryReflectionIdentity({
+        tenantId,
+        scope: { kind: "relationship", relationshipId },
+        purposeKey: "normalized",
+        reflector: { key: "fixture", version: "v1" },
+        sources: [source],
+      }).sources,
+    ).toEqual([source]);
+  });
+
+  it("rejects duplicate source records and malformed source hashes", () => {
+    const tenantId = createCanonicalId("tenant");
+    const relationshipId = createCanonicalId("relationship");
+    const source = memoryReflectionSourceFromSnapshot(
+      snapshot({ tenantId, relationshipId, content: "Alpha" }),
+    );
+
+    expect(() =>
+      normalizeMemoryReflectionIdentity({
+        tenantId,
+        scope: { kind: "relationship", relationshipId },
+        purposeKey: "duplicate",
+        reflector: { key: "fixture", version: "v1" },
+        sources: [source, source],
+      }),
+    ).toThrow(/must be unique/u);
+
+    expect(() =>
+      normalizeMemoryReflectionIdentity({
+        tenantId,
+        scope: { kind: "relationship", relationshipId },
+        purposeKey: "bad-hash",
+        reflector: { key: "fixture", version: "v1" },
+        sources: [{ ...source, sourceContentHash: "not-a-hash" }],
+      }),
+    ).toThrow(/SHA-256/u);
   });
 });
