@@ -180,7 +180,7 @@ Breaking contract changes require:
 - migration window;
 - contract tests.
 
-Database schema is not an API.
+Database schema is not an API. Repository-wide lifecycle, breaking-change and deprecation rules are canonicalized in `API-LIFECYCLE.md`.
 
 ## 12. Readiness
 
