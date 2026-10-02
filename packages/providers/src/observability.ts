@@ -11,9 +11,11 @@ import {
   privacySafeAttributes,
   type PrivacySafeTelemetryAttributes,
 } from "@masanawa/telemetry";
-import type {
-  ProviderDefinition,
-  ProviderReadiness,
+import {
+  normalizeProviderKey,
+  normalizeProviderVersion,
+  type ProviderDefinition,
+  type ProviderReadiness,
 } from "./model.js";
 
 export const providerFailureKinds = [
@@ -57,6 +59,18 @@ export interface ProviderFailure {
   readonly retryAfterMs: number | null;
 }
 
+export const providerExecutionOutcomes = [
+  "succeeded",
+  "accepted",
+  "rejected",
+  "partial",
+  "unknown",
+  "failed",
+] as const;
+
+export type ProviderExecutionOutcome =
+  (typeof providerExecutionOutcomes)[number];
+
 export interface ProviderExecutionTelemetry {
   readonly providerId: ProviderId;
   readonly providerKey: string;
@@ -64,13 +78,7 @@ export interface ProviderExecutionTelemetry {
   readonly capability: CapabilityKey;
   readonly toolVersionId: ToolVersionId | null;
   readonly operationId: OperationId | null;
-  readonly outcome:
-    | "succeeded"
-    | "accepted"
-    | "rejected"
-    | "partial"
-    | "unknown"
-    | "failed";
+  readonly outcome: ProviderExecutionOutcome;
   readonly latencyMs: number;
   readonly costMicros: number | null;
   readonly inputUnits: number | null;
@@ -84,6 +92,7 @@ const dispatchCertaintySet = new Set<string>(
   providerDispatchCertainties,
 );
 const codePattern = /^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u;
+const executionOutcomeSet = new Set<string>(providerExecutionOutcomes);
 
 function boundedCode(value: string, name: string): string {
   if (typeof value !== "string") {
@@ -261,6 +270,9 @@ export function normalizeProviderExecutionTelemetry(
   ) {
     throw new TypeError("provider telemetry operationId is invalid");
   }
+  if (!executionOutcomeSet.has(input.outcome)) {
+    throw new TypeError("provider telemetry outcome is invalid");
+  }
   if (
     !Number.isSafeInteger(input.latencyMs) ||
     input.latencyMs < 0 ||
@@ -271,14 +283,8 @@ export function normalizeProviderExecutionTelemetry(
 
   return Object.freeze({
     providerId: input.providerId,
-    providerKey: boundedCode(
-      input.providerKey,
-      "provider telemetry providerKey",
-    ),
-    providerVersion: boundedCode(
-      input.providerVersion,
-      "provider telemetry providerVersion",
-    ),
+    providerKey: normalizeProviderKey(input.providerKey),
+    providerVersion: normalizeProviderVersion(input.providerVersion),
     capability: normalizeCapabilityKey(input.capability),
     toolVersionId: input.toolVersionId,
     operationId: input.operationId,
