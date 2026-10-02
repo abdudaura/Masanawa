@@ -335,6 +335,8 @@ async function executeMemoryScopePublicationInTransaction(
     to: "dispatching",
   });
 
+  const publicationFingerprint =
+    memoryScopePublicationRequestFingerprint(input);
   const target = await createMemoryRecord(client, {
     tenantId: input.tenantId,
     memoryRecordId: input.targetMemoryRecordId,
@@ -342,6 +344,14 @@ async function executeMemoryScopePublicationInTransaction(
     memoryType: input.targetMemoryType,
     scope: input.targetScope,
     ...input.targetRevision,
+    evidence: [
+      {
+        sourceKind: "operator",
+        sourceReference: `memory-publication:${input.operationId}`,
+        sourceContentHash: publicationFingerprint,
+        observedAt: input.targetRevision.observedAt,
+      },
+    ],
     createdAt: input.publishedAt,
   });
 
