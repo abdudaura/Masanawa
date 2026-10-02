@@ -5,7 +5,6 @@ import type {
   TenantId,
 } from "@masanawa/contracts";
 import type {
-  JsonObject,
   MemoryLifecycleState,
   MemoryRecordSnapshot,
   MemoryScope,
@@ -60,9 +59,3 @@ export interface MemoryRepository {
     input: ListMemoryRecordsByScopesInput,
   ): Promise<readonly MemoryRecordSnapshot[]>;
 }
-
-export type {
-  JsonObject,
-  MemoryEvidenceInput,
-  MemoryRevisionContentInput,
-};
