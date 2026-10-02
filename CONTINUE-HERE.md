@@ -137,20 +137,30 @@ Foundation CI run 379, PR #47 merged as
 `d0a198dbdec1af08e3c8f1378da0985db628eb6e`, and merged-main Foundation CI
 run 380 passed on that exact merge commit.
 
-**Current: Task 064 of 150 — Implement SkillTool/subskill execution boundaries.**
-
-Active implementation branch: `task064-skilltool-subskill-boundaries`. Task 064 adds fail-closed declared-Tool binding to canonical ToolInvocation without Provider selection, plus exact direct-subskill binding constrained to earlier execution-plan steps. Acceptance/CI is pending.
+**Current: Task 065 of 150 — Implement Skill provenance, trust and publisher metadata.**
 
 
 
 
 
-Tasks 001-063 are merged complete.
+
+Tasks 001-064 are merged complete.
 
 
 
 
 
+
+Task 064 implementation head `c72a10295faffe76cfe420d91373c483b54608a1` passed
+Foundation CI run 423. PR #64 merged as
+`b1155fde170c301e96ddddb267c8bf6ed08134b4`, and merged-main Foundation CI
+run 424 passed on that exact merge commit.
+
+Task 064 established:
+- fail-closed binding from declared Skill Tool references to exact registered ToolVersions;
+- canonical ToolInvocation translation with Provider selection deliberately excluded from Skill ownership;
+- exact direct-subskill execution binding constrained to earlier steps in the validated execution plan;
+- unchanged authority propagation and canonical immutable boundary inputs, preventing arbitrary Tool/subskill bypass.
 
 Task 063 implementation head `1e1c15b40933dde74019b332731c3a311a72d52e` passed
 Foundation CI before merge. PR #62 merged as
