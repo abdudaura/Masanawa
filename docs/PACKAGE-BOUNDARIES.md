@@ -25,6 +25,7 @@ Provider/channel/device implementations sit at edges and depend inward on contra
 - `packages/skills` — Skill/SkillVersion/certification/dependency execution plans.
 - `packages/agents` — CharacterSession, AgentRun, strategies, context compiler orchestration.
 - `packages/workflows` — Workflow/WorkflowVersion/WorkflowRun/Task/checkpoints/HITL/scheduler.
+- `packages/devices` — Device/DeviceCapability/CharacterDeviceAssignment/device lifecycle and device-operation custody contracts; concrete Android/OmniSIP behavior remains adapter-side.
 - `packages/providers` — provider-neutral inference/media/search/speech/embedding contracts and configured Provider records.
 - `packages/perception` — normalized permission-scoped PerceptionEvent contracts.
 - `packages/proactivity` — proactive trigger policy and quiet/frequency/privacy gates.
@@ -160,6 +161,19 @@ May import:
 
 Agents must not mutate financial/world/memory truth through hidden direct database access.
 
+### devices
+
+May import:
+- contracts;
+- events;
+- security contract types;
+- narrow identity identifiers;
+- Tool/Provider capability identifiers through public contracts where required.
+
+Must not import Android/OmniSIP/channel implementations, Agent runtime internals, Memory repositories or Workflow repositories.
+
+Device is a canonical execution-node identity and assignment boundary; it is never Character identity or a second agent brain.
+
 ### perception
 
 May import:
@@ -275,6 +289,7 @@ They may not:
 - workflows -> commerce repository implementation
 - agents -> channel implementation
 - agents -> provider SDK directly
+- devices -> Android/OmniSIP concrete implementation
 - plugins -> domain database repositories
 - apps -> database repositories
 - adapters -> other adapters as hidden routing authority
@@ -292,3 +307,8 @@ Architecture tests must:
 - require public package entrypoints for cross-package use.
 
 Exceptions require an ADR and an updated matrix before merge.
+
+
+## Production structure companion
+
+`docs/PRODUCT-PROJECT-STRUCTURE.md` records the production repository topology and refactor thresholds. `docs/PRODUCTION-MASTER-TASKS.md` is the canonical numbered completion ledger.
