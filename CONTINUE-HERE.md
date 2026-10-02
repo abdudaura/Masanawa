@@ -68,8 +68,8 @@ because spatial mechanics remain optional.
 Requested candidates:
 - `mempalace/mempalace`, inspected at
   `5ea40d30caf0ed2ff6e49623e386a0863b28edaa`;
-- `paperclipai/paperclip`, inspected at
-  `261c24ccf96b911e3006cccec934a588ebc84058`.
+- `paperclipai/paperclip`, refreshed against current `master` at
+  `c83df091b1a5207375eaf23466bb5c62e4e1518e`.
 
 Evidence and decision:
 `docs/migration/POST-FREEZE-MEMPALACE-PAPERCLIP.md`.
@@ -119,21 +119,33 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 
 ## Immediate work
 
-PR #31 merged as `f0f516b9ebf10ee40d3e27474e98085efaf8b913`; implementation
-head `2a423ac1480b9c094b602e0d0e846bf882ff1992` passed Foundation CI run 271 and
-final documentation head `a4a9872763b94aa4b9473c5ca19c1d8b72c82559` passed run 273.
+PR #32 implements the authorization-first lexical projection slice. Implementation head
+`a3d4c1edf7df7e485381ac431ba867833f3a7383` passed Foundation CI run 275,
+including frozen install, strict TypeScript, unit tests, PostgreSQL 18 integration
+fixtures and production builds. There are no PR review threads or comments.
 
-1. implement projection generation metadata and authorization-first lexical retrieval
-   on `phase4-memory-retrieval-projections`;
-2. bind every projection to canonical revision/content hash and explicit MemoryScope;
-3. require every retrieval request to supply non-empty authorized scopes and fail
-   closed when an adapter cannot enforce them;
-4. add embedding/provider/model/dimension compatibility metadata for future vector
-   generations without adding vector truth yet;
-5. prove cross-Relationship leakage remains zero and lexical projection deletion/rebuild
-   reproduces the same authorized result set;
-6. run the complete PostgreSQL 18 CI gate and merge before adding vector/entity/temporal
-   signals.
+1. verify the Foundation CI run triggered by the final documentation-only PR #32 head;
+2. fix any real failure; if green, merge PR #32;
+3. on a fresh branch from merged `main`, add vector/entity/temporal signals behind the
+   same explicit authorized-scope and immutable projection-generation contract;
+4. vector work must bind provider/model/dimension to one generation and reject mixed or
+   incompatible vector spaces before query execution;
+5. add multi-signal fusion/reranking plus held-out retrieval evaluation that reports
+   scope leakage separately and requires it to remain zero;
+6. then continue to bounded context compilation, reflection/consolidation and deletion
+   propagation without reopening canonical memory ownership.
+
+The lexical slice now includes activation completeness checks, exact canonical
+revision/type/scope/text validation, current-canonical revalidation at query time,
+stale-revision suppression, cross-Relationship conformance, rebuild equivalence and
+future vector compatibility metadata without prematurely enabling vector retrieval.
+
+The requested post-freeze donor refresh is current as of 2026-10-02: MemPalace remains
+at the previously inspected head; Paperclip advanced to
+`c83df091b1a5207375eaf23466bb5c62e4e1518e`. Newer Paperclip execution-recovery work
+reinforces the existing decision to adopt its reliability/checkout/wake/Ops behaviors
+later through canonical Masanawa workflow/agent ports rather than installing a parallel
+Paperclip control plane.
 
 The lifecycle/publication implementation now includes independent lifecycle CAS,
 immutable same-scope/type lineage, current-authority + one-time-approval publication,
