@@ -17,6 +17,7 @@ import {
   createAuthorityContext,
   createPendingApproval,
   issueServiceCredential,
+  withCredentialSecret,
   verifyServiceCredential,
   type ApprovalBinding,
 } from "@masanawa/security";
@@ -78,6 +79,8 @@ import {
   revokeAuthorityContext,
   persistPendingApproval,
   createPostgresCurrentAuthoritySource,
+  createPostgresCredentialAccessAuditSink,
+  createPostgresCredentialRefRepository,
   createPostgresToolOperationStore,
   consumeOnceApproval,
   enqueueOutbox,
@@ -2977,6 +2980,192 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
       category: "conflict",
       operationId: nonAmbiguous.operation.operationId,
     });
+  });
+
+  it("resolves CredentialRef secrets only for the exact tenant/provider/slot/purpose/destination", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const otherTenantId = createCanonicalId("tenant");
+    const providerId = createCanonicalId("provider");
+    const credentialRefId = createCanonicalId("credential-ref");
+    const createdAt = toInstant("2026-10-02T10:00:00Z");
+
+    await withTransaction(pool, async (client) => {
+      await createTenant(client, { tenantId, createdAt });
+      await createTenant(client, {
+        tenantId: otherTenantId,
+        createdAt,
+      });
+    });
+
+    const refs = createPostgresCredentialRefRepository(pool);
+    const record = {
+      credentialRefId,
+      tenantId,
+      providerId,
+      slotKey: "api-key",
+      purpose: "provider-dispatch",
+      destinationKey: "payments-api",
+      vaultLocator: "vault://payments/api-key",
+      generation: 1,
+      state: "active" as const,
+      createdAt,
+      revokedAt: null,
+    };
+
+    const first = await refs.create(record);
+    const replay = await refs.create(record);
+    expect(first.reused).toBe(false);
+    expect(replay.reused).toBe(true);
+    await expect(
+      refs.create({
+        ...record,
+        destinationKey: "changed-destination",
+      }),
+    ).rejects.toMatchObject({
+      code: "credential-ref.identity_conflict",
+    });
+    await expect(
+      refs.load(otherTenantId, credentialRefId),
+    ).resolves.toBeNull();
+
+    let vaultOpenCount = 0;
+    let leaseClosed = false;
+    const audit = createPostgresCredentialAccessAuditSink(pool);
+    const operationId = createCanonicalId("operation");
+    const authorityContextId = createCanonicalId("authority-context");
+    const correlationId = createCanonicalId("correlation");
+    const access = {
+      tenantId,
+      credentialRefId,
+      providerId,
+      slotKey: "api-key",
+      purpose: "provider-dispatch",
+      destinationKey: "payments-api",
+      operationId,
+      authorityContextId,
+      correlationId,
+      principalKey: "system:postgres-credential-test",
+    } as const;
+
+    const result = await withCredentialSecret(
+      {
+        refs,
+        audit,
+        vault: {
+          async open(input) {
+            vaultOpenCount += 1;
+            expect(input).toEqual({
+              vaultLocator: "vault://payments/api-key",
+              generation: 1,
+            });
+            return {
+              async withSecret(use) {
+                return use("integration-secret-value");
+              },
+              close() {
+                leaseClosed = true;
+              },
+            };
+          },
+        },
+      },
+      access,
+      async (secret) => {
+        expect(secret).toBe("integration-secret-value");
+        return "provider-call-result";
+      },
+    );
+
+    expect(result).toBe("provider-call-result");
+    expect(vaultOpenCount).toBe(1);
+    expect(leaseClosed).toBe(true);
+
+    const auditRows = await pool.query<{ payload: Record<string, unknown> }>(
+      `SELECT payload
+         FROM events.audit_events
+        WHERE tenant_id = $1
+          AND event_type = 'security.credential.access'
+          AND aggregate_id = $2
+        ORDER BY recorded_at`,
+      [tenantId, credentialRefId],
+    );
+    expect(auditRows.rows).toHaveLength(1);
+    expect(auditRows.rows[0]?.payload).toMatchObject({
+      credentialRefId,
+      providerId,
+      slotKey: "api-key",
+      purpose: "provider-dispatch",
+      destinationKey: "payments-api",
+      operationId,
+      principalKey: "system:postgres-credential-test",
+      outcome: "granted",
+      reasonCode: "credential-access-granted",
+    });
+    expect(JSON.stringify(auditRows.rows)).not.toContain(
+      "integration-secret-value",
+    );
+    expect(JSON.stringify(auditRows.rows)).not.toContain(
+      "vault://payments/api-key",
+    );
+
+    await expect(
+      withCredentialSecret(
+        {
+          refs,
+          audit,
+          vault: {
+            async open() {
+              vaultOpenCount += 1;
+              return null;
+            },
+          },
+        },
+        {
+          ...access,
+          destinationKey: "wrong-api",
+        },
+        () => "never",
+      ),
+    ).rejects.toMatchObject({
+      code: "credential-ref.scope_mismatch",
+      category: "authorization",
+    });
+    expect(vaultOpenCount).toBe(1);
+
+    await refs.revoke(
+      tenantId,
+      credentialRefId,
+      toInstant("2026-10-02T10:05:00Z"),
+    );
+    await expect(
+      withCredentialSecret(
+        {
+          refs,
+          audit,
+          vault: {
+            async open() {
+              vaultOpenCount += 1;
+              return null;
+            },
+          },
+        },
+        access,
+        () => "never",
+      ),
+    ).rejects.toMatchObject({
+      code: "credential-ref.revoked",
+      category: "authorization",
+    });
+    expect(vaultOpenCount).toBe(1);
+
+    await expect(
+      pool.query(
+        `UPDATE security.credential_refs
+            SET provider_id = $2
+          WHERE credential_ref_id = $1`,
+        [credentialRefId, createCanonicalId("provider")],
+      ),
+    ).rejects.toThrow(/credential ref binding is immutable/u);
   });
 
   it("uses durable service verification generation and revocation state", async () => {
