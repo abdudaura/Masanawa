@@ -169,13 +169,31 @@ export function normalizeProviderFailure(
       "provider failure dispatch certainty is invalid",
     );
   }
+  if (
+    input.phase === "post-dispatch" &&
+    input.dispatchCertainty !== "unknown"
+  ) {
+    throw new TypeError(
+      "post-dispatch provider failure must have unknown dispatch certainty",
+    );
+  }
+  if (
+    input.phase === "pre-dispatch" &&
+    input.dispatchCertainty !== "not-dispatched"
+  ) {
+    throw new TypeError(
+      "pre-dispatch provider failure must be certified not-dispatched",
+    );
+  }
 
   return Object.freeze({
     kind: input.kind,
     code: boundedCode(input.code, "provider failure code"),
     phase: input.phase,
     dispatchCertainty: input.dispatchCertainty,
-    retryable: input.retryable === true,
+    retryable:
+      input.dispatchCertainty === "not-dispatched" &&
+      input.retryable === true,
     timeoutMs: nullableDuration(
       input.timeoutMs,
       "provider failure timeoutMs",
