@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { createCanonicalId, toInstant } from "@masanawa/contracts";
-import { createMemoryScopePredicate } from "@masanawa/memory";
+import {\n  assertZeroMemoryRetrievalLeakage,\n  createMemoryScopePredicate,\n  evaluateMemoryRetrieval,\n} from "@masanawa/memory";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Pool } from "pg";
 import {
@@ -373,6 +373,72 @@ describePostgres("PostgreSQL multisignal memory retrieval conformance", () => {
       { readOnly: true },
     );
     expect(betaTemporal.map((hit) => hit.memoryRecordId)).toEqual([recordB]);
+
+    const alphaHybrid = await searchMemoryHybrid(pool, {
+      tenantId,
+      scopePredicate: alphaScope,
+      lexicalQuery: "amina visited",
+      vector: {
+        compatibility: vectorCompatibility,
+        queryVector: [1, 0, 0],
+      },
+      entityKeys: ["amina bello"],
+      temporal: {
+        fromInclusive: temporalInput.fromInclusive,
+        toExclusive: temporalInput.toExclusive,
+        asOf: temporalInput.asOf,
+      },
+      limit: 10,
+    });
+    const betaHybrid = await searchMemoryHybrid(pool, {
+      tenantId,
+      scopePredicate: betaScope,
+      lexicalQuery: "amina visited",
+      vector: {
+        compatibility: vectorCompatibility,
+        queryVector: [1, 0, 0],
+      },
+      entityKeys: ["amina bello"],
+      temporal: {
+        fromInclusive: temporalInput.fromInclusive,
+        toExclusive: temporalInput.toExclusive,
+        asOf: temporalInput.asOf,
+      },
+      limit: 10,
+    });
+
+    expect(alphaHybrid.map((hit) => hit.memoryRecordId)).toEqual([recordA]);
+    expect(betaHybrid.map((hit) => hit.memoryRecordId)).toEqual([recordB]);
+    expect(alphaHybrid[0]?.contributions.map((item) => item.signal)).toEqual([
+      "lexical",
+      "vector",
+      "entity",
+      "temporal",
+    ]);
+
+    const heldOut = evaluateMemoryRetrieval({
+      name: "multisignal relationship isolation",
+      partition: "held-out",
+      cases: [
+        {
+          caseId: "relationship-alpha",
+          expectedRecordIds: [recordA],
+          forbiddenRecordIds: [recordB],
+          retrievedRecordIds: alphaHybrid.map((hit) => hit.memoryRecordId),
+        },
+        {
+          caseId: "relationship-beta",
+          expectedRecordIds: [recordB],
+          forbiddenRecordIds: [recordA],
+          retrievedRecordIds: betaHybrid.map((hit) => hit.memoryRecordId),
+        },
+      ],
+    });
+    expect(heldOut.recall).toBe(1);
+    expect(heldOut.precision).toBe(1);
+    expect(heldOut.privacyPass).toBe(true);
+    expect(heldOut.forbiddenHitCount).toBe(0);
+    expect(() => assertZeroMemoryRetrievalLeakage(heldOut)).not.toThrow();
 
     const badVectorGeneration = createCanonicalId(
       "memory-projection-generation",
