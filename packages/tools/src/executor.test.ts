@@ -10,7 +10,10 @@ import {
   type OperationRecord,
   type OperationState,
 } from "@masanawa/events";
-import { createProviderRegistry } from "@masanawa/providers";
+import {
+  createProviderRegistry,
+  type ProviderExecutionObservation,
+} from "@masanawa/providers";
 import {
   createAuthorityContext,
 } from "@masanawa/security";
@@ -417,6 +420,80 @@ describe("consequential Tool executor", () => {
     expect(replay.dispatched).toBe(false);
     expect(replay.receipts).toHaveLength(1);
     expect(dispatches).toBe(1);
+  });
+
+  it("emits typed provider observations without exposing credential material", async () => {
+    const f = fixture();
+    const operations = memoryOperationStore();
+    const observations: ProviderExecutionObservation[] = [];
+    let clock = 1_000;
+
+    const result = await executeConsequentialTool(
+      {
+        tools: f.tools,
+        providers: f.providers,
+        authoritySource: {
+          getPolicyRevision: () => "policy-1",
+        },
+        operations,
+        nowMs: () => {
+          const value = clock;
+          clock += 25;
+          return value;
+        },
+        providerObserver: {
+          observe(observation) {
+            observations.push(observation);
+          },
+        },
+        resolveAdapter: () => ({
+          async dispatch() {
+            return {
+              status: "not-dispatched" as const,
+              errorCode: "provider-timeout",
+              failure: {
+                kind: "timeout" as const,
+                code: "request.timeout",
+                retryable: true,
+                dispatched: false,
+                safeMessage: "Provider request timed out before dispatch.",
+                retryAfterMs: 1_000,
+              },
+            };
+          },
+        }),
+      },
+      {
+        invocation: {
+          toolVersionId: f.toolVersionId,
+          authority: f.authority,
+          input: { amount: 1000 },
+          idempotencyKey: "charge-request-observation",
+          providerSelection: null,
+        },
+        credentialBindings: {
+          "api-key": createCanonicalId("credential-ref"),
+        },
+        idempotencyExpiresAt: toInstant("2026-10-03T10:00:00Z"),
+      },
+    );
+
+    expect(result.operation.state).toBe("failed");
+    expect(observations).toHaveLength(1);
+    expect(observations[0]).toMatchObject({
+      providerKey: "payments",
+      providerVersion: "v1",
+      capability: f.capability,
+      outcome: "not-dispatched",
+      durationMs: 25,
+      failure: {
+        kind: "timeout",
+        code: "request.timeout",
+        dispatched: false,
+      },
+    });
+    expect(JSON.stringify(observations)).not.toContain("credential-ref");
+    expect(JSON.stringify(observations)).not.toContain("api-key");
   });
 
   it("moves receipt persistence failure to reconciliation instead of success", async () => {
