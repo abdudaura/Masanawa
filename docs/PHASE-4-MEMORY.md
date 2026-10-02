@@ -109,12 +109,19 @@ Implemented:
   exact one-time Approval consumption and transactionally creates the target record;
 - publication never mutates source scope/lifecycle and never copies private verbatim
   source text into its audit row;
+- callers cannot inject target evidence during cross-scope publication; the target
+  revision gets generated provenance bound to the governed publication Operation and
+  contains no private verbatim text;
+- execution locks the exact source MemoryRecord before current-revision/lifecycle
+  validation, fencing concurrent correction or supersession;
+- a succeeded publication remains replayable after the private source is later
+  superseded, without consuming approval or executing the mutation again;
 - unit governance tests and PostgreSQL lifecycle/publication fixtures.
 
 Validation evidence:
-- Foundation CI run 253 passed the complete frozen-install, strict TypeScript, unit,
-  PostgreSQL 18 integration and production-build gate on implementation head
-  `eb9c92db62d9a4d877bdcb6e92a8e35c93354619`;
+- Foundation CI run 261 passed the complete frozen-install, strict TypeScript, unit,
+  PostgreSQL 18 integration and production-build gate on hardened implementation head
+  `f5777a0d32fdc57b84d8fd415bb4ddb5de57a972`;
 - the final documentation-only head must pass the same workflow before PR #30 merges.
 
 Rules:
