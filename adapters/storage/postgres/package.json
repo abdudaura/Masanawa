@@ -18,6 +18,7 @@
     "@masanawa/contracts": "workspace:*",
     "@masanawa/events": "workspace:*",
     "@masanawa/identity": "workspace:*",
+    "@masanawa/memory": "workspace:*",
     "@masanawa/security": "workspace:*",
     "@masanawa/world": "workspace:*",
     "pg": "8.23.0"
