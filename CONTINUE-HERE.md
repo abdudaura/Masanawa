@@ -137,7 +137,7 @@ Foundation CI run 379, PR #47 merged as
 `d0a198dbdec1af08e3c8f1378da0985db628eb6e`, and merged-main Foundation CI
 run 380 passed on that exact merge commit.
 
-**Current: Task 058 of 150 — Establish environment/config/deployment contract conventions and validate them with env-schema checks.**
+**Current: Task 058 of 150 — Establish environment/config/deployment contract conventions and validate them with env-schema checks.**\n\nActive implementation branch: `task058-env-deployment-contracts`. Task 058 now has `docs/CONFIGURATION-DEPLOYMENT.md`, `config/production-env.json`, and architecture enforcement for registered production environment reads, secret classification, and package isolation from `process.env`. Acceptance/CI is pending; do not mark complete before green evidence and merge.
 
 Tasks 001-057 are merged complete.
 

@@ -421,7 +421,7 @@ Never create:
 Adapters translate to canonical Masanawa contracts.
 
 
-## 28. Phase 1 implementation specifications
+## 28. Configuration and deployment boundary\n\nProduction configuration is composition-root input. Domain packages do not read deployment environment or vendor metadata directly. `CONFIGURATION-DEPLOYMENT.md` defines the canonical environment registry, secret-reference rules and coarse deployment layout.\n\n## 29. Phase 1 implementation specifications
 
 The following documents refine this architecture into implementation-ready contracts and are canonical together under ADR-0011:
 - `DOMAIN-MODEL.md`;

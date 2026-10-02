@@ -143,7 +143,7 @@ Architecture recognizes compute classes, not vendors:
 
 Initial deployments may use Cloudflare/Vercel, Railway/DigitalOcean, Supabase, Modal/RunPod, but domain packages must not import vendor deployment assumptions.
 
-## Realtime
+## Production configuration and deployment\n\nEnvironment ownership, secret classification and deployable-unit conventions are defined by `CONFIGURATION-DEPLOYMENT.md` and the machine-readable `config/production-env.json` registry. Domain packages do not read process environment directly.\n\n## Realtime
 
 WebRTC is the canonical browser realtime media transport.
 
