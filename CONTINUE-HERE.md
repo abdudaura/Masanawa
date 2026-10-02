@@ -139,6 +139,8 @@ run 380 passed on that exact merge commit.
 
 **Current: Task 065 of 150 — Implement Skill provenance, trust and publisher metadata.**
 
+Active implementation branch: `task065-skill-provenance-trust-publisher`. Task 065 is strengthening exact source provenance with canonical publisher identity and evaluator-attributed trust verdicts; imported Skills require exact source revisions and trust remains non-authoritative metadata. Acceptance/CI is pending.
+
 
 
 

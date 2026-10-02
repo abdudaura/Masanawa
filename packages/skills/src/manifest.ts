@@ -3,10 +3,11 @@ import Schema from "typebox/schema";
 import { fingerprintCanonicalJson } from "@masanawa/security";
 import {
   normalizeSkillKey,
+  normalizeSkillProvenance,
   normalizeSkillVersion,
-  skillTrustTiers,
   type SkillProvenance,
-  type SkillTrustTier,
+  type SkillPublisherMetadata,
+  type SkillTrustVerdict,
   type SkillVisibility,
 } from "./model.js";
 
@@ -42,7 +43,8 @@ export interface SkillImportSource {
   readonly sourceSystem: string;
   readonly sourceReference: string;
   readonly sourceRevision: string | null;
-  readonly trustTier: SkillTrustTier;
+  readonly publisher: SkillPublisherMetadata;
+  readonly trust: SkillTrustVerdict;
 }
 
 export interface SkillImportOptions {
@@ -220,10 +222,6 @@ function normalizeSource(input: SkillImportSource): SkillImportSource {
   if (!/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u.test(sourceSystem)) {
     throw new TypeError("skill import sourceSystem is invalid");
   }
-  if (!(skillTrustTiers as readonly string[]).includes(input.trustTier)) {
-    throw new TypeError("skill import trustTier is invalid");
-  }
-
   return Object.freeze({
     sourceSystem,
     sourceReference: bounded(
@@ -239,7 +237,8 @@ function normalizeSource(input: SkillImportSource): SkillImportSource {
             "skill import sourceRevision",
             256,
           ),
-    trustTier: input.trustTier,
+    publisher: input.publisher,
+    trust: input.trust,
   });
 }
 
@@ -276,7 +275,7 @@ export function importSkillBundle(
     importedResources.push(resource);
   }
 
-  const provenance: SkillProvenance = Object.freeze({
+  const provenance: SkillProvenance = normalizeSkillProvenance({
     sourceKind: "imported",
     sourceSystem: source.sourceSystem,
     sourceReference: source.sourceReference,
@@ -285,7 +284,8 @@ export function importSkillBundle(
       manifest,
       instructions,
     })}`,
-    trustTier: source.trustTier,
+    publisher: source.publisher,
+    trust: source.trust,
   });
 
   return Object.freeze({

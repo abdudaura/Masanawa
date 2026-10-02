@@ -43,6 +43,17 @@ export const skillTrustTiers = [
 
 export type SkillTrustTier = (typeof skillTrustTiers)[number];
 
+export const skillPublisherKinds = [
+  "first-party",
+  "organization",
+  "individual",
+  "registry",
+  "repository",
+] as const;
+
+export type SkillPublisherKind =
+  (typeof skillPublisherKinds)[number];
+
 export const skillSourceKinds = ["authored", "imported"] as const;
 
 export type SkillSourceKind = (typeof skillSourceKinds)[number];
@@ -77,13 +88,28 @@ export type SkillJsonSchema = Readonly<
   Record<string, CanonicalJson>
 >;
 
+export interface SkillPublisherMetadata {
+  readonly publisherKey: string;
+  readonly displayName: string;
+  readonly kind: SkillPublisherKind;
+  readonly reference: string | null;
+}
+
+export interface SkillTrustVerdict {
+  readonly tier: SkillTrustTier;
+  readonly evaluatorKey: string;
+  readonly evaluatedAt: Instant;
+  readonly reasonCodes: readonly string[];
+}
+
 export interface SkillProvenance {
   readonly sourceKind: SkillSourceKind;
   readonly sourceSystem: string;
   readonly sourceReference: string;
   readonly sourceRevision: string | null;
   readonly sourceContentHash: string;
-  readonly trustTier: SkillTrustTier;
+  readonly publisher: SkillPublisherMetadata;
+  readonly trust: SkillTrustVerdict;
 }
 
 export interface SkillCertification {
@@ -319,14 +345,17 @@ function normalizeDependencies(
   return Object.freeze([...values].sort());
 }
 
-function normalizeProvenance(
+export function normalizeSkillProvenance(
   input: SkillProvenance,
 ): SkillProvenance {
   if (!(skillSourceKinds as readonly string[]).includes(input.sourceKind)) {
     throw new TypeError("skill provenance sourceKind is invalid");
   }
-  if (!(skillTrustTiers as readonly string[]).includes(input.trustTier)) {
-    throw new TypeError("skill provenance trustTier is invalid");
+  if (!(skillPublisherKinds as readonly string[]).includes(input.publisher.kind)) {
+    throw new TypeError("skill provenance publisher kind is invalid");
+  }
+  if (!(skillTrustTiers as readonly string[]).includes(input.trust.tier)) {
+    throw new TypeError("skill provenance trust tier is invalid");
   }
   const sourceSystem = bounded(
     input.sourceSystem,
@@ -347,6 +376,58 @@ function normalizeProvenance(
     );
   }
 
+  const publisherKey = bounded(
+    input.publisher.publisherKey,
+    "skill.provenance.publisher.publisherKey",
+    128,
+  ).toLowerCase();
+  if (!sourceSystemPattern.test(publisherKey)) {
+    throw new TypeError("skill provenance publisherKey is invalid");
+  }
+
+  if (
+    input.sourceKind === "imported" &&
+    input.sourceRevision === null
+  ) {
+    throw new TypeError(
+      "imported Skill provenance requires an exact sourceRevision",
+    );
+  }
+
+  if (
+    !Array.isArray(input.trust.reasonCodes) ||
+    input.trust.reasonCodes.length < 1 ||
+    input.trust.reasonCodes.length > 32
+  ) {
+    throw new TypeError(
+      "skill provenance trust reasonCodes are invalid",
+    );
+  }
+
+  const evaluatorKey = bounded(
+    input.trust.evaluatorKey,
+    "skill.provenance.trust.evaluatorKey",
+    128,
+  ).toLowerCase();
+  if (!sourceSystemPattern.test(evaluatorKey)) {
+    throw new TypeError("skill provenance trust evaluatorKey is invalid");
+  }
+
+  const reasonCodes = input.trust.reasonCodes.map((value) => {
+    const normalized = bounded(
+      value,
+      "skill.provenance.trust.reasonCode",
+      200,
+    ).toLowerCase();
+    if (!reasonCodePattern.test(normalized)) {
+      throw new TypeError("skill provenance trust reasonCode is invalid");
+    }
+    return normalized;
+  });
+  if (new Set(reasonCodes).size !== reasonCodes.length) {
+    throw new TypeError("skill provenance trust reasonCodes must be unique");
+  }
+
   return Object.freeze({
     sourceKind: input.sourceKind,
     sourceSystem,
@@ -364,7 +445,29 @@ function normalizeProvenance(
             256,
           ),
     sourceContentHash,
-    trustTier: input.trustTier,
+    publisher: Object.freeze({
+      publisherKey,
+      displayName: bounded(
+        input.publisher.displayName,
+        "skill.provenance.publisher.displayName",
+        200,
+      ),
+      kind: input.publisher.kind,
+      reference:
+        input.publisher.reference === null
+          ? null
+          : bounded(
+              input.publisher.reference,
+              "skill.provenance.publisher.reference",
+              2000,
+            ),
+    }),
+    trust: Object.freeze({
+      tier: input.trust.tier,
+      evaluatorKey,
+      evaluatedAt: toInstant(input.trust.evaluatedAt),
+      reasonCodes: Object.freeze([...reasonCodes].sort()),
+    }),
   });
 }
 
@@ -548,7 +651,7 @@ export function normalizeSkillVersionDefinition(
     idempotencyMode: input.idempotencyMode,
     reconciliationMode: input.reconciliationMode,
     timeoutMs: input.timeoutMs,
-    provenance: normalizeProvenance(input.provenance),
+    provenance: normalizeSkillProvenance(input.provenance),
     certification: normalizeCertification(input.certification),
   });
 }

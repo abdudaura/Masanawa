@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { toInstant } from "@masanawa/contracts";
 import {
   importSkillBundle,
   importSkillMarkdown,
@@ -10,7 +11,18 @@ const source = {
   sourceSystem: "openclaw",
   sourceReference: "skills/research/SKILL.md",
   sourceRevision: "abc123",
-  trustTier: "external-unreviewed" as const,
+  publisher: {
+    publisherKey: "openclaw",
+    displayName: "OpenClaw",
+    kind: "repository" as const,
+    reference: "https://github.com/openclaw/openclaw",
+  },
+  trust: {
+    tier: "external-unreviewed" as const,
+    evaluatorKey: "masanawa.skill-admission",
+    evaluatedAt: toInstant("2026-10-02T00:00:00.000Z"),
+    reasonCodes: ["source.external-unreviewed"],
+  },
 };
 
 function manifest(overrides: Record<string, unknown> = {}) {
@@ -102,7 +114,14 @@ describe("Skill imports", () => {
       sourceSystem: "openclaw",
       sourceReference: "skills/research/SKILL.md",
       sourceRevision: "abc123",
-      trustTier: "external-unreviewed",
+      publisher: {
+        publisherKey: "openclaw",
+        kind: "repository",
+      },
+      trust: {
+        tier: "external-unreviewed",
+        evaluatorKey: "masanawa.skill-admission",
+      },
     });
     expect(candidate.provenance.sourceContentHash).toMatch(
       /^sha256:[0-9a-f]{64}$/u,
@@ -110,6 +129,44 @@ describe("Skill imports", () => {
     expect(candidate).not.toHaveProperty("skillId");
     expect(candidate).not.toHaveProperty("skillVersionId");
     expect(candidate).not.toHaveProperty("certification");
+  });
+
+  it("rejects malformed publisher and trust verdict metadata before quarantine", () => {
+    expect(() =>
+      importSkillBundle({
+        manifest: manifest(),
+        instructions: "Use public sources.",
+        source: {
+          ...source,
+          sourceRevision: null,
+        },
+      }),
+    ).toThrow("requires an exact sourceRevision");
+
+    expect(() =>
+      importSkillBundle({
+        manifest: manifest(),
+        instructions: "Use public sources.",
+        source: {
+          ...source,
+          publisher: { ...source.publisher, publisherKey: "Not Valid!" },
+        },
+      }),
+    ).toThrow("publisherKey is invalid");
+
+    expect(() =>
+      importSkillBundle({
+        manifest: manifest(),
+        instructions: "Use public sources.",
+        source: {
+          ...source,
+          trust: {
+            ...source.trust,
+            reasonCodes: ["Bad Reason Code!"],
+          },
+        },
+      }),
+    ).toThrow("trust reasonCode is invalid");
   });
 
   it("imports scripts only when the importer explicitly opts in", () => {
