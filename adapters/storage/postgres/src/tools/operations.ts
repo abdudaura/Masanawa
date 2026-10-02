@@ -1,4 +1,4 @@
-import type { OperationId } from "@masanawa/contracts";
+import type { OperationId, TenantId } from "@masanawa/contracts";
 import type { OperationRecord, OperationState } from "@masanawa/events";
 import type {
   ToolOperationPrepareInput,
@@ -23,14 +23,14 @@ export function createPostgresToolOperationStore(
       );
     },
 
-    load(tenantId, operationId: OperationId): Promise<OperationRecord | null> {
+    load(tenantId: TenantId, operationId: OperationId): Promise<OperationRecord | null> {
       return withTransaction(pool, (client) =>
         loadOperation(client, tenantId, operationId),
       );
     },
 
     transition(
-      tenantId,
+      tenantId: TenantId,
       operationId: OperationId,
       from: OperationState,
       to: OperationState,
@@ -45,7 +45,7 @@ export function createPostgresToolOperationStore(
       );
     },
 
-    async beginReconciliation(input): Promise<void> {
+    async beginReconciliation(input: Parameters<ToolOperationStore["beginReconciliation"]>[0]): Promise<void> {
       await beginReconciliation(pool, input);
     },
   });
