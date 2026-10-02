@@ -15,7 +15,7 @@ Lifecycle:
 
 ## Phase 0A — Landscape expansion and donor selection
 
-Status: complete. Phase 0B, Phase 1 and Phase 2 are also closed; current active work is Phase 3 identity and world.
+Status: complete. Phase 0B, Phase 1, Phase 2 and the non-spatial Phase 3 core are closed; current active work is Phase 4 memory.
 
 Inputs: all pinned submodules in `references/sources/` and `migration/SOURCE-LOCK.md`.
 
@@ -68,17 +68,21 @@ Implement pnpm monorepo, strict TypeScript, contracts, IDs/errors/config, events
 
 ## Phase 3 — Identity and world
 
-Status: active.
+Status: non-spatial core complete. Closure audit: `PHASE-3-NONSPATIAL-CLOSURE-AUDIT.md`.
+Optional spatial WorldSpace/location/pathing remains a separately gated deferred slice behind
+`WorldPolicy.spatialEnabled`; it does not block Phase 4.
 
-Implement canonical Character, versioned Constitution, voice/appearance refs, expertise metadata, relationships, life state, world events/routines and context compiler.
+Implemented canonical Character, versioned Constitution, voice/appearance refs, expertise metadata, relationships, life state, world events/routines, canon governance, interactions, pause/recovery and typed evidence publication.
 
-Gate against CWS + selected world-simulation donor behaviors.
+Gate passed against CWS + selected world-simulation donor behaviors for the non-spatial boundary.
 
 ## Phase 4 — Memory
 
+Status: active. Implementation record: `PHASE-4-MEMORY.md`.
+
 Implement type+scope memory, lifecycle, retrieval, evidence/reflection, correction/supersession, compaction, privacy isolation and liveness/dead-letter behavior.
 
-Gate against CWS privacy plus selected N.E.K.O/Letta/Mem0/OpenClaw behaviors.
+Gate against CWS privacy plus selected N.E.K.O/Letta/Mem0/OpenClaw behaviors. The post-freeze MemPalace assessment adds verbatim-evidence, retrieval-isolation, projection-compatibility and benchmark-discipline improvements without changing canonical ownership.
 
 ## Phase 5 — Tools and providers
 

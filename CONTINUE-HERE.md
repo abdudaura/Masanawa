@@ -4,9 +4,10 @@ This is the mandatory handoff entry point for every new Masanawa implementation 
 
 ## Mission
 
-Build Masanawa as one clean canonical platform from the strongest validated capabilities found across the pinned reference source vault.
+Build Masanawa as one clean canonical platform from the strongest validated capabilities
+found across the reference vault and explicitly assessed post-freeze candidates.
 
-Do not recreate donor project boundaries. Do not begin application feature implementation while Phase 0 remains open.
+Do not recreate donor project boundaries. The repository is the source of truth.
 
 ## Mandatory read order
 
@@ -25,84 +26,133 @@ Do not recreate donor project boundaries. Do not begin application feature imple
 13. `docs/migration/BEHAVIOUR-LEDGER.md`
 14. `docs/migration/DATA-LEDGER.md`
 15. `docs/migration/INTEGRATION-LEDGER.md`
-16. relevant files under `docs/migration/sources/`.
+16. relevant files under `docs/migration/sources/`
+17. the active phase implementation record named below.
 
-`docs/migration/LICENSE-LEDGER.md` is compliance/provenance metadata and is **not** part of architectural feature selection.
+`docs/migration/LICENSE-LEDGER.md` is compliance/provenance metadata and is **not** part
+of architectural feature selection.
 
 ## Current phase
 
-**Phase 3 — Identity and world.**
+**Phase 4 — Memory.**
 
-Phase 0A/0B, Phase 1 and Phase 2 are closed. Phase 2 closure evidence is in `docs/PHASE-2-CLOSURE-AUDIT.md`; Foundation CI run 213 passed the complete `pnpm check` gate on PostgreSQL 18 with 22 test files / 80 tests and production builds.
+Current implementation branch: `phase4-memory-candidate-assessment`.
 
-The active implementation line remains `phase2-closure` until PR #16 is merged. Do not recreate foundation lifecycle/readiness/authentication/recovery work.
+Phase 0A/0B, Phase 1 and Phase 2 are closed.
 
-## Immediate next work
+The non-spatial Phase 3 Identity/World boundary is closed:
+- PR #28 merged as `02c2c99153e904b4f9d2f403328a1e3b6effc3f1`;
+- implementation head `b56039533bdb4e45a2b27a19621d160394f3b56c` passed Foundation CI run 245;
+- final closure/documentation head `46dffb5d7eb8950ba3de0da9f8d6aab2862e2fa0` passed Foundation CI run 246;
+- `docs/PHASE-3-NONSPATIAL-CLOSURE-AUDIT.md` is PASS.
 
-Phase 3 is active. The non-spatial Identity/World core has passed its closure acceptance gate.
+Optional WorldSpace/location/pathing is deferred behind
+`WorldPolicy.spatialEnabled`. Do not reopen canonical Identity/World ownership merely
+because spatial mechanics remain optional.
 
-Merged Phase 3 slices:
+## Phase 3 merged history
+
 - canonical identity: PR #17, merge `75549800445842f8ff1db54e06529c075ed34ea4`;
 - world generation/input foundation: PR #18, merge `871022d03f4b3fb2a81af5c6253dd38bd5b7a27f`;
 - governed CharacterLifeState + canon events: PR #19, merge `729ab3e64eb0539ea249ceb6a39cf79afab20cb2`;
 - canon policy/time hardening: PR #21, merge `ce89ce091e05508dd4d0614a9127a2256bda13e4`;
 - reconciled routines/story arcs: PR #23, merge `4bd9a3a8b2504617291d7e18e992d5f56856886d`;
-- authority-bound WorldEvent canon governance: PR #24, merge `9f2574b9d3932079a834c5c2976ee89e2fdcf2cc`;
-- canonical WorldInteraction evidence: PR #25, merge `ed186608248659654cdcf23ab8b793dd426fa7ef`;
-- executable pause/restart/catch-up recovery: PR #26, merge `bcfe597bd8aa7cb6191bb34fb5c626bbe5884ee0`;
-- typed World evidence→events/outbox integration: PR #27, merge `426a6689f0839aad3077754a9f947f2abe0ba8d6`.
+- authority-bound WorldEvent governance: PR #24, merge `9f2574b9d3932079a834c5c2976ee89e2fdcf2cc`;
+- WorldInteraction evidence: PR #25, merge `ed186608248659654cdcf23ab8b793dd426fa7ef`;
+- pause/restart/catch-up recovery: PR #26, merge `bcfe597bd8aa7cb6191bb34fb5c626bbe5884ee0`;
+- World evidence→events/outbox: PR #27, merge `426a6689f0839aad3077754a9f947f2abe0ba8d6`;
+- non-spatial privacy/acceptance closure: PR #28, merge `02c2c99153e904b4f9d2f403328a1e3b6effc3f1`.
 
-Current implementation branch: `phase3-nonspatial-closure` (PR #28).
+## Post-freeze candidate review — completed
 
-PR #28 closes the last concrete non-spatial acceptance gap discovered by audit:
-- generic World JSON/text could otherwise carry private User/Relationship/Memory/session identifiers even though the public contracts did not accept Relationship objects directly;
-- `packages/world` now owns a recursive shared-state privacy invariant;
-- canonical User, Relationship, MemoryRecord/MemoryRevision, private session/account/credential/device IDs are rejected anywhere in World payload text, including embedded IDs inside longer strings;
-- reserved private-reference JSON field names are rejected even when they contain non-canonical external values;
-- the invariant is enforced at SimulationInput, Routine, CharacterLifeState, StoryArc, WorldEvent and WorldInteraction ingress;
-- unit tests cover nested, reserved-field and embedded-ID detection;
-- PostgreSQL integration proves rejected private references leave no shared World rows behind;
-- `docs/PHASE-3-NONSPATIAL-CLOSURE-AUDIT.md` maps every ADR-0009 non-spatial acceptance target to implementation/test evidence;
-- Foundation CI run 245 passed the complete gate on implementation head `b56039533bdb4e45a2b27a19621d160394f3b56c`.
+Requested candidates:
+- `mempalace/mempalace`, inspected at
+  `5ea40d30caf0ed2ff6e49623e386a0863b28edaa`;
+- `paperclipai/paperclip`, inspected at
+  `261c24ccf96b911e3006cccec934a588ebc84058`.
 
-Immediate work:
-1. verify the automatically triggered Foundation CI run on the final documentation-only PR #28 head;
-2. fix any real failure; if green, merge PR #28;
-3. after merge, treat non-spatial Phase 3 as closed and do not reopen canonical identity/life/canon ownership without contradictory evidence and an ADR;
-4. evaluate the newly proposed post-freeze candidates `mempalace/mempalace` and `paperclipai/paperclip` against canonical Masanawa boundaries before admitting or integrating anything;
-5. then choose the next repository-backed priority: optional WorldSpace/location/pathing behind `WorldPolicy.spatialEnabled`, or the next scheduled phase where the candidate review materially changes the design.
+Evidence and decision:
+`docs/migration/POST-FREEZE-MEMPALACE-PAPERCLIP.md`.
 
-Do not interpret non-spatial closure as completion of optional spatial simulation. Do not weaken the private Relationship→World boundary.
+Decision:
+- MemPalace is a strong Phase 4 behavior donor for verbatim evidence retention,
+  retrieval isolation/compatibility, hybrid retrieval and evaluation;
+- it does **not** become a canonical store, Python runtime dependency, Chroma/SQLite
+  authority or second memory service;
+- Paperclip is a strong later workflows/agents/Ops behavior donor for atomic task
+  checkout, stale-run adoption, heartbeat execution, cost/run visibility and
+  operator control;
+- Paperclip Company/Agent/Issue/Approval state does **not** replace Tenant/Character,
+  canonical workflows or Masanawa Authority/Approval/Operation semantics;
+- neither candidate is currently admitted as a pinned source-vault submodule.
 
-## World simulation comparison — completed
+## Phase 4 first slice — implementation gate passed
+
+Primary record: `docs/PHASE-4-MEMORY.md`.
+
+Implemented on the current branch:
+- real `@masanawa/memory` package;
+- explicit relationship / character-private / character-shared / world / session /
+  task / organization scopes;
+- canonical MemoryRecord and append-only MemoryRevision;
+- mandatory immutable provenance evidence;
+- optional verbatim evidence preserving exact source text;
+- exact-scope direct read API; there is no unscoped record-by-ID retrieval port;
+- explicit allowed-scope list query;
+- PostgreSQL `memory.records`, `memory.revisions`, `memory.evidence`;
+- immutable record type/scope identity;
+- immutable revision/evidence content;
+- atomic expected-revision append;
+- exact replay idempotency and stale changed replay conflict;
+- workspace/build/lockfile/PostgreSQL adapter wiring;
+- unit tests for scope/evidence/temporal invariants;
+- PostgreSQL fixture for cross-Relationship non-disclosure, revision CAS/replay and
+  database immutability;
+- Foundation CI run 250 passed the complete check gate on implementation head
+  `fd8e20bf7d589393d017338af89502fa4ca3ae6b`.
+
+The MemPalace-inspired behavior used here is deliberately structural: extracted
+MemoryRecords never replace their immutable/verbatim source evidence.
+
+## Immediate work
+
+1. verify the automatically triggered Foundation CI run on the final
+   documentation-only PR #29 head;
+2. fix any real failure; if green, merge PR #29;
+3. on a fresh branch from merged `main`, continue Phase 4 with governed
+   lifecycle/correction/supersession and explicit private→shared/world/organization
+   publication semantics;
+4. then add idempotent extraction queue/retry/dead-letter;
+5. only after canonical lifecycle/liveness is sound, add vector/lexical/entity/temporal
+   projections with embedding identity/dimension/source-hash compatibility and
+   cross-scope conformance tests.
+
+Do not skip directly to vector search. Retrieval quality cannot outrank canonical scope,
+provenance, correction, deletion or liveness.
+
+## Memory architecture — fixed
+
+ADR-0007 and `docs/migration/MEMORY-ADOPTION-BOUNDARY.md` decide:
+- `packages/memory` is the sole canonical memory authority;
+- PostgreSQL stores canonical scoped records/revisions/evidence;
+- relationship/private/shared/world separation is mandatory;
+- scope/authorization precedes retrieval;
+- contradictory/corrected history is versioned rather than silently overwritten;
+- working context is compiled, not durable truth;
+- vector/lexical/entity/temporal/graph indexes are disposable/rebuildable;
+- expiration, tombstone and physical purge are distinct;
+- automatic/proactive and explicit recall have separate policy gates;
+- N.E.K.O, Letta Code, Mem0, OpenClaw and post-freeze MemPalace are bounded donors only.
+
+## World architecture — fixed
 
 ADR-0009 and `docs/migration/WORLD-SIMULATION-ADOPTION-BOUNDARY.md` decide:
 - `packages/world` is the sole canonical world/life authority;
-- AI Town supplies simulation-engine mechanics, not canonical domain objects;
+- AI Town supplies simulation mechanics, not canonical objects;
 - ChatWithStars supplies life-state/canon/governance semantics;
-- durable world generations/claims replace process-local overlap locking;
-- simulation time, wall-clock time, validity time and recorded time remain distinct;
-- spatial simulation is optional;
-- private relationship memory cannot mutate shared canon;
-- memory, workflows, identity and presence consume world contracts without becoming world authority.
-
-## Memory comparison — completed
-
-ADR-0007 and `docs/migration/MEMORY-ADOPTION-BOUNDARY.md` decide:
-- canonical memory record and scope model;
-- relationship/private/shared/world separation;
-- write/extraction lifecycle;
-- provenance/evidence/confidence;
-- working-context blocks versus durable memory;
-- retrieval, entity/temporal indexing and reranking;
-- reflection/consolidation/compaction;
-- deletion/retention/tombstones;
-- rebuildable vector/graph indexes;
-- proactive memory recall versus explicit retrieval;
-- evaluation/quality measurement;
-- which donor components are safe to reuse directly versus adapt behind `packages/memory`.
-
-Decision: `packages/memory` owns canonical scoped PostgreSQL records, provenance, lifecycle and context compilation. N.E.K.O/Letta Code/Mem0/OpenClaw are bounded donors only. Masanawa's type+scope privacy model remains non-negotiable.
+- private Relationship memory cannot mutate shared World canon;
+- memory/workflows consume World evidence only through typed boundaries;
+- optional spatial simulation never becomes Character identity.
 
 ## Non-negotiable rules
 
@@ -118,34 +168,16 @@ Decision: `packages/memory` owns canonical scoped PostgreSQL records, provenance
 - Channels/device nodes are adapters, not alternate brains.
 - Characters are domain entities, not prompts or agent classes.
 - Providers/models/UIs never own business truth.
-- Consequential side effects require deterministic validation, authorization, idempotency, reconciliation and audit.
-- Private relationship memory never silently becomes shared character/world truth.
-- Reference submodules are never production imports.
+- Consequential side effects require deterministic validation, authorization,
+  idempotency, reconciliation and audit.
+- Private relationship memory never silently becomes shared Character/World truth.
+- Reference repositories are never production imports unless an explicit adapter ADR
+  says so.
 - No donor repository becomes a hidden runtime boundary.
-- Licensing/provenance never decides feature survival. Useful donor capabilities remain A/B and are independently rewritten when direct reuse is unsuitable.
-- Nothing is migrated without ledger evidence.
-
-## Definition of done for Phase 0A — achieved 2026-10-01
-
-Closure evidence: `docs/migration/PHASE-0A-CLOSURE-AUDIT.md`.
-
-Phase 0A finished because:
-- every expanded donor has a source map;
-- its major relevant capabilities are represented in the ledgers;
-- licenses/provenance are verified;
-- the required cross-donor comparisons are complete;
-- `docs/SOURCE-OWNERSHIP.md` no longer contains unresolved primary-candidate conflicts for foundation subsystems;
-- donor decisions are recorded in ADRs where necessary.
-
-## Definition of done for full Phase 0
-
-Every meaningful capability in the pinned reference vault is classified:
-- **A — preserve behaviour**
-- **B — preserve capability, redesign implementation**
-- **C — reference/retire explicitly**
-
-Every retained capability has one canonical Masanawa destination and an acceptance/parity strategy.
+- Licensing/provenance never decides feature survival.
+- Nothing is migrated without evidence and an acceptance strategy.
 
 ## If context is missing
 
-Do not ask the user to repeat previous discussions. The repository, source lock and reference vault are the source of truth.
+Do not ask the user to repeat previous discussions. Recover state from this repository,
+the active branch, CI, source lock, reference vault and phase record.
