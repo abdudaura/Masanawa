@@ -238,6 +238,7 @@ export async function recordExternalReceipt(
                normalized_status,
                payload_hash,
                payload_ref,
+               normalized_payload,
                observed_at,
                verification_method,
                provider_version,
