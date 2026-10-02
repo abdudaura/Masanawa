@@ -23,6 +23,9 @@ export const memoryScopePublishCapability = "memory.scope.publish";
 export const memoryScopePublishActionVersion = "1";
 export const memoryScopePublishRiskClass = "consequential";
 
+export type MemoryScopePublicationRevisionInput =
+  Omit<MemoryRevisionContentInput, "evidence">;
+
 export interface MemoryScopePublicationTarget {
   readonly tenantId: TenantId;
   readonly sourceMemoryRecordId: MemoryRecordId;
@@ -32,7 +35,7 @@ export interface MemoryScopePublicationTarget {
   readonly targetMemoryRevisionId: MemoryRevisionId;
   readonly targetMemoryType: MemoryType;
   readonly targetScope: MemoryScope;
-  readonly targetRevision: MemoryRevisionContentInput;
+  readonly targetRevision: MemoryScopePublicationRevisionInput;
   readonly reason: string;
 }
 
@@ -159,6 +162,20 @@ function boundedReason(reason: string): string {
   return normalized;
 }
 
+function assertTargetRevisionHasNoCallerEvidence(
+  targetRevision: MemoryScopePublicationRevisionInput,
+): void {
+  if ("evidence" in (targetRevision as Record<string, unknown>)) {
+    throw new PlatformError({
+      code: "memory.publication_target_evidence_forbidden",
+      category: "authorization",
+      message:
+        "Cross-scope publication target evidence is generated from the governed publication operation",
+      retryable: false,
+    });
+  }
+}
+
 export function assertMemoryScopePublicationAuthority(
   authority: AuthorityContext,
   target: MemoryScopePublicationTarget,
@@ -189,6 +206,7 @@ export function assertMemoryScopePublicationAuthority(
     });
   }
   boundedReason(target.reason);
+  assertTargetRevisionHasNoCallerEvidence(target.targetRevision);
   assertSourceScopeAuthority(authority, target.sourceScope);
   assertTargetScopeAuthority(authority, target.tenantId, target.targetScope);
 
