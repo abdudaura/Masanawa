@@ -9,3 +9,4 @@ export * from "./fusion.js";
 export * from "./evaluation.js";
 export * from "./tombstone.js";
 export * from "./context.js";
+export * from "./reflection.js";
