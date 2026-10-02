@@ -231,6 +231,7 @@ export async function transitionOperation(
   client: PoolClient,
   input: {
     readonly operationId: OperationId;
+    readonly tenantId?: TenantId;
     readonly from: OperationState;
     readonly to: OperationState;
     readonly expectedFence?: number;
@@ -239,6 +240,10 @@ export async function transitionOperation(
   assertOperationTransition(input.from, input.to);
 
   const params: unknown[] = [input.operationId, input.from, input.to];
+  const tenantClause =
+    input.tenantId === undefined
+      ? ""
+      : ` AND tenant_id = ${params.push(input.tenantId)}`;
   const fenceClause =
     input.expectedFence === undefined
       ? ""
@@ -250,6 +255,7 @@ export async function transitionOperation(
             updated_at = clock_timestamp()
       WHERE operation_id = $1
         AND state = $2
+        ${tenantClause}
         ${fenceClause}
       RETURNING operation_id,
                 tenant_id,
