@@ -304,7 +304,7 @@ This inventory is intentionally incomplete. Source-specific map documents identi
 | RTC-020 | presence | direct WebRTC RTP pacing/gap/audio-delay/negotiation behavior independent of LiveKit-room path | CyberVerse | C/B | GPL clean-room behavior reference | services/presence tests/specs | selected |
 | INF-001 | providers | typed gRPC inference service boundaries for ASR/LLM/RAG/TTS/avatar/realtime voice | CyberVerse | C/B | GPL clean-room interface reference | packages/providers/media contracts | selected |
 | RAG-001 | knowledge | vector/RAG service boundary and knowledge-source management | CyberVerse | C/B | GPL clean-room behavior reference | packages/knowledge + provider adapters | selected |
-| AVT-020 | embodiment | avatar warmup, silent/idle runtime, provider catalog and offline-video orchestration | CyberVerse | C/B | GPL clean-room behavior reference | clients/embodiment + worker + future studio/media domain/adapters/presence | selected |
+| AVT-020 | embodiment | avatar warmup, silent/idle runtime, provider catalog and offline-video orchestration | CyberVerse | C/B | GPL clean-room behavior reference | clients/embodiment + worker + future studio/media domain/adapters + presence | selected |
 | TSK-020 | workflows | reconnectable agent-task store/API with terminal artifact/event semantics | CyberVerse | C/B | GPL clean-room workflow reference | packages/workflows + events | selected |
 | MOD-001 | assets | embedded third-party avatar/lipsync/video model source trees require their own licenses and are not reusable through CyberVerse's GPL classification | CyberVerse | C | third-party model reference | no direct import; separate upstream evaluation | selected |
 

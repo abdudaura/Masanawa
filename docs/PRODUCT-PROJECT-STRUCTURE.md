@@ -24,7 +24,9 @@ Agent runtime is a package capability composed by services, not a fifth service 
 
 ### 3. Standardize package internals
 
-Production domain packages should converge on a recognizable shape when applicable: public `src/index.ts`, domain model, public contracts/ports, invariants, repository port, internal implementation folder, colocated unit tests, and package-owned migrations. Not every package needs every file; consistency of ownership matters more than ceremonial folders.\n\n`docs/IMPLEMENTATION-TEMPLATES.md` defines the executable package/service baseline, and the architecture suite enforces its non-optional parts.
+Production domain packages should converge on a recognizable shape when applicable: public `src/index.ts`, domain model, public contracts/ports, invariants, repository port, internal implementation folder, colocated unit tests, and package-owned migrations. Not every package needs every file; consistency of ownership matters more than ceremonial folders.
+
+`docs/IMPLEMENTATION-TEMPLATES.md` defines the executable package/service baseline, and the architecture suite enforces its non-optional parts.
 
 ### 4. Standardize adapter topology
 
