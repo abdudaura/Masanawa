@@ -375,7 +375,7 @@ describePostgres("PostgreSQL memory retrieval projection conformance", () => {
     expect(correctedHits[0]?.memoryRevisionId).toBe(revisionA2);
   });
 
-  it("persists vector compatibility metadata without enabling unsupported vector retrieval", async () => {
+  it("persists vector compatibility metadata and activates an empty complete generation", async () => {
     const tenantId = createCanonicalId("tenant");
     const generationId = createCanonicalId(
       "memory-projection-generation",
@@ -404,14 +404,12 @@ describePostgres("PostgreSQL memory retrieval projection conformance", () => {
       dimension: 1536,
     });
 
-    await expect(
-      activateMemoryProjectionGeneration(pool, {
-        tenantId,
-        memoryProjectionGenerationId: generationId,
-        activatedAt: now,
-      }),
-    ).rejects.toMatchObject({
-      code: "memory.projection_signal_unsupported",
+    const activated = await activateMemoryProjectionGeneration(pool, {
+      tenantId,
+      memoryProjectionGenerationId: generationId,
+      activatedAt: now,
     });
+    expect(activated.state).toBe("current");
+    expect(activated.memoryProjectionGenerationId).toBe(generationId);
   });
 });
