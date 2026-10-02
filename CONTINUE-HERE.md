@@ -137,11 +137,21 @@ Foundation CI run 379, PR #47 merged as
 `d0a198dbdec1af08e3c8f1378da0985db628eb6e`, and merged-main Foundation CI
 run 380 passed on that exact merge commit.
 
-**Current: Task 057 of 150 — Establish repository-wide public API/versioning/deprecation conventions.**
+**Current: Task 058 of 150 — Establish environment/config/deployment contract conventions and validate them with env-schema checks.**
 
-Active implementation branch: `task057-api-lifecycle`. Task 057 remains incomplete until its Contracts/typecheck/test/build evidence is green, merged, and verified on merged `main`.
+Tasks 001-057 are merged complete.
 
-Tasks 001-056 are merged complete.
+Task 057 implementation head `fbdd51b0b113f8d40c625086d0a851c3de60a7f0` passed
+Foundation CI run 394. PR #51 merged as
+`5395b29c1bfa5705d447152d3ff3c606c0658ed6`, and merged-main Foundation CI
+run 395 passed on that exact merge commit.
+
+Task 057 established:
+- one machine-readable API lifecycle policy separating workspace SemVer, HTTP majors, schema versions and domain registry versions;
+- root-only reusable workspace exports and repository-wide no-deep-import enforcement;
+- Contracts-suite acceptance for API lifecycle and supported HTTP major routing;
+- machine-audited deprecation registry with source annotations for deprecated workspace symbols;
+- immutable event/payload and Tool/Provider version semantics.
 
 Task 056 implementation head `b17d4ba53d23abb9abf40aa7800b1c461dc9fa90` passed
 Foundation CI run 386. PR #49 merged as

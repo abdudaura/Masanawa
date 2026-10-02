@@ -8,11 +8,11 @@ Masanawa production is tracked as **150 numbered milestone tasks**. Tasks are no
 
 ## Current position
 
-Merged `main` satisfies Tasks **001-056**.
+Merged `main` satisfies Tasks **001-057**.
 
-**Current: Task 057 of 150 — Establish repository-wide public API/versioning/deprecation conventions.**
+**Current: Task 058 of 150 — Establish environment/config/deployment contract conventions and validate them with env-schema checks.**
 
-Active implementation branch: `task057-api-lifecycle`. Task 057 remains incomplete until Contracts/typecheck/test/build acceptance evidence is green, merged, and verified on merged `main`.
+Task 057 implementation head `fbdd51b0b113f8d40c625086d0a851c3de60a7f0` passed Foundation CI run 394. PR #51 merged as `5395b29c1bfa5705d447152d3ff3c606c0658ed6`; merged-main Foundation CI run 395 passed on that exact merge commit.
 
 Task 056 implementation head `b17d4ba53d23abb9abf40aa7800b1c461dc9fa90` passed Foundation CI run 386. PR #49 merged as `ed119581974cfb146da0b6e0a5e119eda8731df8`; merged-main run 387 passed. Supplemental acceptance hardening PR #50 merged as `b07565a315c35dc1ef840c89845ccfd2836c2da4`; merged-main run 391 passed.
 
@@ -93,7 +93,7 @@ Status: `[x]` COMPLETE, `[ ]` PLANNED.
 - [x] **054** Standardize package/service implementation templates and enforce them in architecture tests.
 - [x] **055** Standardize adapter topology/registration and prohibit adapter-to-adapter hidden orchestration.
 - [x] **056** Expand test taxonomy with security/recovery/load/chaos suites and CI gate conventions.
-- [ ] **057** Establish repository-wide public API/versioning/deprecation conventions.
+- [x] **057** Establish repository-wide public API/versioning/deprecation conventions.
 - [ ] **058** Establish production configuration/environment schema, secret-reference and deployment-layout conventions.
 
 ## Tasks 059-070 — Skills
