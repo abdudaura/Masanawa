@@ -1,6 +1,10 @@
 import { fileURLToPath } from "node:url";
 import { createCanonicalId, toInstant } from "@masanawa/contracts";
-import {\n  assertZeroMemoryRetrievalLeakage,\n  createMemoryScopePredicate,\n  evaluateMemoryRetrieval,\n} from "@masanawa/memory";
+import {
+  assertZeroMemoryRetrievalLeakage,
+  createMemoryScopePredicate,
+  evaluateMemoryRetrieval,
+} from "@masanawa/memory";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Pool } from "pg";
 import {
