@@ -21,6 +21,7 @@ import {
   type MemoryEntitySearchInput,
   type MemoryProjectionKind,
   type MemoryRecordSnapshot,
+  type MemoryScope,
   type MemoryScopeKind,
   type MemoryTemporalHit,
   type MemoryTemporalSearchInput,
@@ -237,7 +238,7 @@ function sameSignalIdentity(
 }
 
 function authorizedScopeRows(
-  scopes: readonly MemoryRecordSnapshot["record"]["scope"][],
+  scopes: readonly MemoryScope[],
 ): readonly { scope_kind: MemoryScopeKind; scope_ref_id: string | null }[] {
   return scopes.map((scope) => {
     const stored = memoryScopeStorage(scope);
