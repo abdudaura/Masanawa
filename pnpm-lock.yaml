@@ -323,6 +323,35 @@ importers:
         specifier: 5.0.3
         version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
 
+  packages/providers:
+    dependencies:
+      '@masanawa/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@masanawa/security':
+        specifier: workspace:*
+        version: link:../security
+    devDependencies:
+      vitest:
+        specifier: 5.0.3
+        version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
+
+  packages/tools:
+    dependencies:
+      '@masanawa/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@masanawa/providers':
+        specifier: workspace:*
+        version: link:../providers
+      '@masanawa/security':
+        specifier: workspace:*
+        version: link:../security
+    devDependencies:
+      vitest:
+        specifier: 5.0.3
+        version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
+
   packages/security:
     dependencies:
       '@masanawa/contracts':
