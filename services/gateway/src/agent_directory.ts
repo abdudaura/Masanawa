@@ -1,10 +1,11 @@
 import type {
   AgentPresentationRepository,
 } from "@masanawa/agents";
-import type { TenantId } from "@masanawa/contracts";
+import type { CharacterId, TenantId } from "@masanawa/contracts";
 
 export interface AgentDirectoryAuthority {
   readonly tenantId: TenantId;
+  readonly characterIds?: readonly CharacterId[];
 }
 
 export interface AgentDirectoryAuthorizer {
@@ -51,8 +52,15 @@ export function createAgentDirectoryService(input: {
       const presentations = await input.presentations.listVisible({
         tenantId: authority.tenantId,
       });
+      const allowed = authority.characterIds
+        ? new Set(authority.characterIds)
+        : null;
       return Object.freeze(
-        presentations.map((presentation) =>
+        presentations
+          .filter((presentation) =>
+            allowed === null || allowed.has(presentation.characterId),
+          )
+          .map((presentation) =>
           Object.freeze({
             characterId: presentation.characterId,
             characterVersionId: presentation.characterVersionId,

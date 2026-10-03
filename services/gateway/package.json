@@ -16,7 +16,8 @@
     "@masanawa/telemetry": "workspace:*",
     "@masanawa/node-runtime": "workspace:*",
     "@masanawa/postgres": "workspace:*",
-    "@masanawa/agents": "workspace:*"
+    "@masanawa/agents": "workspace:*",
+    "@masanawa/security": "workspace:*"
   },
   "devDependencies": {
     "vitest": "5.0.3"

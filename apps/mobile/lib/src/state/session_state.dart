@@ -88,10 +88,17 @@ class SessionError extends SessionState {
   final int? resendInSeconds;
 }
 
-/// Dev sessions are local-only (no backend). Their tokens carry a `dev-`
-/// prefix so every code path can tell them apart from real sessions.
+const String kAlphaDevAccessToken = String.fromEnvironment(
+  'ALPHA_DEV_ACCESS_TOKEN',
+  defaultValue: '',
+);
+
+/// Dev sessions carry either the build-provided Alpha token or a local
+/// `dev-` prefix. Release builds still cannot invoke devLogin.
 bool isDevAccessToken(String? token) =>
-    token != null && token.startsWith('dev-');
+    token != null &&
+    (token.startsWith('dev-') ||
+        (kAlphaDevAccessToken.isNotEmpty && token == kAlphaDevAccessToken));
 
 class SessionController extends Notifier<SessionState> {
   @override
@@ -234,7 +241,9 @@ class SessionController extends Notifier<SessionState> {
     );
     final stamp = DateTime.now().microsecondsSinceEpoch;
     final tokens = AuthTokens(
-      accessToken: 'dev-access-$stamp',
+      accessToken: kAlphaDevAccessToken.isNotEmpty
+          ? kAlphaDevAccessToken
+          : 'dev-access-$stamp',
       refreshToken: 'dev-refresh-$stamp',
       accessExpiresIn: 86400,
       user: user,

@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 
 import '../chat/message_parts.dart';
@@ -134,7 +137,10 @@ class MasanawaAgentTransport implements AgentTransport {
   }) async {
     final data = await _client.post(
       '/agent/sessions/${binding.characterSessionId}/turn',
-      {'text': text},
+      {
+        'characterId': binding.characterId,
+        'text': text,
+      },
     );
     final reply = data['reply'];
     if (reply is! String) {
@@ -165,11 +171,38 @@ class MasanawaAgentTransport implements AgentTransport {
   }
 
   @override
+  Future<AgentTurnResult> sendMediaTurn({
+    required AgentSessionBinding binding,
+    required Uint8List bytes,
+    required String mimeType,
+    required String caption,
+  }) async {
+    final data = await _client.post(
+      '/agent/sessions/${binding.characterSessionId}/media-turn',
+      {
+        'characterId': binding.characterId,
+        'caption': caption,
+        'mimeType': mimeType,
+        'dataBase64': base64Encode(bytes),
+      },
+    );
+    final reply = data['reply'];
+    if (reply is! String || reply.isEmpty) {
+      throw const ApiException('Agent media service unavailable');
+    }
+    final runId = data['agentRunId'];
+    return AgentTurnResult(
+      text: reply,
+      agentRunId: runId is String && runId.isNotEmpty ? runId : null,
+    );
+  }
+
+  @override
   Future<void> closeSession(AgentSessionBinding binding) async {
     try {
       await _client.post(
         '/agent/sessions/${binding.characterSessionId}/close',
-        const {},
+        {'characterId': binding.characterId},
       );
     } catch (_) {
       // Advisory only. Canonical continuity remains server-owned.

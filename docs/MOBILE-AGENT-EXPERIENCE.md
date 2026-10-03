@@ -233,3 +233,34 @@ Those events render into the same message/work-card model rather than creating a
 - Apps do not query canonical domain repositories directly.
 - The phone is a shell/body, never another memory/workflow/identity authority.
 - Consequential actions remain governed by current authority, Operations, receipts and reconciliation.
+
+
+## Alpha 1 continuous-testing mode
+
+The user app has a debug-only Alpha mode so product testing does not wait for
+the full production roadmap.
+
+Real Alpha behavior:
+- authorized server-driven agent directory;
+- canonical CharacterSession creation/closure;
+- canonical AgentRun creation and terminal state for each text/media turn;
+- text conversation through a temporary replaceable Gemini executor;
+- real recorded voice/image/document bytes as multimodal input;
+- optional Android-local TTS for spoken presentation of the canonical text
+  reply;
+- Developer diagnostics showing Gateway health/readiness and latest AgentRun.
+
+Debug-only Scenario Lab behavior:
+- injects Work, artifact/file, approval and call-result cards only to validate
+  the mobile renderer;
+- performs no Tool, Workflow, approval or phone side effect;
+- is unavailable as a release feature.
+
+Assigned SkillVersion IDs are carried into CharacterSession bindings in Alpha
+so admin configuration can be inspected end-to-end. Alpha does not execute
+those Skills. Production Skill orchestration remains Task 075 and must resolve
+current readiness/certification/authority at execution time.
+
+The temporary Alpha executor is replaced by the production AgentStrategy seam
+in Task 073. Alpha therefore accelerates product testing without becoming a
+parallel agent framework.

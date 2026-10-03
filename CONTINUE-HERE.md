@@ -2,6 +2,42 @@
 
 This is the mandatory handoff entry point for every new Masanawa implementation session.
 
+
+## Task 072 / Alpha 1 implementation checkpoint
+
+PR #83 (`task072-alpha1-agent-run`) implements the current Task 072 contract and a
+bounded continuous-testing slice for the Flutter app.
+
+Implemented on this checkpoint:
+- canonical AgentRun identity, CharacterSession/CharacterVersion binding, root/parent
+  lineage and immutable request/correlation/Task/Workflow/Operation trace references;
+- PostgreSQL AgentRun persistence, explicit completed/failed terminal states,
+  Relationship-scoped current-authority checks and DB-level history immutability;
+- PostgreSQL acceptance coverage for lineage, terminal state, isolation, replay and
+  immutable trace history;
+- live Alpha Gateway routes for open/text/media/close using canonical
+  CharacterSession + AgentRun custody;
+- replaceable Gemini development inference only (Task 073 still owns production
+  AgentStrategy);
+- real voice-note/image/document bytes accepted in bounded Alpha media turns;
+- optional Android-local TTS for immediate voice-first testing;
+- canonical Alpha bootstrap script for a dev Tenant/User/Character/Relationship/
+  Security policy/AgentPresentation;
+- debug login token, Developer diagnostics, and debug-only Scenario Lab for
+  Work/File/Approval/Call rendering without backend side effects;
+- debug Android HTTP allowance for a laptop-hosted Gateway only; release builds do
+  not enable cleartext traffic.
+
+Task 072 remains **IN PROGRESS** until required verification actually runs and passes.
+On the latest PR head, both Foundation CI and Mobile Build again terminated before
+checkout with zero steps and `runner_id=0`; this is the same external hosted-runner
+condition and is not a code/test result.
+
+For hands-on Alpha testing, follow `apps/mobile/README.md`: run PostgreSQL 18,
+`pnpm alpha:prepare`, start Gateway with the printed `MASANAWA_ALPHA_*` values,
+then build/run the debug Flutter app with `AGENT_RUNTIME_ENABLED=true`,
+`AGENT_BASE_URL`, and the same `ALPHA_DEV_ACCESS_TOKEN`.
+
 ## Mission
 
 Build Masanawa as one clean canonical platform from the strongest validated capabilities

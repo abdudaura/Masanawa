@@ -1,18 +1,156 @@
 {
   "schemaVersion": 1,
   "variables": [
-    {"name":"NODE_ENV","owner":"runtime","classification":"public","requiredIn":[],"description":"Node runtime environment selector."},
-    {"name":"HOST","owner":"runtime","classification":"public","requiredIn":[],"description":"Deployment-host compatibility bind address."},
-    {"name":"PORT","owner":"runtime","classification":"public","requiredIn":[],"description":"Deployment-host compatibility listen port."},
-    {"name":"MASANAWA_SHUTDOWN_TIMEOUT_MS","owner":"runtime","classification":"public","requiredIn":[],"description":"Bounded graceful shutdown timeout."},
-    {"name":"MASANAWA_DATABASE_URL","owner":"security/bootstrap","classification":"secret","requiredIn":["production"],"description":"Canonical PostgreSQL bootstrap connection secret for deployable services."},
-    {"name":"DATABASE_URL","owner":"runtime","classification":"secret","requiredIn":[],"description":"Deployment-host compatibility alias for MASANAWA_DATABASE_URL."},
-    {"name":"MASANAWA_GATEWAY_HOST","owner":"gateway","classification":"public","requiredIn":[],"description":"Gateway bind address override."},
-    {"name":"MASANAWA_GATEWAY_PORT","owner":"gateway","classification":"public","requiredIn":[],"description":"Gateway listen port override."},
-    {"name":"MASANAWA_WORKER_HOST","owner":"worker","classification":"public","requiredIn":[],"description":"Worker bind address override."},
-    {"name":"MASANAWA_WORKER_PORT","owner":"worker","classification":"public","requiredIn":[],"description":"Worker listen port override."},
-    {"name":"MASANAWA_OPS_HOST","owner":"ops","classification":"public","requiredIn":[],"description":"Ops bind address override."},
-    {"name":"MASANAWA_OPS_PORT","owner":"ops","classification":"public","requiredIn":[],"description":"Ops listen port override."},
-    {"name":"MASANAWA_TEST_DATABASE_URL","owner":"test","classification":"secret","requiredIn":["test"],"description":"Test-only PostgreSQL connection used by integration acceptance."}
+    {
+      "name": "NODE_ENV",
+      "owner": "runtime",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Node runtime environment selector."
+    },
+    {
+      "name": "HOST",
+      "owner": "runtime",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Deployment-host compatibility bind address."
+    },
+    {
+      "name": "PORT",
+      "owner": "runtime",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Deployment-host compatibility listen port."
+    },
+    {
+      "name": "MASANAWA_SHUTDOWN_TIMEOUT_MS",
+      "owner": "runtime",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Bounded graceful shutdown timeout."
+    },
+    {
+      "name": "MASANAWA_DATABASE_URL",
+      "owner": "security/bootstrap",
+      "classification": "secret",
+      "requiredIn": [
+        "production"
+      ],
+      "description": "Canonical PostgreSQL bootstrap connection secret for deployable services."
+    },
+    {
+      "name": "DATABASE_URL",
+      "owner": "runtime",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Deployment-host compatibility alias for MASANAWA_DATABASE_URL."
+    },
+    {
+      "name": "MASANAWA_GATEWAY_HOST",
+      "owner": "gateway",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Gateway bind address override."
+    },
+    {
+      "name": "MASANAWA_GATEWAY_PORT",
+      "owner": "gateway",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Gateway listen port override."
+    },
+    {
+      "name": "MASANAWA_WORKER_HOST",
+      "owner": "worker",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Worker bind address override."
+    },
+    {
+      "name": "MASANAWA_WORKER_PORT",
+      "owner": "worker",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Worker listen port override."
+    },
+    {
+      "name": "MASANAWA_OPS_HOST",
+      "owner": "ops",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Ops bind address override."
+    },
+    {
+      "name": "MASANAWA_OPS_PORT",
+      "owner": "ops",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Ops listen port override."
+    },
+    {
+      "name": "MASANAWA_TEST_DATABASE_URL",
+      "owner": "test",
+      "classification": "secret",
+      "requiredIn": [
+        "test"
+      ],
+      "description": "Test-only PostgreSQL connection used by integration acceptance."
+    },
+    {
+      "name": "MASANAWA_ALPHA_ENABLED",
+      "owner": "gateway/alpha",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Explicit development-only switch enabling the bounded mobile Alpha runtime."
+    },
+    {
+      "name": "MASANAWA_ALPHA_DEV_TOKEN",
+      "owner": "security/bootstrap",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Development-only bearer secret for the mobile Alpha user; never a production user credential."
+    },
+    {
+      "name": "MASANAWA_ALPHA_TENANT_ID",
+      "owner": "gateway/alpha",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Development-only canonical TenantId used by the Alpha bootstrap/runtime."
+    },
+    {
+      "name": "MASANAWA_ALPHA_USER_ID",
+      "owner": "gateway/alpha",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Development-only canonical UserId used by the Alpha bootstrap/runtime."
+    },
+    {
+      "name": "MASANAWA_ALPHA_POLICY_REVISION",
+      "owner": "security/bootstrap",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Development Alpha authority policy revision seeded into the canonical Security store."
+    },
+    {
+      "name": "MASANAWA_ALPHA_RELATIONSHIPS_JSON",
+      "owner": "security/bootstrap",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Development-only Character-to-Relationship admission mapping for the Alpha user."
+    },
+    {
+      "name": "MASANAWA_ALPHA_GEMINI_API_KEY",
+      "owner": "security/bootstrap",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Development-only Gemini bootstrap credential for the replaceable Alpha inference executor."
+    },
+    {
+      "name": "MASANAWA_ALPHA_GEMINI_MODEL",
+      "owner": "gateway/alpha",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Development-only Gemini model name used by the replaceable Alpha inference executor."
+    }
   ]
 }

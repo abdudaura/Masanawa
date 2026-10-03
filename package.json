@@ -24,7 +24,9 @@
     "test:security": "vitest run tests/security",
     "test:recovery": "vitest run tests/recovery",
     "test:load": "vitest run tests/load",
-    "test:chaos": "vitest run tests/chaos"
+    "test:chaos": "vitest run tests/chaos",
+    "alpha:bootstrap": "node --conditions=production scripts/alpha-bootstrap.mjs",
+    "alpha:prepare": "pnpm build && pnpm alpha:bootstrap"
   },
   "devDependencies": {
     "@types/node": "24.13.6",

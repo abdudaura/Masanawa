@@ -1,7 +1,8 @@
 import Fastify from "fastify";
 import type { Instant } from "@masanawa/contracts";
-import { nowInstant } from "@masanawa/contracts";
+import { nowInstant, parseCanonicalId } from "@masanawa/contracts";
 import type { AgentDirectoryService } from "./agent_directory.js";
+import type { AgentConversationService } from "./agent_conversation_contract.js";
 import {
   admitTelemetryCorrelation,
   injectCorrelationHeaders,
@@ -19,6 +20,7 @@ export interface GatewayAppOptions {
   readonly now?: () => Instant;
   readonly isDraining?: () => boolean;
   readonly agentDirectory?: AgentDirectoryService;
+  readonly agentConversation?: AgentConversationService;
 }
 
 const HealthResponseSchema = Type.Object(
@@ -57,6 +59,50 @@ const AgentDirectoryEntrySchema = Type.Object(
 const AgentDirectoryResponseSchema = Type.Object(
   {
     agents: Type.Array(AgentDirectoryEntrySchema),
+  },
+  { additionalProperties: false },
+);
+
+
+const AgentSessionOpenBodySchema = Type.Object(
+  { characterId: Type.String() },
+  { additionalProperties: false },
+);
+
+const AgentSessionOpenResponseSchema = Type.Object(
+  { characterSessionId: Type.String() },
+  { additionalProperties: false },
+);
+
+const AgentSessionParamsSchema = Type.Object(
+  { characterSessionId: Type.String() },
+  { additionalProperties: false },
+);
+
+const AgentTurnBodySchema = Type.Object(
+  {
+    characterId: Type.String(),
+    text: Type.String({ minLength: 1, maxLength: 32000 }),
+  },
+  { additionalProperties: false },
+);
+
+
+const AgentMediaTurnBodySchema = Type.Object(
+  {
+    characterId: Type.String(),
+    caption: Type.String({ maxLength: 32000 }),
+    mimeType: Type.String({ minLength: 3, maxLength: 160 }),
+    dataBase64: Type.String({ minLength: 1, maxLength: 12000000 }),
+  },
+  { additionalProperties: false },
+);
+
+const AgentTurnResponseSchema = Type.Object(
+  {
+    reply: Type.String(),
+    agentRunId: Type.String(),
+    parts: Type.Array(Type.Unknown()),
   },
   { additionalProperties: false },
 );
@@ -118,6 +164,109 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
           authorizationHeader: request.headers.authorization,
         }),
       }),
+    );
+  }
+
+
+  if (options.agentConversation) {
+    const conversation = options.agentConversation;
+
+    app.post(
+      "/agent/sessions/open",
+      {
+        schema: {
+          body: AgentSessionOpenBodySchema,
+          response: { 200: AgentSessionOpenResponseSchema },
+        },
+      },
+      async (request) =>
+        conversation.open({
+          authorizationHeader: request.headers.authorization,
+          characterId: request.body.characterId,
+        }),
+    );
+
+    app.post(
+      "/agent/sessions/:characterSessionId/turn",
+      {
+        schema: {
+          params: AgentSessionParamsSchema,
+          body: AgentTurnBodySchema,
+          response: { 200: AgentTurnResponseSchema },
+        },
+      },
+      async (request) =>
+        conversation.turn({
+          authorizationHeader: request.headers.authorization,
+          characterSessionId: request.params.characterSessionId,
+          characterId: request.body.characterId,
+          text: request.body.text,
+          requestId: parseCanonicalId(
+            "request",
+            request.headers["x-request-id"] as string,
+          ),
+          correlationId: parseCanonicalId(
+            "correlation",
+            request.headers["x-correlation-id"] as string,
+          ),
+        }),
+    );
+
+
+    app.post(
+      "/agent/sessions/:characterSessionId/media-turn",
+      {
+        bodyLimit: 13_000_000,
+        schema: {
+          params: AgentSessionParamsSchema,
+          body: AgentMediaTurnBodySchema,
+          response: { 200: AgentTurnResponseSchema },
+        },
+      },
+      async (request) =>
+        conversation.mediaTurn({
+          authorizationHeader: request.headers.authorization,
+          characterSessionId: request.params.characterSessionId,
+          characterId: request.body.characterId,
+          caption: request.body.caption,
+          mimeType: request.body.mimeType,
+          dataBase64: request.body.dataBase64,
+          requestId: parseCanonicalId(
+            "request",
+            request.headers["x-request-id"] as string,
+          ),
+          correlationId: parseCanonicalId(
+            "correlation",
+            request.headers["x-correlation-id"] as string,
+          ),
+        }),
+    );
+
+    app.post(
+      "/agent/sessions/:characterSessionId/close",
+      {
+        schema: {
+          params: AgentSessionParamsSchema,
+          body: Type.Object(
+            { characterId: Type.String() },
+            { additionalProperties: false },
+          ),
+          response: {
+            200: Type.Object(
+              { closed: Type.Literal(true) },
+              { additionalProperties: false },
+            ),
+          },
+        },
+      },
+      async (request) => {
+        await conversation.close({
+          authorizationHeader: request.headers.authorization,
+          characterSessionId: request.params.characterSessionId,
+          characterId: request.body.characterId,
+        });
+        return { closed: true as const };
+      },
     );
   }
 
