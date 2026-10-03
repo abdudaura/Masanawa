@@ -95,6 +95,9 @@ export function createAgentConversationService(input: {
           await input.executor.reply({
             characterId: admission.scope.characterId,
             characterVersionId: session.characterVersionId,
+            displayName: admission.presentation.displayName,
+            roleLabel: admission.presentation.roleLabel,
+            about: admission.presentation.about,
             text,
           })
         ).trim();
