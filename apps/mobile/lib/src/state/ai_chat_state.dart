@@ -11,6 +11,7 @@ import '../agents/agent_session.dart';
 import '../chat/chat_format.dart';
 import '../chat/message_parts.dart';
 import '../core/providers.dart';
+import '../core/network/api_client.dart';
 import '../core/alpha_speech.dart';
 
 const String _kThreadsFile = 'masanawa_threads_v2.json';
