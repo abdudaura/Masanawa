@@ -134,7 +134,10 @@ class MasanawaAgentTransport implements AgentTransport {
   }) async {
     final data = await _client.post(
       '/agent/sessions/${binding.characterSessionId}/turn',
-      {'text': text},
+      {
+        'characterId': binding.characterId,
+        'text': text,
+      },
     );
     final reply = data['reply'];
     if (reply is! String) {
@@ -169,7 +172,7 @@ class MasanawaAgentTransport implements AgentTransport {
     try {
       await _client.post(
         '/agent/sessions/${binding.characterSessionId}/close',
-        const {},
+        {'characterId': binding.characterId},
       );
     } catch (_) {
       // Advisory only. Canonical continuity remains server-owned.
