@@ -129,6 +129,10 @@ export interface AgentPresentationRepository {
     readonly characterId: CharacterId;
   }): Promise<AgentPresentation | null>;
 
+  listAll(input: {
+    readonly tenantId: TenantId;
+  }): Promise<readonly AgentPresentation[]>;
+
   listVisible(input: {
     readonly tenantId: TenantId;
   }): Promise<readonly AgentPresentation[]>;
