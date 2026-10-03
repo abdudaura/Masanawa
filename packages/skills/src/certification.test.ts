@@ -87,14 +87,17 @@ describe("Skill rehearsal and certification evidence", () => {
 
   it("requires both positive and negative activation rehearsal coverage", () => {
     const skillVersionId = createCanonicalId("skill-version");
-    const cases = [rehearsal("activation.basic", "activation")];
+    const cases = [
+      rehearsal("activation.basic", "activation"),
+      rehearsal("activation.alternate", "activation"),
+    ];
 
     expect(() =>
       normalizeSkillCertification(
         certification(skillVersionId, {
           cases,
-          testCaseCount: 1,
-          passedTestCaseCount: 1,
+          testCaseCount: 2,
+          passedTestCaseCount: 2,
         }),
         skillVersionId,
       ),
