@@ -137,7 +137,7 @@ Foundation CI run 379, PR #47 merged as
 `d0a198dbdec1af08e3c8f1378da0985db628eb6e`, and merged-main Foundation CI
 run 380 passed on that exact merge commit.
 
-**Current: Task 067 of 150 — Implement rehearsal/certification evidence.**
+**Current: Task 068 of 150 — Implement readiness/eligibility and revision pinning.**
 
 Task 066 implementation head `eb0ddef003bf9946d0df50b6c070a4d6ab6ea59c` passed Foundation CI run 431. PR #68 merged as `e1573fc91549b25a0425ef9a8cc7534ca0a4464a`, and merged-main Foundation CI run 432 passed on that exact merge commit.
 
@@ -147,7 +147,16 @@ Task 066 established:
 - explicit surfacing of every Tool authority capability through the Skill authority declaration;
 - exact candidate ToolVersion evidence without selecting or embedding Providers.
 
-Active implementation branch: `task067-rehearsal-certification-evidence`. Task 067 replaces counter-only certification with exact immutable rehearsal evidence bound to the certified SkillVersion, including reproducible suite identity, per-case evidence hashes/references, positive and negative activation coverage, and fail-closed pass/count/temporal validation. Acceptance/CI is pending.
+Task 067 implementation head `413fa1b929d5c098ad22dfe211ebd5038171c2b3` passed Foundation CI run 436. PR #70 merged as `d2a490b40281ea6ab53e70422149b38bd33fda46`, and merged-main Foundation CI run 437 passed on that exact merge commit.
+
+Task 067 established:
+- exact immutable certification binding to the certified SkillVersionId;
+- reproducible rehearsal-suite key, revision and content hash;
+- immutable per-case category/outcome/observation/evidence reference and content hash;
+- mandatory positive and negative activation rehearsal coverage;
+- fail-closed unique-case, temporal, counter and all-pass validation without granting authority or execution rights.
+
+Task 068 is next. Its branch must start from the merged Task 067 closure state and implement explicit readiness/eligibility plus exact revision pinning so newer Skill revisions cannot silently alter an already-selected execution/session plan.
 
 
 
@@ -155,7 +164,7 @@ Active implementation branch: `task067-rehearsal-certification-evidence`. Task 0
 
 
 
-Tasks 001-066 are merged complete.
+Tasks 001-067 are merged complete.
 
 
 

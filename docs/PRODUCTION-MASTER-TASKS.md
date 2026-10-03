@@ -8,9 +8,11 @@ Masanawa production is tracked as **150 numbered milestone tasks**. Tasks are no
 
 ## Current position
 
-Merged `main` satisfies Tasks **001-066**.
+Merged `main` satisfies Tasks **001-067**.
 
-**Current: Task 067 of 150 — Implement rehearsal/certification evidence.**
+**Current: Task 068 of 150 — Implement readiness/eligibility and revision pinning.**
+
+Task 067 implementation head `413fa1b929d5c098ad22dfe211ebd5038171c2b3` passed Foundation CI run 436. PR #70 merged as `d2a490b40281ea6ab53e70422149b38bd33fda46`; merged-main Foundation CI run 437 passed on that exact merge commit.
 
 Task 066 implementation head `eb0ddef003bf9946d0df50b6c070a4d6ab6ea59c` passed Foundation CI run 431. PR #68 merged as `e1573fc91549b25a0425ef9a8cc7534ca0a4464a`; merged-main Foundation CI run 432 passed on that exact merge commit.
 
@@ -108,7 +110,7 @@ Status: `[x]` COMPLETE, `[ ]` PLANNED.
 - [x] **064** Implement SkillTool/subskill execution boundaries.
 - [x] **065** Implement Skill provenance, trust and publisher metadata.
 - [x] **066** Implement risk/capability classification.
-- [ ] **067** Implement rehearsal/certification evidence.
+- [x] **067** Implement rehearsal/certification evidence.
 - [ ] **068** Implement readiness/eligibility and revision pinning.
 - [ ] **069** Implement trace metadata and deterministic failure semantics.
 - [ ] **070** Pass Skills acceptance tests including cloud/device-provider neutrality.
