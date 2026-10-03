@@ -68,6 +68,23 @@ interface SessionRow {
   schema_version: 1;
 }
 
+function sameAdmission(
+  run: AgentRun,
+  input: CreateAgentRunInput,
+): boolean {
+  return (
+    run.tenantId === input.scope.tenantId &&
+    run.userId === input.scope.userId &&
+    run.characterId === input.scope.characterId &&
+    run.relationshipId === input.scope.relationshipId &&
+    run.agentRunId === input.agentRunId &&
+    run.characterSessionId === input.characterSessionId &&
+    run.characterVersionId === input.characterVersionId &&
+    JSON.stringify(run.lineage) === JSON.stringify(input.lineage) &&
+    JSON.stringify(run.trace) === JSON.stringify(input.trace)
+  );
+}
+
 function rowToRun(row: RunRow): AgentRun {
   return normalizeAgentRun({
     schemaVersion: 1,
@@ -301,6 +318,21 @@ export function createPostgresAgentRunRepository(
 
       return withTransaction(pool, async (client) => {
         await admit(client, request, "create", trace);
+
+        const replay = await client.query<RunRow>(
+          `SELECT *
+             FROM agents.agent_runs
+            WHERE tenant_id = $1 AND agent_run_id = $2
+            FOR SHARE`,
+          [input.scope.tenantId, input.agentRunId],
+        );
+        if (replay.rows[0]) {
+          const existing = rowToRun(replay.rows[0]);
+          if (!sameAdmission(existing, input)) throw conflict();
+          await admit(client, request, "create", existing.trace);
+          return existing;
+        }
+
         await loadSession(client, input);
         await validateLineage(client, input);
         const at = await clock(client);
@@ -362,12 +394,7 @@ export function createPostgresAgentRunRepository(
             throw conflict();
           }
           const normalized = rowToRun(existing);
-          const same =
-            normalized.characterSessionId === input.characterSessionId &&
-            normalized.characterVersionId === input.characterVersionId &&
-            JSON.stringify(normalized.lineage) === JSON.stringify(input.lineage) &&
-            JSON.stringify(normalized.trace) === JSON.stringify(input.trace);
-          if (!same) throw conflict();
+          if (!sameAdmission(normalized, input)) throw conflict();
           return normalized;
         }
 
