@@ -120,7 +120,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
               keyboardType: TextInputType.emailAddress,
               autocorrect: false,
               style: TextStyle(
-                fontSize: UnigeriaTokens.fontSize['md'],
+                fontSize: MasanawaTokens.fontSize['md'],
                 color: Theme.of(context).colorScheme.onSurface,
               ),
               decoration: InputDecoration(
@@ -135,7 +135,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
                 filled: true,
                 fillColor: Theme.of(context).colorScheme.surface,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(UnigeriaTokens.radius['md']!),
+                  borderRadius: BorderRadius.circular(MasanawaTokens.radius['md']!),
                 ),
               ),
             )
@@ -151,7 +151,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
               error.message,
               style: TextStyle(
                 color: Theme.of(context).colorScheme.error,
-                fontSize: UnigeriaTokens.fontSize['sm'],
+                fontSize: MasanawaTokens.fontSize['sm'],
               ),
             ),
           ],
@@ -181,7 +181,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
             'By continuing you agree to our Terms and Privacy Policy.',
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: UnigeriaTokens.fontSize['xs'],
+              fontSize: MasanawaTokens.fontSize['xs'],
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
