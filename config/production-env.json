@@ -158,6 +158,41 @@
       "classification": "public",
       "requiredIn": [],
       "description": "Development-only Gemini model name used by the replaceable Alpha inference executor."
+    },
+    {
+      "name": "MASANAWA_BOOTSTRAP_ADMIN_DATABASE_URL",
+      "owner": "security/bootstrap",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Hosted Alpha initialization connection; creates a dedicated database and is never logged."
+    },
+    {
+      "name": "MASANAWA_DATABASE_PASSWORD",
+      "owner": "security/bootstrap",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Hosted Alpha PostgreSQL container bootstrap password; URL-safe value stored outside the repository."
+    },
+    {
+      "name": "MASANAWA_ALPHA_GATEWAY_DOMAIN",
+      "owner": "gateway/alpha",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Hosted Alpha HTTPS DNS hostname for the reverse proxy; distinct from the Gateway bind address."
+    },
+    {
+      "name": "MASANAWA_ALPHA_GATEWAY_URL",
+      "owner": "mobile/alpha",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "HTTPS Gateway origin embedded in a cloud-built debug APK."
+    },
+    {
+      "name": "MASANAWA_APK_DOWNLOAD_TOKEN",
+      "owner": "security/bootstrap",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Private bearer secret protecting Alpha APK downloads; never embedded in the APK."
     }
   ]
 }

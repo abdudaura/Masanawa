@@ -2,6 +2,25 @@
 
 This is the mandatory handoff entry point for every new Masanawa implementation session.
 
+## DigitalOcean hosting preparation checkpoint
+
+The user selected DigitalOcean over Railway/Render and cannot use their Windows
+machine. The hosted Alpha must be a separate canonically bootstrapped instance;
+never fabricate IDs or overwrite the user's local Alpha. DigitalOcean's September
+invoice shows $2.12 of trial credit offsetting Droplet charges. Remaining credit
+and expiry are unverified; the user selected **confirm credit first** before
+creating a server. No Masanawa Droplet or hosted database has been created.
+Existing Nasfam Droplets are outside scope. A public SSH key was registered as
+`codex-key-dark-vale-b3d4` (key ID 59808742); no server is attached to it.
+
+Read `infra/deployment/digitalocean/README.md` for the isolated PostgreSQL 18,
+canonical bootstrap, HTTPS proxy and cloud APK build recipe. The new R2 adapter
+signs private Relationship-scoped grants; live bucket provisioning and Gateway
+media custody/integration remain open. Locally, its signing/architecture tests
+passed (68 tests) and its build/typecheck passed. Hosting syntax checks passed;
+Docker deployment, PostgreSQL acceptance, Flutter and APK checks remain unrun.
+Task 072 remains current and this preparation does not close any task gate.
+
 ## Task 073 hardening / local verification checkpoint
 
 Branch: `task073-inference-hardening`, based on merged main `193ca46b2ed06ff1ced96dab7cb07ea1425345b0`.

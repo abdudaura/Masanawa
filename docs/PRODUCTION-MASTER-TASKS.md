@@ -12,6 +12,14 @@ Merged `main` satisfies Tasks **001-071**.
 
 **Current: Task 072 of 150 — Implement AgentRun identity, lineage and durable trace references.**
 
+Hosted Alpha preparation now targets DigitalOcean with PostgreSQL 18 and HTTPS,
+plus a cloud APK build path and a tested provider-neutral/private R2 signing adapter.
+No live hosted Gateway, bucket or APK exists at this checkpoint. The user chose to
+confirm remaining DigitalOcean trial credit before server creation. This does not
+advance Tasks 072-074 or replace their required acceptance/merged-main gates.
+See `infra/deployment/digitalocean/README.md` for evidence and open dependencies.
+
+
 Supplemental cross-cutting checkpoint PR #81 merged as
 `a41e1d944572f9511497032815b2d191967825f8`. It replaced the hard-coded mobile
 agent roster with admin-configured Character presentations, introduced independent

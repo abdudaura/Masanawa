@@ -1,0 +1,14 @@
+.git
+**/node_modules
+**/dist
+**/.dart_tool
+**/build
+**/__pycache__
+build-artifacts
+.env
+.env.*
+**/.env
+**/.env.*
+!**/.env.example
+*.log
+coverage

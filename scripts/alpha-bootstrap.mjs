@@ -1,3 +1,4 @@
+import { existsSync, writeFileSync } from "node:fs";
 import { randomBytes } from "node:crypto";
 import {
   createCanonicalId,
@@ -12,6 +13,13 @@ import {
   setPolicyRevision,
   withTransaction,
 } from "@masanawa/postgres";
+
+const args = process.argv.slice(2);
+if (args.length && (args.length !== 2 || args[0] !== "--output" || !args[1])) {
+  throw new Error("Supported option: --output <private-config-file>");
+}
+const outputFile = args[1];
+if (outputFile && existsSync(outputFile)) throw new Error("Bootstrap output already exists; refusing to seed another Alpha.");
 
 const connectionString =
   process.env.MASANAWA_DATABASE_URL ?? process.env.DATABASE_URL;
@@ -125,7 +133,17 @@ try {
     [characterId]: relationshipId,
   });
 
-  process.stdout.write(
+  if (outputFile) {
+    writeFileSync(outputFile, JSON.stringify({
+      MASANAWA_ALPHA_ENABLED: "true",
+      MASANAWA_ALPHA_DEV_TOKEN: devToken,
+      MASANAWA_ALPHA_TENANT_ID: tenantId,
+      MASANAWA_ALPHA_USER_ID: userId,
+      MASANAWA_ALPHA_POLICY_REVISION: policyRevision,
+      MASANAWA_ALPHA_RELATIONSHIPS_JSON: relationshipMap,
+    }, null, 2) + "\n", { mode: 0o600, flag: "wx" });
+    process.stdout.write(`Hosted Alpha config written privately. Seeded Character: ${displayName} / ${characterId}\n`);
+  } else process.stdout.write(
     [
       "",
       "Masanawa Alpha bootstrap complete.",

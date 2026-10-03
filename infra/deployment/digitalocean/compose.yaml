@@ -1,0 +1,55 @@
+name: masanawa-alpha
+services:
+  database:
+    image: postgres:18-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${MASANAWA_DATABASE_PASSWORD:?Private database password required}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U postgres -d postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  gateway:
+    build:
+      context: ../../..
+      dockerfile: infra/deployment/digitalocean/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      MASANAWA_BOOTSTRAP_ADMIN_DATABASE_URL: postgres://postgres:${MASANAWA_DATABASE_PASSWORD:?Private database password required}@database:5432/postgres
+      MASANAWA_ALPHA_DEV_TOKEN: ${MASANAWA_ALPHA_DEV_TOKEN:?Private Alpha token required}
+      MASANAWA_ALPHA_GEMINI_API_KEY: ${MASANAWA_ALPHA_GEMINI_API_KEY:?Provider key required}
+      MASANAWA_ALPHA_GEMINI_MODEL: ${MASANAWA_ALPHA_GEMINI_MODEL:?Explicit model required}
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: '3000'
+    healthcheck:
+      test: [CMD, node, -e, 'fetch("http://127.0.0.1:3000/readyz").then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))']
+      interval: 15s
+      timeout: 5s
+      start_period: 120s
+      retries: 5
+  https:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - gateway
+    environment:
+      MASANAWA_ALPHA_GATEWAY_DOMAIN: ${MASANAWA_ALPHA_GATEWAY_DOMAIN:?DNS hostname required}
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:
