@@ -25,22 +25,22 @@ export interface AgentAdminAuthorizer {
 
 export interface AgentAdminService {
   listPresentations(input: {
-    readonly authorizationHeader?: string;
+    readonly authorizationHeader: string | undefined;
   }): Promise<readonly AgentPresentation[]>;
 
   readSkillAssignment(input: {
-    readonly authorizationHeader?: string;
+    readonly authorizationHeader: string | undefined;
     readonly characterId: CharacterId;
   }): Promise<CharacterSkillAssignment | null>;
 
   putPresentation(input: {
-    readonly authorizationHeader?: string;
+    readonly authorizationHeader: string | undefined;
     readonly expectedRevision: number | null;
     readonly presentation: Omit<AgentPresentation, "tenantId">;
   }): Promise<AgentPresentation>;
 
   putSkillAssignment(input: {
-    readonly authorizationHeader?: string;
+    readonly authorizationHeader: string | undefined;
     readonly expectedRevision: number | null;
     readonly assignment: Omit<CharacterSkillAssignment, "tenantId">;
   }): Promise<CharacterSkillAssignment>;
