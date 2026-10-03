@@ -58,6 +58,10 @@ passed Foundation CI run 450: frozen install, strict root/workspace typechecks,
 340 tests in 73 files, and all production builds. All nine Skills cross-package
 acceptance tests ran against PostgreSQL 18 in an isolated database.
 
+The fixture ends its pools and waits for the isolated database's server-side
+connections to disappear before normal database deletion. Cleanup does not force
+terminate closing clients; a bounded timeout fails the gate if connections leak.
+
 PR #76 merged as `34aa6f9d19f9b0c92527fabe3a750052009398d2`. Push-triggered Foundation CI
 run 451 passed frozen install, strict types, all tests and production builds on that
 exact merged-main commit. Tasks 059–070 and Phase 6 are complete.

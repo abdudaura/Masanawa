@@ -133,9 +133,26 @@ describePostgres("Skills PostgreSQL 18 acceptance", () => {
     await runMigrations(pool, foundationMigrationRoots());
   });
   afterAll(async () => {
-    await pool?.end();
-    if (created) await admin.query(`DROP DATABASE ${databaseName} WITH (FORCE)`);
-    await admin?.end();
+    try {
+      await pool?.end();
+      if (created) {
+        // pg-pool may resolve end() after removing clients but before their socket
+        // shutdown reaches the server. Never FORCE-drop those closing clients.
+        const deadline = Date.now() + 5000;
+        for (;;) {
+          const active = await admin.query<{ count: number }>(
+            "SELECT count(*)::int AS count FROM pg_stat_activity WHERE datname = $1",
+            [databaseName],
+          );
+          if (active.rows[0]!.count === 0) break;
+          if (Date.now() >= deadline) throw new Error("Skills acceptance database connections did not close");
+          await new Promise(resolve => setTimeout(resolve, 20));
+        }
+        await admin.query(`DROP DATABASE ${databaseName}`);
+      }
+    } finally {
+      await admin?.end();
+    }
   });
 
   it("reconstructs identities, certification, exact dependencies and pins after reconnect", async () => {
