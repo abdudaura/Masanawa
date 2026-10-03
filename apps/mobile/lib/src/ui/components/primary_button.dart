@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../theme/unigeria_theme.dart';
-import '../../tokens/unigeria_tokens.dart';
+import '../../theme/masanawa_theme.dart';
+import '../../tokens/masanawa_tokens.dart';
 
 /// Tier-1 primary action button — brand filled, full-width by default,
 /// ≥44dp touch target, token-driven motion.
@@ -25,7 +25,7 @@ class PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final u = context.unigeria;
+    final u = context.masanawa;
     final canPress = enabled && !loading && onPressed != null;
     final button = Material(
       color: canPress ? u.brand : u.surfaceMuted,
