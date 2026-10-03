@@ -191,6 +191,7 @@ export async function startGatewayService(
     directoryAuthorizer ??= createAlphaDirectoryAuthorizer({
       token,
       tenantId: ids.tenantId,
+      relationshipIds,
     });
     conversationAuthorizer ??= createAlphaDevAuthorizer({
       config: {
