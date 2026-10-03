@@ -87,6 +87,17 @@ const AgentTurnBodySchema = Type.Object(
   { additionalProperties: false },
 );
 
+
+const AgentMediaTurnBodySchema = Type.Object(
+  {
+    characterId: Type.String(),
+    caption: Type.String({ maxLength: 32000 }),
+    mimeType: Type.String({ minLength: 3, maxLength: 160 }),
+    dataBase64: Type.String({ minLength: 1, maxLength: 12000000 }),
+  },
+  { additionalProperties: false },
+);
+
 const AgentTurnResponseSchema = Type.Object(
   {
     reply: Type.String(),
@@ -190,6 +201,35 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
           characterSessionId: request.params.characterSessionId,
           characterId: request.body.characterId,
           text: request.body.text,
+          requestId: parseCanonicalId(
+            "request",
+            request.headers["x-request-id"] as string,
+          ),
+          correlationId: parseCanonicalId(
+            "correlation",
+            request.headers["x-correlation-id"] as string,
+          ),
+        }),
+    );
+
+
+    app.post(
+      "/agent/sessions/:characterSessionId/media-turn",
+      {
+        schema: {
+          params: AgentSessionParamsSchema,
+          body: AgentMediaTurnBodySchema,
+          response: { 200: AgentTurnResponseSchema },
+        },
+      },
+      async (request) =>
+        conversation.mediaTurn({
+          authorizationHeader: request.headers.authorization,
+          characterSessionId: request.params.characterSessionId,
+          characterId: request.body.characterId,
+          caption: request.body.caption,
+          mimeType: request.body.mimeType,
+          dataBase64: request.body.dataBase64,
           requestId: parseCanonicalId(
             "request",
             request.headers["x-request-id"] as string,
