@@ -194,7 +194,6 @@ Task 070 implementation head `68e8e4002bc7fae8ea0e1a58b72b81e00454e294` passed F
 
 Task 072 is next. Preserve the canonical CharacterSession contract, Skills catalog/restore/pin ports and existing Tool/Provider authority. Real Android/OmniSIP qualification remains in the device tasks.
 
-Tasks 001-070 are merged complete.
 
 Task 065 implementation head `e17e444716c58460de1a780daafd3d6dd5cfdac0` passed
 Foundation CI run 427. PR #66 merged as

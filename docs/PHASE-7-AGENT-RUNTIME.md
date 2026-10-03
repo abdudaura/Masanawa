@@ -6,7 +6,7 @@ Current production task: **072 — AgentRun identity, lineage and durable trace 
 Phase 6 is closed. Task 070 PR #76 merged as
 `34aa6f9d19f9b0c92527fabe3a750052009398d2`; exact merged-main Foundation CI
 run 451 passed. `docs/PHASE-6-CLOSURE-AUDIT.md` is PASS.
-Task 071 starts from main `3f938bd8174e496b6ce3f4ec35d110d1c3aaa88b`
+Task 071 started from main `3f938bd8174e496b6ce3f4ec35d110d1c3aaa88b`
 (PR #78, exact merged-main Foundation CI run 455 passed).
 Task 071 is COMPLETE. Task 071 implementation head `333030618c0d060c6253dbe99fe548dc3b823d4c` passed Foundation CI run 458 (360 tests in 75 files, including ten real PostgreSQL 18 CharacterSession acceptance cases). PR #79 merged as `c2bdfb9f5a970d3d949cbd8692d9c59cb89670a0`; merged-main Foundation CI run 459 passed on that exact merge commit.
 The historical implementation branch is `task071-character-session`; future branches
