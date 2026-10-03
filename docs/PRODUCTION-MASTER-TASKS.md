@@ -142,6 +142,19 @@ Task 070 acceptance (satisfied on merged main):
 
 - [x] **071** Implement CharacterSession canonical runtime contract.
 - [ ] **072** Implement AgentRun identity, lineage and durable trace references.
+  - Implementation checkpoint on branch `task072-alpha1-agent-run`: canonical
+    AgentRun model/repository/migration, root/child lineage, immutable durable
+    request/correlation/Task/Workflow/Operation references, terminal
+    completion/failure, Relationship-scoped authorization and PostgreSQL
+    acceptance coverage are implemented.
+  - A bounded **Alpha 1** mobile vertical slice now exercises real
+    CharacterSession + AgentRun custody for text and media turns through a
+    replaceable Gemini development executor, optional Android-local TTS and a
+    debug Scenario Lab. This is continuous product testing infrastructure, not
+    completion of Tasks 073+.
+  - Task 072 remains unchecked until its required verification actually runs
+    and passes; GitHub-hosted Actions have recently failed before checkout
+    because no runner was allocated.
 - [ ] **073** Implement AgentStrategy interface and provider-neutral inference boundary.
 - [ ] **074** Implement Character-aware context compiler using Identity/Memory/World.
 - [ ] **075** Implement tool/skill selection orchestration.
