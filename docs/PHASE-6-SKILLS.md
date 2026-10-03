@@ -2,7 +2,7 @@
 
 Status: ACTIVE  
 Started: 2026-10-02  
-Active branch: `task067-close`
+Active branch: `task068-readiness-eligibility-revision-pinning`
 
 Phase 5 Tools and Providers is closed by PR #45, merge
 `0fe123e18a9163386c4ab10331139265ce26b64e`.
@@ -101,6 +101,10 @@ Skill classification is now an enforceable envelope over canonical Tool requirem
 ## Task 067 — rehearsal and certification evidence
 
 Canonical Skill certification now carries immutable rehearsal evidence rather than trusting summary counters alone. Each certification is bound to the exact `SkillVersionId`, an exact suite key/revision/content hash, certifier and certification time. Every rehearsal case has a stable case key, bounded category, pass/fail outcome, observation time and content hash/reference. Canonical certification fails closed unless case identities are unique, evidence predates certification, counters exactly match the evidence, every case passes, and both positive activation and negative-activation coverage are present. This is admission evidence only: it does not grant authority, select Providers, execute Tools or create Workflow state. Trace/run linkage remains Task 069.
+
+## Task 068 — readiness, eligibility and exact revision pinning
+
+Skill readiness is now compiled into an explicit exact-graph eligibility snapshot rather than inferred only when execution fails. Eligibility walks the exact immutable SkillVersion dependency graph and reports missing version/readiness or non-ready dependency blockers; model visibility and advertisement remain separate from execution eligibility. A Skill revision pin captures the exact root and dependency SkillVersion IDs, logical key/version values and content-derived definition hashes in dependency-first order. Resolving a pin verifies its own content hash and every exact definition, rejects graph drift, never substitutes a newer logical Skill revision, and rechecks current readiness rather than freezing operational state into the pin. Pins remain Provider-neutral and contain no authority, credential or workflow state.
 
 ## First canonical slice
 
