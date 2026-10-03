@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../ui/components/logo.dart';
 import '../../ui/components/masanawa_wordmark.dart';
-import '../../tokens/unigeria_tokens.dart';
-import '../../theme/unigeria_theme.dart';
+import '../../tokens/masanawa_tokens.dart';
+import '../../theme/masanawa_theme.dart';
 import '../../state/session_state.dart';
 
 /// Brand moment (≤1.5 s), then route to the chats or to login when signed out.
@@ -47,7 +47,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final u = context.unigeria;
+    final u = context.masanawa;
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Container(
