@@ -103,3 +103,37 @@ The operator surface uses separate concerns:
 Presentation and Skill assignment use independent revision compare-and-swap tokens.
 Every Ops call requires an injected operator/current-authority authorizer; no route
 derives authority from role labels, client input, or mere possession of a CharacterId.
+
+
+## Alpha 1 development conversation slice
+
+The development Gateway can expose a bounded vertical slice before the later
+production Gateway/Presence tasks are complete. It uses the same canonical
+CharacterSession and AgentRun stores; only the inference executor and dev
+authorization adapter are temporary.
+
+Development routes:
+
+- `POST /agent/sessions/open` with `{ "characterId": "character_..." }`;
+- `POST /agent/sessions/:characterSessionId/turn` with explicit
+  `characterId` plus text;
+- `POST /agent/sessions/:characterSessionId/media-turn` with explicit
+  `characterId`, caption, MIME type and bounded base64 bytes;
+- `POST /agent/sessions/:characterSessionId/close` with explicit
+  `characterId`.
+
+Each text/media turn creates one canonical AgentRun and returns its
+`agentRunId`. Request/correlation IDs come from Gateway correlation admission,
+not caller-provided IDs.
+
+Alpha media input is a development convenience, not the durable file/artifact
+architecture. The future file store will replace inline payload transport while
+keeping the chat/file reference model.
+
+Alpha inference is intentionally turn-local. It does not claim production
+Memory/context compilation, Skill execution, Workflows, live browsing, phone
+operations or realtime Presence. Those remain their numbered production tasks.
+
+The debug Scenario Lab is UI-only. Its Work/File/Approval/Call cards never
+represent executed backend work and must never be enabled as a production
+source of truth.
