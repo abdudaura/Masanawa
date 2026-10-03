@@ -167,3 +167,27 @@ starts with the production orchestration tasks rather than a fake Alpha tool lay
 - Android TTS is local presentation only; canonical reply text remains server truth.
 - Media payloads are capped for Alpha testing and are not the future durable file store.
 - No consequential Tool, phone, Workflow or external side effect is simulated as real.
+
+
+### Hosted Alpha Gateway
+
+For phone testing away from the development laptop, deploy the Gateway using
+`infra/deployment/gateway/Dockerfile` (or
+`infra/deployment/gateway/railway.toml`) against an isolated development
+PostgreSQL database.
+
+Run `pnpm alpha:prepare` once against that database, save the printed
+`MASANAWA_ALPHA_*` values in the hosting platform, then deploy Gateway.
+Do **not** rerun bootstrap as part of each deployment.
+
+Build the APK with the hosted HTTPS URL:
+
+```bash
+flutter build apk --debug \
+  --dart-define=AGENT_RUNTIME_ENABLED=true \
+  --dart-define=AGENT_BASE_URL=https://<dev-gateway-domain> \
+  --dart-define=ALPHA_DEV_ACCESS_TOKEN=<same-alpha-token> \
+  --dart-define=ALPHA_TTS_ENABLED=true
+```
+
+The provider/database secrets remain server-side.
