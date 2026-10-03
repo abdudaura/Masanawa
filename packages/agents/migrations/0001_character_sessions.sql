@@ -11,7 +11,7 @@ CREATE TABLE agents.character_sessions (
   character_version_id text NOT NULL,
   schema_version integer NOT NULL DEFAULT 1 CHECK (schema_version = 1),
   bindings jsonb NOT NULL CHECK (jsonb_typeof(bindings) = 'object'),
-  admission_hash text NOT NULL CHECK (admission_hash ~ '^sha256:[0-9a-f]{64}$'),
+  admission_hash text NOT NULL CHECK (admission_hash ~ '^[0-9a-f]{64}$'),
   state text NOT NULL DEFAULT 'active' CHECK (state IN ('active', 'closed')),
   revision bigint NOT NULL DEFAULT 1 CHECK (revision > 0 AND revision < 9007199254740991),
   created_at timestamptz NOT NULL,
