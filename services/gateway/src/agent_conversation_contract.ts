@@ -16,6 +16,11 @@ export interface AgentConversationAdmission {
   readonly characterVersionId: CharacterVersionId;
   readonly bindings: CharacterSessionBindings;
   readonly authority: AuthorityContext;
+  readonly presentation: {
+    readonly displayName: string;
+    readonly roleLabel: string;
+    readonly about: string;
+  };
 }
 
 export interface AgentConversationAuthorizer {
@@ -29,6 +34,9 @@ export interface AlphaConversationExecutor {
   reply(input: {
     readonly characterId: CharacterId;
     readonly characterVersionId: CharacterVersionId;
+    readonly displayName: string;
+    readonly roleLabel: string;
+    readonly about: string;
     readonly text: string;
   }): Promise<string>;
 }
