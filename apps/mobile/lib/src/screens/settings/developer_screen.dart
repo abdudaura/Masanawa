@@ -67,11 +67,13 @@ class _DeveloperScreenState extends ConsumerState<DeveloperScreen> {
     final chats = ref.watch(aiChatProvider);
     final session = ref.watch(sessionProvider);
     final token = session is SessionSignedIn ? session.tokens.accessToken : null;
-    final lastRun = chats.chatList
-        .map((thread) => thread.agentRunId)
-        .whereType<String>()
-        .cast<String?>()
-        .firstOrNull;
+    String? lastRun;
+    for (final thread in chats.chatList) {
+      if (thread.agentRunId != null) {
+        lastRun = thread.agentRunId;
+        break;
+      }
+    }
 
     return Scaffold(
       backgroundColor: u.surfaceBg,
