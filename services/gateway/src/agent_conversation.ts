@@ -4,19 +4,19 @@ import {
 } from "@masanawa/contracts";
 import type {
   AgentRunRepository,
+  AgentStrategy,
   CharacterSessionRepository,
 } from "@masanawa/agents";
 import type {
   AgentConversationAuthorizer,
   AgentConversationService,
-  AlphaConversationExecutor,
 } from "./agent_conversation_contract.js";
 
 export function createAgentConversationService(input: {
   readonly sessions: CharacterSessionRepository;
   readonly runs: AgentRunRepository;
   readonly authorizer: AgentConversationAuthorizer;
-  readonly executor: AlphaConversationExecutor;
+  readonly strategy: AgentStrategy;
   readonly sessionDurationMs: number;
 }): AgentConversationService {
   if (
@@ -95,17 +95,15 @@ export function createAgentConversationService(input: {
       });
 
       try {
-        const reply = (
-          await input.executor.reply({
-            characterId: admission.scope.characterId,
-            characterVersionId: session.characterVersionId,
-            displayName: admission.presentation.displayName,
-            roleLabel: admission.presentation.roleLabel,
-            about: admission.presentation.about,
-            text,
-          })
-        ).trim();
-        if (!reply) throw new Error("empty model reply");
+        const result = await input.strategy.execute({
+          agentRunId,
+          characterSessionId,
+          characterVersionId: session.characterVersionId,
+          presentation: admission.presentation,
+          input: Object.freeze({ kind: "text" as const, text }),
+        });
+        const reply = result.reply.trim();
+        if (!reply) throw new Error("empty strategy reply");
 
         await input.runs.finish({
           authority: admission.authority,
@@ -117,7 +115,7 @@ export function createAgentConversationService(input: {
         return Object.freeze({
           reply,
           agentRunId,
-          parts: Object.freeze([]),
+          parts: result.parts,
         });
       } catch (error) {
         await input.runs
@@ -127,7 +125,7 @@ export function createAgentConversationService(input: {
             agentRunId,
             outcome: {
               state: "failed",
-              failureCode: "alpha.executor_failed",
+              failureCode: "alpha.strategy_failed",
             },
           })
           .catch(() => undefined);
@@ -185,19 +183,20 @@ export function createAgentConversationService(input: {
       });
 
       try {
-        const reply = (
-          await input.executor.replyMedia({
-            characterId,
-            characterVersionId: session.characterVersionId,
-            displayName: admission.presentation.displayName,
-            roleLabel: admission.presentation.roleLabel,
-            about: admission.presentation.about,
+        const result = await input.strategy.execute({
+          agentRunId,
+          characterSessionId,
+          characterVersionId: session.characterVersionId,
+          presentation: admission.presentation,
+          input: Object.freeze({
+            kind: "media" as const,
             caption,
             mimeType,
             dataBase64: request.dataBase64,
-          })
-        ).trim();
-        if (!reply) throw new Error("empty model reply");
+          }),
+        });
+        const reply = result.reply.trim();
+        if (!reply) throw new Error("empty strategy reply");
 
         await input.runs.finish({
           authority: admission.authority,
@@ -209,7 +208,7 @@ export function createAgentConversationService(input: {
         return Object.freeze({
           reply,
           agentRunId,
-          parts: Object.freeze([]),
+          parts: result.parts,
         });
       } catch (error) {
         await input.runs
@@ -219,7 +218,7 @@ export function createAgentConversationService(input: {
             agentRunId,
             outcome: {
               state: "failed",
-              failureCode: "alpha.media_executor_failed",
+              failureCode: "alpha.media_strategy_failed",
             },
           })
           .catch(() => undefined);
