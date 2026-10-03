@@ -55,3 +55,52 @@ CREATE INDEX agent_runs_root_idx
 
 CREATE UNIQUE INDEX agent_runs_request_idx
   ON agents.agent_runs(tenant_id, request_id);
+
+
+CREATE OR REPLACE FUNCTION agents.reject_agent_run_identity_update()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF NEW.tenant_id IS DISTINCT FROM OLD.tenant_id
+     OR NEW.agent_run_id IS DISTINCT FROM OLD.agent_run_id
+     OR NEW.user_id IS DISTINCT FROM OLD.user_id
+     OR NEW.character_id IS DISTINCT FROM OLD.character_id
+     OR NEW.relationship_id IS DISTINCT FROM OLD.relationship_id
+     OR NEW.character_session_id IS DISTINCT FROM OLD.character_session_id
+     OR NEW.character_version_id IS DISTINCT FROM OLD.character_version_id
+     OR NEW.parent_agent_run_id IS DISTINCT FROM OLD.parent_agent_run_id
+     OR NEW.root_agent_run_id IS DISTINCT FROM OLD.root_agent_run_id
+     OR NEW.lineage_depth IS DISTINCT FROM OLD.lineage_depth
+     OR NEW.request_id IS DISTINCT FROM OLD.request_id
+     OR NEW.correlation_id IS DISTINCT FROM OLD.correlation_id
+     OR NEW.task_id IS DISTINCT FROM OLD.task_id
+     OR NEW.workflow_run_id IS DISTINCT FROM OLD.workflow_run_id
+     OR NEW.operation_ids IS DISTINCT FROM OLD.operation_ids
+     OR NEW.started_at IS DISTINCT FROM OLD.started_at THEN
+    RAISE EXCEPTION 'AgentRun identity, lineage and trace references are immutable'
+      USING ERRCODE = '23514';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER agent_runs_immutable_identity
+BEFORE UPDATE ON agents.agent_runs
+FOR EACH ROW
+EXECUTE FUNCTION agents.reject_agent_run_identity_update();
+
+CREATE OR REPLACE FUNCTION agents.reject_agent_run_delete()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RAISE EXCEPTION 'AgentRun history is immutable'
+    USING ERRCODE = '23514';
+END;
+$$;
+
+CREATE TRIGGER agent_runs_no_delete
+BEFORE DELETE ON agents.agent_runs
+FOR EACH ROW
+EXECUTE FUNCTION agents.reject_agent_run_delete();
