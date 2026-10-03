@@ -121,7 +121,38 @@ Task 069 implementation head `83ed96c693a307fb9fcebac7a593df680d8e1273` passed F
 
 Local focused verification passed 84 Skills/telemetry tests, 37 Contracts/Tools/Providers tests and strict Skills/telemetry typechecks. Phase 6 remains active: Task 070 must add canonical persistence/restart and cross-package cloud/device Provider-neutrality evidence before closure.
 
-## First canonical slice
+## Task 070 — persistence and cross-package acceptance implementation
+
+The Skills-owned repository port now persists the platform catalog through the
+PostgreSQL adapter. Logical identities and exact normalized certified version
+content are immutable; admission uses the existing dependency validation and an
+atomic transaction. Deferred SQL constraints reject missing dependencies, cycles
+and excess depth even if a maintenance caller bypasses the adapter. Definition
+fingerprints detect stored-content drift during reload.
+
+Readiness remains operational state with compare-and-swap revisions and monotonic
+observation times. A stale writer cannot re-enable a concurrently blocked version;
+hidden versions cannot advertise. Readiness deletion is prohibited so revisions
+cannot be reset. The existing service schema readiness check includes the Skills
+migration ledger and fails closed on missing or changed migration artifacts.
+
+Restart restoration validates complete catalogs without confusing the per-write
+512-version admission bound with a catalog size limit. The projection is disposable
+and must be refreshed for current readiness before resumed execution. It conveys
+no tenant grant, credential or execution authority.
+
+`tests/integration/skills-acceptance.test.ts` exercises the public Skills, Tools,
+Providers, Security and PostgreSQL boundaries in an isolated PostgreSQL 18 database.
+It proves certified exact-version recovery and pins, stale readiness/admission
+conflicts, SQL invariants, cloud/simulated Device Provider selection through one
+unchanged Skill/Tool definition, offline refusal, authority denial, durable replay
+and ambiguous device reconciliation without duplicate side effects. Simulated
+adapters establish contract neutrality; actual device integration belongs to its
+later roadmap phase.
+
+Task 070 remains open until implementation CI and exact merged-main CI pass.
+
+## First canonical slice (original foundation criteria)
 
 Goal: establish the production SkillVersion identity/catalog/governance boundary before
 parser/import/executor work.

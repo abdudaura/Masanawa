@@ -9,3 +9,4 @@ export * from "./identity/index.js";
 export * from "./memory/index.js";
 export * from "./world/index.js";
 export * from "./tools/operations.js";
+export * from "./skills/repository.js";

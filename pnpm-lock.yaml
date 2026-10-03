@@ -169,28 +169,27 @@ importers:
       '@masanawa/contracts':
         specifier: workspace:*
         version: link:packages/contracts
+      '@masanawa/postgres':
+        specifier: workspace:*
+        version: link:adapters/storage/postgres
       '@masanawa/providers':
         specifier: workspace:*
         version: link:packages/providers
       '@masanawa/security':
         specifier: workspace:*
         version: link:packages/security
+      '@masanawa/skills':
+        specifier: workspace:*
+        version: link:packages/skills
+      '@masanawa/tools':
+        specifier: workspace:*
+        version: link:packages/tools
       '@types/node':
         specifier: 24.13.6
         version: 24.13.6
       typescript:
         specifier: 7.0.2
         version: 7.0.2
-      vitest:
-        specifier: 5.0.3
-        version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
-
-  infra/runtime/node:
-    dependencies:
-      '@masanawa/contracts':
-        specifier: workspace:*
-        version: link:../../../packages/contracts
-    devDependencies:
       vitest:
         specifier: 5.0.3
         version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
@@ -215,6 +214,9 @@ importers:
       '@masanawa/security':
         specifier: workspace:*
         version: link:../../../packages/security
+      '@masanawa/skills':
+        specifier: workspace:*
+        version: link:../../../packages/skills
       '@masanawa/tools':
         specifier: workspace:*
         version: link:../../../packages/tools
@@ -282,6 +284,16 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
 
+  infra/runtime/node:
+    dependencies:
+      '@masanawa/contracts':
+        specifier: workspace:*
+        version: link:../../../packages/contracts
+    devDependencies:
+      vitest:
+        specifier: 5.0.3
+        version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
+
   packages/contracts:
     dependencies:
       uuid:
@@ -325,19 +337,6 @@ importers:
         specifier: 5.0.3
         version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
 
-  packages/world:
-    dependencies:
-      '@masanawa/contracts':
-        specifier: workspace:*
-        version: link:../contracts
-      '@masanawa/security':
-        specifier: workspace:*
-        version: link:../security
-    devDependencies:
-      vitest:
-        specifier: 5.0.3
-        version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
-
   packages/providers:
     dependencies:
       '@masanawa/contracts':
@@ -354,7 +353,7 @@ importers:
         specifier: 5.0.3
         version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
 
-  packages/tools:
+  packages/security:
     dependencies:
       '@masanawa/contracts':
         specifier: workspace:*
@@ -362,12 +361,6 @@ importers:
       '@masanawa/events':
         specifier: workspace:*
         version: link:../events
-      '@masanawa/providers':
-        specifier: workspace:*
-        version: link:../providers
-      '@masanawa/security':
-        specifier: workspace:*
-        version: link:../security
     devDependencies:
       vitest:
         specifier: 5.0.3
@@ -392,7 +385,17 @@ importers:
         specifier: 5.0.3
         version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
 
-  packages/security:
+  packages/telemetry:
+    dependencies:
+      '@masanawa/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+    devDependencies:
+      vitest:
+        specifier: 5.0.3
+        version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
+
+  packages/tools:
     dependencies:
       '@masanawa/contracts':
         specifier: workspace:*
@@ -400,16 +403,25 @@ importers:
       '@masanawa/events':
         specifier: workspace:*
         version: link:../events
+      '@masanawa/providers':
+        specifier: workspace:*
+        version: link:../providers
+      '@masanawa/security':
+        specifier: workspace:*
+        version: link:../security
     devDependencies:
       vitest:
         specifier: 5.0.3
         version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
 
-  packages/telemetry:
+  packages/world:
     dependencies:
       '@masanawa/contracts':
         specifier: workspace:*
         version: link:../contracts
+      '@masanawa/security':
+        specifier: workspace:*
+        version: link:../security
     devDependencies:
       vitest:
         specifier: 5.0.3

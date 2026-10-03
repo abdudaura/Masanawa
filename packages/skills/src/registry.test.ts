@@ -7,7 +7,8 @@ import {
   type SkillVersionId,
 } from "@masanawa/contracts";
 import type { SkillVersion } from "./model.js";
-import { createSkillRegistry } from "./registry.js";
+import { createSkillRegistry, restoreSkillRegistry } from "./registry.js";
+import type { SkillCatalogSnapshot } from "./repository.js";
 
 function skillVersion(
   options: {
@@ -271,5 +272,46 @@ describe("Skill registration conflicts", () => {
       "skill.registration_skill_key_conflict",
     );
     expect(registry.listVersions()).toEqual([]);
+  });
+});
+
+describe("canonical Skills restart projection", () => {
+  function snapshot(versions: readonly SkillVersion[]): SkillCatalogSnapshot {
+    return {
+      skills: [...new Map(versions.map(version => [version.skillId, {
+        skillId: version.skillId, key: version.key, createdAt: toInstant("2026-10-03T00:00:00Z"),
+      }])).values()],
+      versions,
+      readiness: [],
+    };
+  }
+
+  it("restores an unordered graph larger than the per-write admission bound", () => {
+    const child = skillVersion({ key: "restart.child" });
+    const root = skillVersion({ key: "restart.root", dependencies: [child.skillVersionId] });
+    const versions = [root, ...Array.from({ length: 512 }, (_, index) => skillVersion({ key: `restart.extra${index}` })), child];
+    const restored = restoreSkillRegistry(snapshot(versions));
+    expect(restored.listVersions()).toHaveLength(514);
+    expect(restored.getVersion(root.skillVersionId)?.dependencies).toEqual([child.skillVersionId]);
+    expect(restored.listAdvertised()).toEqual([]);
+    expect(errorCode(() => restored.resolveExecutionPlan(root.skillVersionId))).toBe("skill.version_not_ready");
+  });
+
+  it("rejects identity mismatch, duplicate versions and invalid or foreign readiness", () => {
+    const version = skillVersion();
+    const valid = snapshot([version]);
+    expect(errorCode(() => restoreSkillRegistry({ ...valid, skills: [] }))).toBe("skill.snapshot_identity_conflict");
+    expect(errorCode(() => restoreSkillRegistry({ ...valid, versions: [version, version] }))).toBe("skill.snapshot_identity_conflict");
+    const readiness = { skillVersionId: version.skillVersionId, state: "ready" as const, advertised: true, reasonCode: null, checkedAt: toInstant("2026-10-03T00:00:00Z") };
+    expect(errorCode(() => restoreSkillRegistry({ ...valid, readiness: [{ readiness, revision: 0 }] }))).toBe("skill.snapshot_readiness_invalid");
+    expect(errorCode(() => restoreSkillRegistry({ ...valid, readiness: [{ readiness: { ...readiness, skillVersionId: createCanonicalId("skill-version") }, revision: 1 }] }))).toBe("skill.readiness_not_registered");
+    expect(errorCode(() => restoreSkillRegistry({ ...valid, readiness: [{ readiness, revision: 1 }, { readiness, revision: 2 }] }))).toBe("skill.snapshot_readiness_invalid");
+  });
+
+  it("does not publish a registry containing a cycle or missing dependency", () => {
+    const child = skillVersion({ key: "restart.child" });
+    const parent = skillVersion({ key: "restart.parent", dependencies: [child.skillVersionId] });
+    expect(errorCode(() => restoreSkillRegistry(snapshot([parent])))).toBe("skill.dependency_missing");
+    expect(errorCode(() => restoreSkillRegistry(snapshot([parent, { ...child, dependencies: [parent.skillVersionId] }])))).toBe("skill.dependency_cycle");
   });
 });

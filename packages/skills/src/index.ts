@@ -1,6 +1,7 @@
 export * from "./certification.js";
 export * from "./model.js";
 export * from "./registry.js";
+export * from "./repository.js";
 export * from "./manifest.js";
 export * from "./requirements.js";
 export * from "./planning.js";
