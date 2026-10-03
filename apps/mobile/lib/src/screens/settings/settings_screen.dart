@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -116,6 +117,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 );
               },
             ),
+            if (kDebugMode) ...[
+              const Divider(height: 1),
+              ListTile(
+                leading: Icon(Icons.developer_mode_outlined, color: u.brand),
+                title: const Text('Developer'),
+                subtitle: const Text('Alpha runtime and AgentRun diagnostics'),
+                onTap: () => context.push('/developer'),
+              ),
+            ],
             const Divider(height: 1),
             ListTile(
               leading: Icon(Icons.info_outline, color: u.brand),
