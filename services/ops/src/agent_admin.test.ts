@@ -6,6 +6,7 @@ import type {
   CharacterSkillAssignmentRepository,
 } from "@masanawa/agents";
 import type { CharacterId, TenantId } from "@masanawa/contracts";
+import type { SkillRepository } from "@masanawa/skills";
 import {
   createAgentAdminService,
   type AgentAdminAuthorizer,
@@ -15,6 +16,22 @@ const tenantId =
   "tenant_00000000-0000-4000-8000-000000000001" as TenantId;
 const characterId =
   "character_00000000-0000-4000-8000-000000000002" as CharacterId;
+
+const skills: SkillRepository = {
+  async registerBatch() {
+    return [];
+  },
+  async readSnapshot() {
+    return {
+      skills: [],
+      versions: [],
+      readiness: [],
+    };
+  },
+  async putReadiness() {
+    throw new Error("not used");
+  },
+};
 
 function repositories() {
   let presentation: AgentPresentation | null = null;
@@ -69,7 +86,7 @@ describe("Ops agent administration", () => {
       },
     };
     const repos = repositories();
-    const service = createAgentAdminService({ ...repos, authorizer });
+    const service = createAgentAdminService({ ...repos, skills, authorizer });
 
     const presentation = await service.putPresentation({
       authorizationHeader: "Bearer operator",
@@ -129,6 +146,7 @@ describe("Ops agent administration", () => {
     const service = createAgentAdminService({
       presentations,
       skillAssignments: repos.skillAssignments,
+      skills,
       authorizer,
     });
 
