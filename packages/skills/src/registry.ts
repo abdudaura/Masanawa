@@ -7,12 +7,14 @@ import {
 import { fingerprintCanonicalJson } from "@masanawa/security";
 import {
   normalizeSkillVersionDefinition,
+  normalizeSkill,
   normalizeSkillKey,
   normalizeSkillReadiness,
   normalizeSkillVersion,
   type SkillVersion,
   type SkillReadiness,
 } from "./model.js";
+import type { SkillCatalogSnapshot } from "./repository.js";
 
 export interface SkillRegistration {
   readonly skill: SkillVersion;
@@ -102,6 +104,10 @@ function validateGraph(
     }
 
     visiting.add(skillVersionId);
+    if (visiting.size > maxDependencyDepth) {
+      throw skillError("skill.dependency_depth_exceeded", "validation",
+        "SkillVersion dependency graph exceeds the configured depth bound");
+    }
     let maxChildDepth = 0;
     for (const dependency of definition.dependencies) {
       maxChildDepth = Math.max(maxChildDepth, depth(dependency));
@@ -124,6 +130,57 @@ function validateGraph(
   for (const root of roots) {
     depth(root);
   }
+}
+
+/** Reconstruct a disposable projection from canonical storage, failing closed. */
+export function restoreSkillRegistry(
+  snapshot: SkillCatalogSnapshot,
+  options: SkillRegistryOptions = {},
+): SkillRegistry {
+  const registry = createSkillRegistry(options);
+  const identities = new Map<SkillId, string>();
+  const keys = new Set<string>();
+  for (const input of snapshot.skills) {
+    const skill = normalizeSkill(input);
+    if (identities.has(skill.skillId) || keys.has(skill.key)) {
+      throw skillError("skill.snapshot_identity_conflict", "validation", "Catalog identities are duplicated");
+    }
+    identities.set(skill.skillId, skill.key);
+    keys.add(skill.key);
+  }
+  const definitions = new Map<SkillVersionId, SkillVersion>();
+  for (const input of snapshot.versions) {
+    const version = normalizeSkillVersionDefinition(input);
+    if (definitions.has(version.skillVersionId) || identities.get(version.skillId) !== version.key) {
+      throw skillError("skill.snapshot_identity_conflict", "validation", "Catalog version identity is inconsistent");
+    }
+    definitions.set(version.skillVersionId, version);
+  }
+  validateGraph(definitions, [...definitions.keys()], options.maxDependencyDepth ?? 16);
+  const ordered: SkillVersion[] = [];
+  const visited = new Set<SkillVersionId>();
+  function visit(id: SkillVersionId): void {
+    if (visited.has(id)) return;
+    visited.add(id);
+    const version = definitions.get(id)!;
+    for (const dependency of version.dependencies) visit(dependency);
+    ordered.push(version);
+  }
+  for (const id of definitions.keys()) visit(id);
+  // Admission limits each write batch, rather than limiting total catalog size.
+  for (let offset = 0; offset < ordered.length; offset += 512) {
+    registry.registerBatch(ordered.slice(offset, offset + 512));
+  }
+  const observed = new Set<SkillVersionId>();
+  for (const record of snapshot.readiness) {
+    if (!Number.isSafeInteger(record.revision) || record.revision < 1 ||
+        observed.has(record.readiness.skillVersionId)) {
+      throw skillError("skill.snapshot_readiness_invalid", "validation", "Catalog readiness revision is invalid or duplicated");
+    }
+    observed.add(record.readiness.skillVersionId);
+    registry.setReadiness(record.readiness);
+  }
+  return registry;
 }
 
 export function createSkillRegistry(

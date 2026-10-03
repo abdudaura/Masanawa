@@ -21,6 +21,7 @@
     "@masanawa/memory": "workspace:*",
     "@masanawa/providers": "workspace:*",
     "@masanawa/security": "workspace:*",
+    "@masanawa/skills": "workspace:*",
     "@masanawa/tools": "workspace:*",
     "@masanawa/world": "workspace:*",
     "pg": "8.23.0"

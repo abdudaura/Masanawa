@@ -40,6 +40,10 @@ export function foundationMigrationRoots(): readonly MigrationRoot[] {
       owner: "security",
       directory: packageMigrationDirectory("@masanawa/security"),
     }),
+    Object.freeze({
+      owner: "skills",
+      directory: packageMigrationDirectory("@masanawa/skills"),
+    }),
   ]);
 }
 
