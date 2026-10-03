@@ -5,6 +5,7 @@ CREATE TABLE agents.agent_presentations (
   character_id text NOT NULL,
   character_version_id text NOT NULL,
   schema_version integer NOT NULL DEFAULT 1 CHECK (schema_version = 1),
+  display_name text NOT NULL CHECK (length(trim(display_name)) BETWEEN 1 AND 120),
   role_label text NOT NULL CHECK (length(trim(role_label)) BETWEEN 1 AND 120),
   about text NOT NULL DEFAULT '' CHECK (length(about) <= 500),
   greeting text CHECK (greeting IS NULL OR length(greeting) <= 1000),
