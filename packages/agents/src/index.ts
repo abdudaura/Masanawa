@@ -7,3 +7,5 @@ export * from "./run-repository.js";
 export * from "./strategy.js";
 export * from "./inference.js";
 export * from "./context.js";
+
+export * from "./selection.js";

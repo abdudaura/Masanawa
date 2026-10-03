@@ -13,3 +13,5 @@ export * from "./eligibility.js";
 export * from "./trace.js";
 
 export * from "./failure.js";
+
+export * from "./selection.js";

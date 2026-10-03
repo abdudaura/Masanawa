@@ -652,3 +652,35 @@ The runtime verification command now includes Memory and World owner unit tests.
 relevant typechecks. Full Vitest passed 388 tests with 77 database-dependent skips.
 Task 072 remains current; PostgreSQL acceptance, merged-main CI and mobile gates
 remain open. No deployment or APK was built by this checkpoint.
+
+
+## Task 075 run-bound Skill/Tool selection preparation (not complete)
+
+Agents now prepares a transient selection through Skills' narrow selection source.
+It requires explicit agents.skill.select authority, matching Character assignment
+and selected session SkillVersion, an active session and running bound AgentRun.
+Assignment/session references constrain selection but never grant capabilities.
+
+Skills owns exact dependency revision pins, model advertisement and current
+readiness. Every dependency's authority requirements are checked. Tools remain
+in the one Tool registry; selection resolves only declared references and exact
+ToolVersion IDs, honors declared pins, rejects duplicate/extra selections and
+requires explicit choices for provider-neutral capability references. Graphs and
+selected references are bounded to 64. Agents imports Skills, not Tools directly.
+
+After asynchronous current-policy/revocation checks, Agents rechecks time/access
+and Skills eligibility. Changed graph pins or expired sessions deny preparation.
+Confirmation requirements are metadata only: no approval, Tool invocation, provider
+choice, side effect, receipt or durable execution truth is produced. Gateway Alpha
+has not been wired to this source and is not granted the new selection capability.
+Consumers must supply owner-admitted durable snapshots and current assignments;
+this helper does not replace durable admission or Task 080 stale-result fencing.
+
+Verification: 21 new selection tests cover graph readiness, exact pin enforcement,
+undeclared/duplicate Tool references, explicit Skill/Tool capabilities, assignment
+and session binding, revocation, expiry and graph changes. The expanded runtime
+gate passed 316 tests plus Gateway/Ops builds/typechecks; full Vitest passed
+409 tests with 77 database-dependent skips. Task 072 remains current; Tasks
+073–075 remain open. Latest pre-checkpoint GitHub Actions on 590deea had zero
+steps and runner_id=0 for both Foundation CI and Mobile Build. No PostgreSQL
+acceptance, hosted inference or APK/device verification is claimed.

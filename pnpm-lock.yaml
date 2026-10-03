@@ -336,6 +336,9 @@ importers:
       '@masanawa/security':
         specifier: workspace:*
         version: link:../security
+      '@masanawa/skills':
+        specifier: workspace:*
+        version: link:../skills
       '@masanawa/world':
         specifier: workspace:*
         version: link:../world

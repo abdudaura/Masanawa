@@ -184,6 +184,11 @@ Task 070 acceptance (satisfied on merged main):
     wired with bounded evidence and post-retrieval authority checks. Full PostgreSQL
     and mobile acceptance remain open; Task 074 is not complete.
 - [ ] **075** Implement tool/skill selection orchestration.
+  - Groundwork on `task073-inference-hardening` prepares exact Skill dependency pins
+    and declared Tool selections, bound to Character assignments, session selection
+    and running AgentRun snapshots. Current authority and eligibility are rechecked.
+    Live Gateway strategy composition, durable admission and execution integration
+    remain open; this selection preparation does not complete Task 075.
 - [ ] **076** Implement run budgets, token/cost/time/tool guards.
 - [ ] **077** Implement foreground conversational strategy.
 - [ ] **078** Implement research/multi-step strategy.
