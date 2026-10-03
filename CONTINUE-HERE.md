@@ -43,6 +43,23 @@ of architectural feature selection.
 Task 071 implementation head `333030618c0d060c6253dbe99fe548dc3b823d4c` passed Foundation CI run 458 (360 tests in 75 files, including ten real PostgreSQL 18 CharacterSession acceptance cases). PR #79 merged as `c2bdfb9f5a970d3d949cbd8692d9c59cb89670a0`; merged-main Foundation CI run 459 passed on that exact merge commit.
 Current production task: **072 — AgentRun identity, lineage and durable trace references**.
 
+Supplemental product-surface checkpoint merged on main as
+`a41e1d944572f9511497032815b2d191967825f8` (PR #81):
+- the Flutter user app no longer contains a hard-coded production agent roster;
+- mobile conversations and directory entries are keyed by canonical CharacterId;
+- admin-configured AgentPresentation is separate from CharacterSkillAssignment;
+- Ops now has separate presentation/Skill administration contracts and UI;
+- Gateway has an authorized mobile agent-directory projection;
+- structured chat result parts cover durable files/artifacts, work progress,
+  approvals, Operations and call results;
+- the mobile shell is explicitly voice-first and uses Masanawa naming rather than
+  retired UNigeria app/theme identifiers.
+
+This checkpoint does **not** complete or supersede Task 072 or later Gateway/Presence
+runtime tasks. GitHub Actions for PR #81 could not start a runner (zero steps,
+`runner_id=0`), so the merge records that infrastructure limitation rather than
+claiming a verified CI pass.
+
 Task 070 implementation head `68e8e4002bc7fae8ea0e1a58b72b81e00454e294` passed Foundation CI run 450 (340 tests in 73 files, including nine PostgreSQL 18 Skills acceptance cases). PR #76 merged as `34aa6f9d19f9b0c92527fabe3a750052009398d2`; merged-main Foundation CI run 451 passed on that exact merge commit. Phase 6 is closed; `docs/PHASE-6-CLOSURE-AUDIT.md` is PASS.
 
 Active phase record: `docs/PHASE-7-AGENT-RUNTIME.md`.
