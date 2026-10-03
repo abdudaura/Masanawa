@@ -390,13 +390,7 @@ export function createPostgresAgentRunRepository(
           await admit(client, request, "read", admissionTrace(request));
           const row = await loadRun(client, request, false);
           const run = rowToRun(row);
-          assertAgentRunAccess(
-            request.authority,
-            request.scope,
-            "read",
-            run.trace,
-            await clock(client),
-          );
+          await admit(client, request, "read", run.trace);
           return run;
         },
         { isolation: "repeatable read", readOnly: true },
@@ -416,13 +410,7 @@ export function createPostgresAgentRunRepository(
       return withTransaction(pool, async (client) => {
         await admit(client, request, "finish", admissionTrace(request));
         const current = rowToRun(await loadRun(client, request, true));
-        assertAgentRunAccess(
-          request.authority,
-          request.scope,
-          "finish",
-          current.trace,
-          await clock(client),
-        );
+        await admit(client, request, "finish", current.trace);
         if (current.state !== "running") {
           if (
             current.state === outcome.state &&
@@ -455,13 +443,7 @@ export function createPostgresAgentRunRepository(
         );
         if (!result.rows[0]) throw conflict();
 
-        assertAgentRunAccess(
-          request.authority,
-          request.scope,
-          "finish",
-          current.trace,
-          await clock(client),
-        );
+        await admit(client, request, "finish", current.trace);
         return rowToRun(result.rows[0]);
       });
     },
