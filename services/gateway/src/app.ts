@@ -216,6 +216,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     app.post(
       "/agent/sessions/:characterSessionId/media-turn",
       {
+        bodyLimit: 13_000_000,
         schema: {
           params: AgentSessionParamsSchema,
           body: AgentMediaTurnBodySchema,
