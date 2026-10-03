@@ -333,4 +333,63 @@ describePostgres("AgentRun PostgreSQL 18 acceptance", () => {
       }),
     ).rejects.toMatchObject({ code: "agents.run_access_denied" });
   });
+  it("reconciles exact replay after session closure and rejects changed/request-reused admissions", async () => {
+    const f = await fixture();
+    const runs = createPostgresAgentRunRepository(pool);
+    const sessions = createPostgresCharacterSessionRepository(pool, {
+      maxDurationMs: sessionMaxMs,
+    });
+    const agentRunId = createCanonicalId("agent-run");
+    const trace = {
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+      taskId: null,
+      workflowRunId: null,
+      operationIds: [],
+    } as const;
+    const input = {
+      authority: f.authority,
+      scope: f.scope,
+      agentRunId,
+      characterSessionId: f.sessionId,
+      characterVersionId: f.characterVersionId,
+      lineage: {
+        parentAgentRunId: null,
+        rootAgentRunId: agentRunId,
+        depth: 0,
+      },
+      trace,
+    } as const;
+
+    const first = await runs.create(input);
+    await sessions.close({
+      authority: f.authority,
+      scope: f.scope,
+      characterSessionId: f.sessionId,
+      expectedRevision: 1,
+    });
+
+    expect(await runs.create(input)).toEqual(first);
+
+    await expect(
+      runs.create({
+        ...input,
+        characterVersionId: createCanonicalId("character-version"),
+      }),
+    ).rejects.toMatchObject({ code: "agents.run_conflict" });
+
+    const secondRunId = createCanonicalId("agent-run");
+    await expect(
+      runs.create({
+        ...input,
+        agentRunId: secondRunId,
+        lineage: {
+          parentAgentRunId: null,
+          rootAgentRunId: secondRunId,
+          depth: 0,
+        },
+      }),
+    ).rejects.toMatchObject({ code: "agents.run_conflict" });
+  });
+
 });
