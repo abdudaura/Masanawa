@@ -6,7 +6,6 @@ import {
 } from "@masanawa/contracts";
 import {
   assertAgentRunAccess,
-  isCharacterSessionOpen,
   normalizeAgentRun,
   normalizeAgentRunLineage,
   normalizeAgentRunScope,
@@ -195,28 +194,11 @@ async function loadSession(
     });
   }
 
-  const session = {
-    schemaVersion: row.schema_version,
-    tenantId: row.tenant_id,
-    characterSessionId: row.character_session_id,
-    userId: row.user_id,
-    characterId: row.character_id,
-    relationshipId: row.relationship_id,
-    characterVersionId: row.character_version_id,
-    bindings: row.bindings as never,
-    state: row.state,
-    revision: Number(row.revision),
-    createdAt: toInstant(row.created_at),
-    updatedAt: toInstant(row.updated_at),
-    expiresAt: toInstant(row.expires_at),
-    closedAt: row.closed_at === null ? null : toInstant(row.closed_at),
-    closeReason: row.close_reason,
-    successorSessionId: row.successor_session_id,
-  } as const;
-
+  const at = await clock(client);
   if (
     row.character_version_id !== input.characterVersionId ||
-    !isCharacterSessionOpen(session, await clock(client))
+    row.state !== "active" ||
+    toInstant(row.expires_at) <= at
   ) {
     throw conflict("CharacterSession cannot admit this AgentRun");
   }
