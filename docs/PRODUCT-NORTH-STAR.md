@@ -277,6 +277,20 @@ The target product is complete only when an agent can combine the following capa
 - approvals;
 - recovery controls.
 
+## 5.1 Mobile user experience
+
+The primary mobile product is a voice-first conversation surface over configured
+Characters. The client does not ship a fixed agent roster. Administrators choose which
+Characters appear and their presentation metadata; Character identity remains separate
+from Skill assignment, so any permitted Skill can be assigned or removed without
+recreating or renaming the Character.
+
+Files, artifacts, long-running work, approvals, calls and receipts return into the same
+conversation as typed result parts. Ordinary users should not need top-level Skills,
+Tools, Workflows, Runs, Files or Devices dashboards to get work done.
+
+See `docs/MOBILE-AGENT-EXPERIENCE.md`.
+
 ## 6. The Agent Loop
 
 The product should converge on one conceptual loop:
