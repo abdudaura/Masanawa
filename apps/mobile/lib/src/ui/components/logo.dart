@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../theme/unigeria_theme.dart';
+import '../../theme/masanawa_theme.dart';
 
 /// Brand mark per BRAND-KIT §1: rounded gradient tile + white chat bubble
 /// (tail bottom-left) holding a gradient map pin — "community conversation
@@ -22,7 +22,7 @@ class UnigeriaMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final u = context.unigeria;
+    final u = context.masanawa;
     return Semantics(
       label: 'Masanawa',
       child: Container(
@@ -135,7 +135,7 @@ class UnigeriaLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final u = context.unigeria;
+    final u = context.masanawa;
     final wordmarkColor = dark ? Colors.white : u.brand;
     return Semantics(
       label: 'Masanawa',
