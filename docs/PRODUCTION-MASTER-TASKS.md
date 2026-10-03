@@ -8,9 +8,11 @@ Masanawa production is tracked as **150 numbered milestone tasks**. Tasks are no
 
 ## Current position
 
-Merged `main` satisfies Tasks **001-070**.
+Merged `main` satisfies Tasks **001-071**.
 
-**Current: Task 071 of 150 — Implement CharacterSession canonical runtime contract.**
+**Current: Task 072 of 150 — Implement AgentRun identity, lineage and durable trace references.**
+
+Task 071 implementation head `333030618c0d060c6253dbe99fe548dc3b823d4c` passed Foundation CI run 458 (360 tests in 75 files, including ten real PostgreSQL 18 CharacterSession acceptance cases). PR #79 merged as `c2bdfb9f5a970d3d949cbd8692d9c59cb89670a0`; merged-main Foundation CI run 459 passed on that exact merge commit.
 
 Task 070 implementation head `68e8e4002bc7fae8ea0e1a58b72b81e00454e294` passed Foundation CI run 450 (340 tests in 73 files, including nine PostgreSQL 18 Skills acceptance cases). PR #76 merged as `34aa6f9d19f9b0c92527fabe3a750052009398d2`; merged-main Foundation CI run 451 passed on that exact merge commit. Phase 6 is closed; `docs/PHASE-6-CLOSURE-AUDIT.md` is PASS.
 
@@ -129,7 +131,7 @@ Task 070 acceptance (satisfied on merged main):
 
 ## Tasks 071-082 — Agent runtime
 
-- [ ] **071** Implement CharacterSession canonical runtime contract.
+- [x] **071** Implement CharacterSession canonical runtime contract.
 - [ ] **072** Implement AgentRun identity, lineage and durable trace references.
 - [ ] **073** Implement AgentStrategy interface and provider-neutral inference boundary.
 - [ ] **074** Implement Character-aware context compiler using Identity/Memory/World.
