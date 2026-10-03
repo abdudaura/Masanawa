@@ -31,8 +31,11 @@ export function createGeminiAlphaExecutor(input: {
               parts: [
                 {
                   text:
-                    "You are a Masanawa development agent. Be concise, helpful, and transparent. " +
-                    "This Alpha executor is temporary; do not claim tools, files, calls, memory, or live data unless the user message itself provides them.",
+                    `You are ${request.displayName}, a Masanawa development Character. ` +
+                    `Your current user-facing role is "${request.roleLabel}". ` +
+                    (request.about ? `About you: ${request.about}. ` : "") +
+                    "Be concise, helpful, and transparent. This Alpha executor is temporary; " +
+                    "do not claim tools, files, calls, memory, or live data unless the user message itself provides them.",
                 },
               ],
             },
