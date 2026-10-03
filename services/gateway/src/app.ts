@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import type { Instant } from "@masanawa/contracts";
 import { nowInstant } from "@masanawa/contracts";
+import type { AgentDirectoryService } from "./agent_directory.js";
 import {
   admitTelemetryCorrelation,
   injectCorrelationHeaders,
@@ -17,6 +18,7 @@ export interface GatewayAppOptions {
   readonly readinessChecks?: readonly ReadinessCheck[];
   readonly now?: () => Instant;
   readonly isDraining?: () => boolean;
+  readonly agentDirectory?: AgentDirectoryService;
 }
 
 const HealthResponseSchema = Type.Object(
@@ -33,6 +35,28 @@ const ReadinessCheckSchema = Type.Object(
     name: Type.String(),
     ready: Type.Boolean(),
     reason: Type.Optional(Type.String()),
+  },
+  { additionalProperties: false },
+);
+
+
+const AgentDirectoryEntrySchema = Type.Object(
+  {
+    characterId: Type.String(),
+    characterVersionId: Type.String(),
+    displayName: Type.String(),
+    roleLabel: Type.String(),
+    about: Type.String(),
+    greeting: Type.Union([Type.String(), Type.Null()]),
+    presence: Type.Literal("available"),
+    activeWorkCount: Type.Literal(0),
+  },
+  { additionalProperties: false },
+);
+
+const AgentDirectoryResponseSchema = Type.Object(
+  {
+    agents: Type.Array(AgentDirectoryEntrySchema),
   },
   { additionalProperties: false },
 );
@@ -78,6 +102,24 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     request.headers["x-correlation-id"] = headers["x-correlation-id"];
     reply.headers(headers);
   });
+
+
+  if (options.agentDirectory) {
+    const directory = options.agentDirectory;
+    app.get(
+      "/agent/directory",
+      {
+        schema: {
+          response: { 200: AgentDirectoryResponseSchema },
+        },
+      },
+      async (request) => ({
+        agents: await directory.list({
+          authorizationHeader: request.headers.authorization,
+        }),
+      }),
+    );
+  }
 
   app.get(
     "/healthz",
