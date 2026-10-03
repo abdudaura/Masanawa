@@ -80,7 +80,10 @@ const AgentSessionParamsSchema = Type.Object(
 );
 
 const AgentTurnBodySchema = Type.Object(
-  { text: Type.String({ minLength: 1, maxLength: 32000 }) },
+  {
+    characterId: Type.String(),
+    text: Type.String({ minLength: 1, maxLength: 32000 }),
+  },
   { additionalProperties: false },
 );
 
@@ -185,6 +188,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
         conversation.turn({
           authorizationHeader: request.headers.authorization,
           characterSessionId: request.params.characterSessionId,
+          characterId: request.body.characterId,
           text: request.body.text,
           requestId: parseCanonicalId(
             "request",
@@ -202,6 +206,10 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       {
         schema: {
           params: AgentSessionParamsSchema,
+          body: Type.Object(
+            { characterId: Type.String() },
+            { additionalProperties: false },
+          ),
           response: {
             200: Type.Object(
               { closed: Type.Literal(true) },
@@ -214,6 +222,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
         await conversation.close({
           authorizationHeader: request.headers.authorization,
           characterSessionId: request.params.characterSessionId,
+          characterId: request.body.characterId,
         });
         return { closed: true as const };
       },
