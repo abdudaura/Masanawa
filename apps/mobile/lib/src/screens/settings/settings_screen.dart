@@ -40,7 +40,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           'Settings & Profile',
           style: TextStyle(
             color: u.textPrimary,
-            fontSize: UnigeriaTokens.fontSize['xl'],
+            fontSize: MasanawaTokens.fontSize['xl'],
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -53,7 +53,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             decoration: BoxDecoration(
               color: u.surfaceCard,
               borderRadius:
-                  BorderRadius.circular(UnigeriaTokens.radius['2xl']!),
+                  BorderRadius.circular(MasanawaTokens.radius['2xl']!),
               border: Border.all(color: u.structuralBorder),
             ),
             child: Row(
@@ -170,7 +170,7 @@ class _Card extends StatelessWidget {
       color: u.surfaceCard,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(UnigeriaTokens.radius['xl']!),
+        borderRadius: BorderRadius.circular(MasanawaTokens.radius['xl']!),
         side: BorderSide(color: u.structuralBorder),
       ),
       child: Column(children: children),
