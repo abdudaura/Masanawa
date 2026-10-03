@@ -119,8 +119,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const Divider(height: 1),
             ListTile(
               leading: Icon(Icons.info_outline, color: u.brand),
-              title: const Text('About Masanawa Agents'),
-              subtitle: const Text('Chat with your Masana — Nigerian AI helpers'),
+              title: const Text('About Masanawa'),
+              subtitle: const Text('Voice-first conversations with your configured AI agents'),
               onTap: () => showAboutDialog(
                 context: context,
                 applicationName: 'Masanawa Agents',
@@ -149,7 +149,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SizedBox(height: 24),
           Center(
             child: Text(
-              'Masanawa Agents · v1.0.0',
+              'Masanawa · v1.0.0',
               style: TextStyle(color: u.textMuted, fontSize: 11),
             ),
           ),
