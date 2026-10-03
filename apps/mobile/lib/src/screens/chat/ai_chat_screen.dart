@@ -724,7 +724,7 @@ class _ChatBubble extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (attachment != null) ...[
-              _AttachmentView(attachment: attachment, isUser: isUser),
+              _AttachmentView(attachment: attachment),
               if (message.text.isNotEmpty) const SizedBox(height: 6),
             ],
             if (message.text.isNotEmpty)
@@ -761,10 +761,9 @@ class _ChatBubble extends StatelessWidget {
 }
 
 class _AttachmentView extends StatelessWidget {
-  const _AttachmentView({required this.attachment, required this.isUser});
+  const _AttachmentView({required this.attachment});
 
   final ChatAttachment attachment;
-  final bool isUser;
 
   @override
   Widget build(BuildContext context) {
