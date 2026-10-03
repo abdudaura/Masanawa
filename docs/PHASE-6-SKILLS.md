@@ -2,7 +2,7 @@
 
 Status: ACTIVE  
 Started: 2026-10-02  
-Active branch: `task066-risk-capability-classification`
+Active branch: `task067-rehearsal-certification-evidence`
 
 Phase 5 Tools and Providers is closed by PR #45, merge
 `0fe123e18a9163386c4ab10331139265ce26b64e`.
@@ -97,6 +97,10 @@ Canonical Skill provenance now preserves exact source-system/reference/revision/
 ## Task 066 — risk and capability classification
 
 Skill classification is now an enforceable envelope over canonical Tool requirements, not a parallel risk taxonomy. The classifier publishes immutable provided/required Tool/required authority capability sets together with Skill risk, side-effect and sensitivity classifications. Every ToolVersion that a declared Skill Tool reference may resolve to must fit inside that envelope: Tool risk cannot exceed Skill risk, Tool side effects cannot exceed the Skill side-effect class, Tool sensitivity cannot exceed Skill sensitivity, and every Tool authority capability must be explicitly surfaced by the Skill. Classification remains Provider-neutral and records exact candidate ToolVersion identities only.
+
+## Task 067 — rehearsal and certification evidence
+
+Canonical Skill certification now carries immutable rehearsal evidence rather than trusting summary counters alone. Each certification is bound to the exact `SkillVersionId`, an exact suite key/revision/content hash, certifier and certification time. Every rehearsal case has a stable case key, bounded category, pass/fail outcome, observation time and content hash/reference. Canonical certification fails closed unless case identities are unique, evidence predates certification, counters exactly match the evidence, every case passes, and both positive activation and negative-activation coverage are present. This is admission evidence only: it does not grant authority, select Providers, execute Tools or create Workflow state. Trace/run linkage remains Task 069.
 
 ## First canonical slice
 
