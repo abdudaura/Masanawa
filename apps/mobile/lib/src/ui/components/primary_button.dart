@@ -29,12 +29,12 @@ class PrimaryButton extends StatelessWidget {
     final canPress = enabled && !loading && onPressed != null;
     final button = Material(
       color: canPress ? u.brand : u.surfaceMuted,
-      borderRadius: BorderRadius.circular(UnigeriaTokens.radius['lg']!),
+      borderRadius: BorderRadius.circular(MasanawaTokens.radius['lg']!),
       child: InkWell(
         onTap: canPress ? onPressed : null,
-        borderRadius: BorderRadius.circular(UnigeriaTokens.radius['lg']!),
+        borderRadius: BorderRadius.circular(MasanawaTokens.radius['lg']!),
         child: SizedBox(
-          height: UnigeriaTokens.touchTargetMin + 4,
+          height: MasanawaTokens.touchTargetMin + 4,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Row(
@@ -59,7 +59,7 @@ class PrimaryButton extends StatelessWidget {
                   label,
                   style: TextStyle(
                     color: canPress ? Colors.white : u.textMuted,
-                    fontSize: UnigeriaTokens.fontSize['md'],
+                    fontSize: MasanawaTokens.fontSize['md'],
                     fontWeight: FontWeight.w600,
                   ),
                 ),
