@@ -7,7 +7,9 @@ export function createPostgresCharacterVersionReferenceReader(
   pool: Pool,
 ): CharacterVersionReferenceReader {
   return Object.freeze({
-    async assertCharacterVersion(input): Promise<void> {
+    async assertCharacterVersion(
+      input: Parameters<CharacterVersionReferenceReader["assertCharacterVersion"]>[0],
+    ): Promise<void> {
       await withTransaction(
         pool,
         async (client) => {
