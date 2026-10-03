@@ -57,6 +57,26 @@ const AgentPresentationSchema = Type.Object(
   { additionalProperties: false },
 );
 
+
+const AgentAdminSkillOptionSchema = Type.Object(
+  {
+    skillVersionId: Type.String(),
+    key: Type.String(),
+    version: Type.String(),
+    displayName: Type.String(),
+    description: Type.String(),
+    readiness: Type.Union([
+      Type.Literal("ready"),
+      Type.Literal("degraded"),
+      Type.Literal("blocked"),
+      Type.Literal("disabled"),
+      Type.Literal("unknown"),
+    ]),
+    advertised: Type.Boolean(),
+  },
+  { additionalProperties: false },
+);
+
 const AgentSkillAssignmentSchema = Type.Object(
   {
     schemaVersion: Type.Literal(1),
@@ -196,6 +216,20 @@ export function createOpsApp(options: OpsAppOptions = {}) {
           },
         });
       },
+    );
+
+
+    app.get(
+      "/v1/skills",
+      {
+        schema: {
+          response: { 200: Type.Array(AgentAdminSkillOptionSchema) },
+        },
+      },
+      async (request) =>
+        agentAdmin.listSkills({
+          authorizationHeader: request.headers.authorization,
+        }),
     );
 
     app.get(
