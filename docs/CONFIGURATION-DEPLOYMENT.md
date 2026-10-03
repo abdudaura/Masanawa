@@ -95,3 +95,43 @@ Any new production environment variable requires:
 
 A new deployable service or a change to canonical service topology requires architecture
 documentation and, when ownership changes, an ADR.
+
+
+## 9. Alpha 1 hosted development deployment
+
+The mobile Alpha runtime can be hosted before the full production platform is
+complete, but it remains a development deployment.
+
+Gateway container contract:
+- `infra/deployment/gateway/Dockerfile`;
+- Railway service config: `infra/deployment/gateway/railway.toml`;
+- build scope: `@masanawa/gateway-service` plus its workspace dependencies;
+- health path: `/healthz`;
+- readiness path remains `/readyz`.
+
+Use `config/alpha-development.env.example` as the variable-name template. It
+contains placeholders only; no credential or generated canonical ID belongs in
+source control.
+
+### One-time bootstrap, repeated deploys
+
+Run `pnpm alpha:prepare` **once per development database**. It applies the
+canonical migration roots and creates the development Tenant/User/Character/
+CharacterVersion/Relationship/Security policy/AgentPresentation, then prints
+the exact `MASANAWA_ALPHA_*` values.
+
+Persist those printed values in the deployment platform's secret/config store.
+Do not configure `alpha:prepare` as a Railway pre-deploy or start command:
+doing so would create a new Alpha identity graph on every deployment.
+
+Subsequent Gateway deployments reuse the existing canonical rows and may safely
+replace application code without changing the mobile Character/Relationship
+identities.
+
+The development Gemini key is a bootstrap secret and must remain deployment
+configuration only. The mobile APK receives only the bounded Alpha bearer token,
+never the provider or database credentials.
+
+For a hosted test APK, use the generated HTTPS service domain as
+`AGENT_BASE_URL`; the Android debug cleartext exception exists only for a
+laptop-hosted local HTTP Gateway.
