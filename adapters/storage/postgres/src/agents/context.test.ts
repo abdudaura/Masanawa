@@ -103,6 +103,8 @@ describe("PostgreSQL Character context admission (query harness)", () => {
     const query = f.queries.find(q => q.sql.includes("FROM world.events"))!;
     expect(query.values.slice(0, 4)).toEqual([f.scope.tenantId, f.input.authority.resourceScope.worldIds,
       f.scope.characterId, f.input.session.characterVersionId]);
+    expect(query.sql).toContain("world_id = ANY($2::text[])");
+    expect(query.sql).not.toContain("uuid[]");
     expect(query.sql).toContain("visibility = 'public'");
     expect(query.sql).toContain("canon_state = 'approved'");
     expect(query.sql).toContain("retired_at IS NULL");

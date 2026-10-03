@@ -301,7 +301,7 @@ export function createPostgresPublicWorldContextReader(client: PoolClient): Publ
       await assertCurrentAuthority(authority, createPostgresCurrentAuthoritySource(client), at);
       const result = await client.query<WorldEventRow>(
         `SELECT * FROM world.events
-          WHERE tenant_id = $1 AND world_id = ANY($2::uuid[])
+          WHERE tenant_id = $1 AND world_id = ANY($2::text[])
             AND visibility = 'public' AND canon_state = 'approved'
             AND retired_at IS NULL AND approved_at <= $5 AND recorded_at <= $5
             AND effective_start <= $5 AND (effective_end IS NULL OR effective_end > $5)

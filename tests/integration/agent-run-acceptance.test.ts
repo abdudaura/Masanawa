@@ -1,3 +1,5 @@
+import { approveWorldEvent } from "../../adapters/storage/postgres/src/world/repository.js";
+import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
@@ -12,6 +14,13 @@ import {
   type CharacterSessionScope,
 } from "@masanawa/agents";
 import {
+  appendWorldEvent,
+  createWorld,
+  activateMemoryProjectionGeneration,
+  createMemoryProjectionGeneration,
+  createMemoryRecord,
+  getMemoryRecordInScope,
+  indexMemoryLexicalSnapshot,
   characterSessionMigrationRoots,
   createPostgresAgentRunRepository,
   createPostgresCharacterContextCompiler,
@@ -60,6 +69,8 @@ describePostgres("AgentRun PostgreSQL 18 acceptance", () => {
 
   beforeEach(async () => {
     for (const schema of [
+      "memory",
+      "world",
       "agents",
       "identity",
       "skills",
@@ -71,7 +82,10 @@ describePostgres("AgentRun PostgreSQL 18 acceptance", () => {
     await pool.query(
       "DROP TABLE IF EXISTS public.masanawa_schema_migrations",
     );
-    await runMigrations(pool, characterSessionMigrationRoots());
+    await runMigrations(pool, [...characterSessionMigrationRoots(),
+      { owner: "memory", directory: fileURLToPath(new URL("../../packages/memory/migrations", import.meta.url)) },
+      { owner: "world", directory: fileURLToPath(new URL("../../packages/world/migrations", import.meta.url)) },
+    ]);
   });
 
   afterAll(async () => {
@@ -200,6 +214,92 @@ describePostgres("AgentRun PostgreSQL 18 acceptance", () => {
     const session = await sessions.read({ authority: f.authority, scope: f.scope, characterSessionId: f.sessionId });
     return { ...f, runs, sessions, run, session, compiler: createPostgresCharacterContextCompiler(pool) };
   }
+
+  it("recalls indexed canonical Memory only from the session Relationship", async () => {
+    const f = await contextFixture();
+    const at = toInstant(new Date());
+    const generation = createCanonicalId("memory-projection-generation");
+    const otherRelationship = createCanonicalId("relationship");
+    await withTransaction(pool, async client => {
+      await createMemoryProjectionGeneration(client, { tenantId: f.scope.tenantId,
+        memoryProjectionGenerationId: generation, kind: "lexical",
+        implementationKey: "postgres-simple-tsvector", schemaVersion: 1, createdAt: at });
+      for (const [relationshipId, content] of [
+        [f.scope.relationshipId, "Nebula means careful Hausa voice replies."],
+        [otherRelationship, "Nebula is another Relationship secret."],
+      ] as const) {
+        const memoryRecordId = createCanonicalId("memory-record");
+        const scope = { kind: "relationship" as const, relationshipId };
+        await createMemoryRecord(client, { tenantId: f.scope.tenantId, memoryRecordId,
+          memoryRevisionId: createCanonicalId("memory-revision"), memoryType: "fact",
+          scope, content, extractionMethod: "acceptance-fixture", observedAt: at,
+          evidence: [{ sourceKind: "message", sourceReference: "acceptance:memory",
+            sourceContentHash: "a".repeat(64), observedAt: at }], createdAt: at });
+        const snapshot = await getMemoryRecordInScope(client, { tenantId: f.scope.tenantId,
+          memoryRecordId, scope });
+        if (!snapshot) throw new Error("Canonical Memory fixture missing");
+        await indexMemoryLexicalSnapshot(client, {
+          memoryProjectionGenerationId: generation, snapshot, builtAt: at });
+      }
+    });
+    await activateMemoryProjectionGeneration(pool, { tenantId: f.scope.tenantId,
+      memoryProjectionGenerationId: generation, activatedAt: at });
+    const authority = { ...f.authority,
+      capabilities: [...f.authority.capabilities, "memory.context.read"] };
+    const context = await f.compiler.compile({ authority, session: f.session,
+      run: f.run, recallQuery: "Nebula" });
+    expect(context.evidence.map(item => item.kind)).toEqual(["identity", "memory"]);
+    expect(JSON.stringify(context)).toContain("careful Hausa voice replies");
+    expect(JSON.stringify(context)).not.toContain("another Relationship secret");
+    expect(await f.runs.read({ authority, scope: f.scope, agentRunId: f.run.agentRunId })).toEqual(f.run);
+    await expect(f.compiler.compile({ authority: f.authority, session: f.session,
+      run: f.run, recallQuery: "Nebula" })).rejects.toMatchObject({ code: "memory.context_capability_missing" });
+  });
+
+  it("admits only approved public events from explicitly scoped Worlds", async () => {
+    const f = await contextFixture();
+    const at = toInstant(new Date());
+    const worldId = createCanonicalId("world");
+    const otherWorldId = createCanonicalId("world");
+    await withTransaction(pool, async client => {
+      for (const id of [worldId, otherWorldId]) {
+        await createWorld(client, { tenantId: f.scope.tenantId, worldId: id,
+          initialGenerationId: createCanonicalId("world-generation"),
+          policy: { schemaVersion: 1, catchUpMode: "manual", maxCatchUpSteps: 1,
+            spatialEnabled: false, automaticCanonEnabled: false },
+          simulationTime: at, createdAt: at });
+      }
+      for (const scenario of [
+        { worldId, visibility: "public", approved: true, scene: "Public library approved" },
+        { worldId, visibility: "private", approved: true, scene: "Private secret forbidden" },
+        { worldId, visibility: "public", approved: false, scene: "Unapproved draft forbidden" },
+        { worldId: otherWorldId, visibility: "public", approved: true, scene: "Other World forbidden" },
+      ] as const) {
+        const worldEventId = createCanonicalId("world-event");
+        await appendWorldEvent(client, { tenantId: f.scope.tenantId, worldEventId,
+          worldId: scenario.worldId, characterId: f.scope.characterId,
+          characterVersionId: f.characterVersionId, eventKind: "authored.scene",
+          payload: { scene: scenario.scene }, provenance: "authored",
+          visibility: scenario.visibility, occurrenceKey: null, admission: "draft",
+          effectiveStart: at, effectiveEnd: null, recordedAt: at });
+        if (scenario.approved) await approveWorldEvent(client, {
+          tenantId: f.scope.tenantId, worldEventId, approvedAt: at });
+      }
+    });
+    const authority = { ...f.authority,
+      capabilities: [...f.authority.capabilities, "world.context.read"],
+      resourceScope: { ...f.authority.resourceScope, worldIds: [worldId] } };
+    const context = await f.compiler.compile({ authority, session: f.session, run: f.run });
+    expect(context.evidence.map(item => item.kind)).toEqual(["identity", "world"]);
+    expect(JSON.stringify(context)).toContain("Public library approved");
+    expect(JSON.stringify(context)).not.toContain("forbidden");
+    const noWorldScope = await f.compiler.compile({ authority: f.authority,
+      session: f.session, run: f.run });
+    expect(noWorldScope.evidence.map(item => item.kind)).toEqual(["identity"]);
+    await expect(f.compiler.compile({ authority: { ...authority,
+      capabilities: f.authority.capabilities }, session: f.session, run: f.run }))
+      .rejects.toMatchObject({ code: "world.context_access_denied" });
+  });
 
   it("loads exact Constitution after a newer version becomes active without mutating run history", async () => {
     const f = await contextFixture();

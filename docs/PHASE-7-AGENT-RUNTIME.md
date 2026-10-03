@@ -281,3 +281,23 @@ required. This work does not complete Task 074 or advance the Task 072 ledger ga
 
 Broader checkpoint verification: 388 tests passed, 75 database-dependent tests
 skipped; root TypeScript compilation passed. No skipped test is a passing acceptance gate.
+
+
+## Task 074 PostgreSQL recall acceptance preparation
+
+Two real PostgreSQL 18 journeys now seed canonical Memory plus its active lexical
+projection, and authored World events. They verify Relationship isolation, explicit
+read capabilities, approved public canon, draft/private exclusion, and World scope
+isolation through the actual context compiler. These tests use a disposable database
+created by the existing AgentRun acceptance harness, not the user's Alpha database.
+They are authored and typechecked, but have not run against PostgreSQL here.
+
+Acceptance preparation exposed and fixed a World SQL parameter mismatch: canonical
+World IDs are text columns, so the admitted-ID array is cast to text[] rather than
+uuid[]. The query-harness regression now checks this storage-compatible cast.
+
+The runtime verification command now includes Memory and World owner unit tests.
+`pnpm alpha:verify --unit-only` passed 214 tests plus Gateway/Ops builds and all
+relevant typechecks. Full Vitest passed 388 tests with 77 database-dependent skips.
+Task 072 remains current; PostgreSQL acceptance, merged-main CI and mobile gates
+remain open. No deployment or APK was built by this checkpoint.
