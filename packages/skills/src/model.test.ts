@@ -13,9 +13,11 @@ import {
 
 function version(overrides: Partial<SkillVersion> = {}): SkillVersion {
   const skillId = overrides.skillId ?? createCanonicalId("skill");
+  const skillVersionId =
+    overrides.skillVersionId ?? createCanonicalId("skill-version");
   return {
     skillId,
-    skillVersionId: createCanonicalId("skill-version"),
+    skillVersionId,
     key: "research.web",
     version: "1.0.0",
     displayName: "Web research",
@@ -65,9 +67,31 @@ function version(overrides: Partial<SkillVersion> = {}): SkillVersion {
       },
     },
     certification: {
+      subjectSkillVersionId: skillVersionId,
       profile: "foundation",
+      suiteKey: "skills.foundation",
+      suiteRevision: "2026.10.03",
+      suiteContentHash: `sha256:${"8".repeat(64)}`,
       certifiedAt: toInstant("2026-10-02T00:00:00.000Z"),
       certifierKey: "masanawa.foundation",
+      cases: [
+        {
+          caseKey: "activation.basic",
+          kind: "activation",
+          outcome: "passed",
+          observedAt: toInstant("2026-10-02T00:00:00.000Z"),
+          evidenceRef: "rehearsal://foundation/activation.basic",
+          evidenceHash: `sha256:${"1".repeat(64)}`,
+        },
+        {
+          caseKey: "negative.basic",
+          kind: "negative-activation",
+          outcome: "passed",
+          observedAt: toInstant("2026-10-02T00:00:00.000Z"),
+          evidenceRef: "rehearsal://foundation/negative.basic",
+          evidenceHash: `sha256:${"2".repeat(64)}`,
+        },
+      ],
       testCaseCount: 2,
       passedTestCaseCount: 2,
     },
@@ -110,6 +134,11 @@ describe("immutable SkillVersion schema", () => {
     expect(normalized.provenance.publisher.publisherKey).toBe("masanawa");
     expect(normalized.provenance.trust.tier).toBe("first-party");
     expect(Object.isFrozen(normalized.certification)).toBe(true);
+    expect(Object.isFrozen(normalized.certification.cases)).toBe(true);
+    expect(normalized.certification.cases.every(Object.isFrozen)).toBe(true);
+    expect(normalized.certification.subjectSkillVersionId).toBe(
+      normalized.skillVersionId,
+    );
   });
 
   it("keeps Tool references consistent with declared capability requirements", () => {
@@ -172,20 +201,24 @@ describe("immutable SkillVersion schema", () => {
     ).toThrow("skillVersionId is invalid");
   });
 
-  it("requires certified evidence to be complete before a version is canonical", () => {
+  it("requires complete passing rehearsal evidence before a version is canonical", () => {
+    const base = version();
+    const failedCases = base.certification.cases.map((item) =>
+      item.kind === "negative-activation"
+        ? { ...item, outcome: "failed" as const }
+        : item,
+    );
+
     expect(() =>
-      normalizeSkillVersionDefinition(
-        version({
-          certification: {
-            profile: "foundation",
-            certifiedAt: toInstant("2026-10-02T00:00:00.000Z"),
-            certifierKey: "masanawa.foundation",
-            testCaseCount: 2,
-            passedTestCaseCount: 1,
-          },
-        }),
-      ),
-    ).toThrow("requires at least one test and all tests passing");
+      normalizeSkillVersionDefinition({
+        ...base,
+        certification: {
+          ...base.certification,
+          cases: failedCases,
+          passedTestCaseCount: 1,
+        },
+      }),
+    ).toThrow("every rehearsal case to pass");
   });
 
   it("keeps consequential execution semantics fail-closed", () => {
