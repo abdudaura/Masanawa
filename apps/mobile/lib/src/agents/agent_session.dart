@@ -44,15 +44,25 @@ class AgentSessionBinding {
       );
 }
 
-/// Transport contract the future runtime client must implement. Kept tiny
-/// on purpose: open a session, send one turn, close. No brain on device.
+/// One assistant turn. `agentRunId` carries the server run reference when the
+/// runtime returns one (Task 072); it is stored on the thread for later
+/// receipts/debugging and is null on the preview path.
+class AgentTurnResult {
+  const AgentTurnResult({required this.text, this.agentRunId});
+
+  final String text;
+  final String? agentRunId;
+}
+
+/// Transport contract the runtime client must implement. Kept tiny on
+/// purpose: open a session, send one turn, close. No brain on device.
 abstract class AgentTransport {
   /// Opens (or resumes) the server session for [masanaId].
   Future<AgentSessionBinding> openSession(String masanaId);
 
-  /// Sends one user turn; returns the assistant text. Must throw when the
-  /// runtime is unreachable so callers can fall back honestly.
-  Future<String> sendTurn({
+  /// Sends one user turn. Must throw when the runtime is unreachable so
+  /// callers can fall back honestly.
+  Future<AgentTurnResult> sendTurn({
     required AgentSessionBinding binding,
     required String text,
   });
@@ -79,11 +89,11 @@ class PreviewAgentTransport implements AgentTransport {
       );
 
   @override
-  Future<String> sendTurn({
+  Future<AgentTurnResult> sendTurn({
     required AgentSessionBinding binding,
     required String text,
-  }) =>
-      sendPreview(text, binding.masanaId);
+  }) async =>
+      AgentTurnResult(text: await sendPreview(text, binding.masanaId));
 
   @override
   Future<void> closeSession(AgentSessionBinding binding) async {}

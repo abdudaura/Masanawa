@@ -1,0 +1,51 @@
+name: Mobile Build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/mobile/**"
+      - ".github/workflows/mobile-build.yml"
+  pull_request:
+    paths:
+      - "apps/mobile/**"
+      - ".github/workflows/mobile-build.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v5
+      # Pinned channel on purpose: exact SDK pins rot fast. Pin an exact
+      # flutter-version once releases stabilize around this app.
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Install
+        run: flutter pub get
+      - name: Analyze
+        run: flutter analyze
+      - name: Test
+        run: flutter test
+      - name: Phone (debug APK)
+        run: flutter build apk --debug --dart-define=API_BASE_URL=https://unigeria.up.railway.app
+      - name: Web (release)
+        run: flutter build web --release --dart-define=API_BASE_URL=https://unigeria.up.railway.app
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: masanawa-debug-apk
+          path: apps/mobile/build/app/outputs/flutter-apk/app-debug.apk
+      - name: Upload web
+        uses: actions/upload-artifact@v4
+        with:
+          name: masanawa-web
+          path: apps/mobile/build/web

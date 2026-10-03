@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../agents/agent_session.dart';
 import '../chat/masana.dart';
 import '../core/providers.dart';
 
@@ -193,11 +194,23 @@ class AiChatState {
       );
 }
 
-/// All Masana conversations. Sends go to `POST /ai/chat` when the backend
-/// exposes it; otherwise an honest on-device reply keeps the UI alive.
+/// All Masana conversations.
+///
+/// Sends go through the active [AgentTransport]: the live Masanawa runtime
+/// when the build points at one, otherwise the civic preview endpoint.
+/// Any transport failure falls back to an honest on-device reply — the UI
+/// never fakes a brain that is not connected.
 class AiChatController extends Notifier<AiChatState> {
   int _seq = 0;
   bool _disposed = false;
+
+  /// In-memory server bindings, one per Masana. Never persisted: sessions
+  /// are server truth and re-opened (resumed) on every app launch.
+  final Map<String, AgentSessionBinding> _bindings = {};
+
+  /// Pinned once a live runtime proves unreachable, so later turns skip
+  /// straight to preview instead of timing out one by one.
+  bool _runtimeDown = false;
 
   @override
   AiChatState build() {
@@ -276,15 +289,59 @@ class AiChatController extends Notifier<AiChatState> {
       final prompt = userMsg.text.isEmpty
           ? '[${userMsg.attachment?.label ?? 'attachment'}]'
           : userMsg.text;
-      final reply =
-          await ref.read(apiClientProvider).aiChat(prompt, masana: masana.name);
-      _appendAi(masanaId, reply);
+      final result = await _sendViaTransport(masanaId, prompt);
+      _appendAi(masanaId, result.text, agentRunId: result.agentRunId);
     } catch (_) {
       _appendAi(masanaId, _fallbackReply(masanaId, userMsg));
     }
   }
 
-  void _appendAi(String masanaId, String text) {
+  /// Sends one turn through the live runtime when configured, otherwise
+  /// through preview. A dead runtime pins preview for the rest of this app
+  /// lifetime and retries the turn once through it.
+  Future<AgentTurnResult> _sendViaTransport(
+    String masanaId,
+    String prompt,
+  ) async {
+    final primary =
+        _runtimeDown ? _previewTransport() : ref.read(agentTransportProvider);
+    try {
+      final binding = await _bindingFor(masanaId, primary);
+      return await primary.sendTurn(binding: binding, text: prompt);
+    } catch (_) {
+      // Preview failures carry no runtime to fall back to.
+      if (primary is PreviewAgentTransport) rethrow;
+      _runtimeDown = true;
+      final preview = _previewTransport();
+      final binding = await _bindingFor(masanaId, preview);
+      return preview.sendTurn(binding: binding, text: prompt);
+    }
+  }
+
+  AgentTransport _previewTransport() => PreviewAgentTransport(
+        sendPreview: (message, masana) =>
+            ref.read(apiClientProvider).aiChat(message, masana: masana),
+      );
+
+  /// Returns the cached server binding for [masanaId], opening (resuming)
+  /// the session when there is none. Preview bindings are ephemeral markers;
+  /// runtime bindings are server truth.
+  Future<AgentSessionBinding> _bindingFor(
+    String masanaId,
+    AgentTransport transport,
+  ) async {
+    final cached = _bindings[masanaId];
+    final previewCached =
+        cached != null && cached.characterSessionId.startsWith('preview-');
+    if (cached != null && previewCached == (transport is PreviewAgentTransport)) {
+      return cached;
+    }
+    final binding = await transport.openSession(masanaId);
+    _bindings[masanaId] = binding;
+    return binding;
+  }
+
+  void _appendAi(String masanaId, String text, {String? agentRunId}) {
     if (_disposed) return;
     final thread = threadOf(masanaId);
     final isOpen = state.openThreadId == masanaId;
@@ -302,6 +359,7 @@ class AiChatController extends Notifier<AiChatState> {
           messages: [...thread.messages, msg],
           unread: isOpen ? 0 : thread.unread + 1,
           updatedAt: DateTime.now(),
+          agentRunId: agentRunId,
         ),
       },
       sendingIn: sending,

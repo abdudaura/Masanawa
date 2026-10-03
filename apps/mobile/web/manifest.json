@@ -1,11 +1,11 @@
 {
-    "name": "UNigeria",
-    "short_name": "UNigeria",
+    "name": "Masanawa",
+    "short_name": "Masanawa",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#064E3B",
     "theme_color": "#064E3B",
-    "description": "UNigeria — see it. Report it. Fix it. Community-powered civic reporting across Nigeria.",
+    "description": "Masanawa — chat with your Masana Agents.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

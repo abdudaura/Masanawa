@@ -16,6 +16,9 @@ Run Flutter commands from this directory:
 - `flutter test`
 - `flutter run --dart-define=API_BASE_URL=<url>`
 
+Phone + web builds (signing, flags, CI): `docs/BUILDS.md`. Agent gateway
+contract (draft, lights up when Task 099 ships): `docs/AGENT-GATEWAY-CONTRACT.md`.
+
 ## Auth
 
 OTP-only. Phone and email both verify a one-time code. There is no silent
