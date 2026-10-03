@@ -307,7 +307,7 @@ export function createPostgresAgentRunRepository(
              $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,
              $15::jsonb,'running',$16,$16
            )
-           ON CONFLICT (tenant_id, agent_run_id) DO NOTHING
+           ON CONFLICT DO NOTHING
            RETURNING *`,
           [
             input.scope.tenantId,
@@ -330,7 +330,27 @@ export function createPostgresAgentRunRepository(
         );
 
         if (!result.rows[0]) {
-          const existing = await loadRun(client, request, false);
+          const byRun = await client.query<RunRow>(
+            `SELECT *
+               FROM agents.agent_runs
+              WHERE tenant_id = $1 AND agent_run_id = $2
+              FOR SHARE`,
+            [input.scope.tenantId, input.agentRunId],
+          );
+          const existing = byRun.rows[0];
+          if (!existing) {
+            const byRequest = await client.query<{ agent_run_id: string }>(
+              `SELECT agent_run_id
+                 FROM agents.agent_runs
+                WHERE tenant_id = $1 AND request_id = $2
+                FOR SHARE`,
+              [input.scope.tenantId, input.trace.requestId],
+            );
+            if (byRequest.rows[0]) {
+              throw conflict("Request is already bound to another AgentRun");
+            }
+            throw conflict();
+          }
           const normalized = rowToRun(existing);
           const same =
             normalized.characterSessionId === input.characterSessionId &&
