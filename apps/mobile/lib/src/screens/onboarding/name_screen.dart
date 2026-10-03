@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/api/models.dart';
 import '../../state/session_state.dart';
-import '../../tokens/unigeria_tokens.dart';
+import '../../tokens/masanawa_tokens.dart';
 import '../../ui/components/onboarding_scaffold.dart';
 import '../../ui/components/primary_button.dart';
 
