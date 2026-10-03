@@ -2,7 +2,7 @@
 
 Status: ACTIVE  
 Started: 2026-10-02  
-Active branch: `task065-skill-provenance-trust-publisher`
+Active branch: `task066-risk-capability-classification`
 
 Phase 5 Tools and Providers is closed by PR #45, merge
 `0fe123e18a9163386c4ab10331139265ce26b64e`.
@@ -93,6 +93,10 @@ The Skills package now exposes fail-closed execution bindings rather than a seco
 ## Task 065 — Skill provenance, trust and publisher metadata
 
 Canonical Skill provenance now preserves exact source-system/reference/revision/content-hash evidence together with normalized publisher identity and a separately attributed trust verdict. Imported Skills require an exact source revision rather than an implicit latest/unknown source. Publisher metadata records a stable publisher key, display name, publisher kind and optional evidence reference. Trust verdicts record tier, evaluator, evaluation time and normalized reason codes; they are descriptive admission evidence only and do not grant Tool, Provider, authority or subskill execution rights. Imported bundles carry this metadata into quarantine unchanged in meaning and normalize it before candidate publication.
+
+## Task 066 — risk and capability classification
+
+Skill classification is now an enforceable envelope over canonical Tool requirements, not a parallel risk taxonomy. The classifier publishes immutable provided/required Tool/required authority capability sets together with Skill risk, side-effect and sensitivity classifications. Every ToolVersion that a declared Skill Tool reference may resolve to must fit inside that envelope: Tool risk cannot exceed Skill risk, Tool side effects cannot exceed the Skill side-effect class, Tool sensitivity cannot exceed Skill sensitivity, and every Tool authority capability must be explicitly surfaced by the Skill. Classification remains Provider-neutral and records exact candidate ToolVersion identities only.
 
 ## First canonical slice
 
