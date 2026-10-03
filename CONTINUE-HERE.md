@@ -137,7 +137,7 @@ Foundation CI run 379, PR #47 merged as
 `d0a198dbdec1af08e3c8f1378da0985db628eb6e`, and merged-main Foundation CI
 run 380 passed on that exact merge commit.
 
-**Current: Task 068 of 150 — Implement readiness/eligibility and revision pinning.**
+**Current: Task 069 of 150 — Implement trace metadata and deterministic failure semantics.**
 
 Task 066 implementation head `eb0ddef003bf9946d0df50b6c070a4d6ab6ea59c` passed Foundation CI run 431. PR #68 merged as `e1573fc91549b25a0425ef9a8cc7534ca0a4464a`, and merged-main Foundation CI run 432 passed on that exact merge commit.
 
@@ -156,7 +156,16 @@ Task 067 established:
 - mandatory positive and negative activation rehearsal coverage;
 - fail-closed unique-case, temporal, counter and all-pass validation without granting authority or execution rights.
 
-Active implementation branch: `task068-readiness-eligibility-revision-pinning`. Task 068 now adds explicit exact-graph eligibility snapshots and content-addressed revision pins over exact root/dependency SkillVersion IDs. Pin resolution rejects tampering/definition or graph drift, never substitutes a newer logical revision, and rechecks current readiness so operational blocks still take effect. Acceptance/CI is pending.
+Task 068 implementation head `66b323703749fdd658f6a0c5af37ba73251636ee` passed Foundation CI run 440. PR #72 merged as `42b2cf29348fa38b58b27744b1162cd623058241`, and merged-main Foundation CI run 441 passed on that exact merge commit.
+
+Task 068 established:
+- explicit exact dependency-graph eligibility snapshots with missing/non-ready blockers;
+- separate execution eligibility, model advertisability and current advertisement state;
+- content-addressed exact root/dependency SkillVersion revision pins with per-definition hashes;
+- pin integrity/definition/graph drift rejection without any implicit latest-version substitution;
+- current readiness revalidation when resolving a pin so operational blocks are never frozen away.
+
+Task 069 is next. Its implementation branch must start from the merged Task 068 closure state and add bounded Skill trace metadata plus deterministic, typed failure semantics without creating a second telemetry, Tool failure or Workflow authority.
 
 
 
@@ -164,7 +173,7 @@ Active implementation branch: `task068-readiness-eligibility-revision-pinning`. 
 
 
 
-Tasks 001-067 are merged complete.
+Tasks 001-068 are merged complete.
 
 
 
