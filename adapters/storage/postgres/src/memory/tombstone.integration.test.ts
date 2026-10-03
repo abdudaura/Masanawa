@@ -7,7 +7,7 @@ import {
   createAuthorityContext,
   createPendingApproval,
 } from "@masanawa/security";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Pool } from "pg";
 import {
   activateMemoryProjectionGeneration,
@@ -76,6 +76,10 @@ describePostgres("PostgreSQL memory tombstone propagation", () => {
   });
 
   beforeEach(async () => {
+    // Authority is checked against application time; fixture expiry must not age
+    // with the CI calendar. Keep real timers for PostgreSQL I/O.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-02T12:00:00Z"));
     await pool.query("DROP SCHEMA IF EXISTS world CASCADE");
     await pool.query("DROP SCHEMA IF EXISTS memory CASCADE");
     await pool.query("DROP SCHEMA IF EXISTS identity CASCADE");
@@ -91,6 +95,10 @@ describePostgres("PostgreSQL memory tombstone propagation", () => {
 
   afterAll(async () => {
     await pool.end();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("requires governed tombstone audit, suppresses retrieval immediately and cleans only disposable projections", async () => {
@@ -397,6 +405,13 @@ describePostgres("PostgreSQL memory tombstone propagation", () => {
       expectedLifecycleRevision: 1,
       reason: "User requested explicit deletion of this memory.",
     } as const;
+
+    await expect(prepareMemoryRecordTombstone(pool, {
+      ...target,
+      authority: createAuthorityContext({ ...baseAuthority, expiresAt: toInstant("2026-10-02T11:00:00Z") }),
+      idempotencyKey: "memory-tombstone-expired-authority",
+      expiresAt,
+    })).rejects.toMatchObject({ code: "authority.expired" });
 
     const prepared = await prepareMemoryRecordTombstone(pool, {
       ...target,
