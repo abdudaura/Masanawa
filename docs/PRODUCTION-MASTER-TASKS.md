@@ -8,9 +8,11 @@ Masanawa production is tracked as **150 numbered milestone tasks**. Tasks are no
 
 ## Current position
 
-Merged `main` satisfies Tasks **001-069**.
+Merged `main` satisfies Tasks **001-070**.
 
-**Current: Task 070 of 150 — Pass Skills acceptance tests including cloud/device-provider neutrality.**
+**Current: Task 071 of 150 — Implement CharacterSession canonical runtime contract.**
+
+Task 070 implementation head `68e8e4002bc7fae8ea0e1a58b72b81e00454e294` passed Foundation CI run 450 (340 tests in 73 files, including nine PostgreSQL 18 Skills acceptance cases). PR #76 merged as `34aa6f9d19f9b0c92527fabe3a750052009398d2`; merged-main Foundation CI run 451 passed on that exact merge commit. Phase 6 is closed; `docs/PHASE-6-CLOSURE-AUDIT.md` is PASS.
 
 Task 069 implementation head `83ed96c693a307fb9fcebac7a593df680d8e1273` passed Foundation CI run 445 (328 tests). PR #74 merged as `1dd2363847c70a81ec1839377921bb461804db1e`; merged-main Foundation CI run 446 passed on that exact merge commit.
 
@@ -117,10 +119,10 @@ Status: `[x]` COMPLETE, `[ ]` PLANNED.
 - [x] **067** Implement rehearsal/certification evidence.
 - [x] **068** Implement readiness/eligibility and revision pinning.
 - [x] **069** Implement trace metadata and deterministic failure semantics.
-- [ ] **070** Pass Skills acceptance tests including cloud/device-provider neutrality.
+- [x] **070** Pass Skills acceptance tests including cloud/device-provider neutrality.
 
-Task 070 acceptance must include:
-- canonical Skill/SkillVersion/readiness persistence and registry reconstruction after restart, as already required by the Phase 6 record; the current registry is in memory and no Skills migration/storage adapter exists yet;
+Task 070 acceptance (satisfied on merged main):
+- canonical Skill/SkillVersion/readiness persistence through the Skills repository port and PostgreSQL adapter, with validated registry reconstruction after restart;
 - immutable version identity/content, exact dependency graphs and pins, certification evidence and fail-closed readiness across persistence/reload;
 - the same Skill/Tool binding selecting cloud or simulated Device Providers only through the existing canonical Tool/Provider executor, including offline readiness, authority denial and ambiguous outcome reconciliation without duplicate effects;
 - cross-package acceptance evidence and the full Foundation CI gate on the implementation head and merged main. Simulated Providers establish contract neutrality, not real Android/OmniSIP qualification.

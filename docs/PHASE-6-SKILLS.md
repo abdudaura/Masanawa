@@ -1,9 +1,12 @@
 # Phase 6 — Skills
 
-Status: ACTIVE  
+Status: COMPLETE  
 Started: 2026-10-02  
-Current production task: **070 — Skills acceptance**
-Task 069 implementation PR: #74, merged; closure branch: `task069-close`
+Closed: 2026-10-03  
+Acceptance audit: `docs/PHASE-6-CLOSURE-AUDIT.md` — PASS  
+Next production task: **071 — CharacterSession canonical runtime contract**
+
+Task 070 implementation head `68e8e4002bc7fae8ea0e1a58b72b81e00454e294` passed Foundation CI run 450 (340 tests in 73 files, including nine PostgreSQL 18 Skills acceptance cases). PR #76 merged as `34aa6f9d19f9b0c92527fabe3a750052009398d2`; merged-main Foundation CI run 451 passed on that exact merge commit. Phase 6 is closed; `docs/PHASE-6-CLOSURE-AUDIT.md` is PASS.
 
 Phase 5 Tools and Providers is closed by PR #45, merge
 `0fe123e18a9163386c4ab10331139265ce26b64e`.
@@ -33,7 +36,7 @@ Adopt:
 - manifest/normalization discipline;
 - catalog/manager;
 - exact dependency/subskill graph;
-- SkillTool adapter later in Phase 6;
+- canonical SkillTool execution binding;
 - provenance/trust metadata;
 - invalid/cyclic skill isolation;
 - trace metadata;
@@ -119,7 +122,7 @@ Trace admission validates exact canonical IDs, bounded reference keys, content-h
 
 Task 069 implementation head `83ed96c693a307fb9fcebac7a593df680d8e1273` passed Foundation CI run 445 (328 tests). PR #74 merged as `1dd2363847c70a81ec1839377921bb461804db1e`; merged-main Foundation CI run 446 passed on that exact merge commit.
 
-Local focused verification passed 84 Skills/telemetry tests, 37 Contracts/Tools/Providers tests and strict Skills/telemetry typechecks. Phase 6 remains active: Task 070 must add canonical persistence/restart and cross-package cloud/device Provider-neutrality evidence before closure.
+Local focused verification passed 84 Skills/telemetry tests, 37 Contracts/Tools/Providers tests and strict Skills/telemetry typechecks. At Task 069 closure, Task 070 still required canonical persistence/restart and cross-package cloud/device Provider-neutrality acceptance; that evidence is now merged.
 
 ## Task 070 — persistence and cross-package acceptance implementation
 
@@ -150,7 +153,7 @@ and ambiguous device reconciliation without duplicate side effects. Simulated
 adapters establish contract neutrality; actual device integration belongs to its
 later roadmap phase.
 
-Task 070 remains open until implementation CI and exact merged-main CI pass.
+Task 070 implementation head `68e8e4002bc7fae8ea0e1a58b72b81e00454e294` passed Foundation CI run 450 (340 tests in 73 files, including nine PostgreSQL 18 Skills acceptance cases). PR #76 merged as `34aa6f9d19f9b0c92527fabe3a750052009398d2`; merged-main Foundation CI run 451 passed on that exact merge commit. Phase 6 is closed; `docs/PHASE-6-CLOSURE-AUDIT.md` is PASS.
 
 ## First canonical slice (original foundation criteria)
 
@@ -177,7 +180,7 @@ Planned invariants:
 - advertised/executable Skills require ready dependencies;
 - no implicit latest-version resolver exists in this slice.
 
-Acceptance before moving deeper into Phase 6:
+Original foundation acceptance criteria (now covered):
 - strict TypeScript/unit/architecture/build gate;
 - graph cycle/missing/depth/conflict tests;
 - certification/governance tests;

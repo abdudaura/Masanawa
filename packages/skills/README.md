@@ -1,6 +1,6 @@
 # @masanawa/skills — canonical boundary
 
-Status: Phase 6 production implementation active.
+Status: Phase 6 production acceptance complete. See `docs/PHASE-6-CLOSURE-AUDIT.md`.
 
 Owns canonical Skill/SkillVersion contracts, dependency graph, execution composition, provenance/trust, risk classification, exact rehearsal/certification evidence, eligibility/revision pins, deterministic trace metadata/failure evidence, immutable revisions and readiness. Source Markdown/files are import formats and never certification authority.
 
