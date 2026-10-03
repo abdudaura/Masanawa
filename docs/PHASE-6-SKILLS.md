@@ -2,7 +2,7 @@
 
 Status: ACTIVE  
 Started: 2026-10-02  
-Active branch: `task068-close`
+Active branch: `task069-trace-failure-semantics`
 
 Phase 5 Tools and Providers is closed by PR #45, merge
 `0fe123e18a9163386c4ab10331139265ce26b64e`.
@@ -105,6 +105,14 @@ Canonical Skill certification now carries immutable rehearsal evidence rather th
 ## Task 068 — readiness, eligibility and exact revision pinning
 
 Skill readiness is now compiled into an explicit exact-graph eligibility snapshot rather than inferred only when execution fails. Eligibility walks the exact immutable SkillVersion dependency graph and reports missing version/readiness or non-ready dependency blockers; model visibility and advertisement remain separate from execution eligibility. A Skill revision pin captures the exact root and dependency SkillVersion IDs, logical key/version values and content-derived definition hashes in dependency-first order. Resolving a pin verifies its own content hash and every exact definition, rejects graph drift, never substitutes a newer logical Skill revision, and rechecks current readiness rather than freezing operational state into the pin. Pins remain Provider-neutral and contain no authority, credential or workflow state.
+
+## Task 069 — trace metadata and deterministic failure semantics
+
+Skill execution now exposes deterministic privacy-bounded trace descriptors over the exact execution plan. Trace metadata identifies the root SkillVersion, exact step SkillVersion, ordinal, trace kind, content-derived plan hash and only the relevant exact Tool/subskill reference identity; it contains no Provider choice, prompts or arbitrary payloads. The platform telemetry allowlist admits these bounded Skill tags without making `packages/skills` depend on telemetry.
+
+Skill failures are normalized into immutable deterministic evidence. Existing typed `PlatformError` code/category/retryability, correlation and Operation identity are preserved, ambiguous outcomes deterministically require reconciliation, retryable typed failures retain retry disposition, and non-retryable failures are terminal. Unknown exceptions are collapsed behind stable source-specific internal codes/messages so raw exception text does not leak. Tool/provider failure truth remains owned by its existing boundary and Skills do not invent a second retry/reconciliation engine.
+
+Trace admission validates exact canonical IDs, bounded reference keys, content-hash format, step ordinal and kind-specific field combinations. Failure evidence copies and freezes only the admitted trace fields, so caller mutation and extra private payload fields cannot alter or contaminate a recorded failure. Ambiguity takes precedence over retry disposition even when a typed upstream failure is marked retryable.
 
 ## First canonical slice
 

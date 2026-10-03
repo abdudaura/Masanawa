@@ -8,3 +8,7 @@ export * from "./boundary.js";
 export * from "./classification.js";
 
 export * from "./eligibility.js";
+
+export * from "./trace.js";
+
+export * from "./failure.js";

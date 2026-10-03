@@ -165,7 +165,7 @@ Task 068 established:
 - pin integrity/definition/graph drift rejection without any implicit latest-version substitution;
 - current readiness revalidation when resolving a pin so operational blocks are never frozen away.
 
-Task 069 is next. Its implementation branch must start from the merged Task 068 closure state and add bounded Skill trace metadata plus deterministic, typed failure semantics without creating a second telemetry, Tool failure or Workflow authority.
+Active implementation branch: `task069-trace-failure-semantics`. Task 069 adds deterministic exact-plan Skill trace descriptors and privacy-safe telemetry attribute admission, plus failure normalization that preserves typed PlatformError retry/ambiguity/Operation semantics while redacting unknown exception text behind stable Skill failure codes. Acceptance/CI is pending.
 
 
 
