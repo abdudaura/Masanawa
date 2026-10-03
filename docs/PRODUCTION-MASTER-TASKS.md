@@ -12,6 +12,15 @@ Merged `main` satisfies Tasks **001-071**.
 
 **Current: Task 072 of 150 — Implement AgentRun identity, lineage and durable trace references.**
 
+Supplemental cross-cutting checkpoint PR #81 merged as
+`a41e1d944572f9511497032815b2d191967825f8`. It replaced the hard-coded mobile
+agent roster with admin-configured Character presentations, introduced independent
+Character Skill assignments, added authorized Ops/Gateway projections and a voice-first
+structured chat surface. This does not advance the numbered production ledger: Tasks
+001-071 remain complete and Task 072 remains current. The PR's GitHub Actions jobs
+terminated before checkout with zero steps/no runner, so it is not recorded as a CI
+acceptance gate for Task 072.
+
 Task 071 implementation head `333030618c0d060c6253dbe99fe548dc3b823d4c` passed Foundation CI run 458 (360 tests in 75 files, including ten real PostgreSQL 18 CharacterSession acceptance cases). PR #79 merged as `c2bdfb9f5a970d3d949cbd8692d9c59cb89670a0`; merged-main Foundation CI run 459 passed on that exact merge commit.
 
 Task 070 implementation head `68e8e4002bc7fae8ea0e1a58b72b81e00454e294` passed Foundation CI run 450 (340 tests in 73 files, including nine PostgreSQL 18 Skills acceptance cases). PR #76 merged as `34aa6f9d19f9b0c92527fabe3a750052009398d2`; merged-main Foundation CI run 451 passed on that exact merge commit. Phase 6 is closed; `docs/PHASE-6-CLOSURE-AUDIT.md` is PASS.
