@@ -16,7 +16,7 @@ import '../../chat/chat_format.dart';
 import '../../chat/message_parts_view.dart';
 import '../../state/agent_directory_state.dart';
 import '../../state/ai_chat_state.dart';
-import '../../theme/unigeria_theme.dart';
+import '../../theme/masanawa_theme.dart';
 
 /// One Character conversation. Voice is the primary action while text,
 /// attachments and structured work results remain in the same timeline.
@@ -256,7 +256,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final u = context.unigeria;
+    final u = context.masanawa;
     final directory = ref.watch(agentDirectoryProvider);
     final agent = directory.find(widget.characterId);
     final chat = ref.watch(aiChatProvider);
@@ -484,7 +484,7 @@ class _AttachOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final u = context.unigeria;
+    final u = context.masanawa;
     return InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: onTap,
@@ -531,7 +531,7 @@ class _Composer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final u = context.unigeria;
+    final u = context.masanawa;
     return SafeArea(
       top: false,
       child: Padding(
@@ -636,7 +636,7 @@ class _RecordingBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final u = context.unigeria;
+    final u = context.masanawa;
     return SafeArea(
       top: false,
       child: Container(
@@ -699,7 +699,7 @@ class _ChatBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final u = context.unigeria;
+    final u = context.masanawa;
     final isUser = message.isUser;
     final attachment = message.attachment;
     return Align(
@@ -829,7 +829,7 @@ class _DocTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final u = context.unigeria;
+    final u = context.masanawa;
     return Container(
       width: 220,
       padding: const EdgeInsets.all(10),
@@ -917,7 +917,7 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
 
   @override
   Widget build(BuildContext context) {
-    final u = context.unigeria;
+    final u = context.masanawa;
     final total = formatDurationMs(widget.attachment.durationMs ?? 0);
     return SizedBox(
       width: 200,
@@ -975,7 +975,7 @@ class _TypingBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final u = context.unigeria;
+    final u = context.masanawa;
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
