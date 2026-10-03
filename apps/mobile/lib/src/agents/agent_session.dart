@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../chat/message_parts.dart';
 
 /// Thin-client boundary for one Character conversation.
@@ -51,6 +53,13 @@ abstract class AgentTransport {
     required String text,
   });
 
+  Future<AgentTurnResult> sendMediaTurn({
+    required AgentSessionBinding binding,
+    required Uint8List bytes,
+    required String mimeType,
+    required String caption,
+  });
+
   Future<void> closeSession(AgentSessionBinding binding);
 }
 
@@ -75,6 +84,20 @@ class PreviewAgentTransport implements AgentTransport {
   }) async =>
       AgentTurnResult(
         text: await sendPreview(text, binding.characterId),
+      );
+
+  @override
+  Future<AgentTurnResult> sendMediaTurn({
+    required AgentSessionBinding binding,
+    required Uint8List bytes,
+    required String mimeType,
+    required String caption,
+  }) async =>
+      AgentTurnResult(
+        text: await sendPreview(
+          caption.isEmpty ? '[attachment]' : caption,
+          binding.characterId,
+        ),
       );
 
   @override
