@@ -5,7 +5,7 @@ import {
 } from "./configuration.js";
 
 const id = (kind: string, suffix: string) =>
-  `${kind}_00000000-0000-4000-8000-${suffix.padStart(12, "0")}`;
+  `${kind}_0199a1b2-c3d4-7e5f-8a9b-${suffix.padStart(12, "0")}`;
 
 describe("agent presentation and Skill assignment", () => {
   it("keeps presentation independent from exact SkillVersion selection", () => {
