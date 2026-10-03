@@ -157,6 +157,7 @@ export function parseAlphaDevIds(input: {
 export function createAlphaDirectoryAuthorizer(input: {
   readonly token: string;
   readonly tenantId: TenantId;
+  readonly relationshipIds: Readonly<Record<string, RelationshipId>>;
 }): AgentDirectoryAuthorizer {
   const expectedToken = input.token.trim();
   if (expectedToken.length < 24) {
@@ -167,7 +168,14 @@ export function createAlphaDirectoryAuthorizer(input: {
       if (bearerToken(request.authorizationHeader) !== expectedToken) {
         throw new Error("Alpha development authorization denied");
       }
-      return Object.freeze({ tenantId: input.tenantId });
+      return Object.freeze({
+        tenantId: input.tenantId,
+        characterIds: Object.freeze(
+          Object.keys(input.relationshipIds).map((id) =>
+            parseCanonicalId("character", id),
+          ),
+        ),
+      });
     },
   });
 }
