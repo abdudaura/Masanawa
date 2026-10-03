@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../agents/agent_directory.dart';
 import '../../state/agent_directory_state.dart';
 import '../../state/ai_chat_state.dart';
-import '../../theme/unigeria_theme.dart';
+import '../../theme/masanawa_theme.dart';
 
 /// Server-driven agent roster. No Character names, roles or capabilities are
 /// compiled into the app; admin configuration can change without a release.
@@ -14,7 +14,7 @@ class AgentListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final u = context.unigeria;
+    final u = context.masanawa;
     final directory = ref.watch(agentDirectoryProvider);
 
     return Scaffold(
@@ -64,7 +64,7 @@ class AgentListScreen extends ConsumerWidget {
     WidgetRef ref,
     AgentDirectoryState directory,
   ) {
-    final u = context.unigeria;
+    final u = context.masanawa;
     if (directory.loading && directory.agents.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -155,7 +155,7 @@ class _AgentAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final u = context.unigeria;
+    final u = context.masanawa;
     final image = agent.avatarUrl;
     return Stack(
       children: [
