@@ -39,6 +39,17 @@ export interface AlphaConversationExecutor {
     readonly about: string;
     readonly text: string;
   }): Promise<string>;
+
+  replyMedia(input: {
+    readonly characterId: CharacterId;
+    readonly characterVersionId: CharacterVersionId;
+    readonly displayName: string;
+    readonly roleLabel: string;
+    readonly about: string;
+    readonly caption: string;
+    readonly mimeType: string;
+    readonly dataBase64: string;
+  }): Promise<string>;
 }
 
 export interface AgentConversationService {
@@ -52,6 +63,21 @@ export interface AgentConversationService {
     readonly characterSessionId: string;
     readonly characterId: string;
     readonly text: string;
+    readonly requestId: RequestId;
+    readonly correlationId: CorrelationId;
+  }): Promise<{
+    readonly reply: string;
+    readonly agentRunId: string;
+    readonly parts: readonly unknown[];
+  }>;
+
+  mediaTurn(input: {
+    readonly authorizationHeader: string | undefined;
+    readonly characterSessionId: string;
+    readonly characterId: string;
+    readonly caption: string;
+    readonly mimeType: string;
+    readonly dataBase64: string;
     readonly requestId: RequestId;
     readonly correlationId: CorrelationId;
   }): Promise<{
