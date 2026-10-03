@@ -117,8 +117,8 @@ class UnigeriaMarkPainter extends CustomPainter {
 
 /// Brand logo lockup per BRAND-KIT §1: gradient mark + wordmark rendered
 /// together. A bare `Text` is never brand — always use this widget.
-class UnigeriaLogo extends StatelessWidget {
-  const UnigeriaLogo({
+class MasanawaLogo extends StatelessWidget {
+  const MasanawaLogo({
     super.key,
     this.dark = false,
     this.height = 96,
