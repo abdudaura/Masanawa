@@ -7,7 +7,7 @@ import '../../chat/message_parts.dart';
 import '../../state/agent_directory_state.dart';
 import '../../state/ai_chat_state.dart';
 import '../../state/session_state.dart';
-import '../../theme/unigeria_theme.dart';
+import '../../theme/masanawa_theme.dart';
 import '../../ui/components/masanawa_wordmark.dart';
 
 class ChatListScreen extends ConsumerWidget {
@@ -44,7 +44,7 @@ class ChatListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final u = context.unigeria;
+    final u = context.masanawa;
     final chat = ref.watch(aiChatProvider);
     final directory = ref.watch(agentDirectoryProvider);
     final session = ref.watch(sessionProvider);
@@ -206,7 +206,7 @@ class _EmptyChats extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final u = context.unigeria;
+    final u = context.masanawa;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
