@@ -6,8 +6,8 @@ import '../../theme/masanawa_theme.dart';
 /// (tail bottom-left) holding a gradient map pin — "community conversation
 /// anchored to a place". Painted, so it scales crisply at any size and can be
 /// mirrored 1:1 into the launcher/splash bitmap assets.
-class UnigeriaMark extends StatelessWidget {
-  const UnigeriaMark({
+class MasanawaMark extends StatelessWidget {
+  const MasanawaMark({
     super.key,
     this.size = 72,
     this.dark = false,
@@ -60,9 +60,9 @@ class UnigeriaMark extends StatelessWidget {
 }
 
 /// Paints the mark. All proportions are relative to the edge length so the
-/// glyph scales linearly with [UnigeriaMark.size].
-class UnigeriaMarkPainter extends CustomPainter {
-  UnigeriaMarkPainter({required this.tile, required this.pin});
+/// glyph scales linearly with [MasanawaMark.size].
+class MasanawaMarkPainter extends CustomPainter {
+  MasanawaMarkPainter({required this.tile, required this.pin});
 
   final Gradient tile;
   final Gradient pin;
@@ -111,7 +111,7 @@ class UnigeriaMarkPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant UnigeriaMarkPainter oldDelegate) =>
+  bool shouldRepaint(covariant MasanawaMarkPainter oldDelegate) =>
       oldDelegate.tile != tile || oldDelegate.pin != pin;
 }
 
@@ -142,7 +142,7 @@ class MasanawaLogo extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          UnigeriaMark(size: height * 0.62, dark: dark),
+          MasanawaMark(size: height * 0.62, dark: dark),
           if (showWordmark) ...[
             SizedBox(height: height * 0.10),
             Text(
