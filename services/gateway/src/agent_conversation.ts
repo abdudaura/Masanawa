@@ -1,8 +1,11 @@
 import {
+  PlatformError,
   createCanonicalId,
   parseCanonicalId,
 } from "@masanawa/contracts";
 import type {
+  AgentStrategyRequest,
+  AgentSkillSelectionAdmission,
   AgentRunRepository,
   CharacterContextCompiler,
   AgentStrategy,
@@ -14,12 +17,29 @@ import type {
   AgentConversationService,
 } from "./agent_conversation_contract.js";
 
+function skillSelectionGate(selection: AgentSkillSelectionAdmission | undefined,
+  custody: Pick<Parameters<AgentSkillSelectionAdmission["prepare"]>[0], "authority" | "session" | "run">) {
+  let open = true;
+  function assertOpen() {
+    if (!open) throw new PlatformError({ code: "agents.selection_turn_closed", category: "conflict",
+      message: "Skill selection is outside its admitted strategy turn.", retryable: false });
+  }
+  const prepareSkillSelection: NonNullable<AgentStrategyRequest["prepareSkillSelection"]> = async choice => {
+    assertOpen();
+    const result = await selection!.prepare({ ...custody, skillVersionId: choice.skillVersionId, tools: choice.tools });
+    assertOpen();
+    return result;
+  };
+  return { request: selection ? { prepareSkillSelection } : {}, close() { open = false; } };
+}
+
 export function createAgentConversationService(input: {
   readonly sessions: CharacterSessionRepository;
   readonly runs: AgentRunRepository;
   readonly authorizer: AgentConversationAuthorizer;
   readonly strategy: AgentStrategy;
   readonly contextCompiler?: CharacterContextCompiler;
+  readonly skillSelection?: AgentSkillSelectionAdmission;
   readonly sessionDurationMs: number;
 }): AgentConversationService {
   if (
@@ -97,17 +117,20 @@ export function createAgentConversationService(input: {
         },
       });
 
+      const selectionGate = skillSelectionGate(input.skillSelection, { authority: admission.authority, session, run });
       try {
         const context = await input.contextCompiler?.compile({ authority: admission.authority, session, run,
           recallQuery: text.slice(0, 2000) });
         const result = await input.strategy.execute({
           ...(context ? { context } : {}),
+          ...selectionGate.request,
           agentRunId,
           characterSessionId,
           characterVersionId: session.characterVersionId,
           presentation: admission.presentation,
           input: Object.freeze({ kind: "text" as const, text }),
         });
+        selectionGate.close();
         const reply = result.reply.trim();
         if (!reply) throw new Error("empty strategy reply");
 
@@ -124,6 +147,7 @@ export function createAgentConversationService(input: {
           parts: result.parts,
         });
       } catch (error) {
+        selectionGate.close();
         await input.runs
           .finish({
             authority: admission.authority,
@@ -189,11 +213,13 @@ export function createAgentConversationService(input: {
         },
       });
 
+      const selectionGate = skillSelectionGate(input.skillSelection, { authority: admission.authority, session, run });
       try {
         const context = await input.contextCompiler?.compile({ authority: admission.authority, session, run,
           ...(caption?.trim() ? { recallQuery: caption.slice(0, 2000) } : {}) });
         const result = await input.strategy.execute({
           ...(context ? { context } : {}),
+          ...selectionGate.request,
           agentRunId,
           characterSessionId,
           characterVersionId: session.characterVersionId,
@@ -205,6 +231,7 @@ export function createAgentConversationService(input: {
             dataBase64: request.dataBase64,
           }),
         });
+        selectionGate.close();
         const reply = result.reply.trim();
         if (!reply) throw new Error("empty strategy reply");
 
@@ -221,6 +248,7 @@ export function createAgentConversationService(input: {
           parts: result.parts,
         });
       } catch (error) {
+        selectionGate.close();
         await input.runs
           .finish({
             authority: admission.authority,

@@ -1,8 +1,12 @@
+import { createToolRegistry } from "@masanawa/tools";
+import type { SkillVersion } from "@masanawa/skills";
+import type { CapabilityKey, SkillVersionId } from "@masanawa/contracts";
 import { approveWorldEvent } from "../../adapters/storage/postgres/src/world/repository.js";
 import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
+  normalizeCapabilityKey,
   createCanonicalId,
   toInstant,
 } from "@masanawa/contracts";
@@ -22,6 +26,9 @@ import {
   getMemoryRecordInScope,
   indexMemoryLexicalSnapshot,
   characterSessionMigrationRoots,
+  createPostgresAgentSkillSelectionAdmission,
+  createPostgresCharacterSkillAssignmentRepository,
+  createPostgresSkillRepository,
   createPostgresAgentRunRepository,
   createPostgresCharacterContextCompiler,
   createPostgresCharacterSessionRepository,
@@ -31,6 +38,102 @@ import {
   setPolicyRevision,
   withTransaction,
 } from "@masanawa/postgres";
+
+function skillVersion(
+  key: string,
+  options: {
+    readonly dependencies?: readonly SkillVersionId[];
+    readonly toolCapability?: CapabilityKey;
+    readonly toolVersionId?: SkillVersion["toolReferences"][number]["toolVersionId"];
+  } = {},
+): SkillVersion {
+  const capability = options.toolCapability;
+  const skillVersionId = createCanonicalId("skill-version");
+  return {
+    skillId: createCanonicalId("skill"),
+    skillVersionId,
+    key,
+    version: "1.0.0",
+    displayName: key,
+    description: `Canonical skill ${key}`,
+    activationExamples: [`Use ${key}`],
+    negativeActivationExamples: [`Do not use ${key}`],
+    capabilities: [normalizeCapabilityKey(key)],
+    requiredToolCapabilities: capability === undefined ? [] : [capability],
+    toolReferences:
+      capability === undefined
+        ? []
+        : [
+            {
+              referenceKey: "search",
+              capability,
+              toolVersionId: options.toolVersionId ?? null,
+            },
+          ],
+    requiredAuthorityCapabilities: [],
+    dependencies: options.dependencies ?? [],
+    inputSchema: { type: "object" },
+    outputSchema: { type: "object" },
+    visibility: "model-visible",
+    riskClass: "read-only",
+    sideEffectClass: "none",
+    sensitivity: "public",
+    costClass: "free",
+    billingMode: "none",
+    confirmationPolicy: "not-required",
+    idempotencyMode: "not-required",
+    reconciliationMode: "none",
+    timeoutMs: 30_000,
+    provenance: {
+      sourceKind: "authored",
+      sourceSystem: "masanawa",
+      sourceReference: `skills/${key}`,
+      sourceRevision: "1.0.0",
+      sourceContentHash: `sha256:${"e".repeat(64)}`,
+      publisher: {
+        publisherKey: "masanawa",
+        displayName: "Masanawa",
+        kind: "first-party",
+        reference: null,
+      },
+      trust: {
+        tier: "first-party",
+        evaluatorKey: "masanawa.skill-admission",
+        evaluatedAt: toInstant("2026-10-02T00:00:00.000Z"),
+        reasonCodes: ["publisher.first-party"],
+      },
+    },
+    certification: {
+      subjectSkillVersionId: skillVersionId,
+      profile: "foundation",
+      suiteKey: "skills.foundation",
+      suiteRevision: "2026.10.03",
+      suiteContentHash: `sha256:${"3".repeat(64)}`,
+      certifiedAt: toInstant("2026-10-02T00:00:00.000Z"),
+      certifierKey: "masanawa.foundation",
+      cases: [
+        {
+          caseKey: "activation.basic",
+          kind: "activation",
+          outcome: "passed",
+          observedAt: toInstant("2026-10-02T00:00:00.000Z"),
+          evidenceRef: "rehearsal://foundation/activation.basic",
+          evidenceHash: `sha256:${"1".repeat(64)}`,
+        },
+        {
+          caseKey: "negative.basic",
+          kind: "negative-activation",
+          outcome: "passed",
+          observedAt: toInstant("2026-10-02T00:00:00.000Z"),
+          evidenceRef: "rehearsal://foundation/negative.basic",
+          evidenceHash: `sha256:${"2".repeat(64)}`,
+        },
+      ],
+      testCaseCount: 2,
+      passedTestCaseCount: 2,
+    },
+  };
+}
 
 const connectionString = process.env.MASANAWA_TEST_DATABASE_URL;
 const describePostgres = connectionString ? describe : describe.skip;
@@ -299,6 +402,30 @@ describePostgres("AgentRun PostgreSQL 18 acceptance", () => {
     await expect(f.compiler.compile({ authority: { ...authority,
       capabilities: f.authority.capabilities }, session: f.session, run: f.run }))
       .rejects.toMatchObject({ code: "world.context_access_denied" });
+  });
+
+  it("admits current exact Skill selection and rejects changed assignment/readiness", async () => {
+    const f=await contextFixture(), skill=skillVersion("acceptance.selection");
+    const at=toInstant(new Date()), skills=createPostgresSkillRepository(pool);
+    await skills.registerBatch([skill]);
+    await skills.putReadiness({readiness:{skillVersionId:skill.skillVersionId,state:"ready",
+      advertised:true,reasonCode:null,checkedAt:at},expectedRevision:null});
+    const assignments=createPostgresCharacterSkillAssignmentRepository(pool);
+    const assignment={schemaVersion:1 as const,tenantId:f.scope.tenantId,characterId:f.scope.characterId,
+      skillVersionIds:[skill.skillVersionId],revision:1};
+    await assignments.put({assignment,expectedRevision:null});
+    const authority={...f.authority,capabilities:[...f.authority.capabilities,"agents.session.update","agents.skill.select"]};
+    const session=await f.sessions.updateBindings({authority,scope:f.scope,characterSessionId:f.sessionId,
+      expectedRevision:f.session.revision,bindings:{...f.session.bindings,skillVersionIds:[skill.skillVersionId]}});
+    const selector=createPostgresAgentSkillSelectionAdmission(pool,createToolRegistry());
+    const input={authority,session,run:f.run,skillVersionId:skill.skillVersionId,tools:[]};
+    expect((await selector.prepare(input)).revisionPin.rootSkillVersionId).toBe(skill.skillVersionId);
+    await skills.putReadiness({readiness:{skillVersionId:skill.skillVersionId,state:"disabled",
+      advertised:false,reasonCode:"acceptance.disabled",checkedAt:at},expectedRevision:1});
+    await expect(selector.prepare(input)).rejects.toMatchObject({code:"skill.selection_not_advertised"});
+    await assignments.put({assignment:{...assignment,skillVersionIds:[],revision:2},expectedRevision:1});
+    await expect(selector.prepare(input)).rejects.toMatchObject({code:"agents.selection_binding_mismatch"});
+    expect(await f.runs.read({authority,scope:f.scope,agentRunId:f.run.agentRunId})).toEqual(f.run);
   });
 
   it("loads exact Constitution after a newer version becomes active without mutating run history", async () => {

@@ -187,8 +187,10 @@ Task 070 acceptance (satisfied on merged main):
   - Groundwork on `task073-inference-hardening` prepares exact Skill dependency pins
     and declared Tool selections, bound to Character assignments, session selection
     and running AgentRun snapshots. Current authority and eligibility are rechecked.
-    Live Gateway strategy composition, durable admission and execution integration
-    remain open; this selection preparation does not complete Task 075.
+    PostgreSQL admission now rereads/locks custody, assignments and the bounded
+    exact Skill graph. Gateway supplies a custody-bound strategy callback scoped
+    to the current turn. Default Alpha catalog/Tool composition and execution
+    integration remain open; this work does not complete Task 075.
 - [ ] **076** Implement run budgets, token/cost/time/tool guards.
 - [ ] **077** Implement foreground conversational strategy.
 - [ ] **078** Implement research/multi-step strategy.

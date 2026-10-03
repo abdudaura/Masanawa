@@ -64,3 +64,10 @@ export function createAgentSkillSelector(dependencies: {
     },
   });
 }
+
+/** Durable owner composition reads current assignment; strategies cannot supply it. */
+export interface AgentSkillSelectionAdmission {
+  prepare(input: { readonly authority: AuthorityContext; readonly session: CharacterSession;
+    readonly run: AgentRun; readonly skillVersionId: SkillVersionId;
+    readonly tools: readonly SkillToolSelection[] }): Promise<AgentSkillSelection>;
+}

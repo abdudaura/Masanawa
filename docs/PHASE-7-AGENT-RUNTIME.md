@@ -333,3 +333,35 @@ gate passed 316 tests plus Gateway/Ops builds/typechecks; full Vitest passed
 073–075 remain open. Latest pre-checkpoint GitHub Actions on 590deea had zero
 steps and runner_id=0 for both Foundation CI and Mobile Build. No PostgreSQL
 acceptance, hosted inference or APK/device verification is claimed.
+
+
+## Task 075 durable selection admission and Gateway custody checkpoint
+
+The PostgreSQL selection adapter now rereads CharacterSession and AgentRun
+snapshots, locks the current Character assignment, and rejects changed custody
+before preparing anything. Skills owns a bounded exact graph reader: only the
+selected root/dependencies are loaded, definition hashes are checked, current
+readiness rows are locked, and graphs over 64 versions fail closed. Assignment,
+Skill versions/readiness and current Security/Identity custody stay in their
+owning schemas within one repeatable-read transaction. No selection writes occur.
+
+Gateway conversation composition accepts this admission port and supplies text
+and media strategies an optional run-bound prepareSkillSelection callback. The
+callback takes only exact Skill/Tool choices; caller-supplied authority or assignment
+cannot replace Gateway custody. It closes on strategy return/failure and rejects
+both retained calls and in-flight results that arrive after the strategy turn ends.
+Provider adapters still receive inference input only. No tool action, approval,
+receipt or completed side effect is inferred from preparation. This local callback
+lifecycle guard does not complete Task 080 cancellation/supersession.
+
+Default Alpha has no executable Tool catalog composition and does not receive
+selection authority automatically. Actual Skill execution integration remains
+open. One new PostgreSQL 18 journey is authored/typechecked to verify current
+assignment/readiness changes; it has not run here. Eleven admission query-harness
+tests and two Gateway journeys verify custody, locks, hash/readiness rejection,
+capability checks, callback lifetime and text/media binding.
+
+Verification: expanded runtime gate passed 329 tests plus Gateway/Ops builds and
+relevant typechecks. Full Vitest passed 422 tests with 78 database-dependent skips.
+Task 072 remains current; Tasks 073–075 are not complete. No PostgreSQL acceptance,
+hosted deployment, Flutter/APK build or device test is claimed.

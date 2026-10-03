@@ -30,6 +30,11 @@ export interface AgentStrategyPresentation {
 }
 
 export interface AgentStrategyRequest {
+  /** Custody-bound selection only; no authority or assignment supplied by a strategy. */
+  readonly prepareSkillSelection?: (input: {
+    readonly skillVersionId: import("@masanawa/contracts").SkillVersionId;
+    readonly tools: readonly import("@masanawa/skills").SkillToolSelection[];
+  }) => Promise<import("./selection.js").AgentSkillSelection>;
   readonly context?: import("./context.js").CompiledCharacterContext;
   readonly agentRunId: AgentRunId;
   readonly characterSessionId: CharacterSessionId;

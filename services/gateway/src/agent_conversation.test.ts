@@ -92,6 +92,44 @@ function sessionFor(
 }
 
 describe("Alpha conversation service", () => {
+  it.each(["text", "media"] as const)("binds strategy Skill preparation to Gateway custody for %s turns", async kind => {
+    const f=fixture(), session=sessionFor(f), skillVersionId=createCanonicalId("skill-version");
+    let selected=false, finished=false, calls=0;
+    let release!: () => void;
+    let pending!: ReturnType<NonNullable<Parameters<AgentStrategy["execute"]>[0]["prepareSkillSelection"]>>;
+    let retained: NonNullable<Parameters<AgentStrategy["execute"]>[0]["prepareSkillSelection"]>;
+    const service=createAgentConversationService({
+      sessions:{ async create(){return session;},async read(){return session;},async close(){return session;},
+        async reset(){throw new Error("unused");},async updateBindings(){throw new Error("unused");} },
+      runs:{async create(input){return {...input,agentRunId:input.agentRunId} as never;},
+        async read(){throw new Error("unused");},async finish(){finished=true;return {} as never;}},
+      authorizer:{async authorize(){return f.admission;}},sessionDurationMs:60_000,
+      skillSelection:{async prepare(input){
+        expect(input.authority).toBe(f.authority);expect(input.session).toBe(session);
+        expect(input.run.characterSessionId).toBe(session.characterSessionId);
+        expect(input.skillVersionId).toBe(skillVersionId);expect(finished).toBe(false);selected=true;
+        if (++calls === 2) await new Promise<void>(resolve => { release=resolve; });
+        return {agentRunId:input.run.agentRunId,characterSessionId:session.characterSessionId,
+          characterVersionId:session.characterVersionId,assignmentRevision:1,
+          revisionPin:{schemaVersion:1,rootSkillVersionId:skillVersionId,orderedVersions:[],contentHash:"test"},
+          tools:[],requiresConfirmation:false};}},
+      strategy:{async execute(input){
+        expect(input.prepareSkillSelection).toBeTypeOf("function");retained=input.prepareSkillSelection!;
+        const selection=await input.prepareSkillSelection!({skillVersionId,tools:[],
+          authority:{...f.authority,tenantId:createCanonicalId("tenant")} } as never);
+        expect(selection.agentRunId).toBe(input.agentRunId);
+        pending=input.prepareSkillSelection!({skillVersionId,tools:[]});
+        return {reply:"Prepared only",parts:[]};}},
+    });
+    const request={authorizationHeader:"Bearer alpha",characterId:f.scope.characterId,
+      characterSessionId:session.characterSessionId,requestId:createCanonicalId("request"),correlationId:createCanonicalId("correlation")};
+    const result=kind==="text"?await service.turn({...request,text:"Prepare"}):
+      await service.mediaTurn({...request,caption:"Prepare",mimeType:"audio/mp4",dataBase64:"YWJj"});
+    expect(result.reply).toBe("Prepared only");expect(selected).toBe(true);expect(finished).toBe(true);
+    await expect(retained!({skillVersionId,tools:[]})).rejects.toMatchObject({code:"agents.selection_turn_closed"});
+    const late=expect(pending).rejects.toMatchObject({code:"agents.selection_turn_closed"});release();await late;
+  });
+
   it("replaces inference providers while retaining exact session/version/run custody", async () => {
     const f = fixture();
     const session = sessionFor(f);
