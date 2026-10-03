@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../agents/masanawa_transport.dart';
+import '../../chat/message_parts.dart';
 import '../../core/providers.dart';
 import '../../state/agent_directory_state.dart';
 import '../../state/ai_chat_state.dart';
@@ -67,6 +68,8 @@ class _DeveloperScreenState extends ConsumerState<DeveloperScreen> {
     final chats = ref.watch(aiChatProvider);
     final session = ref.watch(sessionProvider);
     final token = session is SessionSignedIn ? session.tokens.accessToken : null;
+    final scenarioAgent =
+        directory.agents.isEmpty ? null : directory.agents.first;
     String? lastRun;
     for (final thread in chats.chatList) {
       if (thread.agentRunId != null) {
@@ -130,6 +133,104 @@ class _DeveloperScreenState extends ConsumerState<DeveloperScreen> {
                 ref.read(agentDirectoryProvider.notifier).refresh(),
             icon: const Icon(Icons.refresh),
             label: const Text('Refresh agents'),
+          ),
+          const SizedBox(height: 18),
+          _DiagnosticCard(
+            title: 'Scenario Lab',
+            rows: {
+              'Target': scenarioAgent?.displayName ?? 'No configured agent',
+              'Mode': 'Visual test only · no backend side effect',
+            },
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton(
+                onPressed: scenarioAgent == null
+                    ? null
+                    : () {
+                        ref.read(aiChatProvider.notifier).injectScenario(
+                              scenarioAgent.characterId,
+                              part: const AgentMessagePart(
+                                kind: AgentMessagePartKind.work,
+                                title: 'Research prospects',
+                                body: 'Visual test of long-running work progress.',
+                                status: 'working',
+                                progressCurrent: 31,
+                                progressTotal: 50,
+                                referenceId: 'scenario-work',
+                              ),
+                            );
+                        context.push('/chat/${scenarioAgent.characterId}');
+                      },
+                child: const Text('Work card'),
+              ),
+              OutlinedButton(
+                onPressed: scenarioAgent == null
+                    ? null
+                    : () {
+                        ref.read(aiChatProvider.notifier).injectScenario(
+                              scenarioAgent.characterId,
+                              part: const AgentMessagePart(
+                                kind: AgentMessagePartKind.artifact,
+                                title: 'Alpha Research Report',
+                                body: 'Visual test of an agent-produced artifact.',
+                                status: 'completed',
+                                file: AgentFileRef(
+                                  fileId: 'scenario-file',
+                                  name: 'Alpha-Research-Report.pdf',
+                                  mimeType: 'application/pdf',
+                                  sizeBytes: 284000,
+                                ),
+                              ),
+                            );
+                        context.push('/chat/${scenarioAgent.characterId}');
+                      },
+                child: const Text('File result'),
+              ),
+              OutlinedButton(
+                onPressed: scenarioAgent == null
+                    ? null
+                    : () {
+                        ref.read(aiChatProvider.notifier).injectScenario(
+                              scenarioAgent.characterId,
+                              part: const AgentMessagePart(
+                                kind: AgentMessagePartKind.approval,
+                                title: 'Approval needed',
+                                body:
+                                    'Visual test of a consequential action approval.',
+                                status: 'pending',
+                                referenceId: 'scenario-approval',
+                                actionLabel: 'Approve / Change',
+                              ),
+                            );
+                        context.push('/chat/${scenarioAgent.characterId}');
+                      },
+                child: const Text('Approval'),
+              ),
+              OutlinedButton(
+                onPressed: scenarioAgent == null
+                    ? null
+                    : () {
+                        ref.read(aiChatProvider.notifier).injectScenario(
+                              scenarioAgent.characterId,
+                              part: const AgentMessagePart(
+                                kind: AgentMessagePartKind.callResult,
+                                title: 'Call completed',
+                                body:
+                                    'Visual test only. No phone call was placed.',
+                                status: 'completed',
+                                durationMs: 102000,
+                                referenceId: 'scenario-call',
+                              ),
+                            );
+                        context.push('/chat/${scenarioAgent.characterId}');
+                      },
+                child: const Text('Call result'),
+              ),
+            ],
           ),
         ],
       ),
