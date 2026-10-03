@@ -59,7 +59,7 @@ class OnboardingScaffold extends StatelessWidget {
                     ),
                   ),
                 const SizedBox(height: 8),
-                Center(child: UnigeriaLogo(height: 72)),
+                Center(child: MasanawaLogo(height: 72)),
                 if (title != null) ...[
                   const SizedBox(height: 24),
                   Text(
