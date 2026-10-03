@@ -228,7 +228,7 @@ On Linux/macOS/WSL with Flutter + adb available:
 ```bash
 export ALPHA_DEV_ACCESS_TOKEN="<token>"
 cd apps/mobile
-./tool/build_alpha.sh --install
+bash ./tool/build_alpha.sh --install
 ```
 
 Before running either helper, start the Gateway on laptop port 3000 with the
