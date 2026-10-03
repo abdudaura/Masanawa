@@ -89,6 +89,11 @@ export function createAlphaDevAuthorizer(input: {
           taskIds: Object.freeze([]),
           workflowRunIds: Object.freeze([]),
         }),
+        presentation: Object.freeze({
+          displayName: presentation.displayName,
+          roleLabel: presentation.roleLabel,
+          about: presentation.about,
+        }),
         authority: createAuthorityContext({
           tenantId: input.config.tenantId,
           principal: Object.freeze({
