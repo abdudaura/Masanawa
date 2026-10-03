@@ -15,6 +15,7 @@ import type {
   AgentConversationAdmission,
   AgentConversationAuthorizer,
 } from "./agent_conversation_contract.js";
+import type { AgentDirectoryAuthorizer } from "./agent_directory.js";
 
 export interface AlphaDevAuthorizerConfig {
   readonly token: string;
@@ -144,5 +145,24 @@ export function parseAlphaDevIds(input: {
   return Object.freeze({
     tenantId: parseCanonicalId("tenant", input.tenantId),
     userId: parseCanonicalId("user", input.userId),
+  });
+}
+
+
+export function createAlphaDirectoryAuthorizer(input: {
+  readonly token: string;
+  readonly tenantId: TenantId;
+}): AgentDirectoryAuthorizer {
+  const expectedToken = input.token.trim();
+  if (expectedToken.length < 24) {
+    throw new TypeError("Alpha development token must be at least 24 characters");
+  }
+  return Object.freeze({
+    async authorize(request) {
+      if (bearerToken(request.authorizationHeader) !== expectedToken) {
+        throw new Error("Alpha development authorization denied");
+      }
+      return Object.freeze({ tenantId: input.tenantId });
+    },
   });
 }
