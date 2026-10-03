@@ -35,6 +35,7 @@
     "@masanawa/security": "workspace:*",
     "@masanawa/postgres": "workspace:*",
     "@masanawa/skills": "workspace:*",
-    "@masanawa/tools": "workspace:*"
+    "@masanawa/tools": "workspace:*",
+    "@masanawa/agents": "workspace:*"
   }
 }

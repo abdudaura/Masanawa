@@ -10,3 +10,5 @@ export * from "./memory/index.js";
 export * from "./world/index.js";
 export * from "./tools/operations.js";
 export * from "./skills/repository.js";
+export * from "./skills/references.js";
+export * from "./agents/sessions.js";

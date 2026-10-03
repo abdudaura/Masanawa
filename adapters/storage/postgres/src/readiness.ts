@@ -47,6 +47,15 @@ export function foundationMigrationRoots(): readonly MigrationRoot[] {
   ]);
 }
 
+/** Explicit composition root for CharacterSession consumers; no foreign schema mutation. */
+export function characterSessionMigrationRoots(): readonly MigrationRoot[] {
+  return Object.freeze([
+    ...foundationMigrationRoots(),
+    Object.freeze({ owner: "identity", directory: packageMigrationDirectory("@masanawa/identity") }),
+    Object.freeze({ owner: "agents", directory: packageMigrationDirectory("@masanawa/agents") }),
+  ]);
+}
+
 function migrationKey(
   migration: Pick<MigrationFingerprint, "owner" | "name">,
 ): string {
