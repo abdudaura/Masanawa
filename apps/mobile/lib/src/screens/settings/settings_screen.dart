@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../state/ai_chat_state.dart';
 import '../../state/session_state.dart';
-import '../../theme/unigeria_theme.dart';
-import '../../tokens/unigeria_tokens.dart';
+import '../../theme/masanawa_theme.dart';
+import '../../tokens/masanawa_tokens.dart';
 
 /// Settings + profile. The only secondary screen: account card, two local
 /// toggles, clear-chat, log out. No feature links.
@@ -21,7 +21,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final u = context.unigeria;
+    final u = context.masanawa;
     final session = ref.watch(sessionProvider);
     final user = session is SessionSignedIn ? session.user : null;
     final name = user?.name ?? 'Citizen';
@@ -165,7 +165,7 @@ class _Card extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final u = context.unigeria;
+    final u = context.masanawa;
     return Card(
       color: u.surfaceCard,
       elevation: 0,
