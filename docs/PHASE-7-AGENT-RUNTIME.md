@@ -116,6 +116,27 @@ real Android/OmniSIP qualification belongs to later Device milestones. Task 072 
 AgentRun identity/lineage/trace references. Strategies, context compilation, budgets and
 run cancellation remain later Phase 7 tasks. Phase 8 owns durable business Workflows.
 
+## Task 072 implementation checkpoint
+
+The current implementation branch adds the canonical AgentRun identity,
+lineage and durable trace-reference contract plus PostgreSQL persistence.
+AgentRun is scoped to one tenant/User/Character/Relationship and exact
+CharacterSession/CharacterVersion. Root/parent lineage is bounded; request,
+correlation, optional Task/Workflow and Operation references are immutable;
+terminal completion/failure is explicit. Direct database rewriting/deletion of
+run identity/lineage/trace history is rejected.
+
+A supplemental Alpha 1 vertical slice exercises this new contract from the
+Flutter app: each text or media turn creates a real CharacterSession-backed
+AgentRun, uses a replaceable development inference executor, then finishes the
+run. This is testing integration only and does not advance Tasks 073+.
+
+PostgreSQL acceptance coverage was added for lineage, terminal persistence,
+Relationship isolation and database immutability. GitHub-hosted Actions remain
+unable to allocate a runner in the current repository/account state; Task 072
+must not be marked COMPLETE until its required verification evidence actually
+runs and passes.
+
 ## Next milestone — Task 072
 
 Recover the canonical AgentRun ID/domain model and ADR-0008 before choosing its
