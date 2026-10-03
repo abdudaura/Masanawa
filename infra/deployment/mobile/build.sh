@@ -76,9 +76,14 @@ flutter build apk --debug --dart-define-from-file="$DEFINES_FILE"
 cp build/app/outputs/flutter-apk/app-debug.apk "$ARTIFACT_DIR/masanawa-alpha.apk"
 (cd "$ARTIFACT_DIR" && sha256sum masanawa-alpha.apk > masanawa-alpha.apk.sha256)
 python3 - "$ARTIFACT_DIR" <<'PY'
-import hashlib, json, os, pathlib, subprocess, sys
+import hashlib, json, os, pathlib, re, subprocess, sys
 root = pathlib.Path(sys.argv[1]); apk = root / 'masanawa-alpha.apk'
-manifest = {'schemaVersion': 1, 'commit': subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip(),
+commit = os.environ.get('MASANAWA_APK_SOURCE_COMMIT') or os.environ.get('RAILWAY_GIT_COMMIT_SHA')
+if not commit:
+    commit = subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip()
+if not re.fullmatch(r'[0-9a-f]{40}', commit):
+    raise SystemExit('An exact 40-character source commit is required for APK provenance')
+manifest = {'schemaVersion': 1, 'commit': commit,
  'gatewayUrl': os.environ['MASANAWA_ALPHA_GATEWAY_URL'], 'byteLength': apk.stat().st_size,
  'sha256': hashlib.sha256(apk.read_bytes()).hexdigest(), 'flutterAnalyze': 'passed', 'flutterTest': 'passed', 'apkBuild': 'passed'}
 (root / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')

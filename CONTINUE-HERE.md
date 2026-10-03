@@ -2,7 +2,49 @@
 
 This is the mandatory handoff entry point for every new Masanawa implementation session.
 
-## DigitalOcean hosting preparation checkpoint
+## Railway replacement / encrypted Gemini import checkpoint
+
+The user superseded the DigitalOcean target: reuse the Nurain Railway worker and
+replace its ChatWithStars source with Masanawa for actual phone testing. Both old
+DigitalOcean Droplets (604386381 and 604387968) were explicitly deleted and a
+fresh account inventory showed no Droplets. No Masanawa Droplet was created.
+
+Railway project `3ab9e6ec-a3fa-47c9-be81-4f12a315ca0b`, production environment
+`a7a29368-d2d5-4baf-b846-c570dfeaa6ba`: contracts service
+`498972c8-d316-4d76-b22c-c8358666394f` now runs `postgres:18-bookworm`, private
+DNS `nuraincontracts.railway.internal`, persistent volume
+`72653d2d-1e4f-42bb-82d5-238ed901226f` mounted at `/var/lib/postgresql` (500 MB).
+Deployment `fd4cab85-1874-4486-9aeb-2edbe06621c4` succeeded; real logs report
+PostgreSQL 18.6 ready for connections. Masanawa bootstrap has not run there.
+
+Worker `68191f50-7189-4ebe-88f2-db8ef2077d81` still has ChatWithStars as its
+source: Railway rejected `Baatiku/masanawa` as not found/inaccessible. Restore of
+its original build/start/health settings was submitted after a failed deployment
+`735c979f-aa73-4bdf-89f6-f5dc8cf48258` caused by applying replacement settings
+before source attachment succeeded. Do not repeat that mistake: stop on a source
+attachment error; only apply coordinated settings/source once access is verified.
+The user must grant Railway's GitHub connection access to Masanawa. Do not make
+this private repository public or mirror business truth into ChatWithStars.
+
+At the user's explicit request, all six enabled encrypted Gemini credentials from
+Nurain Supabase were transferred to the worker's private environment variable
+`MASANAWA_ALPHA_GEMINI_IMPORTED_CREDENTIALS_JSON`, without plaintext export or
+source-database changes. The hosted wrapper's explicit migration bridge decrypts
+AES-GCM with the worker's existing current/previous encryption secrets, checks
+fingerprints and fails closed on partial/invalid imports. Credentials remain
+in process/configuration only. The Gemini inference edge accepts a distinct key
+array, rotates one key per request and does not retry quota failures across keys.
+Actual decryption/key validity/inference remain unverified until deployment.
+`gemini-2.5-flash` is explicitly configured, from current official model docs;
+model replacement and real availability checks remain operator concerns.
+
+Local checks passed: Gateway build, 96 Gateway/architecture tests and two Node
+credential-import tests. Cloud APK Docker/start tooling now supports exact
+commit provenance without copying Git history. No Flutter/APK execution is claimed.
+Dashboard/call services have not been switched. Continue toward live Gateway,
+actual bootstrap/acceptance and private APK delivery. Task 072 remains current.
+
+## DigitalOcean hosting preparation checkpoint (superseded)
 
 The user selected DigitalOcean over Railway/Render and cannot use their Windows
 machine. The hosted Alpha must be a separate canonically bootstrapped instance;

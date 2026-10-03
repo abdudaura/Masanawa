@@ -40,7 +40,7 @@ import {
   parseAlphaDevIds,
   parseAlphaRelationshipMap,
 } from "./alpha_dev.js";
-import { createGeminiAlphaInferenceProvider } from "./alpha_executor.js";
+import { createGeminiAlphaInferencePool, parseAlphaGeminiKeys } from "./alpha_executor.js";
 import { createAlphaInferenceStrategy } from "./alpha_strategy.js";
 import {
   createGatewayApp,
@@ -212,8 +212,8 @@ export async function startGatewayService(
       skillAssignments: database.characterSkillAssignments,
     });
     strategy ??= createAlphaInferenceStrategy({
-      inference: createGeminiAlphaInferenceProvider({
-        apiKey: requiredAlphaEnv(env, "MASANAWA_ALPHA_GEMINI_API_KEY"),
+      inference: createGeminiAlphaInferencePool({
+        apiKeys: parseAlphaGeminiKeys({ apiKey: env.MASANAWA_ALPHA_GEMINI_API_KEY, apiKeysJson: env.MASANAWA_ALPHA_GEMINI_API_KEYS_JSON }),
         model: requiredAlphaEnv(env, "MASANAWA_ALPHA_GEMINI_MODEL"),
       }),
     });

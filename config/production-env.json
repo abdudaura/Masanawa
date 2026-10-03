@@ -193,6 +193,27 @@
       "classification": "secret",
       "requiredIn": [],
       "description": "Private bearer secret protecting Alpha APK downloads; never embedded in the APK."
+    },
+    {
+      "name": "MASANAWA_ALPHA_GEMINI_API_KEYS_JSON",
+      "owner": "security/bootstrap",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Private JSON array of distinct Alpha Gemini keys selected at the inference adapter edge; alternative to the single-key setting."
+    },
+    {
+      "name": "MASANAWA_ALPHA_GEMINI_IMPORTED_CREDENTIALS_JSON",
+      "owner": "security/bootstrap",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Explicit one-time encrypted Nurain credential export for the reused Railway worker; decrypts with its existing encryption secret, never logs key values."
+    },
+    {
+      "name": "MASANAWA_APK_SOURCE_COMMIT",
+      "owner": "mobile/alpha",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Exact forty-character Git source commit recorded by the private cloud APK builder."
     }
   ]
 }

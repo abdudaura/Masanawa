@@ -5,9 +5,24 @@ import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { createPostgresPool } from "@masanawa/postgres";
+import { decryptNurainGeminiCredentials } from "./import-nurain-gemini.mjs";
 
-const needed = ["MASANAWA_BOOTSTRAP_ADMIN_DATABASE_URL", "MASANAWA_ALPHA_DEV_TOKEN", "MASANAWA_ALPHA_GEMINI_API_KEY", "MASANAWA_ALPHA_GEMINI_MODEL"];
+if (process.env.MASANAWA_ALPHA_GEMINI_IMPORTED_CREDENTIALS_JSON) {
+  try {
+    if (process.env.MASANAWA_ALPHA_GEMINI_API_KEY || process.env.MASANAWA_ALPHA_GEMINI_API_KEYS_JSON) throw new Error();
+    // Legacy names are read only by this explicit migration bridge on the reused worker.
+    const previous = (process.env["CREDENTIAL_ENCRYPTION_KEY_PREVIOUS"] ?? "").split(",").map(value => value.trim()).filter(Boolean);
+    const keys = decryptNurainGeminiCredentials(process.env.MASANAWA_ALPHA_GEMINI_IMPORTED_CREDENTIALS_JSON, [process.env["CREDENTIAL_ENCRYPTION_KEY"], ...previous]);
+    process.env.MASANAWA_ALPHA_GEMINI_API_KEYS_JSON = JSON.stringify(keys);
+    delete process.env.MASANAWA_ALPHA_GEMINI_IMPORTED_CREDENTIALS_JSON;
+  } catch {
+    console.error("Hosted Alpha credential import failed; no key values are logged.");
+    process.exit(1);
+  }
+}
+const needed = ["MASANAWA_BOOTSTRAP_ADMIN_DATABASE_URL", "MASANAWA_ALPHA_DEV_TOKEN", "MASANAWA_ALPHA_GEMINI_MODEL"];
 const missing = needed.filter(key => !process.env[key]?.trim());
+if (!process.env.MASANAWA_ALPHA_GEMINI_API_KEY?.trim() && !process.env.MASANAWA_ALPHA_GEMINI_API_KEYS_JSON?.trim()) missing.push("MASANAWA_ALPHA_GEMINI_API_KEYS_JSON");
 if (missing.length) {
   // A real setup endpoint, never an imitation of the Agent API or successful readiness.
   createServer((request, response) => {

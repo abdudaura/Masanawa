@@ -14,6 +14,48 @@ interface GeminiResponse {
   }[];
 }
 
+/** Alpha credential selection stays at the inference edge. One request uses one key. */
+export function createGeminiAlphaInferencePool(input: {
+  readonly apiKeys: readonly string[];
+  readonly model: string;
+  readonly fetchImpl?: typeof fetch;
+}): AgentInferenceProvider {
+  if (!Array.isArray(input.apiKeys) || input.apiKeys.length < 1 || input.apiKeys.length > 32) {
+    throw new TypeError("Alpha Gemini credential pool must contain 1-32 keys");
+  }
+  const keys = input.apiKeys.map(key => {
+    if (typeof key !== "string" || !key.trim() || key.length > 256 || /\s/u.test(key.trim())) {
+      throw new TypeError("Invalid Alpha Gemini credential");
+    }
+    return key.trim();
+  });
+  if (new Set(keys).size !== keys.length) throw new TypeError("Duplicate Alpha Gemini credential");
+  const providers = keys.map(apiKey => createGeminiAlphaInferenceProvider({ ...input, apiKey }));
+  let next = 0;
+  return Object.freeze({
+    async generate(request: Parameters<AgentInferenceProvider["generate"]>[0]) {
+      const provider = providers[next]!;
+      next = (next + 1) % providers.length;
+      // No automatic retries across keys: shared-project quotas remain shared.
+      return provider.generate(request);
+    },
+  });
+}
+
+export function parseAlphaGeminiKeys(input: { readonly apiKey?: string | undefined; readonly apiKeysJson?: string | undefined }): readonly string[] {
+  if (input.apiKey?.trim() && input.apiKeysJson?.trim()) throw new TypeError("Configure one Alpha Gemini credential source");
+  if (input.apiKeysJson?.trim()) {
+    if (input.apiKeysJson.length > 16_384) throw new TypeError("Alpha Gemini credential configuration too large");
+    try {
+      const keys: unknown = JSON.parse(input.apiKeysJson);
+      if (!Array.isArray(keys) || keys.length < 1 || keys.length > 32 || keys.some(key => typeof key !== "string" || !key.trim() || key.length > 256 || /\s/u.test(key.trim()))) throw new Error();
+      return Object.freeze(keys.map((key: string) => key.trim()));
+    } catch { throw new TypeError("Invalid Alpha Gemini credential configuration"); }
+  }
+  if (!input.apiKey?.trim()) throw new TypeError("Alpha Gemini credential is required");
+  return Object.freeze([input.apiKey.trim()]);
+}
+
 export function createGeminiAlphaInferenceProvider(input: {
   readonly apiKey: string;
   readonly model: string;

@@ -12,12 +12,15 @@ Merged `main` satisfies Tasks **001-071**.
 
 **Current: Task 072 of 150 — Implement AgentRun identity, lineage and durable trace references.**
 
-Hosted Alpha preparation now targets DigitalOcean with PostgreSQL 18 and HTTPS,
-plus a cloud APK build path and a tested provider-neutral/private R2 signing adapter.
-No live hosted Gateway, bucket or APK exists at this checkpoint. The user chose to
-confirm remaining DigitalOcean trial credit before server creation. This does not
-advance Tasks 072-074 or replace their required acceptance/merged-main gates.
-See `infra/deployment/digitalocean/README.md` for evidence and open dependencies.
+The user now authorized reuse of Nurain's Railway services for Masanawa; the
+DigitalOcean target is superseded and both existing Droplets were deleted.
+PostgreSQL 18.6 is running on the reused contracts service with persistent storage.
+All six enabled Nurain Gemini credentials were transferred in encrypted form to
+the reused worker configuration; live decryption/inference await deployment.
+Railway cannot access the private Masanawa repository, so source replacement and
+APK generation remain blocked. No live Masanawa Gateway, R2 bucket or APK is
+claimed. This does not advance Tasks 072-074 or replace their acceptance gates.
+See `infra/deployment/railway/README.md` for evidence and the remaining access step.
 
 
 Supplemental cross-cutting checkpoint PR #81 merged as

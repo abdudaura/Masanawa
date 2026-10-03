@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createGeminiAlphaInferenceProvider } from "./alpha_executor.js";
+import { createGeminiAlphaInferenceProvider, createGeminiAlphaInferencePool, parseAlphaGeminiKeys } from "./alpha_executor.js";
 
 function response(text: string): Response {
   return new Response(
@@ -9,6 +9,40 @@ function response(text: string): Response {
     { status: 200, headers: { "content-type": "application/json" } },
   );
 }
+
+describe("Gemini Alpha credential pool", () => {
+  it("copies credentials and distributes requests without extra inference attempts", async () => {
+    const keys = ["first-key", "second-key"];
+    const used: (string | null)[] = [];
+    const pool = createGeminiAlphaInferencePool({ apiKeys: keys, model: "replaceable-model", fetchImpl: (async (_url, init) => {
+      used.push(new Headers(init?.headers).get("x-goog-api-key"));
+      return response("Hi");
+    }) as typeof fetch });
+    keys[0] = "changed";
+    const request = { systemInstructions: ["Hello"], input: { kind: "text" as const, text: "Hi" } };
+    await Promise.all([pool.generate(request), pool.generate(request), pool.generate(request)]);
+    expect(used).toEqual(["first-key", "second-key", "first-key"]);
+  });
+
+  it("does not retry a rate-limited request across contributed credentials", async () => {
+    const fetchImpl = vi.fn(async () => new Response("private vendor error", { status: 429 }));
+    const pool = createGeminiAlphaInferencePool({ apiKeys: ["first", "second"], model: "test", fetchImpl: fetchImpl as typeof fetch });
+    await expect(pool.generate({ systemInstructions: ["Hello"], input: { kind: "text", text: "Hi" } })).rejects.toMatchObject({ code: "inference.rate_limited" });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it("fails closed on ambiguous, duplicate, malformed or unbounded configuration", () => {
+    expect(() => parseAlphaGeminiKeys({ apiKey: "secret", apiKeysJson: '["other"]' })).toThrow("one Alpha");
+    for (const apiKeysJson of ['{"secret":"private"}', '[null]', '[]', '["white space"]', 'not-json']) {
+      expect(() => parseAlphaGeminiKeys({ apiKeysJson })).toThrow("Invalid Alpha");
+    }
+    for (const apiKeys of [[], ["same", "same"], Array.from({ length: 33 }, (_, i) => `key-${i}`)]) {
+      expect(() => createGeminiAlphaInferencePool({ apiKeys, model: "test" })).toThrow();
+    }
+    expect(parseAlphaGeminiKeys({ apiKey: " legacy-key " })).toEqual(["legacy-key"]);
+    expect(Object.isFrozen(parseAlphaGeminiKeys({ apiKeysJson: '["first","second"]' }))).toBe(true);
+  });
+});
 
 describe("Gemini Alpha inference provider", () => {
   it("keeps credentials out of request URLs", async () => {
