@@ -66,7 +66,7 @@ class OnboardingScaffold extends StatelessWidget {
                     title!,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: UnigeriaTokens.fontSize['xl'],
+                      fontSize: MasanawaTokens.fontSize['xl'],
                       fontWeight: FontWeight.w700,
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
@@ -78,7 +78,7 @@ class OnboardingScaffold extends StatelessWidget {
                     subtitle!,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: UnigeriaTokens.fontSize['md'],
+                      fontSize: MasanawaTokens.fontSize['md'],
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
