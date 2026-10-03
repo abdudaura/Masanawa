@@ -42,6 +42,15 @@ class AgentFileRef {
   final String? previewUrl;
   final String? downloadUrl;
 
+  Map<String, dynamic> toJson() => {
+        'fileId': fileId,
+        'name': name,
+        if (mimeType != null) 'mimeType': mimeType,
+        if (sizeBytes != null) 'sizeBytes': sizeBytes,
+        if (previewUrl != null) 'previewUrl': previewUrl,
+        if (downloadUrl != null) 'downloadUrl': downloadUrl,
+      };
+
   factory AgentFileRef.fromJson(Map<String, dynamic> json) {
     final id = json['fileId'];
     final name = json['name'];
@@ -88,6 +97,29 @@ class AgentMessagePart {
   /// never authority.
   final String? referenceId;
   final String? actionLabel;
+
+  Map<String, dynamic> toJson() => {
+        'kind': switch (kind) {
+          AgentMessagePartKind.audio => 'audio',
+          AgentMessagePartKind.image => 'image',
+          AgentMessagePartKind.file => 'file',
+          AgentMessagePartKind.artifact => 'artifact',
+          AgentMessagePartKind.work => 'work',
+          AgentMessagePartKind.approval => 'approval',
+          AgentMessagePartKind.operation => 'operation',
+          AgentMessagePartKind.callResult => 'call_result',
+          AgentMessagePartKind.status => 'status',
+        },
+        if (title != null) 'title': title,
+        if (body != null) 'body': body,
+        if (status != null) 'status': status,
+        if (progressCurrent != null) 'progressCurrent': progressCurrent,
+        if (progressTotal != null) 'progressTotal': progressTotal,
+        if (durationMs != null) 'durationMs': durationMs,
+        if (file != null) 'file': file!.toJson(),
+        if (referenceId != null) 'referenceId': referenceId,
+        if (actionLabel != null) 'actionLabel': actionLabel,
+      };
 
   factory AgentMessagePart.fromJson(Map<String, dynamic> json) {
     final kind = AgentMessagePartKind.parse(json['kind'] as String?);
