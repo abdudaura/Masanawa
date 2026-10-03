@@ -56,7 +56,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // Signed-out users can only be in auth.
       final protected = path == '/chats' ||
           path.startsWith('/chat/') ||
-          path == '/masana' ||
+          path == '/agents' || path == '/masana' ||
           path == '/settings' ||
           path == '/profile';
       if (!isSignedIn && protected) return '/phone-login';
@@ -78,7 +78,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       // Backwards-compat: the old single chat now lands on the list.
       GoRoute(path: '/home', builder: (_, _) => const ChatListScreen()),
-      GoRoute(path: '/masana', builder: (_, _) => const MasanaListScreen()),
+      GoRoute(path: '/agents', builder: (_, _) => const AgentListScreen()),
+      GoRoute(path: '/masana', redirect: (_, __) => '/agents'),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
       GoRoute(path: '/profile', builder: (_, _) => const SettingsScreen()),
     ],
