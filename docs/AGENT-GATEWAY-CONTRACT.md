@@ -8,7 +8,7 @@ Define the minimal HTTP shapes the thin mobile shell can consume without owning 
 
 ## Directory
 
-### GET /agent/directory
+### GET /v1/agent/directory
 
 Returns the authorized Characters configured to appear in the current user's app.
 
@@ -36,7 +36,7 @@ The response MUST NOT expose or infer authorization from display names or role l
 
 ## Open/resume session
 
-### POST /agent/sessions/open
+### POST /v1/agent/sessions/open
 
 ```json
 { "characterId": "character_..." }
@@ -46,7 +46,7 @@ Returns canonical CharacterSession identity and optional current AgentRun refere
 
 ## Turn
 
-### POST /agent/sessions/:characterSessionId/turn
+### POST /v1/agent/sessions/:characterSessionId/turn
 
 ```json
 { "text": "Research 50 companies and make a spreadsheet." }
@@ -77,7 +77,7 @@ A file/artifact part carries a durable server reference rather than a device pat
 
 ## Close local handle
 
-### POST /agent/sessions/:characterSessionId/close
+### POST /v1/agent/sessions/:characterSessionId/close
 
 Closing the client handle is advisory. Character identity and durable server work survive disconnects.
 
@@ -114,12 +114,12 @@ authorization adapter are temporary.
 
 Development routes:
 
-- `POST /agent/sessions/open` with `{ "characterId": "character_..." }`;
-- `POST /agent/sessions/:characterSessionId/turn` with explicit
+- `POST /v1/agent/sessions/open` with `{ "characterId": "character_..." }`;
+- `POST /v1/agent/sessions/:characterSessionId/turn` with explicit
   `characterId` plus text;
-- `POST /agent/sessions/:characterSessionId/media-turn` with explicit
+- `POST /v1/agent/sessions/:characterSessionId/media-turn` with explicit
   `characterId`, caption, MIME type and bounded base64 bytes;
-- `POST /agent/sessions/:characterSessionId/close` with explicit
+- `POST /v1/agent/sessions/:characterSessionId/close` with explicit
   `characterId`.
 
 Each text/media turn creates one canonical AgentRun and returns its

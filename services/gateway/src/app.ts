@@ -153,7 +153,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
   if (options.agentDirectory) {
     const directory = options.agentDirectory;
     app.get(
-      "/agent/directory",
+      "/v1/agent/directory",
       {
         schema: {
           response: { 200: AgentDirectoryResponseSchema },
@@ -174,7 +174,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     const conversation = options.agentConversation;
 
     app.post(
-      "/agent/sessions/open",
+      "/v1/agent/sessions/open",
       {
         schema: {
           body: AgentSessionOpenBodySchema,
@@ -189,7 +189,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     );
 
     app.post(
-      "/agent/sessions/:characterSessionId/turn",
+      "/v1/agent/sessions/:characterSessionId/turn",
       {
         schema: {
           params: AgentSessionParamsSchema,
@@ -222,7 +222,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
 
 
     app.post(
-      "/agent/sessions/:characterSessionId/media-turn",
+      "/v1/agent/sessions/:characterSessionId/media-turn",
       {
         bodyLimit: 13_000_000,
         schema: {
@@ -257,7 +257,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     );
 
     app.post(
-      "/agent/sessions/:characterSessionId/close",
+      "/v1/agent/sessions/:characterSessionId/close",
       {
         schema: {
           params: AgentSessionParamsSchema,

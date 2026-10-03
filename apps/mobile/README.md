@@ -1,5 +1,27 @@
 # apps/mobile — Masanawa Voice-First Agent Shell (Flutter)
 
+## Runtime verification after pulling updates
+
+Keep the existing PostgreSQL 18 container and bootstrap-generated Alpha IDs/token.
+From the repository root, point the test URL at that running PostgreSQL instance:
+
+```powershell
+$env:MASANAWA_TEST_DATABASE_URL = "postgres://postgres:masanawa@localhost:5432/masanawa"
+pnpm.cmd alpha:verify
+```
+
+The tests create isolated test databases and require a PostgreSQL role allowed to
+create databases. The helper builds/types Gateway and Ops, runs their unit and
+architecture/contracts checks, then runs CharacterSession/AgentRun acceptance.
+It does not rerun bootstrap, reseed identities or replace the Alpha token.
+`pnpm.cmd alpha:verify --unit-only` deliberately excludes PostgreSQL acceptance
+and cannot establish Task 072 completion. Flutter checks and the APK build remain
+the separate commands below.
+
+Alpha routes now use `/v1/agent/...`. Rebuild Gateway and the debug APK together;
+the Gateway base URL stays `http://127.0.0.1:3000`. Keep the existing USB reverse
+and generated development token.
+
 Thin phone shell for the Masanawa platform. It renders login, a dynamic
 server-configured Character roster, voice-first conversations, structured work results
 and settings. It owns no brain: no Character store, no memory authority, no Skill
@@ -29,7 +51,7 @@ ships in release builds. Tokens live in encrypted platform storage.
 ## Agents and chat
 
 No production agent identities are hard-coded in the app. The roster comes from the
-authorized `/agent/directory` projection. Each conversation is keyed by canonical
+authorized `/v1/agent/directory` projection. Each conversation is keyed by canonical
 `CharacterId`; admin-configured role labels are presentation metadata and never imply
 Skills or authority.
 

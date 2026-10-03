@@ -2,6 +2,7 @@ import type {
   AgentInferenceProvider,
   AgentStrategy,
 } from "@masanawa/agents";
+import { generateAgentInference } from "@masanawa/agents";
 
 export function createAlphaInferenceStrategy(input: {
   readonly inference: AgentInferenceProvider;
@@ -20,12 +21,11 @@ export function createAlphaInferenceStrategy(input: {
         "This Alpha strategy is temporary. Do not claim tools, files, calls, memory, live data, or side effects unless the runtime actually provides them.",
       ];
 
-      const result = await input.inference.generate({
+      const result = await generateAgentInference(input.inference, {
         systemInstructions: Object.freeze(instructions),
         input: request.input,
       });
       const reply = result.text.trim();
-      if (!reply) throw new Error("Alpha inference returned no text");
       return Object.freeze({
         reply,
         parts: Object.freeze([]),

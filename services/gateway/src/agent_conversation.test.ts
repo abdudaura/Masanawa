@@ -16,7 +16,9 @@ import type {
 } from "@masanawa/agents";
 import {
   emptyCharacterSessionBindings,
+  AgentInferenceError,
 } from "@masanawa/agents";
+import { createAlphaInferenceStrategy } from "./alpha_strategy.js";
 import {
   createAgentConversationService,
 } from "./agent_conversation.js";
@@ -90,6 +92,94 @@ function sessionFor(
 }
 
 describe("Alpha conversation service", () => {
+  it("replaces inference providers while retaining exact session/version/run custody", async () => {
+    const f = fixture();
+    const session = sessionFor(f);
+    const admittedRuns: Parameters<AgentRunRepository["create"]>[0][] = [];
+    const finishes: Parameters<AgentRunRepository["finish"]>[0][] = [];
+    const sessions: CharacterSessionRepository = {
+      async create() { return session; },
+      async read() { return session; },
+      async updateBindings() { throw new Error("not used"); },
+      async close() { return session; },
+      async reset() { throw new Error("not used"); },
+    };
+    const runs: AgentRunRepository = {
+      async create(input) { admittedRuns.push(input); return {} as never; },
+      async read() { throw new Error("not used"); },
+      async finish(input) { finishes.push(input); return {} as never; },
+    };
+    // Current admission may have a newer published version; existing continuity
+    // must keep the exact version from its CharacterSession.
+    const admission = { ...f.admission, characterVersionId: createCanonicalId("character-version") };
+    for (const answer of ["Provider A", "Provider B"]) {
+      const strategy = createAlphaInferenceStrategy({
+        inference: {
+          async generate(input) {
+            expect(Object.keys(input).sort()).toEqual(["input", "systemInstructions"]);
+            expect(input.input.kind).toBe("text");
+            return { text: answer };
+          },
+        },
+      });
+      const service = createAgentConversationService({
+        sessions, runs, strategy,
+        authorizer: { async authorize() { return admission; } },
+        sessionDurationMs: 60_000,
+      });
+      const result = await service.turn({
+        authorizationHeader: "Bearer alpha",
+        characterId: f.scope.characterId,
+        characterSessionId: session.characterSessionId,
+        text: "Hello",
+        requestId: createCanonicalId("request"),
+        correlationId: createCanonicalId("correlation"),
+      });
+      expect(result.reply).toBe(answer);
+      expect(result.agentRunId).toBe(admittedRuns.at(-1)?.agentRunId);
+    }
+    expect(new Set(admittedRuns.map((run) => run.agentRunId)).size).toBe(2);
+    for (const run of admittedRuns) {
+      expect(run.characterSessionId).toBe(session.characterSessionId);
+      expect(run.characterVersionId).toBe(session.characterVersionId);
+      expect(run.scope).toEqual(f.scope);
+    }
+    expect(finishes.map((run) => run.outcome.state)).toEqual(["completed", "completed"]);
+  });
+
+  it.each(["text", "media"] as const)("persists safe inference failure codes for %s turns", async (kind) => {
+    const f = fixture();
+    const session = sessionFor(f);
+    const outcomes: Parameters<AgentRunRepository["finish"]>[0][] = [];
+    const service = createAgentConversationService({
+      sessions: {
+        async create() { return session; }, async read() { return session; },
+        async close() { return session; },
+        async reset() { throw new Error("not used"); },
+        async updateBindings() { throw new Error("not used"); },
+      },
+      runs: {
+        async create() { return {} as never; },
+        async read() { throw new Error("not used"); },
+        async finish(input) { outcomes.push(input); return {} as never; },
+      },
+      authorizer: { async authorize() { return f.admission; } },
+      strategy: createAlphaInferenceStrategy({
+        inference: { async generate() { throw new AgentInferenceError("inference.rate_limited"); } },
+      }),
+      sessionDurationMs: 60_000,
+    });
+    const input = {
+      authorizationHeader: "Bearer alpha", characterId: f.scope.characterId,
+      characterSessionId: session.characterSessionId,
+      requestId: createCanonicalId("request"), correlationId: createCanonicalId("correlation"),
+    };
+    const pending = kind === "text" ? service.turn({ ...input, text: "Hello" }) :
+      service.mediaTurn({ ...input, caption: "", mimeType: "audio/mp4", dataBase64: "YWJj" });
+    await expect(pending).rejects.toMatchObject({ code: "inference.rate_limited" });
+    expect(outcomes).toHaveLength(1);
+    expect(outcomes[0]?.outcome).toEqual({ state: "failed", failureCode: "inference.rate_limited" });
+  });
   it("uses canonical session/run custody for text and media turns", async () => {
     const f = fixture();
     let session = sessionFor(f);

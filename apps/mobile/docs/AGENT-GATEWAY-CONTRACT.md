@@ -9,7 +9,7 @@ no app changes required. Until then every turn stays on preview.
 
 ### Open (or resume) a session
 
-`POST /agent/sessions/open`
+`POST /v1/agent/sessions/open`
 
 Request:
 
@@ -28,7 +28,7 @@ when one is already active (resume). Auth: shell session bearer token.
 
 ### Send one turn
 
-`POST /agent/sessions/{characterSessionId}/turn`
+`POST /v1/agent/sessions/{characterSessionId}/turn`
 
 Request:
 
@@ -48,7 +48,7 @@ transport failure — the shell falls back honestly, never fakes text.
 
 ### Close (advisory)
 
-`POST /agent/sessions/{characterSessionId}/close`
+`POST /v1/agent/sessions/{characterSessionId}/close`
 
 Request: `{}`. Always best-effort. Server sessions are durable; a lost
 close never strands the Character.

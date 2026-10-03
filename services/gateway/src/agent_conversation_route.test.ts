@@ -46,7 +46,7 @@ describe("Alpha agent conversation routes", () => {
     const headers = { authorization: "Bearer alpha-test-token" };
     const opened = await app.inject({
       method: "POST",
-      url: "/agent/sessions/open",
+      url: "/v1/agent/sessions/open",
       headers,
       payload: { characterId },
     });
@@ -54,7 +54,7 @@ describe("Alpha agent conversation routes", () => {
 
     const turn = await app.inject({
       method: "POST",
-      url: `/agent/sessions/${sessionId}/turn`,
+      url: `/v1/agent/sessions/${sessionId}/turn`,
       headers,
       payload: { characterId, text: "Hi" },
     });
@@ -63,7 +63,7 @@ describe("Alpha agent conversation routes", () => {
 
     const media = await app.inject({
       method: "POST",
-      url: `/agent/sessions/${sessionId}/media-turn`,
+      url: `/v1/agent/sessions/${sessionId}/media-turn`,
       headers,
       payload: {
         characterId,
@@ -77,7 +77,7 @@ describe("Alpha agent conversation routes", () => {
 
     const closed = await app.inject({
       method: "POST",
-      url: `/agent/sessions/${sessionId}/close`,
+      url: `/v1/agent/sessions/${sessionId}/close`,
       headers,
       payload: { characterId },
     });

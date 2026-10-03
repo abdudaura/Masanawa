@@ -2,6 +2,35 @@
 
 This is the mandatory handoff entry point for every new Masanawa implementation session.
 
+## Task 073 hardening / local verification checkpoint
+
+Branch: `task073-inference-hardening`, based on merged main `193ca46b2ed06ff1ced96dab7cb07ea1425345b0`.
+Task 072 remains current; neither Task 072 nor Task 073 is marked COMPLETE.
+
+The inference seam copies/freezes bounded transient input, strips unrelated fields,
+validates output and translates errors into safe provider-neutral failure codes.
+Gemini credentials are sent in a header rather than URLs; transport/response failures
+are redacted and thought parts are excluded. Replacement tests preserve the exact
+CharacterSession/CharacterVersion while creating distinct canonical AgentRuns.
+
+Alpha HTTP routes and the mobile transport now use `/v1/agent/...`. Rebuild the
+Gateway and APK together. Ops TypeScript 7 blockers, a misplaced Skill-assignment
+guard, UUIDv4 route-test fixtures and an unregistered public Ops environment variable
+were fixed after real local checks exposed them.
+
+Run `pnpm alpha:verify` with `MASANAWA_TEST_DATABASE_URL` set to the existing local
+PostgreSQL 18 instance. The helper checks Gateway/Ops dependency builds/types,
+runtime/architecture/contracts and real CharacterSession/AgentRun PostgreSQL acceptance.
+It refuses to silently skip database acceptance. `--unit-only` explicitly excludes it.
+Do not run bootstrap again just to verify; keep the user's existing generated IDs/token.
+
+Local checkpoint evidence: Node 24.19.0 / pnpm 12.8.2; full workspace typechecking
+passed. `alpha:verify --unit-only` passed 131 tests plus relevant dependency
+builds/typechecks. The full Vitest run passed 344 tests with 72 database-dependent
+tests skipped. No local PostgreSQL, Flutter or APK verification is claimed.
+Hosted Actions on recovered main still has zero steps and `runner_id=0`; these
+local checks do not close the full acceptance/merged-main gate.
+
 
 ## Task 072 / Alpha 1 implementation checkpoint
 

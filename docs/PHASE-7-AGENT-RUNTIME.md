@@ -144,8 +144,9 @@ identity, lineage and durable trace-reference contract. Compose admitted runs wi
 existing CharacterSession and delegated Security ceiling. Do not introduce another
 principal/identity store, transcript-as-memory authority, strategy engine, provider
 selector, Skill catalog, Operation ledger or Workflow checkpoint owner. Record its
-persistence and acceptance requirements before implementation; Task 072 remains planned
-and has no implementation branch or acceptance claim in this checkpoint.
+persistence and acceptance requirements when assessing the implementation above.
+Task 072 is implemented but remains open for its full acceptance gate.
+Do not recreate its model, repository or migration.
 
 
 ## Task 073 adjacent implementation groundwork
@@ -164,3 +165,33 @@ uses the next provider-neutral seam without advancing the canonical task ledger:
   select Skills/Tools, enforce budgets or delegate; those remain Tasks 074-079.
 
 This is mergeable architectural groundwork for Task 073, not a completion claim.
+
+## Task 073 inference hardening and local gate
+
+The Agents-owned inference admission function takes a copied/frozen, bounded transient
+text/media envelope. It excludes canonical IDs, authority and arbitrary extra fields,
+checks model output and returns only validated text. Typed failures have stable
+provider-neutral codes and safe retryability; raw exceptions/payloads are never retained.
+The Gemini edge now keeps its credential out of request URLs, redacts HTTP/transport/
+JSON failures and excludes internal thought parts.
+
+Gateway persists safe inference failure codes in terminal AgentRuns. Replacement
+tests prove that two inference implementations retain the same session and exact
+session CharacterVersion while generating separate canonical runs. This does not
+compile Memory/World, orchestrate Skills, implement run budgets or add cancellation.
+
+Broader local checks also repaired the Alpha route-versioning mismatch across Gateway,
+mobile transport and docs; Ops TypeScript 7 typing and readonly HTTP projections;
+the misplaced configured-Character guard in catalog listing; invalid route-test IDs;
+and the public Ops API-origin environment registration.
+
+`pnpm alpha:verify` builds/typechecks the Gateway/Ops dependency graphs, runs runtime,
+architecture and Contracts tests, then runs real CharacterSession/AgentRun PostgreSQL
+acceptance. Missing `MASANAWA_TEST_DATABASE_URL` fails before checks rather than
+producing a green skipped suite. `--unit-only` explicitly reports database exclusion.
+
+Local Node 24.19.0/pnpm 12.8.2 evidence: full workspace typechecking passed;
+`alpha:verify --unit-only` passed with 131 tests; full Vitest passed 344 tests with
+72 database-dependent tests skipped. PostgreSQL/Flutter/APK and exact merged-main
+Foundation CI acceptance remain unverified. Task 072 is still current and Task 073
+remains unchecked.

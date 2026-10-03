@@ -35,7 +35,7 @@ describe("agent directory route", () => {
 
     const response = await app.inject({
       method: "GET",
-      url: "/agent/directory",
+      url: "/v1/agent/directory",
       headers: { authorization: "Bearer user" },
     });
 

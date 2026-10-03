@@ -89,7 +89,7 @@ class MasanawaAgentDirectoryTransport implements AgentDirectoryTransport {
 
   @override
   Future<List<AgentDirectoryEntry>> loadDirectory() async {
-    final data = await _client.get('/agent/directory');
+    final data = await _client.get('/v1/agent/directory');
     final raw = data['agents'];
     if (raw is! List) throw const ApiException('Invalid agent directory');
     return [
@@ -115,7 +115,7 @@ class MasanawaAgentTransport implements AgentTransport {
 
   @override
   Future<AgentSessionBinding> openSession(String characterId) async {
-    final data = await _client.post('/agent/sessions/open', {
+    final data = await _client.post('/v1/agent/sessions/open', {
       'characterId': characterId,
     });
     final id = data['characterSessionId'];
@@ -136,7 +136,7 @@ class MasanawaAgentTransport implements AgentTransport {
     required String text,
   }) async {
     final data = await _client.post(
-      '/agent/sessions/${binding.characterSessionId}/turn',
+      '/v1/agent/sessions/${binding.characterSessionId}/turn',
       {
         'characterId': binding.characterId,
         'text': text,
@@ -178,7 +178,7 @@ class MasanawaAgentTransport implements AgentTransport {
     required String caption,
   }) async {
     final data = await _client.post(
-      '/agent/sessions/${binding.characterSessionId}/media-turn',
+      '/v1/agent/sessions/${binding.characterSessionId}/media-turn',
       {
         'characterId': binding.characterId,
         'caption': caption,
@@ -201,7 +201,7 @@ class MasanawaAgentTransport implements AgentTransport {
   Future<void> closeSession(AgentSessionBinding binding) async {
     try {
       await _client.post(
-        '/agent/sessions/${binding.characterSessionId}/close',
+        '/v1/agent/sessions/${binding.characterSessionId}/close',
         {'characterId': binding.characterId},
       );
     } catch (_) {

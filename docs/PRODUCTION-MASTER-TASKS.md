@@ -160,6 +160,11 @@ Task 070 acceptance (satisfied on merged main):
     AgentStrategy/AgentInferenceProvider seams and routes Alpha Gemini inference through
     them without moving Memory/context, Skill/Tool orchestration, budgets or delegation
     into this task. Task 073 remains unchecked while Task 072 acceptance is still open.
+  - Follow-up `task073-inference-hardening` adds immutable inference input/output
+    admission, redacted typed failures, Gemini response validation and provider
+    replacement/custody tests. Local non-database checks pass; `pnpm alpha:verify`
+    provides a non-skipping PostgreSQL runtime gate. No completion claim or ledger
+    advancement follows from these checks.
 - [ ] **074** Implement Character-aware context compiler using Identity/Memory/World.
 - [ ] **075** Implement tool/skill selection orchestration.
 - [ ] **076** Implement run budgets, token/cost/time/tool guards.

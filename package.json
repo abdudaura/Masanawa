@@ -25,6 +25,7 @@
     "test:recovery": "vitest run tests/recovery",
     "test:load": "vitest run tests/load",
     "test:chaos": "vitest run tests/chaos",
+    "alpha:verify": "node scripts/verify-agent-runtime.mjs",
     "alpha:bootstrap": "node --conditions=production scripts/alpha-bootstrap.mjs",
     "alpha:prepare": "pnpm --filter @masanawa/gateway-service... build && pnpm alpha:bootstrap"
   },

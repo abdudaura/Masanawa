@@ -49,7 +49,7 @@ describe("Alpha inference strategy", () => {
     });
 
     await expect(strategy.execute(request())).rejects.toThrow(
-      "Alpha inference returned no text",
+      "Inference returned an invalid response.",
     );
   });
 });

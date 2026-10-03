@@ -89,6 +89,35 @@ function repositories() {
 }
 
 describe("Ops agent administration", () => {
+  it("lists the catalog without requiring a Character assignment", async () => {
+    const capabilities: string[] = [];
+    const service = createAgentAdminService({
+      ...repositories(), characterVersions, skills,
+      authorizer: { async authorize(input) { capabilities.push(input.capability); return { tenantId }; } },
+    });
+    const catalog = await service.listSkills({ authorizationHeader: "Bearer operator" });
+    expect(catalog[0]?.skillVersionId).toBe(assignedSkillVersionId);
+    expect(catalog[0]?.readiness).toBe("unknown");
+    expect(capabilities).toEqual(["skills.catalog.read"]);
+  });
+
+  it("rejects Skill assignment to an unconfigured Character before writing", async () => {
+    const repos = repositories();
+    let writes = 0;
+    const service = createAgentAdminService({
+      ...repos, characterVersions, skills,
+      skillAssignments: {
+        ...repos.skillAssignments,
+        async put(input) { writes++; return repos.skillAssignments.put(input); },
+      },
+      authorizer: { async authorize() { return { tenantId }; } },
+    });
+    await expect(service.putSkillAssignment({
+      authorizationHeader: "Bearer operator", expectedRevision: null,
+      assignment: { schemaVersion: 1, characterId, skillVersionIds: [assignedSkillVersionId], revision: 1 },
+    })).rejects.toThrow("Character must be configured");
+    expect(writes).toBe(0);
+  });
   it("keeps presentation writes and Skill writes as separate operations", async () => {
     const seen: string[] = [];
     const authorizer: AgentAdminAuthorizer = {
@@ -170,6 +199,7 @@ describe("Ops agent administration", () => {
 
     await expect(
       service.putPresentation({
+        authorizationHeader: undefined,
         expectedRevision: null,
         presentation: {
           schemaVersion: 1,

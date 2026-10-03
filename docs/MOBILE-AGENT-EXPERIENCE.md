@@ -197,13 +197,13 @@ It should not repeat a generic “Masanawa Agents” label.
 
 The mobile shell currently expects a server-driven directory at:
 
-`GET /agent/directory`
+`GET /v1/agent/directory`
 
 and Character sessions at:
 
-- `POST /agent/sessions/open`
-- `POST /agent/sessions/:characterSessionId/turn`
-- `POST /agent/sessions/:characterSessionId/close`
+- `POST /v1/agent/sessions/open`
+- `POST /v1/agent/sessions/:characterSessionId/turn`
+- `POST /v1/agent/sessions/:characterSessionId/close`
 
 The runtime endpoints remain subject to the canonical roadmap and current-authority admission. The mobile contract is forward-compatible scaffolding, not evidence that later server tasks are production-complete.
 

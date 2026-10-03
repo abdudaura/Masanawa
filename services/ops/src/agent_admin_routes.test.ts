@@ -26,7 +26,7 @@ describe("Ops agent admin routes", () => {
       async putPresentation(input) {
         calls.push(`presentation-write:${input.authorizationHeader ?? ""}`);
         return {
-          tenantId: "tenant_00000000-0000-4000-8000-000000000001" as never,
+          tenantId: "tenant_00000000-0000-7000-8000-000000000001" as never,
           ...input.presentation,
           revision: 1,
         };
@@ -34,7 +34,7 @@ describe("Ops agent admin routes", () => {
       async putSkillAssignment(input) {
         calls.push(`skills-write:${input.authorizationHeader ?? ""}`);
         return {
-          tenantId: "tenant_00000000-0000-4000-8000-000000000001" as never,
+          tenantId: "tenant_00000000-0000-7000-8000-000000000001" as never,
           ...input.assignment,
           revision: 1,
         };
@@ -61,12 +61,12 @@ describe("Ops agent admin routes", () => {
 
     const presentation = await app.inject({
       method: "PUT",
-      url: "/v1/agents/character_00000000-0000-4000-8000-000000000002/presentation",
+      url: "/v1/agents/character_00000000-0000-7000-8000-000000000002/presentation",
       headers,
       payload: {
         schemaVersion: 1,
         characterVersionId:
-          "character-version_00000000-0000-4000-8000-000000000003",
+          "character-version_00000000-0000-7000-8000-000000000003",
         displayName: "Amina",
         roleLabel: "Sales & Outreach",
         about: "Handles prospects",
@@ -82,12 +82,12 @@ describe("Ops agent admin routes", () => {
 
     const assignment = await app.inject({
       method: "PUT",
-      url: "/v1/agents/character_00000000-0000-4000-8000-000000000002/skills",
+      url: "/v1/agents/character_00000000-0000-7000-8000-000000000002/skills",
       headers,
       payload: {
         schemaVersion: 1,
         skillVersionIds: [
-          "skill-version_00000000-0000-4000-8000-000000000004",
+          "skill-version_00000000-0000-7000-8000-000000000004",
         ],
         expectedRevision: null,
       },

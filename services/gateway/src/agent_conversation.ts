@@ -7,6 +7,7 @@ import type {
   AgentStrategy,
   CharacterSessionRepository,
 } from "@masanawa/agents";
+import { AgentInferenceError } from "@masanawa/agents";
 import type {
   AgentConversationAuthorizer,
   AgentConversationService,
@@ -125,7 +126,8 @@ export function createAgentConversationService(input: {
             agentRunId,
             outcome: {
               state: "failed",
-              failureCode: "alpha.strategy_failed",
+              failureCode: error instanceof AgentInferenceError
+                ? error.code : "alpha.strategy_failed",
             },
           })
           .catch(() => undefined);
@@ -218,7 +220,8 @@ export function createAgentConversationService(input: {
             agentRunId,
             outcome: {
               state: "failed",
-              failureCode: "alpha.media_strategy_failed",
+              failureCode: error instanceof AgentInferenceError
+                ? error.code : "alpha.media_strategy_failed",
             },
           })
           .catch(() => undefined);

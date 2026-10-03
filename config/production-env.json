@@ -2,6 +2,13 @@
   "schemaVersion": 1,
   "variables": [
     {
+      "name": "NEXT_PUBLIC_OPS_API_BASE_URL",
+      "owner": "ops/web",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Build-time browser-visible Ops API origin; empty uses same-origin routing. Never contains credentials."
+    },
+    {
       "name": "NODE_ENV",
       "owner": "runtime",
       "classification": "public",

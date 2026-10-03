@@ -28,7 +28,7 @@ describe("production environment contracts", () => {
     expect(registry.schemaVersion).toBe(1);
     expect(entries.size).toBe(registry.variables.length);
     for (const entry of registry.variables) {
-      expect(entry.name).toMatch(/^(?:MASANAWA_[A-Z0-9_]+|NODE_ENV|HOST|PORT|DATABASE_URL)$/u);
+      expect(entry.name).toMatch(/^(?:MASANAWA_[A-Z0-9_]+|NODE_ENV|HOST|PORT|DATABASE_URL|NEXT_PUBLIC_OPS_API_BASE_URL)$/u);
       expect(entry.owner.trim()).not.toBe("");
       expect(entry.description.trim()).not.toBe("");
       expect(["public", "secret"]).toContain(entry.classification);
@@ -56,6 +56,7 @@ describe("production environment contracts", () => {
   });
 
   it("classifies database bootstrap values as secrets without storing values", () => {
+    expect(entries.get("NEXT_PUBLIC_OPS_API_BASE_URL")?.classification).toBe("public");
     expect(entries.get("MASANAWA_DATABASE_URL")?.classification).toBe("secret");
     expect(entries.get("DATABASE_URL")?.classification).toBe("secret");
     const serialized = JSON.stringify(registry);

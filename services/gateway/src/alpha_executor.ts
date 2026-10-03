@@ -1,11 +1,15 @@
 import type {
   AgentInferenceProvider,
 } from "@masanawa/agents";
+import {
+  AgentInferenceError,
+  snapshotAgentInferenceRequest,
+} from "@masanawa/agents";
 
 interface GeminiResponse {
   readonly candidates?: readonly {
     readonly content?: {
-      readonly parts?: readonly { readonly text?: string }[];
+      readonly parts?: readonly { readonly text?: string; readonly thought?: boolean }[];
     };
   }[];
 }
@@ -23,8 +27,9 @@ export function createGeminiAlphaInferenceProvider(input: {
 
   return Object.freeze({
     async generate(
-      request: Parameters<AgentInferenceProvider["generate"]>[0],
+      incoming: Parameters<AgentInferenceProvider["generate"]>[0],
     ) {
+      const request = snapshotAgentInferenceRequest(incoming);
       const userParts =
         request.input.kind === "text"
           ? [{ text: request.input.text }]
@@ -45,11 +50,13 @@ export function createGeminiAlphaInferenceProvider(input: {
               },
             ];
 
-      const response = await fetchImpl(
-        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
+      let response: Response;
+      try {
+        response = await fetchImpl(
+        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
         {
           method: "POST",
-          headers: { "content-type": "application/json" },
+          headers: { "content-type": "application/json", "x-goog-api-key": apiKey },
           body: JSON.stringify({
             system_instruction: {
               parts: request.systemInstructions.map((text) => ({ text })),
@@ -66,17 +73,37 @@ export function createGeminiAlphaInferenceProvider(input: {
             },
           }),
         },
-      );
+        );
+      } catch {
+        throw new AgentInferenceError("inference.unavailable");
+      }
 
       if (!response.ok) {
-        throw new Error(`Alpha model request failed with ${response.status}`);
+        throw new AgentInferenceError(
+          response.status === 429 ? "inference.rate_limited" :
+          response.status >= 500 || response.status === 408 ? "inference.unavailable" :
+          "inference.rejected",
+        );
       }
-      const payload = (await response.json()) as GeminiResponse;
-      const text = payload.candidates?.[0]?.content?.parts
-        ?.map((part) => part.text ?? "")
-        .join("")
-        .trim();
-      if (!text) throw new Error("Alpha model returned no text");
+      let text: string;
+      try {
+        const payload = (await response.json()) as GeminiResponse;
+        const parts = payload.candidates?.[0]?.content?.parts;
+        if (!Array.isArray(parts)) throw new TypeError("Invalid response");
+        text = parts
+          .filter((part) => part && part.thought !== true)
+          .map((part) => {
+            if (part.text !== undefined && typeof part.text !== "string") {
+              throw new TypeError("Invalid response");
+            }
+            return part.text ?? "";
+          })
+          .join("")
+          .trim();
+        if (!text || text.length > 128_000) throw new TypeError("Invalid response");
+      } catch {
+        throw new AgentInferenceError("inference.invalid_response");
+      }
       return Object.freeze({ text });
     },
   });
