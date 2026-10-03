@@ -18,10 +18,8 @@ import '../../state/agent_directory_state.dart';
 import '../../state/ai_chat_state.dart';
 import '../../theme/unigeria_theme.dart';
 
-/// One Masana conversation, styled like WhatsApp: brand header (avatar,
-/// name, `Masana Agents` status, call + team shortcuts), message list, and a
-/// composer with emoji, attachments (document / gallery / camera) and voice
-/// notes.
+/// One Character conversation. Voice is the primary action while text,
+/// attachments and structured work results remain in the same timeline.
 class AiChatScreen extends ConsumerStatefulWidget {
   const AiChatScreen({super.key, required this.characterId});
 
@@ -402,7 +400,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                         }
                         return _ChatBubble(
                           message: messages[index],
-                          masanaColor: u.brand,
+                          agentAccent: u.brand,
                         );
                       },
                     ),
@@ -694,10 +692,10 @@ class _RecordingBar extends StatelessWidget {
 }
 
 class _ChatBubble extends StatelessWidget {
-  const _ChatBubble({required this.message, required this.masanaColor});
+  const _ChatBubble({required this.message, required this.agentAccent});
 
   final AiChatMessage message;
-  final Color masanaColor;
+  final Color agentAccent;
 
   @override
   Widget build(BuildContext context) {
