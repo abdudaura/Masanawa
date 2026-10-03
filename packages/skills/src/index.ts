@@ -1,3 +1,4 @@
+export * from "./certification.js";
 export * from "./model.js";
 export * from "./registry.js";
 export * from "./manifest.js";
