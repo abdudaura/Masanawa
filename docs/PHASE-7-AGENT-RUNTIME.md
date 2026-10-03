@@ -161,7 +161,7 @@ uses the next provider-neutral seam without advancing the canonical task ledger:
   Skill/Tool, Memory or Workflow authority;
 - Gateway Alpha composition now calls AgentStrategy, while the Gemini adapter translates
   only provider-neutral inference input at the external model edge;
-- the current Alpha strategy intentionally does not compile Memory/World context,
+- the initial Alpha strategy intentionally did not compile Memory/World context,
   select Skills/Tools, enforce budgets or delegate; those remain Tasks 074-079.
 
 This is mergeable architectural groundwork for Task 073, not a completion claim.
@@ -207,9 +207,8 @@ source/revision references outside inference prompt text. No context is persiste
 
 Gateway conversation custody accepts an optional context compiler for both text
 and media turns. Alpha strategy checks its run/session/version binding and uses
-compiled authored identity instead of presentation aliases when supplied. Existing
-Alpha startup does not yet supply an Identity/Memory/World retrieval composer:
-this change must not be described as live recall or exact-Constitution Alpha wiring.
+compiled authored identity instead of presentation aliases when supplied. The initial optional seam did not wire source retrieval. The Identity-backed Alpha
+composition below supersedes that limit; Memory/World recall remains unwired.
 
 The source composer remains responsible for owner-authorized reads, current policy,
 revocation, tombstones and source freshness. Character-private and organization
@@ -222,3 +221,33 @@ Verification for this context slice: frozen-lockfile installation succeeded on
 pnpm 12.8.2; Gateway/Ops dependency builds and typechecks plus the runtime gate
 passed 142 tests; full Vitest passed 355 tests with 72 database-dependent skips.
 PostgreSQL, Flutter and APK acceptance remain unrun in this environment.
+
+
+## Task 074 Identity-backed Alpha composition (still incomplete)
+
+Gateway's default Alpha database composition now supplies a Character context compiler;
+Alpha startup refuses missing compiler composition. Identity owns the exact-version
+Constitution read port. The PostgreSQL composer reuses canonical session/run admission,
+locks current Security policy and Identity lifecycle, rereads both durable snapshots,
+loads the pinned published version, and compiles Identity-only transient context. It
+checks server time/current authority again before returning. Provider adapters receive
+admitted text only and never fetch canonical data independently. Model inference runs
+after the read transaction ends; this is a context-admission snapshot, not a long-lived
+lock or cancellation/supersession implementation (Task 080).
+
+A new active version does not rebind an existing session. Closed/changed sessions,
+terminal/changed runs, stale policy, revoked authority and archived Relationships deny
+context before inference. Gateway records a failed run when context admission fails.
+Constitution replaces presentation aliases in model instructions; UI projection edits
+still change UI labels. Memory/World retrieval remains a separate unfinished owner
+composition; no transcript, private disclosure or shared World mutation is added.
+
+The AgentRun read adapter's `FOR SHARE` now runs in a transaction that permits row
+locks. Its previous read-only setting was incompatible with PostgreSQL row locks.
+The query-harness regression test passes; real PostgreSQL acceptance remains required.
+
+Verification: Gateway/Ops dependency builds/typechecks and runtime/architecture checks
+passed 152 tests. Full Vitest passed 365 tests with 75 database-dependent skips.
+Three added PostgreSQL 18 acceptance cases cover exact version after activation, changed
+run/policy, and closed session/archived Relationship. They are authored but unrun here.
+Flutter/APK and hosted merged-main gates remain open; Task 072 is still current.

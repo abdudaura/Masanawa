@@ -175,8 +175,9 @@ the latest AgentRun ID.
 
 The user app still consumes the server-driven AgentPresentation directory. Changing
 display name, role, about/greeting, visibility or order in Ops changes what the app
-shows. Alpha model prompting also consumes the current presentation, so name/role/about
-changes affect subsequent Alpha replies without changing Character identity.
+shows. Alpha model prompting now loads the authored Constitution pinned by the CharacterSession.
+Presentation name/role/about edits change UI labels; they do not replace authored identity
+or grant capabilities. A newly activated Constitution applies when opening a new session.
 
 Skill assignment remains independently persisted. Alpha 1 carries the assigned exact
 SkillVersion IDs into CharacterSession bindings, but does not yet execute Skills; that

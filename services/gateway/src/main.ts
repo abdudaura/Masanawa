@@ -3,6 +3,7 @@ import type {
   AgentPresentationRepository,
   AgentRunRepository,
   AgentStrategy,
+  CharacterContextCompiler,
   CharacterSessionRepository,
   CharacterSkillAssignmentRepository,
 } from "@masanawa/agents";
@@ -21,6 +22,7 @@ import {
   createPostgresAgentPresentationRepository,
   createPostgresAgentRunRepository,
   createPostgresCharacterSessionRepository,
+  createPostgresCharacterContextCompiler,
   createPostgresCharacterSkillAssignmentRepository,
   createPostgresServiceDependency,
 } from "@masanawa/postgres";
@@ -59,6 +61,7 @@ export interface ServiceDatabaseDependency {
   readonly characterSkillAssignments?: CharacterSkillAssignmentRepository;
   readonly characterSessions?: CharacterSessionRepository;
   readonly agentRuns?: AgentRunRepository;
+  readonly characterContextCompiler?: CharacterContextCompiler;
   close(): Promise<void>;
 }
 
@@ -78,6 +81,7 @@ export interface StartGatewayServiceOptions {
   readonly agentDirectoryAuthorizer?: AgentDirectoryAuthorizer;
   readonly agentConversationAuthorizer?: AgentConversationAuthorizer;
   readonly agentStrategy?: AgentStrategy;
+  readonly characterContextCompiler?: CharacterContextCompiler;
 }
 
 export interface GatewayServiceRuntime {
@@ -130,6 +134,7 @@ function createDefaultDatabaseDependency(
       maxDurationMs: 7 * 24 * 60 * 60 * 1000,
     }),
     agentRuns: createPostgresAgentRunRepository(database.pool),
+    characterContextCompiler: createPostgresCharacterContextCompiler(database.pool),
     close: database.close,
   });
 }
@@ -170,10 +175,11 @@ export async function startGatewayService(
       !database.agentPresentations ||
       !database.characterSkillAssignments ||
       !database.characterSessions ||
-      !database.agentRuns
+      !database.agentRuns ||
+      !(options.characterContextCompiler ?? database.characterContextCompiler)
     ) {
       await database.close().catch(() => undefined);
-      throw new Error("Alpha mode requires canonical agent PostgreSQL repositories");
+      throw new Error("Alpha mode requires canonical agent PostgreSQL repositories and a Character context compiler");
     }
 
     const ids = parseAlphaDevIds({
@@ -233,6 +239,8 @@ export async function startGatewayService(
           runs: database.agentRuns,
           authorizer: conversationAuthorizer,
           strategy,
+          ...((options.characterContextCompiler ?? database.characterContextCompiler)
+            ? { contextCompiler: options.characterContextCompiler ?? database.characterContextCompiler } : {}),
           sessionDurationMs: 24 * 60 * 60 * 1000,
         })
       : undefined);

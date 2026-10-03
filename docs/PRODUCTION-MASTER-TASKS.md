@@ -166,6 +166,10 @@ Task 070 acceptance (satisfied on merged main):
     provides a non-skipping PostgreSQL runtime gate. No completion claim or ledger
     advancement follows from these checks.
 - [ ] **074** Implement Character-aware context compiler using Identity/Memory/World.
+  - Partial groundwork on `task073-inference-hardening` adds bounded transient owner
+    projection composition and Identity-backed Alpha Constitution loading pinned to
+    the exact session/run version with current authority/lifecycle checks. Memory/World
+    retrieval and full database/mobile acceptance remain open; Task 074 is not complete.
 - [ ] **075** Implement tool/skill selection orchestration.
 - [ ] **076** Implement run budgets, token/cost/time/tool guards.
 - [ ] **077** Implement foreground conversational strategy.

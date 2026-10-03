@@ -374,3 +374,23 @@ describe("Alpha conversation service", () => {
     expect(outcomes).toEqual(["alpha.strategy_failed"]);
   });
 });
+
+it("fails the durable run before inference when owner-backed context admission fails", async () => {
+  const f = fixture(), session = sessionFor(f);
+  let invoked = false;
+  const outcomes: unknown[] = [];
+  const service = createAgentConversationService({
+    sessions: { async read() { return session; } } as never,
+    runs: { async create(input: Parameters<AgentRunRepository["create"]>[0]) { return { agentRunId: input.agentRunId } as never; },
+      async finish(input: Parameters<AgentRunRepository["finish"]>[0]) { outcomes.push(input.outcome); return {} as never; } } as never,
+    authorizer: { async authorize() { return f.admission; } },
+    contextCompiler: { async compile() { throw new Error("denied context"); } },
+    strategy: { async execute() { invoked = true; return { reply: "bad", parts: [] }; } },
+    sessionDurationMs: 60000,
+  });
+  await expect(service.turn({ authorizationHeader: "Bearer alpha", characterId: f.scope.characterId,
+    characterSessionId: session.characterSessionId, text: "Hello", requestId: createCanonicalId("request"),
+    correlationId: createCanonicalId("correlation") })).rejects.toThrow("denied context");
+  expect(invoked).toBe(false);
+  expect(outcomes).toEqual([{ state: "failed", failureCode: "alpha.strategy_failed" }]);
+});

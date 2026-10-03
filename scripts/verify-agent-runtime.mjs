@@ -11,7 +11,7 @@ export function agentRuntimeVerificationPlan({ unitOnly = false } = {}) {
     ["exec", "tsc", "-p", "tsconfig.json"],
     ["--filter", "@masanawa/gateway-service...", "typecheck"],
     ["--filter", "@masanawa/ops-service...", "typecheck"],
-    ["exec", "vitest", "run", "packages/agents", "services/gateway", "services/ops", "test/architecture", "tests/contracts"],
+    ["exec", "vitest", "run", "packages/agents", "services/gateway", "services/ops", "test/architecture", "tests/contracts", "adapters/storage/postgres/src/agents/context.test.ts"],
     ...(!unitOnly ? [[
       "exec", "vitest", "run",
       "tests/integration/character-session-acceptance.test.ts",

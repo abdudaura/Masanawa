@@ -14,6 +14,7 @@ import {
 import {
   characterSessionMigrationRoots,
   createPostgresAgentRunRepository,
+  createPostgresCharacterContextCompiler,
   createPostgresCharacterSessionRepository,
   createPostgresIdentityRepository,
   createPostgresPool,
@@ -185,6 +186,61 @@ describePostgres("AgentRun PostgreSQL 18 acceptance", () => {
 
     return { scope, characterVersionId, authority, sessionId };
   }
+
+  async function contextFixture() {
+    const f = await fixture();
+    const runs = createPostgresAgentRunRepository(pool);
+    const agentRunId = createCanonicalId("agent-run");
+    const run = await runs.create({ authority: f.authority, scope: f.scope, agentRunId,
+      characterSessionId: f.sessionId, characterVersionId: f.characterVersionId,
+      lineage: { parentAgentRunId: null, rootAgentRunId: agentRunId, depth: 0 },
+      trace: { requestId: createCanonicalId("request"), correlationId: createCanonicalId("correlation"),
+        taskId: null, workflowRunId: null, operationIds: [] } });
+    const sessions = createPostgresCharacterSessionRepository(pool, { maxDurationMs: sessionMaxMs });
+    const session = await sessions.read({ authority: f.authority, scope: f.scope, characterSessionId: f.sessionId });
+    return { ...f, runs, sessions, run, session, compiler: createPostgresCharacterContextCompiler(pool) };
+  }
+
+  it("loads exact Constitution after a newer version becomes active without mutating run history", async () => {
+    const f = await contextFixture();
+    const newerId = createCanonicalId("character-version"), at = toInstant(new Date());
+    await withTransaction(pool, async client => {
+      const identity = createPostgresIdentityRepository(client);
+      await identity.createCharacterVersion({ tenantId: f.scope.tenantId, characterId: f.scope.characterId,
+        characterVersionId: newerId, versionNumber: 2, createdAt: at,
+        constitution: { schemaVersion: 1, displayName: "New identity", biography: "NEW VERSION ONLY",
+          personality: [], boundaries: [], disclosurePolicy: {}, languages: ["en"],
+          voiceReferences: [], appearanceReferences: [], expertise: [] } });
+      await identity.publishCharacterVersion({ tenantId: f.scope.tenantId, characterVersionId: newerId, publishedAt: at });
+      await identity.activateCharacterVersion({ tenantId: f.scope.tenantId, characterId: f.scope.characterId,
+        characterVersionId: newerId, expectedCharacterRevision: 2, activatedAt: at });
+    });
+    const context = await f.compiler.compile({ authority: f.authority, session: f.session, run: f.run });
+    expect(context.characterVersionId).toBe(f.characterVersionId);
+    expect(context.systemInstructions.join(" ")).toContain("Amina");
+    expect(context.systemInstructions.join(" ")).not.toContain("NEW VERSION ONLY");
+    expect(context.evidence).toHaveLength(1);
+    expect(await f.runs.read({ authority: f.authority, scope: f.scope, agentRunId: f.run.agentRunId })).toEqual(f.run);
+  });
+
+  it("denies stale run snapshots and changed policy before context reaches inference", async () => {
+    const f = await contextFixture();
+    await f.runs.finish({ authority: f.authority, scope: f.scope, agentRunId: f.run.agentRunId,
+      outcome: { state: "completed" } });
+    await expect(f.compiler.compile({ authority: f.authority, session: f.session, run: f.run })).rejects.toMatchObject({ code: "agents.context_snapshot_changed" });
+    await withTransaction(pool, client => setPolicyRevision(client, f.scope.tenantId, "policy-2"));
+    await expect(f.compiler.compile({ authority: f.authority, session: f.session, run: f.run })).rejects.toThrow();
+  });
+
+  it("denies closed sessions and archived Relationships at context admission", async () => {
+    const f = await contextFixture();
+    await f.sessions.close({ authority: f.authority, scope: f.scope, characterSessionId: f.sessionId,
+      expectedRevision: f.session.revision });
+    await expect(f.compiler.compile({ authority: f.authority, session: f.session, run: f.run })).rejects.toMatchObject({ code: "agents.context_snapshot_changed" });
+    await pool.query("UPDATE identity.relationships SET state = 'archived', revision = revision + 1 WHERE tenant_id = $1 AND relationship_id = $2",
+      [f.scope.tenantId, f.scope.relationshipId]);
+    await expect(f.compiler.compile({ authority: f.authority, session: f.session, run: f.run })).rejects.toMatchObject({ code: "identity.interaction_unavailable" });
+  });
 
   it("persists root/child lineage, terminal state and immutable trace history", async () => {
     const f = await fixture();

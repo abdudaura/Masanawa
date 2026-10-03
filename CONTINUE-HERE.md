@@ -32,14 +32,25 @@ Hosted Actions on recovered main still has zero steps and `runner_id=0`; these
 local checks do not close the full acceptance/merged-main gate.
 
 
-## Additional Task 074 groundwork on the same open branch
+## Task 074 Identity-backed Alpha context checkpoint
 
-The branch adds bounded transient Character context composition and an optional
-Gateway conversation compiler seam. Constitution is pinned to the exact session/run
-version; relationship evidence is isolated; World evidence must be current, public
-and approved. Alpha startup has not yet wired owner-backed retrieval. Do not claim
-live Memory recall, live Constitution loading, or Task 074 completion. Read the final
-Task 074 section of `docs/PHASE-7-AGENT-RUNTIME.md` before continuing this slice.
+On the same open branch, Alpha now requires the PostgreSQL Character context compiler.
+It loads the exact published Constitution through Identity's narrow read port, using
+current Security policy/revocation checks and Identity lifecycle locks. Session/run
+snapshots are reread and compared in one transaction. A newer active CharacterVersion
+never replaces the version pinned by an existing CharacterSession. Inference receives
+only transient admitted instructions; presentation aliases no longer replace authored
+identity. Memory/World retrieval is not enabled yet; their bounded composition API exists.
+
+AgentRun reads now permit PostgreSQL share locks by removing an invalid read-only
+transaction setting. Query-harness tests cover this regression and context admission;
+three additional PostgreSQL 18 acceptance cases are authored, not run here.
+
+Latest local verification: runtime gate passed 152 tests plus Gateway/Ops dependency
+builds/typechecks; full Vitest passed 365 tests with 75 database-dependent skips.
+Task 072 remains current. Tasks 073/074 remain unchecked. Do not rerun bootstrap or
+replace the user's generated IDs/token. Run `pnpm alpha:verify` against the existing
+PostgreSQL 18 instance to obtain real database acceptance.
 
 ## Task 072 / Alpha 1 implementation checkpoint
 

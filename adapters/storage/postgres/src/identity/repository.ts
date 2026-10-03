@@ -12,6 +12,7 @@ import {
 import {
   assertExternalUserSubjectLinkable,
   normalizeCharacterConstitution,
+  type CharacterVersionReader,
   type ActivateCharacterVersionInput,
   type Character,
   type CharacterConstitution,
@@ -503,4 +504,18 @@ export function createPostgresIdentityRepository(
       getOrCreateRelationship(client, input),
   };
   return Object.freeze(repository);
+}
+
+/** Transaction-local Identity owner read; never substitutes the current active version. */
+export function createPostgresCharacterVersionReader(client: PoolClient): CharacterVersionReader {
+  return Object.freeze({
+    async readCharacterVersion(input: Parameters<CharacterVersionReader["readCharacterVersion"]>[0]) {
+      const result = await client.query<VersionRow>(
+        `SELECT * FROM identity.character_versions
+          WHERE tenant_id = $1 AND character_id = $2 AND character_version_id = $3 FOR SHARE`,
+        [input.tenantId, input.characterId, input.characterVersionId],
+      );
+      return result.rows[0] ? version(result.rows[0]) : null;
+    },
+  });
 }

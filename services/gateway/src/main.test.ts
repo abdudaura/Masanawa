@@ -128,3 +128,14 @@ describe("gateway production lifecycle", () => {
     await runtime.shutdown();
   });
 });
+
+it("refuses Alpha startup without an owner-backed context compiler and releases the database", async () => {
+  const close = vi.fn(async () => undefined);
+  await expect(startGatewayService({
+    env: { MASANAWA_ALPHA_ENABLED: "true" }, processRef: processRef(),
+    databaseFactory: () => ({ readinessCheck: { name: "db", async check() { return { ready: true }; } },
+      agentPresentations: {} as never, characterSkillAssignments: {} as never,
+      characterSessions: {} as never, agentRuns: {} as never, close }),
+  })).rejects.toThrow("Character context compiler");
+  expect(close).toHaveBeenCalledOnce();
+});
