@@ -1,91 +1,71 @@
-/// Agent-ready contract boundary (U-SHELL-05).
-///
-/// The phone is a thin shell. It never owns Characters, memory, skills,
-/// tools, or workflows. When the Masanawa runtime ships, each Masana thread
-/// binds to a server-owned CharacterSession (+ AgentRun per turn).
-/// Until then every binding stays null and the UI runs on the civic
-/// preview endpoint (`POST /ai/chat`) with an honest on-device fallback.
-///
-/// Rules (from Masanawa AGENT-PHONE-EMBODIMENT):
-/// - Losing the phone must not lose the Character.
-/// - Local threads are cache; session/run IDs are truth.
-/// - Consequential actions need server Operation ID + receipt (future).
-library;
+import '../chat/message_parts.dart';
 
-/// Server-owned session binding for one Masana thread. All IDs come from
-/// the Masanawa platform; the phone only holds copies for display/sync.
+/// Thin-client boundary for one Character conversation.
+///
+/// The phone never owns Character identity, memory, Skills, Tools or Workflows.
+/// It holds only server references needed to render and resume a conversation.
 class AgentSessionBinding {
   const AgentSessionBinding({
-    required this.masanaId,
+    required this.characterId,
     required this.characterSessionId,
     this.agentRunId,
   });
 
-  /// Local thread key (`masanawa`, `labari`, …).
-  final String masanaId;
-
-  /// Canonical CharacterSession ID (server truth).
+  final String characterId;
   final String characterSessionId;
-
-  /// Latest AgentRun ID for this turn, when the runtime returns one.
   final String? agentRunId;
 
   Map<String, dynamic> toJson() => {
-        'masanaId': masanaId,
+        'characterId': characterId,
         'characterSessionId': characterSessionId,
         if (agentRunId != null) 'agentRunId': agentRunId,
       };
 
   factory AgentSessionBinding.fromJson(Map<String, dynamic> json) =>
       AgentSessionBinding(
-        masanaId: json['masanaId'] as String? ?? 'masanawa',
+        characterId: json['characterId'] as String? ?? '',
         characterSessionId: json['characterSessionId'] as String? ?? '',
         agentRunId: json['agentRunId'] as String?,
       );
 }
 
-/// One assistant turn. `agentRunId` carries the server run reference when the
-/// runtime returns one (Task 072); it is stored on the thread for later
-/// receipts/debugging and is null on the preview path.
+/// One assistant turn. Text/audio narration and structured work results may
+/// coexist. Structured parts carry durable references, never local authority.
 class AgentTurnResult {
-  const AgentTurnResult({required this.text, this.agentRunId});
+  const AgentTurnResult({
+    required this.text,
+    this.parts = const [],
+    this.agentRunId,
+  });
 
   final String text;
+  final List<AgentMessagePart> parts;
   final String? agentRunId;
 }
 
-/// Transport contract the runtime client must implement. Kept tiny on
-/// purpose: open a session, send one turn, close. No brain on device.
 abstract class AgentTransport {
-  /// Opens (or resumes) the server session for [masanaId].
-  Future<AgentSessionBinding> openSession(String masanaId);
+  Future<AgentSessionBinding> openSession(String characterId);
 
-  /// Sends one user turn. Must throw when the runtime is unreachable so
-  /// callers can fall back honestly.
   Future<AgentTurnResult> sendTurn({
     required AgentSessionBinding binding,
     required String text,
   });
 
-  /// Closes the local handle. Server state survives (phone ≠ brain).
   Future<void> closeSession(AgentSessionBinding binding);
 }
 
-/// Preview transport: delegates to the civic `/ai/chat` endpoint shape.
-/// Replace with the real CharacterSession/AgentRun client when the
-/// Masanawa platform exposes it — no UI changes required.
+/// Compatibility transport used only when the canonical runtime is not wired.
+/// It can converse, but cannot invent an agent roster or durable work results.
 class PreviewAgentTransport implements AgentTransport {
   PreviewAgentTransport({required this.sendPreview});
 
-  /// `(message, masana)` → assistant reply. Wired to `ApiClient.aiChat`.
-  final Future<String> Function(String message, String masana) sendPreview;
+  final Future<String> Function(String message, String characterId) sendPreview;
 
   @override
-  Future<AgentSessionBinding> openSession(String masanaId) async =>
+  Future<AgentSessionBinding> openSession(String characterId) async =>
       AgentSessionBinding(
-        masanaId: masanaId,
-        // Preview marker — never mistaken for a real session ID.
-        characterSessionId: 'preview-$masanaId',
+        characterId: characterId,
+        characterSessionId: 'preview-$characterId',
       );
 
   @override
@@ -93,7 +73,9 @@ class PreviewAgentTransport implements AgentTransport {
     required AgentSessionBinding binding,
     required String text,
   }) async =>
-      AgentTurnResult(text: await sendPreview(text, binding.masanaId));
+      AgentTurnResult(
+        text: await sendPreview(text, binding.characterId),
+      );
 
   @override
   Future<void> closeSession(AgentSessionBinding binding) async {}
