@@ -43,4 +43,5 @@ Post-freeze candidate assessments may exist without being admitted to the vault.
 
 Current phase: **Phase 6 — Skills**, preceded by the short production-structure hardening checkpoint tracked in `docs/PRODUCTION-MASTER-TASKS.md`.
 
-Phase 0 source selection/forensics, Phase 1 architecture, Phase 2 foundation, the non-spatial Phase 3 Identity/World core, Phase 4 Memory and Phase 5 Tools/Providers are closed. The canonical numbered production tracker records Tasks 001-057 as merged complete. Current: Task 058 of 150 — Establish environment/config/deployment contract conventions and validate them with env-schema checks.
+Phase 0 source selection/forensics, Phase 1 architecture, Phase 2 foundation, the non-spatial Phase 3 Identity/World core, Phase 4 Memory and Phase 5 Tools/Providers are closed. Tasks 001-069 are merged complete. Current: Task 070 of 150 — Pass Skills acceptance tests including cloud/device-provider neutrality. The canonical current status and remaining acceptance criteria are in `docs/PRODUCTION-MASTER-TASKS.md`; recover from `CONTINUE-HERE.md` before changing code.
+

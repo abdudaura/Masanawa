@@ -2,7 +2,8 @@
 
 Status: ACTIVE  
 Started: 2026-10-02  
-Active branch: `task069-trace-failure-semantics`
+Current production task: **070 — Skills acceptance**
+Task 069 implementation PR: #74, merged; closure branch: `task069-close`
 
 Phase 5 Tools and Providers is closed by PR #45, merge
 `0fe123e18a9163386c4ab10331139265ce26b64e`.
@@ -113,6 +114,12 @@ Skill execution now exposes deterministic privacy-bounded trace descriptors over
 Skill failures are normalized into immutable deterministic evidence. Existing typed `PlatformError` code/category/retryability, correlation and Operation identity are preserved, ambiguous outcomes deterministically require reconciliation, retryable typed failures retain retry disposition, and non-retryable failures are terminal. Unknown exceptions are collapsed behind stable source-specific internal codes/messages so raw exception text does not leak. Tool/provider failure truth remains owned by its existing boundary and Skills do not invent a second retry/reconciliation engine.
 
 Trace admission validates exact canonical IDs, bounded reference keys, content-hash format, step ordinal and kind-specific field combinations. Failure evidence copies and freezes only the admitted trace fields, so caller mutation and extra private payload fields cannot alter or contaminate a recorded failure. Ambiguity takes precedence over retry disposition even when a typed upstream failure is marked retryable.
+
+## Task 069 merged acceptance
+
+Task 069 implementation head `83ed96c693a307fb9fcebac7a593df680d8e1273` passed Foundation CI run 445 (328 tests). PR #74 merged as `1dd2363847c70a81ec1839377921bb461804db1e`; merged-main Foundation CI run 446 passed on that exact merge commit.
+
+Local focused verification passed 84 Skills/telemetry tests, 37 Contracts/Tools/Providers tests and strict Skills/telemetry typechecks. Phase 6 remains active: Task 070 must add canonical persistence/restart and cross-package cloud/device Provider-neutrality evidence before closure.
 
 ## First canonical slice
 
