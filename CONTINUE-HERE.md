@@ -137,21 +137,32 @@ Foundation CI run 379, PR #47 merged as
 `d0a198dbdec1af08e3c8f1378da0985db628eb6e`, and merged-main Foundation CI
 run 380 passed on that exact merge commit.
 
-**Current: Task 065 of 150 — Implement Skill provenance, trust and publisher metadata.**
-
-Active implementation branch: `task065-skill-provenance-trust-publisher`. Task 065 is strengthening exact source provenance with canonical publisher identity and evaluator-attributed trust verdicts; imported Skills require exact source revisions and trust remains non-authoritative metadata. Acceptance/CI is pending.
+**Current: Task 066 of 150 — Implement risk/capability classification.**
 
 
 
 
 
 
-Tasks 001-064 are merged complete.
+
+Tasks 001-065 are merged complete.
 
 
 
 
 
+
+Task 065 implementation head `e17e444716c58460de1a780daafd3d6dd5cfdac0` passed
+Foundation CI run 427. PR #66 merged as
+`1e852d8b59307e86d5ab0cb2bf592095db725df3`, and merged-main Foundation CI
+run 428 passed on that exact merge commit.
+
+Task 065 established:
+- reproducible exact source-system/reference/revision/content-hash provenance for SkillVersions;
+- normalized publisher identity with publisher key, display name, publisher kind and optional evidence reference;
+- evaluator-attributed trust verdicts with tier, evaluation time and normalized reason codes;
+- exact source revisions required for imported Skills and publisher/trust evidence propagated into quarantined imports;
+- trust remains descriptive admission evidence and never grants Tool, Provider, authority or subskill execution rights.
 
 Task 064 implementation head `c72a10295faffe76cfe420d91373c483b54608a1` passed
 Foundation CI run 423. PR #64 merged as
