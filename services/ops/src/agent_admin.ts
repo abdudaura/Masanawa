@@ -5,6 +5,7 @@ import type {
   CharacterSkillAssignmentRepository,
 } from "@masanawa/agents";
 import type { CharacterId, TenantId } from "@masanawa/contracts";
+import type { CharacterVersionReferenceReader } from "@masanawa/identity";
 import type { SkillRepository } from "@masanawa/skills";
 
 export type AgentAdminCapability =
@@ -70,6 +71,7 @@ export interface AgentAdminService {
 export function createAgentAdminService(input: {
   readonly presentations: AgentPresentationRepository;
   readonly skillAssignments: CharacterSkillAssignmentRepository;
+  readonly characterVersions: CharacterVersionReferenceReader;
   readonly skills: SkillRepository;
   readonly authorizer: AgentAdminAuthorizer;
 }): AgentAdminService {
@@ -126,6 +128,11 @@ export function createAgentAdminService(input: {
         authorizationHeader: request.authorizationHeader,
         capability: "agents.presentation.write",
       });
+      await input.characterVersions.assertCharacterVersion({
+        tenantId: authority.tenantId,
+        characterId: request.presentation.characterId,
+        characterVersionId: request.presentation.characterVersionId,
+      });
       return input.presentations.put({
         expectedRevision: request.expectedRevision,
         presentation: {
@@ -140,6 +147,16 @@ export function createAgentAdminService(input: {
         authorizationHeader: request.authorizationHeader,
         capability: "agents.skills.write",
       });
+      const snapshot = await input.skills.readSnapshot();
+      const available = new Set(
+        snapshot.versions.map((version) => version.skillVersionId),
+      );
+      const missing = request.assignment.skillVersionIds.filter(
+        (skillVersionId) => !available.has(skillVersionId),
+      );
+      if (missing.length > 0) {
+        throw new TypeError("Character Skill assignment contains an unavailable SkillVersion");
+      }
       return input.skillAssignments.put({
         expectedRevision: request.expectedRevision,
         assignment: {
