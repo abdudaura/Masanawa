@@ -156,7 +156,7 @@ Task 067 established:
 - mandatory positive and negative activation rehearsal coverage;
 - fail-closed unique-case, temporal, counter and all-pass validation without granting authority or execution rights.
 
-Task 068 is next. Its branch must start from the merged Task 067 closure state and implement explicit readiness/eligibility plus exact revision pinning so newer Skill revisions cannot silently alter an already-selected execution/session plan.
+Active implementation branch: `task068-readiness-eligibility-revision-pinning`. Task 068 now adds explicit exact-graph eligibility snapshots and content-addressed revision pins over exact root/dependency SkillVersion IDs. Pin resolution rejects tampering/definition or graph drift, never substitutes a newer logical revision, and rechecks current readiness so operational blocks still take effect. Acceptance/CI is pending.
 
 
 
