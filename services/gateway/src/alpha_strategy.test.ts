@@ -53,3 +53,20 @@ describe("Alpha inference strategy", () => {
     );
   });
 });
+
+ it("uses compiled authored identity instead of presentation aliases and denies stale context", async () => {
+   const input = request();
+   let calls = 0;
+   const strategy = createAlphaInferenceStrategy({ inference: { async generate(value) {
+     calls++;
+     expect(value.systemInstructions.join(" ")).toContain("Canonical Constitution");
+     expect(value.systemInstructions.join(" ")).not.toContain("Research Assistant");
+     return { text: "Hello" };
+   } } });
+   const context = { agentRunId: input.agentRunId, characterSessionId: input.characterSessionId,
+     characterVersionId: input.characterVersionId, systemInstructions: ["Canonical Constitution"],
+     evidence: [], usedCharacters: 22, omittedEvidenceItems: 0 };
+   await strategy.execute({ ...input, context });
+   await expect(strategy.execute({ ...input, context: { ...context, agentRunId: createCanonicalId("agent-run") } })).rejects.toThrow();
+   expect(calls).toBe(1);
+ });

@@ -4,6 +4,7 @@ import {
 } from "@masanawa/contracts";
 import type {
   AgentRunRepository,
+  CharacterContextCompiler,
   AgentStrategy,
   CharacterSessionRepository,
 } from "@masanawa/agents";
@@ -18,6 +19,7 @@ export function createAgentConversationService(input: {
   readonly runs: AgentRunRepository;
   readonly authorizer: AgentConversationAuthorizer;
   readonly strategy: AgentStrategy;
+  readonly contextCompiler?: CharacterContextCompiler;
   readonly sessionDurationMs: number;
 }): AgentConversationService {
   if (
@@ -75,7 +77,7 @@ export function createAgentConversationService(input: {
       });
 
       const agentRunId = createCanonicalId("agent-run");
-      await input.runs.create({
+      const run = await input.runs.create({
         authority: admission.authority,
         scope: admission.scope,
         agentRunId,
@@ -96,7 +98,9 @@ export function createAgentConversationService(input: {
       });
 
       try {
+        const context = await input.contextCompiler?.compile({ authority: admission.authority, session, run });
         const result = await input.strategy.execute({
+          ...(context ? { context } : {}),
           agentRunId,
           characterSessionId,
           characterVersionId: session.characterVersionId,
@@ -164,7 +168,7 @@ export function createAgentConversationService(input: {
       });
 
       const agentRunId = createCanonicalId("agent-run");
-      await input.runs.create({
+      const run = await input.runs.create({
         authority: admission.authority,
         scope: admission.scope,
         agentRunId,
@@ -185,7 +189,9 @@ export function createAgentConversationService(input: {
       });
 
       try {
+        const context = await input.contextCompiler?.compile({ authority: admission.authority, session, run });
         const result = await input.strategy.execute({
+          ...(context ? { context } : {}),
           agentRunId,
           characterSessionId,
           characterVersionId: session.characterVersionId,

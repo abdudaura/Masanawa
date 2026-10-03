@@ -305,6 +305,15 @@ importers:
       '@masanawa/contracts':
         specifier: workspace:*
         version: link:../contracts
+      '@masanawa/identity':
+        specifier: workspace:*
+        version: link:../identity
+      '@masanawa/memory':
+        specifier: workspace:*
+        version: link:../memory
+      '@masanawa/world':
+        specifier: workspace:*
+        version: link:../world
       '@masanawa/security':
         specifier: workspace:*
         version: link:../security

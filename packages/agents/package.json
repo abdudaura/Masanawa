@@ -5,6 +5,6 @@
   "type": "module",
   "exports": { ".": { "types": "./src/index.ts", "production": "./dist/index.js", "default": "./src/index.ts" } },
   "scripts": { "typecheck": "tsc -p tsconfig.json", "build": "tsc -p tsconfig.build.json" },
-  "dependencies": { "@masanawa/contracts": "workspace:*", "@masanawa/security": "workspace:*" },
+  "dependencies": { "@masanawa/contracts": "workspace:*", "@masanawa/security": "workspace:*", "@masanawa/identity": "workspace:*", "@masanawa/memory": "workspace:*", "@masanawa/world": "workspace:*" },
   "devDependencies": { "vitest": "5.0.3" }
 }

@@ -32,6 +32,15 @@ Hosted Actions on recovered main still has zero steps and `runner_id=0`; these
 local checks do not close the full acceptance/merged-main gate.
 
 
+## Additional Task 074 groundwork on the same open branch
+
+The branch adds bounded transient Character context composition and an optional
+Gateway conversation compiler seam. Constitution is pinned to the exact session/run
+version; relationship evidence is isolated; World evidence must be current, public
+and approved. Alpha startup has not yet wired owner-backed retrieval. Do not claim
+live Memory recall, live Constitution loading, or Task 074 completion. Read the final
+Task 074 section of `docs/PHASE-7-AGENT-RUNTIME.md` before continuing this slice.
+
 ## Task 072 / Alpha 1 implementation checkpoint
 
 PR #83 (`task072-alpha1-agent-run`) implements the current Task 072 contract and a

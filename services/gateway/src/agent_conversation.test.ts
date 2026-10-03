@@ -105,7 +105,7 @@ describe("Alpha conversation service", () => {
       async reset() { throw new Error("not used"); },
     };
     const runs: AgentRunRepository = {
-      async create(input) { admittedRuns.push(input); return {} as never; },
+      async create(input) { admittedRuns.push(input); return { ...input, characterVersionId: input.characterVersionId } as never; },
       async read() { throw new Error("not used"); },
       async finish(input) { finishes.push(input); return {} as never; },
     };
@@ -124,6 +124,14 @@ describe("Alpha conversation service", () => {
       });
       const service = createAgentConversationService({
         sessions, runs, strategy,
+        contextCompiler: { async compile(input) {
+          expect(input.session).toBe(session);
+          expect(input.run.characterVersionId).toBe(session.characterVersionId);
+          expect(input.authority).toBe(admission.authority);
+          return { agentRunId: input.run.agentRunId, characterSessionId: session.characterSessionId,
+            characterVersionId: session.characterVersionId, systemInstructions: ["Canonical Amina"],
+            evidence: [], usedCharacters: 15, omittedEvidenceItems: 0 };
+        } },
         authorizer: { async authorize() { return admission; } },
         sessionDurationMs: 60_000,
       });

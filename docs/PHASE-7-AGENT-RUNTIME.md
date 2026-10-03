@@ -195,3 +195,30 @@ Local Node 24.19.0/pnpm 12.8.2 evidence: full workspace typechecking passed;
 72 database-dependent tests skipped. PostgreSQL/Flutter/APK and exact merged-main
 Foundation CI acceptance remain unverified. Task 072 is still current and Task 073
 remains unchecked.
+
+## Task 074 bounded context groundwork (not complete)
+
+Agents now composes transient context from owner-resolved CharacterVersion,
+compiled Memory projections and public approved World events. It validates the
+exact running AgentRun/active CharacterSession version, tenant and Relationship;
+rejects mismatched or non-current evidence before truncation; preserves mandatory
+Constitution instructions; bounds optional evidence deterministically; and retains
+source/revision references outside inference prompt text. No context is persisted.
+
+Gateway conversation custody accepts an optional context compiler for both text
+and media turns. Alpha strategy checks its run/session/version binding and uses
+compiled authored identity instead of presentation aliases when supplied. Existing
+Alpha startup does not yet supply an Identity/Memory/World retrieval composer:
+this change must not be described as live recall or exact-Constitution Alpha wiring.
+
+The source composer remains responsible for owner-authorized reads, current policy,
+revocation, tombstones and source freshness. Character-private and organization
+Memory are excluded until an owner-admitted disclosure projection exists. Shared
+Character scopes still require explicit Character resource admission. Private
+Relationship evidence never becomes World canon. Task 074 remains incomplete;
+Task 072 remains the canonical current task pending full acceptance.
+
+Verification for this context slice: frozen-lockfile installation succeeded on
+pnpm 12.8.2; Gateway/Ops dependency builds and typechecks plus the runtime gate
+passed 142 tests; full Vitest passed 355 tests with 72 database-dependent skips.
+PostgreSQL, Flutter and APK acceptance remain unrun in this environment.

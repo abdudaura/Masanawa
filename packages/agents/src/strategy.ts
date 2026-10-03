@@ -30,6 +30,7 @@ export interface AgentStrategyPresentation {
 }
 
 export interface AgentStrategyRequest {
+  readonly context?: import("./context.js").CompiledCharacterContext;
   readonly agentRunId: AgentRunId;
   readonly characterSessionId: CharacterSessionId;
   readonly characterVersionId: CharacterVersionId;
