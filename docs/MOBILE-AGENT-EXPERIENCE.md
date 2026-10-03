@@ -28,6 +28,8 @@ The mobile app MUST NOT compile a fixed list of agent identities.
 
 An administrator may configure which Characters appear for a tenant/account and their presentation metadata. The app renders whatever the server returns from the authorized agent-directory projection.
 
+Changing the Character's visible name is an Identity operation: the admin edits/publishes a CharacterVersion Constitution. Changing the user-facing role/about/greeting/visibility/order is an AgentPresentation operation. Changing capabilities is a separate CharacterSkillAssignment operation. These writes must be authorized through the owning service; the mobile client does not perform them directly.
+
 The directory projection may include:
 
 - CharacterId and active CharacterVersionId;
