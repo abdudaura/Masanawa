@@ -23,13 +23,6 @@ export interface AgentConversationAuthorizer {
     readonly authorizationHeader: string | undefined;
     readonly characterId: CharacterId;
   }): Promise<AgentConversationAdmission>;
-
-  authorizeSession(input: {
-    readonly authorizationHeader: string | undefined;
-    readonly characterSessionId: CharacterSessionId;
-  }): Promise<AgentConversationAdmission & {
-    readonly characterSessionId: CharacterSessionId;
-  }>;
 }
 
 export interface AlphaConversationExecutor {
@@ -49,6 +42,7 @@ export interface AgentConversationService {
   turn(input: {
     readonly authorizationHeader: string | undefined;
     readonly characterSessionId: string;
+    readonly characterId: string;
     readonly text: string;
     readonly requestId: RequestId;
     readonly correlationId: CorrelationId;
@@ -61,5 +55,6 @@ export interface AgentConversationService {
   close(input: {
     readonly authorizationHeader: string | undefined;
     readonly characterSessionId: string;
+    readonly characterId: string;
   }): Promise<void>;
 }
