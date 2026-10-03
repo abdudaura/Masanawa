@@ -13,6 +13,10 @@ import {
   type CanonicalJson,
 } from "@masanawa/security";
 import {
+  normalizeSkillCertification,
+  type SkillCertification,
+} from "./certification.js";
+import {
   toolCostClasses,
   toolIdempotencyModes,
   toolReconciliationModes,
@@ -110,14 +114,6 @@ export interface SkillProvenance {
   readonly sourceContentHash: string;
   readonly publisher: SkillPublisherMetadata;
   readonly trust: SkillTrustVerdict;
-}
-
-export interface SkillCertification {
-  readonly profile: string;
-  readonly certifiedAt: Instant;
-  readonly certifierKey: string;
-  readonly testCaseCount: number;
-  readonly passedTestCaseCount: number;
 }
 
 export interface Skill {
@@ -471,37 +467,6 @@ export function normalizeSkillProvenance(
   });
 }
 
-function normalizeCertification(
-  input: SkillCertification,
-): SkillCertification {
-  if (
-    !Number.isSafeInteger(input.testCaseCount) ||
-    input.testCaseCount < 1 ||
-    input.testCaseCount > 1_000_000 ||
-    !Number.isSafeInteger(input.passedTestCaseCount) ||
-    input.passedTestCaseCount !== input.testCaseCount
-  ) {
-    throw new TypeError(
-      "certified SkillVersion requires at least one test and all tests passing",
-    );
-  }
-  return Object.freeze({
-    profile: bounded(
-      input.profile,
-      "skill.certification.profile",
-      256,
-    ),
-    certifiedAt: toInstant(input.certifiedAt),
-    certifierKey: bounded(
-      input.certifierKey,
-      "skill.certification.certifierKey",
-      256,
-    ),
-    testCaseCount: input.testCaseCount,
-    passedTestCaseCount: input.passedTestCaseCount,
-  });
-}
-
 export function normalizeSkillVersionDefinition(
   input: SkillVersion,
 ): SkillVersion {
@@ -652,7 +617,10 @@ export function normalizeSkillVersionDefinition(
     reconciliationMode: input.reconciliationMode,
     timeoutMs: input.timeoutMs,
     provenance: normalizeSkillProvenance(input.provenance),
-    certification: normalizeCertification(input.certification),
+    certification: normalizeSkillCertification(
+      input.certification,
+      input.skillVersionId,
+    ),
   });
 }
 
