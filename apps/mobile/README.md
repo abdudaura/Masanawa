@@ -50,3 +50,120 @@ fallback for an already selected Character.
 
 
 Product UX rules: `docs/MOBILE-AGENT-EXPERIENCE.md`. Mobile gateway projection: `docs/AGENT-GATEWAY-CONTRACT.md`.
+
+
+## Masanawa Alpha 1 — test the app before the platform is complete
+
+Alpha 1 deliberately uses the canonical CharacterSession and AgentRun stores with a
+temporary replaceable conversation executor. It is for development testing only and
+does not claim later AgentStrategy, Workflow, Presence or Device tasks are complete.
+
+### What works in Alpha 1
+
+- admin-configured agent directory;
+- real CharacterSession admission;
+- one durable AgentRun per text/media turn;
+- Gemini-backed text conversation through the Gateway;
+- actual voice-note/image/document bytes sent as multimodal input;
+- optional Android local TTS for spoken replies;
+- local conversation cache and real latest AgentRun ID;
+- debug Developer screen with Gateway health/readiness and runtime diagnostics.
+
+### Local PostgreSQL 18
+
+A simple local database is enough for phone testing:
+
+```bash
+docker run --name masanawa-alpha-db \
+  -e POSTGRES_PASSWORD=masanawa \
+  -e POSTGRES_DB=masanawa \
+  -p 5432:5432 \
+  -d postgres:18
+```
+
+Set:
+
+```bash
+export DATABASE_URL=postgres://postgres:masanawa@localhost:5432/masanawa
+```
+
+Then build and bootstrap:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm alpha:prepare
+```
+
+The bootstrap prints the exact Alpha Gateway environment and mobile Dart defines.
+It creates real canonical Tenant/User/Character/CharacterVersion/Relationship,
+Security policy and AgentPresentation records. It does not create a parallel demo
+identity store.
+
+Add the printed values plus your development Gemini values to the Gateway shell:
+
+```bash
+export MASANAWA_ALPHA_ENABLED=true
+export MASANAWA_ALPHA_DEV_TOKEN=...
+export MASANAWA_ALPHA_TENANT_ID=...
+export MASANAWA_ALPHA_USER_ID=...
+export MASANAWA_ALPHA_POLICY_REVISION=alpha-1
+export MASANAWA_ALPHA_RELATIONSHIPS_JSON='{"character_...":"relationship_..."}'
+export MASANAWA_ALPHA_GEMINI_API_KEY=...
+export MASANAWA_ALPHA_GEMINI_MODEL=...
+export DATABASE_URL=postgres://postgres:masanawa@localhost:5432/masanawa
+
+pnpm --filter @masanawa/gateway-service build
+pnpm --filter @masanawa/gateway-service start
+```
+
+### Run/build the Android Alpha app
+
+Use the laptop LAN address if the phone is on the same network. With an Android
+emulator, use the appropriate host alias for your environment.
+
+```bash
+cd apps/mobile
+flutter pub get
+flutter run \
+  --dart-define=AGENT_RUNTIME_ENABLED=true \
+  --dart-define=AGENT_BASE_URL=http://<laptop-ip>:3000 \
+  --dart-define=ALPHA_DEV_ACCESS_TOKEN=<same-alpha-token> \
+  --dart-define=ALPHA_TTS_ENABLED=true \
+  --dart-define=ALPHA_TTS_LANGUAGE=en-US
+```
+
+For an installable debug APK:
+
+```bash
+flutter build apk --debug \
+  --dart-define=AGENT_RUNTIME_ENABLED=true \
+  --dart-define=AGENT_BASE_URL=http://<laptop-ip>:3000 \
+  --dart-define=ALPHA_DEV_ACCESS_TOKEN=<same-alpha-token> \
+  --dart-define=ALPHA_TTS_ENABLED=true
+```
+
+Install `build/app/outputs/flutter-apk/app-debug.apk`. On the login screen choose
+**Skip for now — explore as a test user (debug)**. That local dev sign-in uses the
+provided Alpha token, so OTP is not required for this test build.
+
+Open **Settings → Developer** to check Gateway health/readiness, directory loading and
+the latest AgentRun ID.
+
+### Admin changes
+
+The user app still consumes the server-driven AgentPresentation directory. Changing
+display name, role, about/greeting, visibility or order in Ops changes what the app
+shows. Alpha model prompting also consumes the current presentation, so name/role/about
+changes affect subsequent Alpha replies without changing Character identity.
+
+Skill assignment remains independently persisted. Alpha 1 carries the assigned exact
+SkillVersion IDs into CharacterSession bindings, but does not yet execute Skills; that
+starts with the production orchestration tasks rather than a fake Alpha tool layer.
+
+### Alpha boundaries
+
+- The Gemini executor is a temporary development inference seam and is replaced by the
+  production AgentStrategy boundary in Task 073.
+- Android TTS is local presentation only; canonical reply text remains server truth.
+- Media payloads are capped for Alpha testing and are not the future durable file store.
+- No consequential Tool, phone, Workflow or external side effect is simulated as real.
