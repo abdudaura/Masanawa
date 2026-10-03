@@ -17,6 +17,8 @@ export interface AgentPresentation {
   readonly tenantId: TenantId;
   readonly characterId: CharacterId;
   readonly characterVersionId: CharacterVersionId;
+  /** User-app display label. CharacterId remains canonical identity. */
+  readonly displayName: string;
   readonly roleLabel: string;
   readonly about: string;
   readonly greeting: string | null;
@@ -82,6 +84,7 @@ export function normalizeAgentPresentation(
       "character-version",
       input.characterVersionId,
     ),
+    displayName: bounded(input.displayName, "displayName", 120),
     roleLabel: bounded(input.roleLabel, "roleLabel", 120),
     about: bounded(input.about, "about", 500, true),
     greeting:
