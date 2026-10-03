@@ -131,6 +131,96 @@ export function createAgentConversationService(input: {
       }
     },
 
+    async mediaTurn(request) {
+      const characterSessionId = parseCanonicalId(
+        "character-session",
+        request.characterSessionId,
+      );
+      const characterId = parseCanonicalId("character", request.characterId);
+      const caption = request.caption.trim();
+      const mimeType = request.mimeType.trim().toLowerCase();
+      if (
+        !/^[a-z0-9.+-]+\/[a-z0-9.+-]+$/u.test(mimeType) ||
+        request.dataBase64.length < 1 ||
+        request.dataBase64.length > 12_000_000
+      ) {
+        throw new RangeError("Agent media turn is invalid");
+      }
+
+      const admission = await input.authorizer.authorize({
+        authorizationHeader: request.authorizationHeader,
+        characterId,
+      });
+      const session = await input.sessions.read({
+        authority: admission.authority,
+        scope: admission.scope,
+        characterSessionId,
+      });
+
+      const agentRunId = createCanonicalId("agent-run");
+      await input.runs.create({
+        authority: admission.authority,
+        scope: admission.scope,
+        agentRunId,
+        characterSessionId,
+        characterVersionId: session.characterVersionId,
+        lineage: {
+          parentAgentRunId: null,
+          rootAgentRunId: agentRunId,
+          depth: 0,
+        },
+        trace: {
+          requestId: request.requestId,
+          correlationId: request.correlationId,
+          taskId: null,
+          workflowRunId: null,
+          operationIds: [],
+        },
+      });
+
+      try {
+        const reply = (
+          await input.executor.replyMedia({
+            characterId,
+            characterVersionId: session.characterVersionId,
+            displayName: admission.presentation.displayName,
+            roleLabel: admission.presentation.roleLabel,
+            about: admission.presentation.about,
+            caption,
+            mimeType,
+            dataBase64: request.dataBase64,
+          })
+        ).trim();
+        if (!reply) throw new Error("empty model reply");
+
+        await input.runs.finish({
+          authority: admission.authority,
+          scope: admission.scope,
+          agentRunId,
+          outcome: { state: "completed" },
+        });
+
+        return Object.freeze({
+          reply,
+          agentRunId,
+          parts: Object.freeze([]),
+        });
+      } catch (error) {
+        await input.runs
+          .finish({
+            authority: admission.authority,
+            scope: admission.scope,
+            agentRunId,
+            outcome: {
+              state: "failed",
+              failureCode: "alpha.media_executor_failed",
+            },
+          })
+          .catch(() => undefined);
+        throw error;
+      }
+    },
+
     async close(request) {
       const characterSessionId = parseCanonicalId(
         "character-session",
