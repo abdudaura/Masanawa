@@ -147,6 +147,16 @@ function capture(raw: AgentRunRequest): AgentRunRequest {
   });
 }
 
+function admissionTrace(request: AgentRunRequest): AgentRun["trace"] {
+  return normalizeAgentRunTraceReferences({
+    requestId: request.authority.requestId,
+    correlationId: request.authority.correlationId,
+    taskId: null,
+    workflowRunId: null,
+    operationIds: [],
+  });
+}
+
 async function admit(
   client: PoolClient,
   request: AgentRunRequest,
@@ -377,9 +387,16 @@ export function createPostgresAgentRunRepository(
       return withTransaction(
         pool,
         async (client) => {
+          await admit(client, request, "read", admissionTrace(request));
           const row = await loadRun(client, request, false);
           const run = rowToRun(row);
-          await admit(client, request, "read", run.trace);
+          assertAgentRunAccess(
+            request.authority,
+            request.scope,
+            "read",
+            run.trace,
+            await clock(client),
+          );
           return run;
         },
         { isolation: "repeatable read", readOnly: true },
@@ -397,8 +414,15 @@ export function createPostgresAgentRunRepository(
           : Object.freeze({ state: "completed" as const });
 
       return withTransaction(pool, async (client) => {
+        await admit(client, request, "finish", admissionTrace(request));
         const current = rowToRun(await loadRun(client, request, true));
-        await admit(client, request, "finish", current.trace);
+        assertAgentRunAccess(
+          request.authority,
+          request.scope,
+          "finish",
+          current.trace,
+          await clock(client),
+        );
         if (current.state !== "running") {
           if (
             current.state === outcome.state &&
