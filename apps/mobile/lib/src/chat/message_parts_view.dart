@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../theme/unigeria_theme.dart';
+import '../theme/masanawa_theme.dart';
 import 'chat_format.dart';
 import 'message_parts.dart';
 
@@ -63,7 +63,7 @@ class _PartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final u = context.unigeria;
+    final u = context.masanawa;
     final file = part.file;
     final total = part.progressTotal;
     final current = part.progressCurrent;
