@@ -63,6 +63,21 @@ This separation allows an administrator to configure:
 
 and independently assign any permitted Skills to any of them.
 
+## Admin configuration ownership
+
+The admin experience edits two independent concerns:
+
+1. Character identity/versioning in `packages/identity` — including the Character display name and Constitution fields.
+2. Agent presentation/runtime selection in `packages/agents` — role label, about text, greeting, mobile visibility/order and exact assigned SkillVersion references.
+
+`packages/agents/src/configuration.ts` and migration
+`0002_agent_configurations.sql` establish the durable configuration boundary.
+
+The Ops UI MUST NOT write these tables directly. A mutating admin endpoint must be
+added only through the authorized Ops service/current-authority path; the present Ops
+service is still only a health/readiness foundation, so this change deliberately does
+not add an unauthenticated write shortcut.
+
 ## Conversation ownership
 
 One visible conversation is keyed by canonical CharacterId.
