@@ -10,6 +10,7 @@ import '../agents/agent_session.dart';
 import '../chat/chat_format.dart';
 import '../chat/message_parts.dart';
 import '../core/providers.dart';
+import '../core/alpha_speech.dart';
 
 const String _kThreadsFile = 'masanawa_threads_v2.json';
 
@@ -285,6 +286,7 @@ class AiChatController extends Notifier<AiChatState> {
         parts: result.parts,
         agentRunId: result.agentRunId,
       );
+      unawaited(AlphaSpeech.speak(result.text));
     } catch (_) {
       _appendAi(characterId, _fallbackReply(userMsg));
     }
