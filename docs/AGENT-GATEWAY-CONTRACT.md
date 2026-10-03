@@ -32,7 +32,7 @@ Example response:
 }
 ```
 
-The response MUST NOT expose or infer authorization from role labels and MUST NOT require the client to know Skill assignments.
+The response MUST NOT expose or infer authorization from display names or role labels and MUST NOT require the client to know Skill assignments. The current Gateway projection is backed by visible AgentPresentation records; Skill assignments are deliberately omitted.
 
 ## Open/resume session
 
@@ -88,3 +88,18 @@ The production Presence/Gateway path should deliver ordered typed runtime events
 ## Authority
 
 Every route is an authorized projection over canonical domains. No field in these payloads is itself authority. Current Security policy and resource scope must be revalidated by the server before consequential work.
+
+
+## Ops administration contract
+
+The operator surface uses separate concerns:
+
+- `GET /v1/agents` — list configured AgentPresentation records;
+- `PUT /v1/agents/:characterId/presentation` — change app display name, role, about, greeting, visibility/order;
+- `GET /v1/skills` — list canonical SkillVersion options and readiness for selectors;
+- `GET /v1/agents/:characterId/skills` — read independent Character Skill assignment;
+- `PUT /v1/agents/:characterId/skills` — replace the exact selected SkillVersion set.
+
+Presentation and Skill assignment use independent revision compare-and-swap tokens.
+Every Ops call requires an injected operator/current-authority authorizer; no route
+derives authority from role labels, client input, or mere possession of a CharacterId.
