@@ -498,7 +498,12 @@ export default function OpsAgentsPage() {
                   <button
                     type="button"
                     onClick={() => void saveSkills()}
-                    disabled={savingSkills || !draft.characterId}
+                    disabled={
+                      savingSkills ||
+                      !agents.some(
+                        (agent) => agent.characterId === draft.characterId,
+                      )
+                    }
                   >
                     {savingSkills ? "Saving…" : "Save Skills"}
                   </button>
