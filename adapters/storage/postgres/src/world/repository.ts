@@ -1,5 +1,6 @@
 import {
   PlatformError,
+  parseCanonicalId,
   toInstant,
   type CharacterId,
   type CharacterVersionId,
@@ -10,7 +11,9 @@ import {
   type WorldId,
   type WorldInteractionId,
 } from "@masanawa/contracts";
-import { fingerprintCanonicalJson } from "@masanawa/security";
+import { fingerprintCanonicalJson, assertCurrentAuthority, createAuthorityContext } from "@masanawa/security";
+import { worldContextReadCapability, type PublicWorldContextReader } from "@masanawa/world";
+import { createPostgresCurrentAuthoritySource } from "../security/approvals.js";
 import {
   assertRoutineScheduledTime,
   assertSimulationTimeDoesNotMoveBackward,
@@ -276,6 +279,38 @@ function asWorldEvent(row: WorldEventRow): WorldEvent {
     recordedAt: toInstant(row.recorded_at),
     approvedAt: row.approved_at ? toInstant(row.approved_at) : null,
     retiredAt: row.retired_at ? toInstant(row.retired_at) : null,
+  });
+}
+
+export function createPostgresPublicWorldContextReader(client: PoolClient): PublicWorldContextReader {
+  return Object.freeze({
+    async readEvents(input: Parameters<PublicWorldContextReader["readEvents"]>[0]) {
+      const tenantId = parseCanonicalId("tenant", input.tenantId), characterId = parseCanonicalId("character", input.characterId);
+      const versionId = parseCanonicalId("character-version", input.characterVersionId), at = toInstant(input.at);
+      if (!Array.isArray(input.worldIds) || input.worldIds.length < 1 || input.worldIds.length > 16) throw new RangeError("Public World context requires 1-16 admitted Worlds");
+      const worldIds = [...new Set(input.worldIds.map(id => parseCanonicalId("world", id)))].sort();
+      const authority = Object.freeze({ ...createAuthorityContext(input.authority),
+        authorityContextId: parseCanonicalId("authority-context", input.authority.authorityContextId),
+        principal: Object.freeze({ ...input.authority.principal }), issuedAt: toInstant(input.authority.issuedAt),
+        ...(input.authority.expiresAt ? { expiresAt: toInstant(input.authority.expiresAt) } : {}) });
+      if (authority.tenantId !== tenantId || !authority.capabilities.includes(worldContextReadCapability) ||
+          worldIds.some(id => !authority.resourceScope.worldIds?.includes(id))) {
+        throw new PlatformError({ code: "world.context_access_denied", category: "authorization",
+          message: "Public World context requires explicit World admission.", retryable: false });
+      }
+      await assertCurrentAuthority(authority, createPostgresCurrentAuthoritySource(client), at);
+      const result = await client.query<WorldEventRow>(
+        `SELECT * FROM world.events
+          WHERE tenant_id = $1 AND world_id = ANY($2::uuid[])
+            AND visibility = 'public' AND canon_state = 'approved'
+            AND retired_at IS NULL AND approved_at <= $5 AND recorded_at <= $5
+            AND effective_start <= $5 AND (effective_end IS NULL OR effective_end > $5)
+            AND ((character_id IS NULL AND character_version_id IS NULL)
+              OR (character_id = $3 AND character_version_id = $4))
+          ORDER BY effective_start DESC, world_event_id LIMIT 8`,
+        [tenantId, worldIds, characterId, versionId, at]);
+      return Object.freeze(result.rows.map(asWorldEvent));
+    },
   });
 }
 

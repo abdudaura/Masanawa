@@ -239,8 +239,8 @@ A new active version does not rebind an existing session. Closed/changed session
 terminal/changed runs, stale policy, revoked authority and archived Relationships deny
 context before inference. Gateway records a failed run when context admission fails.
 Constitution replaces presentation aliases in model instructions; UI projection edits
-still change UI labels. Memory/World retrieval remains a separate unfinished owner
-composition; no transcript, private disclosure or shared World mutation is added.
+still change UI labels. The owner-backed recall checkpoint below extends this original
+Identity-only composition without adding transcript persistence or World mutation.
 
 The AgentRun read adapter's `FOR SHARE` now runs in a transaction that permits row
 locks. Its previous read-only setting was incompatible with PostgreSQL row locks.
@@ -251,3 +251,33 @@ passed 152 tests. Full Vitest passed 365 tests with 75 database-dependent skips.
 Three added PostgreSQL 18 acceptance cases cover exact version after activation, changed
 run/policy, and closed session/archived Relationship. They are authored but unrun here.
 Flutter/APK and hosted merged-main gates remain open; Task 072 is still current.
+
+
+## Task 074 owner-backed Memory and World recall (still incomplete)
+
+Memory owns a narrow Relationship context read port. Its PostgreSQL reader checks
+current authority and the explicit memory.context.read capability, searches only the
+session Relationship using the existing lexical retrieval pipeline, and compiles at
+most eight current evidence items. The 8,000-character budget is conservative input
+size accounting, not a provider token or billing estimate. Queries are capped at
+2,000 characters; blank queries skip Memory I/O. Gateway supplies text or optional
+media captions without treating transcripts or raw media as durable Memory.
+
+World owns a public-event context read port guarded by world.context.read and
+explicit World resource scopes. Reads admit at most eight approved, non-retired,
+currently effective public events for the pinned CharacterVersion or World-wide
+events. No private World events, other versions, or implicitly accessible Worlds
+are admitted. Alpha grants Relationship Memory recall but no automatic World scopes.
+
+Agents compose these owner projections with the pinned Constitution under the
+existing 32,000-character context budget and retain evidence provenance separately
+from provider text. The compiler rechecks server time and current authority after
+retrieval; revoked or expired authority fails before inference. This snapshot does
+not implement Task 080 cancellation or grant tool execution authority.
+
+Focused runtime, Memory, World and architecture verification passed 199 tests and
+the Gateway dependency build. Full real PostgreSQL and mobile acceptance remain
+required. This work does not complete Task 074 or advance the Task 072 ledger gate.
+
+Broader checkpoint verification: 388 tests passed, 75 database-dependent tests
+skipped; root TypeScript compilation passed. No skipped test is a passing acceptance gate.

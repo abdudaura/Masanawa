@@ -11,6 +11,7 @@ import type {
   CharacterSkillAssignmentRepository,
 } from "@masanawa/agents";
 import { createAuthorityContext } from "@masanawa/security";
+import { memoryContextReadCapability } from "@masanawa/memory";
 import type {
   AgentConversationAdmission,
   AgentConversationAuthorizer,
@@ -110,6 +111,7 @@ export function createAlphaDevAuthorizer(input: {
             "agents.run.create",
             "agents.run.read",
             "agents.run.finish",
+            memoryContextReadCapability,
           ]),
           resourceScope: Object.freeze({
             relationshipIds: Object.freeze([relationshipId]),

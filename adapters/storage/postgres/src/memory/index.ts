@@ -8,3 +8,4 @@ export * from "./tombstone.js";
 export * from "./cleanup.js";
 export * from "./reflection.js";
 export * from "./compaction.js";
+export * from "./context.js";

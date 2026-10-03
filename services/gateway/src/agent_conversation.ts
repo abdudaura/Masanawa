@@ -98,7 +98,8 @@ export function createAgentConversationService(input: {
       });
 
       try {
-        const context = await input.contextCompiler?.compile({ authority: admission.authority, session, run });
+        const context = await input.contextCompiler?.compile({ authority: admission.authority, session, run,
+          recallQuery: text.slice(0, 2000) });
         const result = await input.strategy.execute({
           ...(context ? { context } : {}),
           agentRunId,
@@ -189,7 +190,8 @@ export function createAgentConversationService(input: {
       });
 
       try {
-        const context = await input.contextCompiler?.compile({ authority: admission.authority, session, run });
+        const context = await input.contextCompiler?.compile({ authority: admission.authority, session, run,
+          ...(caption?.trim() ? { recallQuery: caption.slice(0, 2000) } : {}) });
         const result = await input.strategy.execute({
           ...(context ? { context } : {}),
           agentRunId,

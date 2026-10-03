@@ -488,6 +488,9 @@ importers:
       '@masanawa/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@masanawa/memory':
+        specifier: workspace:*
+        version: link:../../packages/memory
       '@masanawa/node-runtime':
         specifier: workspace:*
         version: link:../../infra/runtime/node

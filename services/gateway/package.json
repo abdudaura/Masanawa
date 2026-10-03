@@ -17,7 +17,8 @@
     "@masanawa/node-runtime": "workspace:*",
     "@masanawa/postgres": "workspace:*",
     "@masanawa/agents": "workspace:*",
-    "@masanawa/security": "workspace:*"
+    "@masanawa/security": "workspace:*",
+    "@masanawa/memory": "workspace:*"
   },
   "devDependencies": {
     "vitest": "5.0.3"

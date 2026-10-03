@@ -46,6 +46,8 @@ export interface CharacterContextCompiler {
     readonly authority: AuthorityContext;
     readonly session: CharacterSession;
     readonly run: AgentRun;
+    /** Bounded transient text/caption for owner-scoped recall; never durable memory. */
+    readonly recallQuery?: string;
   }): Promise<CompiledCharacterContext>;
 }
 

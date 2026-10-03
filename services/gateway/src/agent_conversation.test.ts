@@ -128,6 +128,7 @@ describe("Alpha conversation service", () => {
           expect(input.session).toBe(session);
           expect(input.run.characterVersionId).toBe(session.characterVersionId);
           expect(input.authority).toBe(admission.authority);
+          expect(input.recallQuery).toBe("Hello");
           return { agentRunId: input.run.agentRunId, characterSessionId: session.characterSessionId,
             characterVersionId: session.characterVersionId, systemInstructions: ["Canonical Amina"],
             evidence: [], usedCharacters: 15, omittedEvidenceItems: 0 };

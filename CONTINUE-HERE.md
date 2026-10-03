@@ -101,7 +101,8 @@ current Security policy/revocation checks and Identity lifecycle locks. Session/
 snapshots are reread and compared in one transaction. A newer active CharacterVersion
 never replaces the version pinned by an existing CharacterSession. Inference receives
 only transient admitted instructions; presentation aliases no longer replace authored
-identity. Memory/World retrieval is not enabled yet; their bounded composition API exists.
+identity. The newer owner-backed recall checkpoint below supersedes the original
+Identity-only retrieval composition.
 
 AgentRun reads now permit PostgreSQL share locks by removing an invalid read-only
 transaction setting. Query-harness tests cover this regression and context admission;
@@ -607,3 +608,27 @@ ADR-0009 and `docs/migration/WORLD-SIMULATION-ADOPTION-BOUNDARY.md` decide:
 Do not ask the user to repeat previous discussions. Recover state from this repository,
 the active branch, CI, source lock, reference vault and phase record.
 
+
+
+## Task 074 owner-backed recall checkpoint (acceptance remains open)
+
+The context compiler now asks Memory's narrow read port for lexical recall scoped
+only to the current Relationship. Text and optional media captions supply a bounded
+transient query; media bytes are not converted into memory. Memory owns ranking,
+current-revision selection, expiry filtering and evidence provenance. No conversation
+transcript is persisted as Memory. Alpha explicitly grants the scoped read capability.
+
+World's narrow read port admits only explicitly authorized World IDs, current approved
+public events, and the exact pinned CharacterVersion (or World-wide events). Alpha
+does not automatically grant World scopes. Private events and other Character versions
+are rejected. Agents compose bounded transient evidence and recheck current authority
+after both readers finish. Identity, Memory and World remain the canonical owners.
+
+Local focused verification passed 199 tests and the Gateway dependency build. These
+query-harness checks do not replace PostgreSQL acceptance or mobile device testing.
+Task 072 remains the current numbered production task; Tasks 073/074 stay open.
+The Gateway is intended for Railway; APK builds can run separately on DigitalOcean
+or Render. No hosted deployment or APK build is implied by this checkpoint.
+
+Broader checkpoint verification: 388 tests passed, 75 database-dependent tests
+skipped; root TypeScript compilation passed. No skipped test is a passing acceptance gate.

@@ -3,11 +3,27 @@ import {
   type MemoryRecordId,
   type MemoryRevisionId,
   type TenantId,
+  type RelationshipId,
+  type Instant,
 } from "@masanawa/contracts";
+import type { AuthorityContext } from "@masanawa/security";
 import { memoryScopeKey } from "./invariants.js";
 import type { MemoryScope, MemoryType } from "./model.js";
 import type { MemoryFusedHit } from "./fusion.js";
 import type { MemoryScopePredicate } from "./projection.js";
+
+export const memoryContextReadCapability = "memory.context.read";
+
+/** Owning read port: no arbitrary scopes, persistence or transcript extraction. */
+export interface RelationshipMemoryContextReader {
+  readContext(input: {
+    readonly authority: AuthorityContext;
+    readonly tenantId: TenantId;
+    readonly relationshipId: RelationshipId;
+    readonly query: string;
+    readonly at: Instant;
+  }): Promise<CompiledMemoryContext>;
+}
 
 export interface MemoryContextTokenCounter {
   count(text: string): number;

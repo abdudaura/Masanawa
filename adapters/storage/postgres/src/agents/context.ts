@@ -10,13 +10,19 @@ import { createPostgresCharacterVersionReader } from "../identity/repository.js"
 import { createPostgresCurrentAuthoritySource } from "../security/approvals.js";
 import { readPostgresCharacterSessionForContext } from "./sessions.js";
 import { readPostgresAgentRunForContext } from "./runs.js";
+import { createPostgresRelationshipMemoryContextReader } from "../memory/context.js";
+import { createPostgresPublicWorldContextReader } from "../world/repository.js";
 
-/** Identity-only Alpha composer. Memory/World retrieval is deliberately not enabled. */
+/** Owner-backed Identity, private Relationship Memory and admitted public World evidence. */
 export function createPostgresCharacterContextCompiler(pool: Pool): CharacterContextCompiler {
   return Object.freeze({
     async compile(raw: Parameters<CharacterContextCompiler["compile"]>[0]) {
       // Capture before the first wait, preserving the admitted revocation identity.
       const session = normalizeCharacterSession(raw.session), run = normalizeAgentRun(raw.run);
+      if (raw.recallQuery !== undefined && (typeof raw.recallQuery !== "string" || raw.recallQuery.length > 2000)) {
+        throw new RangeError("Character recall query exceeds its bound");
+      }
+      const recallQuery = raw.recallQuery?.trim();
       const authority = Object.freeze({ ...createAuthorityContext(raw.authority),
         authorityContextId: parseCanonicalId("authority-context", raw.authority.authorityContextId),
         principal: Object.freeze({ ...raw.authority.principal }),
@@ -41,8 +47,19 @@ export function createPostgresCharacterContextCompiler(pool: Pool): CharacterCon
         const clock = await client.query<{ at: Date }>("SELECT clock_timestamp() AS at");
         const at = toInstant(clock.rows[0]!.at);
         await assertCurrentAuthority(authority, createPostgresCurrentAuthoritySource(client), at);
+        const memoryItems = recallQuery ? (await createPostgresRelationshipMemoryContextReader(client).readContext({
+          authority, tenantId: session.tenantId, relationshipId: session.relationshipId, query: recallQuery, at,
+        })).items : [];
+        const worldIds = authority.resourceScope.worldIds ?? [];
+        const worldEvents = worldIds.length ? await createPostgresPublicWorldContextReader(client).readEvents({
+          authority, tenantId: session.tenantId, characterId: session.characterId,
+          characterVersionId: session.characterVersionId, worldIds, at,
+        }) : [];
+        const finalClock = await client.query<{ at: Date }>("SELECT clock_timestamp() AS at");
+        const finalAt = toInstant(finalClock.rows[0]!.at);
+        await assertCurrentAuthority(authority, createPostgresCurrentAuthoritySource(client), finalAt);
         return compileCharacterContext({ authority, session: currentSession, run: currentRun, identity,
-          at, memoryItems: [], worldEvents: [], worldIds: [], maxCharacters: 32000, maxEvidenceItems: 0 });
+          at: finalAt, memoryItems, worldEvents, worldIds, maxCharacters: 32000, maxEvidenceItems: 16 });
       }, { isolation: "repeatable read" });
     },
   });
