@@ -32,6 +32,49 @@ function traceError(code: string, message: string): PlatformError {
   });
 }
 
+/** Copies only bounded trace fields; caller-owned objects are never evidence. */
+export function normalizeSkillTraceMetadata(
+  input: SkillTraceMetadata,
+): SkillTraceMetadata {
+  const invalid = (): never => {
+    throw traceError(
+      "skill.trace_metadata_invalid",
+      "Skill trace metadata is invalid",
+    );
+  };
+  if (input === null || typeof input !== "object") return invalid();
+  const {
+    schemaVersion, kind, rootSkillVersionId, skillVersionId, stepOrdinal,
+    planHash, referenceKey, toolVersionId, targetSkillVersionId,
+  } = input;
+  if (
+    schemaVersion !== 1 ||
+    !(skillTraceKinds as readonly string[]).includes(kind) ||
+    !isCanonicalId("skill-version", rootSkillVersionId) ||
+    !isCanonicalId("skill-version", skillVersionId) ||
+    !Number.isSafeInteger(stepOrdinal) || stepOrdinal < 0 ||
+    typeof planHash !== "string" || !/^sha256:[0-9a-f]{64}$/u.test(planHash)
+  ) return invalid();
+
+  if (kind === "tool") {
+    if (
+      typeof referenceKey !== "string" || referenceKey.length > 128 ||
+      !/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u.test(referenceKey) ||
+      !isCanonicalId("tool-version", toolVersionId) ||
+      targetSkillVersionId !== null
+    ) return invalid();
+  } else if (
+    referenceKey !== null || toolVersionId !== null ||
+    (kind === "step" ? targetSkillVersionId !== null :
+      !isCanonicalId("skill-version", targetSkillVersionId))
+  ) return invalid();
+
+  return Object.freeze({
+    schemaVersion, kind, rootSkillVersionId, skillVersionId, stepOrdinal,
+    planHash, referenceKey, toolVersionId, targetSkillVersionId,
+  });
+}
+
 function planStep(
   plan: SkillExecutionPlan,
   ordinal: number,
@@ -79,7 +122,7 @@ function metadata(
   },
 ): SkillTraceMetadata {
   const step = planStep(plan, stepOrdinal);
-  return Object.freeze({
+  return normalizeSkillTraceMetadata({
     schemaVersion: 1 as const,
     kind: input.kind,
     rootSkillVersionId: plan.rootSkillVersionId,

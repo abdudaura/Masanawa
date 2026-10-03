@@ -11,6 +11,8 @@ import {
   createSkillSubskillTraceMetadata,
   createSkillToolTraceMetadata,
   skillExecutionPlanTraceHash,
+  normalizeSkillTraceMetadata,
+  type SkillTraceMetadata,
 } from "./trace.js";
 
 function plan(): SkillExecutionPlan {
@@ -77,6 +79,37 @@ function errorCode(action: () => unknown): string | undefined {
 }
 
 describe("Skill trace metadata", () => {
+  it.each([
+    { schemaVersion: 2 }, { kind: "unknown" }, { stepOrdinal: -1 },
+    { stepOrdinal: 0.5 }, { stepOrdinal: Number.NaN },
+    { rootSkillVersionId: "skill-version_invalid" },
+    { skillVersionId: "skill-version_invalid" }, { planHash: "private content" },
+    { referenceKey: "unexpected" },
+    { toolVersionId: createCanonicalId("tool-version") },
+    { targetSkillVersionId: createCanonicalId("skill-version") },
+  ])("rejects invalid step metadata %j", (change) => {
+    const input = { ...createSkillStepTraceMetadata(plan(), 1), ...change };
+    expect(errorCode(() => normalizeSkillTraceMetadata(
+      input as SkillTraceMetadata,
+    ))).toBe("skill.trace_metadata_invalid");
+  });
+
+  it("rejects malformed Tool and subskill field combinations", () => {
+    const base = createSkillStepTraceMetadata(plan(), 1);
+    const tool = { ...base, kind: "tool" as const,
+      referenceKey: "send-message", toolVersionId: createCanonicalId("tool-version") };
+    expect(normalizeSkillTraceMetadata(tool)).toEqual(tool);
+    for (const referenceKey of ["PRIVATE TEXT", "a".repeat(129), ""]) {
+      expect(errorCode(() => normalizeSkillTraceMetadata({ ...tool, referenceKey })))
+        .toBe("skill.trace_metadata_invalid");
+    }
+    expect(errorCode(() => normalizeSkillTraceMetadata({ ...tool,
+      targetSkillVersionId: createCanonicalId("skill-version") })))
+      .toBe("skill.trace_metadata_invalid");
+    expect(errorCode(() => normalizeSkillTraceMetadata({ ...base, kind: "subskill" })))
+      .toBe("skill.trace_metadata_invalid");
+  });
+
   it("produces deterministic exact step metadata and plan hashes", () => {
     const executionPlan = plan();
     const first = createSkillStepTraceMetadata(executionPlan, 1);

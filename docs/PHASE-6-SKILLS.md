@@ -112,6 +112,8 @@ Skill execution now exposes deterministic privacy-bounded trace descriptors over
 
 Skill failures are normalized into immutable deterministic evidence. Existing typed `PlatformError` code/category/retryability, correlation and Operation identity are preserved, ambiguous outcomes deterministically require reconciliation, retryable typed failures retain retry disposition, and non-retryable failures are terminal. Unknown exceptions are collapsed behind stable source-specific internal codes/messages so raw exception text does not leak. Tool/provider failure truth remains owned by its existing boundary and Skills do not invent a second retry/reconciliation engine.
 
+Trace admission validates exact canonical IDs, bounded reference keys, content-hash format, step ordinal and kind-specific field combinations. Failure evidence copies and freezes only the admitted trace fields, so caller mutation and extra private payload fields cannot alter or contaminate a recorded failure. Ambiguity takes precedence over retry disposition even when a typed upstream failure is marked retryable.
+
 ## First canonical slice
 
 Goal: establish the production SkillVersion identity/catalog/governance boundary before

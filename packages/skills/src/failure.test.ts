@@ -21,6 +21,39 @@ function trace(): SkillTraceMetadata {
 }
 
 describe("Skill deterministic failure semantics", () => {
+  it.each([new Error("private exception"), new PlatformError({
+    code: "provider.unavailable", category: "unavailable",
+    message: "Provider unavailable", retryable: true,
+  })])("copies bounded trace evidence for typed and unknown failures", (error) => {
+    const input = { ...trace(), prompt: "private prompt", credential: "secret" };
+    const expected = trace();
+    const originalId = input.skillVersionId;
+    const failure = normalizeSkillFailure(input, "tool", error);
+    input.skillVersionId = expected.skillVersionId;
+    input.planHash = `sha256:${"b".repeat(64)}`;
+    expect(failure.trace.skillVersionId).toBe(originalId);
+    expect(failure.trace.planHash).toBe(`sha256:${"a".repeat(64)}`);
+    expect(failure.trace).not.toBe(input);
+    expect(Object.isFrozen(failure.trace)).toBe(true);
+    expect(failure.trace).not.toHaveProperty("prompt");
+    expect(failure.trace).not.toHaveProperty("credential");
+    expect(JSON.stringify(failure)).not.toContain("private prompt");
+  });
+
+  it("reconciles ambiguity even when the underlying typed error is retryable", () => {
+    const failure = normalizeSkillFailure(trace(), "tool", new PlatformError({
+      code: "provider.ambiguous", category: "ambiguous",
+      message: "Outcome is uncertain", retryable: true,
+    }));
+    expect(failure.disposition).toBe("reconcile");
+    expect(failure.retryable).toBe(true);
+  });
+
+  it("rejects malformed trace evidence before publishing a failure", () => {
+    expect(() => normalizeSkillFailure({ ...trace(), planHash: "private text" },
+      "tool", new Error("secret"))).toThrow("Skill trace metadata is invalid");
+  });
+
   it("preserves typed ambiguity and Operation identity for reconciliation", () => {
     const operationId = createCanonicalId("operation");
     const correlationId = createCanonicalId("correlation");

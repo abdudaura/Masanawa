@@ -4,7 +4,7 @@ import {
   type ErrorCategory,
   type OperationId,
 } from "@masanawa/contracts";
-import type { SkillTraceMetadata } from "./trace.js";
+import { normalizeSkillTraceMetadata, type SkillTraceMetadata } from "./trace.js";
 
 export const skillFailureSources = [
   "skill",
@@ -76,10 +76,11 @@ export function normalizeSkillFailure(
   if (!(skillFailureSources as readonly string[]).includes(source)) {
     throw new TypeError("skill failure source is invalid");
   }
+  const safeTrace = normalizeSkillTraceMetadata(trace);
 
   if (error instanceof PlatformError) {
     return Object.freeze({
-      trace,
+      trace: safeTrace,
       source,
       code: error.code,
       category: error.category,
@@ -93,7 +94,7 @@ export function normalizeSkillFailure(
 
   const fallback = fallbackBySource[source];
   return Object.freeze({
-    trace,
+    trace: safeTrace,
     source,
     code: fallback.code,
     category: "internal" as const,
