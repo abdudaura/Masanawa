@@ -191,3 +191,45 @@ flutter build apk --debug \
 ```
 
 The provider/database secrets remain server-side.
+
+
+### Fast USB phone loop on Windows
+
+When the Android phone is connected by USB and authorized in `adb devices`,
+you do not need the phone and laptop to share a Wi-Fi/LAN address.
+
+From PowerShell:
+
+```powershell
+$env:ALPHA_DEV_ACCESS_TOKEN = "<token printed by pnpm alpha:prepare>"
+cd apps/mobile
+.\tool\build_alpha.ps1 -Install
+```
+
+The helper:
+1. runs `flutter pub get`;
+2. builds the debug APK with the Alpha runtime enabled;
+3. runs `adb reverse tcp:3000 tcp:3000`;
+4. installs/replaces the APK with `adb install -r`.
+
+The debug APK is built with `AGENT_BASE_URL=http://127.0.0.1:3000`, so the
+phone reaches the Gateway process running on the laptop through the USB reverse
+tunnel. The debug Android manifest allows this cleartext localhost path; release
+builds do not.
+
+To build without installing:
+
+```powershell
+.\tool\build_alpha.ps1
+```
+
+On Linux/macOS/WSL with Flutter + adb available:
+
+```bash
+export ALPHA_DEV_ACCESS_TOKEN="<token>"
+cd apps/mobile
+./tool/build_alpha.sh --install
+```
+
+Before running either helper, start the Gateway on laptop port 3000 with the
+Alpha environment values printed by the bootstrap.
