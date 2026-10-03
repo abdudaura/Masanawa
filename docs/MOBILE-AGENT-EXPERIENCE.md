@@ -28,12 +28,12 @@ The mobile app MUST NOT compile a fixed list of agent identities.
 
 An administrator may configure which Characters appear for a tenant/account and their presentation metadata. The app renders whatever the server returns from the authorized agent-directory projection.
 
-Changing the Character's visible name is an Identity operation: the admin edits/publishes a CharacterVersion Constitution. Changing the user-facing role/about/greeting/visibility/order is an AgentPresentation operation. Changing capabilities is a separate CharacterSkillAssignment operation. These writes must be authorized through the owning service; the mobile client does not perform them directly.
+The canonical Character identity remains CharacterId/CharacterVersion. The admin can independently change the user-app display name, role, about text, greeting, visibility and ordering through AgentPresentation without recreating that Character. Changing capabilities is a separate CharacterSkillAssignment operation. These writes must be authorized through the owning service; the mobile client does not perform them directly.
 
 The directory projection may include:
 
 - CharacterId and active CharacterVersionId;
-- display name sourced from the Character identity/constitution;
+- admin-configured user-app display name;
 - admin-configured role label;
 - short about text;
 - avatar reference;
@@ -69,16 +69,17 @@ and independently assign any permitted Skills to any of them.
 
 The admin experience edits two independent concerns:
 
-1. Character identity/versioning in `packages/identity` — including the Character display name and Constitution fields.
-2. Agent presentation/runtime selection in `packages/agents` — role label, about text, greeting, mobile visibility/order and exact assigned SkillVersion references.
+1. Character identity/versioning in `packages/identity` — canonical CharacterId, CharacterVersion and Constitution.
+2. Agent presentation in `packages/agents` — user-app display name, role label, about text, greeting and mobile visibility/order.
+3. Character Skill assignment in `packages/agents` — exact selected SkillVersion references, stored separately from presentation.
 
 `packages/agents/src/configuration.ts` and migration
 `0002_agent_configurations.sql` establish the durable configuration boundary.
 
-The Ops UI MUST NOT write these tables directly. A mutating admin endpoint must be
-added only through the authorized Ops service/current-authority path; the present Ops
-service is still only a health/readiness foundation, so this change deliberately does
-not add an unauthenticated write shortcut.
+The Ops UI MUST NOT write these tables directly. The Ops service exposes separate
+authorized presentation and Skill-assignment operations, plus a read-only Skill catalog
+for selectors. Those routes remain fail-closed until an operator-session/current-
+authority authorizer is supplied; there is no unauthenticated write shortcut.
 
 ## Conversation ownership
 
