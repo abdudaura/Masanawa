@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import type { Instant } from "@masanawa/contracts";
-import { nowInstant } from "@masanawa/contracts";
+import { nowInstant, parseCanonicalId } from "@masanawa/contracts";
+import type { AgentAdminService } from "./agent_admin.js";
 import {
   admitTelemetryCorrelation,
   injectCorrelationHeaders,
@@ -17,6 +18,7 @@ export interface OpsAppOptions {
   readonly readinessChecks?: readonly ReadinessCheck[];
   readonly now?: () => Instant;
   readonly isDraining?: () => boolean;
+  readonly agentAdmin?: AgentAdminService;
 }
 
 const HealthResponseSchema = Type.Object(
@@ -34,6 +36,70 @@ const ReadinessCheckSchema = Type.Object(
     ready: Type.Boolean(),
     reason: Type.Optional(Type.String()),
   },
+  { additionalProperties: false },
+);
+
+
+const AgentPresentationSchema = Type.Object(
+  {
+    schemaVersion: Type.Literal(1),
+    tenantId: Type.String(),
+    characterId: Type.String(),
+    characterVersionId: Type.String(),
+    displayName: Type.String(),
+    roleLabel: Type.String(),
+    about: Type.String(),
+    greeting: Type.Union([Type.String(), Type.Null()]),
+    visibleInUserApp: Type.Boolean(),
+    sortOrder: Type.Integer(),
+    revision: Type.Integer(),
+  },
+  { additionalProperties: false },
+);
+
+const AgentSkillAssignmentSchema = Type.Object(
+  {
+    schemaVersion: Type.Literal(1),
+    tenantId: Type.String(),
+    characterId: Type.String(),
+    skillVersionIds: Type.Array(Type.String()),
+    revision: Type.Integer(),
+  },
+  { additionalProperties: false },
+);
+
+const PutPresentationBodySchema = Type.Object(
+  {
+    schemaVersion: Type.Literal(1),
+    characterVersionId: Type.String(),
+    displayName: Type.String({ minLength: 1, maxLength: 120 }),
+    roleLabel: Type.String({ minLength: 1, maxLength: 120 }),
+    about: Type.String({ maxLength: 500 }),
+    greeting: Type.Union([Type.String({ maxLength: 1000 }), Type.Null()]),
+    visibleInUserApp: Type.Boolean(),
+    sortOrder: Type.Integer({ minimum: 0, maximum: 1000000 }),
+    expectedRevision: Type.Union([
+      Type.Integer({ minimum: 1 }),
+      Type.Null(),
+    ]),
+  },
+  { additionalProperties: false },
+);
+
+const PutSkillsBodySchema = Type.Object(
+  {
+    schemaVersion: Type.Literal(1),
+    skillVersionIds: Type.Array(Type.String(), { maxItems: 64 }),
+    expectedRevision: Type.Union([
+      Type.Integer({ minimum: 1 }),
+      Type.Null(),
+    ]),
+  },
+  { additionalProperties: false },
+);
+
+const CharacterParamsSchema = Type.Object(
+  { characterId: Type.String() },
   { additionalProperties: false },
 );
 
@@ -78,6 +144,109 @@ export function createOpsApp(options: OpsAppOptions = {}) {
     request.headers["x-correlation-id"] = headers["x-correlation-id"];
     reply.headers(headers);
   });
+
+
+  if (options.agentAdmin) {
+    const agentAdmin = options.agentAdmin;
+
+    app.get(
+      "/v1/agents",
+      {
+        schema: {
+          response: { 200: Type.Array(AgentPresentationSchema) },
+        },
+      },
+      async (request) =>
+        agentAdmin.listPresentations({
+          authorizationHeader: request.headers.authorization,
+        }),
+    );
+
+    app.put(
+      "/v1/agents/:characterId/presentation",
+      {
+        schema: {
+          params: CharacterParamsSchema,
+          body: PutPresentationBodySchema,
+          response: { 200: AgentPresentationSchema },
+        },
+      },
+      async (request) => {
+        const body = request.body;
+        return agentAdmin.putPresentation({
+          authorizationHeader: request.headers.authorization,
+          expectedRevision: body.expectedRevision,
+          presentation: {
+            schemaVersion: 1,
+            characterId: parseCanonicalId(
+              "character",
+              request.params.characterId,
+            ),
+            characterVersionId: parseCanonicalId(
+              "character-version",
+              body.characterVersionId,
+            ),
+            displayName: body.displayName,
+            roleLabel: body.roleLabel,
+            about: body.about,
+            greeting: body.greeting,
+            visibleInUserApp: body.visibleInUserApp,
+            sortOrder: body.sortOrder,
+            revision: body.expectedRevision ?? 1,
+          },
+        });
+      },
+    );
+
+    app.get(
+      "/v1/agents/:characterId/skills",
+      {
+        schema: {
+          params: CharacterParamsSchema,
+          response: {
+            200: Type.Union([AgentSkillAssignmentSchema, Type.Null()]),
+          },
+        },
+      },
+      async (request) =>
+        agentAdmin.readSkillAssignment({
+          authorizationHeader: request.headers.authorization,
+          characterId: parseCanonicalId(
+            "character",
+            request.params.characterId,
+          ),
+        }),
+    );
+
+    app.put(
+      "/v1/agents/:characterId/skills",
+      {
+        schema: {
+          params: CharacterParamsSchema,
+          body: PutSkillsBodySchema,
+          response: { 200: AgentSkillAssignmentSchema },
+        },
+      },
+      async (request) => {
+        const body = request.body;
+        return agentAdmin.putSkillAssignment({
+          authorizationHeader: request.headers.authorization,
+          expectedRevision: body.expectedRevision,
+          assignment: {
+            schemaVersion: 1,
+            characterId: parseCanonicalId(
+              "character",
+              request.params.characterId,
+            ),
+            skillVersionIds: body.skillVersionIds.map((id) =>
+              parseCanonicalId("skill-version", id),
+            ),
+            revision: body.expectedRevision ?? 1,
+          },
+        });
+      },
+    );
+  }
 
   app.get(
     "/healthz",
