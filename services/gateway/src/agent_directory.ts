@@ -44,7 +44,9 @@ export function createAgentDirectoryService(input: {
   readonly authorizer: AgentDirectoryAuthorizer;
 }): AgentDirectoryService {
   return Object.freeze({
-    async list(request) {
+    async list(
+      request: Parameters<AgentDirectoryService["list"]>[0],
+    ) {
       const authority = await input.authorizer.authorize({
         authorizationHeader: request.authorizationHeader,
         capability: "agents.directory.read",

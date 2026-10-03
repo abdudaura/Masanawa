@@ -27,7 +27,9 @@ export function createAgentConversationService(input: {
   }
 
   return Object.freeze({
-    async open(request) {
+    async open(
+      request: Parameters<AgentConversationService["open"]>[0],
+    ) {
       const characterId = parseCanonicalId("character", request.characterId);
       const admission = await input.authorizer.authorize({
         authorizationHeader: request.authorizationHeader,
@@ -49,7 +51,9 @@ export function createAgentConversationService(input: {
       return Object.freeze({ characterSessionId });
     },
 
-    async turn(request) {
+    async turn(
+      request: Parameters<AgentConversationService["turn"]>[0],
+    ) {
       const characterSessionId = parseCanonicalId(
         "character-session",
         request.characterSessionId,
@@ -131,7 +135,9 @@ export function createAgentConversationService(input: {
       }
     },
 
-    async mediaTurn(request) {
+    async mediaTurn(
+      request: Parameters<AgentConversationService["mediaTurn"]>[0],
+    ) {
       const characterSessionId = parseCanonicalId(
         "character-session",
         request.characterSessionId,
@@ -221,7 +227,9 @@ export function createAgentConversationService(input: {
       }
     },
 
-    async close(request) {
+    async close(
+      request: Parameters<AgentConversationService["close"]>[0],
+    ) {
       const characterSessionId = parseCanonicalId(
         "character-session",
         request.characterSessionId,

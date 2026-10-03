@@ -31,7 +31,9 @@ export function createGeminiAlphaExecutor(input: {
     "do not claim tools, files, calls, memory, or live data unless the user message itself provides them.";
 
   return Object.freeze({
-    async reply(request) {
+    async reply(
+      request: Parameters<AlphaConversationExecutor["reply"]>[0],
+    ) {
       const response = await fetchImpl(
         `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
         {
@@ -71,7 +73,9 @@ export function createGeminiAlphaExecutor(input: {
       return text;
     },
 
-    async replyMedia(request) {
+    async replyMedia(
+      request: Parameters<AlphaConversationExecutor["replyMedia"]>[0],
+    ) {
       const response = await fetchImpl(
         `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
         {
