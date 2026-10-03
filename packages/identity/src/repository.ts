@@ -89,3 +89,13 @@ export interface IdentityRepository {
     input: GetOrCreateRelationshipInput,
   ): Promise<UserCharacterRelationship>;
 }
+
+
+/** Narrow cross-domain reference check. Existence never grants authority. */
+export interface CharacterVersionReferenceReader {
+  assertCharacterVersion(input: {
+    readonly tenantId: TenantId;
+    readonly characterId: CharacterId;
+    readonly characterVersionId: CharacterVersionId;
+  }): Promise<void>;
+}

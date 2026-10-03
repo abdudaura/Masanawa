@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../state/ai_chat_state.dart';
 import '../../state/session_state.dart';
-import '../../theme/unigeria_theme.dart';
-import '../../tokens/unigeria_tokens.dart';
+import '../../theme/masanawa_theme.dart';
+import '../../tokens/masanawa_tokens.dart';
 
 /// Settings + profile. The only secondary screen: account card, two local
 /// toggles, clear-chat, log out. No feature links.
@@ -21,7 +21,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final u = context.unigeria;
+    final u = context.masanawa;
     final session = ref.watch(sessionProvider);
     final user = session is SessionSignedIn ? session.user : null;
     final name = user?.name ?? 'Citizen';
@@ -40,7 +40,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           'Settings & Profile',
           style: TextStyle(
             color: u.textPrimary,
-            fontSize: UnigeriaTokens.fontSize['xl'],
+            fontSize: MasanawaTokens.fontSize['xl'],
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -53,7 +53,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             decoration: BoxDecoration(
               color: u.surfaceCard,
               borderRadius:
-                  BorderRadius.circular(UnigeriaTokens.radius['2xl']!),
+                  BorderRadius.circular(MasanawaTokens.radius['2xl']!),
               border: Border.all(color: u.structuralBorder),
             ),
             child: Row(
@@ -119,8 +119,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const Divider(height: 1),
             ListTile(
               leading: Icon(Icons.info_outline, color: u.brand),
-              title: const Text('About Masanawa Agents'),
-              subtitle: const Text('Chat with your Masana — Nigerian AI helpers'),
+              title: const Text('About Masanawa'),
+              subtitle: const Text('Voice-first conversations with your configured AI agents'),
               onTap: () => showAboutDialog(
                 context: context,
                 applicationName: 'Masanawa Agents',
@@ -149,7 +149,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SizedBox(height: 24),
           Center(
             child: Text(
-              'Masanawa Agents · v1.0.0',
+              'Masanawa · v1.0.0',
               style: TextStyle(color: u.textMuted, fontSize: 11),
             ),
           ),
@@ -165,12 +165,12 @@ class _Card extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final u = context.unigeria;
+    final u = context.masanawa;
     return Card(
       color: u.surfaceCard,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(UnigeriaTokens.radius['xl']!),
+        borderRadius: BorderRadius.circular(MasanawaTokens.radius['xl']!),
         side: BorderSide(color: u.structuralBorder),
       ),
       child: Column(children: children),

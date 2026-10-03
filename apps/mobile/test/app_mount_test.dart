@@ -8,7 +8,7 @@ void main() {
   testWidgets('app boots to the splash screen with a fresh install',
       (tester) async {
     await tester.pumpWidget(
-      const ProviderScope(child: UnigeriaApp()),
+      const ProviderScope(child: MasanawaApp()),
     );
     await tester.pump();
 
@@ -20,7 +20,7 @@ void main() {
     // phone login.
     await tester.pump(const Duration(milliseconds: 1300));
     await tester.pumpAndSettle();
-    expect(find.text('Chat with your Masana Agents.'), findsNothing);
+    expect(find.text('Masanawa'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
 }

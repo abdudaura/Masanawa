@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-import '../../theme/unigeria_theme.dart';
+import '../../theme/masanawa_theme.dart';
 
 /// Brand mark per BRAND-KIT §1: rounded gradient tile + white chat bubble
 /// (tail bottom-left) holding a gradient map pin — "community conversation
 /// anchored to a place". Painted, so it scales crisply at any size and can be
 /// mirrored 1:1 into the launcher/splash bitmap assets.
-class UnigeriaMark extends StatelessWidget {
-  const UnigeriaMark({
+class MasanawaMark extends StatelessWidget {
+  const MasanawaMark({
     super.key,
     this.size = 72,
     this.dark = false,
@@ -22,7 +22,7 @@ class UnigeriaMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final u = context.unigeria;
+    final u = context.masanawa;
     return Semantics(
       label: 'Masanawa',
       child: Container(
@@ -60,9 +60,9 @@ class UnigeriaMark extends StatelessWidget {
 }
 
 /// Paints the mark. All proportions are relative to the edge length so the
-/// glyph scales linearly with [UnigeriaMark.size].
-class UnigeriaMarkPainter extends CustomPainter {
-  UnigeriaMarkPainter({required this.tile, required this.pin});
+/// glyph scales linearly with [MasanawaMark.size].
+class MasanawaMarkPainter extends CustomPainter {
+  MasanawaMarkPainter({required this.tile, required this.pin});
 
   final Gradient tile;
   final Gradient pin;
@@ -111,14 +111,14 @@ class UnigeriaMarkPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant UnigeriaMarkPainter oldDelegate) =>
+  bool shouldRepaint(covariant MasanawaMarkPainter oldDelegate) =>
       oldDelegate.tile != tile || oldDelegate.pin != pin;
 }
 
 /// Brand logo lockup per BRAND-KIT §1: gradient mark + wordmark rendered
 /// together. A bare `Text` is never brand — always use this widget.
-class UnigeriaLogo extends StatelessWidget {
-  const UnigeriaLogo({
+class MasanawaLogo extends StatelessWidget {
+  const MasanawaLogo({
     super.key,
     this.dark = false,
     this.height = 96,
@@ -135,14 +135,14 @@ class UnigeriaLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final u = context.unigeria;
+    final u = context.masanawa;
     final wordmarkColor = dark ? Colors.white : u.brand;
     return Semantics(
       label: 'Masanawa',
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          UnigeriaMark(size: height * 0.62, dark: dark),
+          MasanawaMark(size: height * 0.62, dark: dark),
           if (showWordmark) ...[
             SizedBox(height: height * 0.10),
             Text(

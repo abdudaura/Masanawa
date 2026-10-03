@@ -1,4 +1,4 @@
-/// UNigeria design tokens — Naija Green (RATIFIED 2026-08-11, O1).
+/// Masanawa design tokens — Naija Green (RATIFIED 2026-08-11, O1).
 ///
 /// Dart mirror of `packages/tokens/src/index.ts` — the canonical source of
 /// truth. Parity is enforced by the `dart-parity` test in `packages/tokens`,
@@ -51,8 +51,8 @@ class ColorTokens {
 
 /// Semantic color roles, light + dark pairs. Values match
 /// `packages/tokens` exactly (parity-tested).
-final class UnigeriaTokens {
-  const UnigeriaTokens._();
+final class MasanawaTokens {
+  const MasanawaTokens._();
 
   static const ColorTokens light = ColorTokens(
     brandPrimary: '#047857',

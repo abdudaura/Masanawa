@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-import '../tokens/unigeria_tokens.dart';
+import '../tokens/masanawa_tokens.dart';
 
 /// Resolves the Naija Green palette for the active brightness.
 ///
 /// The palette is token-driven only — semantic roles fixed by BRAND-KIT §3.
 /// Widget code never reads raw hex; it reads this extension off the Theme.
-class UnigeriaColors extends ThemeExtension<UnigeriaColors> {
-  const UnigeriaColors({
+class MasanawaColors extends ThemeExtension<MasanawaColors> {
+  const MasanawaColors({
     required this.brand,
     required this.brandStrong,
     required this.brandGradientFrom,
@@ -39,13 +39,13 @@ class UnigeriaColors extends ThemeExtension<UnigeriaColors> {
   final Color surfaceMuted;
   final Color structuralBorder;
 
-  static UnigeriaColors light() => _from(UnigeriaTokens.light);
+  static MasanawaColors light() => _from(MasanawaTokens.light);
 
-  static UnigeriaColors dark() => _from(UnigeriaTokens.dark);
+  static MasanawaColors dark() => _from(MasanawaTokens.dark);
 
-  static UnigeriaColors _from(ColorTokens t) {
+  static MasanawaColors _from(ColorTokens t) {
     Color hex(String v) => Color(int.parse(v.replaceFirst('#', ''), radix: 16) + 0xFF000000);
-    return UnigeriaColors(
+    return MasanawaColors(
       brand: hex(t.brandPrimary),
       brandStrong: hex(t.brandStrong),
       brandGradientFrom: hex(t.brandGradient.from),
@@ -64,7 +64,7 @@ class UnigeriaColors extends ThemeExtension<UnigeriaColors> {
   }
 
   @override
-  UnigeriaColors copyWith({
+  MasanawaColors copyWith({
     Color? brand,
     Color? brandStrong,
     Color? brandGradientFrom,
@@ -80,7 +80,7 @@ class UnigeriaColors extends ThemeExtension<UnigeriaColors> {
     Color? surfaceMuted,
     Color? structuralBorder,
   }) {
-    return UnigeriaColors(
+    return MasanawaColors(
       brand: brand ?? this.brand,
       brandStrong: brandStrong ?? this.brandStrong,
       brandGradientFrom: brandGradientFrom ?? this.brandGradientFrom,
@@ -99,10 +99,10 @@ class UnigeriaColors extends ThemeExtension<UnigeriaColors> {
   }
 
   @override
-  UnigeriaColors lerp(UnigeriaColors? other, double t) {
+  MasanawaColors lerp(MasanawaColors? other, double t) {
     if (other == null) return this;
     Color l(Color a, Color b) => Color.lerp(a, b, t)!;
-    return UnigeriaColors(
+    return MasanawaColors(
       brand: l(brand, other.brand),
       brandStrong: l(brandStrong, other.brandStrong),
       brandGradientFrom: l(brandGradientFrom, other.brandGradientFrom),
@@ -121,37 +121,37 @@ class UnigeriaColors extends ThemeExtension<UnigeriaColors> {
   }
 }
 
-/// Extension: `context.unigeria` — the Naija Green semantic palette from the
+/// Extension: `context.masanawa` — the Naija Green semantic palette from the
 /// active ThemeData. Widget code reads colors from here only (design DoD).
-extension UnigeriaContext on BuildContext {
-  UnigeriaColors get unigeria => Theme.of(this).extension<UnigeriaColors>()!;
+extension MasanawaContext on BuildContext {
+  MasanawaColors get masanawa => Theme.of(this).extension<MasanawaColors>()!;
 }
 
-/// The UNigeria ThemeData — every screen renders from this (design DoD).
-ThemeData buildUnigeriaTheme({required Brightness brightness}) {
+/// The Masanawa ThemeData — every screen renders from this (design DoD).
+ThemeData buildMasanawaTheme({required Brightness brightness}) {
   final isDark = brightness == Brightness.dark;
-  final unigeria = isDark ? UnigeriaColors.dark() : UnigeriaColors.light();
+  final masanawa = isDark ? MasanawaColors.dark() : MasanawaColors.light();
   final scheme = ColorScheme(
     brightness: brightness,
-    primary: unigeria.brand,
+    primary: masanawa.brand,
     onPrimary: isDark ? Colors.black87 : Colors.white,
-    secondary: unigeria.brandStrong,
+    secondary: masanawa.brandStrong,
     onSecondary: isDark ? Colors.black87 : Colors.white,
-    error: unigeria.emergency,
+    error: masanawa.emergency,
     onError: Colors.white,
-    surface: unigeria.surfaceCard,
-    onSurface: unigeria.textPrimary,
-    surfaceContainerHighest: unigeria.surfaceMuted,
-    onSurfaceVariant: unigeria.textMuted,
-    outline: unigeria.structuralBorder,
+    surface: masanawa.surfaceCard,
+    onSurface: masanawa.textPrimary,
+    surfaceContainerHighest: masanawa.surfaceMuted,
+    onSurfaceVariant: masanawa.textMuted,
+    outline: masanawa.structuralBorder,
   );
 
   return ThemeData(
     useMaterial3: true,
     brightness: brightness,
     colorScheme: scheme,
-    scaffoldBackgroundColor: unigeria.surfaceBg,
-    extensions: [unigeria],
+    scaffoldBackgroundColor: masanawa.surfaceBg,
+    extensions: [masanawa],
     textTheme: Typography.material2021(platform: TargetPlatform.android).black.apply(
           bodyColor: scheme.onSurface,
           displayColor: scheme.onSurface,

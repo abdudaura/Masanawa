@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../theme/unigeria_theme.dart';
+import '../../theme/masanawa_theme.dart';
 
 /// `Masanawa` with a small `Agents` sitting low at the end of the name.
 /// The single brand lockup used in headers and splash.
@@ -13,7 +13,7 @@ class MasanawaWordmark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final u = context.unigeria;
+    final u = context.masanawa;
     final main = light ? Colors.white : u.brand;
     final sub = light
         ? Colors.white.withValues(alpha: 0.85)

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../tokens/unigeria_tokens.dart';
-import '../../theme/unigeria_theme.dart';
+import '../../tokens/masanawa_tokens.dart';
+import '../../theme/masanawa_theme.dart';
 import 'logo.dart';
 
 /// Shared onboarding/auth scaffold — every auth/onboarding screen carries the
@@ -31,7 +31,7 @@ class OnboardingScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final u = context.unigeria;
+    final u = context.masanawa;
     final goBack = backDestination != null
         ? () => context.go(backDestination!)
         : () => context.pop();
@@ -59,14 +59,14 @@ class OnboardingScaffold extends StatelessWidget {
                     ),
                   ),
                 const SizedBox(height: 8),
-                Center(child: UnigeriaLogo(height: 72)),
+                Center(child: MasanawaLogo(height: 72)),
                 if (title != null) ...[
                   const SizedBox(height: 24),
                   Text(
                     title!,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: UnigeriaTokens.fontSize['xl'],
+                      fontSize: MasanawaTokens.fontSize['xl'],
                       fontWeight: FontWeight.w700,
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
@@ -78,7 +78,7 @@ class OnboardingScaffold extends StatelessWidget {
                     subtitle!,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: UnigeriaTokens.fontSize['md'],
+                      fontSize: MasanawaTokens.fontSize['md'],
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),

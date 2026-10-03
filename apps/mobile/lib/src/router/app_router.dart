@@ -12,7 +12,7 @@ import '../screens/splash/splash_screen.dart';
 import '../state/session_state.dart';
 
 /// Stripped router — auth (splash → phone → OTP → name), the chat list, one
-/// thread per Masana, the Masana list, and settings. Nothing else.
+/// thread per configured Character, the agent list, and settings. Nothing else.
 ///
 /// Auth rule: OTP must prove ownership. `/name` opens only for first signup
 /// (`SessionNameRequired` or signed-in + `isNewUser`). While the session is
@@ -56,7 +56,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // Signed-out users can only be in auth.
       final protected = path == '/chats' ||
           path.startsWith('/chat/') ||
-          path == '/masana' ||
+          (path == '/agents' || path == '/masana') ||
           path == '/settings' ||
           path == '/profile';
       if (!isSignedIn && protected) return '/phone-login';
@@ -73,12 +73,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/chat/:id',
         builder: (context, state) => AiChatScreen(
-          masanaId: state.pathParameters['id']!,
+          characterId: state.pathParameters['id']!,
         ),
       ),
       // Backwards-compat: the old single chat now lands on the list.
       GoRoute(path: '/home', builder: (_, _) => const ChatListScreen()),
-      GoRoute(path: '/masana', builder: (_, _) => const MasanaListScreen()),
+      GoRoute(path: '/agents', builder: (_, _) => const AgentListScreen()),
+      GoRoute(path: '/masana', redirect: (_, __) => '/agents'),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
       GoRoute(path: '/profile', builder: (_, _) => const SettingsScreen()),
     ],

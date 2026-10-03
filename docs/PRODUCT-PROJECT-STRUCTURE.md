@@ -59,6 +59,20 @@ repository-wide version/deprecation policy.
 
 Before cutover the repository must contain deployment/rollback, backup/restore, credential rotation, provider outage, device loss/revocation, stuck workflow/reconciliation, incident response, data export/deletion and SLO/alert runbooks.
 
+### 10. Keep the mobile app a thin dynamic Character shell
+
+`apps/mobile` is a product surface, not a domain owner. It consumes an authorized
+server projection of admin-configured Characters and never compiles a fixed production
+agent roster. Character identity/configured role presentation is separate from exact
+Skill assignment and authority.
+
+The mobile conversation is the primary work surface: voice, text, durable file/artifact
+references, long-work progress, approvals, calls and receipts render in one timeline.
+Canonical AgentRun, Workflow, Operation, Skill, Device and file truth remains in their
+owning packages/services.
+
+See `docs/MOBILE-AGENT-EXPERIENCE.md` and `docs/AGENT-GATEWAY-CONTRACT.md`.
+
 ## Target top-level structure
 
 - `apps/`: web, ops.

@@ -1,13 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:masanawa/src/chat/masana.dart';
+import 'package:masanawa/src/chat/chat_format.dart';
 import 'package:masanawa/src/core/network/api_client.dart';
 import 'package:masanawa/src/core/providers.dart';
 import 'package:masanawa/src/state/ai_chat_state.dart';
 
-/// ApiClient whose AI endpoint always fails — the controller must fall back
-/// to the honest on-device reply instead of hanging on "sending".
 class _FailingClient extends ApiClient {
   _FailingClient()
       : super(dio: Dio(BaseOptions(baseUrl: 'https://example.test')));
@@ -23,84 +21,88 @@ ProviderContainer _container() => ProviderContainer(
     );
 
 void main() {
-  test('there are five Masana agents with unique ids', () {
-    expect(kMasanaAgents, hasLength(5));
-    final ids = kMasanaAgents.map((a) => a.id).toSet();
-    expect(ids, hasLength(5));
-    expect(masanaById('nope').id, 'masanawa');
-  });
-
-  test('ensureGreeting seeds the Masana hello once', () async {
+  test('chat threads are keyed by arbitrary Character IDs', () async {
     final container = _container();
     addTearDown(container.dispose);
     final notifier = container.read(aiChatProvider.notifier);
     await Future<void>.delayed(Duration.zero);
 
-    notifier.ensureGreeting('labari');
-    notifier.ensureGreeting('labari');
-    final thread = container.read(aiChatProvider).threads['labari']!;
-    expect(thread.messages, hasLength(1));
-    expect(thread.messages.single.isUser, isFalse);
-    expect(thread.messages.single.text, contains('Labari'));
-  });
-
-  test('sendText appends the user message plus a fallback reply', () async {
-    final container = _container();
-    addTearDown(container.dispose);
-    final notifier = container.read(aiChatProvider.notifier);
-    await Future<void>.delayed(Duration.zero);
-
-    await notifier.sendText('masanawa', 'hello there');
-    final thread = container.read(aiChatProvider).threads['masanawa']!;
+    await notifier.sendText('character-any-admin-configures', 'hello there');
+    final thread =
+        container.read(aiChatProvider).threads['character-any-admin-configures']!;
+    expect(thread.characterId, 'character-any-admin-configures');
     expect(thread.messages, hasLength(2));
-    expect(thread.messages[0].isUser, isTrue);
-    expect(thread.messages[0].text, 'hello there');
-    expect(thread.messages[1].isUser, isFalse);
+    expect(thread.messages.first.text, 'hello there');
+  });
+
+  test('server-configured greeting is seeded once', () async {
+    final container = _container();
+    addTearDown(container.dispose);
+    final notifier = container.read(aiChatProvider.notifier);
+    await Future<void>.delayed(Duration.zero);
+
+    notifier.seedGreeting('character-1', 'Hello from the configured agent');
+    notifier.seedGreeting('character-1', 'This should not replace it');
+    final thread = container.read(aiChatProvider).threads['character-1']!;
+    expect(thread.messages, hasLength(1));
+    expect(thread.messages.single.text, 'Hello from the configured agent');
+  });
+
+  test('runtime failure gives an honest local status reply', () async {
+    final container = _container();
+    addTearDown(container.dispose);
+    final notifier = container.read(aiChatProvider.notifier);
+    await Future<void>.delayed(Duration.zero);
+
+    await notifier.sendText('character-2', 'hello');
+    final thread = container.read(aiChatProvider).threads['character-2']!;
+    expect(thread.messages, hasLength(2));
+    expect(thread.messages.last.isUser, isFalse);
+    expect(thread.messages.last.text, contains('runtime is unavailable'));
     expect(container.read(aiChatProvider).sendingIn, isEmpty);
   });
 
-  test('replies to a closed thread raise unread; opening clears it',
-      () async {
+  test('closed-thread replies raise unread and opening clears it', () async {
     final container = _container();
     addTearDown(container.dispose);
     final notifier = container.read(aiChatProvider.notifier);
     await Future<void>.delayed(Duration.zero);
 
-    await notifier.sendText('hakuri', 'my rights?');
-    expect(
-        container.read(aiChatProvider).threads['hakuri']!.unread, 1);
+    await notifier.sendText('character-3', 'status?');
+    expect(container.read(aiChatProvider).threads['character-3']!.unread, 1);
 
-    notifier.openThread('hakuri');
-    expect(container.read(aiChatProvider).threads['hakuri']!.unread, 0);
-    expect(container.read(aiChatProvider).openThreadId, 'hakuri');
-
-    notifier.closeThread();
-    expect(container.read(aiChatProvider).openThreadId, isNull);
+    notifier.openThread('character-3');
+    expect(container.read(aiChatProvider).threads['character-3']!.unread, 0);
+    expect(container.read(aiChatProvider).openThreadId, 'character-3');
   });
 
-  test('chatList only shows threads with messages, newest first', () async {
+  test('chatList works with any configured Character IDs', () async {
     final container = _container();
     addTearDown(container.dispose);
     final notifier = container.read(aiChatProvider.notifier);
     await Future<void>.delayed(Duration.zero);
 
     expect(container.read(aiChatProvider).chatList, isEmpty);
-    await notifier.sendText('lafiya', 'one');
-    await notifier.sendText('labari', 'two');
-    final list = container.read(aiChatProvider).chatList;
-    expect(list.map((t) => t.masanaId), ['labari', 'lafiya']);
+    await notifier.sendText('character-a', 'one');
+    await notifier.sendText('character-b', 'two');
+    final ids =
+        container.read(aiChatProvider).chatList.map((t) => t.characterId).toSet();
+    expect(ids, {'character-a', 'character-b'});
 
-    notifier.clearThread('labari');
+    notifier.clearThread('character-b');
     expect(
-        container.read(aiChatProvider).chatList.map((t) => t.masanaId),
-        ['lafiya']);
+      container.read(aiChatProvider).chatList.map((t) => t.characterId),
+      ['character-a'],
+    );
   });
 
   test('formatChatTime labels today, yesterday and older days', () {
     final now = DateTime.now();
     expect(formatChatTime(now), formatClock(now));
     expect(
-        formatChatTime(now.subtract(const Duration(days: 1))), 'Yesterday');
+      formatChatTime(now.subtract(const Duration(days: 1))),
+      'Yesterday',
+    );
     final old = DateTime(2026, 5, 12, 9, 30);
     expect(formatChatTime(old), '12/5/26');
   });

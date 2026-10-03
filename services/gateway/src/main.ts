@@ -1,4 +1,5 @@
 import { pathToFileURL } from "node:url";
+import type { AgentPresentationRepository } from "@masanawa/agents";
 import { readRequiredEnv } from "@masanawa/contracts";
 import {
   createDrainState,
@@ -9,7 +10,14 @@ import {
   type NodeSignalSource,
   type ServiceLifecycleLogger,
 } from "@masanawa/node-runtime";
-import { createPostgresServiceDependency } from "@masanawa/postgres";
+import {
+  createPostgresAgentPresentationRepository,
+  createPostgresServiceDependency,
+} from "@masanawa/postgres";
+import {
+  createAgentDirectoryService,
+  type AgentDirectoryAuthorizer,
+} from "./agent_directory.js";
 import {
   createGatewayApp,
   type GatewayAppOptions,
@@ -25,6 +33,7 @@ export interface ServiceProcess extends NodeSignalSource {
 
 export interface ServiceDatabaseDependency {
   readonly readinessCheck: ReadinessCheck;
+  readonly agentPresentations?: AgentPresentationRepository;
   close(): Promise<void>;
 }
 
@@ -41,6 +50,7 @@ export interface StartGatewayServiceOptions {
   readonly databaseFactory?: ServiceDatabaseFactory;
   readonly appFactory?: (options: GatewayAppOptions) => ManagedNodeServer;
   readonly appOptions?: Omit<GatewayAppOptions, "isDraining">;
+  readonly agentDirectoryAuthorizer?: AgentDirectoryAuthorizer;
 }
 
 export interface GatewayServiceRuntime {
@@ -79,9 +89,14 @@ function createDefaultDatabaseDependency(
     "DATABASE_URL",
   );
 
-  return createPostgresServiceDependency({
+  const database = createPostgresServiceDependency({
     connectionString,
     applicationName: "masanawa-gateway",
+  });
+  return Object.freeze({
+    readinessCheck: database.readinessCheck,
+    agentPresentations: createPostgresAgentPresentationRepository(database.pool),
+    close: database.close,
   });
 }
 
@@ -97,10 +112,20 @@ export async function startGatewayService(
   const database = databaseFactory(env);
   const appFactory = options.appFactory ?? createGatewayApp;
 
+  const composedDirectory =
+    options.appOptions?.agentDirectory ??
+    (options.agentDirectoryAuthorizer && database.agentPresentations
+      ? createAgentDirectoryService({
+          presentations: database.agentPresentations,
+          authorizer: options.agentDirectoryAuthorizer,
+        })
+      : undefined);
+
   let app: ManagedNodeServer;
   try {
     app = appFactory({
       ...(options.appOptions ?? {}),
+      ...(composedDirectory ? { agentDirectory: composedDirectory } : {}),
       readinessChecks: [
         ...(options.appOptions?.readinessChecks ?? []),
         database.readinessCheck,

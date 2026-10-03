@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/api/models.dart';
 import '../../state/session_state.dart';
-import '../../tokens/unigeria_tokens.dart';
+import '../../tokens/masanawa_tokens.dart';
 import '../../ui/components/onboarding_scaffold.dart';
 import '../../ui/components/primary_button.dart';
 
@@ -127,7 +127,7 @@ class _NameScreenState extends ConsumerState<NameScreen> {
             enabled: !alreadyComplete,
             textCapitalization: TextCapitalization.words,
             style: TextStyle(
-              fontSize: UnigeriaTokens.fontSize['md'],
+              fontSize: MasanawaTokens.fontSize['md'],
               color: Theme.of(context).colorScheme.onSurface,
             ),
             decoration: InputDecoration(
@@ -137,7 +137,7 @@ class _NameScreenState extends ConsumerState<NameScreen> {
               filled: true,
               fillColor: Theme.of(context).colorScheme.surface,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(UnigeriaTokens.radius['md']!),
+                borderRadius: BorderRadius.circular(MasanawaTokens.radius['md']!),
               ),
             ),
           ),
@@ -148,7 +148,7 @@ class _NameScreenState extends ConsumerState<NameScreen> {
             keyboardType: TextInputType.emailAddress,
             autocorrect: false,
             style: TextStyle(
-              fontSize: UnigeriaTokens.fontSize['md'],
+              fontSize: MasanawaTokens.fontSize['md'],
               color: Theme.of(context).colorScheme.onSurface,
             ),
             decoration: InputDecoration(
@@ -158,7 +158,7 @@ class _NameScreenState extends ConsumerState<NameScreen> {
               filled: true,
               fillColor: Theme.of(context).colorScheme.surface,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(UnigeriaTokens.radius['md']!),
+                borderRadius: BorderRadius.circular(MasanawaTokens.radius['md']!),
               ),
             ),
           ),
@@ -179,7 +179,7 @@ class _NameScreenState extends ConsumerState<NameScreen> {
                 : 'We use your email only for account safety and important updates.',
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: UnigeriaTokens.fontSize['xs'],
+              fontSize: MasanawaTokens.fontSize['xs'],
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),

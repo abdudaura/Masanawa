@@ -1,4 +1,10 @@
 import { pathToFileURL } from "node:url";
+import type {
+  AgentPresentationRepository,
+  CharacterSkillAssignmentRepository,
+} from "@masanawa/agents";
+import type { CharacterVersionReferenceReader } from "@masanawa/identity";
+import type { SkillRepository } from "@masanawa/skills";
 import { readRequiredEnv } from "@masanawa/contracts";
 import {
   createDrainState,
@@ -9,7 +15,17 @@ import {
   type NodeSignalSource,
   type ServiceLifecycleLogger,
 } from "@masanawa/node-runtime";
-import { createPostgresServiceDependency } from "@masanawa/postgres";
+import {
+  createPostgresAgentPresentationRepository,
+  createPostgresCharacterSkillAssignmentRepository,
+  createPostgresCharacterVersionReferenceReader,
+  createPostgresServiceDependency,
+  createPostgresSkillRepository,
+} from "@masanawa/postgres";
+import {
+  createAgentAdminService,
+  type AgentAdminAuthorizer,
+} from "./agent_admin.js";
 import {
   createOpsApp,
   type OpsAppOptions,
@@ -25,6 +41,10 @@ export interface ServiceProcess extends NodeSignalSource {
 
 export interface ServiceDatabaseDependency {
   readonly readinessCheck: ReadinessCheck;
+  readonly agentPresentations?: AgentPresentationRepository;
+  readonly characterSkillAssignments?: CharacterSkillAssignmentRepository;
+  readonly characterVersions?: CharacterVersionReferenceReader;
+  readonly skills?: SkillRepository;
   close(): Promise<void>;
 }
 
@@ -41,6 +61,7 @@ export interface StartOpsServiceOptions {
   readonly databaseFactory?: ServiceDatabaseFactory;
   readonly appFactory?: (options: OpsAppOptions) => ManagedNodeServer;
   readonly appOptions?: Omit<OpsAppOptions, "isDraining">;
+  readonly agentAdminAuthorizer?: AgentAdminAuthorizer;
 }
 
 export interface OpsServiceRuntime {
@@ -79,9 +100,19 @@ function createDefaultDatabaseDependency(
     "DATABASE_URL",
   );
 
-  return createPostgresServiceDependency({
+  const database = createPostgresServiceDependency({
     connectionString,
     applicationName: "masanawa-ops",
+  });
+  return Object.freeze({
+    readinessCheck: database.readinessCheck,
+    agentPresentations: createPostgresAgentPresentationRepository(database.pool),
+    characterSkillAssignments:
+      createPostgresCharacterSkillAssignmentRepository(database.pool),
+    characterVersions:
+      createPostgresCharacterVersionReferenceReader(database.pool),
+    skills: createPostgresSkillRepository(database.pool),
+    close: database.close,
   });
 }
 
@@ -97,10 +128,27 @@ export async function startOpsService(
   const database = databaseFactory(env);
   const appFactory = options.appFactory ?? createOpsApp;
 
+  const composedAgentAdmin =
+    options.appOptions?.agentAdmin ??
+    (options.agentAdminAuthorizer &&
+    database.agentPresentations &&
+    database.characterSkillAssignments &&
+    database.characterVersions &&
+    database.skills
+      ? createAgentAdminService({
+          presentations: database.agentPresentations,
+          skillAssignments: database.characterSkillAssignments,
+          characterVersions: database.characterVersions,
+          skills: database.skills,
+          authorizer: options.agentAdminAuthorizer,
+        })
+      : undefined);
+
   let app: ManagedNodeServer;
   try {
     app = appFactory({
       ...(options.appOptions ?? {}),
+      ...(composedAgentAdmin ? { agentAdmin: composedAgentAdmin } : {}),
       readinessChecks: [
         ...(options.appOptions?.readinessChecks ?? []),
         database.readinessCheck,

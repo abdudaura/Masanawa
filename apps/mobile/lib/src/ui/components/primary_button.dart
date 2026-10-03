@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../theme/unigeria_theme.dart';
-import '../../tokens/unigeria_tokens.dart';
+import '../../theme/masanawa_theme.dart';
+import '../../tokens/masanawa_tokens.dart';
 
 /// Tier-1 primary action button — brand filled, full-width by default,
 /// ≥44dp touch target, token-driven motion.
@@ -25,16 +25,16 @@ class PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final u = context.unigeria;
+    final u = context.masanawa;
     final canPress = enabled && !loading && onPressed != null;
     final button = Material(
       color: canPress ? u.brand : u.surfaceMuted,
-      borderRadius: BorderRadius.circular(UnigeriaTokens.radius['lg']!),
+      borderRadius: BorderRadius.circular(MasanawaTokens.radius['lg']!),
       child: InkWell(
         onTap: canPress ? onPressed : null,
-        borderRadius: BorderRadius.circular(UnigeriaTokens.radius['lg']!),
+        borderRadius: BorderRadius.circular(MasanawaTokens.radius['lg']!),
         child: SizedBox(
-          height: UnigeriaTokens.touchTargetMin + 4,
+          height: MasanawaTokens.touchTargetMin + 4,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Row(
@@ -59,7 +59,7 @@ class PrimaryButton extends StatelessWidget {
                   label,
                   style: TextStyle(
                     color: canPress ? Colors.white : u.textMuted,
-                    fontSize: UnigeriaTokens.fontSize['md'],
+                    fontSize: MasanawaTokens.fontSize['md'],
                     fontWeight: FontWeight.w600,
                   ),
                 ),

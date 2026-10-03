@@ -1,14 +1,10 @@
 import 'package:dio/dio.dart';
 
+import '../chat/message_parts.dart';
 import '../core/network/api_client.dart';
+import 'agent_directory.dart';
 import 'agent_session.dart';
 
-/// Build-time flags for the Masanawa agent runtime (Task 099 gateway).
-///
-/// The gateway does not expose these endpoints yet, so the flags default to
-/// the preview path. When the runtime ships, build with:
-///   --dart-define=AGENT_RUNTIME_ENABLED=true
-///   --dart-define=AGENT_BASE_URL=https://gateway.example.com
 const String kAgentBaseUrl = String.fromEnvironment(
   'AGENT_BASE_URL',
   defaultValue: '',
@@ -19,61 +15,105 @@ const bool kAgentRuntimeEnabled = bool.fromEnvironment(
   defaultValue: false,
 );
 
-/// True only when the builder explicitly pointed the shell at a runtime.
-/// Otherwise every conversation stays on the preview transport.
 bool get isAgentRuntimeConfigured =>
     kAgentRuntimeEnabled && kAgentBaseUrl.isNotEmpty;
 
-/// Live transport against the Masanawa agent gateway (draft v0 contract in
-/// `docs/AGENT-GATEWAY-CONTRACT.md`). Auth reuses the shell session token.
-/// Every failure surfaces as [ApiException] so the caller falls back
-/// honestly instead of faking a reply.
-class MasanawaAgentTransport implements AgentTransport {
-  MasanawaAgentTransport({
+class _GatewayClient {
+  _GatewayClient({
     required Dio dio,
     required this.baseUrl,
     this.readAccessToken,
-  }) : _dio = Dio(dio.options);
+  }) : dio = Dio(dio.options);
 
+  final Dio dio;
   final String baseUrl;
-
-  /// Returns the current shell access token, or null when signed out.
   final String? Function()? readAccessToken;
 
-  /// Private Dio with the shared timeouts but no interceptors: requests use
-  /// absolute gateway URLs and carry the token explicitly.
-  final Dio _dio;
+  Options get options {
+    final token = readAccessToken?.call();
+    return Options(headers: {
+      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+    });
+  }
 
-  Future<Map<String, dynamic>> _post(
+  Future<Map<String, dynamic>> post(
     String path,
     Map<String, dynamic> body,
   ) async {
-    final token = readAccessToken?.call();
     try {
-      final res = await _dio.post<Map<String, dynamic>>(
+      final res = await dio.post<Map<String, dynamic>>(
         '$baseUrl$path',
         data: body,
-        options: Options(
-          headers: {
-            if (token != null && token.isNotEmpty)
-              'Authorization': 'Bearer $token',
-          },
-        ),
+        options: options,
       );
       final data = res.data;
-      if (data == null) {
-        throw const ApiException('Empty response from server');
-      }
+      if (data == null) throw const ApiException('Empty response from server');
       return data;
     } on DioException catch (e) {
       throw mapDioError(e);
     }
   }
 
+  Future<Map<String, dynamic>> get(String path) async {
+    try {
+      final res = await dio.get<Map<String, dynamic>>(
+        '$baseUrl$path',
+        options: options,
+      );
+      final data = res.data;
+      if (data == null) throw const ApiException('Empty response from server');
+      return data;
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    }
+  }
+}
+
+/// Reads the admin-configured roster. The payload is a projection only:
+/// identity remains in Identity and Skill assignment remains server-side.
+class MasanawaAgentDirectoryTransport implements AgentDirectoryTransport {
+  MasanawaAgentDirectoryTransport({
+    required Dio dio,
+    required String baseUrl,
+    String? Function()? readAccessToken,
+  }) : _client = _GatewayClient(
+          dio: dio,
+          baseUrl: baseUrl,
+          readAccessToken: readAccessToken,
+        );
+
+  final _GatewayClient _client;
+
   @override
-  Future<AgentSessionBinding> openSession(String masanaId) async {
-    final data = await _post('/agent/sessions/open', {
-      'masanaId': masanaId,
+  Future<List<AgentDirectoryEntry>> loadDirectory() async {
+    final data = await _client.get('/agent/directory');
+    final raw = data['agents'];
+    if (raw is! List) throw const ApiException('Invalid agent directory');
+    return [
+      for (final item in raw)
+        if (item is Map)
+          AgentDirectoryEntry.fromJson(item.cast<String, dynamic>()),
+    ];
+  }
+}
+
+class MasanawaAgentTransport implements AgentTransport {
+  MasanawaAgentTransport({
+    required Dio dio,
+    required String baseUrl,
+    String? Function()? readAccessToken,
+  }) : _client = _GatewayClient(
+          dio: dio,
+          baseUrl: baseUrl,
+          readAccessToken: readAccessToken,
+        );
+
+  final _GatewayClient _client;
+
+  @override
+  Future<AgentSessionBinding> openSession(String characterId) async {
+    final data = await _client.post('/agent/sessions/open', {
+      'characterId': characterId,
     });
     final id = data['characterSessionId'];
     if (id is! String || id.isEmpty) {
@@ -81,7 +121,7 @@ class MasanawaAgentTransport implements AgentTransport {
     }
     final runId = data['agentRunId'];
     return AgentSessionBinding(
-      masanaId: masanaId,
+      characterId: characterId,
       characterSessionId: id,
       agentRunId: runId is String && runId.isNotEmpty ? runId : null,
     );
@@ -92,32 +132,47 @@ class MasanawaAgentTransport implements AgentTransport {
     required AgentSessionBinding binding,
     required String text,
   }) async {
-    final data = await _post(
+    final data = await _client.post(
       '/agent/sessions/${binding.characterSessionId}/turn',
       {'text': text},
     );
     final reply = data['reply'];
-    if (reply is! String || reply.isEmpty) {
+    if (reply is! String) {
       throw const ApiException('Agent service unavailable');
     }
+    final rawParts = data['parts'];
+    final parts = <AgentMessagePart>[];
+    if (rawParts is List) {
+      for (final raw in rawParts) {
+        if (raw is Map) {
+          try {
+            parts.add(AgentMessagePart.fromJson(raw.cast<String, dynamic>()));
+          } catch (_) {
+            // Unknown future part types must not break the conversation.
+          }
+        }
+      }
+    }
     final runId = data['agentRunId'];
+    if (reply.isEmpty && parts.isEmpty) {
+      throw const ApiException('Agent service returned no result');
+    }
     return AgentTurnResult(
       text: reply,
+      parts: List.unmodifiable(parts),
       agentRunId: runId is String && runId.isNotEmpty ? runId : null,
     );
   }
 
   @override
   Future<void> closeSession(AgentSessionBinding binding) async {
-    // Best effort — server sessions are durable; a lost close never strands
-    // the Character (phone ≠ brain).
     try {
-      await _post(
+      await _client.post(
         '/agent/sessions/${binding.characterSessionId}/close',
         const {},
       );
     } catch (_) {
-      // Ignore: closing is advisory.
+      // Advisory only. Canonical continuity remains server-owned.
     }
   }
 }

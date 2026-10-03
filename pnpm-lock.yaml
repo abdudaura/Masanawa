@@ -451,6 +451,9 @@ importers:
       '@fastify/type-provider-typebox':
         specifier: 6.1.0
         version: 6.1.0(typebox@1.3.34)
+      '@masanawa/agents':
+        specifier: workspace:*
+        version: link:../../packages/agents
       '@masanawa/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
@@ -479,15 +482,27 @@ importers:
       '@fastify/type-provider-typebox':
         specifier: 6.1.0
         version: 6.1.0(typebox@1.3.34)
+      '@masanawa/agents':
+        specifier: workspace:*
+        version: link:../../packages/agents
       '@masanawa/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@masanawa/identity':
+        specifier: workspace:*
+        version: link:../../packages/identity
       '@masanawa/node-runtime':
         specifier: workspace:*
         version: link:../../infra/runtime/node
       '@masanawa/postgres':
         specifier: workspace:*
         version: link:../../adapters/storage/postgres
+      '@masanawa/security':
+        specifier: workspace:*
+        version: link:../../packages/security
+      '@masanawa/skills':
+        specifier: workspace:*
+        version: link:../../packages/skills
       '@masanawa/telemetry':
         specifier: workspace:*
         version: link:../../packages/telemetry

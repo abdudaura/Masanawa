@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../ui/components/logo.dart';
 import '../../ui/components/masanawa_wordmark.dart';
-import '../../tokens/unigeria_tokens.dart';
-import '../../theme/unigeria_theme.dart';
+import '../../tokens/masanawa_tokens.dart';
+import '../../theme/masanawa_theme.dart';
 import '../../state/session_state.dart';
 
 /// Brand moment (≤1.5 s), then route to the chats or to login when signed out.
@@ -47,7 +47,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final u = context.unigeria;
+    final u = context.masanawa;
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Container(
@@ -62,15 +62,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              UnigeriaLogo(dark: true, height: 120),
-              SizedBox(height: UnigeriaTokens.spacing[4]),
+              MasanawaLogo(dark: true, height: 120),
+              SizedBox(height: MasanawaTokens.spacing[4]),
               const MasanawaWordmark(light: true, fontSize: 30),
-              SizedBox(height: UnigeriaTokens.spacing[2]),
+              SizedBox(height: MasanawaTokens.spacing[2]),
               Text(
-                'Chat with your Masana Agents.',
+                'Talk. Work. Get things done.',
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.9),
-                  fontSize: UnigeriaTokens.fontSize['md'],
+                  fontSize: MasanawaTokens.fontSize['md'],
                   fontWeight: FontWeight.w500,
                 ),
               ),

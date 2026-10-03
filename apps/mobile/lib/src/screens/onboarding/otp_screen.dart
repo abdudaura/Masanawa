@@ -7,7 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/api/models.dart';
 import '../../state/session_state.dart';
-import '../../tokens/unigeria_tokens.dart';
+import '../../tokens/masanawa_tokens.dart';
 import '../../ui/components/onboarding_scaffold.dart';
 import '../../ui/components/primary_button.dart';
 
@@ -174,7 +174,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
               }
             },
             style: TextStyle(
-              fontSize: UnigeriaTokens.fontSize['2xl'],
+              fontSize: MasanawaTokens.fontSize['2xl'],
               letterSpacing: 12,
               fontWeight: FontWeight.w700,
               color: Theme.of(context).colorScheme.onSurface,
@@ -189,7 +189,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
               filled: true,
               fillColor: Theme.of(context).colorScheme.surface,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(UnigeriaTokens.radius['md']!),
+                borderRadius: BorderRadius.circular(MasanawaTokens.radius['md']!),
               ),
             ),
           ),
@@ -199,7 +199,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
               error.message,
               style: TextStyle(
                 color: Theme.of(context).colorScheme.error,
-                fontSize: UnigeriaTokens.fontSize['sm'],
+                fontSize: MasanawaTokens.fontSize['sm'],
               ),
             ),
           ],
@@ -223,7 +223,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                 color: _remaining > 0
                     ? Theme.of(context).colorScheme.onSurfaceVariant
                     : Theme.of(context).colorScheme.primary,
-                fontSize: UnigeriaTokens.fontSize['md'],
+                fontSize: MasanawaTokens.fontSize['md'],
               ),
             ),
           ),
