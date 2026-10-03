@@ -46,7 +46,9 @@ export function createAlphaDevAuthorizer(input: {
   }
 
   return Object.freeze({
-    async authorize(request): Promise<AgentConversationAdmission> {
+    async authorize(
+      request: Parameters<AgentConversationAuthorizer["authorize"]>[0],
+    ): Promise<AgentConversationAdmission> {
       if (bearerToken(request.authorizationHeader) !== expectedToken) {
         throw new Error("Alpha development authorization denied");
       }
@@ -164,7 +166,9 @@ export function createAlphaDirectoryAuthorizer(input: {
     throw new TypeError("Alpha development token must be at least 24 characters");
   }
   return Object.freeze({
-    async authorize(request) {
+    async authorize(
+      request: Parameters<AgentDirectoryAuthorizer["authorize"]>[0],
+    ) {
       if (bearerToken(request.authorizationHeader) !== expectedToken) {
         throw new Error("Alpha development authorization denied");
       }
