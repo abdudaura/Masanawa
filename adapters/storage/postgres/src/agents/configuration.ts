@@ -86,7 +86,9 @@ export function createPostgresAgentPresentationRepository(
   pool: Pool,
 ): AgentPresentationRepository {
   return Object.freeze({
-    async readForCharacter(input) {
+    async readForCharacter(
+      input: Parameters<AgentPresentationRepository["readForCharacter"]>[0],
+    ) {
       return withTransaction(
         pool,
         async (client) => {
@@ -102,7 +104,9 @@ export function createPostgresAgentPresentationRepository(
       );
     },
 
-    async listAll(input) {
+    async listAll(
+      input: Parameters<AgentPresentationRepository["listAll"]>[0],
+    ) {
       return withTransaction(
         pool,
         async (client) => {
@@ -119,7 +123,9 @@ export function createPostgresAgentPresentationRepository(
       );
     },
 
-    async listVisible(input) {
+    async listVisible(
+      input: Parameters<AgentPresentationRepository["listVisible"]>[0],
+    ) {
       return withTransaction(
         pool,
         async (client) => {
@@ -136,7 +142,9 @@ export function createPostgresAgentPresentationRepository(
       );
     },
 
-    async put(input) {
+    async put(
+      input: Parameters<AgentPresentationRepository["put"]>[0],
+    ) {
       const presentation = normalizeAgentPresentation(input.presentation);
       assertExpectedRevision(input.expectedRevision);
 
@@ -198,7 +206,9 @@ export function createPostgresCharacterSkillAssignmentRepository(
   pool: Pool,
 ): CharacterSkillAssignmentRepository {
   return Object.freeze({
-    async readForCharacter(input) {
+    async readForCharacter(
+      input: Parameters<CharacterSkillAssignmentRepository["readForCharacter"]>[0],
+    ) {
       return withTransaction(
         pool,
         async (client) => {
@@ -214,7 +224,9 @@ export function createPostgresCharacterSkillAssignmentRepository(
       );
     },
 
-    async put(input) {
+    async put(
+      input: Parameters<CharacterSkillAssignmentRepository["put"]>[0],
+    ) {
       const assignment = normalizeCharacterSkillAssignment(input.assignment);
       assertExpectedRevision(input.expectedRevision);
 

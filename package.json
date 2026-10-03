@@ -26,7 +26,7 @@
     "test:load": "vitest run tests/load",
     "test:chaos": "vitest run tests/chaos",
     "alpha:bootstrap": "node --conditions=production scripts/alpha-bootstrap.mjs",
-    "alpha:prepare": "pnpm build && pnpm alpha:bootstrap"
+    "alpha:prepare": "pnpm --filter @masanawa/gateway-service... build && pnpm alpha:bootstrap"
   },
   "devDependencies": {
     "@types/node": "24.13.6",

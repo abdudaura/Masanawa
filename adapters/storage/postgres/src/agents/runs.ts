@@ -166,8 +166,11 @@ function capture(raw: AgentRunRequest): AgentRunRequest {
 
 function admissionTrace(request: AgentRunRequest): AgentRun["trace"] {
   return normalizeAgentRunTraceReferences({
-    requestId: request.authority.requestId,
-    correlationId: request.authority.correlationId,
+    requestId: parseCanonicalId("request", request.authority.requestId),
+    correlationId: parseCanonicalId(
+      "correlation",
+      request.authority.correlationId,
+    ),
     taskId: null,
     workflowRunId: null,
     operationIds: [],
