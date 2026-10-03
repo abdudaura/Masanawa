@@ -147,7 +147,7 @@ Task 066 established:
 - explicit surfacing of every Tool authority capability through the Skill authority declaration;
 - exact candidate ToolVersion evidence without selecting or embedding Providers.
 
-Task 067 is next. Its implementation branch must start from the merged Task 066 closure state and must turn certification from summary counters into exact immutable rehearsal/certification evidence bound to the certified SkillVersion.
+Active implementation branch: `task067-rehearsal-certification-evidence`. Task 067 replaces counter-only certification with exact immutable rehearsal evidence bound to the certified SkillVersion, including reproducible suite identity, per-case evidence hashes/references, positive and negative activation coverage, and fail-closed pass/count/temporal validation. Acceptance/CI is pending.
 
 
 
