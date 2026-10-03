@@ -30,28 +30,6 @@ export interface AgentConversationAuthorizer {
   }): Promise<AgentConversationAdmission>;
 }
 
-export interface AlphaConversationExecutor {
-  reply(input: {
-    readonly characterId: CharacterId;
-    readonly characterVersionId: CharacterVersionId;
-    readonly displayName: string;
-    readonly roleLabel: string;
-    readonly about: string;
-    readonly text: string;
-  }): Promise<string>;
-
-  replyMedia(input: {
-    readonly characterId: CharacterId;
-    readonly characterVersionId: CharacterVersionId;
-    readonly displayName: string;
-    readonly roleLabel: string;
-    readonly about: string;
-    readonly caption: string;
-    readonly mimeType: string;
-    readonly dataBase64: string;
-  }): Promise<string>;
-}
-
 export interface AgentConversationService {
   open(input: {
     readonly authorizationHeader: string | undefined;

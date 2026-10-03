@@ -146,3 +146,21 @@ principal/identity store, transcript-as-memory authority, strategy engine, provi
 selector, Skill catalog, Operation ledger or Workflow checkpoint owner. Record its
 persistence and acceptance requirements before implementation; Task 072 remains planned
 and has no implementation branch or acceptance claim in this checkpoint.
+
+
+## Task 073 adjacent implementation groundwork
+
+While Task 072 remains formally open pending its acceptance gate, the Alpha runtime now
+uses the next provider-neutral seam without advancing the canonical task ledger:
+- `@masanawa/agents` owns an `AgentStrategy` interface keyed by exact AgentRun,
+  CharacterSession and CharacterVersion identity;
+- transient user input is explicitly text or media and is not durable transcript,
+  Memory, World or Workflow truth;
+- `AgentInferenceProvider` is model/vendor neutral and owns no Character/session/run,
+  Skill/Tool, Memory or Workflow authority;
+- Gateway Alpha composition now calls AgentStrategy, while the Gemini adapter translates
+  only provider-neutral inference input at the external model edge;
+- the current Alpha strategy intentionally does not compile Memory/World context,
+  select Skills/Tools, enforce budgets or delegate; those remain Tasks 074-079.
+
+This is mergeable architectural groundwork for Task 073, not a completion claim.

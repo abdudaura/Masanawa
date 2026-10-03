@@ -2,6 +2,7 @@ import { pathToFileURL } from "node:url";
 import type {
   AgentPresentationRepository,
   AgentRunRepository,
+  AgentStrategy,
   CharacterSessionRepository,
   CharacterSkillAssignmentRepository,
 } from "@masanawa/agents";
@@ -30,7 +31,6 @@ import {
 import { createAgentConversationService } from "./agent_conversation.js";
 import type {
   AgentConversationAuthorizer,
-  AlphaConversationExecutor,
 } from "./agent_conversation_contract.js";
 import {
   createAlphaDevAuthorizer,
@@ -38,7 +38,8 @@ import {
   parseAlphaDevIds,
   parseAlphaRelationshipMap,
 } from "./alpha_dev.js";
-import { createGeminiAlphaExecutor } from "./alpha_executor.js";
+import { createGeminiAlphaInferenceProvider } from "./alpha_executor.js";
+import { createAlphaInferenceStrategy } from "./alpha_strategy.js";
 import {
   createGatewayApp,
   type GatewayAppOptions,
@@ -76,7 +77,7 @@ export interface StartGatewayServiceOptions {
   readonly appOptions?: Omit<GatewayAppOptions, "isDraining">;
   readonly agentDirectoryAuthorizer?: AgentDirectoryAuthorizer;
   readonly agentConversationAuthorizer?: AgentConversationAuthorizer;
-  readonly alphaExecutor?: AlphaConversationExecutor;
+  readonly agentStrategy?: AgentStrategy;
 }
 
 export interface GatewayServiceRuntime {
@@ -162,7 +163,7 @@ export async function startGatewayService(
 
   let directoryAuthorizer = options.agentDirectoryAuthorizer;
   let conversationAuthorizer = options.agentConversationAuthorizer;
-  let conversationExecutor = options.alphaExecutor;
+  let strategy = options.agentStrategy;
 
   if (alphaEnabled(env)) {
     if (
@@ -204,9 +205,11 @@ export async function startGatewayService(
       presentations: database.agentPresentations,
       skillAssignments: database.characterSkillAssignments,
     });
-    conversationExecutor ??= createGeminiAlphaExecutor({
-      apiKey: requiredAlphaEnv(env, "MASANAWA_ALPHA_GEMINI_API_KEY"),
-      model: requiredAlphaEnv(env, "MASANAWA_ALPHA_GEMINI_MODEL"),
+    strategy ??= createAlphaInferenceStrategy({
+      inference: createGeminiAlphaInferenceProvider({
+        apiKey: requiredAlphaEnv(env, "MASANAWA_ALPHA_GEMINI_API_KEY"),
+        model: requiredAlphaEnv(env, "MASANAWA_ALPHA_GEMINI_MODEL"),
+      }),
     });
   }
 
@@ -222,14 +225,14 @@ export async function startGatewayService(
   const composedConversation =
     options.appOptions?.agentConversation ??
     (conversationAuthorizer &&
-    conversationExecutor &&
+    strategy &&
     database.characterSessions &&
     database.agentRuns
       ? createAgentConversationService({
           sessions: database.characterSessions,
           runs: database.agentRuns,
           authorizer: conversationAuthorizer,
-          executor: conversationExecutor,
+          strategy,
           sessionDurationMs: 24 * 60 * 60 * 1000,
         })
       : undefined);

@@ -156,6 +156,10 @@ Task 070 acceptance (satisfied on merged main):
     and passes; GitHub-hosted Actions have recently failed before checkout
     because no runner was allocated.
 - [ ] **073** Implement AgentStrategy interface and provider-neutral inference boundary.
+  - Adjacent groundwork branch `task073-strategy-boundary` introduces the canonical
+    AgentStrategy/AgentInferenceProvider seams and routes Alpha Gemini inference through
+    them without moving Memory/context, Skill/Tool orchestration, budgets or delegation
+    into this task. Task 073 remains unchecked while Task 072 acceptance is still open.
 - [ ] **074** Implement Character-aware context compiler using Identity/Memory/World.
 - [ ] **075** Implement tool/skill selection orchestration.
 - [ ] **076** Implement run budgets, token/cost/time/tool guards.

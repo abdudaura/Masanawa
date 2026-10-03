@@ -9,6 +9,7 @@ import {
 } from "@masanawa/security";
 import type {
   AgentRunRepository,
+  AgentStrategy,
   CharacterSession,
   CharacterSessionRepository,
   CharacterSessionScope,
@@ -22,7 +23,6 @@ import {
 import type {
   AgentConversationAdmission,
   AgentConversationAuthorizer,
-  AlphaConversationExecutor,
 } from "./agent_conversation_contract.js";
 
 function fixture() {
@@ -146,16 +146,16 @@ describe("Alpha conversation service", () => {
       },
     };
 
-    const executor: AlphaConversationExecutor = {
-      async reply(input) {
-        expect(input.displayName).toBe("Amina");
-        expect(input.roleLabel).toBe("Research Assistant");
-        return `Text: ${input.text}`;
-      },
-      async replyMedia(input) {
-        expect(input.mimeType).toBe("audio/mp4");
-        expect(input.dataBase64).toBe("YWJj");
-        return "I heard the voice note.";
+    const strategy: AgentStrategy = {
+      async execute(input) {
+        expect(input.presentation.displayName).toBe("Amina");
+        expect(input.presentation.roleLabel).toBe("Research Assistant");
+        if (input.input.kind === "text") {
+          return { reply: `Text: ${input.input.text}`, parts: [] };
+        }
+        expect(input.input.mimeType).toBe("audio/mp4");
+        expect(input.input.dataBase64).toBe("YWJj");
+        return { reply: "I heard the voice note.", parts: [] };
       },
     };
 
@@ -163,7 +163,7 @@ describe("Alpha conversation service", () => {
       sessions,
       runs,
       authorizer,
-      executor,
+      strategy,
       sessionDurationMs: 60_000,
     });
 
@@ -249,11 +249,8 @@ describe("Alpha conversation service", () => {
         return f.admission;
       },
     };
-    const executor: AlphaConversationExecutor = {
-      async reply() {
-        throw new Error("provider down");
-      },
-      async replyMedia() {
+    const strategy: AgentStrategy = {
+      async execute() {
         throw new Error("provider down");
       },
     };
@@ -261,7 +258,7 @@ describe("Alpha conversation service", () => {
       sessions,
       runs,
       authorizer,
-      executor,
+      strategy,
       sessionDurationMs: 60_000,
     });
 
@@ -276,6 +273,6 @@ describe("Alpha conversation service", () => {
       }),
     ).rejects.toThrow("provider down");
 
-    expect(outcomes).toEqual(["alpha.executor_failed"]);
+    expect(outcomes).toEqual(["alpha.strategy_failed"]);
   });
 });
