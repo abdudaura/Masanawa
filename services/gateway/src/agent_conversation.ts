@@ -59,9 +59,9 @@ export function createAgentConversationService(input: {
         throw new RangeError("Agent turn text is invalid");
       }
 
-      const admission = await input.authorizer.authorizeSession({
+      const admission = await input.authorizer.authorize({
         authorizationHeader: request.authorizationHeader,
-        characterSessionId,
+        characterId: parseCanonicalId("character", request.characterId),
       });
       const session = await input.sessions.read({
         authority: admission.authority,
@@ -133,9 +133,9 @@ export function createAgentConversationService(input: {
         "character-session",
         request.characterSessionId,
       );
-      const admission = await input.authorizer.authorizeSession({
+      const admission = await input.authorizer.authorize({
         authorizationHeader: request.authorizationHeader,
-        characterSessionId,
+        characterId: parseCanonicalId("character", request.characterId),
       });
       const session = await input.sessions.read({
         authority: admission.authority,
