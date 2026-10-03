@@ -39,7 +39,9 @@ function conflict(): PlatformError {
 }
 function capture(input: CharacterSessionRequest): CharacterSessionRequest {
   // Copy admitted authority before any wait; preserve its revocation identity.
-  const authority = Object.freeze({ ...createAuthorityContext(input.authority),
+  const authority = Object.freeze({ ...createAuthorityContext({ ...input.authority,
+    issuedAt: toInstant(input.authority.issuedAt),
+    ...(input.authority.expiresAt ? { expiresAt: toInstant(input.authority.expiresAt) } : {}) }),
     authorityContextId: parseCanonicalId("authority-context", input.authority.authorityContextId),
     principal: Object.freeze({ ...input.authority.principal }) });
   return Object.freeze({ authority, scope: normalizeCharacterSessionScope(input.scope),

@@ -84,9 +84,13 @@ describePostgres("CharacterSession PostgreSQL 18 acceptance", () => {
 
   it("persists exact scoped identity, replays creation and rejects changed admissions and private access", async () => {
     const f = await fixture(), store = repository();
-    const simultaneous = await Promise.all([store.create(f.input), store.create(f.input)]);
-    const first = simultaneous[0]!;
-    expect(simultaneous[1]).toEqual(first);
+    await expect(store.create({ ...f.input, authority: { ...f.authority, issuedAt: undefined } as unknown as AuthorityContext })).rejects.toBeInstanceOf(TypeError);
+    const simultaneous = await Promise.allSettled([store.create(f.input), store.create(f.input)]);
+    expect(simultaneous.map(result => result.status)).toEqual(["fulfilled", "fulfilled"]);
+    const firstResult = simultaneous[0]!;
+    if (firstResult.status !== "fulfilled") throw firstResult.reason;
+    const first = firstResult.value;
+    expect(simultaneous[1]).toMatchObject({ status: "fulfilled", value: first });
     expect(await store.create(f.input)).toEqual(first);
     expect(await store.read(f.input)).toEqual(first);
     await expect(store.create({ ...f.input, durationMs: 1000 })).rejects.toMatchObject({ code: "agents.session_conflict" });
