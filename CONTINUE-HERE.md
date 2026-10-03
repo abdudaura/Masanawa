@@ -137,9 +137,17 @@ Foundation CI run 379, PR #47 merged as
 `d0a198dbdec1af08e3c8f1378da0985db628eb6e`, and merged-main Foundation CI
 run 380 passed on that exact merge commit.
 
-**Current: Task 066 of 150 — Implement risk/capability classification.**
+**Current: Task 067 of 150 — Implement rehearsal/certification evidence.**
 
-Active implementation branch: `task066-risk-capability-classification`. Task 066 adds immutable Skill risk/capability envelopes and fail-closed validation that referenced ToolVersions cannot hide stronger risk, side effects, sensitivity, or authority requirements. Acceptance/CI is pending.
+Task 066 implementation head `eb0ddef003bf9946d0df50b6c070a4d6ab6ea59c` passed Foundation CI run 431. PR #68 merged as `e1573fc91549b25a0425ef9a8cc7534ca0a4464a`, and merged-main Foundation CI run 432 passed on that exact merge commit.
+
+Task 066 established:
+- immutable Skill risk/capability classification derived from canonical SkillVersion and Tool registry evidence;
+- fail-closed rejection when any referenced ToolVersion exceeds declared Skill risk, side-effect or sensitivity envelopes;
+- explicit surfacing of every Tool authority capability through the Skill authority declaration;
+- exact candidate ToolVersion evidence without selecting or embedding Providers.
+
+Task 067 is next. Its implementation branch must start from the merged Task 066 closure state and must turn certification from summary counters into exact immutable rehearsal/certification evidence bound to the certified SkillVersion.
 
 
 
@@ -147,7 +155,7 @@ Active implementation branch: `task066-risk-capability-classification`. Task 066
 
 
 
-Tasks 001-065 are merged complete.
+Tasks 001-066 are merged complete.
 
 
 
@@ -273,17 +281,6 @@ Task 056 established:
 - visible Foundation CI Typecheck/Test/Build stages;
 - architecture enforcement for suite directories, scripts, discovery and workflow wiring.
 
-Implemented on Task 057 branch:
-- added one machine-readable API lifecycle manifest separating workspace SemVer, HTTP majors, schema versions and domain registry versions;
-- activated the Contracts suite as blocking evidence;
-- enforced root-only reusable workspace exports and repository-wide no-deep-import rules;
-- enforced supported HTTP major prefixes with only /healthz and /readyz unversioned;
-- added a machine-audited deprecation registry and required source annotations for deprecated workspace symbols;
-- documented immutable event/payload and Tool/Provider version semantics.
-
-Task 057 remains incomplete until the branch passes the complete gate, merges to main,
-and merged-main CI passes.
-
 The existing `phase6-skills-foundation` branch contains valid unmerged Phase 6 work
 based on pre-roadmap `main`. Preserve it, but do not merge it ahead of Tasks 054-058.
 After the structure-hardening sequence closes, reconcile/rebase its valid Skill work
@@ -338,10 +335,10 @@ PostgreSQL 18 + pgvector integration suites and production builds.
 The Phase 5 acceptance audit is PASS and its final merge is green.
 
 Immediate next:
-1. reconcile the valid `phase6-skills-foundation` work onto current merged `main` without duplicating already-valid Skill work;
-2. continue Task 059 in ledger order and preserve provider-neutral Skill ownership;
-4. keep Skills provider-neutral so future assigned Android devices participate through the same Tool/Provider architecture;
-5. use Paperclip only as a bounded workflow/runtime/Ops behavior donor and preserve Masanawa Authority/Operation/Provider boundaries.
+1. implement Task 067 rehearsal/certification evidence on current merged `main`;
+2. bind every certification result to an exact immutable SkillVersion and immutable rehearsal case/result evidence;
+3. keep rehearsal/certification descriptive and admission-oriented: it must not create a second authorization, Tool, Provider or Workflow authority;
+4. preserve provider-neutral Skills so cloud and future Device Providers remain selectable through the same Tool/Provider architecture.
 
 The requested post-freeze donor boundary remains unchanged: MemPalace contributes
 retrieval/evaluation/storage-contract behavior inside canonical Masanawa memory ports;
