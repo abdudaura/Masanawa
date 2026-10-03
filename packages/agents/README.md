@@ -19,3 +19,27 @@ transport bindings. Expiry blocks continuation but preserves history. Clients mu
 See `docs/PHASE-7-AGENT-RUNTIME.md` for the persistence, lifecycle, authorization and
 acceptance contract. AgentRun, strategies, context compilation and run fencing are
 later Tasks 072–082. No donor kernel is a production dependency.
+
+
+## Admin-configured mobile agents
+
+The mobile product direction adds two independent Agents-owned configuration
+records around existing Identity/Skills truth:
+
+- `AgentPresentation` controls role label, about/greeting, user-app visibility
+  and ordering for an existing exact CharacterVersion.
+- `CharacterSkillAssignment` selects exact SkillVersion references for a
+  Character independently of presentation.
+
+A Character display name is still Constitution/CharacterVersion identity and is
+changed through the Identity publication lifecycle, not by copying the name into
+Agents. A role label is presentation only and never grants a Skill. A Skill
+assignment is selection metadata only; runtime admission must revalidate current
+Skill readiness/certification and Security authority.
+
+PostgreSQL stores these separately in
+`agents.agent_presentations` and `agents.character_skill_assignments`.
+Concrete adapters use revision CAS so presentation and capability selection can
+change independently without lost updates.
+
+See `docs/MOBILE-AGENT-EXPERIENCE.md`.
