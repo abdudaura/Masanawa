@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { normalizeAgentConfiguration } from "./configuration.js";
 
-const id = (kind: string, suffix: string) => `${kind}_00000000-0000-4000-8000-${suffix.padStart(12, "0")}`;
+const id = (kind: string, suffix: string) =>
+  `${kind}_0199a1b2-c3d4-7e5f-8a9b-${suffix.padStart(12, "0")}`;
 
 describe("AgentConfiguration", () => {
   it("keeps identity presentation separate from exact SkillVersion assignment", () => {
