@@ -8,9 +8,11 @@ Masanawa production is tracked as **150 numbered milestone tasks**. Tasks are no
 
 ## Current position
 
-Merged `main` satisfies Tasks **001-068**.
+Merged `main` satisfies Tasks **001-069**.
 
-**Current: Task 069 of 150 — Implement trace metadata and deterministic failure semantics.**
+**Current: Task 070 of 150 — Pass Skills acceptance tests including cloud/device-provider neutrality.**
+
+Task 069 implementation head `83ed96c693a307fb9fcebac7a593df680d8e1273` passed Foundation CI run 445 (328 tests). PR #74 merged as `1dd2363847c70a81ec1839377921bb461804db1e`; merged-main Foundation CI run 446 passed on that exact merge commit.
 
 Task 068 implementation head `66b323703749fdd658f6a0c5af37ba73251636ee` passed Foundation CI run 440. PR #72 merged as `42b2cf29348fa38b58b27744b1162cd623058241`; merged-main Foundation CI run 441 passed on that exact merge commit.
 
@@ -114,8 +116,14 @@ Status: `[x]` COMPLETE, `[ ]` PLANNED.
 - [x] **066** Implement risk/capability classification.
 - [x] **067** Implement rehearsal/certification evidence.
 - [x] **068** Implement readiness/eligibility and revision pinning.
-- [ ] **069** Implement trace metadata and deterministic failure semantics.
+- [x] **069** Implement trace metadata and deterministic failure semantics.
 - [ ] **070** Pass Skills acceptance tests including cloud/device-provider neutrality.
+
+Task 070 acceptance must include:
+- canonical Skill/SkillVersion/readiness persistence and registry reconstruction after restart, as already required by the Phase 6 record; the current registry is in memory and no Skills migration/storage adapter exists yet;
+- immutable version identity/content, exact dependency graphs and pins, certification evidence and fail-closed readiness across persistence/reload;
+- the same Skill/Tool binding selecting cloud or simulated Device Providers only through the existing canonical Tool/Provider executor, including offline readiness, authority denial and ambiguous outcome reconciliation without duplicate effects;
+- cross-package acceptance evidence and the full Foundation CI gate on the implementation head and merged main. Simulated Providers establish contract neutrality, not real Android/OmniSIP qualification.
 
 ## Tasks 071-082 — Agent runtime
 

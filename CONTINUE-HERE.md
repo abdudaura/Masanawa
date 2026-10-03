@@ -137,7 +137,7 @@ Foundation CI run 379, PR #47 merged as
 `d0a198dbdec1af08e3c8f1378da0985db628eb6e`, and merged-main Foundation CI
 run 380 passed on that exact merge commit.
 
-**Current: Task 069 of 150 — Implement trace metadata and deterministic failure semantics.**
+**Current: Task 070 of 150 — Pass Skills acceptance tests including cloud/device-provider neutrality.**
 
 Task 066 implementation head `eb0ddef003bf9946d0df50b6c070a4d6ab6ea59c` passed Foundation CI run 431. PR #68 merged as `e1573fc91549b25a0425ef9a8cc7534ca0a4464a`, and merged-main Foundation CI run 432 passed on that exact merge commit.
 
@@ -165,20 +165,17 @@ Task 068 established:
 - pin integrity/definition/graph drift rejection without any implicit latest-version substitution;
 - current readiness revalidation when resolving a pin so operational blocks are never frozen away.
 
-Active implementation branch: `task069-trace-failure-semantics`. Task 069 adds deterministic exact-plan Skill trace descriptors and privacy-safe telemetry attribute admission, plus failure normalization that preserves typed PlatformError retry/ambiguity/Operation semantics while redacting unknown exception text behind stable Skill failure codes. Acceptance/CI is pending.
+Task 069 implementation head `83ed96c693a307fb9fcebac7a593df680d8e1273` passed Foundation CI run 445 (328 tests). PR #74 merged as `1dd2363847c70a81ec1839377921bb461804db1e`; merged-main Foundation CI run 446 passed on that exact merge commit.
 
+Task 069 established:
+- deterministic exact-plan step/Tool/direct-subskill trace metadata and privacy-safe telemetry tags;
+- bounded trace admission with canonical IDs, ordinal/hash/reference validation and kind-specific field combinations;
+- copied, frozen failure trace evidence that rejects malformed metadata and excludes arbitrary private fields;
+- preservation of typed failure/Operation/correlation semantics, reconciliation precedence for ambiguity and redaction of unknown exceptions.
 
+Task 070 is next. Start from the merged Task 069 closure state and use its acceptance criteria in `docs/PRODUCTION-MASTER-TASKS.md`. The canonical in-memory registry still needs Skills-owned persistence/reload evidence before Phase 6 closes. Preserve the current Tool/Provider authority and verify cloud/device neutrality with simulated Provider adapters; real Android/OmniSIP qualification remains in the device tasks.
 
-
-
-
-
-Tasks 001-068 are merged complete.
-
-
-
-
-
+Tasks 001-069 are merged complete.
 
 Task 065 implementation head `e17e444716c58460de1a780daafd3d6dd5cfdac0` passed
 Foundation CI run 427. PR #66 merged as
@@ -299,12 +296,11 @@ Task 056 established:
 - visible Foundation CI Typecheck/Test/Build stages;
 - architecture enforcement for suite directories, scripts, discovery and workflow wiring.
 
-The existing `phase6-skills-foundation` branch contains valid unmerged Phase 6 work
-based on pre-roadmap `main`. Preserve it, but do not merge it ahead of Tasks 054-058.
-After the structure-hardening sequence closes, reconcile/rebase its valid Skill work
-onto then-current `main` rather than duplicating that implementation.
+The historical `phase6-skills-foundation` branch is based on pre-roadmap `main`.
+Its valid foundation was reconciled in Task 059 rather than merged wholesale.
+Do not revive it as the active branch or duplicate its already-merged Skills behavior.
 
-Before implementing the first Phase 6 slice, use `docs/PRODUCT-NORTH-STAR.md` as the
+For the remaining Phase 6 acceptance work, use `docs/PRODUCT-NORTH-STAR.md` as the
 product-priority check and preserve the device-provider direction in
 `docs/AGENT-PHONE-EMBODIMENT.md`. Skills must be capable of resolving Tools through
 both cloud Providers and future Device Providers without embedding either execution
@@ -353,10 +349,10 @@ PostgreSQL 18 + pgvector integration suites and production builds.
 The Phase 5 acceptance audit is PASS and its final merge is green.
 
 Immediate next:
-1. implement Task 067 rehearsal/certification evidence on current merged `main`;
-2. bind every certification result to an exact immutable SkillVersion and immutable rehearsal case/result evidence;
-3. keep rehearsal/certification descriptive and admission-oriented: it must not create a second authorization, Tool, Provider or Workflow authority;
-4. preserve provider-neutral Skills so cloud and future Device Providers remain selectable through the same Tool/Provider architecture.
+1. complete Task 070 Skills persistence/restart and cross-package acceptance evidence from current merged `main`;
+2. preserve exact immutable SkillVersions, certification cases, dependency graphs and revision pins during registry reconstruction;
+3. verify provider-neutral cloud/device execution through canonical Tools, including authority, readiness, receipts and ambiguity;
+4. close Phase 6 only after acceptance and merged-main CI pass; do not start Task 071 early.
 
 The requested post-freeze donor boundary remains unchanged: MemPalace contributes
 retrieval/evaluation/storage-contract behavior inside canonical Masanawa memory ports;
@@ -375,8 +371,8 @@ Foundation CI run 261 passed the complete gate on hardened implementation head
 `061ab25d85b5100120c73d1442984cff8cf922e8` passed run 262; PR #30 merged as
 `b3cc9e75fe32ded30dc51dc2b116a38b454b46a9`.
 
-Do not skip directly to vector search. Retrieval quality cannot outrank canonical scope,
-provenance, correction, deletion or liveness.
+Historical Phase 4 ordering: retrieval quality must not outrank canonical scope,
+provenance, correction, deletion or liveness. Phase 4 is closed; do not restart it.
 
 ## Memory architecture — fixed
 
@@ -429,3 +425,4 @@ ADR-0009 and `docs/migration/WORLD-SIMULATION-ADOPTION-BOUNDARY.md` decide:
 
 Do not ask the user to repeat previous discussions. Recover state from this repository,
 the active branch, CI, source lock, reference vault and phase record.
+
