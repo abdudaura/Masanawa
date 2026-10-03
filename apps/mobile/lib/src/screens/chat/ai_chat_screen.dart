@@ -398,10 +398,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                         if (index >= messages.length) {
                           return const _TypingBubble();
                         }
-                        return _ChatBubble(
-                          message: messages[index],
-                          agentAccent: u.brand,
-                        );
+                        return _ChatBubble(message: messages[index]);
                       },
                     ),
             ),
@@ -692,10 +689,9 @@ class _RecordingBar extends StatelessWidget {
 }
 
 class _ChatBubble extends StatelessWidget {
-  const _ChatBubble({required this.message, required this.agentAccent});
+  const _ChatBubble({required this.message});
 
   final AiChatMessage message;
-  final Color agentAccent;
 
   @override
   Widget build(BuildContext context) {
