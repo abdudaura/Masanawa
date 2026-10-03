@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createCanonicalId,
   nowInstant,
+  toInstant,
 } from "@masanawa/contracts";
 import {
   createAuthorityContext,
@@ -81,7 +82,7 @@ function sessionFor(
     revision: 1,
     createdAt: f.at,
     updatedAt: f.at,
-    expiresAt: nowInstant(new Date(Date.now() + 60_000)),
+    expiresAt: toInstant(new Date(Date.now() + 60_000)),
     closedAt: null,
     closeReason: null,
     successorSessionId: null,
