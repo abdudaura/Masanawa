@@ -1,5 +1,11 @@
 import type { Skill, SkillReadiness, SkillVersion } from "./model.js";
 import type { SkillRegistration } from "./registry.js";
+import type { SkillVersionId } from "@masanawa/contracts";
+
+/** Reference admission only. Existence does not imply certification, readiness or authority. */
+export interface SkillVersionReferenceReader {
+  assertVersionsExist(ids: readonly SkillVersionId[]): Promise<void>;
+}
 
 /** Canonical catalog observation, with a compare-and-swap token for readiness. */
 export interface SkillReadinessRecord {
