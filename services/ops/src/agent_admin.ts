@@ -5,12 +5,14 @@ import type {
   CharacterSkillAssignmentRepository,
 } from "@masanawa/agents";
 import type { CharacterId, TenantId } from "@masanawa/contracts";
+import type { SkillRepository } from "@masanawa/skills";
 
 export type AgentAdminCapability =
   | "agents.presentation.read"
   | "agents.presentation.write"
   | "agents.skills.read"
-  | "agents.skills.write";
+  | "agents.skills.write"
+  | "skills.catalog.read";
 
 export interface AgentAdminAuthority {
   readonly tenantId: TenantId;
@@ -23,10 +25,24 @@ export interface AgentAdminAuthorizer {
   }): Promise<AgentAdminAuthority>;
 }
 
+export interface AgentAdminSkillOption {
+  readonly skillVersionId: string;
+  readonly key: string;
+  readonly version: string;
+  readonly displayName: string;
+  readonly description: string;
+  readonly readiness: "ready" | "degraded" | "blocked" | "disabled" | "unknown";
+  readonly advertised: boolean;
+}
+
 export interface AgentAdminService {
   listPresentations(input: {
     readonly authorizationHeader: string | undefined;
   }): Promise<readonly AgentPresentation[]>;
+
+  listSkills(input: {
+    readonly authorizationHeader: string | undefined;
+  }): Promise<readonly AgentAdminSkillOption[]>;
 
   readSkillAssignment(input: {
     readonly authorizationHeader: string | undefined;
@@ -54,6 +70,7 @@ export interface AgentAdminService {
 export function createAgentAdminService(input: {
   readonly presentations: AgentPresentationRepository;
   readonly skillAssignments: CharacterSkillAssignmentRepository;
+  readonly skills: SkillRepository;
   readonly authorizer: AgentAdminAuthorizer;
 }): AgentAdminService {
   return Object.freeze({
@@ -63,6 +80,34 @@ export function createAgentAdminService(input: {
         capability: "agents.presentation.read",
       });
       return input.presentations.listAll({ tenantId: authority.tenantId });
+    },
+
+    async listSkills(request) {
+      await input.authorizer.authorize({
+        authorizationHeader: request.authorizationHeader,
+        capability: "skills.catalog.read",
+      });
+      const snapshot = await input.skills.readSnapshot();
+      const readiness = new Map(
+        snapshot.readiness.map((record) => [
+          record.readiness.skillVersionId,
+          record.readiness,
+        ]),
+      );
+      return Object.freeze(
+        snapshot.versions.map((version) => {
+          const status = readiness.get(version.skillVersionId);
+          return Object.freeze({
+            skillVersionId: version.skillVersionId,
+            key: version.key,
+            version: version.version,
+            displayName: version.displayName,
+            description: version.description,
+            readiness: status?.state ?? "unknown",
+            advertised: status?.advertised ?? false,
+          });
+        }),
+      );
     },
 
     async readSkillAssignment(request) {
