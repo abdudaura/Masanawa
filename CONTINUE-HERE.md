@@ -40,6 +40,9 @@ of architectural feature selection.
 
 **Phase 7 — Agent runtime.**
 
+Task 071 implementation head `333030618c0d060c6253dbe99fe548dc3b823d4c` passed Foundation CI run 458 (360 tests in 75 files, including ten real PostgreSQL 18 CharacterSession acceptance cases). PR #79 merged as `c2bdfb9f5a970d3d949cbd8692d9c59cb89670a0`; merged-main Foundation CI run 459 passed on that exact merge commit.
+Current production task: **072 — AgentRun identity, lineage and durable trace references**.
+
 Task 070 implementation head `68e8e4002bc7fae8ea0e1a58b72b81e00454e294` passed Foundation CI run 450 (340 tests in 73 files, including nine PostgreSQL 18 Skills acceptance cases). PR #76 merged as `34aa6f9d19f9b0c92527fabe3a750052009398d2`; merged-main Foundation CI run 451 passed on that exact merge commit. Phase 6 is closed; `docs/PHASE-6-CLOSURE-AUDIT.md` is PASS.
 
 Active phase record: `docs/PHASE-7-AGENT-RUNTIME.md`.
@@ -132,16 +135,26 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 
 ## Immediate work
 
-Phase 6 Skills is closed. Start Phase 7 from current merged main; the production-structure hardening checkpoint is already complete.
+Phase 6 Skills is closed. Task 071 CharacterSession is merged and verified. Continue Phase 7 from current merged main; the production-structure hardening checkpoint is already complete.
 
-Tasks 001-070 are merged complete.
+Tasks 001-071 are merged complete.
 
 Task 054 implementation head `3a0a6251a551ffcfd852d3f4f80063195257ece6` passed
 Foundation CI run 379, PR #47 merged as
 `d0a198dbdec1af08e3c8f1378da0985db628eb6e`, and merged-main Foundation CI
 run 380 passed on that exact merge commit.
 
-**Current: Task 071 of 150 — Implement CharacterSession canonical runtime contract.**
+**Current: Task 072 of 150 — Implement AgentRun identity, lineage and durable trace references.**
+
+Task 071 implementation head `333030618c0d060c6253dbe99fe548dc3b823d4c` passed Foundation CI run 458 (360 tests in 75 files, including ten real PostgreSQL 18 CharacterSession acceptance cases). PR #79 merged as `c2bdfb9f5a970d3d949cbd8692d9c59cb89670a0`; merged-main Foundation CI run 459 passed on that exact merge commit.
+
+Task 071 established:
+- one Agents-owned, bounded CharacterSession contract and authorized repository port;
+- immutable tenant/User/Character/Relationship/version bindings with replaceable channel/presence projections;
+- exact SkillVersion references with explicit CAS refresh, without freezing readiness or granting execution;
+- scoped idempotent admission, revision-checked updates and atomic reset/successor continuity;
+- PostgreSQL lifecycle guards and current Security/Identity revalidation through owning ports;
+- real restart, private isolation, reset rollback/race, policy/revocation/expiry-lock and migration-readiness acceptance.
 
 Task 066 implementation head `eb0ddef003bf9946d0df50b6c070a4d6ab6ea59c` passed Foundation CI run 431. PR #68 merged as `e1573fc91549b25a0425ef9a8cc7534ca0a4464a`, and merged-main Foundation CI run 432 passed on that exact merge commit.
 
@@ -179,7 +192,7 @@ Task 069 established:
 
 Task 070 implementation head `68e8e4002bc7fae8ea0e1a58b72b81e00454e294` passed Foundation CI run 450 (340 tests in 73 files, including nine PostgreSQL 18 Skills acceptance cases). PR #76 merged as `34aa6f9d19f9b0c92527fabe3a750052009398d2`; merged-main Foundation CI run 451 passed on that exact merge commit. Phase 6 is closed; `docs/PHASE-6-CLOSURE-AUDIT.md` is PASS.
 
-Task 071 is next. Preserve the canonical Skills catalog/restore/pin ports and the existing Tool/Provider authority. Real Android/OmniSIP qualification remains in the device tasks.
+Task 072 is next. Preserve the canonical CharacterSession contract, Skills catalog/restore/pin ports and existing Tool/Provider authority. Real Android/OmniSIP qualification remains in the device tasks.
 
 Tasks 001-070 are merged complete.
 
@@ -355,10 +368,10 @@ PostgreSQL 18 + pgvector integration suites and production builds.
 The Phase 5 acceptance audit is PASS and its final merge is green.
 
 Immediate next:
-1. start Task 071 CharacterSession canonical runtime contract from current merged `main`;
-2. recover the canonical ledger, architecture/Identity boundaries and `docs/PHASE-7-AGENT-RUNTIME.md` before choosing the session contract;
+1. start Task 072 AgentRun identity, lineage and durable trace references from current merged `main`;
+2. recover the canonical ledger, CharacterSession/Identity/Security boundaries and `docs/PHASE-7-AGENT-RUNTIME.md` before choosing the AgentRun contract;
 3. preserve Skills persistence/pins and atomic Tool/Provider authority rather than introducing another execution engine;
-4. close Task 071 only after its acceptance and exact merged-main CI pass; do not pull Task 072 or Phase 8 Workflows into the session-contract slice.
+4. close Task 072 only after its acceptance and exact merged-main CI pass; preserve later strategy/context/budget milestones and Phase 8 Workflow ownership.
 
 The requested post-freeze donor boundary remains unchanged: MemPalace contributes
 retrieval/evaluation/storage-contract behavior inside canonical Masanawa memory ports;

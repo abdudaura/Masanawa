@@ -1,15 +1,16 @@
 # Phase 7 — Agent runtime
 
 Status: IN PROGRESS
-Current production task: **071 — CharacterSession canonical runtime contract**
+Current production task: **072 — AgentRun identity, lineage and durable trace references**
 
 Phase 6 is closed. Task 070 PR #76 merged as
 `34aa6f9d19f9b0c92527fabe3a750052009398d2`; exact merged-main Foundation CI
 run 451 passed. `docs/PHASE-6-CLOSURE-AUDIT.md` is PASS.
 Task 071 starts from main `3f938bd8174e496b6ce3f4ec35d110d1c3aaa88b`
 (PR #78, exact merged-main Foundation CI run 455 passed).
-The implementation branch is `task071-character-session`. Acceptance remains pending
-until this implementation is merged and exact merged-main CI passes.
+Task 071 is COMPLETE. Task 071 implementation head `333030618c0d060c6253dbe99fe548dc3b823d4c` passed Foundation CI run 458 (360 tests in 75 files, including ten real PostgreSQL 18 CharacterSession acceptance cases). PR #79 merged as `c2bdfb9f5a970d3d949cbd8692d9c59cb89670a0`; merged-main Foundation CI run 459 passed on that exact merge commit.
+The historical implementation branch is `task071-character-session`; future branches
+start from current merged main.
 
 ## Task 071 chosen contract
 
@@ -21,10 +22,10 @@ model selection, Device brain, AgentRun or Workflow checkpoint.
 
 Identity's new minimal `InteractionIdentityReader` supplies tenant/User/Character/
 Relationship/version lifecycle facts without private content. Its PostgreSQL adapter
-locks owning rows until transaction end. Creation and reset require the currently
+locks owning rows until transaction end. New creation and reset require the currently
 active published CharacterVersion and active tenant/User/Character/Relationship with
 the exact User–Character tuple. Continued sessions retain their original version when
-a new authored version activates. A retired version blocks continued mutation;
+a new authored version activates. A retired version blocks binding updates;
 authorized history and closure remain available. Inactive identities deny access.
 
 Skills supplies an existence-only exact-version reference reader. Session selection
@@ -41,8 +42,9 @@ Task 071 does not create future Workflow tables or a parallel task engine.
 ## Lifecycle and concurrency
 
 - Create allocates a caller-supplied canonical session ID once. Same normalized request
-  and ID replay the admitted record; changed requests conflict. Current authority and
-  Identity admission are required for every attempt. The stored fingerprint contains
+  and ID replay the current stored record; changed requests conflict. Replay never
+  reopens closed/expired continuity or re-admits a replaced/retired authored version.
+  Current authority and active Identity scope are required for every attempt. The stored fingerprint contains
   only IDs, duration and bounded references, never authority or private content.
 - `active -> closed` is terminal, with `ended` or `reset` reason. Expiry is a separate
   time boundary: an expired active record is history and cannot accept binding updates.
@@ -113,3 +115,13 @@ and reconciliation. Cloud and future Device Providers remain interchangeable edg
 real Android/OmniSIP qualification belongs to later Device milestones. Task 072 adds
 AgentRun identity/lineage/trace references. Strategies, context compilation, budgets and
 run cancellation remain later Phase 7 tasks. Phase 8 owns durable business Workflows.
+
+## Next milestone — Task 072
+
+Recover the canonical AgentRun ID/domain model and ADR-0008 before choosing its
+identity, lineage and durable trace-reference contract. Compose admitted runs with the
+existing CharacterSession and delegated Security ceiling. Do not introduce another
+principal/identity store, transcript-as-memory authority, strategy engine, provider
+selector, Skill catalog, Operation ledger or Workflow checkpoint owner. Record its
+persistence and acceptance requirements before implementation; Task 072 remains planned
+and has no implementation branch or acceptance claim in this checkpoint.

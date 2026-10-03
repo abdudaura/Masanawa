@@ -43,5 +43,5 @@ Post-freeze candidate assessments may exist without being admitted to the vault.
 
 Current phase: **Phase 7 — Agent runtime**.
 
-Phase 0 source selection/forensics, Phase 1 architecture, Phase 2 foundation, the non-spatial Phase 3 Identity/World core, Phase 4 Memory, Phase 5 Tools/Providers and Phase 6 Skills are closed. Tasks 001-070 are merged complete. Current: Task 071 of 150 — Implement CharacterSession canonical runtime contract. The canonical current status and remaining acceptance criteria are in `docs/PRODUCTION-MASTER-TASKS.md`; recover from `CONTINUE-HERE.md` before changing code.
+Phase 0 source selection/forensics, Phase 1 architecture, Phase 2 foundation, the non-spatial Phase 3 Identity/World core, Phase 4 Memory, Phase 5 Tools/Providers and Phase 6 Skills are closed. Tasks 001-071 are merged complete. Current: Task 072 of 150 — Implement AgentRun identity, lineage and durable trace references. The canonical current status and remaining acceptance criteria are in `docs/PRODUCTION-MASTER-TASKS.md`; recover from `CONTINUE-HERE.md` before changing code.
 

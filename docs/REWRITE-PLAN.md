@@ -120,7 +120,7 @@ Tool/Provider architecture.
 
 ## Phase 7 — Agent runtime
 
-Status: ready for Task 071, CharacterSession canonical runtime contract.
+Status: in progress. Task 071 CharacterSession is complete; current Task 072 is AgentRun identity, lineage and durable trace references.
 Record: `PHASE-7-AGENT-RUNTIME.md`. Later runtime strategies remain later milestones.
 
 Implement AgentStrategy, AgentContext/Result, provider abstraction, orchestration/research/background strategies, budgets/guards and character-aware context.
