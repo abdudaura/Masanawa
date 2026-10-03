@@ -11,7 +11,10 @@ import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 
-import '../../chat/masana.dart';
+import '../../agents/agent_directory.dart';
+import '../../chat/chat_format.dart';
+import '../../chat/message_parts_view.dart';
+import '../../state/agent_directory_state.dart';
 import '../../state/ai_chat_state.dart';
 import '../../theme/unigeria_theme.dart';
 
@@ -20,9 +23,9 @@ import '../../theme/unigeria_theme.dart';
 /// composer with emoji, attachments (document / gallery / camera) and voice
 /// notes.
 class AiChatScreen extends ConsumerStatefulWidget {
-  const AiChatScreen({super.key, required this.masanaId});
+  const AiChatScreen({super.key, required this.characterId});
 
-  final String masanaId;
+  final String characterId;
 
   @override
   ConsumerState<AiChatScreen> createState() => _AiChatScreenState();
@@ -47,8 +50,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       if (hasText != _hasText) setState(() => _hasText = hasText);
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(aiChatProvider.notifier).ensureGreeting(widget.masanaId);
-      ref.read(aiChatProvider.notifier).openThread(widget.masanaId);
+      ref.read(aiChatProvider.notifier).openThread(widget.characterId);
     });
   }
 
@@ -78,7 +80,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     if (text.trim().isEmpty) return;
     _input.clear();
     setState(() => _showEmoji = false);
-    ref.read(aiChatProvider.notifier).sendText(widget.masanaId, text);
+    ref.read(aiChatProvider.notifier).sendText(widget.characterId, text);
   }
 
   void _comingSoon(String what) {
@@ -146,7 +148,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       if (path == null || path.isEmpty) return;
       final size = await file.length();
       await ref.read(aiChatProvider.notifier).sendAttachment(
-            widget.masanaId,
+            widget.characterId,
             ChatAttachment(
               kind: 'doc',
               path: path,
@@ -170,7 +172,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       final size = await File(picked.path).length();
       if (!mounted) return;
       await ref.read(aiChatProvider.notifier).sendAttachment(
-            widget.masanaId,
+            widget.characterId,
             ChatAttachment(
               kind: 'image',
               path: picked.path,
@@ -237,7 +239,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     }
     if (path == null || path.isEmpty) return;
     await ref.read(aiChatProvider.notifier).sendAttachment(
-          widget.masanaId,
+          widget.characterId,
           ChatAttachment(
             kind: 'voice',
             path: path,
@@ -257,15 +259,40 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   @override
   Widget build(BuildContext context) {
     final u = context.unigeria;
-    final masana = masanaById(widget.masanaId);
+    final directory = ref.watch(agentDirectoryProvider);
+    final agent = directory.find(widget.characterId);
     final chat = ref.watch(aiChatProvider);
-    final thread = chat.threads[widget.masanaId];
+    final thread = chat.threads[widget.characterId];
     final messages = thread?.messages ?? const <AiChatMessage>[];
-    final sending = chat.sendingIn.contains(widget.masanaId);
+    final sending = chat.sendingIn.contains(widget.characterId);
+
+    if (agent == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Agent')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(28),
+            child: Text(
+              directory.loading
+                  ? 'Loading agent…'
+                  : 'This agent is no longer available in your configured roster.',
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      );
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(aiChatProvider.notifier).seedGreeting(
+            agent.characterId,
+            agent.greeting,
+          );
+    });
 
     ref.listen(aiChatProvider, (prev, next) {
-      final before = prev?.threads[widget.masanaId]?.messages.length ?? 0;
-      final after = next.threads[widget.masanaId]?.messages.length ?? 0;
+      final before = prev?.threads[widget.characterId]?.messages.length ?? 0;
+      final after = next.threads[widget.characterId]?.messages.length ?? 0;
       if (before != after || prev?.sendingIn != next.sendingIn) {
         Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
       }
@@ -289,14 +316,14 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 : context.go('/chats'),
           ),
           title: InkWell(
-            onTap: () => context.push('/masana'),
+            onTap: () => context.push('/agents'),
             child: Row(
               children: [
                 CircleAvatar(
                   radius: 17,
-                  backgroundColor: masana.color,
+                  backgroundColor: u.brand,
                   child: Text(
-                    masana.initial,
+                    agent.initial,
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w800,
@@ -310,7 +337,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        masana.name,
+                        agent.displayName,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: u.textPrimary,
@@ -319,7 +346,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                         ),
                       ),
                       Text(
-                        sending ? 'typing…' : 'Masana Agents',
+                        sending ? 'Working…' : agent.presenceLabel,
                         style: TextStyle(
                           color: sending ? u.brand : u.textMuted,
                           fontSize: 12,
@@ -344,14 +371,14 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               onPressed: () => _comingSoon('Voice calls'),
             ),
             IconButton(
-              tooltip: 'Masana',
+              tooltip: 'Agents',
               icon: const Icon(Icons.groups_outlined),
-              onPressed: () => context.push('/masana'),
+              onPressed: () => context.push('/agents'),
             ),
             PopupMenuButton<String>(
               tooltip: 'More',
               onSelected: (value) {
-                if (value == 'clear') _confirmClear(masana);
+                if (value == 'clear') _confirmClear(agent);
               },
               itemBuilder: (_) => const [
                 PopupMenuItem(value: 'clear', child: Text('Clear chat')),
@@ -375,7 +402,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                         }
                         return _ChatBubble(
                           message: messages[index],
-                          masanaColor: masana.color,
+                          masanaColor: u.brand,
                         );
                       },
                     ),
@@ -418,11 +445,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     );
   }
 
-  void _confirmClear(MasanaAgent masana) {
+  void _confirmClear(AgentDirectoryEntry agent) {
     showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text('Clear chat with ${masana.name}?'),
+        title: Text('Clear chat with ${agent.displayName}?'),
         content: const Text('All messages in this conversation will be removed.'),
         actions: [
           TextButton(
@@ -433,7 +460,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             onPressed: () {
               ref
                   .read(aiChatProvider.notifier)
-                  .clearThread(widget.masanaId);
+                  .clearThread(widget.characterId);
               Navigator.of(dialogContext).pop();
             },
             child: const Text('Clear'),
@@ -540,7 +567,7 @@ class _Composer extends StatelessWidget {
                           textInputAction: TextInputAction.send,
                           onSubmitted: (_) => onSend(),
                           decoration: const InputDecoration(
-                            hintText: 'Message',
+                            hintText: 'Type or tap the mic to talk',
                             border: InputBorder.none,
                             isDense: true,
                             contentPadding: EdgeInsets.symmetric(vertical: 10),
@@ -567,8 +594,8 @@ class _Composer extends StatelessWidget {
             GestureDetector(
               onTap: hasText ? onSend : onMic,
               child: Container(
-                width: 48,
-                height: 48,
+                width: 56,
+                height: 56,
                 decoration: BoxDecoration(
                   color: u.brand,
                   shape: BoxShape.circle,
@@ -715,6 +742,8 @@ class _ChatBubble extends StatelessWidget {
                   height: 1.4,
                 ),
               ),
+            if (message.parts.isNotEmpty)
+              MessagePartsView(parts: message.parts),
             const SizedBox(height: 3),
             Row(
               mainAxisSize: MainAxisSize.min,
