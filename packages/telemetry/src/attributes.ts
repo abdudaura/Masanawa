@@ -57,6 +57,13 @@ const defaultSafeAttributeKeys = new Set([
   "masanawa.provider.retry_after_ms",
   "masanawa.capability.key",
   "masanawa.tool_version.id",
+  "masanawa.skill_root_version.id",
+  "masanawa.skill_version.id",
+  "masanawa.skill.step_ordinal",
+  "masanawa.skill.trace_kind",
+  "masanawa.skill.plan_hash",
+  "masanawa.skill.reference_key",
+  "masanawa.skill.target_version.id",
 ]);
 
 export function correlationAttributes(
