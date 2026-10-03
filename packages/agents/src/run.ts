@@ -172,7 +172,12 @@ export function normalizeAgentRun(input: AgentRun): AgentRun {
     throw new TypeError("AgentRun schema or state is invalid");
   }
 
-  const scope = normalizeAgentRunScope(input);
+  const scope = normalizeAgentRunScope({
+    tenantId: input.tenantId,
+    userId: input.userId,
+    characterId: input.characterId,
+    relationshipId: input.relationshipId,
+  });
   const agentRunId = parseCanonicalId("agent-run", input.agentRunId);
   const startedAt = toInstant(input.startedAt);
   const updatedAt = toInstant(input.updatedAt);
