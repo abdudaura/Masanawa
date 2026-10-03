@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../tokens/unigeria_tokens.dart';
-import '../../theme/unigeria_theme.dart';
+import '../../tokens/masanawa_tokens.dart';
+import '../../theme/masanawa_theme.dart';
 import 'logo.dart';
 
 /// Shared onboarding/auth scaffold — every auth/onboarding screen carries the
@@ -31,7 +31,7 @@ class OnboardingScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final u = context.unigeria;
+    final u = context.masanawa;
     final goBack = backDestination != null
         ? () => context.go(backDestination!)
         : () => context.pop();
