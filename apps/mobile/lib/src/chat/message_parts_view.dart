@@ -68,7 +68,7 @@ class _PartCard extends StatelessWidget {
     final total = part.progressTotal;
     final current = part.progressCurrent;
     final progress = total != null && total > 0 && current != null
-        ? (current / total).clamp(0.0, 1.0)
+        ? (current / total).clamp(0.0, 1.0).toDouble()
         : null;
 
     return Container(
