@@ -160,9 +160,11 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
         },
       },
       async (request) => ({
-        agents: await directory.list({
-          authorizationHeader: request.headers.authorization,
-        }),
+        agents: [
+          ...(await directory.list({
+            authorizationHeader: request.headers.authorization,
+          })),
+        ],
       }),
     );
   }
@@ -195,8 +197,8 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
           response: { 200: AgentTurnResponseSchema },
         },
       },
-      async (request) =>
-        conversation.turn({
+      async (request) => {
+        const result = await conversation.turn({
           authorizationHeader: request.headers.authorization,
           characterSessionId: request.params.characterSessionId,
           characterId: request.body.characterId,
@@ -209,7 +211,13 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
             "correlation",
             request.headers["x-correlation-id"] as string,
           ),
-        }),
+        });
+        return {
+          reply: result.reply,
+          agentRunId: result.agentRunId,
+          parts: [...result.parts],
+        };
+      },
     );
 
 
@@ -223,8 +231,8 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
           response: { 200: AgentTurnResponseSchema },
         },
       },
-      async (request) =>
-        conversation.mediaTurn({
+      async (request) => {
+        const result = await conversation.mediaTurn({
           authorizationHeader: request.headers.authorization,
           characterSessionId: request.params.characterSessionId,
           characterId: request.body.characterId,
@@ -239,7 +247,13 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
             "correlation",
             request.headers["x-correlation-id"] as string,
           ),
-        }),
+        });
+        return {
+          reply: result.reply,
+          agentRunId: result.agentRunId,
+          parts: [...result.parts],
+        };
+      },
     );
 
     app.post(
