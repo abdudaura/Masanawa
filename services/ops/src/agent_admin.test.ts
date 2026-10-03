@@ -6,6 +6,7 @@ import type {
   CharacterSkillAssignmentRepository,
 } from "@masanawa/agents";
 import type { CharacterId, TenantId } from "@masanawa/contracts";
+import type { CharacterVersionReferenceReader } from "@masanawa/identity";
 import type { SkillRepository } from "@masanawa/skills";
 import {
   createAgentAdminService,
@@ -17,6 +18,9 @@ const tenantId =
 const characterId =
   "character_00000000-0000-4000-8000-000000000002" as CharacterId;
 
+const assignedSkillVersionId =
+  "skill-version_00000000-0000-4000-8000-000000000004" as never;
+
 const skills: SkillRepository = {
   async registerBatch() {
     return [];
@@ -24,13 +28,21 @@ const skills: SkillRepository = {
   async readSnapshot() {
     return {
       skills: [],
-      versions: [],
+      versions: [
+        {
+          skillVersionId: assignedSkillVersionId,
+        } as never,
+      ],
       readiness: [],
     };
   },
   async putReadiness() {
     throw new Error("not used");
   },
+};
+
+const characterVersions: CharacterVersionReferenceReader = {
+  async assertCharacterVersion() {},
 };
 
 function repositories() {
@@ -86,7 +98,12 @@ describe("Ops agent administration", () => {
       },
     };
     const repos = repositories();
-    const service = createAgentAdminService({ ...repos, skills, authorizer });
+    const service = createAgentAdminService({
+      ...repos,
+      characterVersions,
+      skills,
+      authorizer,
+    });
 
     const presentation = await service.putPresentation({
       authorizationHeader: "Bearer operator",
@@ -113,7 +130,7 @@ describe("Ops agent administration", () => {
         schemaVersion: 1,
         characterId,
         skillVersionIds: [
-          "skill-version_00000000-0000-4000-8000-000000000004" as never,
+          assignedSkillVersionId,
         ],
         revision: 1,
       },
@@ -146,6 +163,7 @@ describe("Ops agent administration", () => {
     const service = createAgentAdminService({
       presentations,
       skillAssignments: repos.skillAssignments,
+      characterVersions,
       skills,
       authorizer,
     });
