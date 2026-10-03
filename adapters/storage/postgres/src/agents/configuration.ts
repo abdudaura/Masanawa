@@ -33,6 +33,7 @@ interface PresentationRow {
   character_id: AgentPresentation["characterId"];
   character_version_id: AgentPresentation["characterVersionId"];
   schema_version: 1;
+  display_name: string;
   role_label: string;
   about: string;
   greeting: string | null;
@@ -55,6 +56,7 @@ function presentationFromRow(row: PresentationRow): AgentPresentation {
     tenantId: row.tenant_id,
     characterId: row.character_id,
     characterVersionId: row.character_version_id,
+    displayName: row.display_name,
     roleLabel: row.role_label,
     about: row.about,
     greeting: row.greeting,
@@ -143,6 +145,7 @@ export function createPostgresAgentPresentationRepository(
           presentation.tenantId,
           presentation.characterId,
           presentation.characterVersionId,
+          presentation.displayName,
           presentation.roleLabel,
           presentation.about,
           presentation.greeting,
@@ -154,10 +157,10 @@ export function createPostgresAgentPresentationRepository(
           input.expectedRevision === null
             ? await client.query<PresentationRow>(
                 `INSERT INTO agents.agent_presentations(
-                   tenant_id, character_id, character_version_id, role_label,
-                   about, greeting, visible_in_user_app, sort_order, revision
+                   tenant_id, character_id, character_version_id, display_name,
+                   role_label, about, greeting, visible_in_user_app, sort_order, revision
                  )
-                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,1)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,1)
                  ON CONFLICT DO NOTHING
                  RETURNING *`,
                 values,
@@ -165,15 +168,16 @@ export function createPostgresAgentPresentationRepository(
             : await client.query<PresentationRow>(
                 `UPDATE agents.agent_presentations
                     SET character_version_id = $3,
-                        role_label = $4,
-                        about = $5,
-                        greeting = $6,
-                        visible_in_user_app = $7,
-                        sort_order = $8,
+                        display_name = $4,
+                        role_label = $5,
+                        about = $6,
+                        greeting = $7,
+                        visible_in_user_app = $8,
+                        sort_order = $9,
                         revision = revision + 1
                   WHERE tenant_id = $1
                     AND character_id = $2
-                    AND revision = $9
+                    AND revision = $10
                   RETURNING *`,
                 [...values, input.expectedRevision],
               );
