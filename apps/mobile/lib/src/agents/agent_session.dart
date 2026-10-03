@@ -92,13 +92,11 @@ class PreviewAgentTransport implements AgentTransport {
     required Uint8List bytes,
     required String mimeType,
     required String caption,
-  }) async =>
-      AgentTurnResult(
-        text: await sendPreview(
-          caption.isEmpty ? '[attachment]' : caption,
-          binding.characterId,
-        ),
-      );
+  }) async {
+    throw UnsupportedError(
+      'Preview transport cannot inspect attachment bytes',
+    );
+  }
 
   @override
   Future<void> closeSession(AgentSessionBinding binding) async {}
