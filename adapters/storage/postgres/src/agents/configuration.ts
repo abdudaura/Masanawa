@@ -100,6 +100,23 @@ export function createPostgresAgentPresentationRepository(
       );
     },
 
+    async listAll(input) {
+      return withTransaction(
+        pool,
+        async (client) => {
+          const result = await client.query<PresentationRow>(
+            `SELECT *
+               FROM agents.agent_presentations
+              WHERE tenant_id = $1
+              ORDER BY sort_order, character_id`,
+            [input.tenantId],
+          );
+          return Object.freeze(result.rows.map(presentationFromRow));
+        },
+        { isolation: "repeatable read", readOnly: true },
+      );
+    },
+
     async listVisible(input) {
       return withTransaction(
         pool,
