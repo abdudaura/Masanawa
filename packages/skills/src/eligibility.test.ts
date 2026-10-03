@@ -296,26 +296,14 @@ describe("Skill exact revision pinning", () => {
       errorCode(() => resolveSkillRevisionPin(registry, tamperedHash)),
     ).toBe("skill.pin_hash_mismatch");
 
-    const changedEntry = {
-      ...pin,
-      orderedVersions: [
-        {
-          ...pin.orderedVersions[0]!,
-          definitionHash: `sha256:${"f".repeat(64)}`,
-        },
-      ],
-    };
-    const changedEntryWithValidEnvelope = {
-      ...changedEntry,
-      contentHash: createSkillRevisionPin(
-        registry,
-        root.skillVersionId,
-      ).contentHash,
-    };
+    const driftedRegistry = createSkillRegistry();
+    driftedRegistry.register({
+      ...root,
+      description: "Different content under the same exact version identity.",
+    });
+    setReady(driftedRegistry, root);
     expect(
-      errorCode(() =>
-        resolveSkillRevisionPin(registry, changedEntryWithValidEnvelope),
-      ),
-    ).toBe("skill.pin_hash_mismatch");
+      errorCode(() => resolveSkillRevisionPin(driftedRegistry, pin)),
+    ).toBe("skill.pin_definition_mismatch");
   });
 });
