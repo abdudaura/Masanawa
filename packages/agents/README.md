@@ -31,11 +31,13 @@ records around existing Identity/Skills truth:
 - `CharacterSkillAssignment` selects exact SkillVersion references for a
   Character independently of presentation.
 
-A Character display name is still Constitution/CharacterVersion identity and is
-changed through the Identity publication lifecycle, not by copying the name into
-Agents. A role label is presentation only and never grants a Skill. A Skill
-assignment is selection metadata only; runtime admission must revalidate current
-Skill readiness/certification and Security authority.
+The canonical Character remains identified by CharacterId/CharacterVersion in
+Identity. `AgentPresentation.displayName` is an admin-controlled user-app label
+for that Character; changing it does not recreate the Character or change its
+Constitution. Role/about/greeting/visibility/order are presentation only and
+never grant a Skill. A Skill assignment is selection metadata only; runtime
+admission must revalidate current Skill readiness/certification and Security
+authority.
 
 PostgreSQL stores these separately in
 `agents.agent_presentations` and `agents.character_skill_assignments`.
