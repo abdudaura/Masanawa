@@ -1,0 +1,927 @@
+import 'package:dio/dio.dart';
+
+import '../api/models.dart';
+
+/// Base URL for the UNigeria API. Overridable at build/run time:
+///   flutter run --dart-define=API_BASE_URL=https://staging.example.com
+/// Defaults to the production Railway deployment.
+const String kApiBaseUrl = String.fromEnvironment(
+  'API_BASE_URL',
+  defaultValue: 'https://unigeria.up.railway.app',
+);
+
+/// Thrown for contract-level / transport failures with a message safe to show.
+class ApiException implements Exception {
+  const ApiException(this.message, {this.statusCode, this.code});
+  final String message;
+  final int? statusCode;
+
+  /// Contract error code from the API error envelope (e.g. `OTP_LOCKED`).
+  final String? code;
+
+  @override
+  String toString() => message;
+}
+
+/// Typed API client. Pure Dio transport + contract-shaped DTOs; no UI, no
+/// state. Auth and geo surfaces per `packages/contracts`.
+class ApiClient {
+  ApiClient({required this.dio}) {
+    // Base URL applied here so tests can pass their own Dio without touching
+    // the global default.
+    if (dio.options.baseUrl.isEmpty) {
+      dio.options.baseUrl = kApiBaseUrl;
+    }
+
+    // Auth interceptor: (1) attaches the bearer token to every request from
+    // `accessToken` (single source of truth — callers never set the header
+    // themselves); (2) on a 401, asks [onUnauthorized] for a fresh token
+    // (the session controller rotates the refresh token), retries the request
+    // once, and otherwise lets the 401 surface as a normal session-expired
+    // error. Refresh/OTP endpoints never self-trigger a refresh (a dead
+    // refresh token must propagate so the session clears).
+    dio.interceptors.add(
+      QueuedInterceptorsWrapper(
+        onRequest: (options, handler) {
+          final token = accessToken;
+          if (token != null && token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          handler.next(options);
+        },
+        onError: (e, handler) async {
+          final path = e.requestOptions.path;
+          final canRefresh = onUnauthorized != null &&
+              !path.contains('/auth/refresh') &&
+              !path.contains('/auth/otp') &&
+              !path.contains('/auth/verify');
+          if (e.response?.statusCode == 401 && canRefresh && !_refreshing) {
+            _refreshing = true;
+            try {
+              final newToken = await onUnauthorized!();
+              if (newToken != null && newToken.isNotEmpty) {
+                accessToken = newToken;
+                final opts = e.requestOptions;
+                opts.headers['Authorization'] = 'Bearer $newToken';
+                final retried = await dio.fetch(opts);
+                handler.resolve(retried);
+                return;
+              }
+            } catch (_) {
+              // Refresh failed → the original 401 propagates (the session
+              // controller already cleared the session on its side).
+            } finally {
+              _refreshing = false;
+            }
+          }
+          handler.next(e);
+        },
+      ),
+    );
+  }
+
+  final Dio dio;
+  bool _refreshing = false;
+
+  /// Access token attached to protected requests by the session controller.
+  String? accessToken;
+
+  /// Called by the interceptor on a 401 to rotate the session; returns the new
+  /// access token or null when rotation fails (sign-out). Wired by the session
+  /// controller — never set by API surfaces.
+  Future<String?> Function()? onUnauthorized;
+
+  // ---- Auth (U-p2-01) ----
+
+  Future<OtpSendResponse> otpSend({String? phone, String? email}) async {
+    final data = await _post(
+      '/auth/otp',
+      OtpSendRequest(phone: phone, email: email).toJson(),
+    );
+    return OtpSendResponse.fromJson(data);
+  }
+
+  Future<AuthTokens> otpVerify(String code,
+      {String? phone, String? email, String? name}) async {
+    final data = await _post(
+      '/auth/verify',
+      OtpVerifyRequest(phone: phone, email: email, code: code, name: name)
+          .toJson(),
+    );
+    return AuthTokens.fromJson(data);
+  }
+
+  Future<AuthTokens> refresh(String refreshToken) async {
+    final data = await _post('/auth/refresh', {'refreshToken': refreshToken});
+    return AuthTokens.fromJson(data);
+  }
+
+  Future<Map<String, dynamic>> logout() async {
+    return _post('/auth/logout', const {});
+  }
+
+  /// Sends one message to the AI assistant. Expects `{reply: String}`.
+  /// Throws [ApiException] when the endpoint is missing so callers can fall
+  /// back to an honest offline reply.
+  Future<String> aiChat(String message, {String? masana}) async {
+    final data = await _post('/ai/chat', {
+      'message': message,
+      if (masana != null) 'masana': masana,
+    });
+    final reply = data['reply'];
+    if (reply is String && reply.isNotEmpty) return reply;
+    throw const ApiException('AI service unavailable');
+  }
+
+  /// Updates the citizen's registered state and LGA location.
+  /// Called once from LocationSetupScreen after the user selects their State/LGA.
+  Future<Map<String, dynamic>> updateLocation({
+    required String stateId,
+    required String lgaId,
+  }) async {
+    return _patch('/auth/location', {'stateId': stateId, 'lgaId': lgaId});
+  }
+
+  // ---- Geo (U-p1-05) ----
+
+  Future<GeoSearchResponse> geoSearch(String query,
+      {String? type, int limit = 10}) async {
+final res = await _get(
+      '/geo/search',
+      queryParameters: {
+        'q': query,
+        'limit': limit,
+        'type': ?type,
+      },
+    );
+    return GeoSearchResponse.fromJson(res);
+  }
+
+  /// Drill into `parent` (country code `NG`, state id or LGA id).
+  Future<Map<String, dynamic>> geoTree(String parent, {int depth = 1}) async {
+    return _get(
+      '/geo/tree',
+      queryParameters: {'parent': parent, 'depth': depth},
+    );
+  }
+
+  Future<CommunityRequestResponse> requestCommunity(
+      CommunityRequest request) async {
+    final data = await _post('/communities/request', request.toJson());
+    return CommunityRequestResponse.fromJson(data);
+  }
+
+  // ---- Community + feed (U-p2-04) ----
+
+  Future<CommunityListResponse> listCommunities({
+    String? q,
+    String? stateId,
+    String? lgaId,
+    String? category,
+    int limit = 20,
+    String? cursor,
+  }) async {
+    final data = await _get('/communities', queryParameters: {
+      'q': q,
+      'stateId': stateId,
+      'lgaId': lgaId,
+      'category': category,
+      'limit': limit,
+      'cursor': cursor,
+    });
+    return CommunityListResponse.fromJson(data);
+  }
+
+  /// Returns the user's 6 canonical State & LGA groups based on registered location.
+  Future<List<Map<String, dynamic>>> getMyGroups() async {
+    final data = await _get('/communities/my-groups');
+    final list = data['groups'] as List<dynamic>? ?? const [];
+    return list.whereType<Map>().map((e) => e.cast<String, dynamic>()).toList();
+  }
+
+  Future<CommunityDetailResponse> communityDetail(String id) async {
+    final data = await _get('/communities/$id');
+    return CommunityDetailResponse.fromJson(data);
+  }
+
+  /// Idempotent join: a retry returns `alreadyMember: true`, never an error.
+  Future<JoinCommunityResponse> joinCommunity(String id) async {
+    final data = await _post('/communities/$id/join', const {});
+    return JoinCommunityResponse.fromJson(data);
+  }
+
+  Future<LeaveCommunityResponse> leaveCommunity(String id) async {
+    final data = await _post('/communities/$id/leave', const {});
+    return LeaveCommunityResponse.fromJson(data);
+  }
+
+  Future<CommunityMembersResponse> communityMembers(String id,
+      {int limit = 20, String? cursor}) async {
+    final data = await _get('/communities/$id/members', queryParameters: {
+      'limit': limit,
+      'cursor': ?cursor,
+    });
+    return CommunityMembersResponse.fromJson(data);
+  }
+
+  /// Civic-ordered feed for `communityId` (or the caller's default when null), filtered by state if provided.
+  Future<FeedResponse> getFeed({String? communityId, String? stateId, int limit = 20, String? cursor}) async {
+    final data = await _get('/feed', queryParameters: {
+      if (communityId != null) 'communityId': communityId,
+      if (stateId != null) 'stateId': stateId,
+      'limit': limit,
+      if (cursor != null) 'cursor': cursor,
+    });
+    return FeedResponse.fromJson(data);
+  }
+
+  // ---- Chat (U-p3-01/03) ----
+
+  /// History (newest-first) or reconnect gap-fill (`since`, oldest-first).
+  /// `before` and `since` are mutually exclusive (contract-level refine).
+  Future<MessageListResponse> messageList(
+    String communityId, {
+    int limit = 20,
+    String? before,
+    String? since,
+  }) async {
+    final data = await _get('/communities/$communityId/messages', queryParameters: {
+      'limit': limit,
+      'before': ?before,
+      'since': ?since,
+    });
+    return MessageListResponse.fromJson(data);
+  }
+
+  /// Sends a TEXT/IMAGE/VOICE message (rate-limited per sender + community).
+  Future<ChatMessage> sendMessage(String communityId, SendMessageRequest body) async {
+    final data = await _post('/communities/$communityId/messages', body.toJson());
+    return ChatMessage.fromJson(data);
+  }
+
+  /// Toggles one reaction (add/remove, or switch emoji in place).
+  Future<SetReactionResponse> toggleReaction(
+    String communityId,
+    String messageId,
+    String emoji,
+  ) async {
+    final data = await _post(
+      '/communities/$communityId/messages/$messageId/reactions',
+      {'emoji': emoji},
+    );
+    return SetReactionResponse.fromJson(data);
+  }
+
+  /// Soft-deletes the caller's own message (idempotent).
+  Future<DeleteMessageResponse> deleteMessage(
+    String communityId,
+    String messageId,
+  ) async {
+    final data = await _delete('/communities/$communityId/messages/$messageId');
+    return DeleteMessageResponse.fromJson(data);
+  }
+
+  // ---- Uploads (U-p3-03) ----
+
+  /// Mints a short-lived presigned PUT URL for a chat media object. R2 keys
+  /// are optional server-side; when absent this surfaces a 503
+  /// `MEDIA_UPLOAD_NOT_CONFIGURED` ApiException (fail-soft, never silent).
+  Future<PresignUploadResponse> presignUpload(PresignUploadRequest request) async {
+    final data = await _post('/uploads/presign', request.toJson());
+    return PresignUploadResponse.fromJson(data);
+  }
+
+  // ---- Reports (U-p4-01 + U-p4-02) ----
+
+  /// Submits a report from the 7-step flow. Attachments must already be
+  /// uploaded via the presign seam with `scope: 'report'`.
+  Future<CreateReportResponse> createReport(CreateReportBody body) async {
+    final data = await _post('/reports', body.toJson());
+    return CreateReportResponse.fromJson(data);
+  }
+
+  /// Track screen: full detail + the §57 audit timeline for `publicRef`.
+  /// 404 `REPORT_NOT_FOUND` when the reference is unknown or hidden (§27).
+  Future<ReportDetail> getReportDetail(String publicRef) async {
+    final data = await _get('/reports/$publicRef');
+    return ReportDetail.fromJson(data);
+  }
+
+  /// The caller's own reports, newest first, cursor-paginated (my-reports
+  /// screen tabs filter Active/Resolved/Closed client-side).
+  Future<ListMyReportsResponse> listMyReports({
+    String? cursor,
+    int limit = 20,
+  }) async {
+    final data = await _get('/reports/mine', queryParameters: {
+      'limit': limit,
+      'cursor': ?cursor,
+    });
+    return ListMyReportsResponse.fromJson(data);
+  }
+
+  /// Converts a chat message into a civic report (U-p3-02).
+  Future<Map<String, dynamic>> convertFromMessage({
+    required String communityId,
+    required String messageId,
+    String? category,
+    String? description,
+  }) async {
+    final body = {
+      'communityId': communityId,
+      'messageId': messageId,
+      if (category != null) 'category': category,
+      if (description != null) 'description': description,
+    };
+    final data = await _post('/reports/from-message', body);
+    return (data as Map).cast<String, dynamic>();
+  }
+
+  // ---- Trust & safety (U-p3-04, §51) ----
+
+  /// Blocks `userId` (personal, unilateral — mutual hide, enforced server-side).
+  /// Idempotent: a replay returns `alreadyBlocked`.
+  Future<BlockUserResponse> blockUser(String userId) async {
+    final data = await _post('/users/$userId/block', const {});
+    return BlockUserResponse.fromJson(data);
+  }
+
+  /// Unblocks `userId`. Idempotent: `wasBlocked` is false when already unblocked.
+  Future<UnblockUserResponse> unblockUser(String userId) async {
+    final data = await _delete('/users/$userId/block');
+    return UnblockUserResponse.fromJson(data);
+  }
+
+  /// The caller's block list, newest first (settings/privacy screen).
+  Future<BlockedUsersResponse> blockedUsers() async {
+    final data = await _get('/users/me/blocked');
+    return BlockedUsersResponse.fromJson(data);
+  }
+
+  /// Mutes `userId` in `communityId` (moderator action; requires a community or
+  /// platform moderator role server-side). Optional [until] ISO-8601 expiry.
+  Future<MuteUserResponse> muteUser(
+    String userId, {
+    required String communityId,
+    String? until,
+  }) async {
+    final data = await _post('/users/$userId/mute', {
+      'communityId': communityId,
+      'until': ?until,
+    });
+    return MuteUserResponse.fromJson(data);
+  }
+
+  /// Unmutes `userId` in `communityId`. Idempotent.
+  Future<UnmuteUserResponse> unmuteUser(String userId, String communityId) async {
+    final data = await _delete('/users/$userId/mute', body: {'communityId': communityId});
+    return UnmuteUserResponse.fromJson(data);
+  }
+
+  /// Reports a message to the moderation queue. One report per (message, me).
+  Future<FlagMessageResponse> flagMessage(
+    String communityId,
+    String messageId,
+    String reason,
+  ) async {
+    final data = await _post('/moderation/flag', {
+      'communityId': communityId,
+      'messageId': messageId,
+      'reason': reason,
+    });
+    return FlagMessageResponse.fromJson(data);
+  }
+
+  // ---- Polls (U-p6-02) ----
+
+  /// Scope-matched poll list for `communityId` (falls back to the caller's
+  /// default community when omitted — the tab always passes the community).
+  Future<PollListResponse> listPolls({
+    String? communityId,
+    int limit = 20,
+    String? cursor,
+  }) async {
+    final data = await _get('/polls', queryParameters: {
+      'communityId': ?communityId,
+      'limit': limit,
+      'cursor': ?cursor,
+    });
+    return PollListResponse.fromJson(data);
+  }
+
+  Future<PollDetail> pollDetail(String pollId) async {
+    final data = await _get('/polls/$pollId');
+    return PollDetail.fromJson(data);
+  }
+
+  /// Submits the final vote (SINGLE/YESNO/RATING = exactly one option; MULTI
+  /// = 1..N). One submission only — a replay is 409 ALREADY_VOTED.
+  Future<VotePollResponse> votePoll(String pollId, VotePollBody body) async {
+    final data = await _post('/polls/$pollId/vote', body.toJson());
+    return VotePollResponse.fromJson(data);
+  }
+
+  /// Full admin poll queue, newest first (PLATFORM_ADMIN only server-side).
+  Future<AdminPollListResponse> adminListPolls({
+    int limit = 20,
+    String? cursor,
+  }) async {
+    final data = await _get('/admin/polls', queryParameters: {
+      'limit': limit,
+      'cursor': ?cursor,
+    });
+    return AdminPollListResponse.fromJson(data);
+  }
+
+  Future<AdminPollItem> adminCreatePoll(CreatePollBody body) async {
+    final data = await _post('/admin/polls', body.toJson());
+    return AdminPollItem.fromJson(data);
+  }
+
+  Future<AdminPollItem> adminUpdatePoll(String pollId, UpdatePollBody body) async {
+    final data = await _patch('/admin/polls/$pollId', body.toJson());
+    return AdminPollItem.fromJson(data);
+  }
+
+  /// Full poll for the edit form (live option counts + resolved targets).
+  Future<AdminPollDetail> adminPollDetail(String pollId) async {
+    final data = await _get('/admin/polls/$pollId');
+    return AdminPollDetail.fromJson(data);
+  }
+
+  /// Full cascade delete (votes/options/targets). Irreversible — confirm first.
+  Future<DeletePollResponse> adminDeletePoll(String pollId) async {
+    final data = await _delete('/admin/polls/$pollId');
+    return DeletePollResponse.fromJson(data);
+  }
+
+  // ---- App config (U-p6-02) ----
+
+  /// Public election timetable for the home countdown banner. Returns the
+  /// config object; `election` is null until the seed row exists.
+  Future<AppConfigResponse> getAppConfig() async {
+    final data = await _get('/app/config');
+    return AppConfigResponse.fromJson(data);
+  }
+
+  // ---- Announcements (U-p6-03) ----
+
+  /// Announcement list for `communityId` (falls back to the caller's default
+  /// community when omitted — the tab always passes the community). Pinned
+  /// first, then newest; expired/REJECTED rows never appear (server-side).
+  Future<AnnouncementListResponse> listAnnouncements({
+    String? communityId,
+    int limit = 20,
+    String? cursor,
+  }) async {
+    final data = await _get('/announcements', queryParameters: {
+      'communityId': ?communityId,
+      'limit': limit,
+      'cursor': ?cursor,
+    });
+    return AnnouncementListResponse.fromJson(data);
+  }
+
+  Future<AnnouncementDetail> announcementDetail(String announcementId) async {
+    final data = await _get('/announcements/$announcementId');
+    return AnnouncementDetail.fromJson(data);
+  }
+
+  /// Creates a COMMUNITY (moderator/admin) or OFFICIAL (PLATFORM_ADMIN)
+  /// announcement. Errors: 403 FORBIDDEN, 400 INVALID_EXPIRY.
+  Future<AnnouncementDetail> createAnnouncement(
+      CreateAnnouncementBody body) async {
+    final data = await _post('/announcements', body.toJson());
+    return AnnouncementDetail.fromJson(
+        data['announcement'] as Map<String, dynamic>);
+  }
+
+  /// Pin toggle / expiry change (author or a community moderator).
+  Future<AnnouncementDetail> updateAnnouncement(
+    String announcementId,
+    UpdateAnnouncementBody body,
+  ) async {
+    final data = await _patch('/announcements/$announcementId', body.toJson());
+    return AnnouncementDetail.fromJson(
+        data['announcement'] as Map<String, dynamic>);
+  }
+
+  /// Soft-deletes the announcement (author or a community moderator).
+  /// Irreversible from the user's perspective — confirm before calling.
+  Future<void> deleteAnnouncement(String announcementId) async {
+    await _delete('/announcements/$announcementId');
+  }
+
+  // ---- Issues (U-p4-04, §33/§34) ----
+
+  /// Priority board for `communityId` (falls back to the caller's default
+  /// community when omitted): OPEN issues first, ordered by priorityScore desc.
+  Future<IssueListResponse> listIssues({
+    String? communityId,
+    int limit = 20,
+    String? cursor,
+  }) async {
+    final data = await _get('/issues', queryParameters: {
+      'communityId': ?communityId,
+      'limit': limit,
+      'cursor': ?cursor,
+    });
+    return IssueListResponse.fromJson(data);
+  }
+
+  Future<IssueDetail> issueDetail(String issueId) async {
+    final data = await _get('/issues/$issueId');
+    return IssueDetail.fromJson(data);
+  }
+
+  /// Confirms the issue (once per user — anti-inflation, §34). Idempotent:
+  /// a replay returns `alreadyConfirmed: true` and never double-counts.
+  Future<ConfirmIssueResponse> confirmIssue(String issueId) async {
+    final data = await _post('/issues/$issueId/confirm', const {});
+    return ConfirmIssueResponse.fromJson(data);
+  }
+
+  /// Rates a resolved report's outcome (§128 give-feedback step). Idempotent:
+  /// a replay returns `alreadyFeedback: true` — the citizen never double-votes
+  /// (DB unique (reportId, userId)). 409 FEEDBACK_NOT_AVAILABLE when the report
+  /// has not reached a final outcome yet.
+  Future<FeedbackResponse> submitFeedback(String reportId, FeedbackBody body) async {
+    final data = await _post('/reports/$reportId/feedback', body.toJson());
+    return FeedbackResponse.fromJson(data);
+  }
+
+  /// Lists community-scoped public reports for the civic Reports tab.
+  /// Returns public + verified + community reports, newest first, paginated.
+  Future<ListMyReportsResponse> listCommunityReports({
+    String? communityId,
+    String? stateId,
+    String? category,
+    String? status,
+    int limit = 30,
+    String? cursor,
+  }) async {
+    final data = await _get('/reports', queryParameters: {
+      'limit': limit,
+      if (communityId != null) 'communityId': communityId,
+      if (stateId != null) 'stateId': stateId,
+      if (category != null) 'category': category,
+      if (status != null) 'status': status,
+      if (cursor != null) 'cursor': cursor,
+    });
+    return ListMyReportsResponse.fromJson(data);
+  }
+
+  /// Confirms (upvotes) a report. Idempotent — replays return alreadyConfirmed.
+  Future<void> confirmReport(String reportId) async {
+    await _post('/reports/$reportId/confirm', const {});
+  }
+
+  // ---- Organizations & verification (U-p5-01, §54/§137) ----
+
+  /// Self-serve verification claim (C6 never self-declare): the body carries
+  /// no status field and the server always lands PENDING + SUBMITTED. A
+  /// PLATFORM_ADMIN approves/rejects the claim on the admin surface.
+  Future<OrgApplyResponse> applyOrg(OrgApplyBody body) async {
+    final data = await _post('/orgs/apply', body.toJson());
+    return OrgApplyResponse.fromJson(data);
+  }
+
+  /// Verified-only public directory, newest first, cursor-paginated.
+  Future<OrgListResponse> listOrgs({String? search, int limit = 20, String? cursor}) async {
+    final data = await _get('/orgs', queryParameters: {
+      'search': ?search,
+      'limit': limit,
+      'cursor': ?cursor,
+    });
+    return OrgListResponse.fromJson(data);
+  }
+
+  /// Public detail of a verified org. Non-verified/unknown orgs answer a
+  /// uniform 404 (server-side), so the detail screen shows a not-found state.
+  Future<OrgDetail> orgDetail(String orgId) async {
+    final data = await _get('/orgs/$orgId');
+    return OrgDetail.fromJson(data);
+  }
+
+  // ---- Voice reporting (U-p4-06) ----
+
+  /// Transcribes a voice clip (already uploaded via presign scope report) via
+  /// Gemini. 503 TRANSCRIPTION_NOT_CONFIGURED when GEMINI_API_KEY absent.
+  Future<TranscribeVoiceResponse> transcribeVoice(TranscribeVoiceBody body) async {
+    final data = await _post('/voice/transcribe', body.toJson());
+    return TranscribeVoiceResponse.fromJson(data);
+  }
+
+  Future<ListNotificationsResponse> listNotifications() async {
+    final data = await _get('/notifications');
+    return ListNotificationsResponse.fromJson(data);
+  }
+
+  Future<void> markNotificationsRead() async {
+    await _post('/notifications/read-all', {});
+  }
+
+  Future<void> registerDeviceToken(String token, {String platform = 'android'}) async {
+    try {
+      await _post('/notifications/register-device', {'token': token, 'platform': platform});
+    } catch (_) {
+      // Non-fatal
+    }
+  }
+
+  Future<void> likeReport(String reportId) async {
+    await _post('/reports/$reportId/like', {});
+  }
+
+  Future<void> unlikeReport(String reportId) async {
+    await _post('/reports/$reportId/unlike', {});
+  }
+
+  Future<void> addReportComment(String reportId, String body) async {
+    await _post('/reports/$reportId/comments', {'body': body});
+  }
+
+  Future<List<Map<String, dynamic>>> getReportComments(String reportId) async {
+    try {
+      final res = await dio.get<dynamic>('/reports/$reportId/comments');
+      final data = res.data;
+      if (data is List) {
+        return data.whereType<Map<String, dynamic>>().toList();
+      } else if (data is Map && data['data'] is List) {
+        return (data['data'] as List).whereType<Map<String, dynamic>>().toList();
+      }
+      return [];
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    }
+  }
+
+  // ---- Transport helpers ----
+
+  Future<Map<String, dynamic>> _get(String path,
+      {Map<String, dynamic>? queryParameters}) async {
+    try {
+      final res = await dio.get<Map<String, dynamic>>(
+        path,
+        queryParameters: queryParameters,
+      );
+      return _body(res);
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> _post(String path, Map<String, dynamic> body) async {
+    try {
+      final res = await dio.post<Map<String, dynamic>>(path, data: body);
+      return _body(res);
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> _patch(String path, Map<String, dynamic> body) async {
+    try {
+      final res = await dio.patch<Map<String, dynamic>>(path, data: body);
+      return _body(res);
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    }
+  }
+
+  Map<String, dynamic> _body(Response<Map<String, dynamic>> res) {
+    final data = res.data;
+    if (data == null) {
+      throw ApiException('Empty response from server', statusCode: res.statusCode);
+    }
+    return data;
+  }
+
+  Future<Map<String, dynamic>> _delete(String path, {Map<String, dynamic>? body}) async {
+    try {
+      final res = await dio.delete<Map<String, dynamic>>(path, data: body);
+      return _body(res);
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    }
+  }
+}
+
+/// Parses a DioException into [ApiException], mapping the API error envelope
+/// to professional, user-safe copy. The envelope carries a stable `code` (new
+/// builds) or a legacy `HTTP_xxx` code with the domain code as `message`
+/// (older builds) — both are normalized so users NEVER see raw server text
+/// like "Invalid request payload." or bare codes like "OTP_LOCKED".
+ApiException mapDioError(DioException e) {
+  final res = e.response;
+  final status = res?.statusCode;
+
+  Map<String, dynamic>? envelope;
+  if (res?.data is Map) {
+    final data = res!.data as Map<String, dynamic>;
+    // Some surfaces nest the envelope under `error`; the API emits it flat.
+    envelope = data['error'] is Map ? (data['error'] as Map<String, dynamic>) : data;
+  }
+
+  final code = envelope?['code'] as String?;
+  final message = envelope?['message'] as String?;
+  final issues = envelope?['issues'];
+
+  if (envelope != null && (code != null || (message?.isNotEmpty ?? false))) {
+    return ApiException(
+      _friendlyMessage(code: code, message: message, issues: issues, status: status),
+      statusCode: status,
+      // Preserve the machine code for state logic (e.g. NAME_REQUIRED_ON_SIGNUP
+      // drives the name-capture screen); fall back to the domain code embedded
+      // in a legacy HTTP_xxx message so old APIs behave identically.
+      code: _preferDomainCode(code, message),
+    );
+  }
+
+  if (e.type == DioExceptionType.connectionTimeout ||
+      e.type == DioExceptionType.receiveTimeout ||
+      e.type == DioExceptionType.sendTimeout) {
+    return const ApiException(
+      'Connection timed out. Check your network and try again.',
+      statusCode: null,
+    );
+  }
+  if (e.type == DioExceptionType.connectionError) {
+    return const ApiException(
+      'Could not reach UNigeria. Check your connection.',
+      statusCode: null,
+    );
+  }
+  return ApiException(
+    _friendlyMessage(code: null, message: e.message, status: status),
+    statusCode: status,
+  );
+}
+
+/// Returns the domain code when [code] or [message] is actually a bare API
+/// code. New envelopes put the code in `code` (e.g. `VALIDATION_FAILED`);
+/// legacy envelopes use `HTTP_401` + the real code as `message` — the code in
+/// `message` must win so state logic + copy behave identically on both.
+String? _preferDomainCode(String? code, String? message) {
+  final fromCode = _legacyCode(code);
+  if (fromCode != null) return fromCode;
+  final fromMessage = _legacyCode(message);
+  if (fromMessage != null) return fromMessage;
+  // Unknown future codes still pass through (unless they are HTTP_xxx, which
+  // carry no domain meaning).
+  if (code != null && !code.startsWith('HTTP_')) return code;
+  return null;
+}
+
+/// Returns [value] when it is one of the known contract error codes.
+String? _legacyCode(String? value) {
+  const known = {
+    'VALIDATION_FAILED',
+    'OTP_LOCKED',
+    'OTP_RATE_LIMITED',
+    'OTP_INVALID',
+    'NAME_REQUIRED_ON_SIGNUP',
+    'SESSION_NOT_FOUND',
+    'UNAUTHORIZED',
+    'FORBIDDEN',
+    'NOT_FOUND',
+    'CHAT_SPAM_DETECTED',
+    'SELF_MODERATION',
+    'NOT_A_MEMBER',
+    'COMMUNITY_NOT_FOUND',
+    'MESSAGE_NOT_FOUND',
+    'ALREADY_CONVERTED',
+    'NOT_CONVERTIBLE',
+    'INVALID_ATTACHMENT',
+    'MEDIA_UPLOAD_NOT_CONFIGURED',
+    'COMMUNITY_NOT_ACTIVE',
+    'STATE_REQUIRED_WITH_LGA',
+    'INVALID_LGA',
+    'INVALID_STATE',
+    // Polls (U-p6-02).
+    'POLL_NOT_FOUND',
+    'POLL_CLOSED',
+    'ALREADY_VOTED',
+    'INVALID_OPTION',
+    'POLL_TITLE_EXISTS',
+    'OPTION_COUNT_INVALID',
+    'OPTION_HAS_VOTES',
+    'TARGETS_NOT_ALLOWED',
+    'INVALID_TARGET',
+    'TARGETS_REQUIRED',
+    // Issues (U-p4-04).
+    'ISSUE_NOT_FOUND',
+    'CANNOT_CONFIRM_OWN',
+  };
+  return (value != null && known.contains(value)) ? value : null;
+}
+
+/// Turns a contract code / status into prose a user can act on. Unknown
+/// server messages are only shown when they read like prose — never a raw
+/// code or the generic "Invalid request payload." string.
+String _friendlyMessage({
+  required String? code,
+  required String? message,
+  Object? issues,
+  required int? status,
+}) {
+  final domainCode = _preferDomainCode(code, message);
+
+  switch (domainCode) {
+    case 'VALIDATION_FAILED':
+      return _validationMessage(issues);
+    case 'OTP_INVALID':
+      return 'That code is incorrect or has expired. Please try again.';
+    case 'OTP_LOCKED':
+      return 'Too many incorrect attempts. Please wait a few minutes and try again.';
+    case 'OTP_RATE_LIMITED':
+      return "You've requested too many codes. Please wait a moment and try again.";
+    case 'NAME_REQUIRED_ON_SIGNUP':
+      return 'Please enter your name to continue.';
+    case 'SESSION_NOT_FOUND':
+      return 'That session is no longer active. Please sign in again.';
+    case 'UNAUTHORIZED':
+      return 'Your session has expired. Please sign in again.';
+    case 'CHAT_SPAM_DETECTED':
+      return 'That message looks like spam and wasn\'t sent.';
+    case 'SELF_MODERATION':
+      return 'You can\'t take that action on yourself.';
+    case 'NOT_A_MEMBER':
+      return 'You\'re not a member of this community yet.';
+    case 'MEDIA_UPLOAD_NOT_CONFIGURED':
+      return 'Media uploads aren\'t set up yet. Please try again later.';
+    case 'COMMUNITY_NOT_ACTIVE':
+      return 'That community isn\'t accepting reports right now.';
+    case 'STATE_REQUIRED_WITH_LGA':
+    case 'INVALID_LGA':
+    case 'INVALID_STATE':
+      return 'Please choose a valid location for this report.';
+    case 'INVALID_ATTACHMENT':
+      return 'One of the attached files wasn\'t accepted. Please try again.';
+    case 'POLL_NOT_FOUND':
+      return 'That poll is no longer available.';
+    case 'POLL_CLOSED':
+      return 'This poll has closed. Results are still available.';
+    case 'ALREADY_VOTED':
+      return 'You\'ve already voted in this poll — votes are final.';
+    case 'INVALID_OPTION':
+      return 'That vote didn\'t match the poll\'s options. Please try again.';
+    case 'POLL_TITLE_EXISTS':
+      return 'A poll with that title already exists.';
+    case 'OPTION_COUNT_INVALID':
+      return 'That poll type needs a different number of options.';
+    case 'OPTION_HAS_VOTES':
+      return 'Options with votes can\'t be edited or removed.';
+    case 'TARGETS_NOT_ALLOWED':
+    case 'INVALID_TARGET':
+    case 'TARGETS_REQUIRED':
+      return 'Please check the poll\'s targeting and try again.';
+    case 'ISSUE_NOT_FOUND':
+      return 'That issue is no longer available.';
+    case 'CANNOT_CONFIRM_OWN':
+      return 'You can\'t confirm an issue you reported yourself.';
+  }
+
+  if (status == 400) {
+    return 'We couldn\'t complete that request. Please check your details and try again.';
+  }
+  if (status == 401) return 'Your session has expired. Please sign in again.';
+  if (status == 403) return 'You don\'t have permission to do that.';
+  if (status == 404) return 'That could not be found. It may have been removed.';
+  if (status == 429) return 'Too many requests. Please try again in a little while.';
+  if (status != null && status >= 500) {
+    return 'Something went wrong on our end. Please try again shortly.';
+  }
+
+  final trimmed = message?.trim() ?? '';
+  if (trimmed.isNotEmpty &&
+      !RegExp(r'^[A-Z0-9_]+$').hasMatch(trimmed) &&
+      !trimmed.contains('Invalid request payload')) {
+    return trimmed;
+  }
+  return 'Something went wrong. Please try again.';
+}
+
+/// Field-aware copy for validation failures when the envelope carries per-field
+/// `issues` (server preserves them for code VALIDATION_FAILED).
+String _validationMessage(Object? issues) {
+  if (issues is List) {
+    final paths = issues
+        .whereType<Map>()
+        .expand((issue) => (issue['path'] as List?)?.whereType<String>() ?? const <String>[])
+        .toList();
+    if (paths.contains('email')) {
+      return 'That email address doesn\'t look right. Please check it and try again.';
+    }
+    if (paths.contains('phone')) {
+      return 'That phone number doesn\'t look right. Please check it and try again.';
+    }
+    if (paths.contains('code')) {
+      return 'The code must be exactly 6 digits. Please check and try again.';
+    }
+    if (paths.contains('name')) {
+      return 'Please enter your name (at least 2 characters).';
+    }
+  }
+  return 'Please check the details you entered and try again.';
+}

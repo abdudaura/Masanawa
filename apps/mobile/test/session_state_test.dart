@@ -1,0 +1,293 @@
+import 'dart:convert';
+
+import 'package:dio/dio.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:masanawa/src/core/api/models.dart';
+import 'package:masanawa/src/core/network/api_client.dart';
+import 'package:masanawa/src/core/providers.dart';
+import 'package:masanawa/src/state/session_state.dart';
+
+/// Session state machine tests (U-p2-01/03 mobile mirror). The Dio adapter is
+/// mocked so no network leaves the test; the contract envelope shapes come
+/// straight from packages/contracts.
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  late ApiClient api;
+  late _FakeAdapter adapter;
+  final storageMap = <String, String>{};
+
+  ProviderContainer makeContainer() {
+    final container = ProviderContainer(overrides: [
+      apiClientProvider.overrideWithValue(api),
+    ]);
+    addTearDown(container.dispose);
+    return container;
+  }
+
+  setUp(() {
+    adapter = _FakeAdapter();
+    storageMap.clear();
+    final dio = Dio(BaseOptions(
+      baseUrl: 'https://example.test',
+      validateStatus: (s) => s != null && s >= 200 && s < 300,
+    ));
+    dio.httpClientAdapter = adapter;
+    api = ApiClient(dio: dio);
+
+    // The session controller restores a persisted session from
+    // flutter_secure_storage on first read. A plain test env has no plugin
+    // channel, so stub the channel against an in-memory map.
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+      const MethodChannel('plugins.it_nomads.com/flutter_secure_storage'),
+      (call) async {
+        switch (call.method) {
+          case 'read':
+            return storageMap[call.arguments['key'] as String];
+          case 'write':
+            storageMap[call.arguments['key'] as String] =
+                call.arguments['value'] as String;
+            return true;
+          case 'delete':
+            storageMap.remove(call.arguments['key'] as String);
+            return true;
+          case 'containsKey':
+            return storageMap.containsKey(call.arguments['key'] as String);
+          default:
+            return null;
+        }
+      },
+    );
+  });
+
+  const phone = '+2348012345678';
+  const email = 'ada@example.com';
+  const code = '123456';
+  const user = AuthUser(
+    id: 'usr_test',
+    name: 'Ada Obi',
+    phone: '+2348012345678',
+    locale: 'en-NG',
+    status: 'ACTIVE',
+    role: 'USER',
+    isNewUser: true,
+    createdAt: '2026-08-13T00:00:00Z',
+  );
+
+  test('sendOtp (phone) transitions signedOut → sending → awaitingOtp', () async {
+    adapter.respond('/auth/otp', {'phone': phone, 'resendInSeconds': 300});
+    final container = makeContainer();
+
+    final controller = container.read(sessionProvider.notifier);
+    await Future.delayed(Duration.zero);
+    expect(container.read(sessionProvider), isA<SessionSignedOut>());
+
+    final f = controller.sendOtp(phone: phone);
+    expect(container.read(sessionProvider), isA<SessionSendingOtp>());
+    await f;
+
+    final state = container.read(sessionProvider);
+    if (state is SessionError) {
+      fail('Unexpected SessionError: ${state.message} code=${state.code}');
+    }
+    expect(state, isA<SessionAwaitingOtp>());
+    final awaiting = state as SessionAwaitingOtp;
+    expect(awaiting.channel, OtpChannel.sms);
+    expect(awaiting.identifier, phone);
+    expect(awaiting.resendInSeconds, 300);
+  });
+
+  test('sendOtp (email) carries the email channel + identifier', () async {
+    adapter.respond('/auth/otp', {'email': email, 'resendInSeconds': 300});
+    final container = makeContainer();
+
+    final controller = container.read(sessionProvider.notifier);
+    await Future.delayed(Duration.zero);
+    final f = controller.sendOtp(email: email);
+    expect(container.read(sessionProvider), isA<SessionSendingOtp>());
+    await f;
+
+    final state = container.read(sessionProvider);
+    expect(state, isA<SessionAwaitingOtp>());
+    final awaiting = state as SessionAwaitingOtp;
+    expect(awaiting.channel, OtpChannel.email);
+    expect(awaiting.identifier, email);
+  });
+
+  test('verifyOtp with name transitions to signedIn and persists tokens', () async {
+    adapter.respond('/auth/verify', {
+      'accessToken': 'a1',
+      'refreshToken': 'r1',
+      'accessExpiresIn': 900,
+      'user': user.toJson(),
+    });
+    final container = makeContainer();
+
+    final controller = container.read(sessionProvider.notifier);
+    await Future.delayed(Duration.zero);
+    await controller.verifyOtp(code, phone: phone, name: 'Ada Obi');
+
+    final state = container.read(sessionProvider);
+    expect(state, isA<SessionSignedIn>());
+    final signedIn = state as SessionSignedIn;
+    expect(signedIn.user.name, 'Ada Obi');
+    expect(api.accessToken, 'a1');
+
+    // The token pair hit secure storage (mock channel below).
+    final storedAccess = await const FlutterSecureStorage()
+        .read(key: 'auth_access_token');
+    expect(storedAccess, 'a1');
+  });
+
+  test('verifyOtp (email) verifies the email channel', () async {
+    adapter.respond('/auth/verify', {
+      'accessToken': 'a2',
+      'refreshToken': 'r2',
+      'accessExpiresIn': 900,
+      'user': user.toJson(),
+    });
+    final container = makeContainer();
+
+    final controller = container.read(sessionProvider.notifier);
+    await Future.delayed(Duration.zero);
+    await controller.verifyOtp(code, email: email, name: 'Ada Obi');
+
+    expect(container.read(sessionProvider), isA<SessionSignedIn>());
+  });
+
+  test('verifyOtp surfaces NAME_REQUIRED_ON_SIGNUP as SessionNameRequired',
+      () async {
+    adapter.respond(
+      '/auth/verify',
+      {
+        'error': {'code': 'NAME_REQUIRED_ON_SIGNUP', 'message': 'Name is required on first signup.'}
+      },
+      statusCode: 400,
+    );
+    final container = makeContainer();
+
+    await container.read(sessionProvider.notifier).verifyOtp(code, email: email);
+
+    final state = container.read(sessionProvider);
+    expect(state, isA<SessionNameRequired>());
+    final nameRequired = state as SessionNameRequired;
+    expect(nameRequired.channel, OtpChannel.email);
+    expect(nameRequired.identifier, email);
+    expect(nameRequired.code, code);
+  });
+
+  test('network failure on sendOtp lands in SessionError', () async {
+    adapter.respond(
+      '/auth/otp',
+      {
+        'error': {'code': 'OTP_RATE_LIMITED', 'message': 'Too many attempts.'}
+      },
+      statusCode: 429,
+    );
+    final container = makeContainer();
+
+    await container.read(sessionProvider.notifier).sendOtp(phone: phone);
+
+    final state = container.read(sessionProvider);
+    expect(state, isA<SessionError>());
+    expect((state as SessionError).code, 'OTP_RATE_LIMITED');
+  });
+
+  test('verifyOtp failure keeps the retry context (channel + identifier) in SessionError',
+      () async {
+    adapter.respond(
+      '/auth/verify',
+      {
+        'error': {'code': 'OTP_INVALID', 'message': 'Invalid or expired code.'}
+      },
+      statusCode: 401,
+    );
+    final container = makeContainer();
+
+    await container.read(sessionProvider.notifier).verifyOtp('000000', email: email);
+
+    final state = container.read(sessionProvider);
+    expect(state, isA<SessionError>());
+    final err = state as SessionError;
+    expect(err.code, 'OTP_INVALID');
+    // The OTP screen rebuilds its retry/resend actions from these.
+    expect(err.channel, OtpChannel.email);
+    expect(err.identifier, email);
+  });
+
+  test('clearVerifyError returns to awaitingOtp with the live cooldown', () async {
+    adapter.respond(
+      '/auth/verify',
+      {
+        'error': {'code': 'OTP_INVALID', 'message': 'Invalid or expired code.'}
+      },
+      statusCode: 401,
+    );
+    final container = makeContainer();
+    final controller = container.read(sessionProvider.notifier);
+    await Future.delayed(Duration.zero);
+
+    await controller.verifyOtp('000000', phone: phone);
+    expect(container.read(sessionProvider), isA<SessionError>());
+
+    // Editing the code after a wrong attempt clears the error and restores the
+    // countdown value the screen holds, so resend stays correctly gated.
+    controller.clearVerifyError(channel: OtpChannel.sms, identifier: phone, resendInSeconds: 41);
+
+    final state = container.read(sessionProvider);
+    expect(state, isA<SessionAwaitingOtp>());
+    final awaiting = state as SessionAwaitingOtp;
+    expect(awaiting.channel, OtpChannel.sms);
+    expect(awaiting.identifier, phone);
+    expect(awaiting.resendInSeconds, 41);
+  });
+}
+
+/// Minimal Dio adapter: records requests and replays canned contract-shaped
+/// responses. Dio's MockAdapter needs a package dep; this keeps the test lean.
+class _FakeAdapter implements HttpClientAdapter {
+  final _requests = <String>[];
+  _Route _next = _Route(
+    path: '/',
+    statusCode: 200,
+    body: const {},
+  );
+
+  void respond(String path, Map<String, dynamic> body, {int statusCode = 200}) {
+    _next = _Route(path: path, statusCode: statusCode, body: body);
+  }
+
+  List<String> get requests => List.unmodifiable(_requests);
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    _requests.add('${options.method} ${options.path}');
+    final route = _next;
+    final body = jsonEncode(route.body);
+    return ResponseBody.fromString(
+      body,
+      route.statusCode,
+      headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
+class _Route {
+  const _Route({required this.path, required this.statusCode, required this.body});
+  final String path;
+  final int statusCode;
+  final Map<String, dynamic> body;
+}

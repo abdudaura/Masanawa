@@ -4,6 +4,9 @@
 
 - `apps/web`: customer/fan/product web.
 - `apps/ops`: internal operator workspace.
+- `apps/mobile`: Flutter agent shell (thin client). Outside the pnpm workspace
+  (Flutter toolchain via `pubspec.yaml`); calls service APIs only, never owns
+  Character, memory, skills, tools, or workflows.
 
 ## Planned services
 
