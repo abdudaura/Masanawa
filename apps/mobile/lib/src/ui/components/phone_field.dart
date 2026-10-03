@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/phone/country_codes.dart';
-import '../../tokens/unigeria_tokens.dart';
-import '../../theme/unigeria_theme.dart';
+import '../../tokens/masanawa_tokens.dart';
+import '../../theme/masanawa_theme.dart';
 
 /// WhatsApp-style phone input with automatic country detection: as the user
 /// types an international number (`+233 ...`), the flag + dial code + country
@@ -44,7 +44,7 @@ class _PhoneFieldState extends State<PhoneField> {
 
   @override
   Widget build(BuildContext context) {
-    final u = context.unigeria;
+    final u = context.masanawa;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
