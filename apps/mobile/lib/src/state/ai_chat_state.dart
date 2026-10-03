@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:mime/mime.dart';
 
 import '../agents/agent_session.dart';
 import '../chat/chat_format.dart';
@@ -270,10 +271,14 @@ class AiChatController extends Notifier<AiChatState> {
     );
     await _save();
     try {
-      final prompt = userMsg.text.isEmpty
-          ? '[${userMsg.attachment?.label ?? 'attachment'}]'
-          : userMsg.text;
-      final result = await _sendViaTransport(characterId, prompt);
+      final attachment = userMsg.attachment;
+      final result = attachment == null
+          ? await _sendViaTransport(characterId, userMsg.text)
+          : await _sendMediaViaTransport(
+              characterId,
+              attachment,
+              caption: userMsg.text,
+            );
       _appendAi(
         characterId,
         result.text,
@@ -282,6 +287,51 @@ class AiChatController extends Notifier<AiChatState> {
       );
     } catch (_) {
       _appendAi(characterId, _fallbackReply(userMsg));
+    }
+  }
+
+
+  Future<AgentTurnResult> _sendMediaViaTransport(
+    String characterId,
+    ChatAttachment attachment, {
+    required String caption,
+  }) async {
+    final file = File(attachment.path);
+    final bytes = await file.readAsBytes();
+    if (bytes.isEmpty || bytes.length > 8 * 1024 * 1024) {
+      throw const ApiException('Attachment must be between 1 byte and 8 MB');
+    }
+    final mimeType = lookupMimeType(
+          attachment.path,
+          headerBytes: bytes.take(16).toList(),
+        ) ??
+        switch (attachment.kind) {
+          'voice' => 'audio/mp4',
+          'image' => 'image/jpeg',
+          _ => 'application/octet-stream',
+        };
+
+    final primary =
+        _runtimeDown ? _previewTransport() : ref.read(agentTransportProvider);
+    try {
+      final binding = await _bindingFor(characterId, primary);
+      return await primary.sendMediaTurn(
+        binding: binding,
+        bytes: bytes,
+        mimeType: mimeType,
+        caption: caption,
+      );
+    } catch (_) {
+      if (primary is PreviewAgentTransport) rethrow;
+      _runtimeDown = true;
+      final preview = _previewTransport();
+      final binding = await _bindingFor(characterId, preview);
+      return preview.sendMediaTurn(
+        binding: binding,
+        bytes: bytes,
+        mimeType: mimeType,
+        caption: caption,
+      );
     }
   }
 
