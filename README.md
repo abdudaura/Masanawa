@@ -41,7 +41,7 @@ Post-freeze candidate assessments may exist without being admitted to the vault.
 
 ## Status
 
-Current phase: **Phase 6 — Skills**, preceded by the short production-structure hardening checkpoint tracked in `docs/PRODUCTION-MASTER-TASKS.md`.
+Current phase: **Phase 7 — Agent runtime**.
 
-Phase 0 source selection/forensics, Phase 1 architecture, Phase 2 foundation, the non-spatial Phase 3 Identity/World core, Phase 4 Memory and Phase 5 Tools/Providers are closed. Tasks 001-069 are merged complete. Current: Task 070 of 150 — Pass Skills acceptance tests including cloud/device-provider neutrality. The canonical current status and remaining acceptance criteria are in `docs/PRODUCTION-MASTER-TASKS.md`; recover from `CONTINUE-HERE.md` before changing code.
+Phase 0 source selection/forensics, Phase 1 architecture, Phase 2 foundation, the non-spatial Phase 3 Identity/World core, Phase 4 Memory, Phase 5 Tools/Providers and Phase 6 Skills are closed. Tasks 001-070 are merged complete. Current: Task 071 of 150 — Implement CharacterSession canonical runtime contract. The canonical current status and remaining acceptance criteria are in `docs/PRODUCTION-MASTER-TASKS.md`; recover from `CONTINUE-HERE.md` before changing code.
 

@@ -15,7 +15,7 @@ Lifecycle:
 
 ## Phase 0A — Landscape expansion and donor selection
 
-Status: complete. Phase 0B, Phase 1, Phase 2, the non-spatial Phase 3 core, Phase 4 Memory and Phase 5 Tools/Providers are closed; current active work is Phase 6 Skills.
+Status: complete. Phase 0B, Phase 1, Phase 2, the non-spatial Phase 3 core, Phase 4 Memory, Phase 5 Tools/Providers and Phase 6 Skills are closed; current active work is Phase 7 Agent runtime.
 
 Inputs: all pinned submodules in `references/sources/` and `migration/SOURCE-LOCK.md`.
 
@@ -108,7 +108,8 @@ Final merge:
 
 ## Phase 6 — Skills
 
-Status: active.
+Status: complete. Closure audit: `PHASE-6-CLOSURE-AUDIT.md` — PASS.
+Task 070 PR #76 merged as `34aa6f9d19f9b0c92527fabe3a750052009398d2`; exact merged-main Foundation CI run 451 passed.
 
 Implement the selected unified skill architecture after OpenJarvis/OpenClaw/MAF comparison: manifest/contract, manager, parser/import, dependencies, execution/SkillTool, provenance/trust, governance/certification/readiness and trace metadata.
 
@@ -118,6 +119,9 @@ Providers described in `AGENT-PHONE-EMBODIMENT.md` must be selectable through th
 Tool/Provider architecture.
 
 ## Phase 7 — Agent runtime
+
+Status: ready for Task 071, CharacterSession canonical runtime contract.
+Record: `PHASE-7-AGENT-RUNTIME.md`. Later runtime strategies remain later milestones.
 
 Implement AgentStrategy, AgentContext/Result, provider abstraction, orchestration/research/background strategies, budgets/guards and character-aware context.
 
@@ -186,3 +190,4 @@ Only then retire ChatWithStars as an active platform implementation.
 ## Reference rule
 
 Donor code lives under `references/sources/` only as pinned Git submodules. It is reference material, never a hidden Masanawa dependency.
+

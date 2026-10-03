@@ -38,7 +38,11 @@ of architectural feature selection.
 
 ## Current phase
 
-**Phase 6 — Skills.**
+**Phase 7 — Agent runtime.**
+
+Task 070 implementation head `68e8e4002bc7fae8ea0e1a58b72b81e00454e294` passed Foundation CI run 450 (340 tests in 73 files, including nine PostgreSQL 18 Skills acceptance cases). PR #76 merged as `34aa6f9d19f9b0c92527fabe3a750052009398d2`; merged-main Foundation CI run 451 passed on that exact merge commit. Phase 6 is closed; `docs/PHASE-6-CLOSURE-AUDIT.md` is PASS.
+
+Active phase record: `docs/PHASE-7-AGENT-RUNTIME.md`.
 
 Phase 5 is closed on merged `main` at
 `0fe123e18a9163386c4ab10331139265ce26b64e`; Foundation CI run 369 passed on
@@ -128,16 +132,16 @@ MemoryRecords never replace their immutable/verbatim source evidence.
 
 ## Immediate work
 
-Phase 6 — Skills remains the product implementation phase, preceded by the production-structure hardening sequence in the canonical ledger.
+Phase 6 Skills is closed. Start Phase 7 from current merged main; the production-structure hardening checkpoint is already complete.
 
-Tasks 001-054 are merged complete.
+Tasks 001-070 are merged complete.
 
 Task 054 implementation head `3a0a6251a551ffcfd852d3f4f80063195257ece6` passed
 Foundation CI run 379, PR #47 merged as
 `d0a198dbdec1af08e3c8f1378da0985db628eb6e`, and merged-main Foundation CI
 run 380 passed on that exact merge commit.
 
-**Current: Task 070 of 150 — Pass Skills acceptance tests including cloud/device-provider neutrality.**
+**Current: Task 071 of 150 — Implement CharacterSession canonical runtime contract.**
 
 Task 066 implementation head `eb0ddef003bf9946d0df50b6c070a4d6ab6ea59c` passed Foundation CI run 431. PR #68 merged as `e1573fc91549b25a0425ef9a8cc7534ca0a4464a`, and merged-main Foundation CI run 432 passed on that exact merge commit.
 
@@ -173,9 +177,11 @@ Task 069 established:
 - copied, frozen failure trace evidence that rejects malformed metadata and excludes arbitrary private fields;
 - preservation of typed failure/Operation/correlation semantics, reconciliation precedence for ambiguity and redaction of unknown exceptions.
 
-Task 070 is next. Start from the merged Task 069 closure state and use its acceptance criteria in `docs/PRODUCTION-MASTER-TASKS.md`. The canonical in-memory registry still needs Skills-owned persistence/reload evidence before Phase 6 closes. Preserve the current Tool/Provider authority and verify cloud/device neutrality with simulated Provider adapters; real Android/OmniSIP qualification remains in the device tasks.
+Task 070 implementation head `68e8e4002bc7fae8ea0e1a58b72b81e00454e294` passed Foundation CI run 450 (340 tests in 73 files, including nine PostgreSQL 18 Skills acceptance cases). PR #76 merged as `34aa6f9d19f9b0c92527fabe3a750052009398d2`; merged-main Foundation CI run 451 passed on that exact merge commit. Phase 6 is closed; `docs/PHASE-6-CLOSURE-AUDIT.md` is PASS.
 
-Tasks 001-069 are merged complete.
+Task 071 is next. Preserve the canonical Skills catalog/restore/pin ports and the existing Tool/Provider authority. Real Android/OmniSIP qualification remains in the device tasks.
+
+Tasks 001-070 are merged complete.
 
 Task 065 implementation head `e17e444716c58460de1a780daafd3d6dd5cfdac0` passed
 Foundation CI run 427. PR #66 merged as
@@ -300,7 +306,7 @@ The historical `phase6-skills-foundation` branch is based on pre-roadmap `main`.
 Its valid foundation was reconciled in Task 059 rather than merged wholesale.
 Do not revive it as the active branch or duplicate its already-merged Skills behavior.
 
-For the remaining Phase 6 acceptance work, use `docs/PRODUCT-NORTH-STAR.md` as the
+For Phase 7 runtime work, use `docs/PRODUCT-NORTH-STAR.md` as the
 product-priority check and preserve the device-provider direction in
 `docs/AGENT-PHONE-EMBODIMENT.md`. Skills must be capable of resolving Tools through
 both cloud Providers and future Device Providers without embedding either execution
@@ -349,10 +355,10 @@ PostgreSQL 18 + pgvector integration suites and production builds.
 The Phase 5 acceptance audit is PASS and its final merge is green.
 
 Immediate next:
-1. complete Task 070 Skills persistence/restart and cross-package acceptance evidence from current merged `main`;
-2. preserve exact immutable SkillVersions, certification cases, dependency graphs and revision pins during registry reconstruction;
-3. verify provider-neutral cloud/device execution through canonical Tools, including authority, readiness, receipts and ambiguity;
-4. close Phase 6 only after acceptance and merged-main CI pass; do not start Task 071 early.
+1. start Task 071 CharacterSession canonical runtime contract from current merged `main`;
+2. recover the canonical ledger, architecture/Identity boundaries and `docs/PHASE-7-AGENT-RUNTIME.md` before choosing the session contract;
+3. preserve Skills persistence/pins and atomic Tool/Provider authority rather than introducing another execution engine;
+4. close Task 071 only after its acceptance and exact merged-main CI pass; do not pull Task 072 or Phase 8 Workflows into the session-contract slice.
 
 The requested post-freeze donor boundary remains unchanged: MemPalace contributes
 retrieval/evaluation/storage-contract behavior inside canonical Masanawa memory ports;
