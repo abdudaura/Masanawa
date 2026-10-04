@@ -44,6 +44,7 @@ export interface AgentConversationService {
     readonly requestId: RequestId;
     readonly correlationId: CorrelationId;
     readonly onTextDelta?: (delta: string) => void | Promise<void>;
+    readonly onAudioPcmChunk?: (dataBase64: string) => void | Promise<void>;
     readonly signal?: AbortSignal;
   }): Promise<{
     readonly reply: string;
