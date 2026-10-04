@@ -73,12 +73,15 @@ class RecoveringTransport implements AgentTransport {
   Future<AgentTurnResult> sendTurn({
     required AgentSessionBinding binding,
     required String text,
+    void Function(String delta)? onTextDelta,
   }) async {
     turns++;
     if (pending != null) return pending!.future;
     if (turns == 1) throw const ApiException('private vendor failure');
+    const reply = 'Real Gateway reply';
+    onTextDelta?.call(reply);
     return const AgentTurnResult(
-      text: 'Real Gateway reply',
+      text: reply,
       agentRunId: 'run-2',
     );
   }
