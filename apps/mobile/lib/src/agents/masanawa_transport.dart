@@ -52,6 +52,7 @@ class _GatewayClient {
     String path,
     Map<String, dynamic> body, {
     CancelToken? cancelToken,
+    void Function(int sent, int total)? onSendProgress,
   }) async {
     try {
       final res = await dio.post<Map<String, dynamic>>(
@@ -61,6 +62,7 @@ class _GatewayClient {
           turn: path.endsWith('/turn') || path.endsWith('/media-turn'),
         ),
         cancelToken: cancelToken,
+        onSendProgress: onSendProgress,
       );
       final data = res.data;
       if (data == null) throw const ApiException('Empty response from server');
@@ -330,6 +332,49 @@ class MasanawaAgentTransport implements AgentTransport {
       audioMimeType: audioMimeType is String ? audioMimeType : null,
       audioDurationMs: audioDurationMs is num ? audioDurationMs.round() : null,
     );
+  }
+
+  @override
+  Future<AgentTurnResult> sendMediaSetTurn({
+    required AgentSessionBinding binding,
+    required List<AgentMediaInput> media,
+    required String caption,
+    void Function(int sent, int total)? onUploadProgress,
+  }) async {
+    if (media.isEmpty || media.length > 8) {
+      throw const ApiException('Invalid attachment set');
+    }
+    final token = CancelToken();
+    _turnTokens[binding.characterId]?.cancel('Superseded by a new turn');
+    _turnTokens[binding.characterId] = token;
+    try {
+      final data = await _client.post(
+        '/v1/agent/sessions/${binding.characterSessionId}/media-set-turn',
+        {
+          'characterId': binding.characterId,
+          'caption': caption,
+          'media': [
+            for (final item in media)
+              {
+                'mimeType': item.mimeType,
+                'dataBase64': base64Encode(item.bytes),
+                if (item.name != null) 'name': item.name,
+              },
+          ],
+        },
+        cancelToken: token,
+        onSendProgress: onUploadProgress,
+      );
+      final reply = data['reply'];
+      if (reply is! String || reply.isEmpty) {
+        throw const ApiException('Agent media service unavailable');
+      }
+      return _turnResultFromData(data, reply: reply);
+    } finally {
+      if (identical(_turnTokens[binding.characterId], token)) {
+        _turnTokens.remove(binding.characterId);
+      }
+    }
   }
 
   @override
