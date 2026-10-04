@@ -21,12 +21,42 @@ import {
   type TeachingLessonStep,
   type TeachingProgressHandoff,
   type TeachingSelectableExerciseRubric,
+  coreTeachingSkillKey,
   type TeachingSelectionSubmission,
 } from "./teaching.js";
 
 export interface TeachingProgressKey {
   readonly relationshipId: RelationshipId;
   readonly skillVersionId: SkillVersionId;
+}
+
+export interface TeachingRuntimeBinding {
+  readonly relationshipId: RelationshipId;
+  readonly skillVersionId: SkillVersionId;
+  readonly skillKey: typeof coreTeachingSkillKey;
+  readonly guideContentHash: string;
+}
+
+export function createTeachingRuntimeBinding(input: {
+  readonly relationshipId: RelationshipId;
+  readonly skillVersionId: SkillVersionId;
+  readonly skillKey: string;
+  readonly guideContentHash: string;
+}): TeachingRuntimeBinding {
+  assertScope(input.relationshipId, input.skillVersionId);
+  if (input.skillKey !== coreTeachingSkillKey) {
+    throw new TypeError("Teaching runtime binding requires core.teaching");
+  }
+  const guideContentHash = input.guideContentHash.trim().toLowerCase();
+  if (!/^sha256:[0-9a-f]{64}$/u.test(guideContentHash)) {
+    throw new TypeError("Teaching runtime guideContentHash is invalid");
+  }
+  return Object.freeze({
+    relationshipId: input.relationshipId,
+    skillVersionId: input.skillVersionId,
+    skillKey: coreTeachingSkillKey,
+    guideContentHash,
+  });
 }
 
 export interface TeachingSelectionAttempt {
@@ -108,6 +138,21 @@ export function fingerprintTeachingSelectionAttempt(input: {
   return `sha256:${fingerprintCanonicalJson(JSON.parse(canonicalJson(payload)))}`;
 }
 
+function assertBindingScope(
+  binding: TeachingRuntimeBinding,
+  relationshipId: RelationshipId,
+  skillVersionId: SkillVersionId,
+): void {
+  if (
+    binding.relationshipId !== relationshipId ||
+    binding.skillVersionId !== skillVersionId
+  ) {
+    throw new TypeError(
+      "Teaching runtime input must match the admitted Relationship and SkillVersion",
+    );
+  }
+}
+
 function assertScope(
   relationshipId: RelationshipId,
   skillVersionId: SkillVersionId,
@@ -160,8 +205,16 @@ export class TeachingRuntimeCoordinator {
     this.#presentation = options.presentation;
   }
 
-  async resume(planInput: TeachingLessonPlan): Promise<TeachingRuntimeProjection> {
+  async resume(
+    binding: TeachingRuntimeBinding,
+    planInput: TeachingLessonPlan,
+  ): Promise<TeachingRuntimeProjection> {
     const plan = normalizeTeachingLessonPlan(planInput);
+    assertBindingScope(
+      binding,
+      plan.learner.relationshipId,
+      plan.skillVersionId,
+    );
     const key = Object.freeze({
       relationshipId: plan.learner.relationshipId,
       skillVersionId: plan.skillVersionId,
@@ -181,9 +234,11 @@ export class TeachingRuntimeCoordinator {
   }
 
   async presentExercise(
+    binding: TeachingRuntimeBinding,
     cardInput: TeachingExerciseCard,
   ): Promise<TeachingRuntimeProjection> {
     const card = normalizeTeachingExerciseCard(cardInput);
+    assertBindingScope(binding, card.relationshipId, card.skillVersionId);
     const projection = Object.freeze({
       kind: "exercise" as const,
       relationshipId: card.relationshipId,
@@ -194,7 +249,7 @@ export class TeachingRuntimeCoordinator {
     return projection;
   }
 
-  async submitSelection(input: {
+  async submitSelection(binding: TeachingRuntimeBinding, input: {
     readonly requestId: RequestId;
     readonly plan: TeachingLessonPlan;
     readonly rubric: TeachingSelectableExerciseRubric;
@@ -206,7 +261,13 @@ export class TeachingRuntimeCoordinator {
     }
 
     const plan = normalizeTeachingLessonPlan(input.plan);
+    assertBindingScope(
+      binding,
+      plan.learner.relationshipId,
+      plan.skillVersionId,
+    );
     const rubric = normalizeTeachingSelectableExerciseRubric(input.rubric);
+    assertBindingScope(binding, rubric.relationshipId, rubric.skillVersionId);
     assertScope(rubric.relationshipId, rubric.skillVersionId);
 
     if (
