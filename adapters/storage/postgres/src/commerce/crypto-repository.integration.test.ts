@@ -156,6 +156,30 @@ describeDatabase("crypto conversion and payout fee PostgreSQL acceptance", () =>
     };
   }
 
+  it("does not authorize a child payment from parent identity alone", async () => {
+    const f = await fundedFixture("30");
+    await expect(f.repository.applyProviderPaymentEvent({
+      tenantId: f.tenantId,
+      userId: f.userId,
+      event: {
+        paymentId: "child-payment",
+        parentPaymentId: f.fundingPaymentId,
+        orderId: f.fundingRequestId,
+        status: "finished",
+        priceAmount: "30",
+        priceCurrency: "USDTTRC20",
+        payAmount: "30",
+        payCurrency: "USDTTRC20",
+        actuallyPaid: "30",
+        payloadHash: createHash("sha256").update("child-payment").digest("hex"),
+        observedAt: instant(4),
+      },
+    })).rejects.toThrow("crypto.provider_payment.intent_mismatch");
+    expect(await f.repository.readBalance({
+      tenantId: f.tenantId, userId: f.userId, asset: "USDTTRC20", network: "tron",
+    })).toBe("30");
+  });
+
   it("reverses a provider deposit refund exactly once and never resurrects refunded state", async () => {
     const f = await fundedFixture("30");
     const refundEvent = {
