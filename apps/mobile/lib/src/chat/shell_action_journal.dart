@@ -29,18 +29,44 @@ class EncryptedShellActionJournal implements ShellActionJournal {
   bool _closed = false;
   String get _storageKey => 'masanawa.shell.actions.v1:$namespace';
 
+  static String _ownerSegment(String ownerId) =>
+      base64Url.encode(utf8.encode(ownerId)).replaceAll('=', '');
+
+  static String namespaceForOwnerSession({
+    required String ownerId,
+    required String sessionId,
+  }) {
+    final cleanOwner = ownerId.trim();
+    final cleanSession = sessionId.trim();
+    if (cleanOwner.isEmpty ||
+        cleanOwner.length > 512 ||
+        cleanSession.isEmpty ||
+        cleanSession.length > 512) {
+      throw ArgumentError('Valid owner and session ids required');
+    }
+    return '${_ownerSegment(cleanOwner)}:$cleanSession';
+  }
+
   static Future<void> clearOwner({
     required ShellEncryptedStore store,
     required String ownerId,
   }) async {
     final cleanOwner = ownerId.trim();
-    if (cleanOwner.isEmpty || cleanOwner.length > 512 || cleanOwner.contains(':')) {
+    if (cleanOwner.isEmpty || cleanOwner.length > 512) {
       throw ArgumentError('Valid owner id required');
     }
-    final prefix = 'masanawa.shell.actions.v1:$cleanOwner:';
+    final prefix =
+        'masanawa.shell.actions.v1:${_ownerSegment(cleanOwner)}:';
+    final legacyPrefix = cleanOwner.contains(':')
+        ? null
+        : 'masanawa.shell.actions.v1:$cleanOwner:';
     final all = await store.readAll();
     final keys = all.keys
-        .where((key) => key.startsWith(prefix))
+        .where(
+          (key) =>
+              key.startsWith(prefix) ||
+              (legacyPrefix != null && key.startsWith(legacyPrefix)),
+        )
         .toList(growable: false);
     for (final key in keys) {
       final previous = _locks[key] ?? Future<void>.value();
