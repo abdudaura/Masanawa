@@ -1,6 +1,6 @@
 import Fastify from "fastify";
 import type { Instant } from "@masanawa/contracts";
-import { nowInstant, parseCanonicalId } from "@masanawa/contracts";
+import { nowInstant, parseCanonicalId, PlatformError } from "@masanawa/contracts";
 import type { AgentDirectoryService } from "./agent_directory.js";
 import type { AgentConversationService } from "./agent_conversation_contract.js";
 import type { CreatorCloneService } from "./creator_clone.js";
@@ -168,6 +168,31 @@ const ReadinessResponseSchema = Type.Object(
   { additionalProperties: false },
 );
 
+function switchPlatformErrorStatus(
+  category: PlatformError["category"],
+): number {
+  switch (category) {
+    case "validation":
+      return 400;
+    case "authentication":
+      return 401;
+    case "authorization":
+      return 403;
+    case "not-found":
+      return 404;
+    case "conflict":
+      return 409;
+    case "rate-limit":
+      return 429;
+    case "unavailable":
+      return 503;
+    case "ambiguous":
+      return 409;
+    case "internal":
+      return 500;
+  }
+}
+
 export function createGatewayApp(options: GatewayAppOptions = {}) {
   const app = Fastify({
     logger: false,
@@ -177,6 +202,35 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
 
   const now = options.now ?? nowInstant;
   const checks = options.readinessChecks ?? [];
+
+  app.setErrorHandler((error, request, reply) => {
+    if (error instanceof PlatformError) {
+      const status = switchPlatformErrorStatus(error.category);
+      const safeMessage =
+        error.category === "authentication"
+          ? "Authentication required"
+          : error.category === "authorization"
+            ? "Not authorized"
+            : error.category === "internal"
+              ? "Internal server error"
+              : error.message;
+      void reply.status(status).send({
+        error: {
+          code: error.code,
+          message: safeMessage,
+        },
+      });
+      return;
+    }
+
+    request.log.error(error);
+    void reply.status(500).send({
+      error: {
+        code: "gateway.internal_error",
+        message: "Internal server error",
+      },
+    });
+  });
 
   app.addHook("onRequest", async (request, reply) => {
     const correlation = admitTelemetryCorrelation({
