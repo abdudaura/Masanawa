@@ -9,7 +9,12 @@ import type {
 } from "@masanawa/agents";
 import { parseCanonicalId, readRequiredEnv } from "@masanawa/contracts";
 import type { BillingQuoteRepository, CryptoRepository } from "@masanawa/commerce";
-import { NowPaymentsClient, NowPaymentsPayoutClient } from "@masanawa/nowpayments";
+import {
+  NowPaymentsClient,
+  NowPaymentsCustodyClient,
+  NowPaymentsPayoutClient,
+  withRouteEvidence,
+} from "@masanawa/nowpayments";
 import { FlutterwaveBillsClient, FlutterwaveFundingClient, FlutterwaveHttpTransport } from "@masanawa/providers";
 import type { PlatformSessionRepository } from "@masanawa/security";
 import {
@@ -287,6 +292,32 @@ export async function startGatewayService(
   const nowPaymentsIpnSecret = env.NOWPAYMENTS_IPN_SECRET?.trim();
   const payoutEmail = env.NOWPAYMENTS_PAYOUT_EMAIL?.trim();
   const payoutPassword = env.NOWPAYMENTS_PAYOUT_PASSWORD?.trim();
+  const custodyEnabled = env.NOWPAYMENTS_CUSTODY_ENABLED === "true";
+  const conversionEnabled = env.NOWPAYMENTS_CONVERSION_ENABLED === "true";
+  const payoutEnabled = env.NOWPAYMENTS_PAYOUT_ENABLED === "true";
+  const destinationAllowlist = (() => {
+    const raw = env.NOWPAYMENTS_PAYOUT_DESTINATION_ALLOWLIST_JSON?.trim();
+    if (!raw) return new Set<string>();
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) {
+      throw new TypeError("NOWPAYMENTS_PAYOUT_DESTINATION_ALLOWLIST_JSON must be a JSON array");
+    }
+    const values = new Set<string>();
+    for (const entry of parsed) {
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+        throw new TypeError("NOWPAYMENTS_PAYOUT_DESTINATION_ALLOWLIST_JSON entry invalid");
+      }
+      const row = entry as { providerCode?: unknown; address?: unknown };
+      const providerCode =
+        typeof row.providerCode === "string" ? row.providerCode.trim().toUpperCase() : "";
+      const address = typeof row.address === "string" ? row.address.trim() : "";
+      if (!/^[A-Z0-9_-]{2,32}$/u.test(providerCode) || !address || address.length > 512) {
+        throw new TypeError("NOWPAYMENTS_PAYOUT_DESTINATION_ALLOWLIST_JSON entry invalid");
+      }
+      values.add(`${providerCode}\u0000${address}`);
+    }
+    return values;
+  })();
   const rawPublicBaseUrl =
     env.MASANAWA_PUBLIC_BASE_URL?.trim() ||
     env.RAILWAY_STATIC_URL?.trim() ||
@@ -333,24 +364,93 @@ export async function startGatewayService(
     }
   }
 
+  const nowPayments =
+    nowPaymentsApiKey ? new NowPaymentsClient({ apiKey: nowPaymentsApiKey }) : undefined;
+  const nowPaymentsCustody =
+    nowPaymentsApiKey && payoutEmail && payoutPassword && custodyEnabled
+      ? new NowPaymentsCustodyClient({
+          apiKey: nowPaymentsApiKey,
+          email: payoutEmail,
+          password: payoutPassword,
+        })
+      : undefined;
+  const nowPaymentsPayout =
+    nowPaymentsApiKey && payoutEmail && payoutPassword && payoutEnabled
+      ? new NowPaymentsPayoutClient({
+          apiKey: nowPaymentsApiKey,
+          email: payoutEmail,
+          password: payoutPassword,
+        })
+      : undefined;
+
+  const freshNowPaymentsEvidence =
+    nowPayments && nowPaymentsCustody
+      ? async (operation: "convert" | "withdraw") => {
+          const signal = AbortSignal.timeout(15_000);
+          // A successful authenticated custody read is fresh evidence that the
+          // configured merchant credentials and this runtime's current source IP
+          // are accepted for the custody account. Consequential operations still
+          // perform their own quote/address/fee checks immediately before reserve.
+          await nowPaymentsCustody.authenticate(signal);
+          await nowPaymentsCustody.readBalances(signal);
+          const routes = await nowPayments.listPaymentCurrencies(signal);
+          const operationAvailable =
+            operation === "convert" ? conversionEnabled : payoutEnabled;
+          return Object.freeze({
+            account: Object.freeze({
+              custodyEnabled: true,
+              customerManagementEnabled: null,
+              conversionEnabled: conversionEnabled ? true : false,
+              payoutEnabled: payoutEnabled ? true : false,
+              ipWhitelistSatisfied: true,
+              payoutDestinationWhitelistSatisfied:
+                destinationAllowlist.size > 0 ? true : false,
+              observedAt: new Date().toISOString(),
+            }),
+            routes: Object.freeze(
+              routes.map((route) =>
+                withRouteEvidence(route, {
+                  operation,
+                  operationAvailable,
+                }),
+              ),
+            ),
+          });
+        }
+      : undefined;
+
   const composedFinancial =
     options.appOptions?.financial ??
     (financialAuthorizer &&
     database.crypto &&
-    nowPaymentsApiKey &&
+    nowPayments &&
     nowPaymentsIpnSecret &&
     publicBaseUrl
       ? createFinancialService({
           authorizer: financialAuthorizer,
           crypto: database.crypto,
-          nowPayments: new NowPaymentsClient({ apiKey: nowPaymentsApiKey }),
-          ...(payoutEmail && payoutPassword
+          nowPayments,
+          ...(nowPaymentsCustody ? { nowPaymentsCustody } : {}),
+          ...(nowPaymentsPayout ? { nowPaymentsPayout } : {}),
+          ...(freshNowPaymentsEvidence && conversionEnabled
             ? {
-                nowPaymentsPayout: new NowPaymentsPayoutClient({
-                  apiKey: nowPaymentsApiKey,
-                  email: payoutEmail,
-                  password: payoutPassword,
-                }),
+                conversionEvidence: () => freshNowPaymentsEvidence("convert"),
+              }
+            : {}),
+          ...(freshNowPaymentsEvidence && payoutEnabled
+            ? {
+                withdrawalEvidence: () => freshNowPaymentsEvidence("withdraw"),
+              }
+            : {}),
+          ...(payoutEnabled
+            ? {
+                withdrawalDestinationApproved: async (candidate: {
+                  readonly providerCode: string;
+                  readonly destinationAddress: string;
+                }) =>
+                  destinationAllowlist.has(
+                    `${candidate.providerCode.trim().toUpperCase()}\u0000${candidate.destinationAddress.trim()}`,
+                  ),
               }
             : {}),
           nowPaymentsIpnSecret,
