@@ -33,6 +33,54 @@ class MemoryStore implements BillingFulfillmentStore {
 }
 
 describe("BillingFinancialService catalog authority", () => {
+  it("fails closed when relay configuration is incomplete", () => {
+    const store = new MemoryStore();
+    const authorizer: FinancialAuthorizer = {
+      async authorize() {
+        return {
+          tenantId: createCanonicalId("tenant"),
+          userId: createCanonicalId("user"),
+        };
+      },
+    };
+    const webhookRepository: ProviderWebhookRepository = {
+      async admitProviderWebhook() {
+        return { duplicate: false };
+      },
+    };
+
+    const base = {
+      billingStore: () => store,
+      webhookRepository,
+      authorizer,
+      flutterwaveSecretKey: "test-secret",
+      flutterwaveWebhookHash: "test-hash",
+      flutterwaveWebhookUrl: "https://example.com/webhooks/flutterwave",
+    };
+
+    expect(() =>
+      createBillingFinancialService({
+        ...base,
+        flutterwaveRelayUrl: "https://relay.example.test",
+      }),
+    ).toThrow("flutterwave.relay.configuration_incomplete");
+
+    expect(() =>
+      createBillingFinancialService({
+        ...base,
+        flutterwaveRelayToken: "relay-secret",
+      }),
+    ).toThrow("flutterwave.relay.configuration_incomplete");
+
+    expect(() =>
+      createBillingFinancialService({
+        ...base,
+        flutterwaveRelayUrl: "https://relay.example.test",
+        flutterwaveRelayToken: "relay-secret",
+      }),
+    ).not.toThrow();
+  });
+
   it("re-derives provider catalog fields before dispatch and ignores tampered client metadata", async () => {
     const paymentBodies: unknown[] = [];
     const transport: FlutterwaveBillsTransport = {
