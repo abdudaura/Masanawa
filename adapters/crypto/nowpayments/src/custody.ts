@@ -255,10 +255,7 @@ export class NowPaymentsCustodyClient {
       });
     } catch (error) {
       const code = error instanceof Error ? error.message : "";
-      if (
-        code === "nowpayments.conversion.request_rejected" ||
-        code === "nowpayments.custody.credential.unavailable"
-      ) {
+      if (code === "nowpayments.custody.credential.unavailable") {
         throw new Error("nowpayments.conversion.dispatch_rejected");
       }
       throw error;
