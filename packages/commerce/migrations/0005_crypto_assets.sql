@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS commerce.crypto_intents (
   provider_payout_id text NULL,
   pay_address text NULL,
   provider_pay_amount numeric(38,18) NULL,
+  provider_dispatch_started_at timestamptz NULL,
   status text NOT NULL,
   definition jsonb NOT NULL,
   created_at timestamptz NOT NULL,
