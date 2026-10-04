@@ -1013,6 +1013,7 @@ export function createFinancialService(input: {
         const message = error instanceof Error ? error.message : "";
         if (
           message === "nowpayments.conversion.authentication_unavailable" ||
+          message === "nowpayments.conversion.request_rejected" ||
           message === "nowpayments.conversion.dispatch_rejected"
         ) {
           return conversionView(await input.crypto.settleConversion({
