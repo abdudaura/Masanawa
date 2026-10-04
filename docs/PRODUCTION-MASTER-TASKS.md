@@ -19,6 +19,18 @@ validated settlement, asset-specific ledgers and failure/refund/reconciliation g
 Task 067 acceptance must bind actual rehearsal evidence to Guide/resource content.
 No task completion or deployment is inferred from this planning overlay.
 
+## Required channel/custody/funding overlay — 2026-10-04
+
+Tasks 101-102 (WhatsApp and Telegram) are launch-required alongside the app; preserve
+cross-channel continuity and proof-based account linking in Tasks 097-108.
+Tasks 133-134 include NOWPayments customer custody/balances, conversions/withdrawals,
+creator-funded execution, separate acquisition/execution attribution, exact asset units,
+provider reconciliation and refunds. Commission split and principal withdrawal policy
+remain unresolved and must not be invented in code.
+Broader admin/device/world/studio/plugin promises move to later implementation without
+removing completed foundations or closing their acceptance gates.
+Follow docs/MULTI-WINDOW-WORK.md for concurrent implementation ownership.
+
 ## Current position
 
 Merged `main` satisfies Tasks **001-071**.
