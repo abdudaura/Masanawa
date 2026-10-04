@@ -102,10 +102,28 @@ export function createGeminiLiveAudioRenderer(input: {
           }));
         });
 
-        socket.addEventListener("message", (event: { data: unknown }) => {
+        socket.addEventListener("message", async (event: { data: unknown }) => {
           try {
-            if (typeof event.data !== "string") return;
-            const message = JSON.parse(event.data) as LiveMessage;
+            let raw: string;
+            if (typeof event.data === "string") {
+              raw = event.data;
+            } else if (
+              typeof Blob !== "undefined" &&
+              event.data instanceof Blob
+            ) {
+              raw = await event.data.text();
+            } else if (event.data instanceof ArrayBuffer) {
+              raw = Buffer.from(event.data).toString("utf8");
+            } else if (ArrayBuffer.isView(event.data)) {
+              raw = Buffer.from(
+                event.data.buffer,
+                event.data.byteOffset,
+                event.data.byteLength,
+              ).toString("utf8");
+            } else {
+              return;
+            }
+            const message = JSON.parse(raw) as LiveMessage;
             if (message.setupComplete !== undefined && !sentTurn) {
               sentTurn = true;
               socket.send(JSON.stringify({
