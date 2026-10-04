@@ -1,9 +1,11 @@
 import {
   normalizeCommerceAccountRef,
+  normalizeCommerceFulfillmentAdmission,
   normalizeCommerceLedgerTransfer,
   normalizeCommerceQuote,
   normalizeOfferRevision,
   type CommerceAccountRef,
+  type CommerceFulfillmentAdmission,
   type CommerceLedgerTransfer,
   type CommerceQuote,
   type CommerceRepository,
@@ -30,13 +32,10 @@ function transferFromDefinition(value: unknown): CommerceLedgerTransfer {
   return normalizeCommerceLedgerTransfer(value as CommerceLedgerTransfer);
 }
 
-function accountPredicate(prefix: "debit" | "credit", account: CommerceAccountRef) {
-  return {
-    sql: `${prefix}_kind = $K
-      AND ${prefix}_user_id IS NOT DISTINCT FROM $U
-      AND ${prefix}_character_id IS NOT DISTINCT FROM $C`,
-    values: [account.kind, account.userId, account.characterId] as const,
-  };
+function fulfillmentFromDefinition(value: unknown): CommerceFulfillmentAdmission {
+  return normalizeCommerceFulfillmentAdmission(
+    value as CommerceFulfillmentAdmission,
+  );
 }
 
 const protectedDebitKinds = new Set<CommerceAccountRef["kind"]>([
@@ -75,6 +74,62 @@ async function readBalanceWithClient(
     throw new Error("Commerce balance exceeds safe integer range");
   }
   return balance;
+}
+
+async function postTransferWithClient(
+  client: import("pg").PoolClient,
+  transferInput: CommerceLedgerTransfer,
+): Promise<CommerceLedgerTransfer> {
+  const transfer = normalizeCommerceLedgerTransfer(transferInput);
+  await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+    `commerce:ledger:${transfer.tenantId}:${transfer.ledgerEntryId}`,
+  ]);
+
+  const existing = await client.query<{ definition: CommerceLedgerTransfer }>(
+    "SELECT definition FROM commerce.ledger_entries WHERE tenant_id=$1 AND ledger_entry_id=$2",
+    [transfer.tenantId, transfer.ledgerEntryId],
+  );
+  if (existing.rows[0]) {
+    const replay = transferFromDefinition(existing.rows[0].definition);
+    if (canonicalJson(replay) !== canonicalJson(transfer)) {
+      throw conflict(
+        "commerce.ledger_replay_conflict",
+        "Ledger identity replayed with different content",
+      );
+    }
+    return replay;
+  }
+
+  if (protectedDebitKinds.has(transfer.debit.kind)) {
+    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+      `commerce:account:${transfer.debit.tenantId}:${transfer.debit.kind}:${transfer.debit.userId ?? "-"}:${transfer.debit.characterId ?? "-"}`,
+    ]);
+    const balance = await readBalanceWithClient(client, transfer.debit);
+    if (balance < transfer.amountCredits) {
+      throw conflict(
+        "commerce.insufficient_balance",
+        "Commerce account does not have enough Credits for this transfer",
+      );
+    }
+  }
+
+  const inserted = await client.query<{ definition: CommerceLedgerTransfer }>(
+    `INSERT INTO commerce.ledger_entries(
+       tenant_id, ledger_entry_id,
+       debit_kind, debit_user_id, debit_character_id,
+       credit_kind, credit_user_id, credit_character_id,
+       amount_credits, reason, quote_id, fulfillment_id, created_at, definition
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14::jsonb)
+     RETURNING definition`,
+    [
+      transfer.tenantId, transfer.ledgerEntryId,
+      transfer.debit.kind, transfer.debit.userId, transfer.debit.characterId,
+      transfer.credit.kind, transfer.credit.userId, transfer.credit.characterId,
+      transfer.amountCredits, transfer.reason, transfer.quoteId,
+      transfer.fulfillmentId, transfer.createdAt, canonicalJson(transfer),
+    ],
+  );
+  return transferFromDefinition(inserted.rows[0]!.definition);
 }
 
 export function createPostgresCommerceRepository(pool: Pool): CommerceRepository {
@@ -207,59 +262,89 @@ export function createPostgresCommerceRepository(pool: Pool): CommerceRepository
       });
     },
 
-    async postTransfer(input) {
-      const transfer = normalizeCommerceLedgerTransfer(input);
+    async readQuote(input) {
+      return withTransaction(
+        pool,
+        async (client) => {
+          const result = await client.query<{ definition: CommerceQuote }>(
+            "SELECT definition FROM commerce.quotes WHERE tenant_id=$1 AND quote_id=$2",
+            [input.tenantId, input.quoteId],
+          );
+          return result.rows[0] ? quoteFromDefinition(result.rows[0].definition) : null;
+        },
+        { isolation: "repeatable read", readOnly: true },
+      );
+    },
+
+    async readFulfillmentForQuote(input) {
+      return withTransaction(
+        pool,
+        async (client) => {
+          const result = await client.query<{ definition: CommerceFulfillmentAdmission }>(
+            "SELECT definition FROM commerce.fulfillments WHERE tenant_id=$1 AND quote_id=$2",
+            [input.tenantId, input.quoteId],
+          );
+          return result.rows[0]
+            ? fulfillmentFromDefinition(result.rows[0].definition)
+            : null;
+        },
+        { isolation: "repeatable read", readOnly: true },
+      );
+    },
+
+    async admitFulfillment(input) {
+      const admission = normalizeCommerceFulfillmentAdmission(input.admission);
+      const transfers = input.transfers.map(normalizeCommerceLedgerTransfer);
       return withTransaction(pool, async (client) => {
         await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
-          `commerce:ledger:${transfer.tenantId}:${transfer.ledgerEntryId}`,
+          `commerce:quote-admission:${admission.tenantId}:${admission.quoteId}`,
         ]);
 
-        const existing = await client.query<{ definition: CommerceLedgerTransfer }>(
-          "SELECT definition FROM commerce.ledger_entries WHERE tenant_id=$1 AND ledger_entry_id=$2",
-          [transfer.tenantId, transfer.ledgerEntryId],
+        const existing = await client.query<{ definition: CommerceFulfillmentAdmission }>(
+          "SELECT definition FROM commerce.fulfillments WHERE tenant_id=$1 AND quote_id=$2",
+          [admission.tenantId, admission.quoteId],
         );
         if (existing.rows[0]) {
-          const replay = transferFromDefinition(existing.rows[0].definition);
-          if (canonicalJson(replay) !== canonicalJson(transfer)) {
-            throw conflict(
-              "commerce.ledger_replay_conflict",
-              "Ledger identity replayed with different content",
-            );
-          }
-          return replay;
+          return fulfillmentFromDefinition(existing.rows[0].definition);
         }
 
-        if (protectedDebitKinds.has(transfer.debit.kind)) {
-          await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
-            `commerce:account:${transfer.debit.tenantId}:${transfer.debit.kind}:${transfer.debit.userId ?? "-"}:${transfer.debit.characterId ?? "-"}`,
-          ]);
-          const balance = await readBalanceWithClient(client, transfer.debit);
-          if (balance < transfer.amountCredits) {
-            throw conflict(
-              "commerce.insufficient_balance",
-              "Commerce account does not have enough Credits for this transfer",
-            );
-          }
-        }
-
-        const inserted = await client.query<{ definition: CommerceLedgerTransfer }>(
-          `INSERT INTO commerce.ledger_entries(
-             tenant_id, ledger_entry_id,
-             debit_kind, debit_user_id, debit_character_id,
-             credit_kind, credit_user_id, credit_character_id,
-             amount_credits, reason, quote_id, fulfillment_id, created_at, definition
-           ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14::jsonb)
+        const inserted = await client.query<{ definition: CommerceFulfillmentAdmission }>(
+          `INSERT INTO commerce.fulfillments(
+             tenant_id, fulfillment_id, quote_id, definition, created_at
+           ) VALUES ($1,$2,$3,$4::jsonb,$5)
            RETURNING definition`,
           [
-            transfer.tenantId, transfer.ledgerEntryId,
-            transfer.debit.kind, transfer.debit.userId, transfer.debit.characterId,
-            transfer.credit.kind, transfer.credit.userId, transfer.credit.characterId,
-            transfer.amountCredits, transfer.reason, transfer.quoteId,
-            transfer.fulfillmentId, transfer.createdAt, canonicalJson(transfer),
+            admission.tenantId,
+            admission.fulfillmentId,
+            admission.quoteId,
+            canonicalJson(admission),
+            admission.createdAt,
           ],
         );
-        return transferFromDefinition(inserted.rows[0]!.definition);
+
+        for (const transfer of transfers) {
+          if (
+            transfer.tenantId !== admission.tenantId ||
+            transfer.quoteId !== admission.quoteId ||
+            transfer.fulfillmentId !== admission.fulfillmentId
+          ) {
+            throw conflict(
+              "commerce.fulfillment_transfer_mismatch",
+              "Fulfillment admission transfer does not match admission identity",
+            );
+          }
+          await postTransferWithClient(client, transfer);
+        }
+
+        return fulfillmentFromDefinition(inserted.rows[0]!.definition);
       });
+    },
+
+    async postTransfer(input) {
+      return withTransaction(
+        pool,
+        (client) => postTransferWithClient(client, input),
+      );
     },
 
     async readBalance(input) {
@@ -277,9 +362,23 @@ export function createPostgresCommerceRepository(pool: Pool): CommerceRepository
         { tenantId: input.tenantId, kind: "pending-earnings", userId: input.userId, characterId: null },
         { tenantId: input.tenantId, kind: "available-earnings", userId: input.userId, characterId: null },
       ];
+      const balances = await withTransaction(
+        pool,
+        async (client) =>
+          Promise.all(
+            refs.map((ref) =>
+              readBalanceWithClient(client, normalizeCommerceAccountRef(ref)),
+            ),
+          ),
+        { isolation: "repeatable read", readOnly: true },
+      );
       const [agentFloatCredits, pendingEarningsCredits, availableEarningsCredits] =
-        await Promise.all(refs.map((ref) => this.readBalance(ref)));
-      return Object.freeze({ agentFloatCredits, pendingEarningsCredits, availableEarningsCredits });
+        balances;
+      return Object.freeze({
+        agentFloatCredits: agentFloatCredits ?? 0,
+        pendingEarningsCredits: pendingEarningsCredits ?? 0,
+        availableEarningsCredits: availableEarningsCredits ?? 0,
+      });
     },
   });
 }
