@@ -10,6 +10,8 @@ import {
 } from "@masanawa/telemetry";
 import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import Type from "typebox";
+import type { CryptoFinancialService } from "./financial_crypto.js";
+import type { BillingFinancialService } from "./financial_billing.js";
 
 export interface ReadinessCheck {
   readonly name: string;
@@ -611,6 +613,250 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
         });
         reply.code(202);
         return { accepted: true as const };
+      },
+    );
+  }
+
+
+  if (options.cryptoFinancial) {
+    const crypto = options.cryptoFinancial;
+
+    app.get("/v1/commerce/crypto/capabilities", async (request, reply) => {
+      try {
+        return crypto.capabilities({ authorizationHeader: request.headers.authorization });
+      } catch {
+        reply.code(401);
+        return { error: "unauthorized" };
+      }
+    });
+
+    app.get("/v1/commerce/crypto/routes", async (request, reply) => {
+      try {
+        return await crypto.listRoutes({ authorizationHeader: request.headers.authorization });
+      } catch (error) {
+        reply.code(error instanceof Error && error.message === "financial.auth.unauthorized" ? 401 : 503);
+        return { error: "crypto_routes_unavailable" };
+      }
+    });
+
+    app.post(
+      "/v1/commerce/crypto/quote",
+      {
+        schema: {
+          body: Type.Object({
+            amount: Type.Number({ exclusiveMinimum: 0 }),
+            priceCurrency: Type.String({ minLength: 2, maxLength: 32 }),
+            payCurrency: Type.String({ minLength: 2, maxLength: 32 }),
+          }, { additionalProperties: false }),
+        },
+      },
+      async (request, reply) => {
+        try {
+          return await crypto.quote({
+            authorizationHeader: request.headers.authorization,
+            amount: request.body.amount,
+            priceCurrency: request.body.priceCurrency,
+            payCurrency: request.body.payCurrency,
+          });
+        } catch (error) {
+          reply.code(error instanceof Error && error.message === "financial.auth.unauthorized" ? 401 : 400);
+          return { error: "crypto_quote_unavailable" };
+        }
+      },
+    );
+
+    app.post(
+      "/v1/commerce/crypto/payments",
+      {
+        schema: {
+          body: Type.Object({
+            requestId: Type.String({ minLength: 9, maxLength: 160 }),
+            amount: Type.Number({ exclusiveMinimum: 0 }),
+            priceCurrency: Type.String({ minLength: 2, maxLength: 32 }),
+            payCurrency: Type.String({ minLength: 2, maxLength: 32 }),
+            description: Type.Optional(Type.String({ minLength: 1, maxLength: 256 })),
+          }, { additionalProperties: false }),
+        },
+      },
+      async (request, reply) => {
+        try {
+          return await crypto.createPayment({
+            authorizationHeader: request.headers.authorization,
+            requestId: request.body.requestId,
+            amount: request.body.amount,
+            priceCurrency: request.body.priceCurrency,
+            payCurrency: request.body.payCurrency,
+            ...(request.body.description === undefined ? {} : { description: request.body.description }),
+          });
+        } catch (error) {
+          reply.code(error instanceof Error && error.message === "financial.auth.unauthorized" ? 401 : 400);
+          return { error: "crypto_payment_unavailable" };
+        }
+      },
+    );
+
+    app.get(
+      "/v1/commerce/crypto/payments/:requestId",
+      {
+        schema: {
+          params: Type.Object({ requestId: Type.String({ minLength: 9, maxLength: 160 }) }),
+          querystring: Type.Object({ refresh: Type.Optional(Type.Boolean()) }, { additionalProperties: false }),
+        },
+      },
+      async (request, reply) => {
+        try {
+          return await crypto.readPayment({
+            authorizationHeader: request.headers.authorization,
+            requestId: request.params.requestId,
+            refresh: request.query.refresh === true,
+          });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "";
+          reply.code(message === "financial.auth.unauthorized" ? 401 : message === "financial.crypto_payment_not_found" ? 404 : 503);
+          return { error: "crypto_payment_unavailable" };
+        }
+      },
+    );
+
+    app.post(
+      "/v1/webhooks/nowpayments",
+      { schema: { body: Type.Unknown() } },
+      async (request, reply) => {
+        const signature = request.headers["x-nowpayments-sig"];
+        if (typeof signature !== "string") {
+          reply.code(401);
+          return { error: "invalid_signature" };
+        }
+        try {
+          const result = await crypto.receiveIpn({ payload: request.body, signature });
+          return { accepted: true, duplicate: result.duplicate };
+        } catch {
+          reply.code(400);
+          return { error: "invalid_webhook" };
+        }
+      },
+    );
+  }
+
+  if (options.billingFinancial) {
+    const billing = options.billingFinancial;
+
+    app.get("/v1/commerce/bills/categories", async (request, reply) => {
+      try {
+        return await billing.listCategories({ authorizationHeader: request.headers.authorization });
+      } catch (error) {
+        reply.code(error instanceof Error && error.message === "financial.auth.unauthorized" ? 401 : 503);
+        return { error: "billing_catalog_unavailable" };
+      }
+    });
+
+    app.get(
+      "/v1/commerce/bills/categories/:categoryCode/billers",
+      { schema: { params: Type.Object({ categoryCode: Type.String({ minLength: 1, maxLength: 128 }) }) } },
+      async (request, reply) => {
+        try {
+          return await billing.listBillers({
+            authorizationHeader: request.headers.authorization,
+            categoryCode: request.params.categoryCode,
+          });
+        } catch (error) {
+          reply.code(error instanceof Error && error.message === "financial.auth.unauthorized" ? 401 : 503);
+          return { error: "billing_catalog_unavailable" };
+        }
+      },
+    );
+
+    app.get(
+      "/v1/commerce/bills/billers/:billerCode/items",
+      { schema: { params: Type.Object({ billerCode: Type.String({ minLength: 1, maxLength: 128 }) }) } },
+      async (request, reply) => {
+        try {
+          return await billing.listItems({
+            authorizationHeader: request.headers.authorization,
+            billerCode: request.params.billerCode,
+          });
+        } catch (error) {
+          reply.code(error instanceof Error && error.message === "financial.auth.unauthorized" ? 401 : 503);
+          return { error: "billing_catalog_unavailable" };
+        }
+      },
+    );
+
+    app.post(
+      "/v1/commerce/bills/purchases",
+      {
+        schema: {
+          body: Type.Object({
+            requestId: Type.String({ minLength: 9, maxLength: 160 }),
+            billerCode: Type.String({ minLength: 1, maxLength: 128 }),
+            itemCode: Type.String({ minLength: 1, maxLength: 128 }),
+            itemName: Type.String({ minLength: 1, maxLength: 300 }),
+            customerId: Type.String({ minLength: 1, maxLength: 200 }),
+            amount: Type.String({ minLength: 1, maxLength: 80 }),
+            catalogAmount: Type.String({ minLength: 1, maxLength: 80 }),
+            recipientValidation: Type.Optional(Type.Union([Type.Literal("required"), Type.Literal("not-required")])),
+          }, { additionalProperties: false }),
+        },
+      },
+      async (request, reply) => {
+        try {
+          return await billing.purchase({
+            authorizationHeader: request.headers.authorization,
+            requestId: request.body.requestId,
+            billerCode: request.body.billerCode,
+            itemCode: request.body.itemCode,
+            itemName: request.body.itemName,
+            customerId: request.body.customerId,
+            amount: request.body.amount,
+            catalogAmount: request.body.catalogAmount,
+            ...(request.body.recipientValidation === undefined ? {} : { recipientValidation: request.body.recipientValidation }),
+          });
+        } catch (error) {
+          reply.code(error instanceof Error && error.message === "financial.auth.unauthorized" ? 401 : 400);
+          return { error: "billing_purchase_unavailable" };
+        }
+      },
+    );
+
+    app.get(
+      "/v1/commerce/bills/purchases/:reference",
+      {
+        schema: {
+          params: Type.Object({ reference: Type.String({ minLength: 1, maxLength: 128 }) }),
+          querystring: Type.Object({ refresh: Type.Optional(Type.Boolean()) }, { additionalProperties: false }),
+        },
+      },
+      async (request, reply) => {
+        try {
+          return await billing.readPurchase({
+            authorizationHeader: request.headers.authorization,
+            reference: request.params.reference,
+            refresh: request.query.refresh === true,
+          });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "";
+          reply.code(message === "financial.auth.unauthorized" ? 401 : message === "financial.billing_not_found" ? 404 : 503);
+          return { error: "billing_purchase_unavailable" };
+        }
+      },
+    );
+
+    app.post(
+      "/v1/webhooks/flutterwave",
+      { schema: { body: Type.Unknown() } },
+      async (request, reply) => {
+        const verifHash = request.headers["verif-hash"];
+        const encoded = Buffer.from(JSON.stringify(request.body ?? {}), "utf8");
+        try {
+          const result = await billing.receiveWebhook({
+            rawBody: encoded,
+            verifHash: typeof verifHash === "string" ? verifHash : null,
+          });
+          return { accepted: true, duplicate: result.duplicate };
+        } catch {
+          reply.code(401);
+          return { error: "invalid_webhook" };
+        }
       },
     );
   }
