@@ -13,3 +13,6 @@ export * from "./eligibility.js";
 export * from "./trace.js";
 
 export * from "./failure.js";
+
+export * from "./guide.js";
+export * from "./guide-repository.js";
