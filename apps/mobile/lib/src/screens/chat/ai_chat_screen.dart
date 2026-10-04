@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:just_audio/just_audio.dart';
@@ -13,6 +14,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:video_player/video_player.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:audio_session/audio_session.dart';
 
 import '../../agents/agent_directory.dart';
 import '../../chat/chat_format.dart';
@@ -307,6 +310,22 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       return;
     }
     try {
+      await _activeVoiceBubble?._pauseFromAnotherBubble();
+      final session = await AudioSession.instance;
+      await session.configure(
+        AudioSessionConfiguration(
+          avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
+          avAudioSessionCategoryOptions:
+              AVAudioSessionCategoryOptions.allowBluetooth,
+          avAudioSessionMode: AVAudioSessionMode.spokenAudio,
+          androidAudioAttributes: const AndroidAudioAttributes(
+            contentType: AndroidAudioContentType.speech,
+            usage: AndroidAudioUsage.voiceCommunication,
+          ),
+          androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
+          androidWillPauseWhenDucked: true,
+        ),
+      );
       final allowed = await _recorder.hasPermission();
       if (!allowed) {
         if (mounted) _comingSoon('Microphone access');
@@ -1715,131 +1734,108 @@ class _RichMessageText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final u = context.masanawa;
-    final lines = text.replaceAll('\r\n', '\n').split('\n');
-    final blocks = <Widget>[];
-    var inCode = false;
-    final code = StringBuffer();
-
-    void flushCode() {
-      if (code.isEmpty) return;
-      final value = code.toString().trimRight();
-      blocks.add(
-        Container(
-          width: double.infinity,
-          margin: const EdgeInsets.symmetric(vertical: 5),
-          padding: const EdgeInsets.all(9),
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: .07),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Stack(
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(right: 28),
-                child: SelectableText(
-                  value,
-                  style: TextStyle(
+    final chunks = text.split('```');
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < chunks.length; i++)
+          if (i.isEven)
+            if (chunks[i].trim().isNotEmpty)
+              MarkdownBody(
+                data: chunks[i],
+                selectable: true,
+                onTapLink: (_, href, __) async {
+                  if (href == null) return;
+                  final uri = Uri.tryParse(href);
+                  if (uri != null &&
+                      (uri.scheme == 'https' || uri.scheme == 'http')) {
+                    await launchUrl(
+                      uri,
+                      mode: LaunchMode.externalApplication,
+                    );
+                  }
+                },
+                styleSheet: MarkdownStyleSheet(
+                  p: TextStyle(
+                    color: u.textPrimary,
+                    fontSize: 15,
+                    height: 1.4,
+                  ),
+                  h1: TextStyle(
+                    color: u.textPrimary,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  h2: TextStyle(
+                    color: u.textPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  h3: TextStyle(
+                    color: u.textPrimary,
+                    fontSize: 16.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  code: TextStyle(
                     color: u.textPrimary,
                     fontFamily: 'monospace',
                     fontSize: 12.5,
-                    height: 1.35,
                   ),
+                  tableBorder: TableBorder.all(color: u.structuralBorder),
+                  tableCellsPadding: const EdgeInsets.all(6),
                 ),
-              ),
-              Positioned(
-                top: -8,
-                right: -8,
-                child: IconButton(
-                  tooltip: 'Copy code',
-                  icon: const Icon(Icons.copy, size: 16),
-                  onPressed: () =>
-                      Clipboard.setData(ClipboardData(text: value)),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-      code.clear();
-    }
+              )
+          else
+            _CodeBlock(raw: chunks[i]),
+      ],
+    );
+  }
+}
 
-    for (final line in lines) {
-      if (line.trimLeft().startsWith('~~~') ||
-          line.trimLeft().startsWith('```')) {
-        if (inCode) flushCode();
-        inCode = !inCode;
-        continue;
-      }
-      if (inCode) {
-        code.writeln(line);
-        continue;
-      }
+class _CodeBlock extends StatelessWidget {
+  const _CodeBlock({required this.raw});
+  final String raw;
 
-      final trimmed = line.trim();
-      if (trimmed.isEmpty) {
-        blocks.add(const SizedBox(height: 6));
-        continue;
-      }
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    final firstBreak = raw.indexOf('\n');
+    final value = firstBreak > 0 &&
+            RegExp(r'^[a-zA-Z0-9_+#.-]+$').hasMatch(raw.substring(0, firstBreak))
+        ? raw.substring(firstBreak + 1).trimRight()
+        : raw.trim();
+    if (value.isEmpty) return const SizedBox.shrink();
 
-      final isHeading = trimmed.startsWith('#');
-      final headingText = isHeading
-          ? trimmed.replaceFirst(RegExp(r'^#{1,6}\s*'), '')
-          : trimmed;
-      final bullet = RegExp(r'^[-*]\s+(.+)$').firstMatch(trimmed);
-      final numbered = RegExp(r'^(\d+)\.\s+(.+)$').firstMatch(trimmed);
-
-      if (bullet != null || numbered != null) {
-        final content = bullet?.group(1) ?? numbered?.group(2) ?? '';
-        final marker = bullet != null ? '•' : '${numbered!.group(1)}.';
-        blocks.add(
-          Padding(
-            padding: const EdgeInsets.only(bottom: 3),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: 24,
-                  child: Text(
-                    marker,
-                    style: TextStyle(color: u.textPrimary, fontSize: 14),
-                  ),
-                ),
-                Expanded(
-                  child: SelectableText(
-                    content,
-                    style: TextStyle(
-                      color: u.textPrimary,
-                      fontSize: 15,
-                      height: 1.4,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      } else {
-        blocks.add(
-          Padding(
-            padding: const EdgeInsets.only(bottom: 2),
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(vertical: 5),
+      padding: const EdgeInsets.fromLTRB(10, 10, 4, 10),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: .07),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
             child: SelectableText(
-              headingText,
+              value,
               style: TextStyle(
                 color: u.textPrimary,
-                fontSize: isHeading ? 16 : 15,
-                height: 1.4,
-                fontWeight: isHeading ? FontWeight.w700 : FontWeight.w400,
+                fontFamily: 'monospace',
+                fontSize: 12.5,
+                height: 1.35,
               ),
             ),
           ),
-        );
-      }
-    }
-    if (inCode) flushCode();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: blocks,
+          IconButton(
+            tooltip: 'Copy code',
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(Icons.copy, size: 16),
+            onPressed: () => Clipboard.setData(ClipboardData(text: value)),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -2126,6 +2122,8 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
   Future<void> _toggle() async {
     try {
       if (_broken && mounted) setState(() => _broken = false);
+      final session = await AudioSession.instance;
+      await session.configure(AudioSessionConfiguration.speech());
       await _ensurePlayer();
       if (_playing) {
         await _player!.pause();
