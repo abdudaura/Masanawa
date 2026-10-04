@@ -376,6 +376,8 @@ class _SystemAdminPageState extends State<SystemAdminPage> {
 
   Future<SystemAdminData> _load() async => SystemAdminData(
         snapshot: await widget.api.systemSnapshot(),
+        memoryJobs: await widget.api.memoryJobs(),
+        queueIssues: await widget.api.queueIssues(),
         worlds: await widget.api.worlds(),
         approvals: await widget.api.approvals(),
       );
@@ -411,6 +413,64 @@ class _SystemAdminPageState extends State<SystemAdminPage> {
                       ),
                       const SizedBox(height: 8),
                       _MapMetrics(values: data.snapshot.queues),
+                      const SizedBox(height: 20),
+                      Text(
+                        'Memory jobs needing attention',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      if (data.memoryJobs.isEmpty)
+                        const Card(
+                          child: ListTile(title: Text('No active Memory issues')),
+                        )
+                      else
+                        ...data.memoryJobs.map(
+                          (job) => Card(
+                            child: ListTile(
+                              leading: const Icon(Icons.psychology_outlined),
+                              title: Text(
+                                '${job.extractorKey} · ${job.state}',
+                              ),
+                              subtitle: Text(
+                                '${shortId(job.memoryExtractionId)} · '
+                                'attempt ${job.attempt}/${job.maxAttempts}'
+                                '${job.safeErrorCode == null ? '' : '\n${job.safeErrorCode}'}',
+                              ),
+                              isThreeLine: job.safeErrorCode != null,
+                            ),
+                          ),
+                        ),
+                      const SizedBox(height: 20),
+                      Text(
+                        'Queue issues',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      if (data.queueIssues.isEmpty)
+                        const Card(
+                          child: ListTile(title: Text('No inbox/outbox issues')),
+                        )
+                      else
+                        ...data.queueIssues.map(
+                          (issue) => Card(
+                            child: ListTile(
+                              leading: Icon(
+                                issue.direction == 'inbox'
+                                    ? Icons.move_to_inbox_outlined
+                                    : Icons.outbox_outlined,
+                              ),
+                              title: Text(
+                                '${issue.direction} · ${issue.route}',
+                              ),
+                              subtitle: Text(
+                                '${shortId(issue.recordId)} · '
+                                'attempt ${issue.attempt}'
+                                '${issue.safeErrorCode == null ? '' : '\n${issue.safeErrorCode}'}',
+                              ),
+                              trailing: Chip(label: Text(issue.state)),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                   ListView(
@@ -475,11 +535,15 @@ class _SystemAdminPageState extends State<SystemAdminPage> {
 class SystemAdminData {
   const SystemAdminData({
     required this.snapshot,
+    required this.memoryJobs,
+    required this.queueIssues,
     required this.worlds,
     required this.approvals,
   });
 
   final AdminSystemSnapshot snapshot;
+  final List<AdminMemoryJob> memoryJobs;
+  final List<AdminQueueIssue> queueIssues;
   final List<AdminWorld> worlds;
   final List<AdminApproval> approvals;
 }
