@@ -162,10 +162,20 @@ Task 070 acceptance (satisfied on merged main):
     into this task. Task 073 remains unchecked while Task 072 acceptance is still open.
 - [ ] **074** Implement Character-aware context compiler using Identity/Memory/World.
 - [ ] **075** Implement tool/skill selection orchestration.
+  - Preserve a platform-wide Masanawa Core capability bundle while resolving exact
+    commercial SkillVersion assignments through the existing Skills registry.
+  - Selection must support the future distinction between originating/reseller Character
+    and fulfillment executor; it must not assume the visible Character performs every
+    admitted Skill itself.
 - [ ] **076** Implement run budgets, token/cost/time/tool guards.
+  - Budget contracts must be composable with future Customer Credit, Agent Float and
+    fulfillment-reserve admission without turning AgentRun into a wallet/ledger owner.
 - [ ] **077** Implement foreground conversational strategy.
 - [ ] **078** Implement research/multi-step strategy.
 - [ ] **079** Implement background/delegated specialist strategy.
+  - Delegation must preserve the lead/originating Character's conversation responsibility
+    so later reseller fallback can change executor without moving the customer to another
+    conversation.
 - [ ] **080** Implement run cancellation, supersession and stale-result protection.
 - [ ] **081** Implement AgentRun telemetry/evidence and operator diagnostics.
 - [ ] **082** Pass agent-runtime golden journey and provider/model replacement tests.
@@ -235,7 +245,21 @@ Task 070 acceptance (satisfied on merged main):
 - [ ] **131** Implement canonical social identity/account binding and content state.
 - [ ] **132** Implement social draft/approval/publish/outbox/receipt/retry journey.
 - [ ] **133** Implement deterministic quote/payment/ledger/fulfillment domain.
+  - Include versioned Masanawa Offer/catalog pricing linked to eligible Skill/runtime
+    capabilities without making price part of Skill identity.
+  - Include append-only Customer Credit, Agent Float, fulfillment reserve, pending
+    earnings, available earnings and platform-revenue ledger semantics.
+  - Record originating/reseller Character attribution independently from selected
+    fulfillment executor.
+  - Enforce one-clone-per-ordinary-User commercial ownership policy through canonical
+    identity/product contracts, not only UI.
+  - Support deterministic insufficient-Float fallback to Masanawa/other eligible
+    fulfillment while preserving the originating relationship and explicit commission
+    policy.
 - [ ] **134** Implement payment reconciliation/refund/adjustment/receipt journeys.
+  - Prove settlement, commission, fallback financing, refund/reversal and withdrawal
+    invariants; purchased Credits/Float must never become withdrawable through self-routed
+    traffic.
 - [ ] **135** Implement Studio project/artifact/provenance domain.
 - [ ] **136** Implement script/storyboard/render/voice/lipsync production workflow.
 - [ ] **137** Enforce Character identity consistency across social/media/commerce.
@@ -249,6 +273,28 @@ Task 070 acceptance (satisfied on merged main):
 - [ ] **142** Implement trace/evaluation datasets and regression harness.
 - [ ] **143** Implement candidate optimization/learning pipeline with promotion gates.
 - [ ] **144** Pass plugin isolation and no-silent-self-mutation acceptance tests.
+
+## Product overlay — creator clones and platform Characters
+
+The canonical implementation direction for creator clones/reseller economics is
+`docs/CREATOR-CLONE-ECONOMY.md`. It does not create a parallel numbered roadmap.
+
+Before commercial launch, the existing task sequence must collectively prove:
+- one personal clone per ordinary User;
+- simple conversational clone creation with platform-managed configuration;
+- Masanawa Core capabilities plus simple commercial Skill enrollment;
+- canonical Gwani and Gwana platform Characters with the same platform/support role;
+- Gwani default selection with Gemini Bodi voice preference;
+- user-selectable Gwana alternative with Gemini Sulafat voice preference;
+- server-side/default-agent settings rather than client hard-coding;
+- Offer-controlled pricing/margins;
+- Customer Credits, Agent Float and creator earnings separation;
+- share/referral attribution;
+- fallback fulfillment that preserves the originating clone's customer relationship;
+- deterministic commission and settlement.
+
+These requirements should land inside the owning Agent runtime, Workflow, Gateway,
+Realtime and Commerce tasks rather than as a temporary marketplace/wallet subsystem.
 
 ## Tasks 145-150 — Production hardening, launch and cutover
 
