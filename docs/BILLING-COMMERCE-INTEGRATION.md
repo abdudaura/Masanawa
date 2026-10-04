@@ -69,8 +69,11 @@ to bind these contracts to:
   provider IP allow-list requirement.
 
 The provider-side implementation in this branch also includes a production HTTPS transport,
-Security CredentialRef-resolved client construction, and deterministic catalog-to-Offer-draft
-projection. The raw secret is resolved at the adapter edge for each operation rather than
+Security CredentialRef-resolved client construction, deterministic catalog-to-Offer-draft
+projection, and a bounded Flutterwave v3 `verif-hash` webhook verifier. Webhook bodies are
+retained only as authenticated evidence with a raw-body fingerprint; they never settle a
+purchase directly. A verified callback must cause requery/reconciliation of the canonical
+fulfillment reference before value is released. The raw secret is resolved at the adapter edge for each operation rather than
 stored in a configuration object.
 
 Flutterwave currently documents Nigerian bill payments as requiring completed profile/KYC,
