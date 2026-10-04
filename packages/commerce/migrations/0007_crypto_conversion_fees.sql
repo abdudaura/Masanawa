@@ -90,3 +90,51 @@ ALTER TABLE commerce.crypto_intents
       AND provider_conversion_id IS NOT NULL
     )
   );
+
+
+ALTER TABLE commerce.crypto_intents
+  DROP CONSTRAINT IF EXISTS crypto_intents_operation_shape_check;
+
+ALTER TABLE commerce.crypto_intents
+  ADD CONSTRAINT crypto_intents_operation_shape_check CHECK (
+    (
+      operation = 'deposit'
+      AND target_asset IS NULL
+      AND target_network IS NULL
+      AND destination_address IS NULL
+    )
+    OR
+    (
+      operation = 'withdraw'
+      AND target_asset IS NULL
+      AND target_network IS NULL
+      AND destination_address IS NOT NULL
+    )
+    OR
+    (
+      operation = 'convert'
+      AND target_asset IS NOT NULL
+      AND destination_address IS NULL
+    )
+  );
+
+CREATE OR REPLACE FUNCTION commerce.reject_crypto_financial_mutation()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RAISE EXCEPTION 'crypto financial evidence is immutable';
+END;
+$$;
+
+DROP TRIGGER IF EXISTS crypto_ledger_entries_immutable
+  ON commerce.crypto_ledger_entries;
+CREATE TRIGGER crypto_ledger_entries_immutable
+  BEFORE UPDATE OR DELETE ON commerce.crypto_ledger_entries
+  FOR EACH ROW EXECUTE FUNCTION commerce.reject_crypto_financial_mutation();
+
+DROP TRIGGER IF EXISTS crypto_provider_events_immutable
+  ON commerce.crypto_provider_events;
+CREATE TRIGGER crypto_provider_events_immutable
+  BEFORE UPDATE OR DELETE ON commerce.crypto_provider_events
+  FOR EACH ROW EXECUTE FUNCTION commerce.reject_crypto_financial_mutation();
