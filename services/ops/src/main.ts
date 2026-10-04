@@ -117,7 +117,7 @@ function createDefaultDatabaseDependency(
     characterVersions:
       createPostgresCharacterVersionReferenceReader(database.pool),
     skills: createPostgresSkillRepository(database.pool),
-    platformAdminDatabase: database.pool,
+    platformAdminDatabase: database.pool as unknown as PlatformAdminQuery,
     close: database.close,
   });
 }
