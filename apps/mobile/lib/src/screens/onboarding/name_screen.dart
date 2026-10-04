@@ -68,7 +68,6 @@ class _NameScreenState extends ConsumerState<NameScreen> {
       if (signedIn.user.name.isNotEmpty) _name.text = signedIn.user.name;
     }
     final alreadyComplete = signedIn != null && !signedIn.user.isNewUser;
-    final submitting = session is SessionError ? false : signedIn?.user.isNewUser == true;
 
     return OnboardingScaffold(
       title: 'What should we call you?',
@@ -102,7 +101,7 @@ class _NameScreenState extends ConsumerState<NameScreen> {
           ),
           const SizedBox(height: 24),
           PrimaryButton(
-            label: alreadyComplete ? 'Continue' : 'Continue',
+            label: 'Continue',
             loading: false,
             onPressed: alreadyComplete ? () => context.go('/chats') : _submit,
           ),
