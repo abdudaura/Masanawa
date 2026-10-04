@@ -23,4 +23,23 @@ describe("financial request replay custody", () => {
     expect(() => assertFinancialReplay({ ...deposit, targetAsset: null, provider: "nowpayments" }, deposit)).not.toThrow();
     expect(() => assertFinancialReplay(intent, deposit)).toThrow("financial.crypto.request_conflict");
   });
+  it("binds conversion replay to the exact target asset and network", () => {
+    const conversion: FinancialReplayTerms = {
+      operation: "convert", asset: "USDTTRC20", network: "tron",
+      amount: "10", destinationAddress: null, targetAsset: "BTC", targetNetwork: null,
+    };
+    const admitted = {
+      ...conversion, targetAsset: "BTC", targetNetwork: null, provider: "nowpayments",
+    };
+    expect(() => assertFinancialReplay(admitted, conversion)).not.toThrow();
+    for (const change of [
+      { targetAsset: "ETH" },
+      { targetNetwork: "ethereum" },
+      { amount: "11" },
+      { operation: "withdraw" as const },
+    ]) {
+      expect(() => assertFinancialReplay({ ...admitted, ...change }, conversion))
+        .toThrow("financial.crypto.request_conflict");
+    }
+  });
 });
