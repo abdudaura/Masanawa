@@ -37,6 +37,20 @@ The universal shell is already merged. The previous window stopped while tracing
 ## Current step
 Replace client-side developer-token selection with the normal signed-in session as the only production credential, and add a bounded server-side bridge that validates the existing platform session identity before mapping it into canonical Masanawa authority. Preserve Alpha mode only as an explicit server-side development mode; do not expose Alpha credentials in the customer app.
 
-Implementation: in progress.
-Verification: pending.
-Deployment: not claimed.
+Implementation: substantially complete in PR #128:
+- removed client Developer/Alpha token UI and debug login;
+- normal OTP session is the only mobile credential;
+- hosted agent runtime defaults on;
+- Gateway validates the existing platform session via /auth/me;
+- external platform users map into canonical Masanawa users;
+- directory/conversation access is limited to support agents plus the user's relationships;
+- platform access-token refresh is shared with Gateway calls;
+- canonical DELETE /auth/logout is used;
+- obsolete client-token build/docs were removed.
+
+Verification:
+- PR is mergeable and based directly on main 24c8ed783cc2b4797e2c915a698b69ee997f3995.
+- GitHub Actions Foundation CI and Mobile Build currently fail before executing any step (runner allocation failure; jobs contain zero steps), so no passing CI is claimed.
+- Source audit found no remaining mobile Developer route, devLogin, AgentConnectionStore, connection.token, or Alpha mobile token references in the changed runtime paths.
+
+Deployment: not claimed. Hosted Gateway must not be switched until this PR is merged and executable verification is available.
