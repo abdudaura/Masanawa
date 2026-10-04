@@ -8,7 +8,10 @@ export {
 export {
   NowPaymentsPayoutClient,
   type NowPaymentsCreatedPayout,
+  type NowPaymentsPayoutAddressValidation,
   type NowPaymentsPayoutClientOptions,
+  type NowPaymentsPayoutFeeEstimate,
+  type NowPaymentsPayoutMinimum,
 } from "./payout.js";
 export {
   runReadOnlyNowPaymentsProbe,
