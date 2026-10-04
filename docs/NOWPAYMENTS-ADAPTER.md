@@ -108,7 +108,7 @@ returns the API key, request headers or raw provider bodies. It performs:
 A successful result exposes only reachability/authentication booleans, currency count,
 a bounded sample of provider currency codes and optional normalized minimum evidence.
 The current NOWPayments API documentation describes status and currency discovery as
-the first API integration checks. citeturn683464search0turn683464search1
+the first API integration checks.
 
 This probe is intentionally not an HTTP route by itself. The shared Gateway/integration
 owner may call it from an authenticated operator-only diagnostic surface or one-shot
