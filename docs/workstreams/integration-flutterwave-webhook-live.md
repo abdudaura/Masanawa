@@ -10,6 +10,7 @@
   - `scripts/flutterwave-webhook-proxy.mjs`
   - `scripts/flutterwave-webhook-proxy.test.mjs`
   - `scripts/flutterwave-qualification-trigger.mjs`
+  - `scripts/flutterwave-render-relay.mjs`
 - Shared/deployment operations:
   - Railway production worker start command may be changed to launch the owned proxy wrapper.
   - Railway production worker source may be repointed to this branch after review.
@@ -19,7 +20,7 @@
   - preserve PR #98 NOWPayments adapter and pre-deploy checks;
   - webhook payload is authenticated evidence only and must not directly settle value;
   - operator Bills execution must be separately authenticated, use deterministic request references, requery-before-dispatch, fail closed on ambiguous provider outcomes and never become the canonical customer Commerce API.
-- Current step: extend the owned proxy with a protected operator Bills execution endpoint for live provider qualification and one-off controlled purchases; no Gateway/Commerce ownership changes.
+- Current step: move Flutterwave Bills outbound traffic onto a narrow Render relay with stable documented outbound ranges; keep webhook ingress and canonical Commerce ownership unchanged.
 - Implementation commit before handoff update: `67302ac593d5d877a70f573715b1f3e587b4d906`.
 - Verification/deployment status:
   - Railway deployment `1fd2db39-0ff6-488e-b10c-940cb6659b39` succeeded in `ams`;
