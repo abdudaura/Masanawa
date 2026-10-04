@@ -1,4 +1,8 @@
 export {
+  runReadOnlyNowPaymentsProbe,
+  type NowPaymentsReadOnlyProbeResult,
+} from "./probe.js";
+export {
   normalizeCreatePaymentInput,
   parseCreatedPayment,
   type CreateNowPaymentsPaymentInput,
