@@ -764,7 +764,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   }
 
   Future<void> _forwardMessage(AiChatMessage message) async {
-    final agents = ref.read(agentDirectoryProvider).entries;
+    final agents = ref.read(agentDirectoryProvider).agents;
     final target = await showModalBottomSheet<AgentDirectoryEntry>(
       context: context,
       showDragHandle: true,
