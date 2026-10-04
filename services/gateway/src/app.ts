@@ -10,7 +10,6 @@ import {
 } from "@masanawa/telemetry";
 import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import Type from "typebox";
-import type { CryptoFinancialService } from "./financial_crypto.js";
 import type { BillingFinancialService } from "./financial_billing.js";
 
 export interface ReadinessCheck {
@@ -25,6 +24,7 @@ export interface GatewayAppOptions {
   readonly agentDirectory?: AgentDirectoryService;
   readonly agentConversation?: AgentConversationService;
   readonly financial?: FinancialService;
+  readonly billingFinancial?: BillingFinancialService;
 }
 
 const HealthResponseSchema = Type.Object(
@@ -683,126 +683,6 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     );
   }
 
-
-  if (options.cryptoFinancial) {
-    const crypto = options.cryptoFinancial;
-
-    app.get("/v1/commerce/crypto/capabilities", async (request, reply) => {
-      try {
-        return crypto.capabilities({ authorizationHeader: request.headers.authorization });
-      } catch {
-        reply.code(401);
-        return { error: "unauthorized" };
-      }
-    });
-
-    app.get("/v1/commerce/crypto/routes", async (request, reply) => {
-      try {
-        return await crypto.listRoutes({ authorizationHeader: request.headers.authorization });
-      } catch (error) {
-        reply.code(error instanceof Error && error.message === "financial.auth.unauthorized" ? 401 : 503);
-        return { error: "crypto_routes_unavailable" };
-      }
-    });
-
-    app.post(
-      "/v1/commerce/crypto/quote",
-      {
-        schema: {
-          body: Type.Object({
-            amount: Type.Number({ exclusiveMinimum: 0 }),
-            priceCurrency: Type.String({ minLength: 2, maxLength: 32 }),
-            payCurrency: Type.String({ minLength: 2, maxLength: 32 }),
-          }, { additionalProperties: false }),
-        },
-      },
-      async (request, reply) => {
-        try {
-          return await crypto.quote({
-            authorizationHeader: request.headers.authorization,
-            amount: request.body.amount,
-            priceCurrency: request.body.priceCurrency,
-            payCurrency: request.body.payCurrency,
-          });
-        } catch (error) {
-          reply.code(error instanceof Error && error.message === "financial.auth.unauthorized" ? 401 : 400);
-          return { error: "crypto_quote_unavailable" };
-        }
-      },
-    );
-
-    app.post(
-      "/v1/commerce/crypto/payments",
-      {
-        schema: {
-          body: Type.Object({
-            requestId: Type.String({ minLength: 9, maxLength: 160 }),
-            amount: Type.Number({ exclusiveMinimum: 0 }),
-            priceCurrency: Type.String({ minLength: 2, maxLength: 32 }),
-            payCurrency: Type.String({ minLength: 2, maxLength: 32 }),
-            description: Type.Optional(Type.String({ minLength: 1, maxLength: 256 })),
-          }, { additionalProperties: false }),
-        },
-      },
-      async (request, reply) => {
-        try {
-          return await crypto.createPayment({
-            authorizationHeader: request.headers.authorization,
-            requestId: request.body.requestId,
-            amount: request.body.amount,
-            priceCurrency: request.body.priceCurrency,
-            payCurrency: request.body.payCurrency,
-            ...(request.body.description === undefined ? {} : { description: request.body.description }),
-          });
-        } catch (error) {
-          reply.code(error instanceof Error && error.message === "financial.auth.unauthorized" ? 401 : 400);
-          return { error: "crypto_payment_unavailable" };
-        }
-      },
-    );
-
-    app.get(
-      "/v1/commerce/crypto/payments/:requestId",
-      {
-        schema: {
-          params: Type.Object({ requestId: Type.String({ minLength: 9, maxLength: 160 }) }),
-          querystring: Type.Object({ refresh: Type.Optional(Type.Boolean()) }, { additionalProperties: false }),
-        },
-      },
-      async (request, reply) => {
-        try {
-          return await crypto.readPayment({
-            authorizationHeader: request.headers.authorization,
-            requestId: request.params.requestId,
-            refresh: request.query.refresh === true,
-          });
-        } catch (error) {
-          const message = error instanceof Error ? error.message : "";
-          reply.code(message === "financial.auth.unauthorized" ? 401 : message === "financial.crypto_payment_not_found" ? 404 : 503);
-          return { error: "crypto_payment_unavailable" };
-        }
-      },
-    );
-
-    app.post(
-      "/v1/webhooks/nowpayments",
-      { schema: { body: Type.Unknown() } },
-      async (request, reply) => {
-        const signature = request.headers["x-nowpayments-sig"];
-        if (typeof signature !== "string") {
-          reply.code(401);
-          return { error: "invalid_signature" };
-        }
-        try {
-          const result = await crypto.receiveIpn({ payload: request.body, signature });
-          return { accepted: true, duplicate: result.duplicate };
-        } catch {
-          reply.code(400);
-          return { error: "invalid_webhook" };
-        }
-      },
-    );
-  }
 
   if (options.billingFinancial) {
     const billing = options.billingFinancial;
