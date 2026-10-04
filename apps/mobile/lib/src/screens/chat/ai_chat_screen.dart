@@ -2216,7 +2216,9 @@ class _ImageGalleryViewerState extends State<_ImageGalleryViewer> {
   @override
   void initState() {
     super.initState();
-    _index = widget.initialIndex.clamp(0, widget.paths.length - 1);
+    _index = widget.initialIndex
+        .clamp(0, widget.paths.length - 1)
+        .toInt();
     _controller = PageController(initialPage: _index);
   }
 
