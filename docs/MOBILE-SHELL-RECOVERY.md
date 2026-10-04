@@ -35,3 +35,23 @@ flutter build apk --debug --dart-define=AGENT_RUNTIME_ENABLED=true
 
 Then verify on Android: muted-before-connect; uninterrupted audio over several chunks; incoming phone call/headset unplug/background ends live capture; end/restart and speaker route recovery; cold and warm `masanawa://chat/<authorized-character-id>` navigation; signed-out link waits for login; foreground notification does not navigate; tap does; permission enables authenticated registration; account/Gateway switch during history/reconnect cannot apply stale results. Keep #104 and #125 draft until actual checks pass, integrate without overwriting active branches, and preserve the provider/deployment claims.
 
+
+
+## Continuation audit addendum
+
+A second shell audit found and corrected additional release gaps beyond the original #125 patch:
+
+- Encrypted shell-action journals were only cleared if they had been opened in the current process. Logout now enumerates secure storage and removes every journal scoped to the signed-in owner, including records from a previous app process; already-open instances are invalidated.
+- Clear-all/logout now closes live canonical CharacterSessions, cancels shell event subscriptions, stops live PCM, resets shell configuration and awaits local persistence before authentication is removed.
+- Local conversation cache files are account-scoped. The old global cache is never loaded and is deleted. Authentication restoration/account switching is generation-guarded so one user's cached conversations cannot populate another user's shell.
+- Forced sign-out and direct account changes clear in-memory conversation state, encrypted action state and the outgoing owner's local cache; the next owner is loaded only after the new authenticated identity is stable.
+- Switching Agent transports/Gateways now closes bindings through the previous transport instead of silently orphaning the old sessions.
+- The Settings notification switch now reflects the stored preference plus current system/Firebase authorization instead of starting visually enabled for every user.
+- Clear-all/logout removes only Masanawa-created temporary voice-note and reply-audio files. User-selected photos/documents are not deleted.
+- A stale recovery-test expectation for the retired `/v1/agent/**` namespace was corrected to the canonical `/agent/**` route.
+
+Regression coverage was extended with cross-process owner journal cleanup, invalidation of an already-open journal after owner cleanup, and canonical session closure during clear-all. Together with the earlier deep-link/live-audio/live-session cases, the recovery branch now carries 14 focused regression additions/extensions.
+
+Latest branch structural sweep found no conflict markers, TODO/FIXME markers or stale `/v1/agent/**` routes in the changed Dart/Kotlin recovery sources/tests. The current environment still has no Dart or Flutter executable. GitHub Actions runs for the latest head again ended before executing any workflow step: both Foundation CI and Mobile Build report failed jobs with `steps: null` and no logs. That is runner-allocation failure, not evidence that analysis/tests/build passed or failed.
+
+Current release boundary remains: run `flutter pub get`, `flutter analyze`, `flutter test`, an Android APK build and physical-device checks before merging/releasing. PR #125 intentionally remains draft until executable runner/device evidence exists.
