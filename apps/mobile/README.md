@@ -233,3 +233,65 @@ bash ./tool/build_alpha.sh --install
 
 Before running either helper, start the Gateway on laptop port 3000 with the
 Alpha environment values printed by the bootstrap.
+
+## Phone testing: local and hosted Gateways are separate
+
+A debug APK built for the laptop cannot reach that laptop through phone localhost
+unless USB reverse is active. The token printed by a local bootstrap belongs to
+the local Gateway; it does not authenticate against the hosted Gateway.
+
+After pulling the mobile testing fixes, build once:
+
+```powershell
+cd apps/mobile
+flutter pub get
+flutter build apk --debug --dart-define=ALPHA_TTS_ENABLED=true
+```
+
+Install `build/app/outputs/flutter-apk/app-debug.apk`, use the debug test-login
+shortcut, then open **Settings → Developer → Connect test app**. Enter:
+
+- Gateway: `https://nurainworker-production.up.railway.app`
+- Alpha access token: the existing `MASANAWA_ALPHA_DEV_TOKEN` from Railway project
+  **empowering-education**, service **@nurain/worker**, Variables. Use that
+  hosted value, not the token printed by a new laptop bootstrap. Do not paste
+  provider keys, database credentials or tokens into Git/chat.
+
+Tap **Connect**. The app verifies the authorized directory before saving the
+connection in platform secure storage. It never replaces a working connection
+when verification fails. Return to Agents and open Amina if the directory admits
+her. The debug connection persists after reopening; it is disabled in release
+builds and cannot turn the user app into an admin/runtime authority.
+
+For a preconfigured hosted build, the PowerShell helper supports:
+
+```powershell
+.\tool\build_alpha.ps1 -GatewayUrl "https://nurainworker-production.up.railway.app" -Install
+```
+
+Without an Alpha token, enter it through the debug connection screen after
+installation. With `ALPHA_DEV_ACCESS_TOKEN` set privately, the helper verifies
+that token against the selected directory before compiling. HTTPS hosted builds
+do not run USB reverse. Local loopback builds use the selected port for reverse.
+No helper runs bootstrap or changes existing identities.
+
+### Small device acceptance pass
+
+1. Open Agents, choose the visible agent, and send a short text.
+2. Record a voice note; confirm a real response and optional spoken playback.
+3. Attach a small image, PDF or text document and ask about its contents.
+4. Reopen the app; confirm connection settings and local conversation cache remain.
+5. Interrupt connectivity, send once, restore connectivity, and tap **Try again**.
+   The original user message stays in the thread; retry does not add a duplicate
+   user bubble or silently route to the legacy civic preview API.
+
+Chat waits up to 75 seconds for the server's 60-second inference limit. Directory
+refresh has its shorter timeout. Failed refreshes preserve the last roster except
+on denied/expired access; changing account or Gateway resets directory custody.
+Internal/vendor error messages are never rendered as agent feedback.
+
+Operator smoke checks can run inside the hosted Gateway using the existing
+private token: `node scripts/verify-hosted-alpha.mjs http://127.0.0.1:8080`.
+The check opens and closes a real session, runs one text and one small document
+turn, and prints only pass/fail summaries. It does not qualify Android recording,
+TTS, Skills, phone calls or durable Workflows.

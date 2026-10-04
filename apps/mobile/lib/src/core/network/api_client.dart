@@ -744,12 +744,14 @@ ApiException mapDioError(DioException e) {
     return const ApiException(
       'Connection timed out. Check your network and try again.',
       statusCode: null,
+      code: 'NETWORK_TIMEOUT',
     );
   }
   if (e.type == DioExceptionType.connectionError) {
     return const ApiException(
-      'Could not reach UNigeria. Check your connection.',
+      'Check your connection and try again.',
       statusCode: null,
+      code: 'NETWORK_UNREACHABLE',
     );
   }
   return ApiException(

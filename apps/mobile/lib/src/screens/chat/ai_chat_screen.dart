@@ -13,9 +13,11 @@ import 'package:record/record.dart';
 
 import '../../agents/agent_directory.dart';
 import '../../chat/chat_format.dart';
+import '../../chat/message_parts.dart';
 import '../../chat/message_parts_view.dart';
 import '../../state/agent_directory_state.dart';
 import '../../state/ai_chat_state.dart';
+import '../../state/session_state.dart';
 import '../../theme/masanawa_theme.dart';
 
 /// One Character conversation. Voice is the primary action while text,
@@ -74,6 +76,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   }
 
   void _sendText() {
+    if (ref.read(aiChatProvider).sendingIn.contains(widget.characterId)) return;
     final text = _input.text;
     if (text.trim().isEmpty) return;
     _input.clear();
@@ -82,9 +85,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   }
 
   void _comingSoon(String what) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$what are coming soon.')),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text('$what are coming soon.')));
   }
 
   // ---- Attachments ---------------------------------------------------------
@@ -145,7 +147,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       final path = file.path;
       if (path == null || path.isEmpty) return;
       final size = await file.length();
-      await ref.read(aiChatProvider.notifier).sendAttachment(
+      await ref
+          .read(aiChatProvider.notifier)
+          .sendAttachment(
             widget.characterId,
             ChatAttachment(
               kind: 'doc',
@@ -169,7 +173,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       if (picked == null) return;
       final size = await File(picked.path).length();
       if (!mounted) return;
-      await ref.read(aiChatProvider.notifier).sendAttachment(
+      await ref
+          .read(aiChatProvider.notifier)
+          .sendAttachment(
             widget.characterId,
             ChatAttachment(
               kind: 'image',
@@ -236,13 +242,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       return;
     }
     if (path == null || path.isEmpty) return;
-    await ref.read(aiChatProvider.notifier).sendAttachment(
+    await ref
+        .read(aiChatProvider.notifier)
+        .sendAttachment(
           widget.characterId,
-          ChatAttachment(
-            kind: 'voice',
-            path: path,
-            durationMs: seconds * 1000,
-          ),
+          ChatAttachment(kind: 'voice', path: path, durationMs: seconds * 1000),
         );
   }
 
@@ -270,11 +274,25 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(28),
-            child: Text(
-              directory.loading
-                  ? 'Loading agent…'
-                  : 'This agent is no longer available in your configured roster.',
-              textAlign: TextAlign.center,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  directory.loading
+                      ? 'Loading agent…'
+                      : directory.error ??
+                            'This agent isn’t available right now.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                OutlinedButton(
+                  onPressed: directory.loading
+                      ? null
+                      : () =>
+                            ref.read(agentDirectoryProvider.notifier).refresh(),
+                  child: const Text('Try again'),
+                ),
+              ],
             ),
           ),
         ),
@@ -282,10 +300,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(aiChatProvider.notifier).seedGreeting(
-            agent.characterId,
-            agent.greeting,
-          );
+      ref
+          .read(aiChatProvider.notifier)
+          .seedGreeting(agent.characterId, agent.greeting);
     });
 
     ref.listen(aiChatProvider, (prev, next) {
@@ -309,9 +326,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           leadingWidth: 40,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.canPop()
-                ? context.pop()
-                : context.go('/chats'),
+            onPressed: () =>
+                context.canPop() ? context.pop() : context.go('/chats'),
           ),
           title: InkWell(
             onTap: () => context.push('/agents'),
@@ -392,13 +408,45 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   : ListView.builder(
                       controller: _scroll,
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 12),
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
                       itemCount: messages.length + (sending ? 1 : 0),
                       itemBuilder: (context, index) {
                         if (index >= messages.length) {
                           return const _TypingBubble();
                         }
-                        return _ChatBubble(message: messages[index]);
+                        final message = messages[index];
+                        final failedParts = message.parts.where(
+                          (p) =>
+                              p.kind == AgentMessagePartKind.status &&
+                              p.status == 'failed',
+                        );
+                        final failure = failedParts.isEmpty
+                            ? null
+                            : failedParts.first;
+                        return _ChatBubble(
+                          message: message,
+                          onRetry: failure == null || sending
+                              ? null
+                              : () async {
+                                  if (failure.actionLabel == 'Sign in') {
+                                    await ref
+                                        .read(sessionProvider.notifier)
+                                        .logout();
+                                  } else if (failure.actionLabel ==
+                                      'Reconnect') {
+                                    if (mounted) context.push('/developer');
+                                  } else if (failure.referenceId != null) {
+                                    await ref
+                                        .read(aiChatProvider.notifier)
+                                        .retryMessage(
+                                          widget.characterId,
+                                          failure.referenceId!,
+                                        );
+                                  }
+                                },
+                        );
                       },
                     ),
             ),
@@ -430,9 +478,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             if (_showEmoji && !_recording)
               SizedBox(
                 height: 270,
-                child: EmojiPicker(
-                  textEditingController: _input,
-                ),
+                child: EmojiPicker(textEditingController: _input),
               ),
           ],
         ),
@@ -445,7 +491,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text('Clear chat with ${agent.displayName}?'),
-        content: const Text('All messages in this conversation will be removed.'),
+        content: const Text(
+          'All messages in this conversation will be removed.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
@@ -453,9 +501,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           ),
           TextButton(
             onPressed: () {
-              ref
-                  .read(aiChatProvider.notifier)
-                  .clearThread(widget.characterId);
+              ref.read(aiChatProvider.notifier).clearThread(widget.characterId);
               Navigator.of(dialogContext).pop();
             },
             child: const Text('Clear'),
@@ -548,8 +594,10 @@ class _Composer extends StatelessWidget {
                   children: [
                     IconButton(
                       tooltip: 'Emoji',
-                      icon: Icon(Icons.emoji_emotions_outlined,
-                          color: u.textMuted),
+                      icon: Icon(
+                        Icons.emoji_emotions_outlined,
+                        color: u.textMuted,
+                      ),
                       onPressed: onEmojiToggle,
                     ),
                     Expanded(
@@ -577,8 +625,7 @@ class _Composer extends StatelessWidget {
                     ),
                     IconButton(
                       tooltip: 'Camera',
-                      icon: Icon(Icons.camera_alt_outlined,
-                          color: u.textMuted),
+                      icon: Icon(Icons.camera_alt_outlined, color: u.textMuted),
                       onPressed: onCamera,
                     ),
                   ],
@@ -689,14 +736,19 @@ class _RecordingBar extends StatelessWidget {
 }
 
 class _ChatBubble extends StatelessWidget {
-  const _ChatBubble({required this.message});
+  const _ChatBubble({required this.message, this.onRetry});
 
   final AiChatMessage message;
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
     final u = context.masanawa;
     final isUser = message.isUser;
+    final failedParts = message.parts.where(
+      (p) => p.kind == AgentMessagePartKind.status && p.status == 'failed',
+    );
+    final failure = failedParts.isEmpty ? null : failedParts.first;
     final attachment = message.attachment;
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
@@ -736,8 +788,16 @@ class _ChatBubble extends StatelessWidget {
                   height: 1.4,
                 ),
               ),
-            if (message.parts.isNotEmpty)
-              MessagePartsView(parts: message.parts),
+            if (message.parts.any((p) => p != failure))
+              MessagePartsView(
+                parts: message.parts.where((p) => p != failure).toList(),
+              ),
+            if (failure != null)
+              TextButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh, size: 18),
+                label: Text(failure.actionLabel ?? 'Try again'),
+              ),
             const SizedBox(height: 3),
             Row(
               mainAxisSize: MainAxisSize.min,
@@ -790,13 +850,14 @@ class _ImageAttachment extends StatelessWidget {
         context: context,
         builder: (_) => Dialog(
           insetPadding: const EdgeInsets.all(16),
-          child: Image.file(file,
-              fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) =>
-                  const Padding(
-                    padding: EdgeInsets.all(24),
-                    child: Text('Photo no longer available on this device.'),
-                  )),
+          child: Image.file(
+            file,
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => const Padding(
+              padding: EdgeInsets.all(24),
+              child: Text('Photo no longer available on this device.'),
+            ),
+          ),
         ),
       ),
       child: ClipRRect(
@@ -834,8 +895,7 @@ class _DocTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.insert_drive_file,
-              size: 34, color: u.brand),
+          Icon(Icons.insert_drive_file, size: 34, color: u.brand),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -931,8 +991,8 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
                 _broken
                     ? Icons.error_outline
                     : _playing
-                        ? Icons.pause
-                        : Icons.play_arrow,
+                    ? Icons.pause
+                    : Icons.play_arrow,
                 color: u.brand,
               ),
             ),

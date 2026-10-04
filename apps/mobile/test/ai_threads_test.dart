@@ -8,7 +8,7 @@ import 'package:masanawa/src/state/ai_chat_state.dart';
 
 class _FailingClient extends ApiClient {
   _FailingClient()
-      : super(dio: Dio(BaseOptions(baseUrl: 'https://example.test')));
+    : super(dio: Dio(BaseOptions(baseUrl: 'https://example.test')));
 
   @override
   Future<String> aiChat(String message, {String? masana}) async {
@@ -17,8 +17,8 @@ class _FailingClient extends ApiClient {
 }
 
 ProviderContainer _container() => ProviderContainer(
-      overrides: [apiClientProvider.overrideWithValue(_FailingClient())],
-    );
+  overrides: [apiClientProvider.overrideWithValue(_FailingClient())],
+);
 
 void main() {
   test('chat threads are keyed by arbitrary Character IDs', () async {
@@ -28,8 +28,9 @@ void main() {
     await Future<void>.delayed(Duration.zero);
 
     await notifier.sendText('character-any-admin-configures', 'hello there');
-    final thread =
-        container.read(aiChatProvider).threads['character-any-admin-configures']!;
+    final thread = container
+        .read(aiChatProvider)
+        .threads['character-any-admin-configures']!;
     expect(thread.characterId, 'character-any-admin-configures');
     expect(thread.messages, hasLength(2));
     expect(thread.messages.first.text, 'hello there');
@@ -58,7 +59,10 @@ void main() {
     final thread = container.read(aiChatProvider).threads['character-2']!;
     expect(thread.messages, hasLength(2));
     expect(thread.messages.last.isUser, isFalse);
-    expect(thread.messages.last.text, contains('runtime is unavailable'));
+    expect(
+      thread.messages.last.text,
+      'I couldn’t respond just now. Please try again.',
+    );
     expect(container.read(aiChatProvider).sendingIn, isEmpty);
   });
 
@@ -85,24 +89,23 @@ void main() {
     expect(container.read(aiChatProvider).chatList, isEmpty);
     await notifier.sendText('character-a', 'one');
     await notifier.sendText('character-b', 'two');
-    final ids =
-        container.read(aiChatProvider).chatList.map((t) => t.characterId).toSet();
+    final ids = container
+        .read(aiChatProvider)
+        .chatList
+        .map((t) => t.characterId)
+        .toSet();
     expect(ids, {'character-a', 'character-b'});
 
     notifier.clearThread('character-b');
-    expect(
-      container.read(aiChatProvider).chatList.map((t) => t.characterId),
-      ['character-a'],
-    );
+    expect(container.read(aiChatProvider).chatList.map((t) => t.characterId), [
+      'character-a',
+    ]);
   });
 
   test('formatChatTime labels today, yesterday and older days', () {
     final now = DateTime.now();
     expect(formatChatTime(now), formatClock(now));
-    expect(
-      formatChatTime(now.subtract(const Duration(days: 1))),
-      'Yesterday',
-    );
+    expect(formatChatTime(now.subtract(const Duration(days: 1))), 'Yesterday');
     final old = DateTime(2026, 5, 12, 9, 30);
     expect(formatChatTime(old), '12/5/26');
   });

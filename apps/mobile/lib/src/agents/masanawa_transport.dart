@@ -26,17 +26,26 @@ class _GatewayClient {
     required Dio dio,
     required this.baseUrl,
     this.readAccessToken,
-  }) : dio = Dio(dio.options);
+  }) : dio = Dio(dio.options.copyWith(baseUrl: baseUrl)) {
+    // Keep injected adapters available for tests; never copy legacy interceptors.
+    this.dio.httpClientAdapter = dio.httpClientAdapter;
+  }
 
   final Dio dio;
   final String baseUrl;
   final String? Function()? readAccessToken;
 
-  Options get options {
+  Options options({bool turn = false}) {
     final token = readAccessToken?.call();
-    return Options(headers: {
-      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
-    });
+    return Options(
+      followRedirects: false,
+      receiveTimeout: turn
+          ? const Duration(seconds: 75)
+          : const Duration(seconds: 15),
+      headers: {
+        if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+      },
+    );
   }
 
   Future<Map<String, dynamic>> post(
@@ -47,7 +56,9 @@ class _GatewayClient {
       final res = await dio.post<Map<String, dynamic>>(
         '$baseUrl$path',
         data: body,
-        options: options,
+        options: options(
+          turn: path.endsWith('/turn') || path.endsWith('/media-turn'),
+        ),
       );
       final data = res.data;
       if (data == null) throw const ApiException('Empty response from server');
@@ -61,7 +72,7 @@ class _GatewayClient {
     try {
       final res = await dio.get<Map<String, dynamic>>(
         '$baseUrl$path',
-        options: options,
+        options: options(),
       );
       final data = res.data;
       if (data == null) throw const ApiException('Empty response from server');
@@ -80,16 +91,16 @@ class MasanawaAgentDirectoryTransport implements AgentDirectoryTransport {
     required String baseUrl,
     String? Function()? readAccessToken,
   }) : _client = _GatewayClient(
-          dio: dio,
-          baseUrl: baseUrl,
-          readAccessToken: readAccessToken,
-        );
+         dio: dio,
+         baseUrl: baseUrl,
+         readAccessToken: readAccessToken,
+       );
 
   final _GatewayClient _client;
 
   @override
   Future<List<AgentDirectoryEntry>> loadDirectory() async {
-    final data = await _client.get('/agent/directory');
+    final data = await _client.get('/v1/agent/directory');
     final raw = data['agents'];
     if (raw is! List) throw const ApiException('Invalid agent directory');
     return [
@@ -106,16 +117,16 @@ class MasanawaAgentTransport implements AgentTransport {
     required String baseUrl,
     String? Function()? readAccessToken,
   }) : _client = _GatewayClient(
-          dio: dio,
-          baseUrl: baseUrl,
-          readAccessToken: readAccessToken,
-        );
+         dio: dio,
+         baseUrl: baseUrl,
+         readAccessToken: readAccessToken,
+       );
 
   final _GatewayClient _client;
 
   @override
   Future<AgentSessionBinding> openSession(String characterId) async {
-    final data = await _client.post('/agent/sessions/open', {
+    final data = await _client.post('/v1/agent/sessions/open', {
       'characterId': characterId,
     });
     final id = data['characterSessionId'];
@@ -136,11 +147,8 @@ class MasanawaAgentTransport implements AgentTransport {
     required String text,
   }) async {
     final data = await _client.post(
-      '/agent/sessions/${binding.characterSessionId}/turn',
-      {
-        'characterId': binding.characterId,
-        'text': text,
-      },
+      '/v1/agent/sessions/${binding.characterSessionId}/turn',
+      {'characterId': binding.characterId, 'text': text},
     );
     final reply = data['reply'];
     if (reply is! String) {
@@ -178,7 +186,7 @@ class MasanawaAgentTransport implements AgentTransport {
     required String caption,
   }) async {
     final data = await _client.post(
-      '/agent/sessions/${binding.characterSessionId}/media-turn',
+      '/v1/agent/sessions/${binding.characterSessionId}/media-turn',
       {
         'characterId': binding.characterId,
         'caption': caption,
@@ -201,7 +209,7 @@ class MasanawaAgentTransport implements AgentTransport {
   Future<void> closeSession(AgentSessionBinding binding) async {
     try {
       await _client.post(
-        '/agent/sessions/${binding.characterSessionId}/close',
+        '/v1/agent/sessions/${binding.characterSessionId}/close',
         {'characterId': binding.characterId},
       );
     } catch (_) {

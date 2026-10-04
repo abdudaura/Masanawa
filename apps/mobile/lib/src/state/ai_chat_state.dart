@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:mime/mime.dart';
 
 import '../agents/agent_session.dart';
+import '../agents/agent_feedback.dart';
 import '../chat/chat_format.dart';
 import '../chat/message_parts.dart';
 import '../core/providers.dart';
@@ -34,26 +35,26 @@ class ChatAttachment {
   final int? durationMs;
 
   String get label => switch (kind) {
-        'image' => '📷 Photo',
-        'voice' => '🎤 Voice note (${formatDurationMs(durationMs ?? 0)})',
-        _ => '📄 ${name ?? 'Document'}',
-      };
+    'image' => '📷 Photo',
+    'voice' => '🎤 Voice note (${formatDurationMs(durationMs ?? 0)})',
+    _ => '📄 ${name ?? 'Document'}',
+  };
 
   Map<String, dynamic> toJson() => {
-        'kind': kind,
-        'path': path,
-        if (name != null) 'name': name,
-        if (sizeBytes != null) 'sizeBytes': sizeBytes,
-        if (durationMs != null) 'durationMs': durationMs,
-      };
+    'kind': kind,
+    'path': path,
+    if (name != null) 'name': name,
+    if (sizeBytes != null) 'sizeBytes': sizeBytes,
+    if (durationMs != null) 'durationMs': durationMs,
+  };
 
   factory ChatAttachment.fromJson(Map<String, dynamic> json) => ChatAttachment(
-        kind: json['kind'] as String? ?? 'doc',
-        path: json['path'] as String? ?? '',
-        name: json['name'] as String?,
-        sizeBytes: json['sizeBytes'] as int?,
-        durationMs: json['durationMs'] as int?,
-      );
+    kind: json['kind'] as String? ?? 'doc',
+    path: json['path'] as String? ?? '',
+    name: json['name'] as String?,
+    sizeBytes: json['sizeBytes'] as int?,
+    durationMs: json['durationMs'] as int?,
+  );
 }
 
 class AiChatMessage {
@@ -74,30 +75,30 @@ class AiChatMessage {
   final List<AgentMessagePart> parts;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'isUser': isUser,
-        'text': text,
-        'createdAt': createdAt.toIso8601String(),
-        if (attachment != null) 'attachment': attachment!.toJson(),
-        if (parts.isNotEmpty) 'parts': [for (final part in parts) part.toJson()],
-      };
+    'id': id,
+    'isUser': isUser,
+    'text': text,
+    'createdAt': createdAt.toIso8601String(),
+    if (attachment != null) 'attachment': attachment!.toJson(),
+    if (parts.isNotEmpty) 'parts': [for (final part in parts) part.toJson()],
+  };
 
   factory AiChatMessage.fromJson(Map<String, dynamic> json) => AiChatMessage(
-        id: json['id'] as String? ?? '',
-        isUser: json['isUser'] as bool? ?? false,
-        text: json['text'] as String? ?? '',
-        createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
-            DateTime.now(),
-        attachment: json['attachment'] == null
-            ? null
-            : ChatAttachment.fromJson(
-                (json['attachment'] as Map).cast<String, dynamic>()),
-        parts: [
-          for (final raw in (json['parts'] as List? ?? const []))
-            if (raw is Map)
-              AgentMessagePart.fromJson(raw.cast<String, dynamic>()),
-        ],
-      );
+    id: json['id'] as String? ?? '',
+    isUser: json['isUser'] as bool? ?? false,
+    text: json['text'] as String? ?? '',
+    createdAt:
+        DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
+    attachment: json['attachment'] == null
+        ? null
+        : ChatAttachment.fromJson(
+            (json['attachment'] as Map).cast<String, dynamic>(),
+          ),
+    parts: [
+      for (final raw in (json['parts'] as List? ?? const []))
+        if (raw is Map) AgentMessagePart.fromJson(raw.cast<String, dynamic>()),
+    ],
+  );
 }
 
 /// One conversation per canonical Character.
@@ -118,8 +119,7 @@ class ChatThread {
   final String? characterSessionId;
   final String? agentRunId;
 
-  AiChatMessage? get lastMessage =>
-      messages.isEmpty ? null : messages.last;
+  AiChatMessage? get lastMessage => messages.isEmpty ? null : messages.last;
 
   ChatThread copyWith({
     List<AiChatMessage>? messages,
@@ -127,25 +127,23 @@ class ChatThread {
     DateTime? updatedAt,
     String? characterSessionId,
     String? agentRunId,
-  }) =>
-      ChatThread(
-        characterId: characterId,
-        messages: messages ?? this.messages,
-        unread: unread ?? this.unread,
-        updatedAt: updatedAt ?? this.updatedAt,
-        characterSessionId: characterSessionId ?? this.characterSessionId,
-        agentRunId: agentRunId ?? this.agentRunId,
-      );
+  }) => ChatThread(
+    characterId: characterId,
+    messages: messages ?? this.messages,
+    unread: unread ?? this.unread,
+    updatedAt: updatedAt ?? this.updatedAt,
+    characterSessionId: characterSessionId ?? this.characterSessionId,
+    agentRunId: agentRunId ?? this.agentRunId,
+  );
 
   Map<String, dynamic> toJson() => {
-        'characterId': characterId,
-        'messages': [for (final m in messages) m.toJson()],
-        'unread': unread,
-        'updatedAt': updatedAt.toIso8601String(),
-        if (characterSessionId != null)
-          'characterSessionId': characterSessionId,
-        if (agentRunId != null) 'agentRunId': agentRunId,
-      };
+    'characterId': characterId,
+    'messages': [for (final m in messages) m.toJson()],
+    'unread': unread,
+    'updatedAt': updatedAt.toIso8601String(),
+    if (characterSessionId != null) 'characterSessionId': characterSessionId,
+    if (agentRunId != null) 'agentRunId': agentRunId,
+  };
 
   factory ChatThread.fromJson(Map<String, dynamic> json) {
     final characterId =
@@ -176,38 +174,40 @@ class AiChatState {
   final String? openThreadId;
 
   List<ChatThread> get chatList {
-    final list =
-        threads.values.where((t) => t.messages.isNotEmpty).toList();
+    final list = threads.values.where((t) => t.messages.isNotEmpty).toList();
     list.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
     return list;
   }
 
-  int get totalUnread =>
-      threads.values.fold(0, (sum, t) => sum + t.unread);
+  int get totalUnread => threads.values.fold(0, (sum, t) => sum + t.unread);
 
   AiChatState copyWith({
     Map<String, ChatThread>? threads,
     Set<String>? sendingIn,
     String? openThreadId,
     bool clearOpen = false,
-  }) =>
-      AiChatState(
-        threads: threads ?? this.threads,
-        sendingIn: sendingIn ?? this.sendingIn,
-        openThreadId: clearOpen ? null : (openThreadId ?? this.openThreadId),
-      );
+  }) => AiChatState(
+    threads: threads ?? this.threads,
+    sendingIn: sendingIn ?? this.sendingIn,
+    openThreadId: clearOpen ? null : (openThreadId ?? this.openThreadId),
+  );
 }
 
 class AiChatController extends Notifier<AiChatState> {
   int _seq = 0;
   bool _disposed = false;
   final Map<String, AgentSessionBinding> _bindings = {};
-  bool _runtimeDown = false;
+  int _connectionGeneration = 0;
+  final Map<String, int> _threadGenerations = {};
 
   @override
   AiChatState build() {
     scheduleMicrotask(_load);
     ref.onDispose(() => _disposed = true);
+    ref.listen(agentTransportProvider, (_, __) {
+      _connectionGeneration++;
+      _bindings.clear();
+    });
     return const AiChatState();
   }
 
@@ -259,20 +259,25 @@ class AiChatController extends Notifier<AiChatState> {
 
   Future<void> _dispatchUserMessage(
     String characterId,
-    AiChatMessage userMsg,
-  ) async {
+    AiChatMessage userMsg, {
+    bool retry = false,
+  }) async {
+    final connectionGeneration = _connectionGeneration;
+    final threadGeneration = _threadGenerations[characterId] ?? 0;
     final thread = threadOf(characterId);
     state = state.copyWith(
       threads: {
         ...state.threads,
         characterId: thread.copyWith(
-          messages: [...thread.messages, userMsg],
+          messages: retry ? thread.messages : [...thread.messages, userMsg],
           updatedAt: DateTime.now(),
         ),
       },
       sendingIn: {...state.sendingIn, characterId},
     );
     await _save();
+    if (_disposed || threadGeneration != (_threadGenerations[characterId] ?? 0))
+      return;
     try {
       final attachment = userMsg.attachment;
       final result = attachment == null
@@ -282,6 +287,13 @@ class AiChatController extends Notifier<AiChatState> {
               attachment,
               caption: userMsg.text,
             );
+      if (_disposed ||
+          threadGeneration != (_threadGenerations[characterId] ?? 0)) {
+        return;
+      }
+      if (connectionGeneration != _connectionGeneration) {
+        throw const ApiException('Connection changed');
+      }
       _appendAi(
         characterId,
         result.text,
@@ -289,11 +301,59 @@ class AiChatController extends Notifier<AiChatState> {
         agentRunId: result.agentRunId,
       );
       unawaited(AlphaSpeech.speak(result.text));
-    } catch (_) {
-      _appendAi(characterId, _fallbackReply(userMsg));
+    } catch (error) {
+      if (_disposed ||
+          threadGeneration != (_threadGenerations[characterId] ?? 0)) {
+        return;
+      }
+      if (error is ApiException &&
+          (error.statusCode == 401 ||
+              error.statusCode == 403 ||
+              error.statusCode == 404)) {
+        _bindings.remove(characterId);
+      }
+      final feedback = AgentFeedback.fromError(error, conversation: true);
+      _appendAi(
+        characterId,
+        feedback.message,
+        parts: [
+          AgentMessagePart(
+            kind: AgentMessagePartKind.status,
+            status: 'failed',
+            referenceId: userMsg.id,
+            actionLabel: feedback.actionLabel,
+          ),
+        ],
+      );
     }
   }
 
+  Future<void> retryMessage(String characterId, String messageId) async {
+    if (state.sendingIn.contains(characterId)) return;
+    final thread = threadOf(characterId);
+    final users = thread.messages.where((m) => m.id == messageId && m.isUser);
+    if (users.isEmpty) return;
+    final failures = thread.messages.where(
+      (m) => m.parts.any(
+        (p) =>
+            p.kind == AgentMessagePartKind.status &&
+            p.status == 'failed' &&
+            p.referenceId == messageId,
+      ),
+    );
+    if (failures.isEmpty) return;
+    state = state.copyWith(
+      threads: {
+        ...state.threads,
+        characterId: thread.copyWith(
+          messages: thread.messages
+              .where((m) => !failures.contains(m))
+              .toList(),
+        ),
+      },
+    );
+    await _dispatchUserMessage(characterId, users.first, retry: true);
+  }
 
   Future<AgentTurnResult> _sendMediaViaTransport(
     String characterId,
@@ -303,72 +363,44 @@ class AiChatController extends Notifier<AiChatState> {
     final file = File(attachment.path);
     final bytes = await file.readAsBytes();
     if (bytes.isEmpty || bytes.length > 8 * 1024 * 1024) {
-      throw const ApiException('Attachment must be between 1 byte and 8 MB');
+      throw const ApiException(
+        'Attachment must be between 1 byte and 8 MB',
+        code: 'ATTACHMENT_TOO_LARGE',
+      );
     }
-    final mimeType = lookupMimeType(
-          attachment.path,
-          headerBytes: bytes.take(16).toList(),
-        ) ??
+    final mimeType =
+        lookupMimeType(attachment.path, headerBytes: bytes.take(16).toList()) ??
         switch (attachment.kind) {
           'voice' => 'audio/mp4',
           'image' => 'image/jpeg',
           _ => 'application/octet-stream',
         };
 
-    final primary =
-        _runtimeDown ? _previewTransport() : ref.read(agentTransportProvider);
-    try {
-      final binding = await _bindingFor(characterId, primary);
-      return await primary.sendMediaTurn(
-        binding: binding,
-        bytes: bytes,
-        mimeType: mimeType,
-        caption: caption,
-      );
-    } catch (_) {
-      if (primary is PreviewAgentTransport) rethrow;
-      _runtimeDown = true;
-      final preview = _previewTransport();
-      final binding = await _bindingFor(characterId, preview);
-      return preview.sendMediaTurn(
-        binding: binding,
-        bytes: bytes,
-        mimeType: mimeType,
-        caption: caption,
-      );
-    }
+    final transport = ref.read(agentTransportProvider);
+    final binding = await _bindingFor(characterId, transport);
+    return transport.sendMediaTurn(
+      binding: binding,
+      bytes: bytes,
+      mimeType: mimeType,
+      caption: caption,
+    );
   }
 
   Future<AgentTurnResult> _sendViaTransport(
     String characterId,
     String prompt,
   ) async {
-    final primary =
-        _runtimeDown ? _previewTransport() : ref.read(agentTransportProvider);
-    try {
-      final binding = await _bindingFor(characterId, primary);
-      return await primary.sendTurn(binding: binding, text: prompt);
-    } catch (_) {
-      if (primary is PreviewAgentTransport) rethrow;
-      _runtimeDown = true;
-      final preview = _previewTransport();
-      final binding = await _bindingFor(characterId, preview);
-      return preview.sendTurn(binding: binding, text: prompt);
-    }
+    final transport = ref.read(agentTransportProvider);
+    final binding = await _bindingFor(characterId, transport);
+    return transport.sendTurn(binding: binding, text: prompt);
   }
-
-  AgentTransport _previewTransport() => PreviewAgentTransport(
-        sendPreview: (message, characterId) =>
-            ref.read(apiClientProvider).aiChat(
-                  message,
-                  masana: characterId,
-                ),
-      );
 
   Future<AgentSessionBinding> _bindingFor(
     String characterId,
     AgentTransport transport,
   ) async {
+    final connectionGeneration = _connectionGeneration;
+    final threadGeneration = _threadGenerations[characterId] ?? 0;
     final cached = _bindings[characterId];
     final previewCached =
         cached != null && cached.characterSessionId.startsWith('preview-');
@@ -377,7 +409,23 @@ class AiChatController extends Notifier<AiChatState> {
       return cached;
     }
     final binding = await transport.openSession(characterId);
+    if (connectionGeneration != _connectionGeneration ||
+        threadGeneration != (_threadGenerations[characterId] ?? 0)) {
+      unawaited(transport.closeSession(binding));
+      throw const ApiException('Conversation changed');
+    }
+    if (_disposed) return binding;
     _bindings[characterId] = binding;
+    final thread = threadOf(characterId);
+    state = state.copyWith(
+      threads: {
+        ...state.threads,
+        characterId: thread.copyWith(
+          characterSessionId: binding.characterSessionId,
+        ),
+      },
+    );
+    await _save();
     return binding;
   }
 
@@ -445,37 +493,31 @@ class AiChatController extends Notifier<AiChatState> {
     if (!kDebugMode) {
       throw StateError('Scenario injection is debug-only');
     }
-    _appendAi(
-      characterId,
-      text,
-      parts: [part],
-    );
+    _appendAi(characterId, text, parts: [part]);
   }
 
   void clearThread(String characterId) {
+    _threadGenerations[characterId] =
+        (_threadGenerations[characterId] ?? 0) + 1;
+    _bindings.remove(characterId);
     final threads = {...state.threads}..remove(characterId);
-    state = state.copyWith(threads: threads);
+    state = state.copyWith(
+      threads: threads,
+      sendingIn: {...state.sendingIn}..remove(characterId),
+    );
     _save();
   }
 
   void clearAll() {
-    state = state.copyWith(threads: {});
+    for (final id in state.threads.keys) {
+      _threadGenerations[id] = (_threadGenerations[id] ?? 0) + 1;
+    }
+    _bindings.clear();
+    state = state.copyWith(threads: {}, sendingIn: {});
     _save();
   }
 
-  String _newId() =>
-      'm-${DateTime.now().microsecondsSinceEpoch}-${_seq++}';
-
-  String _fallbackReply(AiChatMessage userMsg) {
-    final buffer = StringBuffer(
-      'The live Masanawa agent runtime is unavailable right now. ',
-    );
-    if (userMsg.attachment != null) {
-      buffer.write('Your ${userMsg.attachment!.label} is still on this device. ');
-    }
-    buffer.write('I have kept this conversation locally so you can retry.');
-    return buffer.toString();
-  }
+  String _newId() => 'm-${DateTime.now().microsecondsSinceEpoch}-${_seq++}';
 
   Future<File?> _threadsFile() async {
     try {
@@ -497,7 +539,7 @@ class AiChatController extends Notifier<AiChatState> {
           .toList();
       if (_disposed || list.isEmpty) return;
       state = state.copyWith(
-        threads: {for (final t in list) t.characterId: t},
+        threads: {for (final t in list) t.characterId: t, ...state.threads},
       );
     } catch (_) {
       // Corrupt/missing cache never prevents the user from opening chat.
@@ -516,5 +558,6 @@ class AiChatController extends Notifier<AiChatState> {
   }
 }
 
-final aiChatProvider =
-    NotifierProvider<AiChatController, AiChatState>(AiChatController.new);
+final aiChatProvider = NotifierProvider<AiChatController, AiChatState>(
+  AiChatController.new,
+);

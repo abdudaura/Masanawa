@@ -5,9 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../agents/masanawa_transport.dart';
+import '../../agents/agent_feedback.dart';
 import '../../chat/message_parts.dart';
 import '../../core/providers.dart';
 import '../../state/agent_directory_state.dart';
+import '../../state/agent_connection_state.dart';
 import '../../state/ai_chat_state.dart';
 import '../../state/session_state.dart';
 import '../../theme/masanawa_theme.dart';
@@ -23,9 +25,72 @@ class _DeveloperScreenState extends ConsumerState<DeveloperScreen> {
   bool _checking = false;
   String _health = 'Not checked';
   String _readiness = 'Not checked';
+  final _gateway = TextEditingController();
+  final _token = TextEditingController();
+  bool _connecting = false;
+  String? _connectionMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _gateway.text = ref.read(agentConnectionProvider).baseUrl;
+  }
+
+  @override
+  void dispose() {
+    _gateway.dispose();
+    _token.dispose();
+    super.dispose();
+  }
+
+  Future<void> _connect() async {
+    if (!kDebugMode || _connecting) return;
+    setState(() {
+      _connecting = true;
+      _connectionMessage = null;
+    });
+    try {
+      final connection = ref.read(agentConnectionProvider);
+      final agents = await ref
+          .read(agentConnectionProvider.notifier)
+          .connect(
+            baseUrl: _gateway.text,
+            token: _token.text.trim().isEmpty
+                ? connection.token ?? kAlphaDevAccessToken
+                : _token.text,
+            verify: (url, token) => MasanawaAgentDirectoryTransport(
+              dio: ref.read(dioProvider),
+              baseUrl: url,
+              readAccessToken: () => token,
+            ).loadDirectory(),
+          );
+      if (!mounted) return;
+      _token.clear();
+      setState(
+        () => _connectionMessage = agents.isEmpty
+            ? 'Connected. No agents are available for this account yet.'
+            : 'Connected. ${agents.length} ${agents.length == 1 ? 'agent is' : 'agents are'} ready to open.',
+      );
+      // A connection change rebuilds the directory transport automatically.
+      await _checkRuntime();
+    } on FormatException catch (error) {
+      if (mounted) {
+        setState(() => _connectionMessage = error.message.toString());
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(
+          () => _connectionMessage = AgentFeedback.fromError(error).message,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _connecting = false);
+    }
+  }
 
   Future<void> _checkRuntime() async {
-    if (!isAgentRuntimeConfigured) {
+    final connection = ref.read(agentConnectionProvider);
+    if (!connection.configured) {
       setState(() {
         _health = 'Not configured';
         _readiness = 'Not configured';
@@ -37,11 +102,12 @@ class _DeveloperScreenState extends ConsumerState<DeveloperScreen> {
     final dio = ref.read(dioProvider);
     try {
       final health = await dio.get<Map<String, dynamic>>(
-        '$kAgentBaseUrl/healthz',
+        '${connection.baseUrl}/healthz',
+        options: Options(followRedirects: false),
       );
       final ready = await dio.get<Map<String, dynamic>>(
-        '$kAgentBaseUrl/readyz',
-        options: Options(validateStatus: (_) => true),
+        '${connection.baseUrl}/readyz',
+        options: Options(validateStatus: (_) => true, followRedirects: false),
       );
       if (!mounted) return;
       setState(() {
@@ -63,13 +129,29 @@ class _DeveloperScreenState extends ConsumerState<DeveloperScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (!kDebugMode) {
+      return const Scaffold(
+        body: Center(child: Text('This page is unavailable.')),
+      );
+    }
     final u = context.masanawa;
+    final connection = ref.watch(agentConnectionProvider);
+    ref.listen(agentConnectionProvider, (previous, next) {
+      if (previous?.restoring == true &&
+          !next.restoring &&
+          _gateway.text == previous!.baseUrl) {
+        _gateway.text = next.baseUrl;
+      }
+    });
     final directory = ref.watch(agentDirectoryProvider);
     final chats = ref.watch(aiChatProvider);
     final session = ref.watch(sessionProvider);
-    final token = session is SessionSignedIn ? session.tokens.accessToken : null;
-    final scenarioAgent =
-        directory.agents.isEmpty ? null : directory.agents.first;
+    final token = session is SessionSignedIn
+        ? session.tokens.accessToken
+        : null;
+    final scenarioAgent = directory.agents.isEmpty
+        ? null
+        : directory.agents.first;
     String? lastRun;
     for (final thread in chats.chatList) {
       if (thread.agentRunId != null) {
@@ -91,15 +173,95 @@ class _DeveloperScreenState extends ConsumerState<DeveloperScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    'Connect test app',
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Use the address and Alpha token from the same Gateway. Your laptop token and hosted token are different.',
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _gateway,
+                    enabled: !_connecting,
+                    autocorrect: false,
+                    keyboardType: TextInputType.url,
+                    decoration: const InputDecoration(
+                      labelText: 'Gateway HTTPS address',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _token,
+                    enabled: !_connecting,
+                    obscureText: true,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    decoration: InputDecoration(
+                      labelText: 'Alpha access token',
+                      helperText: connection.token == null
+                          ? 'Stored securely after verification.'
+                          : 'Leave blank to keep the saved token.',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton(
+                    onPressed: _connecting || connection.restoring
+                        ? null
+                        : _connect,
+                    child: Text(_connecting ? 'Connecting…' : 'Connect'),
+                  ),
+                  if (_connectionMessage != null) ...[
+                    const SizedBox(height: 8),
+                    Text(_connectionMessage!),
+                  ],
+                  TextButton(
+                    onPressed: _connecting
+                        ? null
+                        : () async {
+                            await ref
+                                .read(agentConnectionProvider.notifier)
+                                .reset();
+                            if (mounted) {
+                              setState(() {
+                                _gateway.text = kAgentBaseUrl;
+                                _token.clear();
+                                _connectionMessage = null;
+                              });
+                            }
+                          },
+                    child: const Text('Use build settings'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
           _DiagnosticCard(
             title: 'Environment',
             rows: {
               'Build': kDebugMode ? 'Debug' : 'Release',
-              'Agent runtime':
-                  isAgentRuntimeConfigured ? 'Configured' : 'Disabled',
-              'Gateway': kAgentBaseUrl.isEmpty ? 'Not set' : kAgentBaseUrl,
-              'Auth token':
-                  token == null ? 'None' : (isDevAccessToken(token) ? 'Alpha/dev' : 'User'),
+              'Agent runtime': connection.restoring
+                  ? 'Restoring'
+                  : connection.configured
+                  ? 'Configured'
+                  : 'Disabled',
+              'Gateway': connection.baseUrl.isEmpty
+                  ? 'Not set'
+                  : connection.baseUrl,
+              'Connection token': connection.token == null
+                  ? 'Build/session'
+                  : 'Securely saved',
+              'Auth token': token == null
+                  ? 'None'
+                  : (isDevAccessToken(token) ? 'Alpha/dev' : 'User'),
             },
           ),
           const SizedBox(height: 12),
@@ -109,8 +271,9 @@ class _DeveloperScreenState extends ConsumerState<DeveloperScreen> {
               'Health': _health,
               'Readiness': _readiness,
               'Configured agents': '${directory.agents.length}',
-              'Directory':
-                  directory.loading ? 'Loading' : (directory.error ?? 'Loaded'),
+              'Directory': directory.loading
+                  ? 'Loading'
+                  : (directory.error ?? 'Loaded'),
               'Local conversations': '${chats.chatList.length}',
               'Last AgentRun': lastRun ?? 'None yet',
             },
@@ -151,12 +314,15 @@ class _DeveloperScreenState extends ConsumerState<DeveloperScreen> {
                 onPressed: scenarioAgent == null
                     ? null
                     : () {
-                        ref.read(aiChatProvider.notifier).injectScenario(
+                        ref
+                            .read(aiChatProvider.notifier)
+                            .injectScenario(
                               scenarioAgent.characterId,
                               part: const AgentMessagePart(
                                 kind: AgentMessagePartKind.work,
                                 title: 'Research prospects',
-                                body: 'Visual test of long-running work progress.',
+                                body:
+                                    'Visual test of long-running work progress.',
                                 status: 'working',
                                 progressCurrent: 31,
                                 progressTotal: 50,
@@ -171,12 +337,15 @@ class _DeveloperScreenState extends ConsumerState<DeveloperScreen> {
                 onPressed: scenarioAgent == null
                     ? null
                     : () {
-                        ref.read(aiChatProvider.notifier).injectScenario(
+                        ref
+                            .read(aiChatProvider.notifier)
+                            .injectScenario(
                               scenarioAgent.characterId,
                               part: const AgentMessagePart(
                                 kind: AgentMessagePartKind.artifact,
                                 title: 'Alpha Research Report',
-                                body: 'Visual test of an agent-produced artifact.',
+                                body:
+                                    'Visual test of an agent-produced artifact.',
                                 status: 'completed',
                                 file: AgentFileRef(
                                   fileId: 'scenario-file',
@@ -194,7 +363,9 @@ class _DeveloperScreenState extends ConsumerState<DeveloperScreen> {
                 onPressed: scenarioAgent == null
                     ? null
                     : () {
-                        ref.read(aiChatProvider.notifier).injectScenario(
+                        ref
+                            .read(aiChatProvider.notifier)
+                            .injectScenario(
                               scenarioAgent.characterId,
                               part: const AgentMessagePart(
                                 kind: AgentMessagePartKind.approval,
@@ -214,7 +385,9 @@ class _DeveloperScreenState extends ConsumerState<DeveloperScreen> {
                 onPressed: scenarioAgent == null
                     ? null
                     : () {
-                        ref.read(aiChatProvider.notifier).injectScenario(
+                        ref
+                            .read(aiChatProvider.notifier)
+                            .injectScenario(
                               scenarioAgent.characterId,
                               part: const AgentMessagePart(
                                 kind: AgentMessagePartKind.callResult,
