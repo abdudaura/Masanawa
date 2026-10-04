@@ -1,7 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
+import { createHmac } from "node:crypto";
 import { createCanonicalId, toInstant } from "@masanawa/contracts";
 import type { CryptoIntent, CryptoRepository } from "@masanawa/commerce";
-import { NowPaymentsClient, NowPaymentsPayoutClient, type NowPaymentsAccountEvidence } from "@masanawa/nowpayments";
+import { canonicalizeIpnPayload, NowPaymentsClient, NowPaymentsPayoutClient, type NowPaymentsAccountEvidence } from "@masanawa/nowpayments";
 import { createFinancialService, createFixedFinancialAuthorizer } from "./financial_service.js";
 
 const tenantId = createCanonicalId("tenant"), userId = createCanonicalId("user");
@@ -26,6 +27,7 @@ function setup(existing: CryptoIntent | null = intent, evidence?: NowPaymentsAcc
   const fetch = vi.fn(async () => new Response(JSON.stringify(payload)));
   const crypto = {
     readIntent: vi.fn(async () => existing),
+    readIntentByRequestId: vi.fn(async () => existing),
     applyProviderPaymentEvent: vi.fn(async () => ({ ...intent, status: "succeeded" as const })),
     reserveWithdrawal: vi.fn(async (value: CryptoIntent) => value),
     createIntent: vi.fn(async (value: CryptoIntent) => value),
@@ -45,6 +47,22 @@ function setup(existing: CryptoIntent | null = intent, evidence?: NowPaymentsAcc
 }
 const authorizationHeader = "Bearer fixture-token";
 describe("financial service recovery and admission", () => {
+  it("rejects signed callbacks with changed principal before posting a credit", async () => {
+    const { service, crypto, payload } = setup();
+    const changed = { ...payload, price_amount: "11" };
+    const signature = createHmac("sha512", "fixture-ipn").update(canonicalizeIpnPayload(changed)).digest("hex");
+    await expect(service.handleNowPaymentsIpn({ payload: changed, signature })).rejects.toThrow("financial.crypto.evidence_mismatch");
+    expect(crypto.applyProviderPaymentEvent).not.toHaveBeenCalled();
+  });
+  it("preserves exact paid amounts from signed callback strings", async () => {
+    const { service, crypto, payload } = setup();
+    const changed = { ...payload, actually_paid: "10.000000000000000001" };
+    const signature = createHmac("sha512", "fixture-ipn").update(canonicalizeIpnPayload(changed)).digest("hex");
+    await service.handleNowPaymentsIpn({ payload: changed, signature });
+    expect(crypto.applyProviderPaymentEvent).toHaveBeenCalledWith(expect.objectContaining({
+      event: expect.objectContaining({ actuallyPaid: "10.000000000000000001" }),
+    }));
+  });
   it("keeps missing transactions scoped without querying the provider", async () => {
     const { service, fetch } = setup(null);
     expect(await service.readIntent({ authorizationHeader, requestId })).toBeNull();
