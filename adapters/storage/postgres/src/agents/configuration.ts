@@ -53,6 +53,7 @@ interface PlatformProfileRow {
   character_id: PlatformAgentProfile["characterId"];
   schema_version: 1;
   support_agent: boolean;
+  default_for_new_users: boolean;
   voice_provider: string;
   voice_name: string;
   revision: string;
@@ -94,6 +95,7 @@ function platformProfileFromRow(row: PlatformProfileRow): PlatformAgentProfile {
     tenantId: row.tenant_id,
     characterId: row.character_id,
     supportAgent: row.support_agent,
+    defaultForNewUsers: row.default_for_new_users,
     voiceProvider: row.voice_provider,
     voiceName: row.voice_name,
     revision: Number(row.revision),
@@ -351,23 +353,26 @@ export function createPostgresPlatformAgentProfileRepository(
           profile.tenantId,
           profile.characterId,
           profile.supportAgent,
+          profile.defaultForNewUsers,
           profile.voiceProvider,
           profile.voiceName,
         ];
         const result = input.expectedRevision === null
           ? await client.query<PlatformProfileRow>(
               `INSERT INTO agents.platform_agent_profiles(
-                 tenant_id, character_id, support_agent, voice_provider, voice_name, revision
-               ) VALUES ($1,$2,$3,$4,$5,1)
+                 tenant_id, character_id, support_agent, default_for_new_users,
+                 voice_provider, voice_name, revision
+               ) VALUES ($1,$2,$3,$4,$5,$6,1)
                ON CONFLICT DO NOTHING
                RETURNING *`,
               values,
             )
           : await client.query<PlatformProfileRow>(
               `UPDATE agents.platform_agent_profiles
-                  SET support_agent=$3, voice_provider=$4, voice_name=$5,
+                  SET support_agent=$3, default_for_new_users=$4,
+                      voice_provider=$5, voice_name=$6,
                       revision=revision+1
-                WHERE tenant_id=$1 AND character_id=$2 AND revision=$6
+                WHERE tenant_id=$1 AND character_id=$2 AND revision=$7
                 RETURNING *`,
               [...values, input.expectedRevision],
             );
