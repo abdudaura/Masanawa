@@ -499,6 +499,73 @@ class AdminSystemSnapshot {
       );
 }
 
+
+class AdminMemoryJob {
+  const AdminMemoryJob({
+    required this.memoryExtractionId,
+    required this.state,
+    required this.scopeKind,
+    required this.sourceKind,
+    required this.extractorKey,
+    required this.attempt,
+    required this.maxAttempts,
+    required this.safeErrorCode,
+    required this.updatedAt,
+  });
+
+  final String memoryExtractionId;
+  final String state;
+  final String scopeKind;
+  final String sourceKind;
+  final String extractorKey;
+  final int attempt;
+  final int maxAttempts;
+  final String? safeErrorCode;
+  final String updatedAt;
+
+  factory AdminMemoryJob.fromJson(Map<String, dynamic> json) => AdminMemoryJob(
+        memoryExtractionId: json['memoryExtractionId'] as String,
+        state: json['state'] as String,
+        scopeKind: json['scopeKind'] as String,
+        sourceKind: json['sourceKind'] as String,
+        extractorKey: json['extractorKey'] as String,
+        attempt: json['attempt'] as int? ?? 0,
+        maxAttempts: json['maxAttempts'] as int? ?? 0,
+        safeErrorCode: json['safeErrorCode'] as String?,
+        updatedAt: json['updatedAt'] as String,
+      );
+}
+
+class AdminQueueIssue {
+  const AdminQueueIssue({
+    required this.direction,
+    required this.recordId,
+    required this.state,
+    required this.route,
+    required this.attempt,
+    required this.safeErrorCode,
+    required this.updatedAt,
+  });
+
+  final String direction;
+  final String recordId;
+  final String state;
+  final String route;
+  final int attempt;
+  final String? safeErrorCode;
+  final String updatedAt;
+
+  factory AdminQueueIssue.fromJson(Map<String, dynamic> json) => AdminQueueIssue(
+        direction: json['direction'] as String,
+        recordId: json['recordId'] as String,
+        state: json['state'] as String,
+        route: json['route'] as String,
+        attempt: json['attempt'] as int? ?? 0,
+        safeErrorCode: json['safeErrorCode'] as String?,
+        updatedAt: json['updatedAt'] as String,
+      );
+}
+
 class AdminWorld {
   const AdminWorld({
     required this.worldId,
@@ -829,6 +896,25 @@ class AdminApi {
       () => _dio.get<dynamic>('/v1/admin/system', options: _auth),
     );
     return AdminSystemSnapshot.fromJson(_map(response.data));
+  }
+
+
+  Future<List<AdminMemoryJob>> memoryJobs() async {
+    final response = await _request(
+      () => _dio.get<dynamic>('/v1/admin/memory-jobs', options: _auth),
+    );
+    return _list(response.data)
+        .map((item) => AdminMemoryJob.fromJson(_map(item)))
+        .toList(growable: false);
+  }
+
+  Future<List<AdminQueueIssue>> queueIssues() async {
+    final response = await _request(
+      () => _dio.get<dynamic>('/v1/admin/queue-issues', options: _auth),
+    );
+    return _list(response.data)
+        .map((item) => AdminQueueIssue.fromJson(_map(item)))
+        .toList(growable: false);
   }
 
   Future<List<AdminWorld>> worlds() async {
