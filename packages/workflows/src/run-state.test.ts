@@ -347,11 +347,11 @@ describe("WorkflowRun and Task canonical state", () => {
   });
 
   it("verifies exact WorkflowVersion pinning", () => {
-    const run = createWorkflowRun(pendingRun());
+    const pending = pendingRun();
     const version = createWorkflowVersion({
-      tenantId: run.tenantId,
-      workflowId: run.workflowId,
-      workflowVersionId: run.workflowVersionId,
+      tenantId: pending.tenantId,
+      workflowId: pending.workflowId,
+      workflowVersionId: pending.workflowVersionId,
       versionNumber: 1,
       graph: {
         entryNodeKeys: ["start"],
@@ -365,8 +365,11 @@ describe("WorkflowRun and Task canonical state", () => {
         ],
         edges: [],
       },
-      graphSignature: run.graphSignature,
       createdAt: t0,
+    });
+    const run = createWorkflowRun({
+      ...pending,
+      graphSignature: version.graphSignature,
     });
 
     expect(() => assertWorkflowRunMatchesVersion(run, version)).not.toThrow();
