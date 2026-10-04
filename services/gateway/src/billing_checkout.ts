@@ -56,6 +56,9 @@ function quotePhase(quote: BillingQuote): BillingCheckoutView["phase"] {
       return "fulfilled";
     case "refund-pending":
       return "failed";
+    case "refund-dispatching":
+    case "refund-submitted":
+      return "processing";
     case "refunded":
       return "refunded";
     case "expired":
@@ -109,15 +112,17 @@ function documentFor(quote: BillingQuote, actionSecret: string): unknown {
     });
   }
   const statusText =
-    phase === "checkout"
-      ? "Secure checkout created. Open the payment link, complete payment, then choose Verify payment."
-      : phase === "paid" || phase === "processing"
-        ? "Payment verified. Masanawa is completing your bill."
-        : phase === "fulfilled"
-          ? "Bill completed successfully."
-          : phase === "refunded"
-            ? "The bill could not be completed. Your verified payment was refunded."
-            : "This bill needs attention.";
+    quote.state === "refund-dispatching" || quote.state === "refund-submitted"
+      ? "The bill could not be completed. Your refund is being reconciled with Flutterwave."
+      : phase === "checkout"
+        ? "Secure checkout created. Open the payment link, complete payment, then choose Verify payment."
+        : phase === "paid" || phase === "processing"
+          ? "Payment verified. Masanawa is completing your bill."
+          : phase === "fulfilled"
+            ? "Bill completed successfully."
+            : phase === "refunded"
+              ? "The bill could not be completed. Your verified payment was refunded."
+              : "This bill needs attention.";
   const nodes: unknown[] = [
     ...base,
     { type: "notice", tone: phase === "fulfilled" ? "success" : phase === "refunded" ? "warning" : "info", text: statusText },
@@ -280,20 +285,95 @@ export function createBillingCheckoutService(input: Readonly<{
     quote: BillingQuote,
     signal?: AbortSignal,
   ): Promise<BillingQuote> {
-    if (quote.state !== "refund-pending") return quote;
-    if (!quote.providerTransactionId) throw new Error("financial.billing.refund_evidence_missing");
-    const receipt = await input.funding.refund({
+    if (!["refund-pending","refund-dispatching","refund-submitted"].includes(quote.state)) {
+      return quote;
+    }
+    if (!quote.providerTransactionId) {
+      throw new Error("financial.billing.refund_evidence_missing");
+    }
+
+    const terminalRefund = (status: string) =>
+      ["successful","completed-bank-transfer","completed-momo","completed-mpgs",
+       "completed-offline","completed-preauth"].includes(status);
+
+    if (quote.state === "refund-pending") {
+      quote = await input.quotes.claimRefundDispatch({
+        tenantId: owner.tenantId,
+        userId: owner.userId,
+        quoteId: quote.quoteId,
+        providerTransactionId: quote.providerTransactionId,
+        claimedAt: now(),
+      });
+    }
+
+    if (quote.state === "refund-dispatching") {
+      // Persist-before-send prevents an automatic duplicate refund if the POST
+      // outcome is unknown. First reconcile any provider-side refund by the
+      // original transaction ID.
+      const existing = await input.funding.findRefund({
+        transactionId: quote.providerTransactionId,
+        ...(signal ? { signal } : {}),
+      });
+      if (existing) {
+        quote = await input.quotes.recordRefundInitiated({
+          tenantId: owner.tenantId,
+          userId: owner.userId,
+          quoteId: quote.quoteId,
+          providerTransactionId: quote.providerTransactionId,
+          refundReference: existing.refundReference,
+          initiatedAt: now(),
+        });
+        if (terminalRefund(existing.status)) {
+          return input.quotes.markRefunded({
+            tenantId: owner.tenantId,
+            userId: owner.userId,
+            quoteId: quote.quoteId,
+            providerTransactionId: quote.providerTransactionId,
+            refundReference: existing.refundReference,
+            refundedAt: now(),
+          });
+        }
+        return quote;
+      }
+
+      const receipt = await input.funding.refund({
+        transactionId: quote.providerTransactionId,
+        amount: formatNgnKobo(quote.totalAmountKobo),
+        ...(signal ? { signal } : {}),
+      });
+      quote = await input.quotes.recordRefundInitiated({
+        tenantId: owner.tenantId,
+        userId: owner.userId,
+        quoteId: quote.quoteId,
+        providerTransactionId: quote.providerTransactionId,
+        refundReference: receipt.refundReference,
+        initiatedAt: now(),
+      });
+      if (terminalRefund(receipt.status)) {
+        return input.quotes.markRefunded({
+          tenantId: owner.tenantId,
+          userId: owner.userId,
+          quoteId: quote.quoteId,
+          providerTransactionId: quote.providerTransactionId,
+          refundReference: receipt.refundReference,
+          refundedAt: now(),
+        });
+      }
+      return quote;
+    }
+
+    const receipt = await input.funding.findRefund({
       transactionId: quote.providerTransactionId,
-      amount: formatNgnKobo(quote.totalAmountKobo),
+      ...(quote.refundReference ? { refundReference: quote.refundReference } : {}),
       ...(signal ? { signal } : {}),
     });
-    if (!["successful","success","completed"].includes(receipt.status)) return quote;
+    if (!receipt || !terminalRefund(receipt.status)) return quote;
     return input.quotes.markRefunded({
       tenantId: owner.tenantId,
       userId: owner.userId,
       quoteId: quote.quoteId,
       providerTransactionId: quote.providerTransactionId,
-      refundReference: receipt.refundReference,
+      refundReference: quote.refundReference ?? receipt.refundReference,
       refundedAt: now(),
     });
   }
@@ -433,7 +513,7 @@ export function createBillingCheckoutService(input: Readonly<{
         });
       }
 
-      if (quote.state === "refund-pending") {
+      if (["refund-pending","refund-dispatching","refund-submitted"].includes(quote.state)) {
         const refunded = await refundIfRequired(owned.identity,quote,request.signal);
         return view(refunded);
       }
