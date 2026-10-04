@@ -47,3 +47,34 @@ evidence is insufficient.
    continuity, evidence uncertainty and privacy across app/WhatsApp/Telegram.
 
 None of those integrations or production readiness is claimed by this domain slice.
+
+
+## Canonical authoring bundle
+
+`createCoreTeachingSkillBundle` now produces the exact canonical pair used by later
+runtime admission:
+
+- one `SkillVersion` with key `core.teaching`, capability `teaching.core`,
+  private sensitivity, no billing, no hidden Tool/Provider/Offer authority, and an exact
+  immutable `SkillVersionId`;
+- one `SkillGuide` bound to that same exact `SkillVersionId`, with trigger-only
+  discovery metadata and progressively disclosed teaching instructions/resources.
+
+The factory accepts provenance and certification rather than inventing them. It fails
+closed unless certification includes passed teaching-specific rehearsal evidence for:
+
+- teaching activation and non-teaching rejection;
+- language switching without losing lesson continuity;
+- misconception correction;
+- failed-understanding recovery;
+- Relationship-scoped continuity;
+- source/evidence uncertainty;
+- Relationship privacy boundaries.
+
+This makes the required teaching behaviors part of exact-version production admission
+evidence instead of leaving them as prose-only aspirations.
+
+Subject references remain optional Guide resources or future exact-version subskills.
+Core Teaching itself intentionally declares no Tool dependency: current/specialist
+claims must enter through an independently admitted evidence-capable Tool/Skill path
+when needed rather than receiving implicit authority from teaching.
