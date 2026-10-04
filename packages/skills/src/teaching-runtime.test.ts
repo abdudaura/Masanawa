@@ -1019,6 +1019,7 @@ describe("Teaching channel callback binding", () => {
       resolveTeachingChannelSelection({
         selectionId: "tch_cb_AbC12345",
         binding: channel,
+        action,
         now: toInstant("2026-10-04T18:40:00.000Z"),
       }),
     ).toEqual({
@@ -1066,6 +1067,7 @@ describe("Teaching channel callback binding", () => {
       resolveTeachingChannelSelection({
         selectionId: "tch_cb_Different",
         binding: channel,
+        action,
         now: toInstant("2026-10-04T18:40:00.000Z"),
       }),
     ).toThrow(/does not match binding/);
@@ -1074,6 +1076,7 @@ describe("Teaching channel callback binding", () => {
       resolveTeachingChannelSelection({
         selectionId: channel.callbackToken,
         binding: channel,
+        action,
         now: toInstant("2100-01-01T00:00:00.000Z"),
       }),
     ).toThrow(/expired/);
@@ -1085,6 +1088,7 @@ describe("Teaching channel callback binding", () => {
           ...channel,
           optionKey: "five",
         },
+        action,
         now: toInstant("2026-10-04T18:40:00.000Z"),
       }),
     ).toThrow(/binding hash does not match payload/);
