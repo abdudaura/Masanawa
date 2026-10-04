@@ -41,6 +41,8 @@ export interface AgentStrategyPresentation {
 export interface AgentStrategyRequest {
   /** Optional ephemeral UI stream. It never becomes transcript or durable truth. */
   readonly onTextDelta?: (delta: string) => void | Promise<void>;
+  /** Optional cancellation from the client transport. */
+  readonly signal?: AbortSignal;
   /** Custody-bound selection only; no authority or assignment supplied by a strategy. */
   readonly prepareSkillSelection?: (input: {
     readonly skillVersionId: import("@masanawa/contracts").SkillVersionId;
