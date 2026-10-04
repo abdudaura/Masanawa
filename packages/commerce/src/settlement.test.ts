@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createCanonicalId, toInstant } from "@masanawa/contracts";
-import type { CommerceFulfillmentAdmission, CommerceQuote } from "./model.js";
+import type { CommerceFulfillmentAdmission, CommerceQuote, OfferId } from "./model.js";
 import { assertFulfillmentAdmissionTransfers, planFulfillmentSettlement } from "./settlement.js";
 
 function fixture() {
@@ -8,7 +8,7 @@ function fixture() {
   const tenantId = createCanonicalId("tenant");
   const quote: CommerceQuote = {
     schemaVersion: 1, tenantId, quoteId: createCanonicalId("quote"),
-    offerId: createCanonicalId("offer"), offerRevision: 1,
+    offerId: "offer_0194c2d2-6c00-7abc-8abc-1234567890ab" as OfferId, offerRevision: 1,
     customerUserId: createCanonicalId("user"), originatingCharacterId: createCanonicalId("character"),
     creatorUserId: createCanonicalId("user"), priceCredits: 100,
     fulfillmentReserveCredits: 50, creatorCommissionCredits: 30, platformMarginCredits: 20,
