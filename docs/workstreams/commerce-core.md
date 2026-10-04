@@ -62,7 +62,7 @@ were present in main/open PRs at selection time. Recheck before writes and commi
   interleaved new receipts, restart continuity, custody mismatches and ledger alias
   rejection; strict Commerce/Postgres/Gateway typechecks and whitespace checks passed.
   Earlier Gateway dependency build evidence is retained.
-- Receipt history: implemented; exact publication SHA recorded in PR evidence.
+- Receipt history implementation: c7f7138df13315a28ef7065fdca316e60ed1fbb5.
 
 ### Next integration step
 
