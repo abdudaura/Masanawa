@@ -36,6 +36,7 @@ customer-billing blockers. New billing/auth-specific owned paths:
 - `services/gateway/src/customer_auth.test.ts`
 - `services/gateway/src/billing_checkout.ts`
 - `services/gateway/src/billing_checkout.test.ts`
+- `scripts/flutterwave-billing-catalog-qualification.mjs`
 - `docs/BILLING-CUSTOMER-READINESS.md`
 - this claim file.
 
@@ -45,7 +46,8 @@ Coordinated append-only/shared seams permitted for this continuation:
 - `adapters/storage/postgres/src/security/index.ts`;
 - `packages/security/src/index.ts`;
 - `packages/providers/src/index.ts`;
-- existing billing-only Gateway route/composition files already listed above.
+- existing billing-only Gateway route/composition files already listed above;
+- `adapters/storage/postgres/src/postgres.integration.test.ts` — migration manifest assertion only; no foundation behavior changes.
 Any collision discovered on these shared seams must be reconciled from the newest source
 before writing; no unrelated changes may be reverted.
 
