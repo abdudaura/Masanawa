@@ -30,6 +30,14 @@ Finish the production-authentication cleanup that the prior Android-shell window
 - services/gateway/src/alpha_dev.ts (auth error normalization only)
 - services/gateway/package.json if a verification dependency is required
 - focused Gateway auth tests
+- infra/portable/* (provider/domain/secret portability contracts)
+- scripts/database/* (portable PostgreSQL export/import only)
+- scripts/railway/* (rebuild/secret portability automation only)
+- .github/workflows/railway-rebuild.yml
+- scripts/check-provider-portability.mjs
+- package.json and foundation CI (portability check wiring only)
+- infra/deployment/gateway/Dockerfile (workspace-complete build fix only)
+- docs/PORTABILITY.md
 - this claim
 
 No billing, crypto, provider fulfillment, migrations, deployment, teaching, channel, or unrelated UI paths are owned.
