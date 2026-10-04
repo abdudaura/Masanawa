@@ -20,6 +20,18 @@ export interface PlatformAdminSummary {
   readonly activeProviderCredentials: number;
 }
 
+export interface PlatformAdminCharacter {
+  readonly characterId: string;
+  readonly state: "active" | "disabled" | "archived";
+  readonly activeCharacterVersionId: string | null;
+  readonly revision: number;
+  readonly configuredInUserApp: boolean;
+  readonly visibleInUserApp: boolean | null;
+  readonly displayName: string | null;
+  readonly roleLabel: string | null;
+  readonly updatedAt: string;
+}
+
 export interface PlatformAdminUser {
   readonly userId: string;
   readonly state: "active" | "disabled" | "archived";
@@ -122,6 +134,10 @@ export interface PlatformAdminAuditEvent {
 
 export interface PlatformAdminService {
   summary(input: { readonly authorizationHeader: string | undefined }): Promise<PlatformAdminSummary>;
+  listCharacters(input: {
+    readonly authorizationHeader: string | undefined;
+    readonly limit?: number;
+  }): Promise<readonly PlatformAdminCharacter[]>;
   listUsers(input: {
     readonly authorizationHeader: string | undefined;
     readonly limit?: number;
@@ -250,6 +266,46 @@ export function createPlatformAdminService(input: {
         openReconciliationCases: numberValue(row.open_reconciliation_cases),
         activeProviderCredentials: numberValue(row.active_provider_credentials),
       };
+    },
+
+    async listCharacters(request) {
+      const authority = await authorize(
+        request.authorizationHeader,
+        "agents.presentation.read",
+      );
+      const result = await input.database.query<{
+        character_id: string;
+        state: PlatformAdminCharacter["state"];
+        active_character_version_id: string | null;
+        revision: string | number;
+        display_name: string | null;
+        role_label: string | null;
+        visible_in_user_app: boolean | null;
+        updated_at: Date | string;
+      }>(
+        `SELECT c.character_id, c.state, c.active_character_version_id,
+                c.revision, p.display_name, p.role_label,
+                p.visible_in_user_app, c.updated_at
+           FROM identity.characters c
+           LEFT JOIN agents.agent_presentations p
+             ON p.tenant_id = c.tenant_id
+            AND p.character_id = c.character_id
+          WHERE c.tenant_id = $1
+          ORDER BY c.updated_at DESC
+          LIMIT $2`,
+        [tenant(authority), boundedLimit(request.limit)],
+      );
+      return result.rows.map((row) => ({
+        characterId: row.character_id,
+        state: row.state,
+        activeCharacterVersionId: row.active_character_version_id,
+        revision: numberValue(row.revision),
+        configuredInUserApp: row.display_name !== null,
+        visibleInUserApp: row.visible_in_user_app,
+        displayName: row.display_name,
+        roleLabel: row.role_label,
+        updatedAt: iso(row.updated_at),
+      }));
     },
 
     async listUsers(request) {
