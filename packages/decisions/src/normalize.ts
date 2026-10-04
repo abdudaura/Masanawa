@@ -86,7 +86,7 @@ function normalizeValue(value: DecisionValue, depth: number, path: string): Deci
       fail(`${path} exceeds maximum object key count`);
     }
     const normalized: Record<string, DecisionValue> = {};
-    for (const [key, item] of entries.sort(([a], [b]) => a.localeCompare(b))) {
+    for (const [key, item] of entries.sort(([a], [b]) => compareKeys(a, b))) {
       normalizeKey(key, `${path} key`, decisionLimits.maxAnswerKeyLength);
       normalized[key] = normalizeValue(item, depth + 1, `${path}.${key}`);
     }
@@ -108,7 +108,7 @@ function normalizeQuestion(question: JevQuestion, name: string): JevQuestion {
       fail(`${name}.criteria must contain between 2 and ${decisionLimits.maxCriteriaPerQuestion} choices`);
     }
     const criteria: Record<string, string> = {};
-    for (const [key, description] of entries.sort(([a], [b]) => a.localeCompare(b))) {
+    for (const [key, description] of entries.sort(([a], [b]) => compareKeys(a, b))) {
       const normalizedKey = normalizeKey(key, `${name}.criteria key`, decisionLimits.maxAnswerKeyLength);
       assertBoundedString(
         description,
@@ -189,7 +189,7 @@ export function createDecisionDefinition(
     fail(`questions must contain between 1 and ${decisionLimits.maxQuestions} entries`);
   }
   const questions: Record<string, JevQuestion> = {};
-  for (const [name, question] of entries.sort(([a], [b]) => a.localeCompare(b))) {
+  for (const [name, question] of entries.sort(([a], [b]) => compareKeys(a, b))) {
     const key = normalizeKey(name, "question key", decisionLimits.maxAnswerKeyLength);
     questions[key] = normalizeQuestion(question, `questions.${key}`);
   }
@@ -224,6 +224,19 @@ function normalizeTrace(trace: DecisionTrace): DecisionTrace {
   });
 }
 
+export function assertDecisionRequestMatchesDefinition(
+  definition: DecisionDefinition,
+  request: DecisionRequest,
+): void {
+  const normalizedDefinition = createDecisionDefinition(definition);
+  if (
+    request.decisionClass !== normalizedDefinition.decisionClass ||
+    request.schemaVersion !== normalizedDefinition.schemaVersion
+  ) {
+    fail("decision request does not match the declared decision schema");
+  }
+}
+
 export function createDecisionRequest(input: DecisionRequest): DecisionRequest {
   const decisionClass = normalizeKey(
     input.decisionClass,
@@ -240,7 +253,7 @@ export function createDecisionRequest(input: DecisionRequest): DecisionRequest {
     fail("packet exceeds maximum top-level key count");
   }
   const packet: Record<string, DecisionValue> = {};
-  for (const [key, value] of entries.sort(([a], [b]) => a.localeCompare(b))) {
+  for (const [key, value] of entries.sort(([a], [b]) => compareKeys(a, b))) {
     const normalizedKey = normalizeKey(key, "packet key", decisionLimits.maxAnswerKeyLength);
     packet[normalizedKey] = normalizeValue(value, 1, `packet.${normalizedKey}`);
   }
