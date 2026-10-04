@@ -480,6 +480,14 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     const financial = options.financial;
 
     app.get(
+      "/v1/financial/capabilities",
+      async (request) =>
+        financial.capabilities({
+          authorizationHeader: request.headers.authorization,
+        }),
+    );
+
+    app.get(
       "/v1/financial/crypto/routes",
       {
         schema: {
@@ -533,6 +541,64 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
           requestId: request.body.requestId,
           providerCode: request.body.providerCode,
           amount: request.body.amount,
+        }),
+    );
+
+    app.post(
+      "/v1/financial/crypto/withdrawals",
+      {
+        schema: {
+          body: Type.Object(
+            {
+              requestId: Type.String(),
+              providerCode: Type.String({ minLength: 2, maxLength: 32 }),
+              amount: Type.String({ minLength: 1, maxLength: 80 }),
+              destinationAddress: Type.String({ minLength: 1, maxLength: 512 }),
+            },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request) =>
+        financial.createWithdrawal({
+          authorizationHeader: request.headers.authorization,
+          requestId: request.body.requestId,
+          providerCode: request.body.providerCode,
+          amount: request.body.amount,
+          destinationAddress: request.body.destinationAddress,
+        }),
+    );
+
+    app.post(
+      "/v1/financial/crypto/withdrawals/:requestId/verify",
+      {
+        schema: {
+          params: Type.Object({ requestId: Type.String() }, { additionalProperties: false }),
+          body: Type.Object(
+            { verificationCode: Type.String({ minLength: 4, maxLength: 10 }) },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request) =>
+        financial.verifyWithdrawal({
+          authorizationHeader: request.headers.authorization,
+          requestId: request.params.requestId,
+          verificationCode: request.body.verificationCode,
+        }),
+    );
+
+    app.post(
+      "/v1/financial/crypto/withdrawals/:requestId/refresh",
+      {
+        schema: {
+          params: Type.Object({ requestId: Type.String() }, { additionalProperties: false }),
+        },
+      },
+      async (request) =>
+        financial.refreshWithdrawal({
+          authorizationHeader: request.headers.authorization,
+          requestId: request.params.requestId,
         }),
     );
 
