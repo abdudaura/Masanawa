@@ -15,6 +15,11 @@ export {
   type NowPaymentsPayoutEvidence,
 } from "./payout.js";
 export {
+  collectNowPaymentsRuntimeEvidence,
+  type NowPaymentsRuntimeEvidence,
+  type NowPaymentsRuntimeEvidenceConfig,
+} from "./runtime-evidence.js";
+export {
   runReadOnlyNowPaymentsProbe,
   type NowPaymentsReadOnlyProbeResult,
 } from "./probe.js";
