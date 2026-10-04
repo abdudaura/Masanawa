@@ -1,6 +1,6 @@
 # Workstream claim — workflow-human-requests
 
-Status: active
+Status: implementation complete; PostgreSQL verification evidence pending
 Owner: this isolated stacked workstream
 Started: 2026-10-04 20:28 Africa/Lagos
 Base: work/workflow-retries-20261004 @ 3291ea8163af97f26951930d5a30be0fa47d3ec0
@@ -46,3 +46,25 @@ Task 092 timers/schedules, Task 093 Tool receipt integration and Task 094 cancel
 - approval-backed requests require the referenced canonical approval to be approved/current before resume.
 
 Task 091 remains open until focused PostgreSQL acceptance executes and canonical task evidence advances.
+
+
+## Implementation handoff
+
+Implemented in draft PR #115.
+
+Delivered:
+
+- immutable information/confirmation/approval request contracts;
+- exact Task/Run/WorkflowVersion/graph persistence binding;
+- one pending request per Task;
+- fenced running → waiting request open;
+- exact lost-response replay before lease validation;
+- durable request/response fingerprints;
+- information response resume;
+- confirmation rejection/cancellation;
+- canonical Security approval lookup and decision gating;
+- single-transaction request lock + approval read + Task transition + request settlement;
+- exact terminal replay and conflicting response rejection;
+- focused unit and PostgreSQL acceptance coverage.
+
+Task 092+ remains explicitly excluded.
