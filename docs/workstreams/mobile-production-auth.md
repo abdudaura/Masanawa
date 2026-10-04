@@ -19,6 +19,8 @@ Finish the production-authentication cleanup that the prior Android-shell window
 - apps/mobile/test/session_state_test.dart
 - apps/mobile/test/agent_recovery_test.dart (production-auth regression coverage only)
 - services/gateway/src/production_auth.ts (new)
+- adapters/storage/postgres/src/identity/platform-session.ts (new narrow external-session identity bridge)
+- adapters/storage/postgres/src/identity/index.ts and adapters/storage/postgres/src/index.ts (export only)
 - services/gateway/src/main.ts (authorizer composition only)
 - services/gateway/package.json if a verification dependency is required
 - focused Gateway auth tests
