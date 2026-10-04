@@ -327,6 +327,58 @@ export async function startGatewayService(
         })
       : undefined);
 
+
+  const composedBilling =
+    options.appOptions?.billingFinancial ??
+    (env["FLUTTERWAVE_BILLS_ENABLED"] === "true" &&
+    financialAuthorizer &&
+    database.billingStore &&
+    database.providerWebhooks &&
+    env["FLUTTERWAVE_SECRET_KEY"]?.trim() &&
+    env["FLUTTERWAVE_WEBHOOK_SECRET_HASH"]?.trim() &&
+    env["FLUTTERWAVE_WEBHOOK_URL"]?.trim()
+      ? createBillingFinancialService({
+          billingStore: database.billingStore,
+          webhookRepository: database.providerWebhooks,
+          authorizer: financialAuthorizer,
+          flutterwaveSecretKey: env["FLUTTERWAVE_SECRET_KEY"],
+          flutterwaveWebhookHash: env["FLUTTERWAVE_WEBHOOK_SECRET_HASH"],
+          flutterwaveWebhookUrl: env["FLUTTERWAVE_WEBHOOK_URL"],
+        })
+      : undefined);
+
+  const composedWhatsAppIngress =
+    options.appOptions?.whatsAppIngress ??
+    (database.channelAdmission &&
+    env["WHATSAPP_CHANNEL_ACCOUNT_ID"]?.trim() &&
+    env["WHATSAPP_BUSINESS_ACCOUNT_ID"]?.trim() &&
+    env["WHATSAPP_PHONE_NUMBER_ID"]?.trim() &&
+    env["WHATSAPP_APP_SECRET"]?.trim() &&
+    env["WHATSAPP_VERIFY_TOKEN"]?.trim()
+      ? createWhatsAppIngress({
+          accountId: env["WHATSAPP_CHANNEL_ACCOUNT_ID"] as never,
+          businessAccountId: env["WHATSAPP_BUSINESS_ACCOUNT_ID"],
+          phoneNumberId: env["WHATSAPP_PHONE_NUMBER_ID"],
+          appSecret: env["WHATSAPP_APP_SECRET"],
+          verifyToken: env["WHATSAPP_VERIFY_TOKEN"],
+          admission: database.channelAdmission,
+        })
+      : undefined);
+
+  const composedTelegramIngress =
+    options.appOptions?.telegramIngress ??
+    (database.channelAdmission &&
+    env["TELEGRAM_CHANNEL_ACCOUNT_ID"]?.trim() &&
+    env["TELEGRAM_BOT_ID"]?.trim() &&
+    env["TELEGRAM_WEBHOOK_SECRET"]?.trim()
+      ? createTelegramIngress({
+          accountId: env["TELEGRAM_CHANNEL_ACCOUNT_ID"] as never,
+          botId: env["TELEGRAM_BOT_ID"],
+          webhookSecret: env["TELEGRAM_WEBHOOK_SECRET"],
+          admission: database.channelAdmission,
+        })
+      : undefined);
+
   let app: ManagedNodeServer;
   try {
     app = appFactory({
