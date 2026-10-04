@@ -173,7 +173,7 @@ class MasanawaAgentDirectoryTransport implements AgentDirectoryTransport {
 
   @override
   Future<List<AgentDirectoryEntry>> loadDirectory() async {
-    final data = await _client.get('/v1/agent/directory');
+    final data = await _client.get('/agent/directory');
     final raw = data['agents'];
     if (raw is! List) throw const ApiException('Invalid agent directory');
     return [
@@ -184,7 +184,7 @@ class MasanawaAgentDirectoryTransport implements AgentDirectoryTransport {
   }
   @override
   Future<void> setDefaultPlatformAgent(String characterId) async {
-    await _client.put('/v1/agent/preferences/default', {
+    await _client.put('/agent/preferences/default', {
       'characterId': characterId,
     });
   }
@@ -306,7 +306,7 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
 
   @override
   Future<AgentSessionBinding> openSession(String characterId) async {
-    final data = await _client.post('/v1/agent/sessions/open', {
+    final data = await _client.post('/agent/sessions/open', {
       'characterId': characterId,
     });
     final id = data['characterSessionId'];
@@ -338,7 +338,7 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
         var streamedText = '';
         Map<String, dynamic>? done;
         await for (final event in _client.postStream(
-          '/v1/agent/sessions/${binding.characterSessionId}/turn-stream',
+          '/agent/sessions/${binding.characterSessionId}/turn-stream',
           {'characterId': binding.characterId, 'text': text},
           cancelToken: token,
           requestId: requestId,
@@ -379,7 +379,7 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
       }
 
       final data = await _client.post(
-        '/v1/agent/sessions/${binding.characterSessionId}/turn',
+        '/agent/sessions/${binding.characterSessionId}/turn',
         {'characterId': binding.characterId, 'text': text},
         cancelToken: token,
         requestId: requestId,
@@ -442,7 +442,7 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
     late final Map<String, dynamic> data;
     try {
       data = await _client.post(
-        '/v1/agent/sessions/${binding.characterSessionId}/media-turn',
+        '/agent/sessions/${binding.characterSessionId}/media-turn',
         {
           'characterId': binding.characterId,
           'caption': caption,
@@ -505,7 +505,7 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
     _turnTokens[binding.characterId] = token;
     try {
       final data = await _client.post(
-        '/v1/agent/sessions/${binding.characterSessionId}/media-set-turn',
+        '/agent/sessions/${binding.characterSessionId}/media-set-turn',
         {
           'characterId': binding.characterId,
           'caption': caption,
@@ -546,7 +546,7 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
       'clientVersion': kMasanawaShellVersion,
       'capabilities': jsonEncode(ShellDocument.capabilities),
     };
-    final path = '/v1/agent/shell/config?${Uri(queryParameters: query).query}';
+    final path = '/agent/shell/config?${Uri(queryParameters: query).query}';
     return AgentShellConfig.fromJson(await _client.get(path));
   }
 
@@ -561,7 +561,7 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
       'limit': '$limit',
       if (before != null && before.isNotEmpty) 'before': before,
     };
-    final path = '/v1/agent/history?${Uri(queryParameters: query).query}';
+    final path = '/agent/history?${Uri(queryParameters: query).query}';
     final data = await _client.get(path);
     final raw = data['messages'];
     if (raw is! List) throw const ApiException('Invalid conversation history');
@@ -578,7 +578,7 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
     String requestId,
   ) async {
     final path =
-        '/v1/agent/turns/${Uri.encodeComponent(requestId)}/status'
+        '/agent/turns/${Uri.encodeComponent(requestId)}/status'
         '?characterId=${Uri.encodeQueryComponent(characterId)}';
     final data = await _client.get(path);
     return AgentTurnStatus(
@@ -605,7 +605,7 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
         if (cursor != null && cursor.isNotEmpty) 'after': cursor,
         'limit': '100',
       };
-      final path = '/v1/agent/events/stream?${Uri(queryParameters: query).query}';
+      final path = '/agent/events/stream?${Uri(queryParameters: query).query}';
       await for (final raw in _client.getStream(path)) {
         final parsed = AgentShellEvent.fromJson(raw);
         if (parsed.cursor.isNotEmpty) cursor = parsed.cursor;
@@ -622,7 +622,7 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
     required ShellAction action,
   }) async {
     await _client.post(
-      '/v1/agent/sessions/${Uri.encodeComponent(characterSessionId)}/actions',
+      '/agent/sessions/${Uri.encodeComponent(characterSessionId)}/actions',
       {
         'characterId': characterId,
         'documentId': action.documentId,
@@ -646,7 +646,7 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
       'revision': '${action.revision}',
     };
     final data = await _client.get(
-      '/v1/agent/actions/status?${Uri(queryParameters: query).query}',
+      '/agent/actions/status?${Uri(queryParameters: query).query}',
     );
     final record = data['record'];
     return record is Map && record['state'] == 'accepted';
@@ -655,7 +655,7 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
   @override
   Future<AgentLiveVoiceGrant> mintLiveVoiceGrant(String characterId) async {
     final data = await _client.post(
-      '/v1/agent/live/token',
+      '/agent/live/token',
       {'characterId': characterId},
     );
     final expiresAt = DateTime.tryParse(data['expiresAt'] as String? ?? '');
@@ -685,7 +685,7 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
     required String state,
     int durationMs = 60000,
   }) async {
-    await _client.post('/v1/agent/presence', {
+    await _client.post('/agent/presence', {
       'characterId': characterId,
       'state': state,
       'durationMs': durationMs,
@@ -699,7 +699,7 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
     required String platform,
     required String token,
   }) async {
-    await _client.post('/v1/agent/push/register', {
+    await _client.post('/agent/push/register', {
       'characterId': characterId,
       'installationId': installationId,
       'platform': platform,
@@ -712,7 +712,7 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
     required String characterId,
     required String installationId,
   }) async {
-    await _client.post('/v1/agent/push/unregister', {
+    await _client.post('/agent/push/unregister', {
       'characterId': characterId,
       'installationId': installationId,
     });
@@ -722,7 +722,7 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
   Future<void> closeSession(AgentSessionBinding binding) async {
     try {
       await _client.post(
-        '/v1/agent/sessions/${binding.characterSessionId}/close',
+        '/agent/sessions/${binding.characterSessionId}/close',
         {'characterId': binding.characterId},
       );
     } catch (_) {
