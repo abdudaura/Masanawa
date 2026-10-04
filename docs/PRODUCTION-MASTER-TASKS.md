@@ -12,15 +12,17 @@ Merged `main` satisfies Tasks **001-071**.
 
 **Current: Task 072 of 150 — Implement AgentRun identity, lineage and durable trace references.**
 
-The user now authorized reuse of Nurain's Railway services for Masanawa; the
-DigitalOcean target is superseded and both existing Droplets were deleted.
-PostgreSQL 18.6 is running on the reused contracts service with persistent storage.
-All six enabled Nurain Gemini credentials were transferred in encrypted form to
-the reused worker configuration; live decryption/inference await deployment.
-Railway cannot access the private Masanawa repository, so source replacement and
-APK generation remain blocked. No live Masanawa Gateway, R2 bucket or APK is
-claimed. This does not advance Tasks 072-074 or replace their acceptance gates.
-See `infra/deployment/railway/README.md` for evidence and the remaining access step.
+Railway's private repository access is resolved. The hosted Masanawa Gateway
+has a successful deployment and its HTTPS readiness endpoint returned 200 with
+database-schema ready on 2026-10-04. The reused call-gateway service now builds
+the private Alpha APK. Its first completed diagnostic test run passed 40 tests
+but failed splash timer-disposal acceptance; source
+`5c5632cd7a7c7f6b886184bd54e732cf6525f508` fixes that lifecycle defect
+and observed Alpha 500/401 access-status handling. All 46 Gateway tests, strict
+Gateway typechecking and the Gateway dependency build pass. The new Gateway deployment succeeded and live checks returned readiness 200
+and unauthenticated directory 401. APK verification remains in progress. No APK, authenticated inference,
+Resend delivery or numbered-task closure is claimed.
+See `CONTINUE-HERE.md` for exact deployment IDs and continuation requirements.
 
 
 Supplemental cross-cutting checkpoint PR #81 merged as

@@ -1,85 +1,79 @@
 # Railway hosted Alpha replacement
 
-The user authorized retiring the Nurain deployment connected to ChatWithStars in
-favor of Masanawa, using existing service slots. Both DigitalOcean Droplets were
-deleted at their explicit request. No new Droplet was created.
+## Current status — 2026-10-04
 
-## Verified resources
+The repository-access blocker is resolved. Private `Baatiku/masanawa` source is
+attached to the reused worker and call-gateway slots in project
+`3ab9e6ec-a3fa-47c9-be81-4f12a315ca0b`, production environment
+`a7a29368-d2d5-4baf-b846-c570dfeaa6ba`. No repository was made public or
+mirrored into ChatWithStars.
 
-Project: `3ab9e6ec-a3fa-47c9-be81-4f12a315ca0b` (`empowering-education`).
-Environment: `a7a29368-d2d5-4baf-b846-c570dfeaa6ba` (`production`).
+The worker is the Gateway. Deployment
+`17f42e04-5087-488e-9b65-5ac7d8683b3b` succeeded on
+`ec2b9c798c68dec3c651b4c7a4fb3190ec6271e9`.
+`https://nurainworker-production.up.railway.app/readyz` returned HTTP 200,
+Gateway ready and database-schema ready. The hosted wrapper completed startup
+and canonical bootstrap/adoption; no database was reseeded for verification.
+Gemini generation and authenticated conversations still require live checks.
 
-The former contracts service `498972c8-d316-4d76-b22c-c8358666394f` now runs
-`postgres:18-bookworm` on the private endpoint `nuraincontracts.railway.internal`.
-Its 500 MB volume `72653d2d-1e4f-42bb-82d5-238ed901226f` mounts at
-`/var/lib/postgresql`. Deployment `fd4cab85-1874-4486-9aeb-2edbe06621c4`
-succeeded; real logs confirm PostgreSQL 18.6 ready for connections. No public
-database proxy was created. Masanawa migrations/bootstrap remain unrun here.
+The contracts service is PostgreSQL 18.6:
+`498972c8-d316-4d76-b22c-c8358666394f`,
+private endpoint `nuraincontracts.railway.internal`, 500 MB volume
+`72653d2d-1e4f-42bb-82d5-238ed901226f` at `/var/lib/postgresql`.
+No public database proxy exists. The dashboard slot remains unchanged.
 
-## Repository access blocker
+## Current APK continuation
 
-Railway rejected `Baatiku/masanawa` as not found/inaccessible. The worker
-`68191f50-7189-4ebe-88f2-db8ef2077d81` remains connected to ChatWithStars.
-Masanawa configuration was mistakenly applied before source attachment succeeded,
-causing failed deployment `735c979f-aa73-4bdf-89f6-f5dc8cf48258`; restoration of
-the original build/start/health/watch settings was subsequently applied live.
-Do not reuse that failed deployment as validation of Masanawa code.
+The reused call-gateway service `6e4a8421-ff66-4d4d-9409-62631edfd2a4` now
+runs the APK builder. It is not a telephony service at this checkpoint.
+Diagnostic deployment `3e32b67f-e98c-4853-9519-6aa312812418` ran Flutter
+analysis without compilation errors and passed 40 tests. It failed the splash
+test because a polling timer survived disposal, so no APK was produced.
 
-The repository owner must grant the Railway GitHub App access to Masanawa through
-GitHub Settings / Applications / Installed GitHub Apps / Railway / Configure.
-Do not publish the private repository or copy it into ChatWithStars to bypass
-installation access. After access is granted, attach the reviewed Masanawa branch
-at an exact verified commit. Stop on any source-attachment error before committing
-coordinated deployment settings.
+Source `5c5632cd7a7c7f6b886184bd54e732cf6525f508` fixes that lifecycle
+and strengthens login-routing/disposal tests. It also fixes live Alpha access
+rejections returning 500 instead of 401. All 46 Gateway tests, strict Gateway
+typechecking and the complete dependency build pass locally.
 
-For the Gateway use the hosted Dockerfile at
-`infra/deployment/digitalocean/Dockerfile` (host-neutral Node/bootstrap image),
-start `node --conditions=production scripts/start-hosted-alpha.mjs`, clear old
-Nurain pre-deploy commands, and use `/healthz` as deployment healthcheck.
-`/readyz` must independently succeed before calling the Agent runtime ready.
-Keep port 8080 to match the existing domain. The private admin database URL and
-Alpha development token are already configured; never print their values.
+New deployments were authorized and triggered on this exact source:
+- Gateway: `1162ccd8-4b6b-4a1c-85e0-f0417cd820eb`.
+- APK builder: `0abc66ae-d1fc-456a-a705-f58f2a4c822c`.
 
-## All-six-key import
+Gateway deployment succeeded; live readiness returned 200 and the unauthenticated
+directory returned 401. All 106 Gateway/Agents tests pass. Foundation CI run
+37186111144 failed before checkout with zero steps and runner_id=0.
+Inspect APK logs/status; do not claim compilation from deployment submission.
+The builder uses `infra/deployment/mobile/Dockerfile` and
+`bash infra/deployment/mobile/start-builder.sh`, HTTPS Gateway URL, the existing
+Alpha token, private download token and exact source commit. Flutter tests use
+one worker, expanded reporting and a ten-minute process limit. Errors still
+stop compilation. The download server starts only after a successful APK build.
 
-The user's explicit instruction authorized pulling all six enabled Gemini
-credentials from Nurain Supabase. The encrypted rows and fingerprints were copied
-to `MASANAWA_ALPHA_GEMINI_IMPORTED_CREDENTIALS_JSON` on the Railway worker.
-The source database was not modified. The app connection withholds environment
-values, so the existing encryption secret was not extracted or displayed.
+The download token was rotated without changing the Gateway Alpha token or
+identity references. Fetch the authenticated manifest/APK/hash, check source
+provenance and SHA-256, then deliver the actual artifact privately. This debug
+APK contains a development token and must not be publicly released.
 
-At startup, the explicit infrastructure migration bridge decrypts the imported
-AES-256-GCM rows using the worker's existing `CREDENTIAL_ENCRYPTION_KEY` and any
-configured previous encryption secrets. It checks source fingerprints and rejects
-duplicates, tampering and partial imports. The resulting private in-process key
-array goes to `MASANAWA_ALPHA_GEMINI_API_KEYS_JSON`; do not also configure the
-single-key alternative. No provider key is embedded in the APK or canonical
-Memory/Identity. The encrypted configuration and encryption secret must remain
-restricted to the backend, not copied to the APK builder.
+## Credential boundary
 
-The inference edge selects one key per request. It does not retry quota failures
-across keys; several keys in the same Google project do not multiply its quota.
-This Alpha selector does not claim durable credential health/cooldown/operator
-management. Live decryption, key validity and model inference remain unverified.
-`gemini-2.5-flash` is explicitly configured from official model documentation;
-verify it with the actual credentials after deployment and replace it if needed.
+All six enabled Nurain Gemini credential rows were imported in encrypted form
+at the user's request. The source database was unchanged. The hosted migration
+bridge decrypts/fingerprint-checks the complete import and fails closed.
+Only the backend holds provider/database credentials; the APK builder uses
+the Alpha token, Gateway URL and private download token.
 
-## APK builder after access is fixed
+One Gemini key is selected per request, with no quota-failure cycling. Startup
+readiness does not prove model/key generation succeeds. Preserve the existing
+configuration; do not recreate sealed credentials or print their values.
+Resend remains pending the user's API key. No email integration/delivery is claimed.
 
-Use `infra/deployment/mobile/Dockerfile` and
-`bash infra/deployment/mobile/start-builder.sh` on an authorized reused builder
-service. Supply the actual HTTPS Gateway URL, the same Alpha development token,
-the private download token and the exact reviewed source commit via
-`MASANAWA_APK_SOURCE_COMMIT` (or Railway's Git commit metadata). Do not put these
-credentials in Docker build arguments or source control.
+## History and gates
 
-SDK installation, Flutter analyze/tests and APK compilation run before private
-downloads are served. Allow enough startup time for the cloud build. The debug
-APK embeds a development token and is not a public release. Return the actual
-artifact privately after the real build succeeds. The dashboard/call service
-sources have not been switched at this checkpoint.
+The earlier inaccessible-source attempt
+`735c979f-aa73-4bdf-89f6-f5dc8cf48258` was not a Masanawa code test.
+The subsequent access grant resolved that blocker. Both DigitalOcean Droplets
+were deleted at the user's request; no replacement Droplet was created.
 
-Local validation passed: Gateway build, 96 Gateway/architecture tests and two
-Node credential-import tests. No Docker image, Flutter/APK build, live Gemini
-inference or full PostgreSQL AgentRun acceptance result is claimed. Task 072
-remains current; the full acceptance/merged-main gate is still open.
+Task 072 remains current despite the successful previously recorded 515-test
+PostgreSQL run. Its implementation-head and merged-main Foundation CI gates
+remain open. APK/device and authenticated hosted-inference checks are separate.

@@ -1,5 +1,50 @@
 # Continue Here
 
+## 2026-10-04 live Railway / APK continuation checkpoint
+
+This checkpoint supersedes older repository-access and hosted-deployment blockers
+below. Recover the live service state before changing settings.
+
+- Open work remains PR #89, branch `task073-inference-hardening`; main is
+  `193ca46b2ed06ff1ced96dab7cb07ea1425345b0`. Task 072 is still current.
+- Railway now accesses the private Masanawa repository. Gateway deployment
+  `17f42e04-5087-488e-9b65-5ac7d8683b3b` succeeded on source
+  `ec2b9c798c68dec3c651b4c7a4fb3190ec6271e9`.
+  HTTPS `https://nurainworker-production.up.railway.app/readyz` returned
+  200, gateway ready, database-schema ready. Hosted bootstrap/startup completed;
+  this does not verify Gemini generation or authenticated mobile conversations.
+- The reused call-gateway service is now the private APK builder, not telephony.
+  Deployment `3e32b67f-e98c-4853-9519-6aa312812418` ran Flutter analysis
+  without compilation errors and passed 40 tests, but failed its splash boot test:
+  a polling timer survived widget disposal. It produced no APK.
+- Source `5c5632cd7a7c7f6b886184bd54e732cf6525f508` replaces splash polling
+  with session listening plus cancellable brand/restore-deadline timers. The boot
+  test now asserts actual login routing and early disposal. Cloud Flutter tests
+  and APK compilation must run before calling that fix verified on Flutter.
+- The same source fixes observed live Alpha access errors: missing token previously
+  returned 500. Explicit HTTP-edge 401/403 now preserve fail-closed admission and
+  hide the distinction between unadmitted/hidden Characters. All 106 Gateway/Agents tests,
+  strict Gateway typechecking and the complete Gateway dependency build passed.
+- Authorized deployments on this source were triggered together: Gateway
+  `1162ccd8-4b6b-4a1c-85e0-f0417cd820eb`, APK builder
+  `0abc66ae-d1fc-456a-a705-f58f2a4c822c`. Gateway deployment succeeded; live readiness returned 200 and the
+  unauthenticated directory returned 401. Inspect the APK builder's actual result.
+  All 106 Gateway/Agents tests pass. Foundation CI run 37186111144 still failed
+  before checkout with zero steps and runner_id=0.
+  The builder logs individual tests with one worker and fails after a bounded
+  ten-minute test stage; failures are never skipped to force APK production.
+- Gateway Alpha identity references and development token were preserved.
+  Only the APK download token was rotated; its value is private and not in Git.
+  The builder embeds the existing Alpha token, never Gemini/database credentials.
+  Inspect its authenticated manifest/hash and deliver the actual APK only after
+  compilation succeeds. Do not expose the APK publicly.
+- Resend configuration remains pending the user's promised API key and completion
+  of the hosted testing path. No email delivery or Resend integration is claimed.
+- Task 072 still requires the exact implementation/merged-main Foundation CI gate;
+  the prior 515 real-PostgreSQL test result is preserved, not rerun or waived here.
+  Do not restart AgentRun, context, selection or inference-budget implementation.
+
+
 ## Task 072 real PostgreSQL verification checkpoint
 
 The 2026-10-04 closure attempt runs PostgreSQL 18.6 with pgvector 0.8.6 in
