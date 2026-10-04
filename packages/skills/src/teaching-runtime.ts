@@ -200,8 +200,19 @@ export function fingerprintTeachingLessonPlan(
   planInput: TeachingLessonPlan,
 ): string {
   const plan = normalizeTeachingLessonPlan(planInput);
+  const pedagogicalIdentity = Object.freeze({
+    skillVersionId: plan.skillVersionId,
+    relationshipId: plan.learner.relationshipId,
+    topic: plan.learner.topic,
+    level: plan.learner.level,
+    goals: plan.learner.goals,
+    sequenceTitle: plan.sequenceTitle,
+    steps: plan.steps,
+    resources: plan.resources,
+    uncertaintyNotes: plan.uncertaintyNotes,
+  });
   return `sha256:${fingerprintCanonicalJson(
-    JSON.parse(canonicalJson(plan)),
+    JSON.parse(canonicalJson(pedagogicalIdentity)),
   )}`;
 }
 
