@@ -39,7 +39,7 @@ if not url.startswith('https://storage.googleapis.com/flutter_infra_release/'):
 PY
   curl -fsSL --retry 2 "$(cat "$CACHE_DIR/flutter-url")" -o "$CACHE_DIR/flutter.tar.xz"
   sha256sum -c "$CACHE_DIR/flutter.sha256"
-  tar -xf "$CACHE_DIR/flutter.tar.xz" -C "$CACHE_DIR"
+  tar --no-same-owner -xf "$CACHE_DIR/flutter.tar.xz" -C "$CACHE_DIR"
 fi
 if [[ ! -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]]; then
   curl -fsSL --retry 2 https://dl.google.com/android/repository/commandlinetools-linux-15859902_latest.zip -o "$CACHE_DIR/android-tools.zip"
