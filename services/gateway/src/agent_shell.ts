@@ -145,6 +145,8 @@ export function createAgentShellService(input: {
         });
       }
 
+      if (!input.actionExecutor) throw unsupportedAction();
+
       const valuesHash = sha256(stableValues(request.action.values));
       const tokenHash = sha256(request.action.token);
       const claimed = await input.repository.claimAction({
@@ -172,8 +174,6 @@ export function createAgentShellService(input: {
           retryable: false,
         });
       }
-
-      if (!input.actionExecutor) throw unsupportedAction();
 
       let execution;
       try {
