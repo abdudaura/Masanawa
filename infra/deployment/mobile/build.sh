@@ -50,7 +50,26 @@ if [[ ! -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]]; then
 fi
 export PATH="$CACHE_DIR/flutter/bin:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
 export GRADLE_USER_HOME="$CACHE_DIR/gradle"
-export GRADLE_OPTS="-Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx1536m -Dfile.encoding=UTF-8"
+# Small hosted builders need a single JVM/worker; do not inherit the template's
+# 8 GB heap or spawn a second Kotlin compiler daemon.
+mkdir -p "$GRADLE_USER_HOME"
+cat > "$GRADLE_USER_HOME/gradle.properties" <<'PROPERTIES'
+org.gradle.daemon=false
+org.gradle.workers.max=1
+org.gradle.parallel=false
+org.gradle.jvmargs=-Xmx768m -XX:MaxMetaspaceSize=384m -XX:ReservedCodeCacheSize=128m -Dfile.encoding=UTF-8
+kotlin.compiler.execution.strategy=in-process
+PROPERTIES
+export GRADLE_OPTS="-Dorg.gradle.daemon=false -Dorg.gradle.workers.max=1 -Dorg.gradle.parallel=false"
+python3 - <<'PY'
+from pathlib import Path
+for file in ('/sys/fs/cgroup/memory.max', '/sys/fs/cgroup/memory/memory.limit_in_bytes'):
+    path = Path(file)
+    if path.is_file():
+        value = path.read_text().strip()
+        print('APK builder cgroup memory limit: ' + value, flush=True)
+        break
+PY
 flutter config --no-analytics
 # Avoid masking license/setup failures (yes may exit with SIGPIPE after sdkmanager exits).
 set +o pipefail
@@ -58,7 +77,7 @@ yes | sdkmanager --licenses >/dev/null
 license_status=${PIPESTATUS[1]}
 set -o pipefail
 [[ "$license_status" -eq 0 ]]
-sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+sdkmanager "platform-tools" "platforms;android-37" "build-tools;36.0.0"
 cd "$ROOT_DIR/apps/mobile"
 flutter pub get
 flutter analyze --no-fatal-infos --no-fatal-warnings
