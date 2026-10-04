@@ -153,8 +153,8 @@ function assertTaskShape(task: WorkflowTask): void {
   }
 
   const terminal = ["completed", "failed", "cancelled"].includes(task.state);
-  if (["pending", "ready"].includes(task.state) && task.startedAt !== null) {
-    fail("unstarted Task cannot have startedAt");
+  if (task.state === "pending" && task.startedAt !== null) {
+    fail("pending Task cannot have startedAt");
   }
   if (["running", "waiting", "completed", "failed"].includes(task.state) && task.startedAt === null) {
     fail("started Task states require startedAt");
