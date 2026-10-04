@@ -86,6 +86,15 @@ describe("financial service recovery and admission", () => {
     expect(crypto.reserveWithdrawal).not.toHaveBeenCalled();
     expect(fetch).not.toHaveBeenCalled();
   });
+  it("rejects a representable seven-decimal payout before provider access or reserve", async () => {
+    const { service, crypto, fetch } = setup(null, account);
+    await expect(service.createWithdrawal({
+      authorizationHeader, requestId, providerCode: "USDTTRC20",
+      amount: "1.1234567", destinationAddress: "address",
+    })).rejects.toThrow("financial.crypto.amount_unavailable");
+    expect(crypto.reserveWithdrawal).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalled();
+  });
   it("does not infer withdrawal routes from deposit support", async () => {
     const { service, crypto } = setup(null, account);
     await expect(service.createWithdrawal({ authorizationHeader, requestId, providerCode: "BTC",
