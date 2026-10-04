@@ -518,6 +518,9 @@ importers:
       '@masanawa/memory':
         specifier: workspace:*
         version: link:../../packages/memory
+      '@masanawa/messaging-channels':
+        specifier: workspace:*
+        version: link:../../adapters/channels/messaging
       '@masanawa/node-runtime':
         specifier: workspace:*
         version: link:../../infra/runtime/node
@@ -527,6 +530,9 @@ importers:
       '@masanawa/postgres':
         specifier: workspace:*
         version: link:../../adapters/storage/postgres
+      '@masanawa/providers':
+        specifier: workspace:*
+        version: link:../../packages/providers
       '@masanawa/security':
         specifier: workspace:*
         version: link:../../packages/security
