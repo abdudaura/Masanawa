@@ -59,6 +59,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   bool _nearBottom = true;
   int _newBelow = 0;
   final Set<String> _selectedMessageIds = {};
+  final Map<String, GlobalKey> _messageKeys = {};
 
   @override
   void initState() {
@@ -462,9 +463,18 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     final thread = chat.threads[widget.characterId];
     final allMessages = thread?.messages ?? const <AiChatMessage>[];
     final query = _search.text.trim().toLowerCase();
-    final messages = query.isEmpty
-        ? allMessages
-        : allMessages.where((m) => m.text.toLowerCase().contains(query)).toList();
+    final messages = allMessages;
+    final searchMatches = query.isEmpty
+        ? const <AiChatMessage>[]
+        : allMessages
+            .where((m) => !m.deleted && m.text.toLowerCase().contains(query))
+            .toList();
+    if (_searchIndex >= searchMatches.length && searchMatches.isNotEmpty) {
+      _searchIndex = searchMatches.length - 1;
+    }
+    final highlightedSearchId = searchMatches.isEmpty
+        ? null
+        : searchMatches[_searchIndex].id;
     final sending = chat.sendingIn.contains(widget.characterId);
     final userMessages = allMessages.where((m) => m.isUser).toList();
     final lastUser = userMessages.isEmpty ? null : userMessages.last;
@@ -554,7 +564,12 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                     hintText: 'Search this chat',
                     border: InputBorder.none,
                   ),
-                  onChanged: (_) => setState(() => _searchIndex = 0),
+                  onChanged: (_) {
+                    setState(() => _searchIndex = 0);
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      _scrollToSearchMatch();
+                    });
+                  },
                 )
               : InkWell(
             onTap: () => context.push('/agents'),
@@ -626,6 +641,27 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 if (!_showSearch) _search.clear();
               }),
             ),
+            if (_showSearch && searchMatches.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Center(
+                  child: Text(
+                    '${_searchIndex + 1}/${searchMatches.length}',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ),
+              ),
+              IconButton(
+                tooltip: 'Previous result',
+                icon: const Icon(Icons.keyboard_arrow_up),
+                onPressed: () => _moveSearch(-1, searchMatches),
+              ),
+              IconButton(
+                tooltip: 'Next result',
+                icon: const Icon(Icons.keyboard_arrow_down),
+                onPressed: () => _moveSearch(1, searchMatches),
+              ),
+            ],
             IconButton(
               tooltip: 'Video call',
               icon: const Icon(Icons.videocam_outlined),
@@ -699,9 +735,15 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                         return Column(
                           children: [
                             if (showDate) _DateSeparator(date: message.createdAt),
-                            _ChatBubble(
+                            KeyedSubtree(
+                              key: _messageKeys.putIfAbsent(
+                                message.id,
+                                () => GlobalKey(),
+                              ),
+                              child: _ChatBubble(
                           message: message,
                           selected: _selectedMessageIds.contains(message.id),
+                          highlighted: highlightedSearchId == message.id,
                           onSelect: () => setState(() {
                             if (!_selectedMessageIds.add(message.id)) {
                               _selectedMessageIds.remove(message.id);
@@ -744,6 +786,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                                         );
                                   }
                                 },
+                              ),
                             ),
                           ],
                         );
@@ -823,6 +866,38 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
   bool _sameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
+
+  void _moveSearch(int delta, List<AiChatMessage> matches) {
+    if (matches.isEmpty) return;
+    setState(() {
+      _searchIndex = (_searchIndex + delta) % matches.length;
+      if (_searchIndex < 0) _searchIndex += matches.length;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToSearchMatch());
+  }
+
+  void _scrollToSearchMatch() {
+    final query = _search.text.trim().toLowerCase();
+    if (query.isEmpty) return;
+    final messages = ref
+        .read(aiChatProvider.notifier)
+        .threadOf(widget.characterId)
+        .messages
+        .where((m) => !m.deleted && m.text.toLowerCase().contains(query))
+        .toList();
+    if (messages.isEmpty) return;
+    final index = _searchIndex.clamp(0, messages.length - 1);
+    final key = _messageKeys[messages[index].id];
+    final target = key?.currentContext;
+    if (target != null) {
+      Scrollable.ensureVisible(
+        target,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+        alignment: .35,
+      );
+    }
+  }
 
   void _copySelected(List<AiChatMessage> messages) {
     final text = messages
@@ -1424,6 +1499,7 @@ class _ChatBubble extends StatelessWidget {
   const _ChatBubble({
     required this.message,
     required this.selected,
+    required this.highlighted,
     required this.onSelect,
     required this.onReply,
     required this.onReact,
@@ -1438,6 +1514,7 @@ class _ChatBubble extends StatelessWidget {
 
   final AiChatMessage message;
   final bool selected;
+  final bool highlighted;
   final VoidCallback onSelect;
   final VoidCallback onReply;
   final ValueChanged<String> onReact;
@@ -1580,8 +1657,11 @@ class _ChatBubble extends StatelessWidget {
                   bottomLeft: Radius.circular(isUser ? 14 : 4),
                   bottomRight: Radius.circular(isUser ? 4 : 14),
                 ),
-                border: selected
-                    ? Border.all(color: u.brand, width: 2)
+                border: selected || highlighted
+                    ? Border.all(
+                        color: highlighted ? u.warning : u.brand,
+                        width: 2,
+                      )
                     : isUser
                     ? null
                     : Border.all(color: u.structuralBorder),
