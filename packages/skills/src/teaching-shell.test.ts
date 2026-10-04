@@ -19,6 +19,7 @@ describe("Teaching ShellDocument v1 projection", () => {
       kind: "exercise",
       ...ids,
       actionKey: "teach.action.fractions.1",
+      actionExpiresAt: "2099-01-01T00:00:00.000Z",
       card: {
         ...ids,
         lessonStepKey: "fractions",
@@ -35,14 +36,14 @@ describe("Teaching ShellDocument v1 projection", () => {
     const document = projectTeachingToShellDocument(projection, {
       documentId: "teaching.fractions.exercise.1",
       revision: 1,
-      expiresAt: "2099-01-01T00:00:00Z",
+      expiresAt: "2099-01-01T00:00:00.000Z",
     });
 
     expect(document).toMatchObject({
       version: 1,
       id: "teaching.fractions.exercise.1",
       revision: 1,
-      expiresAt: "2099-01-01T00:00:00Z",
+      expiresAt: "2099-01-01T00:00:00.000Z",
       nodes: [
         { type: "heading" },
         { type: "text" },
@@ -71,12 +72,13 @@ describe("Teaching ShellDocument v1 projection", () => {
     expect(JSON.stringify(document)).not.toContain(ids.skillVersionId);
   });
 
-  it("requires expiry for actionable documents just like the Flutter parser", () => {
+  it("derives expiry from the bound action even when projection options omit it", () => {
     const ids = scope();
     const projection: TeachingRuntimeProjection = {
       kind: "exercise",
       ...ids,
       actionKey: "teach.action.fractions.2",
+      actionExpiresAt: "2099-01-01T00:00:00.000Z",
       card: {
         ...ids,
         lessonStepKey: "fractions",
@@ -87,12 +89,11 @@ describe("Teaching ShellDocument v1 projection", () => {
       },
     };
 
-    expect(() =>
-      projectTeachingToShellDocument(projection, {
-        documentId: "teaching.fractions.exercise.2",
-        revision: 0,
-      }),
-    ).toThrow(/require timezone-bound expiry/);
+    const document = projectTeachingToShellDocument(projection, {
+      documentId: "teaching.fractions.exercise.2",
+      revision: 0,
+    });
+    expect(document.expiresAt).toBe("2099-01-01T00:00:00.000Z");
   });
 
   it("renders free response as non-executable readable content", () => {
@@ -101,6 +102,7 @@ describe("Teaching ShellDocument v1 projection", () => {
       kind: "exercise",
       ...ids,
       actionKey: null,
+      actionExpiresAt: null,
       card: {
         ...ids,
         lessonStepKey: "fractions",
@@ -217,5 +219,34 @@ describe("Teaching ShellDocument v1 projection", () => {
     expect(JSON.stringify(document)).not.toContain("contentHash");
     expect(JSON.stringify(document)).not.toContain("provider");
     expect(JSON.stringify(document)).not.toContain("credential");
+  });
+});
+
+
+describe("Teaching ShellDocument action expiry binding", () => {
+  it("rejects a shell expiry that differs from the server Teaching action expiry", () => {
+    const ids = scope();
+    const projection: TeachingRuntimeProjection = {
+      kind: "exercise",
+      ...ids,
+      actionKey: "teach.action.fractions.expiry",
+      actionExpiresAt: "2099-01-01T00:00:00.000Z",
+      card: {
+        ...ids,
+        lessonStepKey: "fractions",
+        exerciseKey: "common-denominator",
+        prompt: "Choose.",
+        kind: "single-select",
+        options: [{ optionKey: "six", label: "6" }],
+      },
+    };
+
+    expect(() =>
+      projectTeachingToShellDocument(projection, {
+        documentId: "teaching.fractions.expiry",
+        revision: 0,
+        expiresAt: "2100-01-01T00:00:00.000Z",
+      }),
+    ).toThrow(/must match the bound action expiry/);
   });
 });
