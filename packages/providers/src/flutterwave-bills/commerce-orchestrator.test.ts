@@ -99,6 +99,31 @@ describe("BillingCommerceOrchestrator", () => {
     });
   });
 
+  it("supports Flutterwave airtime/data flow without validation when the catalog says it is unnecessary", async () => {
+    let validations = 0;
+    const store = new MemoryStore();
+    const orchestrator = new BillingCommerceOrchestrator({
+      store,
+      provider: provider({
+        async validateCustomer() {
+          validations += 1;
+          throw new Error("must not validate airtime/data");
+        },
+      }),
+    });
+    await expect(
+      orchestrator.prepare({
+        ...purchase,
+        itemName: "1 GB Data",
+        recipientValidation: "not-required",
+      }),
+    ).resolves.toMatchObject({
+      state: "ready",
+      customerName: null,
+    });
+    expect(validations).toBe(0);
+  });
+
   it("rejects a provider validation that does not bind the selected biller", async () => {
     const orchestrator = new BillingCommerceOrchestrator({
       store: new MemoryStore(),
