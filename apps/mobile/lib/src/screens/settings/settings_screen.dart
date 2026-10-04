@@ -463,8 +463,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               leading: Icon(Icons.delete_outline, color: u.brand),
               title: const Text('Clear all chats'),
               subtitle: const Text('Remove every conversation on this device'),
-              onTap: () {
-                ref.read(aiChatProvider.notifier).clearAll();
+              onTap: () async {
+                await ref.read(aiChatProvider.notifier).clearAll();
+                if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('All chats cleared')),
                 );
@@ -506,7 +507,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onTap: () async {
                 await MobilePushService.instance.unregister();
                 await ref.read(aiChatProvider.notifier).clearSecureShellState();
-                ref.read(aiChatProvider.notifier).clearAll();
+                await ref.read(aiChatProvider.notifier).clearAll();
                 await ref.read(sessionProvider.notifier).logout();
                 if (context.mounted) context.go('/phone-login');
               },
