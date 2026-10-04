@@ -288,6 +288,144 @@ export function createAgentConversationService(input: {
       }
     },
 
+    async mediaSetTurn(
+      request: Parameters<AgentConversationService["mediaSetTurn"]>[0],
+    ) {
+      const characterSessionId = parseCanonicalId(
+        "character-session",
+        request.characterSessionId,
+      );
+      const characterId = parseCanonicalId("character", request.characterId);
+      const caption = request.caption.trim();
+      if (
+        !Array.isArray(request.media) ||
+        request.media.length < 2 ||
+        request.media.length > 8
+      ) {
+        throw new RangeError("Agent media set is invalid");
+      }
+      let aggregate = 0;
+      const media = request.media.map((item) => {
+        const mimeType = item.mimeType.trim().toLowerCase();
+        aggregate += item.dataBase64.length;
+        if (
+          aggregate > 16_000_000 ||
+          !/^[a-z0-9.+-]+\/[a-z0-9.+-]+$/u.test(mimeType) ||
+          item.dataBase64.length < 1 ||
+          item.dataBase64.length > 12_000_000 ||
+          (item.name !== undefined && item.name.length > 240)
+        ) {
+          throw new RangeError("Agent media set is invalid");
+        }
+        return Object.freeze({
+          mimeType,
+          dataBase64: item.dataBase64,
+          ...(item.name?.trim() ? { name: item.name.trim() } : {}),
+        });
+      });
+
+      const admission = await input.authorizer.authorize({
+        authorizationHeader: request.authorizationHeader,
+        characterId,
+      });
+      const session = await input.sessions.read({
+        authority: admission.authority,
+        scope: admission.scope,
+        characterSessionId,
+      });
+
+      const agentRunId = createCanonicalId("agent-run");
+      const run = await input.runs.create({
+        authority: admission.authority,
+        scope: admission.scope,
+        agentRunId,
+        characterSessionId,
+        characterVersionId: session.characterVersionId,
+        lineage: {
+          parentAgentRunId: null,
+          rootAgentRunId: agentRunId,
+          depth: 0,
+        },
+        trace: {
+          requestId: request.requestId,
+          correlationId: request.correlationId,
+          taskId: null,
+          workflowRunId: null,
+          operationIds: [],
+        },
+      });
+
+      const selectionGate = skillSelectionGate(input.skillSelection, {
+        authority: admission.authority,
+        session,
+        run,
+      });
+      try {
+        const context = await input.contextCompiler?.compile({
+          authority: admission.authority,
+          session,
+          run,
+          ...(caption ? { recallQuery: caption.slice(0, 2000) } : {}),
+        });
+        const result = await input.strategy.execute({
+          ...(context ? { context } : {}),
+          ...selectionGate.request,
+          agentRunId,
+          characterSessionId,
+          characterVersionId: session.characterVersionId,
+          presentation: admission.presentation,
+          input: Object.freeze({
+            kind: "media-set" as const,
+            caption,
+            media: Object.freeze(media),
+          }),
+        });
+        selectionGate.close();
+        const reply = result.reply.trim();
+        if (!reply) throw new Error("empty strategy reply");
+
+        await input.runs.finish({
+          authority: admission.authority,
+          scope: admission.scope,
+          agentRunId,
+          outcome: { state: "completed" },
+        });
+
+        const audio = input.nativeAudio
+          ? await input.nativeAudio.render(reply).catch(() => undefined)
+          : undefined;
+        return Object.freeze({
+          reply,
+          agentRunId,
+          parts: result.parts,
+          ...(audio
+            ? {
+                audioBase64: audio.dataBase64,
+                audioMimeType: audio.mimeType,
+                audioDurationMs: audio.durationMs,
+              }
+            : {}),
+        });
+      } catch (error) {
+        selectionGate.close();
+        await input.runs
+          .finish({
+            authority: admission.authority,
+            scope: admission.scope,
+            agentRunId,
+            outcome: {
+              state: "failed",
+              failureCode:
+                error instanceof AgentInferenceError
+                  ? error.code
+                  : "alpha.media_strategy_failed",
+            },
+          })
+          .catch(() => undefined);
+        throw error;
+      }
+    },
+
     async close(
       request: Parameters<AgentConversationService["close"]>[0],
     ) {
