@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createCanonicalId } from "@masanawa/contracts";
-import type { BillingQuote, BillingQuoteRepository } from "@masanawa/commerce";
+import { formatNgnKobo, type BillingQuote, type BillingQuoteRepository } from "@masanawa/commerce";
 import {
   FlutterwaveBillsClient,
   FlutterwaveFundingClient,
