@@ -11,7 +11,7 @@
   - `packages/skills/src/teaching-runtime.test.ts`
   - `packages/skills/src/index.ts` only for the new integration export
 - Dependencies: consumes Core Teaching contracts from stacked PR #94; external owners implement the published ports. No edits to their claimed files.
-- Current step: claim publication before integration edits.
-- Verification: pending.
-- Deployment: none.
+- Current step: provider-neutral runtime/persistence/presentation bridge implemented; verification and owner composition pending.
+- Verification: source/tests authored; GitHub CI status pending on current head. Exact changed-file audit and CI execution state will be recorded before handoff.
+- Deployment: none. Coordination comments published on PRs #89, #91 and #92; no ownership transfer or foreign-file edits.
 - Collision rule: no Gateway/mobile/channel/chat-renderer/migration/lockfile/shared deployment edits in this workstream.
