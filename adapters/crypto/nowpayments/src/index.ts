@@ -2,6 +2,7 @@ export {
   normalizeAvailableCurrencies,
   qualifyRoute,
   splitProviderCurrency,
+  withRouteEvidence,
   type CryptoOperation,
   type NowPaymentsCurrencyEvidence,
   type RouteQualification,
