@@ -187,19 +187,21 @@ settlement. Models may recommend or explain but do not create financial truth.
 
 ## Initial product families
 
-Do not seed a large uncurated marketplace. Start with a small set that proves different
-fulfillment shapes:
-- web research;
-- document/CV creation;
-- website audit/order;
-- lead research;
-- social content;
-- airtime/data;
-- bill payment;
-- booking/reservation.
+The launch overlay is `docs/DIGITAL-COMMERCE-LAUNCH.md`.
+Data bundles and crypto buy/sell are required families. Airtime, electricity and TV
+are proposed companion products awaiting approval. Flutterwave is the selected
+billing provider; NOWPayments is the selected crypto provider.
+Crypto catalogs are discovered by exact supported asset/network and operation,
+filtered through low-fee policy; Ethereum-mainnet ERC-20 routes are excluded.
+Users name an asset or request a short searchable list rather than seeing every token.
+Crypto payment acceptance is not proof of customer fiat cash-out support; qualify
+each buy/sell flow for our account and region before advertising it.
+Fiat/crypto principal is separate from AI Credits/Agent Float and creator earnings.
 
-Each production Skill/Offer must use the existing canonical Skills/Tools/Provider
-boundaries and appropriate commerce/Workflow acceptance gates.
+Writing, CVs, business planning, research, websites, social content and bookings remain
+capability candidates; they are not automatically launch paid products. The prior alpha
+Business Plan Offer is scaffolding pending complete delivery and scope decision.
+The overlay records financial/Skill corrections and broader keep/defer decisions.
 
 ## Implementation sequencing
 
