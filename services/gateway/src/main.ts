@@ -9,7 +9,7 @@ import type {
 } from "@masanawa/agents";
 import { readRequiredEnv } from "@masanawa/contracts";
 import type { CryptoRepository } from "@masanawa/commerce";
-import { NowPaymentsClient } from "@masanawa/nowpayments";
+import { NowPaymentsClient, NowPaymentsPayoutClient } from "@masanawa/nowpayments";
 import {
   createDrainState,
   readNodeServiceRuntimeConfig,
@@ -260,6 +260,8 @@ export async function startGatewayService(
 
   const nowPaymentsApiKey = env.NOWPAYMENTS_API_KEY?.trim();
   const nowPaymentsIpnSecret = env.NOWPAYMENTS_IPN_SECRET?.trim();
+  const payoutEmail = env.NOWPAYMENTS_PAYOUT_EMAIL?.trim();
+  const payoutPassword = env.NOWPAYMENTS_PAYOUT_PASSWORD?.trim();
   const publicBaseUrl =
     env.MASANAWA_PUBLIC_BASE_URL?.trim() ||
     env.RAILWAY_STATIC_URL?.trim() ||
@@ -278,6 +280,15 @@ export async function startGatewayService(
           authorizer: financialAuthorizer,
           crypto: database.crypto,
           nowPayments: new NowPaymentsClient({ apiKey: nowPaymentsApiKey }),
+          ...(payoutEmail && payoutPassword
+            ? {
+                nowPaymentsPayout: new NowPaymentsPayoutClient({
+                  apiKey: nowPaymentsApiKey,
+                  email: payoutEmail,
+                  password: payoutPassword,
+                }),
+              }
+            : {}),
           nowPaymentsIpnSecret,
           publicBaseUrl,
         })
