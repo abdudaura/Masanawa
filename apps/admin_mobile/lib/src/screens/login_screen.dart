@@ -27,7 +27,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
       _error = null;
     });
     try {
-      await AdminApi(token: token).health();
+      await AdminApi(token: token).platformSummary();
       await widget.onAuthenticated(token);
     } catch (error) {
       if (mounted) setState(() => _error = error.toString());
@@ -105,7 +105,9 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    adminBaseUrl,
+                    adminBaseUrl.trim().isEmpty
+                        ? 'Ops endpoint not configured'
+                        : adminBaseUrl,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: colors.textMuted,
