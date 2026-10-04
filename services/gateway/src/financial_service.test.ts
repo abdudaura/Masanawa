@@ -16,7 +16,7 @@ const intent: CryptoIntent = {
   providerDispatchStartedAt: at, status: "processing", createdAt: at, updatedAt: at,
 };
 const account: NowPaymentsAccountEvidence = {
-  custodyEnabled: true, customerManagementEnabled: true, conversionEnabled: false,
+  custodyEnabled: true, customerManagementEnabled: true, conversionEnabled: true,
   payoutEnabled: true, ipWhitelistSatisfied: true,
   payoutDestinationWhitelistSatisfied: true, observedAt: at,
 };
@@ -24,7 +24,18 @@ function setup(existing: CryptoIntent | null = intent, evidence?: NowPaymentsAcc
   const payload = { payment_id: "123", order_id: tenantId+"."+requestId, price_amount: "10",
     price_currency: "usdttrc20", pay_currency: "usdttrc20", pay_amount: "10",
     actually_paid: "10", payment_status: "finished" };
-  const fetch = vi.fn(async () => new Response(JSON.stringify(payload)));
+  const fetch = vi.fn(async (request: RequestInfo | URL) => {
+    const url = String(request);
+    if (url.endsWith("/auth")) return new Response(JSON.stringify({ token: "fixture-jwt" }));
+    if (url.includes("/payout/validate-address")) return new Response(JSON.stringify({ valid: true }));
+    if (url.includes("/payout/fee?")) {
+      return new Response(JSON.stringify({ currency: "usdttrc20", fee: "0.1" }));
+    }
+    if (url.includes("/payout-withdrawal/min-amount/")) {
+      return new Response(JSON.stringify({ success: true, result: "1" }));
+    }
+    return new Response(JSON.stringify(payload));
+  });
   const crypto = {
     readIntent: vi.fn(async () => existing),
     readIntentByRequestId: vi.fn(async () => existing),
@@ -79,6 +90,45 @@ describe("financial service recovery and admission", () => {
     const { service, crypto } = setup(null, account);
     await expect(service.createWithdrawal({ authorizationHeader, requestId, providerCode: "BTC",
       amount: "10", destinationAddress: "address" })).rejects.toThrow("financial.crypto.withdrawal_unavailable");
+    expect(crypto.reserveWithdrawal).not.toHaveBeenCalled();
+  });
+  it("quotes validated withdrawal minimum and current network fee before reservation", async () => {
+    const { service, crypto, fetch } = setup(null, account);
+    await expect(service.quoteWithdrawal({
+      authorizationHeader, providerCode: "USDTTRC20", amount: "10", destinationAddress: "address",
+    })).resolves.toEqual({
+      providerCode: "USDTTRC20", amount: "10", destinationAddress: "address",
+      minimumAmount: "1", networkFee: "0.1", addressValidated: true, quotedAt: at,
+    });
+    expect(crypto.reserveWithdrawal).not.toHaveBeenCalled();
+    expect(fetch).toHaveBeenCalledTimes(3);
+  });
+  it("rejects a provider-invalid destination before reserving customer principal", async () => {
+    const { service, crypto, fetch } = setup(null, account);
+    fetch.mockImplementation(async (request: RequestInfo | URL) => {
+      const url = String(request);
+      if (url.includes("/payout/validate-address")) return new Response("invalid", { status: 400 });
+      if (url.includes("/payout/fee?")) return new Response(JSON.stringify({ fee: "0.1" }));
+      if (url.includes("/payout-withdrawal/min-amount/")) return new Response(JSON.stringify({ success: true, result: "1" }));
+      return new Response("{}");
+    });
+    await expect(service.createWithdrawal({
+      authorizationHeader, requestId, providerCode: "USDTTRC20", amount: "10", destinationAddress: "bad-address",
+    })).rejects.toThrow("nowpayments.payout.address.invalid");
+    expect(crypto.reserveWithdrawal).not.toHaveBeenCalled();
+  });
+  it("rejects a withdrawal below the live provider minimum before reservation", async () => {
+    const { service, crypto, fetch } = setup(null, account);
+    fetch.mockImplementation(async (request: RequestInfo | URL) => {
+      const url = String(request);
+      if (url.includes("/payout/validate-address")) return new Response("{}");
+      if (url.includes("/payout/fee?")) return new Response(JSON.stringify({ fee: "0.1" }));
+      if (url.includes("/payout-withdrawal/min-amount/")) return new Response(JSON.stringify({ success: true, result: "20" }));
+      return new Response("{}");
+    });
+    await expect(service.createWithdrawal({
+      authorizationHeader, requestId, providerCode: "USDTTRC20", amount: "10", destinationAddress: "address",
+    })).rejects.toThrow("financial.crypto.withdrawal_below_minimum");
     expect(crypto.reserveWithdrawal).not.toHaveBeenCalled();
   });
   it("requeries a bound pending deposit and passes full evidence to its ledger owner", async () => {
