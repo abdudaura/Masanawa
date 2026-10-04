@@ -389,8 +389,10 @@ export function createFinancialService(input: {
   async function routesCoveredByCustody(
     auth: FinancialAuthority,
     routes: readonly NowPaymentsCurrencyEvidence[],
-  ): Promise<readonly NowPaymentsCurrencyEvidence[]> {
-    if (!input.nowPaymentsCustody) return Object.freeze([]);
+  ) {
+    if (!input.nowPaymentsCustody) {
+      return Object.freeze({ routes: Object.freeze([] as NowPaymentsCurrencyEvidence[]), balances: Object.freeze([]) });
+    }
     const balances = await input.nowPaymentsCustody.readBalances(AbortSignal.timeout(15_000));
     const balanceByCurrency = new Map(
       balances.map((entry) => [entry.currency, entry.available] as const),
@@ -410,7 +412,10 @@ export function createFinancialService(input: {
         covered.push(route);
       }
     }
-    return Object.freeze(covered);
+    return Object.freeze({
+      routes: Object.freeze(covered),
+      balances,
+    });
   }
 
   async function qualifiedWithdrawalRoutes(auth: FinancialAuthority) {
@@ -464,9 +469,6 @@ export function createFinancialService(input: {
       throw new Error("financial.crypto.amount_unavailable");
     }
 
-    const routes = await qualifiedWithdrawalRoutes(auth);
-    const route = routes?.find((candidate) => candidate.providerCode === providerCode);
-    if (!route) throw new Error("financial.crypto.withdrawal_unavailable");
     if (
       !input.withdrawalDestinationApproved ||
       !(await input.withdrawalDestinationApproved({
@@ -479,19 +481,22 @@ export function createFinancialService(input: {
       throw new Error("financial.crypto.withdrawal_destination_unapproved");
     }
 
+    const qualified = await qualifiedWithdrawalRoutes(auth);
+    const route = qualified?.routes.find((candidate) => candidate.providerCode === providerCode);
+    if (!route) throw new Error("financial.crypto.withdrawal_unavailable");
+
     const signal = AbortSignal.timeout(15_000);
-    const [, validated, fee, minimum, balances] = await Promise.all([
+    const [, validated, fee, minimum] = await Promise.all([
       input.nowPaymentsPayout.authenticate(signal),
       input.nowPaymentsPayout.validateAddress({ currency: providerCode, address, signal }),
       input.nowPaymentsPayout.getPayoutFeeEstimate({ currency: providerCode, amount, signal }),
       input.nowPaymentsPayout.getMinimumPayoutAmount({ currency: providerCode, signal }),
-      input.nowPaymentsCustody.readBalances(signal),
     ]);
     const minimumAmount = normalizeCryptoAmount(minimum.minimumAmount);
     if (!amountAtLeast(amount, minimumAmount)) {
       throw new Error("financial.crypto.withdrawal_below_minimum");
     }
-    const providerBalance = balances.find((entry) => entry.currency === providerCode);
+    const providerBalance = qualified.balances.find((entry) => entry.currency === providerCode);
     const requiredProviderUnits =
       decimalUnits(amount) + decimalUnits(fee.fee, true);
     if (
@@ -530,16 +535,16 @@ export function createFinancialService(input: {
       throw new Error("financial.crypto.amount_unavailable");
     }
 
-    const routes = await qualifiedConversionRoutes(auth);
+    const qualified = await qualifiedConversionRoutes(auth);
     if (
-      !routes?.some((route) => route.providerCode === providerCode) ||
-      !routes.some((route) => route.providerCode === targetProviderCode)
+      !qualified?.routes.some((route) => route.providerCode === providerCode) ||
+      !qualified.routes.some((route) => route.providerCode === targetProviderCode)
     ) {
       throw new Error("financial.crypto.conversion_unavailable");
     }
 
     const signal = AbortSignal.timeout(15_000);
-    const [, quote, balances] = await Promise.all([
+    const [, quote] = await Promise.all([
       input.nowPaymentsCustody.authenticate(signal),
       input.nowPayments.quotePayment({
         amount: numericAmount,
@@ -547,9 +552,8 @@ export function createFinancialService(input: {
         currencyTo: targetProviderCode,
         signal,
       }),
-      input.nowPaymentsCustody.readBalances(signal),
     ]);
-    const providerBalance = balances.find((entry) => entry.currency === providerCode);
+    const providerBalance = qualified.balances.find((entry) => entry.currency === providerCode);
     if (
       providerBalance === undefined ||
       decimalUnits(providerBalance.available, true) < decimalUnits(amount)
@@ -659,12 +663,12 @@ export function createFinancialService(input: {
       let withdrawals = false;
       let conversions = false;
       try {
-        const routes = await qualifiedWithdrawalRoutes(auth);
-        withdrawals = routes !== null && routes.length > 0;
+        const qualified = await qualifiedWithdrawalRoutes(auth);
+        withdrawals = qualified !== null && qualified.routes.length > 0;
       } catch { /* Unknown/stale evidence denies admission. */ }
       try {
-        const routes = await qualifiedConversionRoutes(auth);
-        conversions = routes !== null && routes.length > 1;
+        const qualified = await qualifiedConversionRoutes(auth);
+        conversions = qualified !== null && qualified.routes.length > 1;
       } catch { /* Unknown/stale evidence denies admission. */ }
       return Object.freeze({
         deposits: true as const,
@@ -691,7 +695,7 @@ export function createFinancialService(input: {
 
     async listConversionRoutes(request) {
       const auth = await authority(request.authorizationHeader);
-      return Object.freeze((await qualifiedConversionRoutes(auth)) ?? []);
+      return Object.freeze((await qualifiedConversionRoutes(auth))?.routes ?? []);
     },
 
     async createDeposit(request) {
