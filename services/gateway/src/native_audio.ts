@@ -64,7 +64,7 @@ export function createGeminiLiveAudioRenderer(input: {
 
       const url =
         "wss://generativelanguage.googleapis.com/ws/" +
-        "google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent" +
+        "google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent" +
         "?key=" + encodeURIComponent(apiKey);
 
       return await new Promise<NativeAudioResult>((resolve, reject) => {
@@ -90,12 +90,10 @@ export function createGeminiLiveAudioRenderer(input: {
           socket.send(JSON.stringify({
             setup: {
               model: "models/" + model,
-              generationConfig: {
-                responseModalities: ["AUDIO"],
-                speechConfig: {
-                  voiceConfig: {
-                    prebuiltVoiceConfig: { voiceName },
-                  },
+              responseModalities: ["AUDIO"],
+              speechConfig: {
+                voiceConfig: {
+                  prebuiltVoiceConfig: { voiceName },
                 },
               },
             },
