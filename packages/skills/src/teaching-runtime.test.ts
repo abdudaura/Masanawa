@@ -25,6 +25,7 @@ import {
   type TeachingProgressPort,
   type TeachingRuntimeProjection,
   type TeachingSelectionAttempt,
+  type TeachingFreeResponseAttempt,
 } from "./teaching-runtime.js";
 
 function lesson(): TeachingLessonPlan {
@@ -121,6 +122,7 @@ function rubric(plan: TeachingLessonPlan): TeachingSelectableExerciseRubric {
 class MemoryProgressPort implements TeachingProgressPort {
   progress: { planHash: string; progress: TeachingProgressHandoff } | null = null;
   readonly attempts = new Map<RequestId, TeachingSelectionAttempt>();
+  readonly freeResponses = new Map<RequestId, TeachingFreeResponseAttempt>();
 
   async load(
     key: TeachingProgressKey,
@@ -146,6 +148,24 @@ class MemoryProgressPort implements TeachingProgressPort {
       return "replay";
     }
     this.attempts.set(attempt.requestId, attempt);
+    this.progress = {
+      planHash: attempt.planHash,
+      progress: attempt.progress,
+    };
+    return "stored";
+  }
+
+  async commitFreeResponseAttempt(
+    attempt: TeachingFreeResponseAttempt,
+  ): Promise<"stored" | "replay"> {
+    const existing = this.freeResponses.get(attempt.requestId);
+    if (existing !== undefined) {
+      if (existing.payloadHash !== attempt.payloadHash) {
+        throw new TypeError("Teaching RequestId payload conflict");
+      }
+      return "replay";
+    }
+    this.freeResponses.set(attempt.requestId, attempt);
     this.progress = {
       planHash: attempt.planHash,
       progress: attempt.progress,
