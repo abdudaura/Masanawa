@@ -1311,32 +1311,34 @@ class _Composer extends StatelessWidget {
             Semantics(
               button: true,
               label: hasText ? 'Send message' : 'Record voice note',
-              child: Material(
-                color: u.brand,
-                shape: const CircleBorder(),
-                clipBehavior: Clip.antiAlias,
-                child: InkWell(
-                  onTap: sending ? onStop : (hasText ? onSend : onMic),
-                  onLongPressStart:
-                      sending || hasText ? null : onMicHoldStart,
-                  onLongPressMoveUpdate:
-                      sending || hasText ? null : onMicHoldMove,
-                  onLongPressEnd:
-                      sending || hasText ? null : onMicHoldEnd,
-                  child: SizedBox(
-                    width: 52,
-                    height: 52,
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 160),
-                      child: Icon(
-                        sending
-                            ? Icons.stop_rounded
-                            : hasText
-                            ? Icons.send_rounded
-                            : Icons.mic_rounded,
-                        key: ValueKey('$sending-$hasText'),
-                        color: Colors.white,
-                        size: 23,
+              child: GestureDetector(
+                onLongPressStart:
+                    sending || hasText ? null : onMicHoldStart,
+                onLongPressMoveUpdate:
+                    sending || hasText ? null : onMicHoldMove,
+                onLongPressEnd:
+                    sending || hasText ? null : onMicHoldEnd,
+                child: Material(
+                  color: u.brand,
+                  shape: const CircleBorder(),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: sending ? onStop : (hasText ? onSend : onMic),
+                    child: SizedBox(
+                      width: 52,
+                      height: 52,
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 160),
+                        child: Icon(
+                          sending
+                              ? Icons.stop_rounded
+                              : hasText
+                              ? Icons.send_rounded
+                              : Icons.mic_rounded,
+                          key: ValueKey('$sending-$hasText'),
+                          color: Colors.white,
+                          size: 23,
+                        ),
                       ),
                     ),
                   ),
