@@ -15,6 +15,7 @@ Owned paths for this workstream:
 - `apps/mobile/lib/src/state/agent_connection_state.dart`, `apps/mobile/lib/src/core/providers.dart` to remove manual Agent connection/token state.
 - `apps/mobile/lib/src/router/app_router.dart`, `apps/mobile/lib/src/screens/settings/settings_screen.dart`, `apps/mobile/lib/src/screens/onboarding/phone_login_screen.dart`, `apps/mobile/lib/src/screens/onboarding/name_screen.dart` to remove Developer/test-login UI and complete the real signed-in profile.
 - `apps/mobile/lib/src/screens/settings/developer_screen.dart` deletion.
+- `apps/mobile/lib/src/screens/onboarding/otp_screen.dart`, `apps/mobile/lib/src/screens/splash/splash_screen.dart`, `apps/mobile/lib/src/screens/chat/ai_chat_screen.dart`, `apps/mobile/lib/src/screens/chat/masana_list_screen.dart`, `apps/mobile/lib/src/state/creator_economy_state.dart`, `apps/mobile/lib/src/state/creator_skills_state.dart`, and `apps/mobile/lib/src/agents/agent_feedback.dart` only to remove dependencies on the retired Developer/connection state and bind recovery to the production session.
 - focused mobile tests affected by the above.
 - this claim and production-auth handoff docs.
 
