@@ -1,6 +1,6 @@
 # Workstream claim — workflow-task-leasing
 
-Status: active
+Status: implementation complete; PostgreSQL verification evidence pending
 Owner: this isolated stacked workstream
 Started: 2026-10-04 19:26 Africa/Lagos
 Base: work/workflow-task-admission-20261004 @ 5ffbe40e20542426bc51cd702c644571d3f72af9
@@ -38,3 +38,25 @@ This workstream does not modify Task 084-086 implementation files, canonical eve
 - prevent duplicate checkout of the same ready Task under concurrency.
 
 Task 088 remains the owner of heartbeat, expired-lease reclaim and stale-run adoption.
+
+
+## Implementation handoff
+
+Implemented on branch `work/workflow-task-leasing-20261004` in draft PR #109.
+
+The slice now provides:
+
+- Task lease owner/fence/lease timestamps;
+- running-state lease custody constraint;
+- Tenant-scoped deterministic checkout;
+- `FOR UPDATE SKIP LOCKED` concurrency;
+- monotonic fence increment on checkout;
+- optimistic Task revision increment on checkout/settlement;
+- fenced completed/failed/waiting/cancelled settlement;
+- current owner/fence/state/expiry/chronology checks;
+- lease clearing with persisted fence generation;
+- PostgreSQL acceptance for distinct concurrent workers, stale owner/fence,
+  expiry and state-specific settlements.
+
+Task 088 heartbeat, lease renewal, expired-lease reclaim and stale-run adoption
+remain explicitly unimplemented here.
