@@ -75,3 +75,18 @@ PR #102 (`work/integration-financial-ops-20261004`) is merged into this PR's bas
 Purpose of the transfer: implement atomic conversion reserve/bind/settle, durable provider conversion identity, durable withdrawal network-fee reserve/release accounting, and reconciliation/liability helpers required by the already-owned financial service. Do not edit unrelated billing, channel, workflow, mobile, deployment, or shared Commerce repository paths.
 
 Applied migrations are immutable. `0005_crypto_assets.sql` will not be modified; all schema evolution is additive in `0007_crypto_conversion_fees.sql`.
+
+
+## NOWPayments adapter successor ownership — 2026-10-05
+
+PR #98 (`work/integration-nowpayments-live-20261004`) is retained as a frozen live/read-only verification checkpoint. Its adapter snapshot was already imported into the financial-integration lineage consumed by this continuation and it has not advanced since that handoff. The user explicitly continued the crypto implementation in PR #124.
+
+PR #124 is therefore the successor writer for crypto-specific NOWPayments adapter evolution required by this workstream, including:
+- `adapters/crypto/nowpayments/src/client.ts`;
+- `adapters/crypto/nowpayments/src/payment.ts` and `payment.test.ts`;
+- `adapters/crypto/nowpayments/src/custody.ts` and `custody.test.ts`;
+- `adapters/crypto/nowpayments/src/payout.ts` and `payout.test.ts`;
+- `adapters/crypto/nowpayments/src/index.ts`;
+- associated crypto-only adapter tests needed by those files.
+
+PR #98 has been notified not to add further adapter commits without re-coordination. Runtime/deployment composition is still excluded from this ownership.
