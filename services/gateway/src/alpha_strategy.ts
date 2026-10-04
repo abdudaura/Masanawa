@@ -43,6 +43,7 @@ export function createAlphaInferenceStrategy(input: {
         },
         limits,
         request.onTextDelta,
+        request.signal,
       );
       const reply = result.text.trim();
       return Object.freeze({
