@@ -71,3 +71,22 @@ The acceptance harness now exercises the production-style selectable path:
 It also proves that a later channel cannot resume durable learner progress against a
 different regenerated pedagogical sequence. Language/modality changes remain permitted
 without changing the pedagogical plan identity.
+
+
+## Shell and provider callback acceptance
+
+The acceptance path now crosses the same shapes used by the active UI/channel work:
+- a bound Teaching exercise projects into ShellDocument v1 using existing primitives;
+- Shell button id is the visible option key;
+- Shell action id is the fixed allowlisted `teaching.select`;
+- Shell token is the opaque server action key;
+- Shell document expiry is the exact Teaching action expiry;
+- ShellAction resolves back to one opaque Teaching selection without accepting injected form values;
+- WhatsApp/Telegram outbound choices expose compact <=64-character provider selection IDs;
+- provider selection IDs resolve through server-held bindings tied to the exact Teaching action binding hash;
+- a valid callback cannot be substituted onto another valid action;
+- aggregate ShellDocument text/node/depth bounds are checked server-side before emission.
+
+Current app/channel executable projection is single-select. Multi-select deliberately fails closed until
+#91/#92 have a bounded staged-selection/commit contract rather than independent buttons pretending to be
+one multi-answer submission.
