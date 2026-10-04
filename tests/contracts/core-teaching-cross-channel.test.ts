@@ -162,6 +162,32 @@ describe("Core Teaching cross-channel acceptance", () => {
       rubric: rubric(active),
       expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
     });
+
+    const exerciseProjection = await app.presentBoundExercise(
+      binding(active),
+      {
+        relationshipId: active.learner.relationshipId,
+        skillVersionId: active.skillVersionId,
+        lessonStepKey: "common-denominator",
+        exerciseKey: "common-denominator-choice",
+        prompt: "Which is a common denominator for 1/2 and 1/3?",
+        kind: "single-select",
+        options: [
+          { optionKey: "six", label: "6" },
+          { optionKey: "five", label: "5" },
+        ],
+      },
+      action,
+    );
+    expect(exerciseProjection).toMatchObject({
+      kind: "exercise",
+      actionKey: "teach.action.common-denominator.1",
+    });
+    if (exerciseProjection.kind === "exercise") {
+      expect(exerciseProjection).not.toHaveProperty("rubric");
+      expect(exerciseProjection.card).not.toHaveProperty("correctOptionKeys");
+    }
+
     surfaces.failNext = true;
     await expect(
       app.submitOpaqueSelection({
