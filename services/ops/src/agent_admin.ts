@@ -24,6 +24,7 @@ export type AgentAdminCapability =
   | "operations.read"
   | "reconciliation.read"
   | "providers.credentials.read"
+  | "providers.credentials.write"
   | "audit.read"
   | "memory.admin.read"
   | "world.admin.read"
