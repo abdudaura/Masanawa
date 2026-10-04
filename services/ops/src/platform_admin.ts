@@ -1,4 +1,5 @@
-import type { TenantId } from "@masanawa/contracts";
+import { nowInstant, parseCanonicalId, type TenantId } from "@masanawa/contracts";
+import type { CommerceRepository } from "@masanawa/commerce";
 import type { AgentAdminAuthorizer } from "./agent_admin.js";
 
 export interface PlatformAdminQuery {
@@ -158,6 +159,12 @@ export interface PlatformAdminService {
     readonly authorizationHeader: string | undefined;
     readonly limit?: number;
   }): Promise<readonly PlatformAdminOffer[]>;
+  setOfferEnabled(input: {
+    readonly authorizationHeader: string | undefined;
+    readonly offerId: string;
+    readonly expectedRevision: number;
+    readonly enabled: boolean;
+  }): Promise<PlatformAdminOffer>;
   listFulfillments(input: {
     readonly authorizationHeader: string | undefined;
     readonly limit?: number;
@@ -219,6 +226,7 @@ function tenant(authority: { readonly tenantId: TenantId }): TenantId {
 export function createPlatformAdminService(input: {
   readonly database: PlatformAdminQuery;
   readonly authorizer: AgentAdminAuthorizer;
+  readonly commerce?: CommerceRepository;
 }): PlatformAdminService {
   const authorize = async (
     authorizationHeader: string | undefined,
@@ -228,6 +236,7 @@ export function createPlatformAdminService(input: {
       | "identity.users.write"
       | "agents.runs.read"
       | "commerce.read"
+      | "commerce.write"
       | "operations.read"
       | "reconciliation.read"
       | "providers.credentials.read"
@@ -487,6 +496,38 @@ export function createPlatformAdminService(input: {
         enabled: row.enabled,
         updatedAt: iso(row.updated_at),
       }));
+    },
+
+    async setOfferEnabled(request) {
+      const authority = await authorize(
+        request.authorizationHeader,
+        "commerce.write",
+      );
+      if (!input.commerce) {
+        throw new Error("Commerce administration is unavailable");
+      }
+      const offerId = parseCanonicalId("offer", request.offerId);
+      const current = await input.commerce.readOfferRevision({
+        tenantId: tenant(authority),
+        offerId,
+        revision: request.expectedRevision,
+      });
+      if (!current) {
+        throw new AdminConflictError("Offer revision changed or was not found");
+      }
+      const next = await input.commerce.registerOfferRevision({
+        ...current,
+        revision: current.revision + 1,
+        active: request.enabled,
+        createdAt: nowInstant(),
+      });
+      return {
+        offerId: next.offerId,
+        key: next.key,
+        revision: next.revision,
+        enabled: next.active,
+        updatedAt: next.createdAt,
+      };
     },
 
     async listFulfillments(request) {
