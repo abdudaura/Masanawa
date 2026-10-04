@@ -16,7 +16,7 @@ if ($AlphaToken -match '\s') { throw "Alpha token must not contain whitespace." 
 $ready = Invoke-RestMethod -Uri "$GatewayUrl/readyz" -TimeoutSec 20
 if ($ready.status -ne "ready") { throw "Gateway is not ready." }
 if (-not [string]::IsNullOrWhiteSpace($AlphaToken)) {
-  $directory = Invoke-RestMethod -Uri "$GatewayUrl/v1/agent/directory" -TimeoutSec 20 -Headers @{Authorization = "Bearer $AlphaToken"}
+  $directory = Invoke-RestMethod -Uri "$GatewayUrl/agent/directory" -TimeoutSec 20 -Headers @{Authorization = "Bearer $AlphaToken"}
   $names = @($directory.agents | ForEach-Object { $_.displayName })
   $missing = @("Gwani", "Gwana") | Where-Object { $_ -notin $names }
   Write-Host "Authorized visible agents:" ($names -join ", ")
@@ -39,6 +39,15 @@ try {
   if ($LASTEXITCODE -ne 0) { throw "Flutter tests failed." }
   $defines = @{ AGENT_RUNTIME_ENABLED = "true"; AGENT_BASE_URL = $GatewayUrl }
   if (-not [string]::IsNullOrWhiteSpace($AlphaToken)) { $defines.ALPHA_DEV_ACCESS_TOKEN = $AlphaToken }
+  foreach ($name in @(
+    "FIREBASE_API_KEY",
+    "FIREBASE_APP_ID",
+    "FIREBASE_MESSAGING_SENDER_ID",
+    "FIREBASE_PROJECT_ID"
+  )) {
+    $value = [Environment]::GetEnvironmentVariable($name)
+    if (-not [string]::IsNullOrWhiteSpace($value)) { $defines[$name] = $value }
+  }
   [IO.File]::WriteAllText($definesPath, ($defines | ConvertTo-Json), [Text.UTF8Encoding]::new($false))
   & $flutterCommand.Source build apk --debug "--dart-define-from-file=$definesPath"
   if ($LASTEXITCODE -ne 0) { throw "APK build failed." }
