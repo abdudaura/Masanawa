@@ -208,19 +208,7 @@ function txRef(quote: BillingQuote): string {
   return `bill-${quote.quoteId}-r${quote.revision}`.slice(0,128);
 }
 
-export function createBillingCheckoutService(input: Readonly<{
-  sessions: CustomerSessionAuthorizer;
-  quotes: BillingQuoteRepository;
-  catalog: FlutterwaveBillsClient;
-  funding: FlutterwaveFundingClient;
-  billing: BillingFinancialService;
-  actionSecret: string;
-  redirectUrl: string;
-  feeBasisPoints?: number;
-  feeFixedKobo?: number;
-  quoteTtlSeconds?: number;
-  now?: () => string;
-}>): Readonly<{
+export interface BillingCheckoutService {
   createQuote(request: Readonly<{
     authorizationHeader: string | undefined;
     categoryCode: string;
@@ -252,8 +240,27 @@ export function createBillingCheckoutService(input: Readonly<{
     revision: number;
     actionId: string;
     token: string;
-  }>): Promise<Readonly<{ accepted: true; phase: string; document: unknown; message?: string }>>;
-}> {
+  }>): Promise<Readonly<{
+    accepted: true;
+    phase: string;
+    document: unknown;
+    message?: string;
+  }>>;
+}
+
+export function createBillingCheckoutService(input: Readonly<{
+  sessions: CustomerSessionAuthorizer;
+  quotes: BillingQuoteRepository;
+  catalog: FlutterwaveBillsClient;
+  funding: FlutterwaveFundingClient;
+  billing: BillingFinancialService;
+  actionSecret: string;
+  redirectUrl: string;
+  feeBasisPoints?: number;
+  feeFixedKobo?: number;
+  quoteTtlSeconds?: number;
+  now?: () => string;
+}>): BillingCheckoutService {
   const now = input.now ?? (() => new Date().toISOString());
   const quoteTtlSeconds = input.quoteTtlSeconds ?? 15 * 60;
   const feeBasisPoints = input.feeBasisPoints ?? 0;
