@@ -7,7 +7,6 @@ import {
 import {
   createTeachingRuntimeBinding,
   createTeachingSelectionActionBinding,
-  createTeachingChannelSelectionBinding,
   createTeachingChannelSingleSelectProjection,
   resolveTeachingChannelSelection,
   TeachingRuntimeCoordinator,
