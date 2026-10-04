@@ -35,6 +35,13 @@ export interface BillingFinancialService {
     refresh?: boolean;
     signal?: AbortSignal;
   }>): Promise<BillingFulfillmentRecord>;
+  /** Server-internal owner-scoped reconciliation after trusted webhook/status evidence. */
+  reconcileOwnedPurchase(input: Readonly<{
+    tenantId: string;
+    userId: string;
+    reference: string;
+    signal?: AbortSignal;
+  }>): Promise<BillingFulfillmentRecord>;
   receiveWebhook(input: Readonly<{
     rawBody: Uint8Array;
     verifHash: string | null | undefined;
@@ -121,6 +128,24 @@ export function createBillingFinancialService(input: Readonly<{
     }
   }
 
+  async function readForIdentity(
+    identity: Readonly<{ tenantId: string; userId: string }>,
+    reference: string,
+    refresh: boolean,
+    signal?: AbortSignal,
+  ): Promise<BillingFulfillmentRecord> {
+    const service = orchestrator(identity);
+    const current = await input.billingStore(identity).read(reference);
+    if (!current) throw new Error("financial.billing_not_found");
+    if (!refresh || ["failed","reversed","manual_review"].includes(current.state)) {
+      await settle(identity,current);
+      return current;
+    }
+    const reconciled = await service.reconcile(reference,signal);
+    await settle(identity,reconciled);
+    return reconciled;
+  }
+
   return Object.freeze<BillingFinancialService>({
     async listCategories(request) {
       await input.authorizer.authorize({ authorizationHeader: request.authorizationHeader });
@@ -198,18 +223,24 @@ export function createBillingFinancialService(input: Readonly<{
     },
 
     async readPurchase(request) {
-      const identity = await input.authorizer.authorize({ authorizationHeader: request.authorizationHeader });
-      const service = orchestrator(identity);
-      const current = await input.billingStore(identity).read(request.reference);
-      if (!current) throw new Error("financial.billing_not_found");
-      if (!request.refresh ||
-          ["failed","reversed","manual_review"].includes(current.state)) {
-        await settle(identity, current);
-        return current;
-      }
-      const reconciled = await service.reconcile(request.reference, request.signal);
-      await settle(identity, reconciled);
-      return reconciled;
+      const identity = await input.authorizer.authorize({
+        authorizationHeader: request.authorizationHeader,
+      });
+      return readForIdentity(
+        identity,
+        request.reference,
+        request.refresh === true,
+        request.signal,
+      );
+    },
+
+    async reconcileOwnedPurchase(request) {
+      return readForIdentity(
+        { tenantId: request.tenantId, userId: request.userId },
+        request.reference,
+        true,
+        request.signal,
+      );
     },
 
     async receiveWebhook(request) {
