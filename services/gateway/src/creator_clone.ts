@@ -17,12 +17,19 @@ export interface CreatorCloneAuthority {
   readonly userId: UserId;
 }
 
-export interface CreatorCloneAuthorizer {
+export type CreatorCapability =
+  | "creator.clone.write"
+  | "creator.economy.read"
+  | "creator.float.write";
+
+export interface CreatorAuthorizer {
   authorize(input: {
     readonly authorizationHeader: string | undefined;
-    readonly capability: "creator.clone.write";
+    readonly capability: CreatorCapability;
   }): Promise<CreatorCloneAuthority>;
 }
+
+export type CreatorCloneAuthorizer = CreatorAuthorizer;
 
 export interface CreatorCloneService {
   create(input: {
@@ -62,7 +69,7 @@ function list(values: readonly string[], name: string, maxItems: number): readon
 }
 
 export function createCreatorCloneService(input: {
-  readonly authorizer: CreatorCloneAuthorizer;
+  readonly authorizer: CreatorAuthorizer;
   readonly personalClones: PersonalCloneProvisioningRepository;
   readonly presentations: AgentPresentationRepository;
   readonly skillAssignments: CharacterSkillAssignmentRepository;
