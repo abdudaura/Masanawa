@@ -8,6 +8,7 @@ import '../core/network/api_client.dart';
 import 'agent_directory.dart';
 import 'creator_clone.dart';
 import 'creator_economy.dart';
+import 'creator_skills.dart';
 import 'agent_session.dart';
 
 const String kAgentBaseUrl = String.fromEnvironment(
@@ -180,6 +181,47 @@ class MasanawaAgentDirectoryTransport implements AgentDirectoryTransport {
 }
 
 
+
+
+class MasanawaCreatorSkillTransport implements CreatorSkillTransport {
+  MasanawaCreatorSkillTransport({
+    required Dio dio,
+    required String baseUrl,
+    String? Function()? readAccessToken,
+  }) : _client = _GatewayClient(
+         dio: dio,
+         baseUrl: baseUrl,
+         readAccessToken: readAccessToken,
+       );
+
+  final _GatewayClient _client;
+
+  List<CreatorSkillEntry> _parse(Map<String, dynamic> data) {
+    final raw = data['skills'];
+    if (raw is! List) throw const ApiException('Invalid creator Skill catalog');
+    return [
+      for (final item in raw)
+        if (item is Map)
+          CreatorSkillEntry.fromJson(item.cast<String, dynamic>()),
+    ];
+  }
+
+  @override
+  Future<List<CreatorSkillEntry>> load() async {
+    return _parse(await _client.get('/v1/creator/skills'));
+  }
+
+  @override
+  Future<List<CreatorSkillEntry>> setEnabled(
+    String skillVersionId,
+    bool enabled,
+  ) async {
+    return _parse(await _client.put('/v1/creator/skills', {
+      'skillVersionId': skillVersionId,
+      'enabled': enabled,
+    }));
+  }
+}
 
 class MasanawaCreatorEconomyTransport implements CreatorEconomyTransport {
   MasanawaCreatorEconomyTransport({
