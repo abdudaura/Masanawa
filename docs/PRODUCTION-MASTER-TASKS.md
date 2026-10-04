@@ -31,6 +31,15 @@ Broader admin/device/world/studio/plugin promises move to later implementation w
 removing completed foundations or closing their acceptance gates.
 Follow docs/MULTI-WINDOW-WORK.md for concurrent implementation ownership.
 
+## Required Core teaching overlay — 2026-10-04
+
+Tasks 075/077-078 must include detailed adaptive Teaching Skill orchestration;
+Tasks 067/070/082 cover rehearsals and evidence; canonical Memory/Workflow tasks own
+private learner progress and resumable lessons. App, WhatsApp and Telegram must
+support teaching with voice/text and selectable exercises. Basic teaching is Core;
+paid course/exam Offers remain future proposals. See docs/SKILL-DESIGN.md.
+No task completion is inferred by adding this requirement.
+
 ## Current position
 
 Merged `main` satisfies Tasks **001-071**.
