@@ -1,0 +1,22 @@
+# Workstream claim — integration / Billing Commerce
+
+- Owner/window: ChatGPT billing completion window, 2026-10-04.
+- Branch: `work/integration-billing-commerce-20261004`.
+- Base: Flutterwave bills PR #95 head `5b304dad76714525fa3bf59c7b2a61b7f6f9a702`.
+- Purpose: complete provider-neutral billing orchestration around the Flutterwave bills adapter without editing active Commerce, Gateway, channel, chat-renderer, runtime, migration, package-export or deployment owners.
+- Owned paths:
+  - `docs/workstreams/integration-billing-commerce.md`
+  - `docs/BILLING-COMMERCE-INTEGRATION.md`
+  - `packages/providers/src/flutterwave-bills/commerce-orchestrator.ts`
+  - `packages/providers/src/flutterwave-bills/commerce-orchestrator.test.ts`
+  - `packages/providers/src/flutterwave-bills/receipt-projection.ts`
+  - `packages/providers/src/flutterwave-bills/receipt-projection.test.ts`
+- Dependencies:
+  - consumes Flutterwave adapter contracts from stacked PR #95;
+  - consumes canonical Commerce Offer/quote/fulfillment/ledger through injected ports only;
+  - CredentialRef resolution, persistent repository implementation, Gateway routes, chat-action projection, app/WhatsApp/Telegram transport binding and production deployment remain owned by their current workstreams.
+- Safety invariants: server-owned quote terms and fulfillment reference only; validated recipient binding; no blind redispatch after ambiguous provider outcome; exact requery before retry; provider evidence must match expected amount/recipient/reference before success; duplicate confirmation/retry reuses one fulfillment identity; provider response never becomes ledger authority by itself.
+- Current step: claim publication before implementation.
+- Verification: pending.
+- Deployment: none.
+- Collision rule: no edits outside the exact owned paths above.
