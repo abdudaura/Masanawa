@@ -60,11 +60,12 @@ describeDatabase("crypto conversion and payout fee PostgreSQL acceptance", () =>
       updatedAt: createdAt,
     };
     await repository.createIntent(deposit);
+    const fundingPaymentId = `fund-${fundingRequestId}`;
     await repository.bindProviderPayment({
       tenantId,
       userId,
       requestId: fundingRequestId,
-      providerPaymentId: `fund-${fundingRequestId}`,
+      providerPaymentId: fundingPaymentId,
       payAddress: "fixture-deposit-address",
       providerPayAmount: balance,
       updatedAt: instant(1),
@@ -73,7 +74,7 @@ describeDatabase("crypto conversion and payout fee PostgreSQL acceptance", () =>
       tenantId,
       userId,
       event: {
-        paymentId: `fund-${fundingRequestId}`,
+        paymentId: fundingPaymentId,
         parentPaymentId: null,
         orderId: fundingRequestId,
         status: "finished",
@@ -91,7 +92,7 @@ describeDatabase("crypto conversion and payout fee PostgreSQL acceptance", () =>
     expect(await repository.readBalance({
       tenantId, userId, asset: "USDTTRC20", network: "tron",
     })).toBe(balance);
-    return { repository, tenantId, userId };
+    return { repository, tenantId, userId, fundingRequestId, fundingPaymentId };
   }
 
   function conversionIntent(
@@ -154,6 +155,69 @@ describeDatabase("crypto conversion and payout fee PostgreSQL acceptance", () =>
       updatedAt: createdAt,
     };
   }
+
+  it("reverses a provider deposit refund exactly once and never resurrects refunded state", async () => {
+    const f = await fundedFixture("30");
+    const refundEvent = {
+      paymentId: f.fundingPaymentId,
+      parentPaymentId: null,
+      orderId: f.fundingRequestId,
+      status: "refunded" as const,
+      priceAmount: "30",
+      priceCurrency: "USDTTRC20",
+      payAmount: "30",
+      payCurrency: "USDTTRC20",
+      actuallyPaid: "30",
+      payloadHash: createHash("sha256").update("refund-one").digest("hex"),
+      observedAt: instant(5),
+    };
+    const refunded = await f.repository.applyProviderPaymentEvent({
+      tenantId: f.tenantId,
+      userId: f.userId,
+      event: refundEvent,
+    });
+    expect(refunded.status).toBe("refunded");
+    expect(await f.repository.readBalance({
+      tenantId: f.tenantId, userId: f.userId, asset: "USDTTRC20", network: "tron",
+    })).toBe("0");
+
+    await f.repository.applyProviderPaymentEvent({
+      tenantId: f.tenantId,
+      userId: f.userId,
+      event: {
+        ...refundEvent,
+        payloadHash: createHash("sha256").update("refund-two").digest("hex"),
+        observedAt: instant(6),
+      },
+    });
+    expect(await f.repository.readBalance({
+      tenantId: f.tenantId, userId: f.userId, asset: "USDTTRC20", network: "tron",
+    })).toBe("0");
+
+    const afterLateFinished = await f.repository.applyProviderPaymentEvent({
+      tenantId: f.tenantId,
+      userId: f.userId,
+      event: {
+        ...refundEvent,
+        status: "finished",
+        payloadHash: createHash("sha256").update("late-finished").digest("hex"),
+        observedAt: instant(7),
+      },
+    });
+    expect(afterLateFinished.status).toBe("refunded");
+    expect(await f.repository.readBalance({
+      tenantId: f.tenantId, userId: f.userId, asset: "USDTTRC20", network: "tron",
+    })).toBe("0");
+
+    const count = await pool.query<{ count: string }>(
+      `SELECT count(*)::text AS count
+         FROM commerce.crypto_ledger_entries
+        WHERE tenant_id=$1 AND user_id=$2 AND request_id=$3
+          AND reason='provider-refund'`,
+      [f.tenantId, f.userId, f.fundingRequestId],
+    );
+    expect(count.rows[0]?.count).toBe("1");
+  });
 
   it("debits source once and credits the exact evidenced target once", async () => {
     const f = await fundedFixture();
