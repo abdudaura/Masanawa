@@ -688,8 +688,17 @@ describe("financial service recovery and admission", () => {
   it("credentials alone do not advertise qualified withdrawals", async () => {
     expect((await setup().service.capabilities({ authorizationHeader })).withdrawals).toBe(false);
   });
-  it("fresh account and exact-route evidence qualify withdrawals", async () => {
-    expect((await setup(intent, account).service.capabilities({ authorizationHeader })).withdrawals).toBe(true);
+  it("fresh account, exact-route evidence and live custody coverage qualify withdrawals", async () => {
+    const { service, crypto } = setup(intent, account);
+    expect((await service.capabilities({ authorizationHeader })).withdrawals).toBe(true);
+    expect(crypto.readAggregateLiability).toHaveBeenCalled();
+  });
+  it("does not treat Customer Management capability as a substitute for user-to-provider binding", async () => {
+    const customerManaged = { ...account, customerManagementEnabled: true };
+    expect((await setup(intent, customerManaged, false).service.capabilities({ authorizationHeader })).withdrawals)
+      .toBe(false);
+    expect((await setup(intent, customerManaged, true).service.capabilities({ authorizationHeader })).withdrawals)
+      .toBe(true);
   });
   it("allows pooled custody only when live custody covers canonical aggregate liabilities", async () => {
     const pooled = { ...account, customerManagementEnabled: false };
@@ -699,7 +708,7 @@ describe("financial service recovery and admission", () => {
       .toBe(true);
   });
   it.each([
-    { custodyEnabled: false }, { payoutEnabled: null }, { customerManagementEnabled: false },
+    { custodyEnabled: false }, { payoutEnabled: null },
     { ipWhitelistSatisfied: false }, { payoutDestinationWhitelistSatisfied: null },
     { observedAt: "2026-10-04T20:00:00Z" },
   ])("fails closed on absent or stale qualification %j", change => {
