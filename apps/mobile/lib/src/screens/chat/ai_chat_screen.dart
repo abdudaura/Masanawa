@@ -644,7 +644,13 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                         horizontal: 12,
                         vertical: 12,
                       ),
-                      itemCount: messages.length + (sending ? 1 : 0),
+                      itemCount: messages.length +
+                          (sending &&
+                                  !messages.any((m) =>
+                                      !m.isUser &&
+                                      m.deliveryStatus == 'streaming')
+                              ? 1
+                              : 0),
                       itemBuilder: (context, index) {
                         if (index >= messages.length) {
                           return const _TypingBubble();
