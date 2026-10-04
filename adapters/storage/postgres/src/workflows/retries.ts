@@ -258,9 +258,9 @@ export async function recordWorkflowTaskFailure(
       `INSERT INTO workflows.task_retry_state (
          tenant_id, task_id, policy_key, policy_version, max_attempts,
          completed_attempts, disposition, next_attempt_at,
-         last_failure_code, last_failure_message, updated_at
+         last_failure_code, last_failure_message, created_at, updated_at
        )
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$11)
        ON CONFLICT (tenant_id, task_id)
        DO UPDATE SET
          completed_attempts = EXCLUDED.completed_attempts,
