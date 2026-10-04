@@ -36,6 +36,7 @@ export interface CryptoIntent {
   readonly providerPayoutId: string | null;
   readonly payAddress: string | null;
   readonly providerPayAmount: string | null;
+  readonly providerDispatchStartedAt: Instant | null;
   readonly status: CryptoIntentStatus;
   readonly createdAt: Instant;
   readonly updatedAt: Instant;
@@ -141,6 +142,8 @@ export function normalizeCryptoIntent(input: CryptoIntent): CryptoIntent {
     payAddress: optional(input.payAddress, "crypto.pay_address.invalid", 512),
     providerPayAmount:
       input.providerPayAmount === null ? null : normalizeCryptoAmount(input.providerPayAmount),
+    providerDispatchStartedAt:
+      input.providerDispatchStartedAt === null ? null : toInstant(input.providerDispatchStartedAt),
     status,
     createdAt,
     updatedAt,
@@ -207,6 +210,12 @@ export interface CryptoRepository {
     readonly requestId: RequestId;
   }): Promise<CryptoIntent | null>;
   listIntents(input: CryptoIntentHistoryQuery): Promise<readonly CryptoIntent[]>;
+  beginProviderDispatch(input: {
+    readonly tenantId: TenantId;
+    readonly userId: UserId;
+    readonly requestId: RequestId;
+    readonly updatedAt: Instant;
+  }): Promise<{ readonly intent: CryptoIntent; readonly shouldDispatch: boolean }>;
   bindProviderPayment(input: {
     readonly tenantId: TenantId;
     readonly userId: UserId;
