@@ -447,4 +447,87 @@ describePostgres("AgentRun restart and replay acceptance", () => {
     });
   });
 
+
+  it("rejects changed admission payload and forged child lineage after restart", async () => {
+    const f = await fixture();
+    const rootAgentRunId = createCanonicalId("agent-run");
+    const requestId = createCanonicalId("request");
+    const correlationId = createCanonicalId("correlation");
+    const rootInput = {
+      authority: f.authority,
+      scope: f.scope,
+      agentRunId: rootAgentRunId,
+      characterSessionId: f.characterSessionId,
+      characterVersionId: f.characterVersionId,
+      lineage: {
+        parentAgentRunId: null,
+        rootAgentRunId,
+        depth: 0,
+      },
+      trace: {
+        requestId,
+        correlationId,
+        taskId: null,
+        workflowRunId: null,
+        operationIds: [],
+      },
+    } as const;
+
+    const repository = createPostgresAgentRunRepository(pool);
+    const root = await repository.create(rootInput);
+
+    await reconnect("changed-admission");
+    const restartedRepository = createPostgresAgentRunRepository(pool);
+
+    await expect(
+      restartedRepository.create({
+        ...rootInput,
+        trace: {
+          ...rootInput.trace,
+          correlationId: createCanonicalId("correlation"),
+        },
+      }),
+    ).rejects.toMatchObject({
+      code: "agents.run_conflict",
+      category: "conflict",
+      retryable: false,
+    });
+
+    const childAgentRunId = createCanonicalId("agent-run");
+    const unrelatedParentId = createCanonicalId("agent-run");
+    await expect(
+      restartedRepository.create({
+        authority: f.authority,
+        scope: f.scope,
+        agentRunId: childAgentRunId,
+        characterSessionId: f.characterSessionId,
+        characterVersionId: f.characterVersionId,
+        lineage: {
+          parentAgentRunId: unrelatedParentId,
+          rootAgentRunId,
+          depth: 1,
+        },
+        trace: {
+          requestId: createCanonicalId("request"),
+          correlationId,
+          taskId: null,
+          workflowRunId: null,
+          operationIds: [],
+        },
+      }),
+    ).rejects.toMatchObject({
+      code: "agents.run_conflict",
+      category: "conflict",
+      retryable: false,
+    });
+
+    await expect(
+      restartedRepository.read({
+        authority: f.authority,
+        scope: f.scope,
+        agentRunId: rootAgentRunId,
+      }),
+    ).resolves.toEqual(root);
+  });
+
 });
