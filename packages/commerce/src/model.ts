@@ -6,13 +6,18 @@ import {
   type FulfillmentId,
   type Instant,
   type LedgerEntryId,
-  type OfferId,
   type QuoteId,
   type RequestId,
   type SkillVersionId,
   type TenantId,
   type UserId,
 } from "@masanawa/contracts";
+
+export type OfferId = string & { readonly __offerId: unique symbol };
+
+function isOfferId(value: unknown): value is OfferId {
+  return typeof value === "string" && /^offer_[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(value);
+}
 
 export type CommerceAccountKind =
   | "customer-credit"
@@ -214,7 +219,7 @@ export function normalizeCommerceAccountRef(input: CommerceAccountRef): Commerce
 
 export function normalizeOfferRevision(input: OfferRevision): OfferRevision {
   if (input.schemaVersion !== 1) throw new TypeError("Unsupported Offer schema");
-  if (!isCanonicalId("offer", input.offerId)) throw new TypeError("offerId is invalid");
+  if (!isOfferId(input.offerId)) throw new TypeError("offerId is invalid");
   if (!isCanonicalId("skill-version", input.skillVersionId)) {
     throw new TypeError("Offer SkillVersionId is invalid");
   }
@@ -326,7 +331,7 @@ export function normalizeCommerceLedgerTransfer(
 export function normalizeCommerceQuote(input: CommerceQuote): CommerceQuote {
   if (input.schemaVersion !== 1) throw new TypeError("Unsupported quote schema");
   if (!isCanonicalId("quote", input.quoteId)) throw new TypeError("quoteId is invalid");
-  if (!isCanonicalId("offer", input.offerId)) throw new TypeError("offerId is invalid");
+  if (!isOfferId(input.offerId)) throw new TypeError("offerId is invalid");
   if (!isCanonicalId("user", input.customerUserId)) throw new TypeError("customerUserId is invalid");
   if (!isCanonicalId("character", input.originatingCharacterId)) {
     throw new TypeError("originatingCharacterId is invalid");
@@ -399,7 +404,7 @@ export function normalizeCommerceFulfillmentAdmission(
   if (!isCanonicalId("quote", input.quoteId)) {
     throw new TypeError("fulfillment quoteId is invalid");
   }
-  if (!isCanonicalId("offer", input.offerId)) {
+  if (!isOfferId(input.offerId)) {
     throw new TypeError("fulfillment offerId is invalid");
   }
   if (!isCanonicalId("skill-version", input.skillVersionId)) {
