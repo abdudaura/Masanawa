@@ -10,6 +10,7 @@ import type {
   TeachingSelectableExerciseRubric,
 } from "./teaching.js";
 import {
+  fingerprintTeachingSelectionAttempt,
   TeachingRuntimeCoordinator,
   type TeachingProgressKey,
   type TeachingProgressPort,
@@ -92,10 +93,9 @@ class MemoryProgressPort implements TeachingProgressPort {
   ): Promise<"stored" | "replay"> {
     const existing = this.attempts.get(attempt.requestId);
     if (existing !== undefined) {
-      expect(existing.relationshipId).toBe(attempt.relationshipId);
-      expect(existing.skillVersionId).toBe(attempt.skillVersionId);
-      expect(existing.exerciseKey).toBe(attempt.exerciseKey);
-      expect(existing.selectedOptionKeys).toEqual(attempt.selectedOptionKeys);
+      if (existing.payloadHash !== attempt.payloadHash) {
+        throw new TypeError("Teaching RequestId payload conflict");
+      }
       return "replay";
     }
     this.attempts.set(attempt.requestId, attempt);
@@ -232,5 +232,68 @@ describe("TeachingRuntimeCoordinator", () => {
       }),
     ).rejects.toThrow(/match rubric scope/);
     expect(progress.attempts.size).toBe(0);
+  });
+});
+
+
+describe("Teaching selection replay identity", () => {
+  it("fingerprints equivalent multi-select order identically", () => {
+    const relationshipId = createCanonicalId("relationship");
+    const skillVersionId = createCanonicalId("skill-version");
+    const left = fingerprintTeachingSelectionAttempt({
+      relationshipId,
+      skillVersionId,
+      lessonStepKey: "prime-numbers",
+      exerciseKey: "choose-primes",
+      selectedOptionKeys: ["two", "three"],
+    });
+    const right = fingerprintTeachingSelectionAttempt({
+      relationshipId,
+      skillVersionId,
+      lessonStepKey: "prime-numbers",
+      exerciseKey: "choose-primes",
+      selectedOptionKeys: ["three", "two"],
+    });
+
+    expect(left).toBe(right);
+    expect(left).toMatch(/^sha256:[0-9a-f]{64}$/);
+  });
+
+  it("rejects changed selection payload under the same RequestId", async () => {
+    const plan = lesson();
+    const progress = new MemoryProgressPort();
+    const coordinator = new TeachingRuntimeCoordinator({ progress });
+    const requestId = createCanonicalId("request");
+
+    await coordinator.submitSelection({
+      requestId,
+      plan,
+      rubric: rubric(plan),
+      submission: {
+        relationshipId: plan.learner.relationshipId,
+        skillVersionId: plan.skillVersionId,
+        lessonStepKey: "common-denominator",
+        exerciseKey: "denominator-choice",
+        selectedOptionKeys: ["six"],
+      },
+      recordedAt: toInstant("2026-10-04T16:00:00.000Z"),
+    });
+
+    await expect(
+      coordinator.submitSelection({
+        requestId,
+        plan,
+        rubric: rubric(plan),
+        submission: {
+          relationshipId: plan.learner.relationshipId,
+          skillVersionId: plan.skillVersionId,
+          lessonStepKey: "common-denominator",
+          exerciseKey: "denominator-choice",
+          selectedOptionKeys: ["five"],
+        },
+        recordedAt: toInstant("2026-10-04T16:00:01.000Z"),
+      }),
+    ).rejects.toThrow(/payload conflict/);
+    expect(progress.attempts.size).toBe(1);
   });
 });
