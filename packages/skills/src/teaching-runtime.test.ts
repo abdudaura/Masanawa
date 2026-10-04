@@ -681,3 +681,118 @@ describe("Teaching opaque action binding", () => {
     ).toThrow(/binding hash does not match payload/);
   });
 });
+
+
+describe("Teaching bound exercise projection", () => {
+  it("exposes only the opaque action key while keeping the answer rubric server-side", async () => {
+    const active = lesson();
+    const admitted = binding(active);
+    const coordinator = new TeachingRuntimeCoordinator({
+      progress: new MemoryProgressPort(),
+    });
+    const action = createTeachingSelectionActionBinding({
+      binding: admitted,
+      actionKey: "teach.action.denominator-choice.bound",
+      requestId: createCanonicalId("request"),
+      rubric: rubric(active),
+      expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
+    });
+
+    const projection = await coordinator.presentBoundExercise(
+      admitted,
+      {
+        relationshipId: active.learner.relationshipId,
+        skillVersionId: active.skillVersionId,
+        lessonStepKey: "common-denominator",
+        exerciseKey: "denominator-choice",
+        prompt: "Which is a common denominator for 1/2 and 1/3?",
+        kind: "single-select",
+        options: [
+          { optionKey: "six", label: "6" },
+          { optionKey: "five", label: "5" },
+        ],
+      },
+      action,
+    );
+
+    expect(projection).toMatchObject({
+      kind: "exercise",
+      actionKey: "teach.action.denominator-choice.bound",
+      card: {
+        exerciseKey: "denominator-choice",
+      },
+    });
+    if (projection.kind === "exercise") {
+      expect(projection.card).not.toHaveProperty("correctOptionKeys");
+      expect(projection).not.toHaveProperty("rubric");
+    }
+  });
+
+  it("rejects a visible card whose option set drifts from the hidden rubric", async () => {
+    const active = lesson();
+    const admitted = binding(active);
+    const coordinator = new TeachingRuntimeCoordinator({
+      progress: new MemoryProgressPort(),
+    });
+    const action = createTeachingSelectionActionBinding({
+      binding: admitted,
+      actionKey: "teach.action.denominator-choice.drift",
+      requestId: createCanonicalId("request"),
+      rubric: rubric(active),
+      expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
+    });
+
+    await expect(
+      coordinator.presentBoundExercise(
+        admitted,
+        {
+          relationshipId: active.learner.relationshipId,
+          skillVersionId: active.skillVersionId,
+          lessonStepKey: "common-denominator",
+          exerciseKey: "denominator-choice",
+          prompt: "Which is a common denominator?",
+          kind: "single-select",
+          options: [
+            { optionKey: "six", label: "6" },
+            { optionKey: "twelve", label: "12" },
+          ],
+        },
+        action,
+      ),
+    ).rejects.toThrow(/options must match the server rubric/);
+  });
+
+  it("rejects a card bound to a different exercise even inside the same lesson", async () => {
+    const active = lesson();
+    const admitted = binding(active);
+    const coordinator = new TeachingRuntimeCoordinator({
+      progress: new MemoryProgressPort(),
+    });
+    const action = createTeachingSelectionActionBinding({
+      binding: admitted,
+      actionKey: "teach.action.denominator-choice.scope",
+      requestId: createCanonicalId("request"),
+      rubric: rubric(active),
+      expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
+    });
+
+    await expect(
+      coordinator.presentBoundExercise(
+        admitted,
+        {
+          relationshipId: active.learner.relationshipId,
+          skillVersionId: active.skillVersionId,
+          lessonStepKey: "common-denominator",
+          exerciseKey: "different-exercise",
+          prompt: "Choose.",
+          kind: "single-select",
+          options: [
+            { optionKey: "six", label: "6" },
+            { optionKey: "five", label: "5" },
+          ],
+        },
+        action,
+      ),
+    ).rejects.toThrow(/must match the server action binding scope/);
+  });
+});
