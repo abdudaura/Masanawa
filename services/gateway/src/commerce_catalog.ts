@@ -24,7 +24,10 @@ export interface CommerceUserAuthority {
 export interface CommerceUserAuthorizer {
   authorize(input: {
     readonly authorizationHeader: string | undefined;
-    readonly capability: "commerce.offers.read" | "commerce.quote.write";
+    readonly capability:
+      | "commerce.offers.read"
+      | "commerce.quote.write"
+      | "commerce.fulfillment.write";
   }): Promise<CommerceUserAuthority>;
 }
 
