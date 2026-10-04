@@ -13,6 +13,7 @@ Finish the production-authentication cleanup that the prior Android-shell window
 - apps/mobile/lib/src/state/agent_connection_state.dart
 - apps/mobile/lib/src/agents/masanawa_transport.dart (runtime-default productionization only)
 - apps/mobile/lib/src/core/providers.dart
+- apps/mobile/lib/src/core/network/api_client.dart (shared session-refresh singleflight only)
 - apps/mobile/lib/src/router/app_router.dart
 - apps/mobile/lib/src/screens/onboarding/phone_login_screen.dart
 - apps/mobile/lib/src/screens/settings/settings_screen.dart
