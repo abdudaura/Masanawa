@@ -6,14 +6,14 @@ Branch: `work/production-mobile-auth-20261004`
 Base: current `main` after merged mobile shell PRs #104, #125 and #127.
 
 Owned paths for this workstream:
-- `services/gateway/src/production_auth.ts` and focused tests.
+- `services/gateway/src/production_auth.ts` and `services/gateway/src/production_auth.test.ts`.
 - `services/gateway/src/app.ts`, `services/gateway/src/main.ts` only for production auth/session composition and route aliases.
 - `services/gateway/package.json` only if auth implementation needs a pinned dependency.
 - `adapters/storage/postgres/src/identity/production-auth.ts` and export wiring only for canonical Supabase-subject -> Masanawa User mapping.
 - `apps/mobile/lib/src/core/network/api_client.dart` for Masanawa Gateway auth base/default only.
 - `apps/mobile/lib/src/state/session_state.dart` to remove Alpha/dev session semantics.
 - `apps/mobile/lib/src/state/agent_connection_state.dart`, `apps/mobile/lib/src/core/providers.dart` to remove manual Agent connection/token state.
-- `apps/mobile/lib/src/router/app_router.dart`, `apps/mobile/lib/src/screens/settings/settings_screen.dart`, `apps/mobile/lib/src/screens/onboarding/phone_login_screen.dart` to remove Developer/test-login UI.
+- `apps/mobile/lib/src/router/app_router.dart`, `apps/mobile/lib/src/screens/settings/settings_screen.dart`, `apps/mobile/lib/src/screens/onboarding/phone_login_screen.dart`, `apps/mobile/lib/src/screens/onboarding/name_screen.dart` to remove Developer/test-login UI and complete the real signed-in profile.
 - `apps/mobile/lib/src/screens/settings/developer_screen.dart` deletion.
 - focused mobile tests affected by the above.
 - this claim and production-auth handoff docs.
