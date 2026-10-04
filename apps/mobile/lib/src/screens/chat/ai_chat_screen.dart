@@ -1640,6 +1640,106 @@ class _VoicePreviewBar extends StatelessWidget {
   }
 }
 
+class _PendingAttachmentStrip extends StatelessWidget {
+  const _PendingAttachmentStrip({
+    required this.attachments,
+    required this.onRemove,
+  });
+
+  final List<ChatAttachment> attachments;
+  final ValueChanged<int> onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    return Container(
+      height: 92,
+      margin: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+      decoration: BoxDecoration(
+        color: u.surfaceCard,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: u.structuralBorder),
+      ),
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: attachments.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 6),
+        itemBuilder: (_, index) {
+          final attachment = attachments[index];
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: attachment.kind == 'image' ? 74 : 120,
+                height: 78,
+                decoration: BoxDecoration(
+                  color: u.surfaceMuted,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: u.structuralBorder),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: attachment.kind == 'image'
+                    ? Image.file(
+                        File(attachment.path),
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) =>
+                            const Center(child: Icon(Icons.broken_image_outlined)),
+                      )
+                    : Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              attachment.kind == 'video'
+                                  ? Icons.videocam_outlined
+                                  : Icons.insert_drive_file_outlined,
+                              color: u.brand,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              attachment.name ?? attachment.label,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: u.textPrimary,
+                                fontSize: 10.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+              ),
+              Positioned(
+                top: -4,
+                right: -4,
+                child: Material(
+                  color: u.surfaceCard,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: () => onRemove(index),
+                    child: Padding(
+                      padding: const EdgeInsets.all(3),
+                      child: Icon(
+                        Icons.close,
+                        size: 15,
+                        color: u.textPrimary,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
 class _ReplyComposerPreview extends StatelessWidget {
   const _ReplyComposerPreview({
     required this.message,
