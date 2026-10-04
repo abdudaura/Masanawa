@@ -132,7 +132,7 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> logout() async {
-    return _post('/auth/logout', const {});
+    return _delete('/auth/logout');
   }
 
   /// Sends one message to the AI assistant. Expects `{reply: String}`.
