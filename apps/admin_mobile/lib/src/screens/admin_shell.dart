@@ -330,6 +330,81 @@ class AgentsPage extends StatefulWidget {
 class _AgentsPageState extends State<AgentsPage> {
   late Future<List<AgentPresentation>> _future = widget.api.agents();
 
+  Future<void> _configureNew() async {
+    try {
+      final characters = await widget.api.characters();
+      if (!mounted) return;
+      final available = characters
+          .where((character) =>
+              !character.configuredInUserApp &&
+              character.activeCharacterVersionId != null)
+          .toList(growable: false);
+
+      if (available.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No unconfigured Character with an active version is available.'),
+          ),
+        );
+        return;
+      }
+
+      final selected = await showModalBottomSheet<AdminCharacter>(
+        context: context,
+        showDragHandle: true,
+        builder: (context) => SafeArea(
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              const ListTile(
+                title: Text('Configure Character'),
+                subtitle: Text('Choose a canonical Character to expose in the user app.'),
+              ),
+              ...available.map(
+                (character) => ListTile(
+                  leading: const Icon(Icons.smart_toy_outlined),
+                  title: Text(character.displayName ?? shortId(character.characterId)),
+                  subtitle: Text(
+                    '${shortId(character.characterId)} · ${character.state}',
+                  ),
+                  onTap: () => Navigator.of(context).pop(character),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      if (selected == null || !mounted) return;
+
+      final draft = AgentPresentation(
+        characterId: selected.characterId,
+        characterVersionId: selected.activeCharacterVersionId!,
+        displayName: selected.displayName ?? '',
+        roleLabel: selected.roleLabel ?? '',
+        about: '',
+        greeting: null,
+        visibleInUserApp: true,
+        sortOrder: 0,
+        revision: 0,
+      );
+
+      final changed = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          builder: (_) => AgentEditorScreen(api: widget.api, agent: draft),
+        ),
+      );
+      if (changed == true && mounted) {
+        setState(() => _future = widget.api.agents());
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error.toString())),
+        );
+      }
+    }
+  }
+
   Future<void> _edit(AgentPresentation agent) async {
     final changed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
@@ -356,10 +431,24 @@ class _AgentsPageState extends State<AgentsPage> {
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(16),
             children: [
-              Text('Agents', style: Theme.of(context).textTheme.headlineSmall),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Agents',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                  ),
+                  FilledButton.icon(
+                    onPressed: _configureNew,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Configure'),
+                  ),
+                ],
+              ),
               const SizedBox(height: 4),
               Text(
-                'Manage what users see and which Skills each agent may use.',
+                'Manage configured Agents or expose another canonical Character.',
                 style: TextStyle(color: context.masanawa.textMuted),
               ),
               const SizedBox(height: 12),
