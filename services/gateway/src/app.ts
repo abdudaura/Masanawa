@@ -6,6 +6,7 @@ import type { AgentConversationService } from "./agent_conversation_contract.js"
 import type { CreatorCloneService } from "./creator_clone.js";
 import type { CreatorEconomyService } from "./creator_economy.js";
 import type { CreatorSkillService } from "./creator_skills.js";
+import type { CommerceCatalogService } from "./commerce_catalog.js";
 import {
   admitTelemetryCorrelation,
   injectCorrelationHeaders,
@@ -27,6 +28,7 @@ export interface GatewayAppOptions {
   readonly creatorClone?: CreatorCloneService;
   readonly creatorEconomy?: CreatorEconomyService;
   readonly creatorSkills?: CreatorSkillService;
+  readonly commerceCatalog?: CommerceCatalogService;
 }
 
 const HealthResponseSchema = Type.Object(
@@ -205,6 +207,87 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
 
 
 
+
+
+  if (options.commerceCatalog) {
+    const commerceCatalog = options.commerceCatalog;
+    const OfferViewSchema = Type.Object(
+      {
+        offerId: Type.String(),
+        revision: Type.Integer({ minimum: 1 }),
+        key: Type.String(),
+        title: Type.String(),
+        description: Type.String(),
+        skillVersionId: Type.String(),
+        priceCredits: Type.Integer({ minimum: 1 }),
+        active: Type.Literal(true),
+      },
+      { additionalProperties: false },
+    );
+
+    app.get(
+      "/offers",
+      {
+        schema: {
+          response: {
+            200: Type.Object(
+              { offers: Type.Array(OfferViewSchema) },
+              { additionalProperties: false },
+            ),
+          },
+        },
+      },
+      async (request) => ({
+        offers: [
+          ...(await commerceCatalog.list({
+            authorizationHeader: request.headers.authorization,
+          })),
+        ],
+      }),
+    );
+
+    app.post(
+      "/quotes",
+      {
+        schema: {
+          body: Type.Object(
+            {
+              offerId: Type.String(),
+              originatingCharacterId: Type.String(),
+            },
+            { additionalProperties: false },
+          ),
+          response: {
+            200: Type.Object(
+              {
+                schemaVersion: Type.Literal(1),
+                tenantId: Type.String(),
+                quoteId: Type.String(),
+                offerId: Type.String(),
+                offerRevision: Type.Integer({ minimum: 1 }),
+                customerUserId: Type.String(),
+                originatingCharacterId: Type.String(),
+                creatorUserId: Type.Union([Type.String(), Type.Null()]),
+                priceCredits: Type.Integer({ minimum: 1 }),
+                creatorCommissionCredits: Type.Integer({ minimum: 0 }),
+                fulfillmentReserveCredits: Type.Integer({ minimum: 0 }),
+                platformMarginCredits: Type.Integer({ minimum: 0 }),
+                expiresAt: Type.String(),
+                createdAt: Type.String(),
+              },
+              { additionalProperties: false },
+            ),
+          },
+        },
+      },
+      async (request) =>
+        commerceCatalog.quote({
+          authorizationHeader: request.headers.authorization,
+          offerId: request.body.offerId,
+          originatingCharacterId: request.body.originatingCharacterId,
+        }),
+    );
+  }
 
   if (options.creatorSkills) {
     const creatorSkills = options.creatorSkills;
