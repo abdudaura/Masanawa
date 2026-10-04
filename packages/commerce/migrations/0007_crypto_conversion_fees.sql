@@ -45,6 +45,10 @@ ALTER TABLE commerce.crypto_ledger_entries
     )
   );
 
+CREATE UNIQUE INDEX IF NOT EXISTS crypto_provider_refund_debit_once
+  ON commerce.crypto_ledger_entries(tenant_id, user_id, provider_reference)
+  WHERE reason = 'provider-refund' AND provider_reference IS NOT NULL;
+
 CREATE UNIQUE INDEX IF NOT EXISTS crypto_withdrawal_fee_ledger_once
   ON commerce.crypto_ledger_entries(tenant_id, user_id, request_id, reason)
   WHERE reason IN ('withdrawal-fee-reserve','withdrawal-fee-release');
