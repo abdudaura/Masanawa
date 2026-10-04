@@ -764,6 +764,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                           ),
                           onForward: () => _forwardMessage(message),
                           onShare: () => _shareMessage(message),
+                          onSaveMedia: message.allAttachments.isEmpty
+                              ? null
+                              : () => _saveMessageMedia(message),
                           onAgentAction: message.isUser
                               ? null
                               : (action) => _runAgentAction(message, action),
@@ -839,7 +842,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 hasText: _hasText,
                 sending: sending,
                 onSend: _sendText,
-                onStop: () => ref.read(aiChatProvider.notifier).stopGeneration(widget.characterId),
+                onStop: () async {
+                  await _activeVoiceBubble?._pauseFromAnotherBubble();
+                  ref.read(aiChatProvider.notifier).stopGeneration(widget.characterId);
+                },
                 onAttach: _openAttachSheet,
                 onCamera: () => _pickImage(ImageSource.camera),
                 onMic: _toggleRecording,
@@ -918,11 +924,58 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   }
 
   Future<void> _shareMessage(AiChatMessage message) async {
-    final text = message.text.isNotEmpty
-        ? message.text
-        : message.attachment?.label ?? '';
-    if (text.isEmpty) return;
-    await SharePlus.instance.share(ShareParams(text: text));
+    final attachments = message.allAttachments
+        .where((item) => File(item.path).existsSync())
+        .toList();
+    await SharePlus.instance.share(
+      ShareParams(
+        text: message.text.isEmpty ? null : message.text,
+        files: [
+          for (final attachment in attachments)
+            XFile(
+              attachment.path,
+              name: attachment.name,
+              mimeType: lookupMimeType(attachment.path),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _saveMessageMedia(AiChatMessage message) async {
+    final items = message.allAttachments
+        .where((item) => File(item.path).existsSync())
+        .toList();
+    if (items.isEmpty) return;
+
+    var saved = 0;
+    for (final item in items) {
+      try {
+        final fallbackName = item.kind == 'image'
+            ? 'masanawa-photo.jpg'
+            : item.kind == 'voice'
+            ? 'masanawa-voice.m4a'
+            : item.kind == 'video'
+            ? 'masanawa-video.mp4'
+            : 'masanawa-file';
+        final output = await FilePicker.platform.saveFile(
+          dialogTitle: 'Save from Masanawa',
+          fileName: item.name ?? fallbackName,
+        );
+        if (output == null) break;
+        await File(item.path).copy(output);
+        saved++;
+      } catch (_) {}
+    }
+    if (mounted && saved > 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            saved == 1 ? 'Saved 1 file' : 'Saved $saved files',
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _forwardMessage(AiChatMessage message) async {
@@ -1507,6 +1560,7 @@ class _ChatBubble extends StatelessWidget {
     required this.onCopy,
     required this.onForward,
     required this.onShare,
+    this.onSaveMedia,
     this.onEdit,
     this.onRetry,
     this.onAgentAction,
@@ -1522,6 +1576,7 @@ class _ChatBubble extends StatelessWidget {
   final VoidCallback onCopy;
   final VoidCallback onForward;
   final VoidCallback onShare;
+  final VoidCallback? onSaveMedia;
   final VoidCallback? onEdit;
   final VoidCallback? onRetry;
   final ValueChanged<String>? onAgentAction;
@@ -1559,6 +1614,12 @@ class _ChatBubble extends StatelessWidget {
               title: const Text('Share'),
               onTap: () => Navigator.pop(sheetContext, 'share'),
             ),
+            if (onSaveMedia != null)
+              ListTile(
+                leading: const Icon(Icons.download_outlined),
+                title: const Text('Save media'),
+                onTap: () => Navigator.pop(sheetContext, 'save'),
+              ),
             ListTile(
               leading: const Icon(Icons.checklist_outlined),
               title: const Text('Select'),
@@ -1613,6 +1674,7 @@ class _ChatBubble extends StatelessWidget {
     if (action == 'copy') onCopy();
     if (action == 'forward') onForward();
     if (action == 'share') onShare();
+    if (action == 'save') onSaveMedia?.call();
     if (action == 'select') onSelect();
     if (action == 'edit') onEdit?.call();
     if (action == 'delete') onDelete();
@@ -1762,14 +1824,19 @@ class _ChatBubble extends StatelessWidget {
                       if (isUser) ...[
                         const SizedBox(width: 3),
                         Icon(
-                          message.deliveryStatus == 'sending'
-                              ? Icons.schedule
-                              : message.deliveryStatus == 'failed'
-                              ? Icons.error_outline
-                              : Icons.done_all,
+                          switch (message.deliveryStatus) {
+                            'sending' || 'uploading' || 'processing' =>
+                              Icons.schedule,
+                            'queued' => Icons.cloud_off_outlined,
+                            'failed' => Icons.error_outline,
+                            'stopped' => Icons.stop_circle_outlined,
+                            _ => Icons.done_all,
+                          },
                           size: 14,
                           color: message.deliveryStatus == 'failed'
-                              ? Colors.red
+                              ? u.emergency
+                              : message.deliveryStatus == 'queued'
+                              ? u.warning
                               : u.textMuted,
                         ),
                       ],
