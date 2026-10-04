@@ -15,6 +15,7 @@ import {
   type CryptoIntent,
   type CryptoProviderPaymentEvent,
   type CryptoRepository,
+  type CryptoWithdrawalFeePayer,
 } from "@masanawa/commerce";
 import {
   NowPaymentsClient,
@@ -69,15 +70,39 @@ export interface FinancialWithdrawalQuote {
   readonly destinationAddress: string;
   readonly minimumAmount: string;
   readonly networkFee: string;
+  readonly feePayer: CryptoWithdrawalFeePayer;
   readonly addressValidated: true;
+  readonly quotedAt: Instant;
+}
+
+export interface FinancialConversionView {
+  readonly requestId: RequestId;
+  readonly asset: string;
+  readonly network: string | null;
+  readonly amount: string;
+  readonly targetAsset: string;
+  readonly targetNetwork: string | null;
+  readonly targetAmount: string | null;
+  readonly status: CryptoIntent["status"];
+  readonly providerConversionId: string | null;
+  readonly outcomeUnknown: boolean;
+}
+
+export interface FinancialConversionQuote {
+  readonly providerCode: string;
+  readonly targetProviderCode: string;
+  readonly amount: string;
+  readonly minimumAmount: string;
+  readonly estimatedTargetAmount: string;
   readonly quotedAt: Instant;
 }
 
 export interface FinancialCapabilities {
   readonly deposits: true;
   readonly withdrawals: boolean;
-  readonly conversions: false;
+  readonly conversions: boolean;
   readonly payoutReason: string | null;
+  readonly conversionReason: string | null;
 }
 
 export interface FinancialService {
@@ -85,6 +110,9 @@ export interface FinancialService {
     readonly authorizationHeader: string | undefined;
   }): Promise<FinancialCapabilities>;
   listDepositRoutes(input: {
+    readonly authorizationHeader: string | undefined;
+  }): Promise<readonly NowPaymentsCurrencyEvidence[]>;
+  listConversionRoutes(input: {
     readonly authorizationHeader: string | undefined;
   }): Promise<readonly NowPaymentsCurrencyEvidence[]>;
   createDeposit(input: {
@@ -106,6 +134,23 @@ export interface FinancialService {
     readonly amount: string;
     readonly destinationAddress: string;
   }): Promise<FinancialWithdrawalView>;
+  quoteConversion(input: {
+    readonly authorizationHeader: string | undefined;
+    readonly providerCode: string;
+    readonly targetProviderCode: string;
+    readonly amount: string;
+  }): Promise<FinancialConversionQuote>;
+  createConversion(input: {
+    readonly authorizationHeader: string | undefined;
+    readonly requestId: string;
+    readonly providerCode: string;
+    readonly targetProviderCode: string;
+    readonly amount: string;
+  }): Promise<FinancialConversionView>;
+  refreshConversion(input: {
+    readonly authorizationHeader: string | undefined;
+    readonly requestId: string;
+  }): Promise<FinancialConversionView>;
   refreshWithdrawal(input: {
     readonly authorizationHeader: string | undefined;
     readonly requestId: string;
@@ -205,12 +250,40 @@ function withdrawalView(intent: CryptoIntent): FinancialWithdrawalView {
   });
 }
 
+function conversionView(intent: CryptoIntent): FinancialConversionView {
+  if (intent.operation !== "convert" || intent.targetAsset === null) {
+    throw new Error("financial.crypto.conversion_unavailable");
+  }
+  return Object.freeze({
+    requestId: intent.requestId,
+    asset: intent.asset,
+    network: intent.network,
+    amount: intent.amount,
+    targetAsset: intent.targetAsset,
+    targetNetwork: intent.targetNetwork ?? null,
+    targetAmount: intent.providerTargetAmount ?? null,
+    status: intent.status,
+    providerConversionId: intent.providerConversionId ?? null,
+    outcomeUnknown:
+      intent.providerDispatchStartedAt !== null &&
+      (intent.providerConversionId ?? null) === null,
+  });
+}
+
 function payoutSucceeded(status: string | null): boolean {
   return status !== null && ["finished", "success", "successful", "sent"].includes(status);
 }
 
 function payoutFailed(status: string | null): boolean {
   return status !== null && ["failed", "rejected", "rejected_not_checked", "cancelled", "canceled", "expired"].includes(status);
+}
+
+function conversionSucceeded(status: string): boolean {
+  return ["finished", "completed", "success", "successful"].includes(status);
+}
+
+function conversionFailed(status: string): boolean {
+  return ["failed", "rejected", "cancelled", "canceled", "expired"].includes(status);
 }
 
 function decimalUnits(value: string, allowZero = false): bigint {
@@ -244,16 +317,12 @@ export function createFinancialService(input: {
      */
     readonly pooledCustodyLiabilityCoverageSatisfied?: boolean;
   }>;
-  /**
-   * Canonical Commerce/Postgres hook for a payout whose live network fee is non-zero.
-   * The implementation must atomically reserve principal and durably account for the
-   * quoted fee policy (user-funded or platform-funded) before provider dispatch.
-   */
-  readonly reserveWithdrawalWithFee?: (input: {
-    readonly intent: CryptoIntent;
-    readonly networkFee: string;
-    readonly quotedAt: Instant;
-  }) => Promise<CryptoIntent>;
+  readonly conversionEvidence?: () => Promise<{
+    readonly account: NowPaymentsAccountEvidence;
+    readonly routes: readonly NowPaymentsCurrencyEvidence[];
+    readonly pooledCustodyLiabilityCoverageSatisfied?: boolean;
+  }>;
+  readonly withdrawalFeePayer?: CryptoWithdrawalFeePayer;
   /**
    * Server-side merchant 2FA source. Never accept this code from an end-user route.
    * Return null when the provider account does not require verification.
@@ -276,6 +345,7 @@ export function createFinancialService(input: {
   const ipnCallbackUrl = new URL("/v1/financial/nowpayments/ipn", base).toString();
   const payoutIpnCallbackUrl =
     new URL("/v1/financial/nowpayments/payout-ipn", base).toString();
+  const withdrawalFeePayer = input.withdrawalFeePayer ?? "user";
 
   async function authority(header: string | undefined) {
     return input.authorizer.authorize({ authorizationHeader: header });
@@ -299,6 +369,21 @@ export function createFinancialService(input: {
       return null;
     }
     return evidence.routes.filter(route => qualifyRoute(route, "withdraw").eligible);
+  }
+
+  async function qualifiedConversionRoutes() {
+    if (!input.nowPaymentsCustody || !input.conversionEvidence) return null;
+    const evidence = await input.conversionEvidence();
+    assertFreshAccountEvidence(evidence.account, { now: new Date(now()) });
+    for (const capability of ["custody", "conversion"] as const) {
+      if (!qualifyAccountCapability(evidence.account, capability).eligible) return null;
+    }
+    const customerManaged =
+      qualifyAccountCapability(evidence.account, "customer_management").eligible;
+    if (!customerManaged && evidence.pooledCustodyLiabilityCoverageSatisfied !== true) {
+      return null;
+    }
+    return evidence.routes.filter((route) => qualifyRoute(route, "convert").eligible);
   }
 
   async function preflightWithdrawal(
@@ -351,8 +436,92 @@ export function createFinancialService(input: {
       destinationAddress: validated.address,
       minimumAmount,
       networkFee: fee.fee,
+      feePayer: withdrawalFeePayer,
       addressValidated: true as const,
       quotedAt: now(),
+    });
+  }
+
+  async function preflightConversion(
+    providerCode: string,
+    targetProviderCode: string,
+    amount: string,
+  ): Promise<FinancialConversionQuote> {
+    if (!input.nowPaymentsCustody) throw new Error("financial.crypto.conversion_unavailable");
+    if (providerCode === targetProviderCode) throw new Error("financial.crypto.conversion_same_asset");
+
+    const numericAmount = Number(amount);
+    if (
+      !Number.isFinite(numericAmount) ||
+      numericAmount <= 0 ||
+      normalizeCryptoAmount(String(numericAmount)) !== amount
+    ) {
+      throw new Error("financial.crypto.amount_unavailable");
+    }
+
+    const routes = await qualifiedConversionRoutes();
+    if (
+      !routes?.some((route) => route.providerCode === providerCode) ||
+      !routes.some((route) => route.providerCode === targetProviderCode)
+    ) {
+      throw new Error("financial.crypto.conversion_unavailable");
+    }
+
+    const signal = AbortSignal.timeout(15_000);
+    const [quote, balances] = await Promise.all([
+      input.nowPayments.quotePayment({
+        amount: numericAmount,
+        currencyFrom: providerCode,
+        currencyTo: targetProviderCode,
+        signal,
+      }),
+      input.nowPaymentsCustody.readBalances(signal),
+    ]);
+    const providerBalance = balances.find((entry) => entry.currency === providerCode);
+    if (
+      providerBalance === undefined ||
+      decimalUnits(providerBalance.available, true) < decimalUnits(amount)
+    ) {
+      throw new Error("financial.crypto.provider_balance_unavailable");
+    }
+    return Object.freeze({
+      providerCode,
+      targetProviderCode,
+      amount,
+      minimumAmount: normalizeCryptoAmount(String(quote.minimum.minimumAmount)),
+      estimatedTargetAmount: normalizeCryptoAmount(String(quote.estimate.estimatedAmount)),
+      quotedAt: now(),
+    });
+  }
+
+  async function settleReconciledConversion(
+    auth: FinancialAuthority,
+    intent: CryptoIntent,
+  ): Promise<CryptoIntent> {
+    if (
+      !input.nowPaymentsCustody ||
+      intent.operation !== "convert" ||
+      intent.targetAsset === null ||
+      (intent.providerConversionId ?? null) === null
+    ) {
+      throw new Error("financial.crypto.conversion_unavailable");
+    }
+    const evidence = await input.nowPaymentsCustody.getConversionEvidence({
+      conversionId: intent.providerConversionId!,
+      fromCurrency: intent.asset,
+      toCurrency: intent.targetAsset,
+      fromAmount: intent.amount,
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!conversionSucceeded(evidence.status) && !conversionFailed(evidence.status)) return intent;
+    return input.crypto.settleConversion({
+      tenantId: auth.tenantId,
+      userId: auth.userId,
+      requestId: intent.requestId,
+      succeeded: conversionSucceeded(evidence.status),
+      targetAmount: conversionSucceeded(evidence.status) ? evidence.toAmount : null,
+      providerReference: evidence.conversionId,
+      updatedAt: now(),
     });
   }
 
@@ -416,14 +585,26 @@ export function createFinancialService(input: {
     async capabilities(request) {
       await authority(request.authorizationHeader);
       let withdrawals = false;
-      try { const routes = await qualifiedWithdrawalRoutes(); withdrawals = routes !== null && routes.length > 0; } catch { /* Unknown/stale evidence denies admission. */ }
+      let conversions = false;
+      try {
+        const routes = await qualifiedWithdrawalRoutes();
+        withdrawals = routes !== null && routes.length > 0;
+      } catch { /* Unknown/stale evidence denies admission. */ }
+      try {
+        const routes = await qualifiedConversionRoutes();
+        conversions = routes !== null && routes.length > 1;
+      } catch { /* Unknown/stale evidence denies admission. */ }
       return Object.freeze({
         deposits: true as const,
         withdrawals,
-        conversions: false as const,
+        conversions,
         payoutReason:
           !withdrawals
             ? "nowpayments_payout_credentials_or_account_capability_unavailable"
+            : null,
+        conversionReason:
+          !conversions
+            ? "nowpayments_conversion_account_or_route_capability_unavailable"
             : null,
       });
     },
@@ -434,6 +615,11 @@ export function createFinancialService(input: {
         operation: "deposit",
       });
       return Object.freeze(qualified.map((entry) => entry.route));
+    },
+
+    async listConversionRoutes(request) {
+      await authority(request.authorizationHeader);
+      return Object.freeze((await qualifiedConversionRoutes()) ?? []);
     },
 
     async createDeposit(request) {
@@ -586,13 +772,11 @@ export function createFinancialService(input: {
       const admitted =
         quote.networkFee === "0"
           ? await input.crypto.reserveWithdrawal(withdrawalIntent)
-          : input.reserveWithdrawalWithFee
-            ? await input.reserveWithdrawalWithFee({
-                intent: withdrawalIntent,
-                networkFee: quote.networkFee,
-                quotedAt: quote.quotedAt,
-              })
-            : (() => { throw new Error("financial.crypto.withdrawal_fee_settlement_unavailable"); })();
+          : await input.crypto.reserveWithdrawalWithFee({
+              intent: withdrawalIntent,
+              networkFee: quote.networkFee,
+              feePayer: withdrawalFeePayer,
+            });
 
       assertFinancialReplay(admitted, terms);
       const dispatch = await input.crypto.beginProviderDispatch({
@@ -645,6 +829,120 @@ export function createFinancialService(input: {
         return withdrawalView(await settleReconciledPayout(auth, bound));
       }
       return withdrawalView(bound);
+    },
+
+    async quoteConversion(request) {
+      await authority(request.authorizationHeader);
+      const providerCode = normalizeCryptoAsset(request.providerCode);
+      const targetProviderCode = normalizeCryptoAsset(request.targetProviderCode);
+      const amount = normalizeCryptoAmount(request.amount);
+      return preflightConversion(providerCode, targetProviderCode, amount);
+    },
+
+    async createConversion(request) {
+      const auth = await authority(request.authorizationHeader);
+      if (!input.nowPaymentsCustody) throw new Error("financial.crypto.conversion_unavailable");
+
+      const requestId = parseCanonicalId("request", request.requestId);
+      const providerCode = normalizeCryptoAsset(request.providerCode);
+      const targetProviderCode = normalizeCryptoAsset(request.targetProviderCode);
+      const amount = normalizeCryptoAmount(request.amount);
+      const target = splitProviderCurrency(targetProviderCode);
+
+      const existing = await input.crypto.readIntent({
+        tenantId: auth.tenantId,
+        userId: auth.userId,
+        requestId,
+      });
+      const terms: FinancialReplayTerms = {
+        operation: "convert",
+        asset: providerCode,
+        network: splitProviderCurrency(providerCode).network,
+        amount,
+        destinationAddress: null,
+        targetAsset: targetProviderCode,
+        targetNetwork: target.network,
+      };
+      if (existing) {
+        assertFinancialReplay(existing, terms);
+        return conversionView(existing);
+      }
+
+      await preflightConversion(providerCode, targetProviderCode, amount);
+      const createdAt = now();
+      const admitted = await input.crypto.reserveConversion({
+        schemaVersion: 1,
+        tenantId: auth.tenantId,
+        userId: auth.userId,
+        requestId,
+        operation: "convert",
+        asset: providerCode,
+        network: splitProviderCurrency(providerCode).network,
+        amount,
+        targetAsset: targetProviderCode,
+        targetNetwork: target.network,
+        destinationAddress: null,
+        provider: "nowpayments",
+        providerPaymentId: null,
+        providerPayoutId: null,
+        providerConversionId: null,
+        providerTargetAmount: null,
+        payAddress: null,
+        providerPayAmount: null,
+        providerDispatchStartedAt: null,
+        status: "processing",
+        createdAt,
+        updatedAt: createdAt,
+      });
+      assertFinancialReplay(admitted, terms);
+
+      const dispatch = await input.crypto.beginProviderDispatch({
+        tenantId: auth.tenantId,
+        userId: auth.userId,
+        requestId,
+        updatedAt: now(),
+      });
+      assertFinancialReplay(dispatch.intent, terms);
+      if (!dispatch.shouldDispatch) return conversionView(dispatch.intent);
+
+      const conversion = await input.nowPaymentsCustody.createConversion({
+        fromCurrency: providerCode,
+        toCurrency: targetProviderCode,
+        amount,
+        signal: AbortSignal.timeout(15_000),
+      });
+      const bound = await input.crypto.bindProviderConversion({
+        tenantId: auth.tenantId,
+        userId: auth.userId,
+        requestId,
+        providerConversionId: conversion.conversionId,
+        updatedAt: now(),
+      });
+      if (conversionSucceeded(conversion.status) || conversionFailed(conversion.status)) {
+        return conversionView(await settleReconciledConversion(auth, bound));
+      }
+      return conversionView(bound);
+    },
+
+    async refreshConversion(request) {
+      const auth = await authority(request.authorizationHeader);
+      const requestId = parseCanonicalId("request", request.requestId);
+      const intent = await input.crypto.readIntent({
+        tenantId: auth.tenantId,
+        userId: auth.userId,
+        requestId,
+      });
+      if (
+        !intent ||
+        intent.operation !== "convert" ||
+        (intent.providerConversionId ?? null) === null
+      ) {
+        throw new Error("financial.crypto.conversion_unavailable");
+      }
+      if (intent.status === "succeeded" || intent.status === "failed") {
+        return conversionView(intent);
+      }
+      return conversionView(await settleReconciledConversion(auth, intent));
     },
 
     async refreshWithdrawal(request) {
