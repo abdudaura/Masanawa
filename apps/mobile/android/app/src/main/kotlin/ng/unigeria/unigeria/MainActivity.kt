@@ -52,6 +52,11 @@ class MainActivity : FlutterActivity() {
                     result.success(true)
                 }
 
+                "speaker" -> {
+                    val enabled = call.argument<Boolean>("enabled") ?: true
+                    result.success(setSpeakerRoute(enabled))
+                }
+
                 else -> result.notImplemented()
             }
         }
@@ -94,6 +99,18 @@ class MainActivity : FlutterActivity() {
         liveAudioTrack = track
         track.play()
         return true
+    }
+
+    @Suppress("DEPRECATION")
+    private fun setSpeakerRoute(enabled: Boolean): Boolean {
+        val audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
+        return try {
+            audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
+            audioManager.isSpeakerphoneOn = enabled
+            true
+        } catch (_: RuntimeException) {
+            false
+        }
     }
 
     private fun stopLivePcm() {
