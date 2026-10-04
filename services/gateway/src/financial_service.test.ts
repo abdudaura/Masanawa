@@ -80,6 +80,11 @@ function setup(
     if (url.includes("/payout-withdrawal/min-amount/")) {
       return new Response(JSON.stringify({ success: true, result: "1" }));
     }
+    if (url.endsWith("/currencies")) {
+      return new Response(JSON.stringify({
+        currencies: ["usdttrc20", "btc", "trx"],
+      }));
+    }
     if (url.endsWith("/balance")) {
       return new Response(JSON.stringify({
         usdttrc20: { amount: "100", pendingAmount: "0" },
@@ -328,6 +333,57 @@ describe("financial service recovery and admission", () => {
       event: expect.objectContaining({ actuallyPaid: "10.000000000000000001" }),
     }));
   });
+  it("advertises and lists only deposit currencies backed by live custody balances", async () => {
+    const { service } = setup(null);
+    await expect(service.capabilities({ authorizationHeader }))
+      .resolves.toMatchObject({ deposits: true });
+    await expect(service.listDepositRoutes({ authorizationHeader }))
+      .resolves.toEqual([
+        expect.objectContaining({ providerCode: "BTC" }),
+        expect.objectContaining({ providerCode: "USDTTRC20" }),
+      ]);
+  });
+
+  it("rejects a deposit route that the provider would auto-convert outside custody", async () => {
+    const { service, crypto, fetch } = setup(null);
+    fetch.mockImplementation(async (request: Parameters<typeof globalThis.fetch>[0]) => {
+      const url = String(request);
+      if (url.endsWith("/currencies")) {
+        return new Response(JSON.stringify({ currencies: ["usdttrc20", "btc"] }));
+      }
+      if (url.endsWith("/balance")) {
+        return new Response(JSON.stringify({
+          btc: { amount: "1", pendingAmount: "0" },
+        }));
+      }
+      return new Response("{}");
+    });
+    await expect(service.createDeposit({
+      authorizationHeader,
+      requestId,
+      providerCode: "USDTTRC20",
+      amount: "10",
+    })).rejects.toThrow("financial.crypto.route_unavailable");
+    expect(crypto.createIntent).not.toHaveBeenCalled();
+    expect(fetch.mock.calls.some((call) => String(call[0]).includes("/payment"))).toBe(false);
+  });
+
+  it("fails deposit capability closed when custody evidence is unavailable", async () => {
+    const { service, fetch } = setup(null);
+    fetch.mockImplementation(async (request: Parameters<typeof globalThis.fetch>[0]) => {
+      const url = String(request);
+      if (url.endsWith("/currencies")) {
+        return new Response(JSON.stringify({ currencies: ["usdttrc20"] }));
+      }
+      if (url.endsWith("/balance")) {
+        return new Response("unavailable", { status: 503 });
+      }
+      return new Response("{}");
+    });
+    await expect(service.capabilities({ authorizationHeader }))
+      .resolves.toMatchObject({ deposits: false });
+  });
+
   it("keeps missing transactions scoped without querying the provider", async () => {
     const { service, fetch } = setup(null);
     expect(await service.readIntent({ authorizationHeader, requestId })).toBeNull();
