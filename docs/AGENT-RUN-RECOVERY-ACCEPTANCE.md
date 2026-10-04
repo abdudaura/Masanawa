@@ -47,3 +47,38 @@ Gateway, mobile, channel, Commerce or deployment path. Repository recreation is 
 by closing and reopening the PostgreSQL pool against the same isolated database. It is
 not a power-loss durability test and does not substitute for the required hosted
 implementation-head and merged-main CI gates.
+
+
+## Recovery matrix
+
+| Recovery condition | Expected invariant |
+| --- | --- |
+| Lost root-admission response | Exact replay returns the same durable AgentRun |
+| Same RequestId, different AgentRun after restart | Rebinding is rejected |
+| Exact child continuation after restart | Parent/root/depth lineage is preserved |
+| Missing/forged parent after restart | Admission fails closed |
+| Changed admission payload | Existing immutable admission wins; changed replay conflicts |
+| Completed terminal response loss | Exact completion replay is idempotent |
+| Failed terminal response loss | Same failure code replays; changed failure conflicts |
+| Two repositories race with identical admission | Both observe one durable AgentRun |
+| Two repositories race different runs on one RequestId | Exactly one durable binding survives |
+| Task/Workflow/Operation trace after restart | Exact references survive; insufficient resource scope is denied |
+| New CharacterVersion activation | Existing AgentRun remains pinned to admitted CharacterVersion |
+| Policy revision changes | Old AuthorityContext is rejected as stale |
+| AuthorityContext revoked | Subsequent mutation fails closed |
+| AuthorityContext expired | Recovery read is denied |
+| CharacterSession closes | Existing exact replay reconciles; new work is rejected |
+| Direct SQL trace rewrite after restart | PostgreSQL immutability trigger rejects mutation |
+
+These cases deliberately exercise the canonical storage and authorization boundaries rather
+than adding retry state in Gateway or application memory.
+
+## Current hosted evidence
+
+The latest Foundation CI attempt for this slice is run `37224302096`, job
+`111500662069`. It again recorded `runner_id=0`, an empty runner name and zero
+steps. Earlier attempts `37220620769` and `37223081109` failed the same way.
+No checkout, install, TypeScript compilation or PostgreSQL test ran in those jobs.
+
+Therefore the branch contains implemented acceptance coverage but still requires an
+execution environment with PostgreSQL 18 before any pass is claimed.
