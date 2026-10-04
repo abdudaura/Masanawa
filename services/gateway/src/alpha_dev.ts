@@ -18,6 +18,7 @@ import type {
 } from "./agent_conversation_contract.js";
 import type { AgentDirectoryAuthorizer } from "./agent_directory.js";
 import type { CreatorCloneAuthorizer } from "./creator_clone.js";
+import type { CommerceUserAuthorizer } from "./commerce_catalog.js";
 
 export interface AlphaDevAuthorizerConfig {
   readonly token: string;
@@ -212,6 +213,29 @@ export function createAlphaCreatorAuthorizer(input: {
   readonly tenantId: TenantId;
   readonly userId: UserId;
 }): CreatorCloneAuthorizer {
+  const expectedToken = input.token.trim();
+  if (expectedToken.length < 24) {
+    throw new TypeError("Alpha development token must be at least 24 characters");
+  }
+  return Object.freeze({
+    async authorize(request) {
+      if (bearerToken(request.authorizationHeader) !== expectedToken) {
+        throw new Error("Alpha development authorization denied");
+      }
+      return Object.freeze({
+        tenantId: input.tenantId,
+        userId: input.userId,
+      });
+    },
+  });
+}
+
+
+export function createAlphaCommerceAuthorizer(input: {
+  readonly token: string;
+  readonly tenantId: TenantId;
+  readonly userId: UserId;
+}): CommerceUserAuthorizer {
   const expectedToken = input.token.trim();
   if (expectedToken.length < 24) {
     throw new TypeError("Alpha development token must be at least 24 characters");
