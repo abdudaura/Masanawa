@@ -405,9 +405,15 @@ class AiChatController extends Notifier<AiChatState> {
       final generation = ++_cacheGeneration;
       unawaited(_handleOwnerChange(previousOwner, nextOwner, generation));
     });
-    ref.listen(agentTransportProvider, (_, __) {
+    ref.listen(agentTransportProvider, (previous, _) {
       _connectionGeneration++;
+      final bindings = [..._bindings.values];
       _bindings.clear();
+      if (previous != null) {
+        for (final binding in bindings) {
+          unawaited(previous.closeSession(binding).catchError((_) {}));
+        }
+      }
       for (final subscription in _eventSubscriptions.values) {
         unawaited(subscription.cancel());
       }
