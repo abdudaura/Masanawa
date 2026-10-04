@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   createCanonicalId,
   toInstant,
+  type TenantId,
 } from "@masanawa/contracts";
 import {
   admitWorkflowTask,
@@ -145,7 +146,7 @@ describePostgres("workflow Operation truth acceptance", () => {
     return { run, task: admitted.task };
   }
 
-  async function prepare(tenantId: ReturnType<typeof createCanonicalId<"tenant">>, suffix: string) {
+  async function prepare(tenantId: TenantId, suffix: string) {
     return withTransaction(pool, async (client) =>
       prepareOperation(client, {
         tenantId,
