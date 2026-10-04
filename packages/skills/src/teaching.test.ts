@@ -8,6 +8,8 @@ import {
   normalizeTeachingLessonPlan,
   normalizeTeachingProgressHandoff,
   normalizeTeachingSubjectReference,
+  resolveTeachingContinuation,
+  updateTeachingLearnerPreferences,
   type TeachingLessonPlan,
 } from "./teaching.js";
 
@@ -344,5 +346,100 @@ describe("Teaching surface projections", () => {
       skillVersionId: subjectSkillVersionId,
     });
     expect(subskill.skillVersionId).toBe(subjectSkillVersionId);
+  });
+});
+
+
+describe("Teaching continuity decisions", () => {
+  it("changes language or modality without changing Relationship, topic or goals", () => {
+    const original = plan().learner;
+    const updated = updateTeachingLearnerPreferences(original, {
+      language: "en",
+      preferredModalities: ["voice"],
+      accessibilityPreferences: ["Use simpler sentence structure"],
+    });
+
+    expect(updated.relationshipId).toBe(original.relationshipId);
+    expect(updated.topic).toBe(original.topic);
+    expect(updated.goals).toEqual(original.goals);
+    expect(updated.language).toBe("en");
+    expect(updated.preferredModalities).toEqual(["voice"]);
+  });
+
+  it("reteaches the same lesson step after failed understanding", () => {
+    const input = plan();
+    const progress = normalizeTeachingProgressHandoff({
+      relationshipId: input.learner.relationshipId,
+      skillVersionId: input.skillVersionId,
+      lessonStepKey: "factor-basics",
+      checkpointState: "needs-reteaching",
+      demonstratedUnderstanding: [],
+      misconceptionsToRevisit: ["Factor pairs are being added incorrectly"],
+      nextSteps: ["Explain with a multiplication grid"],
+      recordedAt: toInstant("2026-10-04T12:00:00.000Z"),
+    });
+
+    const continuation = resolveTeachingContinuation(input, progress);
+    expect(continuation.reason).toBe("reteach-current");
+    expect(continuation.nextStep?.stepKey).toBe("factor-basics");
+    expect(continuation.sequenceCompleted).toBe(false);
+  });
+
+  it("advances only after a ready/completed checkpoint and ends at the final step", () => {
+    const input = plan();
+    const extended = {
+      ...input,
+      steps: [
+        input.steps[0]!,
+        {
+          ...input.steps[0]!,
+          stepKey: "solve-by-factoring",
+          title: "Solve by factoring",
+        },
+      ],
+    };
+    const ready = normalizeTeachingProgressHandoff({
+      relationshipId: input.learner.relationshipId,
+      skillVersionId: input.skillVersionId,
+      lessonStepKey: "factor-basics",
+      checkpointState: "ready-to-advance",
+      demonstratedUnderstanding: ["Can factor simple quadratics"],
+      misconceptionsToRevisit: [],
+      nextSteps: ["Solve equations using the zero-product rule"],
+      recordedAt: toInstant("2026-10-04T12:00:00.000Z"),
+    });
+    expect(resolveTeachingContinuation(extended, ready)).toMatchObject({
+      reason: "advance",
+      sequenceCompleted: false,
+      nextStep: { stepKey: "solve-by-factoring" },
+    });
+
+    const done = normalizeTeachingProgressHandoff({
+      ...ready,
+      lessonStepKey: "solve-by-factoring",
+      checkpointState: "completed",
+    });
+    expect(resolveTeachingContinuation(extended, done)).toMatchObject({
+      reason: "sequence-complete",
+      sequenceCompleted: true,
+      nextStep: null,
+    });
+  });
+
+  it("fails closed when progress belongs to another Relationship or SkillVersion", () => {
+    const input = plan();
+    const otherRelationship = normalizeTeachingProgressHandoff({
+      relationshipId: createCanonicalId("relationship"),
+      skillVersionId: input.skillVersionId,
+      lessonStepKey: "factor-basics",
+      checkpointState: "in-progress",
+      demonstratedUnderstanding: [],
+      misconceptionsToRevisit: [],
+      nextSteps: ["Continue"],
+      recordedAt: toInstant("2026-10-04T12:00:00.000Z"),
+    });
+    expect(() =>
+      resolveTeachingContinuation(input, otherRelationship),
+    ).toThrow(/must match the lesson SkillVersion and Relationship/);
   });
 });
