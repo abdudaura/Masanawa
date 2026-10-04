@@ -362,6 +362,166 @@ class _AuditAdminPageState extends State<AuditAdminPage> {
       );
 }
 
+
+class SystemAdminPage extends StatefulWidget {
+  const SystemAdminPage({super.key, required this.api});
+  final AdminApi api;
+
+  @override
+  State<SystemAdminPage> createState() => _SystemAdminPageState();
+}
+
+class _SystemAdminPageState extends State<SystemAdminPage> {
+  late Future<SystemAdminData> _future = _load();
+
+  Future<SystemAdminData> _load() async => SystemAdminData(
+        snapshot: await widget.api.systemSnapshot(),
+        worlds: await widget.api.worlds(),
+        approvals: await widget.api.approvals(),
+      );
+
+  @override
+  Widget build(BuildContext context) => AdminFuture<SystemAdminData>(
+        future: _future,
+        retry: () => setState(() => _future = _load()),
+        builder: (data) => DefaultTabController(
+          length: 3,
+          child: Column(
+            children: [
+              const TabBar(tabs: [
+                Tab(text: 'Memory & queues'),
+                Tab(text: 'Worlds'),
+                Tab(text: 'Approvals'),
+              ]),
+              Expanded(
+                child: TabBarView(children: [
+                  ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      Text(
+                        'Memory health',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      _MapMetrics(values: data.snapshot.memory),
+                      const SizedBox(height: 20),
+                      Text(
+                        'Inbox / outbox',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      _MapMetrics(values: data.snapshot.queues),
+                    ],
+                  ),
+                  ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: data.worlds.map((world) => Card(
+                      child: ListTile(
+                        leading: const Icon(Icons.public_outlined),
+                        title: Text(shortId(world.worldId)),
+                        subtitle: Text(
+                          'generation ${world.currentGenerationNumber} · '
+                          'policy rev ${world.policyRevision} · world rev ${world.revision}',
+                        ),
+                        trailing: Chip(label: Text(world.status)),
+                      ),
+                    )).toList(growable: false),
+                  ),
+                  ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      if (data.approvals.isEmpty)
+                        const Card(
+                          child: ListTile(title: Text('No approval records')),
+                        ),
+                      ...data.approvals.map((approval) => Card(
+                        child: ListTile(
+                          leading: Icon(
+                            approval.state == 'pending'
+                                ? Icons.pending_actions_outlined
+                                : Icons.verified_user_outlined,
+                          ),
+                          title: Text(approval.action),
+                          subtitle: Text(
+                            '${approval.riskClass} · ${shortId(approval.operationId)}\n'
+                            '${approval.resourceKey}',
+                          ),
+                          isThreeLine: true,
+                          trailing: Chip(label: Text(approval.state)),
+                        ),
+                      )),
+                      const SizedBox(height: 12),
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Text(
+                            'Approve/deny is intentionally not exposed until the '
+                            'production admin identity supplies a real operator '
+                            'principal for the security approval contract.',
+                            style: TextStyle(color: context.masanawa.textMuted),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ]),
+              ),
+            ],
+          ),
+        ),
+      );
+}
+
+class SystemAdminData {
+  const SystemAdminData({
+    required this.snapshot,
+    required this.worlds,
+    required this.approvals,
+  });
+
+  final AdminSystemSnapshot snapshot;
+  final List<AdminWorld> worlds;
+  final List<AdminApproval> approvals;
+}
+
+class _MapMetrics extends StatelessWidget {
+  const _MapMetrics({required this.values});
+  final Map<String, dynamic> values;
+
+  @override
+  Widget build(BuildContext context) => Wrap(
+        spacing: 10,
+        runSpacing: 10,
+        children: values.entries.map((entry) => SizedBox(
+          width: 170,
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    entry.value.toString(),
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _humanize(entry.key),
+                    style: TextStyle(color: context.masanawa.textMuted),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        )).toList(growable: false),
+      );
+}
+
+String _humanize(String value) => value
+    .replaceAllMapped(RegExp(r'([A-Z])'), (match) => ' ${match.group(1)}')
+    .replaceAll('_', ' ')
+    .trim();
+
 class AdminPageList extends StatelessWidget {
   const AdminPageList({
     super.key,
