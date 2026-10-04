@@ -33,6 +33,16 @@ For account portability, store application secret values once in the GitHub `pro
 
 Never commit plaintext secrets or provider tokens.
 
+### One-time migration of today's Railway secrets
+
+Run this once from a machine authenticated to both Railway and GitHub:
+
+```bash
+bash scripts/railway/migrate-secrets-to-github.sh Baatiku/masanawa production
+```
+
+The script reads the approved secret names from Railway and sends their values directly to GitHub Environment secrets with `gh secret set`. It does not print or write the plaintext values to disk beyond Railway CLI's temporary JSON output, which is removed on exit. After this migration, future Railway-account moves do not require copying every application key again.
+
 ## PostgreSQL portability
 
 Masanawa uses ordinary PostgreSQL migrations and connection strings. Provider-specific database APIs are not a dependency.
