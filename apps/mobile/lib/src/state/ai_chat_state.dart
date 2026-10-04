@@ -451,6 +451,8 @@ class AiChatController extends Notifier<AiChatState> {
     String characterId,
     ChatAttachment attachment, {
     String? caption,
+    String? replyToId,
+    String? replyPreview,
   }) async {
     if (state.sendingIn.contains(characterId)) return;
     final message = AiChatMessage(
@@ -459,6 +461,8 @@ class AiChatController extends Notifier<AiChatState> {
       text: (caption ?? '').trim(),
       createdAt: DateTime.now(),
       attachment: attachment,
+      replyToId: replyToId,
+      replyPreview: replyPreview,
       deliveryStatus: 'sending',
     );
     if (await _offlineNow()) {
@@ -472,10 +476,18 @@ class AiChatController extends Notifier<AiChatState> {
     String characterId,
     List<ChatAttachment> attachments, {
     String? caption,
+    String? replyToId,
+    String? replyPreview,
   }) async {
     if (attachments.isEmpty || state.sendingIn.contains(characterId)) return;
     if (attachments.length == 1) {
-      await sendAttachment(characterId, attachments.first, caption: caption);
+      await sendAttachment(
+        characterId,
+        attachments.first,
+        caption: caption,
+        replyToId: replyToId,
+        replyPreview: replyPreview,
+      );
       return;
     }
     final bounded = List<ChatAttachment>.unmodifiable(attachments.take(8));
@@ -485,6 +497,8 @@ class AiChatController extends Notifier<AiChatState> {
       text: (caption ?? '').trim(),
       createdAt: DateTime.now(),
       attachments: bounded,
+      replyToId: replyToId,
+      replyPreview: replyPreview,
       deliveryStatus: 'sending',
       uploadProgress: 0,
     );
@@ -525,6 +539,9 @@ class AiChatController extends Notifier<AiChatState> {
       final promptText = userMsg.replyPreview?.trim().isNotEmpty == true
           ? 'Replying to this earlier message:\n"${userMsg.replyPreview}"\n\n${userMsg.text}'
           : userMsg.text;
+      final mediaCaption = userMsg.replyPreview?.trim().isNotEmpty == true
+          ? 'Replying to this earlier message:\n"${userMsg.replyPreview}"\n\n${userMsg.text}'
+          : userMsg.text;
       var livePcmStarted = false;
       DateTime? livePcmStartedAt;
       final result = !hasMedia
@@ -553,13 +570,13 @@ class AiChatController extends Notifier<AiChatState> {
               characterId,
               userMsg.id,
               attachmentSet,
-              caption: userMsg.text,
+              caption: mediaCaption,
             )
           : await _sendMediaViaTransport(
               characterId,
               userMsg.id,
               attachment!,
-              caption: userMsg.text,
+              caption: mediaCaption,
             );
       if (livePcmStarted) {
         final elapsedMs = livePcmStartedAt == null
