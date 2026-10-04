@@ -373,6 +373,26 @@ describeDatabase("crypto conversion and payout fee PostgreSQL acceptance", () =>
     })).toBe("90");
   });
 
+  it("keeps crypto ledger and authenticated provider evidence append-only", async () => {
+    const f = await fundedFixture("20");
+    await expect(pool.query(
+      "UPDATE commerce.crypto_ledger_entries SET amount=1 WHERE tenant_id=$1",
+      [f.tenantId],
+    )).rejects.toThrow("crypto financial evidence is immutable");
+    await expect(pool.query(
+      "DELETE FROM commerce.crypto_ledger_entries WHERE tenant_id=$1",
+      [f.tenantId],
+    )).rejects.toThrow("crypto financial evidence is immutable");
+    await expect(pool.query(
+      "UPDATE commerce.crypto_provider_events SET status='failed' WHERE tenant_id=$1",
+      [f.tenantId],
+    )).rejects.toThrow("crypto financial evidence is immutable");
+    await expect(pool.query(
+      "DELETE FROM commerce.crypto_provider_events WHERE tenant_id=$1",
+      [f.tenantId],
+    )).rejects.toThrow("crypto financial evidence is immutable");
+  });
+
   it("reports aggregate liability for pooled-custody reconciliation", async () => {
     const f = await fundedFixture("75");
     expect(await f.repository.readAggregateLiability({
