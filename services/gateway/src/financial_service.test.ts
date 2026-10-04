@@ -35,6 +35,11 @@ function setup(
   existing: CryptoIntent | null = intent,
   evidence?: NowPaymentsAccountEvidence,
   pooledCustodyLiabilityCoverageSatisfied?: boolean,
+  feeReserve?: (input: {
+    readonly intent: CryptoIntent;
+    readonly networkFee: string;
+    readonly quotedAt: ReturnType<typeof toInstant>;
+  }) => Promise<CryptoIntent>,
 ) {
   const payload = { payment_id: "123", order_id: tenantId+"."+requestId, price_amount: "10",
     price_currency: "usdttrc20", pay_currency: "usdttrc20", pay_amount: "10",
@@ -54,18 +59,25 @@ function setup(
     }
     return new Response(JSON.stringify(payload));
   });
+  let currentIntent = existing ?? intent;
   const crypto = {
     readIntent: vi.fn(async () => existing),
     readIntentByRequestId: vi.fn(async () => existing),
     applyProviderPaymentEvent: vi.fn(async () => ({ ...intent, status: "succeeded" as const })),
-    reserveWithdrawal: vi.fn(async (value: CryptoIntent) => value),
+    reserveWithdrawal: vi.fn(async (value: CryptoIntent) => {
+      currentIntent = value;
+      return value;
+    }),
     settleWithdrawal: vi.fn(async (value: { readonly succeeded: boolean }) => ({
       ...withdrawalIntent,
       status: value.succeeded ? "succeeded" as const : "failed" as const,
     })),
     bindProviderPayout: vi.fn(async () => withdrawalIntent),
-    createIntent: vi.fn(async (value: CryptoIntent) => value),
-    beginProviderDispatch: vi.fn(async () => ({ intent, shouldDispatch: false })),
+    createIntent: vi.fn(async (value: CryptoIntent) => {
+      currentIntent = value;
+      return value;
+    }),
+    beginProviderDispatch: vi.fn(async () => ({ intent: currentIntent, shouldDispatch: false })),
   } as unknown as CryptoRepository;
   const service = createFinancialService({
     authorizer: createFixedFinancialAuthorizer({ token: "fixture-token", tenantId, userId }),
@@ -81,6 +93,13 @@ function setup(
         ? {}
         : { pooledCustodyLiabilityCoverageSatisfied }),
     }) }),
+    ...(feeReserve === undefined ? {} : {
+      reserveWithdrawalWithFee: async (value) => {
+        const reserved = await feeReserve(value);
+        currentIntent = reserved;
+        return reserved;
+      },
+    }),
   });
   return { service, crypto, fetch, payload };
 }
@@ -139,6 +158,32 @@ describe("financial service recovery and admission", () => {
     });
     expect(crypto.reserveWithdrawal).not.toHaveBeenCalled();
     expect(fetch).toHaveBeenCalledTimes(4);
+  });
+  it("requires canonical fee accounting before reserving a non-zero-fee withdrawal", async () => {
+    const { service, crypto } = setup(null, account);
+    await expect(service.createWithdrawal({
+      authorizationHeader, requestId, providerCode: "USDTTRC20",
+      amount: "10", destinationAddress: "address",
+    })).rejects.toThrow("financial.crypto.withdrawal_fee_settlement_unavailable");
+    expect(crypto.reserveWithdrawal).not.toHaveBeenCalled();
+  });
+  it("uses the canonical fee-aware reserve hook when a network fee is quoted", async () => {
+    const reserveWithFee = vi.fn(async (value: {
+      readonly intent: CryptoIntent;
+      readonly networkFee: string;
+      readonly quotedAt: ReturnType<typeof toInstant>;
+    }) => value.intent);
+    const { service, crypto } = setup(null, account, undefined, reserveWithFee);
+    await expect(service.createWithdrawal({
+      authorizationHeader, requestId, providerCode: "USDTTRC20",
+      amount: "10", destinationAddress: "address",
+    })).resolves.toMatchObject({ status: "processing", amount: "10" });
+    expect(reserveWithFee).toHaveBeenCalledWith(expect.objectContaining({
+      networkFee: "0.1",
+      quotedAt: at,
+      intent: expect.objectContaining({ operation: "withdraw", amount: "10" }),
+    }));
+    expect(crypto.reserveWithdrawal).not.toHaveBeenCalled();
   });
   it("rejects provider custody insufficiency before reserving customer principal", async () => {
     const { service, crypto, fetch } = setup(null, account);
