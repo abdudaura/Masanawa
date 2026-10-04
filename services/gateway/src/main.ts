@@ -22,7 +22,7 @@ import type {
   UserRelationshipReader,
 } from "@masanawa/identity";
 import type { CommerceRepository } from "@masanawa/commerce";
-import { readRequiredEnv } from "@masanawa/contracts";
+import { parseCanonicalId, readRequiredEnv } from "@masanawa/contracts";
 import {
   createDrainState,
   readNodeServiceRuntimeConfig,
@@ -51,6 +51,8 @@ import {
   createPostgresMobileShellRepository,
   createPostgresMobilePushRepository,
   createPostgresMobileAgentActivityRepository,
+  createPostgresPlatformIdentityBridge,
+  type PostgresPlatformIdentityBridge,
 } from "@masanawa/postgres";
 import {
   createAgentDirectoryService,
@@ -80,6 +82,7 @@ import {
   parseAlphaRelationshipMap,
 } from "./alpha_dev.js";
 import { createGeminiAlphaInferenceProvider } from "./alpha_executor.js";
+import { createPlatformSessionVerifier, createProductionAuthorizers } from "./production_auth.js";
 import { createAlphaInferenceStrategy } from "./alpha_strategy.js";
 import { createGeminiLiveAudioRenderer } from "./native_audio.js";
 import { createAgentShellService } from "./agent_shell.js";
@@ -124,6 +127,7 @@ export interface ServiceDatabaseDependency {
   readonly mobileShell?: MobileShellRepository;
   readonly mobilePush?: MobilePushRepository;
   readonly mobileActivity?: MobileAgentActivityRepository;
+  readonly platformIdentity?: PostgresPlatformIdentityBridge;
   close(): Promise<void>;
 }
 
@@ -211,6 +215,7 @@ function createDefaultDatabaseDependency(
     mobileShell: createPostgresMobileShellRepository(database.pool),
     mobilePush: createPostgresMobilePushRepository(database.pool),
     mobileActivity: createPostgresMobileAgentActivityRepository(database.pool),
+    platformIdentity: createPostgresPlatformIdentityBridge(database.pool),
     close: database.close,
   });
 }
@@ -228,6 +233,37 @@ function requiredAlphaEnv(
   const value = env[key]?.trim();
   if (!value) throw new TypeError(`${key} is required when Alpha mode is enabled`);
   return value;
+}
+
+function platformAuthEnabled(
+  env: Readonly<Record<string, string | undefined>>,
+): boolean {
+  return Boolean(env.MASANAWA_PLATFORM_AUTH_BASE_URL?.trim());
+}
+
+function requiredPlatformEnv(
+  env: Readonly<Record<string, string | undefined>>,
+  key: string,
+): string {
+  const value = env[key]?.trim();
+  if (!value) throw new TypeError(`${key} is required when platform auth is enabled`);
+  return value;
+}
+
+function fallbackAuthorizer<T extends { authorize(input: any): Promise<any> }>(
+  primary: T,
+  fallback: T | undefined,
+): T {
+  if (!fallback) return primary;
+  return Object.freeze({
+    async authorize(input: any) {
+      try {
+        return await primary.authorize(input);
+      } catch {
+        return fallback.authorize(input);
+      }
+    },
+  }) as T;
 }
 
 export async function startGatewayService(
@@ -249,6 +285,9 @@ export async function startGatewayService(
   let strategy = options.agentStrategy;
   let nativeAudio;
   let liveVoiceTokens: LiveVoiceTokenService | undefined;
+  let liveVoiceApiKey: string | undefined;
+  let liveVoiceModel: string | undefined;
+  let liveVoiceName: string | undefined;
   let pushSender: MobilePushSender | undefined;
 
   if (alphaEnabled(env)) {
@@ -318,16 +357,53 @@ export async function startGatewayService(
       skills: database.skills,
       guides: database.skillGuides,
     });
+    liveVoiceModel = env.MASANAWA_ALPHA_GEMINI_LIVE_MODEL ?? "gemini-3.8-live";
+    liveVoiceName = env.MASANAWA_ALPHA_GEMINI_LIVE_VOICE ?? "Kore";
+    liveVoiceApiKey = alphaGeminiApiKey;
     nativeAudio = createGeminiLiveAudioRenderer({
       apiKey: alphaGeminiApiKey,
-      model: env.MASANAWA_ALPHA_GEMINI_LIVE_MODEL ?? "gemini-3.8-live",
-      voiceName: env.MASANAWA_ALPHA_GEMINI_LIVE_VOICE ?? "Kore",
+      model: liveVoiceModel,
+      voiceName: liveVoiceName,
     });
+  }
+
+  if (platformAuthEnabled(env)) {
+    if (
+      !database.agentPresentations ||
+      !database.characterSkillAssignments ||
+      !database.platformIdentity
+    ) {
+      await database.close().catch(() => undefined);
+      throw new Error("Platform auth requires canonical identity and agent repositories");
+    }
+    const tenantId = parseCanonicalId(
+      "tenant",
+      requiredPlatformEnv(env, "MASANAWA_PLATFORM_TENANT_ID"),
+    );
+    const production = createProductionAuthorizers({
+      verifier: createPlatformSessionVerifier({
+        baseUrl: requiredPlatformEnv(env, "MASANAWA_PLATFORM_AUTH_BASE_URL"),
+      }),
+      identities: database.platformIdentity,
+      tenantId,
+      policyRevision:
+        env.MASANAWA_PLATFORM_AUTH_POLICY_REVISION?.trim() ||
+        "mobile-platform-session-v1",
+      presentations: database.agentPresentations,
+      skillAssignments: database.characterSkillAssignments,
+    });
+    directoryAuthorizer = fallbackAuthorizer(production.directory, directoryAuthorizer);
+    conversationAuthorizer = fallbackAuthorizer(production.conversation, conversationAuthorizer);
+    creatorCloneAuthorizer = fallbackAuthorizer(production.creator, creatorCloneAuthorizer);
+    commerceAuthorizer = fallbackAuthorizer(production.commerce, commerceAuthorizer);
+  }
+
+  if (liveVoiceApiKey && liveVoiceModel && liveVoiceName && conversationAuthorizer) {
     liveVoiceTokens = createGeminiLiveTokenService({
-      apiKey: alphaGeminiApiKey,
-      authorizer: conversationAuthorizer!,
-      model: env.MASANAWA_ALPHA_GEMINI_LIVE_MODEL ?? "gemini-3.8-live",
-      voiceName: env.MASANAWA_ALPHA_GEMINI_LIVE_VOICE ?? "Kore",
+      apiKey: liveVoiceApiKey,
+      authorizer: conversationAuthorizer,
+      model: liveVoiceModel,
+      voiceName: liveVoiceName,
     });
   }
 
