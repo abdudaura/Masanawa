@@ -1,6 +1,6 @@
 # Workstream claim — decision-jev-contracts
 
-Status: active
+Status: implementation complete; shared integration/check evidence pending
 Owner: this isolated workstream
 Started: 2026-10-04 19:26 Africa/Lagos
 Base: main @ 3906419669203844018b6687ad06ab2af48654eb
@@ -33,3 +33,30 @@ This workstream does not modify:
 ## Acceptance target
 
 The package must define bounded immutable Decision/JEV value contracts, deterministic validation/normalization helpers and unit tests for malformed, oversized and mutation-prone inputs. It must not claim durable workflow persistence, runtime orchestration or completion of Task 083 until checks run and the canonical task owner advances it.
+
+
+## Implementation handoff
+
+Implemented on branch `work/decision-jev-contracts-20261004` in draft PR #103.
+
+The package now provides:
+
+- bounded immutable Decision/JEV definitions;
+- closed-set choice, boolean `noul` and bounded score questions;
+- deterministic host-independent normalization;
+- bounded JSON-like request packets;
+- canonical Tenant/request/correlation plus optional Task/WorkflowRun/Operation trace refs;
+- exact request-to-schema binding;
+- complete-answer validation;
+- confidence/evidence bounds;
+- mutation-resistant frozen snapshots;
+- runtime rejection of malformed enum casts, non-plain objects, excessive depth/cardinality and non-finite numbers.
+
+Shared integration dependency: the new workspace manifest requires a
+`packages/decisions` importer in `pnpm-lock.yaml`. This claim deliberately
+does not own that shared file because active PR #98 already modifies it.
+Coordination has been posted on #98.
+
+Hosted Foundation CI for this PR currently fails before checkout with no runner
+allocated (`runner_id=0`, zero steps), so no install/typecheck/test/build result
+is claimed yet.
