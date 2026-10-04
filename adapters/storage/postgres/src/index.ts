@@ -21,3 +21,4 @@ export * from "./skills/guides.js";
 export * from "./identity/personal_clone.js";
 export * from "./identity/relationships.js";
 export * from "./skills/distribution.js";
+export * from "./identity/ownerships.js";
