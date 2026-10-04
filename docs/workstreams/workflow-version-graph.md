@@ -1,6 +1,6 @@
 # Workstream claim — workflow-version-graph
 
-Status: active
+Status: implementation complete; shared integration/check evidence pending
 Owner: this isolated workstream
 Started: 2026-10-04 19:26 Africa/Lagos
 Base: main @ 3906419669203844018b6687ad06ab2af48654eb
@@ -35,3 +35,33 @@ This workstream does not modify:
 Define immutable Workflow and WorkflowVersion graph contracts with deterministic normalization, structural validation, stable graph signatures, bounded nodes/edges, explicit entry points and safe executor references. Unit tests must reject dangling edges, duplicate keys, unreachable nodes where disallowed, malformed cycles under the selected graph policy, oversized graphs and post-admission mutation.
 
 This claim does not own WorkflowRun/Task state (Task 085+) and does not mark Task 084 complete without repository verification evidence.
+
+
+## Implementation handoff
+
+Implemented on branch `work/workflow-version-graph-20261004` in draft PR #105.
+
+The package now provides:
+
+- immutable tenant-scoped Workflow identity;
+- immutable WorkflowVersion with positive version numbers;
+- bounded normalized graph values;
+- explicit entry nodes and terminal sinks;
+- executor, decision, wait, join and terminal node kinds;
+- pinned SkillVersion, ToolVersion, WorkflowVersion, agent-strategy and system executor refs;
+- sequential, fan-out, fan-in and conditional graph composition;
+- host-independent canonical ordering;
+- deterministic SHA-256 graph signatures;
+- acyclic v1 validation;
+- duplicate/dangling/unreachable/root/sink/join/decision validation;
+- direct self-subworkflow rejection;
+- mutation-resistant snapshots and focused unit tests.
+
+Shared integration dependency: this new workspace package requires a
+`packages/workflows` importer in `pnpm-lock.yaml`. This claim deliberately
+does not own that shared file because active PR #98 already modifies it.
+Coordination has been posted on #98.
+
+Hosted Foundation CI run `37225219216`, job `111503365191`, failed before
+checkout with `runner_id=0` and zero steps. No install, typecheck, test or build
+result is claimed.
