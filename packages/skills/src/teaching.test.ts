@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { createCanonicalId, toInstant } from "@masanawa/contracts";
+import { createCanonicalId, toInstant, type SkillVersionId } from "@masanawa/contracts";
+import type { SkillCertification } from "./certification.js";
 import {
+  createCoreTeachingSkillBundle,
   normalizeTeachingAnswerEvaluation,
   normalizeTeachingLessonPlan,
   normalizeTeachingProgressHandoff,
@@ -129,5 +131,137 @@ describe("Core Teaching contracts", () => {
         learner: { ...input.learner, language: "not a language tag!" },
       }),
     ).toThrow(/language/);
+  });
+});
+
+
+function coreCertification(
+  skillVersionId: SkillVersionId,
+  omitCaseKey?: string,
+): SkillCertification {
+  const observedAt = toInstant("2026-10-04T00:00:00.000Z");
+  const required = [
+    ["activation.teaching-request", "activation"],
+    ["negative.non-teaching-request", "negative-activation"],
+    ["contract.language-switching", "contract"],
+    ["contract.misconception-correction", "contract"],
+    ["recovery.failed-understanding", "recovery"],
+    ["contract.relationship-continuity", "contract"],
+    ["recovery.source-uncertainty", "recovery"],
+    ["contract.relationship-privacy", "contract"],
+  ] as const;
+  const cases = required
+    .filter(([caseKey]) => caseKey !== omitCaseKey)
+    .map(([caseKey, kind], index) => ({
+      caseKey,
+      kind,
+      outcome: "passed" as const,
+      observedAt,
+      evidenceRef: `rehearsal://core-teaching/${caseKey}`,
+      evidenceHash: `sha256:${String(index + 1).padStart(64, "0")}`,
+    }));
+  return {
+    subjectSkillVersionId: skillVersionId,
+    profile: "core-teaching",
+    suiteKey: "skills.core-teaching",
+    suiteRevision: "2026.10.04",
+    suiteContentHash: `sha256:${"9".repeat(64)}`,
+    certifiedAt: observedAt,
+    certifierKey: "masanawa.core-teaching",
+    cases,
+    testCaseCount: cases.length,
+    passedTestCaseCount: cases.length,
+  };
+}
+
+function coreProvenance() {
+  return {
+    sourceKind: "authored" as const,
+    sourceSystem: "masanawa",
+    sourceReference: "skills/core.teaching",
+    sourceRevision: "1.0.0",
+    sourceContentHash: `sha256:${"8".repeat(64)}`,
+    publisher: {
+      publisherKey: "masanawa",
+      displayName: "Masanawa",
+      kind: "first-party" as const,
+      reference: null,
+    },
+    trust: {
+      tier: "first-party" as const,
+      evaluatorKey: "masanawa.skill-admission",
+      evaluatedAt: toInstant("2026-10-04T00:00:00.000Z"),
+      reasonCodes: ["publisher.first-party"],
+    },
+  };
+}
+
+describe("Core Teaching Skill authoring", () => {
+  it("builds one exact canonical SkillVersion and progressively disclosed SkillGuide", () => {
+    const skillId = createCanonicalId("skill");
+    const skillVersionId = createCanonicalId("skill-version");
+    const bundle = createCoreTeachingSkillBundle({
+      skillId,
+      skillVersionId,
+      version: "1.0.0",
+      provenance: coreProvenance(),
+      certification: coreCertification(skillVersionId),
+      guideResources: [
+        {
+          path: "references/mathematics.md",
+          kind: "reference",
+          description: "Reviewed mathematics teaching reference.",
+        },
+      ],
+    });
+
+    expect(bundle.skillVersion).toMatchObject({
+      skillId,
+      skillVersionId,
+      key: "core.teaching",
+      billingMode: "none",
+      confirmationPolicy: "not-required",
+      sensitivity: "private",
+    });
+    expect(bundle.skillVersion.capabilities).toEqual(["teaching.core"]);
+    expect(bundle.guide.skillVersionId).toBe(skillVersionId);
+    expect(bundle.guide.resources[0]?.path).toBe("references/mathematics.md");
+    expect(bundle.guide.contentHash).toMatch(/^sha256:[0-9a-f]{64}$/);
+    expect(bundle.guide.instructions).toContain("Relationship-scoped progress handoff");
+    expect(Object.isFrozen(bundle)).toBe(true);
+  });
+
+  it("refuses production certification that omits a required teaching rehearsal", () => {
+    const skillVersionId = createCanonicalId("skill-version");
+    expect(() =>
+      createCoreTeachingSkillBundle({
+        skillId: createCanonicalId("skill"),
+        skillVersionId,
+        version: "1.0.0",
+        provenance: coreProvenance(),
+        certification: coreCertification(
+          skillVersionId,
+          "recovery.source-uncertainty",
+        ),
+      }),
+    ).toThrow(/recovery\.source-uncertainty/);
+  });
+
+  it("keeps teaching free of hidden Tool, Provider and Offer authority", () => {
+    const skillVersionId = createCanonicalId("skill-version");
+    const bundle = createCoreTeachingSkillBundle({
+      skillId: createCanonicalId("skill"),
+      skillVersionId,
+      version: "1.0.0",
+      provenance: coreProvenance(),
+      certification: coreCertification(skillVersionId),
+    });
+
+    expect(bundle.skillVersion.requiredToolCapabilities).toEqual([]);
+    expect(bundle.skillVersion.toolReferences).toEqual([]);
+    expect(bundle.skillVersion.requiredAuthorityCapabilities).toEqual([]);
+    expect(bundle.skillVersion.dependencies).toEqual([]);
+    expect(bundle.skillVersion).not.toHaveProperty("offerId");
+    expect(bundle.skillVersion).not.toHaveProperty("providerId");
   });
 });
