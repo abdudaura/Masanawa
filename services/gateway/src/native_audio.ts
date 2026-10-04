@@ -90,10 +90,12 @@ export function createGeminiLiveAudioRenderer(input: {
           socket.send(JSON.stringify({
             setup: {
               model: "models/" + model,
-              responseModalities: ["AUDIO"],
-              speechConfig: {
-                voiceConfig: {
-                  prebuiltVoiceConfig: { voiceName },
+              generationConfig: {
+                responseModalities: ["AUDIO"],
+                speechConfig: {
+                  voiceConfig: {
+                    prebuiltVoiceConfig: { voiceName },
+                  },
                 },
               },
             },
@@ -159,8 +161,14 @@ export function createGeminiLiveAudioRenderer(input: {
         socket.addEventListener("error", () =>
           finishError(new Error("Gemini Live audio connection failed")),
         );
-        socket.addEventListener("close", () => {
-          if (!settled) finishError(new Error("Gemini Live audio connection closed"));
+        socket.addEventListener("close", (event: { code?: number; reason?: string }) => {
+          if (!settled) {
+            const suffix =
+              event.code || event.reason
+                ? ` (${event.code ?? 0}${event.reason ? `: ${event.reason}` : ""})`
+                : "";
+            finishError(new Error(`Gemini Live audio connection closed${suffix}`));
+          }
         });
       });
     },
