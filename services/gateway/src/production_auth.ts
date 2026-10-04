@@ -9,6 +9,7 @@ import {
 import type {
   AgentPresentationRepository,
   CharacterSkillAssignmentRepository,
+  PlatformAgentProfileRepository,
 } from "@masanawa/agents";
 import { createAuthorityContext } from "@masanawa/security";
 import type {
@@ -29,6 +30,10 @@ export interface ProductionIdentityResolver {
     readonly userId: UserId;
     readonly characterId: CharacterId;
   }): Promise<RelationshipId>;
+  listCharacterIdsForUser(input: {
+    readonly tenantId: TenantId;
+    readonly userId: UserId;
+  }): Promise<readonly CharacterId[]>;
 }
 
 export interface PlatformSessionVerifier {
@@ -94,6 +99,7 @@ export function createProductionAuthorizers(input: {
   readonly policyRevision: string;
   readonly presentations: AgentPresentationRepository;
   readonly skillAssignments: CharacterSkillAssignmentRepository;
+  readonly platformProfiles: PlatformAgentProfileRepository;
 }): {
   readonly directory: AgentDirectoryAuthorizer;
   readonly conversation: AgentConversationAuthorizer;
@@ -114,7 +120,23 @@ export function createProductionAuthorizers(input: {
 
   const directory: AgentDirectoryAuthorizer = Object.freeze({
     async authorize(request) {
-      return authorizeUser(request.authorizationHeader);
+      const user = await authorizeUser(request.authorizationHeader);
+      const [related, support] = await Promise.all([
+        input.identities.listCharacterIdsForUser({
+          tenantId: user.tenantId,
+          userId: user.userId,
+        }),
+        input.platformProfiles.listSupportAgents({ tenantId: user.tenantId }),
+      ]);
+      return Object.freeze({
+        ...user,
+        characterIds: Object.freeze([
+          ...new Set([
+            ...related,
+            ...support.map((profile) => profile.characterId),
+          ]),
+        ]),
+      });
     },
   });
 
@@ -139,6 +161,19 @@ export function createProductionAuthorizers(input: {
         characterId,
       });
       if (!presentation || !presentation.visibleInUserApp) {
+        throw new Error("Character is not available to this user");
+      }
+      const existingCharacterIds =
+        await input.identities.listCharacterIdsForUser({
+          tenantId: user.tenantId,
+          userId: user.userId,
+        });
+      const alreadyRelated = existingCharacterIds.includes(characterId);
+      const profile = await input.platformProfiles.readForCharacter({
+        tenantId: user.tenantId,
+        characterId,
+      });
+      if (!alreadyRelated && profile?.supportAgent !== true) {
         throw new Error("Character is not available to this user");
       }
       const relationshipId = await input.identities.relationshipFor({
