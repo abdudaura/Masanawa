@@ -17,6 +17,7 @@ import '../core/live_pcm_audio.dart';
 import '../core/network/api_client.dart';
 import '../core/request_id.dart';
 import '../agents/agent_shell.dart';
+import '../core/mobile_push.dart';
 import '../chat/shell_action_coordinator.dart';
 import '../chat/shell_action_journal.dart';
 import '../chat/shell_document.dart';
@@ -362,10 +363,18 @@ class AiChatController extends Notifier<AiChatState> {
   final Map<String, String> _eventCursors = {};
   final Map<String, ShellActionCoordinator> _actionCoordinators = {};
   final Map<String, EncryptedShellActionJournal> _actionJournals = {};
+  String? _cacheOwnerId;
+  int _cacheGeneration = 0;
 
   @override
   AiChatState build() {
-    scheduleMicrotask(_load);
+    final initialSession = ref.read(sessionProvider);
+    _cacheOwnerId =
+        initialSession is SessionSignedIn ? initialSession.user.id : null;
+    final initialOwner = _cacheOwnerId;
+    if (initialOwner != null && initialOwner.isNotEmpty) {
+      scheduleMicrotask(() => _load(initialOwner, _cacheGeneration));
+    }
     try {
       _connectivitySub = Connectivity().onConnectivityChanged.listen(
         (results) {
@@ -388,14 +397,30 @@ class AiChatController extends Notifier<AiChatState> {
       }
       _eventSubscriptions.clear();
     });
-    ref.listen(agentTransportProvider, (_, __) {
+    ref.listen(sessionProvider, (previous, next) {
+      final nextOwner = next is SessionSignedIn ? next.user.id : null;
+      if (nextOwner == _cacheOwnerId) return;
+      final previousOwner = _cacheOwnerId;
+      _cacheOwnerId = nextOwner;
+      final generation = ++_cacheGeneration;
+      unawaited(_handleOwnerChange(previousOwner, nextOwner, generation));
+    });
+    ref.listen(agentTransportProvider, (previous, _) {
       _connectionGeneration++;
+      final bindings = [..._bindings.values];
       _bindings.clear();
+      if (previous != null) {
+        for (final binding in bindings) {
+          unawaited(previous.closeSession(binding).catchError((_) {}));
+        }
+      }
       for (final subscription in _eventSubscriptions.values) {
         unawaited(subscription.cancel());
       }
       _eventSubscriptions.clear();
       _actionCoordinators.clear();
+      _eventCursors.clear();
+      state = state.copyWith(shellConfigs: {});
     });
     return const AiChatState();
   }
@@ -423,13 +448,17 @@ class AiChatController extends Notifier<AiChatState> {
 
   Future<void> syncFromServer(String characterId) async {
     final transport = _shellTransport;
+    final generation = _connectionGeneration;
+    final threadGeneration = _threadGenerations[characterId] ?? 0;
     if (transport == null || await _offlineNow()) return;
+    if (_disposed || generation != _connectionGeneration) return;
     try {
       final results = await Future.wait<dynamic>([
         transport.loadShellConfig(characterId),
         transport.loadHistory(characterId, limit: 100),
       ]);
-      if (_disposed) return;
+      if (_disposed || generation != _connectionGeneration ||
+          threadGeneration != (_threadGenerations[characterId] ?? 0)) return;
       final config = results[0] as AgentShellConfig;
       final history = results[1] as List<AgentHistoryMessage>;
       state = state.copyWith(
@@ -437,7 +466,13 @@ class AiChatController extends Notifier<AiChatState> {
       );
       _mergeServerHistory(characterId, history);
       await _reconcilePendingTurns(characterId, transport);
+      if (_disposed || generation != _connectionGeneration ||
+          threadGeneration != (_threadGenerations[characterId] ?? 0)) return;
       _startEventStream(characterId, transport);
+      if (state.openThreadId == characterId) {
+        unawaited(MobilePushService.instance
+            .registerForCharacter(transport, characterId).catchError((_) {}));
+      }
     } catch (_) {
       // A cached conversation remains usable while the canonical service is unavailable.
     }
@@ -499,7 +534,9 @@ class AiChatController extends Notifier<AiChatState> {
     String characterId,
     AgentShellTransport transport,
   ) async {
+    final generation = _connectionGeneration;
     final thread = threadOf(characterId);
+    final threadGeneration = _threadGenerations[characterId] ?? 0;
     for (final message in thread.messages.where(
       (m) => m.isUser &&
           m.requestId != null &&
@@ -507,6 +544,8 @@ class AiChatController extends Notifier<AiChatState> {
     )) {
       try {
         final status = await transport.turnStatus(characterId, message.requestId!);
+        if (_disposed || generation != _connectionGeneration ||
+            threadGeneration != (_threadGenerations[characterId] ?? 0)) return;
         if (status.state == 'completed') {
           _setDelivery(characterId, message.id, 'delivered');
           final assistantExists = threadOf(characterId).messages.any(
@@ -536,29 +575,41 @@ class AiChatController extends Notifier<AiChatState> {
     String characterId,
     AgentShellTransport transport,
   ) {
+    final generation = _connectionGeneration;
     if (_eventSubscriptions.containsKey(characterId)) return;
     _eventSubscriptions[characterId] = transport
         .events(characterId, after: _eventCursors[characterId])
         .listen(
       (event) {
+        if (_disposed || generation != _connectionGeneration) return;
         if (event.cursor.isNotEmpty) _eventCursors[characterId] = event.cursor;
         _applyShellEvent(characterId, event);
       },
       onError: (_) {
+        if (_disposed || generation != _connectionGeneration) return;
         _eventSubscriptions.remove(characterId);
         if (!_disposed && state.online) {
           Future<void>.delayed(
             const Duration(seconds: 2),
-            () => syncFromServer(characterId),
+            () {
+              if (!_disposed && generation == _connectionGeneration) {
+                unawaited(syncFromServer(characterId));
+              }
+            },
           );
         }
       },
       onDone: () {
+        if (_disposed || generation != _connectionGeneration) return;
         _eventSubscriptions.remove(characterId);
         if (!_disposed && state.online) {
           Future<void>.delayed(
             const Duration(milliseconds: 400),
-            () => syncFromServer(characterId),
+            () {
+              if (!_disposed && generation == _connectionGeneration) {
+                unawaited(syncFromServer(characterId));
+              }
+            },
           );
         }
       },
@@ -696,8 +747,13 @@ class AiChatController extends Notifier<AiChatState> {
     if (transport == null) throw StateError('Shell actions unavailable');
     final binding = await _bindingFor(characterId, ref.read(agentTransportProvider));
     final session = ref.read(sessionProvider);
-    final userId = session is SessionSignedIn ? session.user.id : 'anonymous';
-    final namespace = '$userId:${binding.characterSessionId}';
+    if (session is! SessionSignedIn || session.user.id.isEmpty) {
+      throw StateError('Authentication required for shell actions');
+    }
+    final namespace = EncryptedShellActionJournal.namespaceForOwnerSession(
+      ownerId: session.user.id,
+      sessionId: binding.characterSessionId,
+    );
     var coordinator = _actionCoordinators[namespace];
     if (coordinator == null) {
       final journal = EncryptedShellActionJournal(
@@ -719,12 +775,21 @@ class AiChatController extends Notifier<AiChatState> {
     await coordinator.submit(action);
   }
 
-  Future<void> clearSecureShellState() async {
+  Future<void> clearSecureShellState({String? ownerId}) async {
+    final session = ref.read(sessionProvider);
+    final userId = ownerId ??
+        (session is SessionSignedIn ? session.user.id : null);
     final journals = [..._actionJournals.values];
     _actionJournals.clear();
     _actionCoordinators.clear();
     for (final journal in journals) {
       await journal.clearAndClose().catchError((_) {});
+    }
+    if (userId != null && userId.isNotEmpty) {
+      await EncryptedShellActionJournal.clearOwner(
+        store: const FlutterShellEncryptedStore(),
+        ownerId: userId,
+      ).catchError((_) {});
     }
   }
 
@@ -1590,13 +1655,51 @@ class AiChatController extends Notifier<AiChatState> {
     _save();
   }
 
-  void clearAll() {
-    for (final id in state.threads.keys) {
+  Future<void> clearAll() async {
+    final ids = <String>{...state.threads.keys, ..._bindings.keys};
+    for (final id in ids) {
       _threadGenerations[id] = (_threadGenerations[id] ?? 0) + 1;
     }
+    final transport = ref.read(agentTransportProvider);
+    final bindings = [..._bindings.values];
     _bindings.clear();
-    state = state.copyWith(threads: {}, sendingIn: {});
-    _save();
+    final subscriptions = [..._eventSubscriptions.values];
+    _eventSubscriptions.clear();
+    _eventCursors.clear();
+    state = state.copyWith(threads: {}, sendingIn: {}, shellConfigs: {});
+    await _save();
+    await Future.wait([
+      for (final binding in bindings)
+        transport.closeSession(binding).catchError((_) {}),
+      for (final subscription in subscriptions)
+        subscription.cancel().catchError((_) {}),
+      LivePcmAudio.stop().catchError((_) {}),
+      _clearOwnedTempMedia(),
+    ]);
+  }
+
+  Future<void> _clearOwnedTempMedia() async {
+    try {
+      final dir = await getTemporaryDirectory();
+      if (!await dir.exists()) return;
+      await for (final entity in dir.list(followLinks: false)) {
+        if (entity is! File) continue;
+        final name = entity.uri.pathSegments.isEmpty
+            ? ''
+            : entity.uri.pathSegments.last;
+        if (!name.startsWith('masanawa_voice_') &&
+            !name.startsWith('masanawa_reply_')) {
+          continue;
+        }
+        try {
+          await entity.delete();
+        } catch (_) {
+          // One locked temp file must not block account cleanup.
+        }
+      }
+    } catch (_) {
+      // OS temp storage remains non-canonical; cleanup is best effort.
+    }
   }
 
   List<double> _pcmWaveform(Uint8List wavBytes, {int bars = 36}) {
@@ -1628,25 +1731,99 @@ class AiChatController extends Notifier<AiChatState> {
 
   String _newId() => 'm-${DateTime.now().microsecondsSinceEpoch}-${_seq++}';
 
-  Future<File?> _threadsFile() async {
+  Future<File?> _threadsFile(String ownerId) async {
     try {
+      if (ownerId.isEmpty) return null;
       final dir = await getApplicationDocumentsDirectory();
-      return File('${dir.path}/$_kThreadsFile');
+      final owner =
+          base64Url.encode(utf8.encode(ownerId)).replaceAll('=', '');
+      return File('${dir.path}/masanawa_threads_v2_$owner.json');
     } catch (_) {
       return null;
     }
   }
 
-  Future<void> _load() async {
+  Future<void> _deleteLegacyThreadCache() async {
     try {
-      final file = await _threadsFile();
+      final dir = await getApplicationDocumentsDirectory();
+      final legacy = File('${dir.path}/$_kThreadsFile');
+      if (await legacy.exists()) await legacy.delete();
+    } catch (_) {
+      // Legacy cache is never loaded; failed deletion does not block startup.
+    }
+  }
+
+  Future<void> _deleteThreadCache(String ownerId) async {
+    try {
+      final file = await _threadsFile(ownerId);
+      if (file != null && await file.exists()) await file.delete();
+    } catch (_) {
+      // Account cleanup remains best effort locally; server history is canonical.
+    }
+  }
+
+  Future<void> _handleOwnerChange(
+    String? previousOwner,
+    String? nextOwner,
+    int generation,
+  ) async {
+    _connectionGeneration++;
+    final ids = <String>{...state.threads.keys, ..._bindings.keys};
+    for (final id in ids) {
+      _threadGenerations[id] = (_threadGenerations[id] ?? 0) + 1;
+    }
+    final transport = ref.read(agentTransportProvider);
+    final bindings = [..._bindings.values];
+    _bindings.clear();
+    final subscriptions = [..._eventSubscriptions.values];
+    _eventSubscriptions.clear();
+    _eventCursors.clear();
+    state = state.copyWith(
+      threads: {},
+      sendingIn: {},
+      shellConfigs: {},
+      clearOpen: true,
+    );
+
+    if (previousOwner != null && previousOwner.isNotEmpty) {
+      await clearSecureShellState(ownerId: previousOwner);
+      await _deleteThreadCache(previousOwner);
+    }
+    await Future.wait([
+      for (final binding in bindings)
+        transport.closeSession(binding).catchError((_) {}),
+      for (final subscription in subscriptions)
+        subscription.cancel().catchError((_) {}),
+      LivePcmAudio.stop().catchError((_) {}),
+      _clearOwnedTempMedia(),
+    ]);
+
+    if (_disposed ||
+        generation != _cacheGeneration ||
+        nextOwner == null ||
+        nextOwner.isEmpty ||
+        nextOwner != _cacheOwnerId) {
+      return;
+    }
+    await _load(nextOwner, generation);
+  }
+
+  Future<void> _load(String ownerId, int generation) async {
+    try {
+      await _deleteLegacyThreadCache();
+      final file = await _threadsFile(ownerId);
       if (file == null || !await file.exists()) return;
       final raw = jsonDecode(await file.readAsString());
       final list = (raw as List? ?? [])
           .map((e) => ChatThread.fromJson((e as Map).cast<String, dynamic>()))
           .where((t) => t.characterId.isNotEmpty)
           .toList();
-      if (_disposed || list.isEmpty) return;
+      if (_disposed ||
+          generation != _cacheGeneration ||
+          ownerId != _cacheOwnerId ||
+          list.isEmpty) {
+        return;
+      }
       state = state.copyWith(
         threads: {for (final t in list) t.characterId: t, ...state.threads},
       );
@@ -1656,8 +1833,10 @@ class AiChatController extends Notifier<AiChatState> {
   }
 
   Future<void> _save() async {
+    final ownerId = _cacheOwnerId;
+    if (ownerId == null || ownerId.isEmpty) return;
     try {
-      final file = await _threadsFile();
+      final file = await _threadsFile(ownerId);
       if (file == null) return;
       final list = state.threads.values.map((t) => t.toJson()).toList();
       await file.writeAsString(jsonEncode(list));

@@ -25,14 +25,16 @@ class LivePcmAudio {
     }
   }
 
-  static Future<void> write(Uint8List bytes) async {
-    if (bytes.isEmpty) return;
+  static Future<bool> write(Uint8List bytes) async {
+    if (bytes.isEmpty) return true;
     try {
-      await _channel.invokeMethod<void>('write', {'bytes': bytes});
+      return await _channel.invokeMethod<bool>('write', {'bytes': bytes}) ?? false;
     } on MissingPluginException {
       // Buffered WAV playback remains available.
+      return false;
     } on PlatformException {
       // Buffered WAV playback remains available.
+      return false;
     }
   }
 
@@ -57,6 +59,17 @@ class LivePcmAudio {
       // Unsupported platform.
     } on PlatformException {
       // Unsupported platform.
+    }
+  }
+
+  /// Ending a live call also restores Android's normal communication route.
+  static Future<void> release() async {
+    try {
+      await _channel.invokeMethod<void>('release');
+    } on MissingPluginException {
+      // Unsupported platform.
+    } on PlatformException {
+      // Audio may already have been released by Android.
     }
   }
 }

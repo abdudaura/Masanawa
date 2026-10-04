@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,8 +25,19 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  bool _notifications = true;
+  bool _notifications = false;
   String? _savingDefaultAgentId;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_refreshNotificationState());
+  }
+
+  Future<void> _refreshNotificationState() async {
+    final enabled = await MobilePushService.instance.notificationEnabled();
+    if (mounted) setState(() => _notifications = enabled);
+  }
 
   Future<void> _addFloat(BuildContext context, int availableCredits) async {
     final controller = TextEditingController();
@@ -429,6 +442,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     await ref
                         .read(agentDirectoryProvider.notifier)
                         .refresh();
+                    await _refreshNotificationState();
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -449,8 +463,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               leading: Icon(Icons.delete_outline, color: u.brand),
               title: const Text('Clear all chats'),
               subtitle: const Text('Remove every conversation on this device'),
-              onTap: () {
-                ref.read(aiChatProvider.notifier).clearAll();
+              onTap: () async {
+                await ref.read(aiChatProvider.notifier).clearAll();
+                if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('All chats cleared')),
                 );
@@ -492,7 +507,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onTap: () async {
                 await MobilePushService.instance.unregister();
                 await ref.read(aiChatProvider.notifier).clearSecureShellState();
-                ref.read(aiChatProvider.notifier).clearAll();
+                await ref.read(aiChatProvider.notifier).clearAll();
                 await ref.read(sessionProvider.notifier).logout();
                 if (context.mounted) context.go('/phone-login');
               },

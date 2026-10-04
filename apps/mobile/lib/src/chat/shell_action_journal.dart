@@ -8,6 +8,7 @@ abstract class ShellEncryptedStore {
   Future<String?> read(String key);
   Future<void> write(String key, String value);
   Future<void> delete(String key);
+  Future<Map<String, String>> readAll();
 }
 
 /// One UI-isolate owner of encrypted records. Static serialization covers
@@ -27,6 +28,53 @@ class EncryptedShellActionJournal implements ShellActionJournal {
   late final int _epoch;
   bool _closed = false;
   String get _storageKey => 'masanawa.shell.actions.v1:$namespace';
+
+  static String _ownerSegment(String ownerId) =>
+      base64Url.encode(utf8.encode(ownerId)).replaceAll('=', '');
+
+  static String namespaceForOwnerSession({
+    required String ownerId,
+    required String sessionId,
+  }) {
+    final cleanOwner = ownerId.trim();
+    final cleanSession = sessionId.trim();
+    if (cleanOwner.isEmpty ||
+        cleanOwner.length > 512 ||
+        cleanSession.isEmpty ||
+        cleanSession.length > 512) {
+      throw ArgumentError('Valid owner and session ids required');
+    }
+    return '${_ownerSegment(cleanOwner)}:$cleanSession';
+  }
+
+  static Future<void> clearOwner({
+    required ShellEncryptedStore store,
+    required String ownerId,
+  }) async {
+    final cleanOwner = ownerId.trim();
+    if (cleanOwner.isEmpty || cleanOwner.length > 512) {
+      throw ArgumentError('Valid owner id required');
+    }
+    final prefix =
+        'masanawa.shell.actions.v1:${_ownerSegment(cleanOwner)}:';
+    final all = await store.readAll();
+    final keys =
+        all.keys.where((key) => key.startsWith(prefix)).toList(growable: false);
+    for (final key in keys) {
+      final previous = _locks[key] ?? Future<void>.value();
+      final gate = Completer<void>();
+      final ticket = gate.future;
+      _locks[key] = ticket;
+      await previous;
+      try {
+        await store.delete(key);
+        _epochs[key] = (_epochs[key] ?? 0) + 1;
+      } finally {
+        gate.complete();
+        if (identical(_locks[key], ticket)) _locks.remove(key);
+      }
+    }
+  }
 
   Future<T> _exclusive<T>(Future<T> Function() work) async {
     final previous = _locks[_storageKey] ?? Future<void>.value();

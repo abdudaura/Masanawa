@@ -64,6 +64,7 @@ class MemoryConnectionStore implements AgentConnectionStore {
 
 class RecoveringTransport implements AgentTransport {
   int turns = 0;
+  int closedSessions = 0;
   final Completer<AgentTurnResult>? pending;
   RecoveringTransport({this.pending});
   @override
@@ -75,6 +76,7 @@ class RecoveringTransport implements AgentTransport {
     required String text,
     void Function(String delta)? onTextDelta,
     Future<void> Function(Uint8List pcmChunk)? onAudioPcmChunk,
+    String? requestId,
   }) async {
     turns++;
     if (pending != null) return pending!.future;
@@ -94,6 +96,7 @@ class RecoveringTransport implements AgentTransport {
     required String mimeType,
     required String caption,
     void Function(int sent, int total)? onUploadProgress,
+    String? requestId,
   }) async {
     onUploadProgress?.call(bytes.length, bytes.length);
     return const AgentTurnResult(text: 'Media reply');
@@ -104,6 +107,7 @@ class RecoveringTransport implements AgentTransport {
     required List<AgentMediaInput> media,
     required String caption,
     void Function(int sent, int total)? onUploadProgress,
+    String? requestId,
   }) async {
     final total = media.fold<int>(0, (sum, item) => sum + item.bytes.length);
     onUploadProgress?.call(total, total);
@@ -114,7 +118,9 @@ class RecoveringTransport implements AgentTransport {
   void cancelTurn(String characterId) {}
 
   @override
-  Future<void> closeSession(AgentSessionBinding binding) async {}
+  Future<void> closeSession(AgentSessionBinding binding) async {
+    closedSessions++;
+  }
 }
 
 class RecordingAdapter implements HttpClientAdapter {
@@ -366,6 +372,23 @@ void main() {
     expect(c.read(aiChatProvider).sendingIn, isEmpty);
   });
 
+  test('clear all closes canonical CharacterSessions before dropping local state', () async {
+    final transport = RecoveringTransport();
+    final c = ProviderContainer(
+      overrides: [agentTransportProvider.overrideWithValue(transport)],
+    );
+    addTearDown(c.dispose);
+    final controller = c.read(aiChatProvider.notifier);
+    await Future<void>.delayed(Duration.zero);
+    await controller.sendText('character-1', 'hello');
+    expect(c.read(aiChatProvider).threads, isNotEmpty);
+
+    await controller.clearAll();
+
+    expect(transport.closedSessions, 1);
+    expect(c.read(aiChatProvider).threads, isEmpty);
+  });
+
   test(
     'chat transport keeps Alpha authorization and waits for server deadline',
     () async {
@@ -386,7 +409,7 @@ void main() {
       );
       expect(
         adapter.request!.path,
-        'https://gateway.test/v1/agent/sessions/session-1/turn',
+        'https://gateway.test/agent/sessions/session-1/turn',
       );
       expect(adapter.request!.headers['Authorization'], 'Bearer private-token');
       expect(adapter.request!.receiveTimeout, const Duration(seconds: 75));

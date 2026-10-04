@@ -5,9 +5,11 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter/services.dart';
 
 import '../agents/agent_shell.dart';
 import 'request_id.dart';
+import 'shell_deep_link.dart';
 
 const _firebaseApiKey =
     String.fromEnvironment('FIREBASE_API_KEY', defaultValue: '');
@@ -43,12 +45,18 @@ class MobilePushService {
   static final instance = MobilePushService._();
   static const _storage = FlutterSecureStorage();
   static const _installationKey = 'masanawa.push.installation.v1';
+  static const _enabledKey = 'masanawa.push.enabled.v1';
   static final _links = StreamController<Uri>.broadcast(sync: true);
   static final _notifications = FlutterLocalNotificationsPlugin();
   static bool _initialized = false;
+  static bool _nativeLinksInitialized = false;
+  static Future<void>? _initializing;
+  static Uri? _initialLink;
+  static const _nativeLinks = MethodChannel('masanawa/deep_links');
   static String? _installationId;
   static AgentShellTransport? _transport;
   static String? _characterId;
+  static int _contextGeneration = 0;
   static StreamSubscription<String>? _tokenRefresh;
   static StreamSubscription<RemoteMessage>? _foreground;
   static StreamSubscription<RemoteMessage>? _opened;
@@ -56,8 +64,43 @@ class MobilePushService {
   Stream<Uri> get deepLinks => _links.stream;
   bool get configured => firebasePushConfigured;
 
+  Uri? takeInitialDeepLink() {
+    final link = _initialLink;
+    _initialLink = null;
+    return link;
+  }
+
   Future<void> initialize() async {
-    if (_initialized || !firebasePushConfigured) return;
+    if (_initialized) return;
+    final active = _initializing;
+    if (active != null) return active;
+    final future = _initialize();
+    _initializing = future;
+    try {
+      await future;
+    } finally {
+      _initializing = null;
+    }
+  }
+
+  Future<void> _initialize() async {
+    if (!_nativeLinksInitialized) {
+      _nativeLinks.setMethodCallHandler((call) async {
+        if (call.method == 'open' && call.arguments is String) {
+          _emitLink(call.arguments as String);
+        }
+      });
+      try {
+        final raw = await _nativeLinks.invokeMethod<String>('initial');
+        if (raw != null) _emitLink(raw);
+      } on MissingPluginException {
+        // Native URI bridge is Android-only.
+      } on PlatformException {
+        // Push navigation remains available independently.
+      }
+      _nativeLinksInitialized = true;
+    }
+    if (!firebasePushConfigured) return;
     await Firebase.initializeApp(options: _firebaseOptions);
     FirebaseMessaging.onBackgroundMessage(masanawaFirebaseBackgroundMessage);
 
@@ -79,14 +122,13 @@ class MobilePushService {
     final launch = await _notifications.getNotificationAppLaunchDetails();
     final localPayload = launch?.notificationResponse?.payload;
     if (launch?.didNotificationLaunchApp == true && localPayload != null) {
-      scheduleMicrotask(() => _emitLink(localPayload));
+      _emitLink(localPayload);
     }
 
     final initial = await FirebaseMessaging.instance.getInitialMessage();
-    if (initial != null) scheduleMicrotask(() => _emitMessageLink(initial));
+    if (initial != null) _emitMessageLink(initial);
 
     _foreground = FirebaseMessaging.onMessage.listen((message) async {
-      _emitMessageLink(message);
       final notification = message.notification;
       if (notification == null) return;
       await _notifications.show(
@@ -111,10 +153,19 @@ class MobilePushService {
       final transport = _transport;
       final characterId = _characterId;
       if (transport != null && characterId != null) {
-        unawaited(registerForCharacter(transport, characterId));
+        unawaited(registerForCharacter(transport, characterId).catchError((_) {}));
       }
     });
     _initialized = true;
+  }
+
+  Future<bool> notificationEnabled() async {
+    if (!firebasePushConfigured) return false;
+    await initialize();
+    if (await _storage.read(key: _enabledKey) == 'false') return false;
+    final settings = await FirebaseMessaging.instance.getNotificationSettings();
+    return settings.authorizationStatus == AuthorizationStatus.authorized ||
+        settings.authorizationStatus == AuthorizationStatus.provisional;
   }
 
   Future<bool> requestPermission() async {
@@ -132,8 +183,15 @@ class MobilePushService {
     if (android != null) {
       await android.requestNotificationsPermission();
     }
-    return settings.authorizationStatus == AuthorizationStatus.authorized ||
+    final allowed = settings.authorizationStatus == AuthorizationStatus.authorized ||
         settings.authorizationStatus == AuthorizationStatus.provisional;
+    await _storage.write(key: _enabledKey, value: allowed ? 'true' : 'false');
+    final transport = _transport;
+    final characterId = _characterId;
+    if (allowed && transport != null && characterId != null) {
+      await registerForCharacter(transport, characterId).catchError((_) {});
+    }
+    return allowed;
   }
 
   Future<String> _installation() async {
@@ -153,14 +211,22 @@ class MobilePushService {
     String characterId,
   ) async {
     if (!firebasePushConfigured) return;
-    await initialize();
     _transport = transport;
     _characterId = characterId;
+    final generation = ++_contextGeneration;
+    await initialize();
+    if (generation != _contextGeneration) return;
+    if (await _storage.read(key: _enabledKey) == 'false') return;
+    final settings = await FirebaseMessaging.instance.getNotificationSettings();
+    if (settings.authorizationStatus != AuthorizationStatus.authorized &&
+        settings.authorizationStatus != AuthorizationStatus.provisional) return;
     final token = await FirebaseMessaging.instance.getToken();
     if (token == null || token.isEmpty) return;
+    final installationId = await _installation();
+    if (generation != _contextGeneration) return;
     await transport.registerPush(
       characterId: characterId,
-      installationId: await _installation(),
+      installationId: installationId,
       platform: Platform.isIOS ? 'ios' : 'android',
       token: token,
     );
@@ -169,6 +235,11 @@ class MobilePushService {
   Future<void> unregister() async {
     final transport = _transport;
     final characterId = _characterId;
+    ++_contextGeneration;
+    _transport = null;
+    _characterId = null;
+    _initialLink = null;
+    await _storage.write(key: _enabledKey, value: 'false');
     if (transport != null && characterId != null) {
       try {
         await transport.unregisterPush(
@@ -177,8 +248,6 @@ class MobilePushService {
         );
       } catch (_) {}
     }
-    _transport = null;
-    _characterId = null;
     try {
       await FirebaseMessaging.instance.deleteToken();
     } catch (_) {}
@@ -201,14 +270,21 @@ class MobilePushService {
 
   void _emitLink(String raw) {
     final uri = Uri.tryParse(raw);
-    if (uri == null || uri.scheme != 'masanawa') return;
-    if (!{'chat', 'work', 'approval', 'artifact'}.contains(uri.host)) return;
-    _links.add(uri);
+    if (uri == null || shellDeepLinkRoute(uri) == null) return;
+    if (_links.hasListener) {
+      _links.add(uri);
+    } else {
+      _initialLink = uri;
+    }
   }
 
   Future<void> dispose() async {
     await _tokenRefresh?.cancel();
     await _foreground?.cancel();
     await _opened?.cancel();
+    _tokenRefresh = null;
+    _foreground = null;
+    _opened = null;
+    _initialized = false;
   }
 }

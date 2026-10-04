@@ -17,6 +17,9 @@ class Store implements ShellEncryptedStore {
 
   @override
   Future<void> delete(String key) async => data.remove(key);
+
+  @override
+  Future<Map<String, String>> readAll() async => Map.unmodifiable(data);
 }
 
 const action = ShellAction(
@@ -91,6 +94,93 @@ void main() {
       expect((await journal.read('key-0'))!.state, ShellActionState.pending);
     },
   );
+  test('owner cleanup deletes persisted journals from prior app processes', () async {
+    final ownerNamespace =
+        EncryptedShellActionJournal.namespaceForOwnerSession(
+      ownerId: 'user-1',
+      sessionId: 'session-old',
+    );
+    final ownerNamespace2 =
+        EncryptedShellActionJournal.namespaceForOwnerSession(
+      ownerId: 'user-1',
+      sessionId: 'session-new',
+    );
+    final otherNamespace =
+        EncryptedShellActionJournal.namespaceForOwnerSession(
+      ownerId: 'user-2',
+      sessionId: 'session-other',
+    );
+    final store = Store()
+      ..data['masanawa.shell.actions.v1:$ownerNamespace'] =
+          '{"version":1,"records":{}}'
+      ..data['masanawa.shell.actions.v1:$ownerNamespace2'] =
+          '{"version":1,"records":{}}'
+      ..data['masanawa.shell.actions.v1:$otherNamespace'] =
+          '{"version":1,"records":{}}'
+      ..data['unrelated.secure.key'] = 'keep';
+
+    await EncryptedShellActionJournal.clearOwner(
+      store: store,
+      ownerId: 'user-1',
+    );
+
+    expect(
+      store.data.keys.where(
+        (key) =>
+            key == 'masanawa.shell.actions.v1:$ownerNamespace' ||
+            key == 'masanawa.shell.actions.v1:$ownerNamespace2',
+      ),
+      isEmpty,
+    );
+    expect(
+      store.data['masanawa.shell.actions.v1:$otherNamespace'],
+      isNotNull,
+    );
+    expect(store.data['unrelated.secure.key'], 'keep');
+  });
+
+  test('encoded owner namespaces cannot prefix-match a different owner', () async {
+    final shortOwner =
+        EncryptedShellActionJournal.namespaceForOwnerSession(
+      ownerId: 'user',
+      sessionId: 'session-a',
+    );
+    final colonOwner =
+        EncryptedShellActionJournal.namespaceForOwnerSession(
+      ownerId: 'user:child',
+      sessionId: 'session-b',
+    );
+    final store = Store()
+      ..data['masanawa.shell.actions.v1:$shortOwner'] =
+          '{"version":1,"records":{}}'
+      ..data['masanawa.shell.actions.v1:$colonOwner'] =
+          '{"version":1,"records":{}}';
+
+    await EncryptedShellActionJournal.clearOwner(
+      store: store,
+      ownerId: 'user',
+    );
+
+    expect(store.data['masanawa.shell.actions.v1:$shortOwner'], isNull);
+    expect(store.data['masanawa.shell.actions.v1:$colonOwner'], isNotNull);
+  });
+
+  test('owner cleanup invalidates an already-open journal', () async {
+    final store = Store();
+    final journal = EncryptedShellActionJournal(
+      store: store,
+      namespace: 'user-1:session-live',
+    );
+    await journal.createPending('key', action);
+
+    await EncryptedShellActionJournal.clearOwner(
+      store: store,
+      ownerId: 'user-1',
+    );
+
+    await expectLater(journal.read('key'), throwsStateError);
+  });
+
   test('logout deletes scoped records and closes the journal', () async {
     final store = Store();
     final journal = EncryptedShellActionJournal(store: store, namespace: 'f');
