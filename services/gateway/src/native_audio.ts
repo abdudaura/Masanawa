@@ -99,6 +99,13 @@ export function createGeminiLiveAudioRenderer(input: {
           finishError(new Error("Gemini Live audio cancelled"));
         signal?.addEventListener("abort", onAbort, { once: true });
 
+        const abort = () => finishError(new Error("Gemini Live audio cancelled"));
+        if (signal?.aborted) {
+          abort();
+          return;
+        }
+        signal?.addEventListener("abort", abort, { once: true });
+
         const timer = setTimeout(
           () => finishError(new Error("Gemini Live audio timed out")),
           timeoutMs,
