@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "project": "masanawa",
+  "targetBranch": "main",
+  "database": {
+    "engine": "postgresql",
+    "image": "pgvector/pgvector:0.8.6-pg18-bookworm",
+    "dataPath": "/var/lib/postgresql",
+    "portableVia": ["pg_dump", "pg_restore", "repository migrations"]
+  },
+  "services": [
+    {
+      "name": "gateway",
+      "repo": "Baatiku/masanawa",
+      "dockerfile": "infra/deployment/gateway/Dockerfile",
+      "startCommand": "pnpm --filter @masanawa/gateway-service start",
+      "healthcheck": "/healthz",
+      "publicUrl": "https://gateway.masanawa.com"
+    },
+    {
+      "name": "billing",
+      "repo": "Baatiku/masanawa",
+      "publicUrl": "https://billing.masanawa.com",
+      "status": "must converge to main before portability milestone is complete"
+    },
+    {
+      "name": "calls",
+      "repo": "Baatiku/masanawa",
+      "publicUrl": "https://calls.masanawa.com",
+      "status": "legacy APK-builder/call service must converge to main before portability milestone is complete"
+    },
+    {
+      "name": "admin",
+      "publicUrl": "https://nurain.masanawa.com",
+      "status": "legacy ChatWithStars source; must be migrated into Baatiku/masanawa or explicitly retained as an external dependency"
+    }
+  ],
+  "invariants": [
+    "Client code uses only *.masanawa.com URLs",
+    "No provider-generated hostname is an application contract",
+    "No plaintext secret is committed to Git",
+    "Schema changes are migrations",
+    "A new Railway account needs only a Railway deployment credential once application secrets are stored in GitHub production secrets"
+  ]
+}
