@@ -36,4 +36,8 @@ export interface PersonalCloneProvisioningRepository {
   getOrCreatePersonalClone(
     input: ProvisionPersonalCloneInput,
   ): Promise<PersonalCloneProvision>;
+  readPersonalClone(input: {
+    readonly tenantId: TenantId;
+    readonly userId: UserId;
+  }): Promise<CharacterOwnership | null>;
 }
