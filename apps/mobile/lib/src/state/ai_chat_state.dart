@@ -748,7 +748,10 @@ class AiChatController extends Notifier<AiChatState> {
     final binding = await _bindingFor(characterId, ref.read(agentTransportProvider));
     final session = ref.read(sessionProvider);
     final userId = session is SessionSignedIn ? session.user.id : 'anonymous';
-    final namespace = '$userId:${binding.characterSessionId}';
+    final namespace = EncryptedShellActionJournal.namespaceForOwnerSession(
+      ownerId: userId,
+      sessionId: binding.characterSessionId,
+    );
     var coordinator = _actionCoordinators[namespace];
     if (coordinator == null) {
       final journal = EncryptedShellActionJournal(
