@@ -318,6 +318,12 @@ export function createOpsApp(options: OpsAppOptions = {}) {
       }),
     );
 
+    app.get("/v1/admin/characters", async (request) => [
+      ...await platformAdmin.listCharacters({
+        authorizationHeader: request.headers.authorization,
+      }),
+    ]);
+
     app.get("/v1/admin/users", async (request) => [
       ...await platformAdmin.listUsers({
         authorizationHeader: request.headers.authorization,
