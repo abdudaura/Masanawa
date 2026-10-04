@@ -75,16 +75,48 @@ export function createGeminiAlphaInferenceProvider(input: {
       const request = snapshotAgentInferenceRequest(incoming);
       const maxOutputTokens = controls?.maxOutputTokens ?? 2048;
       if (!Number.isSafeInteger(maxOutputTokens) || maxOutputTokens < 128 || maxOutputTokens > 8192) throw new RangeError("Invalid inference token limit");
-      let documentText: string | undefined;
-      if (request.input.kind === "media" && request.input.mimeType === "text/plain") {
-        try {
-          documentText = new TextDecoder("utf-8", { fatal: true }).decode(Buffer.from(request.input.dataBase64, "base64"));
-          if (!documentText.trim() || documentText.length > 128_000) throw new Error();
-        } catch { throw new AgentInferenceError("inference.rejected"); }
-      }
+      const mediaPart = (
+        mimeType: string,
+        dataBase64: string,
+        name?: string,
+      ) => {
+        if (mimeType === "text/plain") {
+          try {
+            const documentText = new TextDecoder("utf-8", { fatal: true }).decode(
+              Buffer.from(dataBase64, "base64"),
+            );
+            if (!documentText.trim() || documentText.length > 128_000) {
+              throw new Error();
+            }
+            return {
+              text: name ? `${name}:\n${documentText}` : documentText,
+            };
+          } catch {
+            throw new AgentInferenceError("inference.rejected");
+          }
+        }
+        return {
+          inline_data: {
+            mime_type: mimeType,
+            data: dataBase64,
+          },
+        };
+      };
+
       const userParts =
         request.input.kind === "text"
           ? [{ text: request.input.text }]
+          : request.input.kind === "media-set"
+          ? [
+              {
+                text:
+                  request.input.caption ||
+                  `Review these ${request.input.media.length} attachments together and respond helpfully.`,
+              },
+              ...request.input.media.map((item) =>
+                mediaPart(item.mimeType, item.dataBase64, item.name),
+              ),
+            ]
           : [
               ...(request.input.caption
                 ? [{ text: request.input.caption }]
@@ -94,12 +126,7 @@ export function createGeminiAlphaInferenceProvider(input: {
                         ? "Listen to this voice note and respond to what the user said."
                         : "Review this attachment and respond helpfully.",
                   }]),
-              ...(documentText !== undefined ? [{ text: documentText }] : [{
-                inline_data: {
-                  mime_type: request.input.mimeType,
-                  data: request.input.dataBase64,
-                },
-              }]),
+              mediaPart(request.input.mimeType, request.input.dataBase64),
             ];
 
       let response: Response;
