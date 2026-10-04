@@ -13,7 +13,6 @@ import '../chat/chat_format.dart';
 import '../chat/message_parts.dart';
 import '../core/providers.dart';
 import '../core/network/api_client.dart';
-import '../core/alpha_speech.dart';
 
 const String _kThreadsFile = 'masanawa_threads_v2.json';
 
@@ -300,7 +299,6 @@ class AiChatController extends Notifier<AiChatState> {
         parts: result.parts,
         agentRunId: result.agentRunId,
       );
-      unawaited(AlphaSpeech.speak(result.text));
     } catch (error) {
       if (_disposed ||
           threadGeneration != (_threadGenerations[characterId] ?? 0)) {
@@ -368,13 +366,20 @@ class AiChatController extends Notifier<AiChatState> {
         code: 'ATTACHMENT_TOO_LARGE',
       );
     }
-    final mimeType =
-        lookupMimeType(attachment.path, headerBytes: bytes.take(16).toList()) ??
-        switch (attachment.kind) {
-          'voice' => 'audio/mp4',
-          'image' => 'image/jpeg',
-          _ => 'application/octet-stream',
-        };
+    // Android records voice notes as AAC-LC in an M4A container. Gemini's
+    // documented media MIME for that container is audio/m4a; generic MIME
+    // inference commonly reports audio/mp4, which caused hosted voice turns
+    // to be rejected even though the bytes were valid.
+    final mimeType = attachment.kind == 'voice'
+        ? 'audio/m4a'
+        : lookupMimeType(
+                attachment.path,
+                headerBytes: bytes.take(16).toList(),
+              ) ??
+              switch (attachment.kind) {
+                'image' => 'image/jpeg',
+                _ => 'application/octet-stream',
+              };
 
     final transport = ref.read(agentTransportProvider);
     final binding = await _bindingFor(characterId, transport);
