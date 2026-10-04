@@ -20,6 +20,8 @@ import {
   type CreateCharacterVersionInput,
   type CreateTenantInput,
   type CreateUserInput,
+  type AssignCharacterOwnershipInput,
+  type CharacterOwnership,
   type ExternalUserIdentityLink,
   type GetOrCreateRelationshipInput,
   type IdentityRepository,
@@ -65,6 +67,13 @@ interface VersionRow {
   created_at: Date;
   published_at: Date | null;
   retired_at: Date | null;
+}
+interface OwnershipRow {
+  tenant_id: TenantId;
+  character_id: CharacterId;
+  kind: CharacterOwnership["kind"];
+  owner_user_id: UserId | null;
+  created_at: Date;
 }
 interface RelationshipRow {
   tenant_id: TenantId;
@@ -149,6 +158,15 @@ function version(row: VersionRow): CharacterVersion {
     createdAt: toInstant(row.created_at),
     ...(row.published_at ? { publishedAt: toInstant(row.published_at) } : {}),
     ...(row.retired_at ? { retiredAt: toInstant(row.retired_at) } : {}),
+  });
+}
+function ownership(row: OwnershipRow): CharacterOwnership {
+  return Object.freeze({
+    tenantId: row.tenant_id,
+    characterId: row.character_id,
+    kind: row.kind,
+    ownerUserId: row.owner_user_id,
+    createdAt: toInstant(row.created_at),
   });
 }
 function relationship(row: RelationshipRow): UserCharacterRelationship {
@@ -447,6 +465,68 @@ export async function activateCharacterVersion(
   return character(result.rows[0]);
 }
 
+export async function assignCharacterOwnership(
+  client: PoolClient,
+  input: AssignCharacterOwnershipInput,
+): Promise<CharacterOwnership> {
+  const inserted = await client.query<OwnershipRow>(
+    `INSERT INTO identity.character_ownership(
+       tenant_id, character_id, kind, owner_user_id, created_at
+     ) VALUES ($1,$2,$3,$4,$5)
+     ON CONFLICT (tenant_id, character_id) DO NOTHING
+     RETURNING *`,
+    [
+      input.tenantId,
+      input.characterId,
+      input.kind,
+      input.ownerUserId,
+      input.createdAt,
+    ],
+  );
+  if (inserted.rows[0]) return ownership(inserted.rows[0]);
+
+  const existing = await client.query<OwnershipRow>(
+    `SELECT * FROM identity.character_ownership
+      WHERE tenant_id = $1 AND character_id = $2`,
+    [input.tenantId, input.characterId],
+  );
+  const row = existing.rows[0];
+  if (!row) {
+    throw conflict("identity.character_ownership_conflict", "Character ownership could not be assigned");
+  }
+  if (row.kind !== input.kind || row.owner_user_id !== input.ownerUserId) {
+    throw conflict(
+      "identity.character_ownership_conflict",
+      "Character ownership is already assigned differently",
+    );
+  }
+  return ownership(row);
+}
+
+export async function readCharacterOwnership(
+  client: PoolClient,
+  input: { readonly tenantId: TenantId; readonly characterId: CharacterId },
+): Promise<CharacterOwnership | null> {
+  const result = await client.query<OwnershipRow>(
+    `SELECT * FROM identity.character_ownership
+      WHERE tenant_id = $1 AND character_id = $2`,
+    [input.tenantId, input.characterId],
+  );
+  return result.rows[0] ? ownership(result.rows[0]) : null;
+}
+
+export async function readPersonalCloneForUser(
+  client: PoolClient,
+  input: { readonly tenantId: TenantId; readonly userId: UserId },
+): Promise<CharacterOwnership | null> {
+  const result = await client.query<OwnershipRow>(
+    `SELECT * FROM identity.character_ownership
+      WHERE tenant_id = $1 AND owner_user_id = $2 AND kind = 'personal-clone'`,
+    [input.tenantId, input.userId],
+  );
+  return result.rows[0] ? ownership(result.rows[0]) : null;
+}
+
 export async function getOrCreateRelationship(
   client: PoolClient,
   input: GetOrCreateRelationshipInput,
@@ -501,6 +581,12 @@ export function createPostgresIdentityRepository(
       activateCharacterVersion(client, input),
     getOrCreateRelationship: (input: GetOrCreateRelationshipInput) =>
       getOrCreateRelationship(client, input),
+    assignCharacterOwnership: (input: AssignCharacterOwnershipInput) =>
+      assignCharacterOwnership(client, input),
+    readCharacterOwnership: (input) =>
+      readCharacterOwnership(client, input),
+    readPersonalCloneForUser: (input) =>
+      readPersonalCloneForUser(client, input),
   };
   return Object.freeze(repository);
 }
