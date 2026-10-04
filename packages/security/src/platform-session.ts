@@ -31,6 +31,8 @@ export interface PlatformSessionRepository {
   }>): Promise<void>;
   consumeOtpChallenge(input: Readonly<{
     tenantId: TenantId; channel: PlatformAuthChannel; identifier: string; codeHash: string; consumedAt: string;
+    /** Validate without consuming when false; used by signup name capture. Defaults to true. */
+    consume?: boolean;
   }>): Promise<OtpConsumeResult>;
   resolveProfile(input: Readonly<{
     tenantId: TenantId; channel: PlatformAuthChannel; identifier: string; observedAt: string;
