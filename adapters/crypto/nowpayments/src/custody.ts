@@ -155,16 +155,6 @@ function parseConversion(
   return result;
 }
 
-function conversionRows(body: unknown): readonly unknown[] {
-  if (Array.isArray(body)) return body;
-  if (!body || typeof body !== "object") throw new Error("nowpayments.conversion.invalid_response");
-  const record = body as Record<string, unknown>;
-  if (Array.isArray(record.data)) return record.data;
-  if (Array.isArray(record.conversions)) return record.conversions;
-  if (record.conversion_id !== undefined || record.id !== undefined) return [record];
-  throw new Error("nowpayments.conversion.invalid_response");
-}
-
 export class NowPaymentsCustodyClient {
   readonly #apiKey: string;
   readonly #email: string;
@@ -256,18 +246,13 @@ export class NowPaymentsCustodyClient {
   }): Promise<NowPaymentsConversionEvidence> {
     const id = conversionId(input.conversionId);
     const token = await this.authenticate(input.signal);
-    const search = new URLSearchParams({ id, limit: "2", offset: "0" });
-    const response = await this.#request(`/conversion?${search.toString()}`, {
+    const response = await this.#request(`/conversion/${encodeURIComponent(id)}`, {
       method: "GET",
       authenticated: true,
       token,
       ...(input.signal === undefined ? {} : { signal: input.signal }),
     });
-    const matches = conversionRows(await response.json())
-      .map((row) => parseConversion(row))
-      .filter((row) => row.conversionId === id);
-    if (matches.length !== 1) throw new Error("nowpayments.conversion.evidence_unavailable");
-    return parseConversion(matches[0], {
+    return parseConversion(await response.json(), {
       conversionId: id,
       ...(input.fromCurrency === undefined ? {} : { fromCurrency: input.fromCurrency }),
       ...(input.toCurrency === undefined ? {} : { toCurrency: input.toCurrency }),
