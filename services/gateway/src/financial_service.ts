@@ -61,6 +61,16 @@ export interface FinancialWithdrawalView {
   readonly outcomeUnknown: boolean;
 }
 
+export interface FinancialWithdrawalQuote {
+  readonly providerCode: string;
+  readonly amount: string;
+  readonly destinationAddress: string;
+  readonly minimumAmount: string;
+  readonly networkFee: string;
+  readonly addressValidated: true;
+  readonly quotedAt: Instant;
+}
+
 export interface FinancialCapabilities {
   readonly deposits: true;
   readonly withdrawals: boolean;
@@ -81,6 +91,12 @@ export interface FinancialService {
     readonly providerCode: string;
     readonly amount: string;
   }): Promise<FinancialDepositView>;
+  quoteWithdrawal(input: {
+    readonly authorizationHeader: string | undefined;
+    readonly providerCode: string;
+    readonly amount: string;
+    readonly destinationAddress: string;
+  }): Promise<FinancialWithdrawalQuote>;
   createWithdrawal(input: {
     readonly authorizationHeader: string | undefined;
     readonly requestId: string;
@@ -196,6 +212,16 @@ function payoutFailed(status: string | null): boolean {
   return status !== null && ["failed", "rejected", "cancelled", "canceled", "expired"].includes(status);
 }
 
+function decimalUnits(value: string): bigint {
+  const normalized = normalizeCryptoAmount(value);
+  const [whole = "0", fraction = ""] = normalized.split(".");
+  return BigInt(whole + fraction.padEnd(18, "0"));
+}
+
+function amountAtLeast(left: string, right: string): boolean {
+  return decimalUnits(left) >= decimalUnits(right);
+}
+
 export function createFinancialService(input: {
   readonly authorizer: FinancialAuthorizer;
   readonly crypto: CryptoRepository;
@@ -233,6 +259,47 @@ export function createFinancialService(input: {
       if (!qualifyAccountCapability(evidence.account, capability).eligible) return null;
     }
     return evidence.routes.filter(route => qualifyRoute(route, "withdraw").eligible);
+  }
+
+  async function preflightWithdrawal(
+    providerCode: string,
+    amount: string,
+    address: string,
+  ): Promise<FinancialWithdrawalQuote> {
+    if (!input.nowPaymentsPayout) throw new Error("financial.crypto.withdrawal_unavailable");
+
+    const numericAmount = Number(amount);
+    if (
+      !Number.isFinite(numericAmount) ||
+      numericAmount <= 0 ||
+      normalizeCryptoAmount(String(numericAmount)) !== amount
+    ) {
+      throw new Error("financial.crypto.amount_unavailable");
+    }
+
+    const routes = await qualifiedWithdrawalRoutes();
+    const route = routes?.find((candidate) => candidate.providerCode === providerCode);
+    if (!route) throw new Error("financial.crypto.withdrawal_unavailable");
+
+    const signal = AbortSignal.timeout(15_000);
+    const [validated, fee, minimum] = await Promise.all([
+      input.nowPaymentsPayout.validateAddress({ currency: providerCode, address, signal }),
+      input.nowPaymentsPayout.getPayoutFeeEstimate({ currency: providerCode, amount, signal }),
+      input.nowPaymentsPayout.getMinimumPayoutAmount({ currency: providerCode, signal }),
+    ]);
+    const minimumAmount = normalizeCryptoAmount(minimum.minimumAmount);
+    if (!amountAtLeast(amount, minimumAmount)) {
+      throw new Error("financial.crypto.withdrawal_below_minimum");
+    }
+    return Object.freeze({
+      providerCode,
+      amount,
+      destinationAddress: validated.address,
+      minimumAmount,
+      networkFee: normalizeCryptoAmount(fee.fee),
+      addressValidated: true as const,
+      quotedAt: now(),
+    });
   }
 
   return Object.freeze<FinancialService>({
@@ -349,6 +416,15 @@ export function createFinancialService(input: {
       return depositView(bound);
     },
 
+    async quoteWithdrawal(request) {
+      await authority(request.authorizationHeader);
+      const providerCode = normalizeCryptoAsset(request.providerCode);
+      const amount = normalizeCryptoAmount(request.amount);
+      const address = request.destinationAddress.trim();
+      if (!address || address.length > 512) throw new Error("financial.crypto.destination_invalid");
+      return preflightWithdrawal(providerCode, amount, address);
+    },
+
     async createWithdrawal(request) {
       const auth = await authority(request.authorizationHeader);
       if (!input.nowPaymentsPayout) throw new Error("financial.crypto.withdrawal_unavailable");
@@ -374,14 +450,7 @@ export function createFinancialService(input: {
         return withdrawalView(existing);
       }
 
-      const routes = await qualifiedWithdrawalRoutes();
-      const route = routes?.find(candidate => candidate.providerCode === providerCode);
-      if (!route) throw new Error("financial.crypto.withdrawal_unavailable");
-
-      const numericAmount = Number(amount);
-      if (!Number.isFinite(numericAmount) || numericAmount <= 0 || normalizeCryptoAmount(String(numericAmount)) !== amount) {
-        throw new Error("financial.crypto.amount_unavailable");
-      }
+      await preflightWithdrawal(providerCode, amount, address);
       const createdAt = now();
       const admitted = await input.crypto.reserveWithdrawal({
         schemaVersion: 1,
