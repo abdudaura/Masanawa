@@ -75,6 +75,10 @@ export interface ServiceDatabaseDependency {
   readonly agentRuns?: AgentRunRepository;
   readonly characterContextCompiler?: CharacterContextCompiler;
   readonly crypto?: CryptoRepository;
+  readonly billingStore?: (
+    identity: Readonly<{ tenantId: string; userId: string }>,
+  ) => ReturnType<typeof createPostgresBillingFulfillmentStore>;
+  readonly providerWebhooks?: ReturnType<typeof createPostgresProviderWebhookRepository>;
   close(): Promise<void>;
 }
 
@@ -150,6 +154,9 @@ function createDefaultDatabaseDependency(
     agentRuns: createPostgresAgentRunRepository(database.pool),
     characterContextCompiler: createPostgresCharacterContextCompiler(database.pool),
     crypto: createPostgresCryptoRepository(database.pool),
+    billingStore: (identity) =>
+      createPostgresBillingFulfillmentStore(database.pool, identity),
+    providerWebhooks: createPostgresProviderWebhookRepository(database.pool),
     close: database.close,
   });
 }
