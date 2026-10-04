@@ -51,8 +51,14 @@ Expanded non-overlapping provider/service ownership for this continuation:
 - `adapters/crypto/nowpayments/src/index.ts`;
 - existing owned `adapters/crypto/nowpayments/src/payout.ts` and `payout.test.ts`;
 - existing transferred `services/gateway/src/financial_service.ts` and `financial_service.test.ts`;
+- new `services/gateway/src/financial_payout_evidence.ts` and `financial_payout_evidence.test.ts` for signed payout callback admission;
 - this claim file.
 
 The continuation may add authenticated custody balance/conversion API operations, conversion reconciliation evidence, payout address/minimum/network-fee preflight and service-level qualification. It must not edit `packages/commerce/**`, `adapters/storage/postgres/src/commerce/**`, mobile, shared runtime composition or deployment because those remain separately owned.
 
 Canonical atomic conversion settlement is a shared dependency: Commerce/PostgreSQL must reserve/debit the exact source balance and post the evidenced target credit exactly once before user-facing conversion execution can be advertised. This branch may define/provider-test the required evidence, but it must not create a second ledger owner or execute a conversion before that atomic boundary exists.
+
+
+## Payout callback continuation
+
+The crypto window additionally owns signed NOWPayments payout callback admission and exact binding to the stored withdrawal. The payout callback must be HMAC verified, identify the canonical tenant/request through a provider external id, match the stored batch id, exact asset, exact principal and exact destination, and only then may terminal provider status settle or release the canonical withdrawal reserve. Runtime route composition remains owned by the integration/deployment window.
