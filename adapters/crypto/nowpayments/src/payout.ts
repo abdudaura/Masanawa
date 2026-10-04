@@ -340,7 +340,7 @@ export class NowPaymentsPayoutClient {
       "nowpayments.payout.verification_code.invalid",
       16,
     );
-    if (!/^[0-9]{4,10}$/u.test(verificationCode)) {
+    if (!/^[0-9]{6}$/u.test(verificationCode)) {
       throw new Error("nowpayments.payout.verification_code.invalid");
     }
     const token = await this.authenticate(input.signal);
