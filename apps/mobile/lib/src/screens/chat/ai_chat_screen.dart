@@ -300,7 +300,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           final amp = await _recorder.getAmplitude();
           if (!mounted) return;
           setState(() {
-            final normalized = ((amp.current + 55) / 55).clamp(0.08, 1.0);
+            final normalized = ((amp.current + 55) / 55).clamp(0.08, 1.0).toDouble();
             _amplitudes.add(normalized);
             if (_amplitudes.length > 42) _amplitudes.removeAt(0);
           });
@@ -2032,11 +2032,15 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
         : fallbackMs;
     final progress = totalMs <= 0
         ? 0.0
-        : (_position.inMilliseconds / totalMs).clamp(0.0, 1.0);
+        : (_position.inMilliseconds / totalMs)
+              .clamp(0.0, 1.0)
+              .toDouble();
     final remaining = totalMs <= 0
         ? formatDurationMs(fallbackMs)
         : formatDurationMs(
-            (totalMs - _position.inMilliseconds).clamp(0, totalMs),
+            (totalMs - _position.inMilliseconds)
+                .clamp(0, totalMs)
+                .toInt(),
           );
 
     return SizedBox(
