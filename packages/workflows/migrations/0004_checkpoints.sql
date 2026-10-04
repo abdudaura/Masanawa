@@ -39,3 +39,24 @@ CREATE INDEX workflow_checkpoints_latest_idx
 
 COMMENT ON TABLE workflows.checkpoints IS
   'Immutable committed WorkflowRun checkpoint snapshots. Restore requires exact schema, WorkflowVersion and graph signature compatibility.';
+
+
+CREATE OR REPLACE FUNCTION workflows.reject_checkpoint_mutation()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RAISE EXCEPTION 'Workflow checkpoints are immutable'
+    USING ERRCODE = '23514';
+END;
+$$;
+
+CREATE TRIGGER workflow_checkpoints_no_update
+BEFORE UPDATE ON workflows.checkpoints
+FOR EACH ROW
+EXECUTE FUNCTION workflows.reject_checkpoint_mutation();
+
+CREATE TRIGGER workflow_checkpoints_no_delete
+BEFORE DELETE ON workflows.checkpoints
+FOR EACH ROW
+EXECUTE FUNCTION workflows.reject_checkpoint_mutation();
