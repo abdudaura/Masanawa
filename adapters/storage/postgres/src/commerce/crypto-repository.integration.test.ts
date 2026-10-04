@@ -387,6 +387,36 @@ describeDatabase("crypto conversion and payout fee PostgreSQL acceptance", () =>
     })).toBe("10");
   });
 
+  it("resolves a payout callback by globally unique provider batch id", async () => {
+    const f = await fundedFixture();
+    const intent = withdrawalIntent(f.tenantId, f.userId, "10");
+    await f.repository.reserveWithdrawal(intent);
+    const bound = await f.repository.bindProviderPayout({
+      tenantId: f.tenantId,
+      userId: f.userId,
+      requestId: intent.requestId,
+      providerPayoutId: "batch-global-1",
+      updatedAt: instant(39),
+    });
+    await expect(f.repository.readIntentByProviderPayoutId({
+      providerPayoutId: "batch-global-1",
+    })).resolves.toEqual(bound);
+    await expect(f.repository.readIntentByProviderPayoutId({
+      providerPayoutId: "missing-batch",
+    })).resolves.toBeNull();
+
+    const other = await fundedFixture();
+    const otherIntent = withdrawalIntent(other.tenantId, other.userId, "10");
+    await other.repository.reserveWithdrawal(otherIntent);
+    await expect(other.repository.bindProviderPayout({
+      tenantId: other.tenantId,
+      userId: other.userId,
+      requestId: otherIntent.requestId,
+      providerPayoutId: "batch-global-1",
+      updatedAt: instant(40),
+    })).rejects.toMatchObject({ code: "23505" });
+  });
+
   it("reserves and releases a user-paid payout network fee atomically", async () => {
     const f = await fundedFixture();
     const intent = withdrawalIntent(f.tenantId, f.userId);
