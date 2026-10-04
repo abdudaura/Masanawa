@@ -10,3 +10,5 @@ export * from "./human-request-model.js";
 export * from "./human-request.js";
 export * from "./operation-binding-model.js";
 export * from "./operation-binding.js";
+export * from "./control-model.js";
+export * from "./control.js";
