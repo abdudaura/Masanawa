@@ -13,7 +13,7 @@
   - `tests/contracts/core-teaching-cross-channel.test.ts`
   - `docs/CORE-TEACHING-ACCEPTANCE.md`
 - Dependencies: consumes Core Teaching contracts from stacked PR #94; external owners implement the published ports. No edits to their claimed files.
-- Current step: provider-neutral runtime/persistence/presentation bridge plus stable replay fingerprint implemented; claim extended to isolated cross-channel contract acceptance before writing that harness.
-- Verification: changed-file audit is exactly the five claimed integration paths. Foundation CI run 933 failed before executing any job steps; its single `check` job exposes no steps/logs. No code pass/failure is inferred from that infrastructure result.
+- Current step: runtime/persistence/presentation bridge, stable replay fingerprint, cross-channel acceptance harness and fail-closed Teaching runtime admission binding implemented; owner composition pending.
+- Verification: changed-file audit covers only claimed integration/acceptance paths. Contract acceptance source now covers app start -> persisted attempt -> lost feedback -> WhatsApp replay -> Telegram resume, cross-Relationship isolation, changed-payload conflict and admitted-binding mismatch. GitHub Actions continues to exhibit zero-step runner allocation failures; latest exact run is checked before handoff.
 - Deployment: none. Coordination comments published on PRs #89, #91 and #92; no ownership transfer or foreign-file edits.
 - Collision rule: no Gateway/mobile/channel/chat-renderer/migration/lockfile/shared deployment edits in this workstream.
