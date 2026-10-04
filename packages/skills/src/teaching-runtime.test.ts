@@ -1371,6 +1371,10 @@ describe("Teaching durable free-response flow", () => {
       },
     });
     expect(progress.freeResponses.size).toBe(1);
+    expect(progress.freeResponses.get(exercise.requestId)).toMatchObject({
+      cardHash: exercise.cardHash,
+      planHash: fingerprintTeachingLessonPlan(active),
+    });
 
     const replay = await coordinator.submitFreeResponse({
       binding: binding(active),
