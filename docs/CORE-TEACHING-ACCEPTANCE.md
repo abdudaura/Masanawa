@@ -90,3 +90,16 @@ The acceptance path now crosses the same shapes used by the active UI/channel wo
 Current app/channel executable projection is single-select. Multi-select deliberately fails closed until
 #91/#92 have a bounded staged-selection/commit contract rather than independent buttons pretending to be
 one multi-answer submission.
+
+
+## Free-response acceptance
+
+The contract harness now also covers a free-response exercise bound on the server,
+answered through WhatsApp text, evaluated formatively, persisted exactly once and then
+resumed from Telegram at the next lesson step.
+
+The free-response binding is created from the exact normalized exercise card, so a
+selectable exercise cannot be rebound as open text and prompt drift is included in
+binding integrity. Changed response text under an existing RequestId is a replay conflict;
+wrong answers persist reteaching state; expired/tampered/cross-Relationship bindings fail
+closed.
