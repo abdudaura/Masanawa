@@ -15,6 +15,17 @@ const intent: CryptoIntent = {
   providerPayoutId: null, payAddress: "address", providerPayAmount: "10",
   providerDispatchStartedAt: at, status: "processing", createdAt: at, updatedAt: at,
 };
+const withdrawalIntent: CryptoIntent = {
+  ...intent,
+  operation: "withdraw",
+  destinationAddress: "address",
+  providerPaymentId: null,
+  providerPayoutId: "batch-1",
+  payAddress: null,
+  providerPayAmount: null,
+  status: "processing",
+};
+
 const account: NowPaymentsAccountEvidence = {
   custodyEnabled: true, customerManagementEnabled: true, conversionEnabled: true,
   payoutEnabled: true, ipWhitelistSatisfied: true,
@@ -48,6 +59,11 @@ function setup(
     readIntentByRequestId: vi.fn(async () => existing),
     applyProviderPaymentEvent: vi.fn(async () => ({ ...intent, status: "succeeded" as const })),
     reserveWithdrawal: vi.fn(async (value: CryptoIntent) => value),
+    settleWithdrawal: vi.fn(async (value: { readonly succeeded: boolean }) => ({
+      ...withdrawalIntent,
+      status: value.succeeded ? "succeeded" as const : "failed" as const,
+    })),
+    bindProviderPayout: vi.fn(async () => withdrawalIntent),
     createIntent: vi.fn(async (value: CryptoIntent) => value),
     beginProviderDispatch: vi.fn(async () => ({ intent, shouldDispatch: false })),
   } as unknown as CryptoRepository;
@@ -168,6 +184,117 @@ describe("financial service recovery and admission", () => {
       authorizationHeader, requestId, providerCode: "USDTTRC20", amount: "10", destinationAddress: "address",
     })).rejects.toThrow("financial.crypto.withdrawal_below_minimum");
     expect(crypto.reserveWithdrawal).not.toHaveBeenCalled();
+  });
+  it("settles an exact signed terminal payout callback once", async () => {
+    const { service, crypto } = setup(withdrawalIntent, account);
+    const payout = {
+      id: "withdrawal-1",
+      batch_withdrawal_id: "batch-1",
+      payout_status: "FINISHED",
+      currency: "usdttrc20",
+      amount: "10.000000",
+      address: "address",
+      unique_external_id: tenantId+"."+requestId,
+    };
+    const signature = createHmac("sha512", "fixture-ipn")
+      .update(canonicalizeIpnPayload(payout)).digest("hex");
+    await expect(service.handleNowPaymentsPayoutIpn({ payload: payout, signature }))
+      .resolves.toEqual({ accepted: true, requestId });
+    expect(crypto.settleWithdrawal).toHaveBeenCalledWith(expect.objectContaining({
+      tenantId, userId, requestId, succeeded: true, providerReference: "withdrawal-1",
+    }));
+  });
+  it("rejects changed signed payout terms before ledger settlement", async () => {
+    const { service, crypto } = setup(withdrawalIntent, account);
+    const payout = {
+      id: "withdrawal-1",
+      batch_withdrawal_id: "batch-1",
+      payout_status: "FINISHED",
+      currency: "usdttrc20",
+      amount: "9",
+      address: "address",
+      unique_external_id: tenantId+"."+requestId,
+    };
+    const signature = createHmac("sha512", "fixture-ipn")
+      .update(canonicalizeIpnPayload(payout)).digest("hex");
+    await expect(service.handleNowPaymentsPayoutIpn({ payload: payout, signature }))
+      .rejects.toThrow("financial.crypto.payout_evidence_mismatch");
+    expect(crypto.settleWithdrawal).not.toHaveBeenCalled();
+  });
+  it("rejects forged payout callbacks before reading or settling the ledger", async () => {
+    const { service, crypto } = setup(withdrawalIntent, account);
+    const payout = {
+      id: "withdrawal-1",
+      batch_withdrawal_id: "batch-1",
+      payout_status: "FINISHED",
+      currency: "usdttrc20",
+      amount: "10",
+      address: "address",
+      unique_external_id: tenantId+"."+requestId,
+    };
+    await expect(service.handleNowPaymentsPayoutIpn({
+      payload: payout, signature: "0".repeat(128),
+    })).rejects.toThrow("nowpayments.ipn.signature.invalid");
+    expect(crypto.readIntentByRequestId).not.toHaveBeenCalled();
+    expect(crypto.settleWithdrawal).not.toHaveBeenCalled();
+  });
+  it("accepts an idempotent duplicate terminal payout and rejects a contradictory terminal callback", async () => {
+    const succeeded = { ...withdrawalIntent, status: "succeeded" as const };
+    const { service, crypto } = setup(succeeded, account);
+    const finished = {
+      id: "withdrawal-1", batch_withdrawal_id: "batch-1", payout_status: "FINISHED",
+      currency: "usdttrc20", amount: "10", address: "address",
+      unique_external_id: tenantId+"."+requestId,
+    };
+    await service.handleNowPaymentsPayoutIpn({
+      payload: finished,
+      signature: createHmac("sha512", "fixture-ipn").update(canonicalizeIpnPayload(finished)).digest("hex"),
+    });
+    expect(crypto.settleWithdrawal).not.toHaveBeenCalled();
+
+    const failed = { ...finished, payout_status: "FAILED" };
+    await expect(service.handleNowPaymentsPayoutIpn({
+      payload: failed,
+      signature: createHmac("sha512", "fixture-ipn").update(canonicalizeIpnPayload(failed)).digest("hex"),
+    })).rejects.toThrow("financial.crypto.payout_terminal_conflict");
+  });
+  it("refreshes a payout only from exact provider evidence", async () => {
+    const { service, crypto, fetch } = setup(withdrawalIntent, account);
+    fetch.mockImplementation(async (request: Parameters<typeof globalThis.fetch>[0]) => {
+      const url = String(request);
+      if (url.endsWith("/auth")) return new Response(JSON.stringify({ token: "fixture-jwt" }));
+      if (url.includes("/payout?")) return new Response(JSON.stringify({
+        payouts: [{
+          id: "withdrawal-1", batch_withdrawal_id: "batch-1", payout_status: "FINISHED",
+          currency: "usdttrc20", amount: "10", address: "address",
+          unique_external_id: tenantId+"."+requestId,
+        }],
+      }));
+      return new Response("{}");
+    });
+    await expect(service.refreshWithdrawal({ authorizationHeader, requestId }))
+      .resolves.toMatchObject({ status: "succeeded", providerPayoutId: "batch-1" });
+    expect(crypto.settleWithdrawal).toHaveBeenCalledWith(expect.objectContaining({
+      providerReference: "withdrawal-1", succeeded: true,
+    }));
+  });
+  it("does not settle refreshed payout evidence with changed destination", async () => {
+    const { service, crypto, fetch } = setup(withdrawalIntent, account);
+    fetch.mockImplementation(async (request: Parameters<typeof globalThis.fetch>[0]) => {
+      const url = String(request);
+      if (url.endsWith("/auth")) return new Response(JSON.stringify({ token: "fixture-jwt" }));
+      if (url.includes("/payout?")) return new Response(JSON.stringify({
+        payouts: [{
+          id: "withdrawal-1", batch_withdrawal_id: "batch-1", payout_status: "FINISHED",
+          currency: "usdttrc20", amount: "10", address: "different",
+          unique_external_id: tenantId+"."+requestId,
+        }],
+      }));
+      return new Response("{}");
+    });
+    await expect(service.refreshWithdrawal({ authorizationHeader, requestId }))
+      .rejects.toThrow("financial.crypto.payout_evidence_mismatch");
+    expect(crypto.settleWithdrawal).not.toHaveBeenCalled();
   });
   it("requeries a bound pending deposit and passes full evidence to its ledger owner", async () => {
     const { service, crypto, fetch } = setup();
