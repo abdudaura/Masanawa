@@ -868,6 +868,24 @@ class AdminApi {
         .toList(growable: false);
   }
 
+
+  Future<AdminOffer> setOfferEnabled(
+    AdminOffer offer,
+    bool enabled,
+  ) async {
+    final response = await _request(
+      () => _dio.put<dynamic>(
+        '/v1/admin/offers/${Uri.encodeComponent(offer.offerId)}/enabled',
+        options: _auth,
+        data: {
+          'enabled': enabled,
+          'expectedRevision': offer.revision,
+        },
+      ),
+    );
+    return AdminOffer.fromJson(_map(response.data));
+  }
+
   Future<List<AdminFulfillment>> fulfillments() async {
     final response = await _request(
       () => _dio.get<dynamic>('/v1/admin/fulfillments', options: _auth),
