@@ -237,6 +237,12 @@ export function createFinancialService(input: {
   readonly withdrawalEvidence?: () => Promise<{
     readonly account: NowPaymentsAccountEvidence;
     readonly routes: readonly NowPaymentsCurrencyEvidence[];
+    /**
+     * Required when Extended Custody / Customer Management is not enabled.
+     * A canonical ledger owner must prove aggregate user liabilities are covered
+     * by reconciled master-custody assets before pooled custody can fund payouts.
+     */
+    readonly pooledCustodyLiabilityCoverageSatisfied?: boolean;
   }>;
   readonly nowPaymentsIpnSecret: string;
   readonly publicBaseUrl: string;
@@ -262,8 +268,13 @@ export function createFinancialService(input: {
     if (!input.nowPaymentsPayout || !input.nowPaymentsCustody || !input.withdrawalEvidence) return null;
     const evidence = await input.withdrawalEvidence();
     assertFreshAccountEvidence(evidence.account, { now: new Date(now()) });
-    for (const capability of ["custody", "customer_management", "payout"] as const) {
+    for (const capability of ["custody", "payout"] as const) {
       if (!qualifyAccountCapability(evidence.account, capability).eligible) return null;
+    }
+    const customerManaged =
+      qualifyAccountCapability(evidence.account, "customer_management").eligible;
+    if (!customerManaged && evidence.pooledCustodyLiabilityCoverageSatisfied !== true) {
+      return null;
     }
     return evidence.routes.filter(route => qualifyRoute(route, "withdraw").eligible);
   }
