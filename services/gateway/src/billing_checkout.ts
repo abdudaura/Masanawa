@@ -85,16 +85,19 @@ function presentationRevision(quote: BillingQuote): number {
       return 4;
     case "succeeded":
       return 5;
+    // A later provider reversal can move an already-succeeded bill into refund
+    // custody. That must advance the presentation revision rather than replace
+    // the successful document at the same revision.
     case "refund-pending":
-      return 5;
-    case "refund-dispatching":
       return 6;
-    case "refund-submitted":
+    case "refund-dispatching":
       return 7;
-    case "refunded":
+    case "refund-submitted":
       return 8;
-    case "expired":
+    case "refunded":
       return 9;
+    case "expired":
+      return 10;
   }
 }
 
