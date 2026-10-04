@@ -2673,7 +2673,8 @@ class _VoiceWaveform extends StatelessWidget {
                       alignment: Alignment.center,
                       child: Container(
                         width: 2,
-                        height: 5 + bars[i].clamp(0.0, 1.0) * 23,
+                        height:
+                            (5 + bars[i].clamp(0.0, 1.0) * 23).toDouble(),
                         decoration: BoxDecoration(
                           color: (i / bars.length) <= progress
                               ? u.brand
