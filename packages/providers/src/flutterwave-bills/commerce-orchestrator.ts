@@ -356,7 +356,7 @@ export class BillingCommerceOrchestrator {
         amount: dispatching.amount,
         reference: dispatching.fulfillmentReference,
         ...(options?.callbackUrl ? { callbackUrl: options.callbackUrl } : {}),
-        signal: options?.signal,
+        ...(options?.signal === undefined ? {} : { signal: options.signal }),
       });
       const evaluated = evaluateReceipt(
         dispatching,
