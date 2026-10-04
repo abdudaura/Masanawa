@@ -307,3 +307,125 @@ describe("billing checkout", () => {
     expect(purchases).toBe(0);
   });
 });
+
+describe("billing service qualification policy", () => {
+  const categoryCodes = [
+    "CABLEBILLS",
+    "INTSERVICE",
+    "UTILITYBILLS",
+    "TAX",
+    "DONATIONS",
+    "TRANSLOG",
+    "DEALPAY",
+    "RELINST",
+    "SCHPB",
+  ] as const;
+
+  for (const categoryCode of categoryCodes) {
+    it(`validates provider customer identity for ${categoryCode}`, async () => {
+      const owner = identity();
+      const quotes = new MemoryQuotes();
+      let validationCalls = 0;
+      const transport: FlutterwaveBillsTransport = {
+        async request(request) {
+          if (request.method === "GET" && request.path === "/v3/top-bill-categories") {
+            return { status: 200, body: { status: "success", data: [{
+              code: categoryCode, name: categoryCode, description: categoryCode, country_code: "NG",
+            }] } };
+          }
+          if (request.method === "GET" && request.path === `/v3/bills/${categoryCode}/billers`) {
+            return { status: 200, body: { status: "success", data: [{
+              biller_code: "BIL900", name: "Qualified biller",
+            }] } };
+          }
+          if (request.method === "GET" && request.path === "/v3/billers/BIL900/items") {
+            return { status: 200, body: { status: "success", data: [{
+              biller_code: "BIL900", item_code: "ITEM900", name: "Qualified item",
+              amount: "100", currency: "NGN", label_name: "Customer identifier",
+            }] } };
+          }
+          if (request.method === "GET" && request.path === "/v3/bill-items/ITEM900/validate") {
+            validationCalls += 1;
+            return { status: 200, body: { status: "success", data: {
+              response_code: "00", response_message: "Successful",
+              customer: "CUSTOMER-900", name: "Qualified Customer",
+              biller_code: "BIL900", product_code: "ITEM900",
+              minimum: "100", maximum: "100",
+            } } };
+          }
+          throw new Error(`unexpected provider call ${request.method} ${request.path}`);
+        },
+      };
+      const service = createBillingCheckoutService({
+        sessions: { async authorize() { return owner; } },
+        quotes,
+        catalog: new FlutterwaveBillsClient({ secretKey: "secret", transport, country: "NG" }),
+        funding: new FlutterwaveFundingClient({ secretKey: "secret", transport }),
+        billing: billing(quotes),
+        actionSecret: "a".repeat(48),
+        redirectUrl: "https://app.masanawa.com/billing/return",
+      });
+      await expect(service.createQuote({
+        authorizationHeader: "Bearer session",
+        categoryCode,
+        billerCode: "BIL900",
+        itemCode: "ITEM900",
+        customerId: "CUSTOMER-900",
+        amount: "100",
+      })).resolves.toMatchObject({ quote: { categoryCode, state: "quoted" } });
+      expect(validationCalls).toBe(1);
+    });
+  }
+
+  for (const categoryCode of ["AIRTIME","MOBILEDATA"] as const) {
+    it(`uses phone validation without provider recipient lookup for ${categoryCode}`, async () => {
+      const owner = identity();
+      const quotes = new MemoryQuotes();
+      let validationCalls = 0;
+      const transport: FlutterwaveBillsTransport = {
+        async request(request) {
+          if (request.method === "GET" && request.path === "/v3/top-bill-categories") {
+            return { status: 200, body: { status: "success", data: [{
+              code: categoryCode, name: categoryCode, description: categoryCode, country_code: "NG",
+            }] } };
+          }
+          if (request.method === "GET" && request.path === `/v3/bills/${categoryCode}/billers`) {
+            return { status: 200, body: { status: "success", data: [{
+              biller_code: "BIL901", name: "Mobile biller",
+            }] } };
+          }
+          if (request.method === "GET" && request.path === "/v3/billers/BIL901/items") {
+            return { status: 200, body: { status: "success", data: [{
+              biller_code: "BIL901", item_code: "ITEM901", name: "Mobile item",
+              amount: categoryCode === "AIRTIME" ? "0" : "100",
+              currency: "NGN", label_name: "Mobile Number",
+            }] } };
+          }
+          if (request.path.includes("/validate")) {
+            validationCalls += 1;
+            throw new Error("mobile validation must be skipped");
+          }
+          throw new Error(`unexpected provider call ${request.method} ${request.path}`);
+        },
+      };
+      const service = createBillingCheckoutService({
+        sessions: { async authorize() { return owner; } },
+        quotes,
+        catalog: new FlutterwaveBillsClient({ secretKey: "secret", transport, country: "NG" }),
+        funding: new FlutterwaveFundingClient({ secretKey: "secret", transport }),
+        billing: billing(quotes),
+        actionSecret: "a".repeat(48),
+        redirectUrl: "https://app.masanawa.com/billing/return",
+      });
+      await expect(service.createQuote({
+        authorizationHeader: "Bearer session",
+        categoryCode,
+        billerCode: "BIL901",
+        itemCode: "ITEM901",
+        customerId: "+2348012345678",
+        amount: "100",
+      })).resolves.toMatchObject({ quote: { categoryCode, state: "quoted" } });
+      expect(validationCalls).toBe(0);
+    });
+  }
+});
