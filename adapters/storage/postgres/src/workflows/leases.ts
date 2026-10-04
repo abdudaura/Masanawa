@@ -209,6 +209,7 @@ export async function settleWorkflowTaskLease(
         AND state = 'running'
         AND lease_owner = $3
         AND lease_fence = $4
+        AND started_at <= $6::timestamptz
         AND lease_expires_at > $6::timestamptz`,
     [
       input.tenantId,
