@@ -319,6 +319,7 @@ export class NowPaymentsPayoutClient {
       ...(input.signal === undefined ? {} : { signal: input.signal }),
       token,
       authenticated: true,
+      badRequestCode: "nowpayments.payout.request_rejected",
     });
     const body = await response.json();
     return Object.freeze({
