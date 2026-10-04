@@ -60,3 +60,33 @@ ALTER TABLE commerce.crypto_intents
 ALTER TABLE commerce.crypto_intents
   ADD CONSTRAINT crypto_intents_provider_target_amount_check
     CHECK (provider_target_amount IS NULL OR provider_target_amount > 0);
+
+
+ALTER TABLE commerce.crypto_intents
+  DROP CONSTRAINT IF EXISTS crypto_intents_conversion_metadata_check,
+  DROP CONSTRAINT IF EXISTS crypto_intents_withdrawal_metadata_check;
+
+ALTER TABLE commerce.crypto_intents
+  ADD CONSTRAINT crypto_intents_conversion_metadata_check CHECK (
+    (operation = 'convert')
+    OR
+    (provider_conversion_id IS NULL AND provider_target_amount IS NULL AND target_network IS NULL)
+  ),
+  ADD CONSTRAINT crypto_intents_withdrawal_metadata_check CHECK (
+    (operation = 'withdraw')
+    OR
+    (provider_network_fee IS NULL AND withdrawal_fee_payer IS NULL)
+  );
+
+ALTER TABLE commerce.crypto_intents
+  DROP CONSTRAINT IF EXISTS crypto_intents_conversion_outcome_check;
+
+ALTER TABLE commerce.crypto_intents
+  ADD CONSTRAINT crypto_intents_conversion_outcome_check CHECK (
+    provider_target_amount IS NULL
+    OR (
+      operation = 'convert'
+      AND status = 'succeeded'
+      AND provider_conversion_id IS NOT NULL
+    )
+  );
