@@ -296,3 +296,5 @@ export function startHostedAlphaWithFlutterwaveWebhook() {
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
   startHostedAlphaWithFlutterwaveWebhook();
 }
+
+// egress probe deployment trigger
