@@ -1,4 +1,11 @@
 export {
+  NowPaymentsCustodyClient,
+  type NowPaymentsCustodyBalance,
+  type NowPaymentsCustodyClientOptions,
+  type NowPaymentsConversionEvidence,
+  type NowPaymentsConversionStatus,
+} from "./custody.js";
+export {
   NowPaymentsPayoutClient,
   type NowPaymentsCreatedPayout,
   type NowPaymentsPayoutClientOptions,
