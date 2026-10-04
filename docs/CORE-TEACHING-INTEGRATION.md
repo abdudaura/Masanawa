@@ -284,3 +284,35 @@ by the app shell. Changed/tampered callbacks fail closed.
 
 This currently supports single-select only. Multi-select across messaging channels needs
 a real staged selection/commit protocol before it can be considered executable.
+
+
+## Durable free-response exercises
+
+Open-ended Teaching exercises now have a server-held `TeachingFreeResponseBinding`
+with:
+- canonical RequestId;
+- exact RelationshipId + SkillVersionId;
+- exact lesson step + exercise;
+- SHA-256 hash of the normalized free-response exercise card/prompt;
+- expiry;
+- deterministic binding hash.
+
+Binding creation requires the actual normalized `TeachingExerciseCard` and refuses
+non-`free-response` cards. The client never chooses Relationship/SkillVersion/exercise
+scope.
+
+`submitFreeResponse()`:
+- verifies exact binding integrity and expiry;
+- requires the admitted Teaching runtime scope and current pedagogical plan;
+- bounds the learner answer to 16,384 characters;
+- accepts only normalized Core Teaching formative/practice evaluation;
+- preserves the existing rule that only positive understanding evidence can advance;
+- persists the exact learner response, evaluation, plan hash and progress before feedback;
+- uses canonical RequestId + response payload hash for replay safety;
+- rejects changed answer text under the same RequestId;
+- returns the same feedback/continue/reteach/advance projection used by selectable answers.
+
+For app/WhatsApp/Telegram, the free-response binding remains server-side. A normal text
+message may only be evaluated as the pending exercise after the owning Gateway has
+resolved the authenticated Relationship/session to that exact unexpired binding.
+Narrative text alone never selects an exercise or grants progress authority.
