@@ -57,7 +57,7 @@ class _MasanawaAdminAppState extends State<MasanawaAdminApp> {
         themeMode: ThemeMode.system,
         home: _restoring
             ? const _Splash()
-            : _token == null
+            : _token == null || adminBaseUrl.trim().isEmpty
                 ? AdminLoginScreen(onAuthenticated: _authenticate)
                 : AdminShell(
                     api: AdminApi(token: _token!),
