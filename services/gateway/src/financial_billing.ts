@@ -65,17 +65,20 @@ export function createBillingFinancialService(input: Readonly<{
   flutterwaveSecretKey: string;
   flutterwaveWebhookHash: string;
   flutterwaveWebhookUrl: string;
+  providerClient?: FlutterwaveBillsClient;
 }>): BillingFinancialService {
   const secretKey = input.flutterwaveSecretKey.trim();
   const webhookHash = input.flutterwaveWebhookHash.trim();
   if (!secretKey) throw new Error("flutterwave.secret_key.required");
   if (!webhookHash) throw new Error("flutterwave.webhook_hash.required");
 
-  const provider = new FlutterwaveBillsClient({
-    secretKey,
-    transport: new FlutterwaveHttpTransport(),
-    country: "NG",
-  });
+  const provider =
+    input.providerClient ??
+    new FlutterwaveBillsClient({
+      secretKey,
+      transport: new FlutterwaveHttpTransport(),
+      country: "NG",
+    });
   const callbackUrl = (() => {
     const url = new URL(input.flutterwaveWebhookUrl);
     if (url.protocol !== "https:") throw new Error("flutterwave.webhook_url.https_required");
