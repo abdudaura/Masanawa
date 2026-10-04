@@ -206,6 +206,7 @@ export function createPostgresBillingFulfillmentStore(
 }
 
 
+
 export type BillingFundingOutcome = "succeeded" | "refunded";
 
 export interface BillingFundingTerms {
@@ -214,10 +215,20 @@ export interface BillingFundingTerms {
   readonly customerPriceCredits: number;
   readonly providerReserveCredits: number;
   readonly platformMarginCredits: number;
+  readonly pricingPolicyVersion: string;
   readonly observedAt: string;
 }
 
-export interface BillingFundingReceipt extends BillingFundingTerms {
+export interface BillingFundingSnapshot {
+  readonly providerAmountNgn: string;
+  readonly customerPriceCredits: number;
+  readonly providerReserveCredits: number;
+  readonly platformMarginCredits: number;
+  readonly pricingPolicyVersion: string;
+}
+
+export interface BillingFundingReceipt extends BillingFundingSnapshot {
+  readonly reference: string;
   readonly tenantId: TenantId;
   readonly userId: UserId;
   readonly quoteId: QuoteId;
@@ -226,21 +237,28 @@ export interface BillingFundingReceipt extends BillingFundingTerms {
 
 export interface BillingFundingRepository {
   reserve(input: BillingFundingTerms): Promise<BillingFundingReceipt>;
-  settle(
-    input: BillingFundingTerms & Readonly<{ outcome: BillingFundingOutcome }>,
-  ): Promise<BillingFundingReceipt>;
+  settle(input: Readonly<{
+    reference: string;
+    outcome: BillingFundingOutcome;
+    observedAt: string;
+  }>): Promise<BillingFundingReceipt>;
 }
 
 const BILLING_DECIMAL = /^(?:0|[1-9]\d*)(?:\.\d+)?$/u;
 
 function credits(value: number, label: string, allowZero = false): number {
-  if (
-    !Number.isSafeInteger(value) ||
-    value < (allowZero ? 0 : 1)
-  ) {
+  if (!Number.isSafeInteger(value) || value < (allowZero ? 0 : 1)) {
     throw new RangeError(`${label} is invalid`);
   }
   return value;
+}
+
+function policyVersion(value: string): string {
+  const normalized = bounded(value, "pricingPolicyVersion", 128);
+  if (!/^[A-Za-z0-9._:-]+$/u.test(normalized)) {
+    throw new TypeError("pricingPolicyVersion is invalid");
+  }
+  return normalized;
 }
 
 export function normalizeBillingFundingTerms(
@@ -276,8 +294,38 @@ export function normalizeBillingFundingTerms(
     customerPriceCredits,
     providerReserveCredits,
     platformMarginCredits,
+    pricingPolicyVersion: policyVersion(input.pricingPolicyVersion),
     observedAt: instant(input.observedAt),
   });
+}
+
+function fundingSnapshot(
+  input: Omit<BillingFundingTerms, "reference" | "observedAt">,
+): BillingFundingSnapshot {
+  return Object.freeze({
+    providerAmountNgn: input.providerAmountNgn,
+    customerPriceCredits: input.customerPriceCredits,
+    providerReserveCredits: input.providerReserveCredits,
+    platformMarginCredits: input.platformMarginCredits,
+    pricingPolicyVersion: input.pricingPolicyVersion,
+  });
+}
+
+function normalizeStoredFunding(value: unknown): BillingFundingSnapshot {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new Error("financial.billing_funding_snapshot_invalid");
+  }
+  const record = value as Record<string, unknown>;
+  const terms = normalizeBillingFundingTerms({
+    reference: "request_018f0f5e-7b00-7000-8000-000000000000",
+    providerAmountNgn: String(record.providerAmountNgn ?? ""),
+    customerPriceCredits: Number(record.customerPriceCredits),
+    providerReserveCredits: Number(record.providerReserveCredits),
+    platformMarginCredits: Number(record.platformMarginCredits),
+    pricingPolicyVersion: String(record.pricingPolicyVersion ?? ""),
+    observedAt: "2026-01-01T00:00:00.000Z",
+  });
+  return fundingSnapshot(terms);
 }
 
 function requestUuid(reference: string): string {
@@ -445,22 +493,11 @@ function fundingTransfer(input: Readonly<{
     userId: input.userId,
     characterId: null,
   };
-  const clearing = {
-    ...platform,
-    kind: "external-clearing" as const,
-  };
-  const platformFloat = {
-    ...platform,
-    kind: "platform-float" as const,
-  };
-  const platformRevenue = {
-    ...platform,
-    kind: "platform-revenue" as const,
-  };
+  const clearing = { ...platform, kind: "external-clearing" as const };
+  const platformFloat = { ...platform, kind: "platform-float" as const };
+  const platformRevenue = { ...platform, kind: "platform-revenue" as const };
   const debit =
-    input.direction === "customer-to-clearing"
-      ? customer
-      : clearing;
+    input.direction === "customer-to-clearing" ? customer : clearing;
   const credit =
     input.direction === "customer-to-clearing"
       ? clearing
@@ -491,6 +528,55 @@ function fundingTransfer(input: Readonly<{
   });
 }
 
+async function readBillingFundingSnapshot(
+  client: PoolClient,
+  input: Readonly<{
+    tenantId: TenantId;
+    userId: UserId;
+    reference: string;
+  }>,
+): Promise<BillingFundingSnapshot | null> {
+  const result = await client.query<{ definition: Record<string, unknown> }>(
+    `SELECT definition
+       FROM commerce.billing_fulfillments
+      WHERE fulfillment_reference=$1 AND tenant_id=$2 AND user_id=$3
+      FOR UPDATE`,
+    [input.reference, input.tenantId, input.userId],
+  );
+  const definition = result.rows[0]?.definition;
+  if (!definition) {
+    throw new Error("financial.billing_not_found");
+  }
+  if (definition.funding === undefined) return null;
+  return normalizeStoredFunding(definition.funding);
+}
+
+async function persistBillingFundingSnapshot(
+  client: PoolClient,
+  input: Readonly<{
+    tenantId: TenantId;
+    userId: UserId;
+    reference: string;
+    funding: BillingFundingSnapshot;
+    observedAt: string;
+  }>,
+): Promise<void> {
+  const result = await client.query(
+    `UPDATE commerce.billing_fulfillments
+        SET definition=jsonb_set(definition,'{funding}',$4::jsonb,true),
+            updated_at=$5
+      WHERE fulfillment_reference=$1 AND tenant_id=$2 AND user_id=$3`,
+    [
+      input.reference,
+      input.tenantId,
+      input.userId,
+      canonicalJson(input.funding),
+      input.observedAt,
+    ],
+  );
+  if (result.rowCount !== 1) throw new Error("financial.billing_not_found");
+}
+
 export function createPostgresBillingFundingRepository(
   pool: Pool,
   owner: Readonly<{ tenantId: string; userId: string }>,
@@ -499,24 +585,37 @@ export function createPostgresBillingFundingRepository(
   const userId = parseCanonicalId("user", owner.userId);
 
   const receipt = (
-    terms: BillingFundingTerms,
+    reference: string,
+    snapshot: BillingFundingSnapshot,
     state: BillingFundingReceipt["state"],
   ): BillingFundingReceipt => Object.freeze({
-    ...terms,
+    ...snapshot,
+    reference: parseCanonicalId("request", reference),
     tenantId,
     userId,
-    quoteId: deriveBillingFundingIdentity(terms.reference).quoteId,
+    quoteId: deriveBillingFundingIdentity(reference).quoteId,
     state,
   });
 
   return Object.freeze({
     async reserve(input) {
       const terms = normalizeBillingFundingTerms(input);
+      const snapshot = fundingSnapshot(terms);
       const identity = deriveBillingFundingIdentity(terms.reference);
       return withTransaction(pool, async (client) => {
         await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
           `billing-funding:${tenantId}:${userId}:${terms.reference}`,
         ]);
+
+        const stored = await readBillingFundingSnapshot(client, {
+          tenantId,
+          userId,
+          reference: terms.reference,
+        });
+        if (stored && canonicalJson(stored) !== canonicalJson(snapshot)) {
+          throw new Error("financial.billing_funding_replay_conflict");
+        }
+
         const refund = await readLedgerTransfer(
           client,
           tenantId,
@@ -529,7 +628,7 @@ export function createPostgresBillingFundingRepository(
           userId,
           ledgerEntryId: identity.reserveLedgerEntryId,
           quoteId: identity.quoteId,
-          amountCredits: terms.customerPriceCredits,
+          amountCredits: snapshot.customerPriceCredits,
           direction: "customer-to-clearing",
           createdAt: terms.observedAt,
         });
@@ -539,15 +638,44 @@ export function createPostgresBillingFundingRepository(
           identity.reserveLedgerEntryId,
         );
         if (existing) {
-          if (canonicalJson(existing) !== canonicalJson(expected)) {
+          if (
+            existing.amountCredits !== expected.amountCredits ||
+            existing.debit.kind !== "customer-credit" ||
+            existing.debit.userId !== userId ||
+            existing.credit.kind !== "external-clearing" ||
+            existing.quoteId !== identity.quoteId
+          ) {
             throw new Error("financial.billing_funding_replay_conflict");
+          }
+          if (!stored) {
+            await persistBillingFundingSnapshot(client, {
+              tenantId,
+              userId,
+              reference: terms.reference,
+              funding: snapshot,
+              observedAt: terms.observedAt,
+            });
           }
           const provider = await readLedgerTransfer(
             client,
             tenantId,
             identity.providerLedgerEntryId,
           );
-          return receipt(terms, provider ? "settled" : "reserved");
+          const margin =
+            snapshot.platformMarginCredits === 0
+              ? true
+              : Boolean(
+                  await readLedgerTransfer(
+                    client,
+                    tenantId,
+                    identity.marginLedgerEntryId,
+                  ),
+                );
+          return receipt(
+            terms.reference,
+            snapshot,
+            provider && margin ? "settled" : "reserved",
+          );
         }
 
         await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
@@ -559,45 +687,50 @@ export function createPostgresBillingFundingRepository(
           userId,
           characterId: null,
         });
-        if (balance < terms.customerPriceCredits) {
+        if (balance < snapshot.customerPriceCredits) {
           throw new Error("commerce.insufficient_balance");
         }
         await insertLedgerTransfer(client, expected);
-        return receipt(terms, "reserved");
+        await persistBillingFundingSnapshot(client, {
+          tenantId,
+          userId,
+          reference: terms.reference,
+          funding: snapshot,
+          observedAt: terms.observedAt,
+        });
+        return receipt(terms.reference, snapshot, "reserved");
       });
     },
 
     async settle(input) {
-      const terms = normalizeBillingFundingTerms(input);
-      const identity = deriveBillingFundingIdentity(terms.reference);
+      const reference = parseCanonicalId("request", input.reference);
+      const observedAt = instant(input.observedAt);
+      const identity = deriveBillingFundingIdentity(reference);
       return withTransaction(pool, async (client) => {
         await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
-          `billing-funding:${tenantId}:${userId}:${terms.reference}`,
+          `billing-funding:${tenantId}:${userId}:${reference}`,
         ]);
-
-        const reserveExpected = fundingTransfer({
+        const snapshot = await readBillingFundingSnapshot(client, {
           tenantId,
           userId,
-          ledgerEntryId: identity.reserveLedgerEntryId,
-          quoteId: identity.quoteId,
-          amountCredits: terms.customerPriceCredits,
-          direction: "customer-to-clearing",
-          createdAt: terms.observedAt,
+          reference,
         });
+        if (!snapshot) throw new Error("financial.billing_funding_not_reserved");
+
         const reserve = await readLedgerTransfer(
           client,
           tenantId,
           identity.reserveLedgerEntryId,
         );
-        if (!reserve) throw new Error("financial.billing_funding_not_reserved");
         if (
-          reserve.amountCredits !== reserveExpected.amountCredits ||
+          !reserve ||
+          reserve.amountCredits !== snapshot.customerPriceCredits ||
           reserve.debit.kind !== "customer-credit" ||
           reserve.debit.userId !== userId ||
           reserve.credit.kind !== "external-clearing" ||
           reserve.quoteId !== identity.quoteId
         ) {
-          throw new Error("financial.billing_funding_replay_conflict");
+          throw new Error("financial.billing_funding_not_reserved");
         }
 
         const refund = await readLedgerTransfer(
@@ -612,9 +745,7 @@ export function createPostgresBillingFundingRepository(
         );
 
         if (input.outcome === "refunded") {
-          if (provider) {
-            throw new Error("financial.billing_funding_already_settled");
-          }
+          if (provider) throw new Error("financial.billing_funding_already_settled");
           if (!refund) {
             await insertLedgerTransfer(
               client,
@@ -623,18 +754,16 @@ export function createPostgresBillingFundingRepository(
                 userId,
                 ledgerEntryId: identity.refundLedgerEntryId,
                 quoteId: identity.quoteId,
-                amountCredits: terms.customerPriceCredits,
+                amountCredits: snapshot.customerPriceCredits,
                 direction: "clearing-to-customer",
-                createdAt: terms.observedAt,
+                createdAt: observedAt,
               }),
             );
           }
-          return receipt(terms, "refunded");
+          return receipt(reference, snapshot, "refunded");
         }
 
-        if (refund) {
-          throw new Error("financial.billing_funding_already_refunded");
-        }
+        if (refund) throw new Error("financial.billing_funding_already_refunded");
         if (!provider) {
           await insertLedgerTransfer(
             client,
@@ -643,27 +772,34 @@ export function createPostgresBillingFundingRepository(
               userId,
               ledgerEntryId: identity.providerLedgerEntryId,
               quoteId: identity.quoteId,
-              amountCredits: terms.providerReserveCredits,
+              amountCredits: snapshot.providerReserveCredits,
               direction: "clearing-to-platform-float",
-              createdAt: terms.observedAt,
+              createdAt: observedAt,
             }),
           );
         }
-        if (terms.platformMarginCredits > 0) {
-          await insertLedgerTransfer(
+        if (snapshot.platformMarginCredits > 0) {
+          const margin = await readLedgerTransfer(
             client,
-            fundingTransfer({
-              tenantId,
-              userId,
-              ledgerEntryId: identity.marginLedgerEntryId,
-              quoteId: identity.quoteId,
-              amountCredits: terms.platformMarginCredits,
-              direction: "clearing-to-platform-revenue",
-              createdAt: terms.observedAt,
-            }),
+            tenantId,
+            identity.marginLedgerEntryId,
           );
+          if (!margin) {
+            await insertLedgerTransfer(
+              client,
+              fundingTransfer({
+                tenantId,
+                userId,
+                ledgerEntryId: identity.marginLedgerEntryId,
+                quoteId: identity.quoteId,
+                amountCredits: snapshot.platformMarginCredits,
+                direction: "clearing-to-platform-revenue",
+                createdAt: observedAt,
+              }),
+            );
+          }
         }
-        return receipt(terms, "settled");
+        return receipt(reference, snapshot, "settled");
       });
     },
   });
