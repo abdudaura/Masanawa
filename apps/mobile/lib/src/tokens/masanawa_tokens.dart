@@ -1,8 +1,6 @@
-/// Masanawa design tokens — Naija Green (RATIFIED 2026-08-11, O1).
+/// Masanawa design tokens — Agent Blue (ratified 2026-10-04).
 ///
-/// Dart mirror of `packages/tokens/src/index.ts` — the canonical source of
-/// truth. Parity is enforced by the `dart-parity` test in `packages/tokens`,
-/// so these values can never drift from the TypeScript token package.
+/// Canonical mobile color source for the Masanawa agent-blue identity.
 /// No raw hex in widget code — always read from this file.
 library;
 
@@ -55,35 +53,35 @@ final class MasanawaTokens {
   const MasanawaTokens._();
 
   static const ColorTokens light = ColorTokens(
-    brandPrimary: '#047857',
-    brandStrong: '#065F46',
-    brandGradient: TokenGradient('#059669', '#10B981'),
-    verified: '#1D4ED8',
+    brandPrimary: '#0A6FFA',
+    brandStrong: '#0121D2',
+    brandGradient: TokenGradient('#0121D2', '#1DA4FD'),
+    verified: '#0A6FFA',
     emergency: '#DC2626',
     warning: '#D97706',
     success: '#16A34A',
-    textPrimary: '#0F172A',
-    textMuted: '#475569',
-    surfaceBg: '#FAFAF9',
+    textPrimary: '#0A1830',
+    textMuted: '#526A86',
+    surfaceBg: '#F6FAFF',
     surfaceCard: '#FFFFFF',
-    surfaceMuted: '#F1F5F9',
-    structuralBorder: '#E2E8F0',
+    surfaceMuted: '#EAF4FF',
+    structuralBorder: '#D6E8FF',
   );
 
   static const ColorTokens dark = ColorTokens(
-    brandPrimary: '#34D399',
-    brandStrong: '#6EE7B7',
-    brandGradient: TokenGradient('#10B981', '#34D399'),
-    verified: '#60A5FA',
+    brandPrimary: '#36C0FF',
+    brandStrong: '#79DBFF',
+    brandGradient: TokenGradient('#034EF6', '#24B9FF'),
+    verified: '#5BCBFF',
     emergency: '#F87171',
     warning: '#FBBF24',
     success: '#4ADE80',
-    textPrimary: '#F1F5F9',
-    textMuted: '#94A3B8',
-    surfaceBg: '#0B1220',
-    surfaceCard: '#111A2C',
-    surfaceMuted: '#1E293B',
-    structuralBorder: '#334155',
+    textPrimary: '#F3F8FF',
+    textMuted: '#9AB7D8',
+    surfaceBg: '#06132C',
+    surfaceCard: '#0B1E3F',
+    surfaceMuted: '#102B52',
+    structuralBorder: '#1F4F87',
   );
 
   /// 4px spacing grid.
