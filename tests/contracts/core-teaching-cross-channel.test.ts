@@ -85,13 +85,21 @@ function rubric(active: TeachingLessonPlan): TeachingSelectableExerciseRubric {
 
 class DurableTeachingPort implements TeachingProgressPort {
   readonly attempts = new Map<RequestId, TeachingSelectionAttempt>();
-  readonly progress = new Map<string, TeachingProgressHandoff>();
+  readonly progress = new Map<
+    string,
+    { readonly planHash: string; readonly progress: TeachingProgressHandoff }
+  >();
 
   #key(key: TeachingProgressKey): string {
     return `${key.relationshipId}:${key.skillVersionId}`;
   }
 
-  async load(key: TeachingProgressKey): Promise<TeachingProgressHandoff | null> {
+  async load(
+    key: TeachingProgressKey,
+  ): Promise<{
+    readonly planHash: string;
+    readonly progress: TeachingProgressHandoff;
+  } | null> {
     return this.progress.get(this.#key(key)) ?? null;
   }
 
@@ -111,7 +119,10 @@ class DurableTeachingPort implements TeachingProgressPort {
         relationshipId: attempt.relationshipId,
         skillVersionId: attempt.skillVersionId,
       }),
-      attempt.progress,
+      {
+        planHash: attempt.planHash,
+        progress: attempt.progress,
+      },
     );
     return "stored";
   }
@@ -208,7 +219,9 @@ describe("Core Teaching cross-channel acceptance", () => {
         relationshipId: active.learner.relationshipId,
         skillVersionId: active.skillVersionId,
       }),
-    ).toMatchObject({ checkpointState: "ready-to-advance" });
+    ).toMatchObject({
+      progress: { checkpointState: "ready-to-advance" },
+    });
 
     const whatsapp = new TeachingRuntimeCoordinator({
       progress: durable,
