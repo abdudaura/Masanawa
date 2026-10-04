@@ -1,6 +1,6 @@
 # Workstream claim — workflow-control
 
-Status: active
+Status: implementation complete; PostgreSQL verification evidence pending
 Owner: this isolated stacked workstream
 Started: 2026-10-04 20:28 Africa/Lagos
 Base: work/workflow-operation-truth-20261004 @ 7c56d5e32968584fb69ae388cde4249ff6d239b1
@@ -41,3 +41,23 @@ Do not modify Task 084-093 implementations, canonical Operation/provider state, 
 - no new Task checkout after cancellation/supersession admission.
 
 Task 094 remains open until PostgreSQL acceptance executes and canonical task evidence advances.
+
+
+## Implementation handoff
+
+Implemented in draft PR #118.
+
+Delivered:
+
+- durable cancel/supersede control identity and replay fingerprint;
+- immediate cancellation of non-running Tasks;
+- preservation of active leased Tasks;
+- activation trigger blocking future ready/running work;
+- finalization only after running Tasks drain;
+- same-Workflow successor validation;
+- independent compensation state;
+- original↔compensation canonical Operation linkage;
+- database validation of Operation tenant/binding/state;
+- forward-only compensation transitions;
+- canonical compensation Operation success required before workflow compensation success;
+- focused unit and PostgreSQL acceptance coverage.
