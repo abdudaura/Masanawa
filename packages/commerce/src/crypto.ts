@@ -39,6 +39,8 @@ export interface CryptoIntent {
   readonly providerPayoutId: string | null;
   /** Durable NOWPayments custody conversion identity. */
   readonly providerConversionId?: string | null;
+  /** Exact target amount evidenced by the provider after conversion settlement. */
+  readonly providerTargetAmount?: string | null;
   readonly payAddress: string | null;
   readonly providerPayAmount: string | null;
   /** Live payout network fee admitted at reserve time; zero is represented as null. */
@@ -151,8 +153,18 @@ export function normalizeCryptoIntent(input: CryptoIntent): CryptoIntent {
   }
   const providerConversionId =
     optional(input.providerConversionId ?? null, "crypto.provider_conversion.invalid", 128);
-  if (operation !== "convert" && providerConversionId !== null) {
+  const providerTargetAmount =
+    input.providerTargetAmount === undefined || input.providerTargetAmount === null
+      ? null
+      : normalizeCryptoAmount(input.providerTargetAmount);
+  if (
+    operation !== "convert" &&
+    (providerConversionId !== null || providerTargetAmount !== null)
+  ) {
     throw new TypeError("crypto.provider_conversion.unexpected");
+  }
+  if (operation === "convert" && providerTargetAmount !== null && status !== "succeeded") {
+    throw new TypeError("crypto.provider_target_amount.unexpected");
   }
   const providerNetworkFee =
     input.providerNetworkFee === undefined || input.providerNetworkFee === null
@@ -196,6 +208,7 @@ export function normalizeCryptoIntent(input: CryptoIntent): CryptoIntent {
     providerPaymentId: optional(input.providerPaymentId, "crypto.provider_payment.invalid", 128),
     providerPayoutId: optional(input.providerPayoutId, "crypto.provider_payout.invalid", 128),
     providerConversionId,
+    providerTargetAmount,
     payAddress: optional(input.payAddress, "crypto.pay_address.invalid", 512),
     providerPayAmount:
       input.providerPayAmount === null ? null : normalizeCryptoAmount(input.providerPayAmount),
