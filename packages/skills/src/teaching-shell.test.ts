@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   createCanonicalId,
+  toInstant,
 } from "@masanawa/contracts";
 import type { TeachingRuntimeProjection } from "./teaching-runtime.js";
 import {
@@ -22,7 +23,7 @@ describe("Teaching ShellDocument v1 projection", () => {
       kind: "exercise",
       ...ids,
       actionKey: "teach.action.fractions.1",
-      actionExpiresAt: "2099-01-01T00:00:00.000Z",
+      actionExpiresAt: toInstant("2099-01-01T00:00:00.000Z"),
       card: {
         ...ids,
         lessonStepKey: "fractions",
@@ -81,7 +82,7 @@ describe("Teaching ShellDocument v1 projection", () => {
       kind: "exercise",
       ...ids,
       actionKey: "teach.action.fractions.2",
-      actionExpiresAt: "2099-01-01T00:00:00.000Z",
+      actionExpiresAt: toInstant("2099-01-01T00:00:00.000Z"),
       card: {
         ...ids,
         lessonStepKey: "fractions",
@@ -233,7 +234,7 @@ describe("Teaching ShellDocument action expiry binding", () => {
       kind: "exercise",
       ...ids,
       actionKey: "teach.action.fractions.expiry",
-      actionExpiresAt: "2099-01-01T00:00:00.000Z",
+      actionExpiresAt: toInstant("2099-01-01T00:00:00.000Z"),
       card: {
         ...ids,
         lessonStepKey: "fractions",
@@ -302,7 +303,7 @@ describe("Teaching ShellAction resolution", () => {
       kind: "exercise",
       ...ids,
       actionKey: "teach.action.fractions.multi",
-      actionExpiresAt: "2099-01-01T00:00:00.000Z",
+      actionExpiresAt: toInstant("2099-01-01T00:00:00.000Z"),
       card: {
         ...ids,
         lessonStepKey: "fractions",
