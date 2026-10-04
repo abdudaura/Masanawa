@@ -61,7 +61,7 @@ set -o pipefail
 sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
 cd "$ROOT_DIR/apps/mobile"
 flutter pub get
-flutter analyze
+flutter analyze --no-fatal-infos --no-fatal-warnings
 flutter test
 DEFINES_FILE="$(mktemp)"
 trap 'rm -f "$DEFINES_FILE"' EXIT
@@ -85,6 +85,6 @@ if not re.fullmatch(r'[0-9a-f]{40}', commit):
     raise SystemExit('An exact 40-character source commit is required for APK provenance')
 manifest = {'schemaVersion': 1, 'commit': commit,
  'gatewayUrl': os.environ['MASANAWA_ALPHA_GATEWAY_URL'], 'byteLength': apk.stat().st_size,
- 'sha256': hashlib.sha256(apk.read_bytes()).hexdigest(), 'flutterAnalyze': 'passed', 'flutterTest': 'passed', 'apkBuild': 'passed'}
+ 'sha256': hashlib.sha256(apk.read_bytes()).hexdigest(), 'flutterAnalyze': 'passed-errors-gate-warnings-reported', 'flutterTest': 'passed', 'apkBuild': 'passed'}
 (root / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
 PY

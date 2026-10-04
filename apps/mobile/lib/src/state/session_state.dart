@@ -10,10 +10,10 @@ import '../core/providers.dart';
 
 /// Secure keychain/keystore for the token pair + profile.
 ///
-/// Never in local DB / plain prefs. Android uses EncryptedSharedPreferences;
+/// Never in local DB / plain prefs. Android uses the package's encrypted storage defaults;
 /// iOS uses first-unlock-this-device accessibility.
 const _storage = FlutterSecureStorage(
-  aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  aOptions: AndroidOptions(),
   iOptions: IOSOptions(
     accessibility: KeychainAccessibility.first_unlock_this_device,
   ),
