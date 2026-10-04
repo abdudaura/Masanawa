@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { createCanonicalId, nowInstant } from "@masanawa/contracts";
-import { normalizeOfferRevision } from "./model.js";
+import { normalizeOfferRevision, type OfferId } from "./model.js";
 import { planFulfillmentFunding } from "./funding.js";
 
 describe("commerce offer economics", () => {
   const offer = normalizeOfferRevision({
     schemaVersion: 1,
     tenantId: createCanonicalId("tenant"),
-    offerId: createCanonicalId("offer"),
+    offerId: "offer_0194c2d2-6c00-7abc-8abc-1234567890ab" as OfferId,
     revision: 1,
     key: "research.web",
     title: "Web research",
