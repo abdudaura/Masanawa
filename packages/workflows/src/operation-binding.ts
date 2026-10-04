@@ -1,5 +1,6 @@
-import type { OperationState, ReconciliationStatus } from "@masanawa/events";
 import {
+  type CanonicalOperationState,
+  type CanonicalReconciliationStatus,
   type WorkflowOperationBinding,
   type WorkflowOperationProjection,
 } from "./operation-binding-model.js";
@@ -24,8 +25,8 @@ export function createWorkflowOperationBinding(
 
 export function projectWorkflowOperationTruth(input: {
   readonly operationId: WorkflowOperationBinding["operationId"];
-  readonly operationState: OperationState;
-  readonly reconciliationStatus: ReconciliationStatus | null;
+  readonly operationState: CanonicalOperationState;
+  readonly reconciliationStatus: CanonicalReconciliationStatus | null;
   readonly receiptIds: WorkflowOperationProjection["receiptIds"];
 }): WorkflowOperationProjection {
   let disposition: WorkflowOperationProjection["disposition"];
