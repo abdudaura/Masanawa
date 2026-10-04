@@ -1686,7 +1686,8 @@ class _RichMessageText extends StatelessWidget {
                 child: IconButton(
                   tooltip: 'Copy code',
                   icon: const Icon(Icons.copy, size: 16),
-                  onPressed: () => Clipboard.setData(ClipboardData(text: value)),
+                  onPressed: () =>
+                      Clipboard.setData(ClipboardData(text: value)),
                 ),
               ),
             ],
@@ -1716,9 +1717,68 @@ class _RichMessageText extends StatelessWidget {
 
       final isHeading = trimmed.startsWith('#');
       final headingText = isHeading
-          ? trimmed.replaceFirst(RegExp(r'^#{1,6}\\s*'), '')
+          ? trimmed.replaceFirst(RegExp(r'^#{1,6}\s*'), '')
           : trimmed;
-      final bullet = RegExp(r'^[-*]\\s+(.+)
+      final bullet = RegExp(r'^[-*]\s+(.+)$').firstMatch(trimmed);
+      final numbered = RegExp(r'^(\d+)\.\s+(.+)$').firstMatch(trimmed);
+
+      if (bullet != null || numbered != null) {
+        final content = bullet?.group(1) ?? numbered?.group(2) ?? '';
+        final marker = bullet != null ? '•' : '${numbered!.group(1)}.';
+        blocks.add(
+          Padding(
+            padding: const EdgeInsets.only(bottom: 3),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 24,
+                  child: Text(
+                    marker,
+                    style: TextStyle(color: u.textPrimary, fontSize: 14),
+                  ),
+                ),
+                Expanded(
+                  child: SelectableText(
+                    content,
+                    style: TextStyle(
+                      color: u.textPrimary,
+                      fontSize: 15,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      } else {
+        blocks.add(
+          Padding(
+            padding: const EdgeInsets.only(bottom: 2),
+            child: SelectableText(
+              headingText,
+              style: TextStyle(
+                color: u.textPrimary,
+                fontSize: isHeading ? 16 : 15,
+                height: 1.4,
+                fontWeight: isHeading ? FontWeight.w700 : FontWeight.w400,
+              ),
+            ),
+          ),
+        );
+      }
+    }
+    if (inCode) flushCode();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: blocks,
+    );
+  }
+}
+
+class _AttachmentView extends StatelessWidget {
   const _AttachmentView({required this.attachment});
 
   final ChatAttachment attachment;
