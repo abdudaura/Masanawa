@@ -116,3 +116,20 @@ with the same RequestId and hash is an exact replay; a different hash under that
 is a conflict. Receipt time is deliberately not part of the fingerprint, so a lost
 response may be retried later without turning the same learner action into a second
 attempt.
+
+
+## Runtime admission binding
+
+The coordinator now requires a `TeachingRuntimeBinding` on resume, exercise projection
+and selection submission. The binding is created only from server-resolved values after
+the outer runtime has admitted the capability and contains:
+- exact RelationshipId;
+- exact SkillVersionId;
+- canonical skill key `core.teaching`;
+- exact certified SkillGuide content hash.
+
+The coordinator rejects plans, exercises and rubrics that do not match that admitted
+Relationship/SkillVersion. This does not replace #89 readiness/authority admission; it
+makes its result explicit at the Teaching integration boundary so a caller cannot
+accidentally invoke Teaching with an arbitrary SkillVersion or another user's
+Relationship.
