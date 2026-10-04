@@ -134,3 +134,11 @@ export interface UserRelationshipReader {
     readonly userId: UserId;
   }): Promise<readonly UserCharacterRelationship[]>;
 }
+
+
+export interface CharacterOwnershipReader {
+  readForCharacter(input: {
+    readonly tenantId: TenantId;
+    readonly characterId: CharacterId;
+  }): Promise<CharacterOwnership | null>;
+}
