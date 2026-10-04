@@ -427,7 +427,7 @@ export function createOpsApp(options: OpsAppOptions = {}) {
       async (request) =>
         platformAdmin.setUserState({
           authorizationHeader: request.headers.authorization,
-          userId: request.params.userId,
+          userId: parseCanonicalId("user", request.params.userId),
           state: request.body.state,
           expectedRevision: request.body.expectedRevision,
         }),
