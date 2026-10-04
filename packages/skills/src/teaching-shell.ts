@@ -30,6 +30,15 @@ export interface TeachingShellProjectionOptions {
   readonly expiresAt?: string;
 }
 
+export interface TeachingShellActionInput {
+  readonly documentId: string;
+  readonly revision: number;
+  readonly nodeId: string;
+  readonly actionId: string;
+  readonly token: string;
+  readonly values: Readonly<Record<string, string>>;
+}
+
 const documentIdPattern = /^[A-Za-z0-9._:-]{1,128}$/u;
 
 function boundedText(value: string, limit: number): string {
@@ -153,6 +162,11 @@ function exerciseNodes(
     return Object.freeze(nodes);
   }
 
+  if (projection.card.kind === "multi-select") {
+    throw new TypeError(
+      "Teaching ShellDocument v1 does not support actionable multi-select",
+    );
+  }
   if (projection.actionKey === null) {
     throw new TypeError(
       "Selectable Teaching shell exercises require an opaque action key",
@@ -297,5 +311,50 @@ export function projectTeachingToShellDocument(
     fallback: fallbackFor(projection),
     ...(expiresAt === undefined ? {} : { expiresAt }),
     nodes,
+  });
+}
+
+
+export function resolveTeachingShellAction(
+  action: TeachingShellActionInput,
+): Readonly<{
+  actionKey: string;
+  selectedOptionKeys: readonly string[];
+}> {
+  if (
+    !documentIdPattern.test(action.documentId) ||
+    !Number.isSafeInteger(action.revision) ||
+    action.revision < 0
+  ) {
+    throw new TypeError("Teaching shell action document scope is invalid");
+  }
+  if (action.actionId !== "teaching.select") {
+    throw new TypeError("Teaching shell action id is invalid");
+  }
+  if (
+    typeof action.token !== "string" ||
+    action.token.length < 8 ||
+    action.token.length > 2048
+  ) {
+    throw new TypeError("Teaching shell action token is invalid");
+  }
+  if (
+    typeof action.nodeId !== "string" ||
+    !/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u.test(action.nodeId)
+  ) {
+    throw new TypeError("Teaching shell option key is invalid");
+  }
+  if (
+    action.values === null ||
+    typeof action.values !== "object" ||
+    Object.keys(action.values).length !== 0
+  ) {
+    throw new TypeError(
+      "Teaching single-select shell action must not carry form values",
+    );
+  }
+  return Object.freeze({
+    actionKey: action.token,
+    selectedOptionKeys: Object.freeze([action.nodeId]),
   });
 }
