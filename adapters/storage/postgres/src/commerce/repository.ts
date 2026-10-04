@@ -1,11 +1,13 @@
 import {
   normalizeCommerceAccountRef,
   normalizeCommerceFulfillmentAdmission,
+  normalizeCommerceFulfillmentCompletion,
   normalizeCommerceLedgerTransfer,
   normalizeCommerceQuote,
   normalizeOfferRevision,
   type CommerceAccountRef,
   type CommerceFulfillmentAdmission,
+  type CommerceFulfillmentCompletion,
   type CommerceLedgerTransfer,
   type CommerceQuote,
   type CommerceRepository,
@@ -35,6 +37,12 @@ function transferFromDefinition(value: unknown): CommerceLedgerTransfer {
 function fulfillmentFromDefinition(value: unknown): CommerceFulfillmentAdmission {
   return normalizeCommerceFulfillmentAdmission(
     value as CommerceFulfillmentAdmission,
+  );
+}
+
+function completionFromDefinition(value: unknown): CommerceFulfillmentCompletion {
+  return normalizeCommerceFulfillmentCompletion(
+    value as CommerceFulfillmentCompletion,
   );
 }
 
@@ -337,6 +345,104 @@ export function createPostgresCommerceRepository(pool: Pool): CommerceRepository
         }
 
         return fulfillmentFromDefinition(inserted.rows[0]!.definition);
+      });
+    },
+
+    async readFulfillment(input) {
+      return withTransaction(
+        pool,
+        async (client) => {
+          const result = await client.query<{ definition: CommerceFulfillmentAdmission }>(
+            "SELECT definition FROM commerce.fulfillments WHERE tenant_id=$1 AND fulfillment_id=$2",
+            [input.tenantId, input.fulfillmentId],
+          );
+          return result.rows[0]
+            ? fulfillmentFromDefinition(result.rows[0].definition)
+            : null;
+        },
+        { isolation: "repeatable read", readOnly: true },
+      );
+    },
+
+    async readFulfillmentCompletion(input) {
+      return withTransaction(
+        pool,
+        async (client) => {
+          const result = await client.query<{ definition: CommerceFulfillmentCompletion }>(
+            "SELECT definition FROM commerce.fulfillment_completions WHERE tenant_id=$1 AND fulfillment_id=$2",
+            [input.tenantId, input.fulfillmentId],
+          );
+          return result.rows[0]
+            ? completionFromDefinition(result.rows[0].definition)
+            : null;
+        },
+        { isolation: "repeatable read", readOnly: true },
+      );
+    },
+
+    async completeFulfillment(input) {
+      const completion = normalizeCommerceFulfillmentCompletion(
+        input.completion,
+      );
+      const transfers = input.transfers.map(normalizeCommerceLedgerTransfer);
+      return withTransaction(pool, async (client) => {
+        await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+          `commerce:fulfillment-completion:${completion.tenantId}:${completion.fulfillmentId}`,
+        ]);
+
+        const existing = await client.query<{ definition: CommerceFulfillmentCompletion }>(
+          "SELECT definition FROM commerce.fulfillment_completions WHERE tenant_id=$1 AND fulfillment_id=$2",
+          [completion.tenantId, completion.fulfillmentId],
+        );
+        if (existing.rows[0]) {
+          const replay = completionFromDefinition(existing.rows[0].definition);
+          if (canonicalJson(replay) !== canonicalJson(completion)) {
+            throw conflict(
+              "commerce.fulfillment_completion_conflict",
+              "Fulfillment already completed with different receipt evidence",
+            );
+          }
+          return replay;
+        }
+
+        const admitted = await client.query<{ definition: CommerceFulfillmentAdmission }>(
+          "SELECT definition FROM commerce.fulfillments WHERE tenant_id=$1 AND fulfillment_id=$2 FOR SHARE",
+          [completion.tenantId, completion.fulfillmentId],
+        );
+        if (!admitted.rows[0]) {
+          throw conflict(
+            "commerce.fulfillment_not_admitted",
+            "Fulfillment must be admitted before completion",
+          );
+        }
+
+        const inserted = await client.query<{ definition: CommerceFulfillmentCompletion }>(
+          `INSERT INTO commerce.fulfillment_completions(
+             tenant_id, fulfillment_id, definition, completed_at
+           ) VALUES ($1,$2,$3::jsonb,$4)
+           RETURNING definition`,
+          [
+            completion.tenantId,
+            completion.fulfillmentId,
+            canonicalJson(completion),
+            completion.completedAt,
+          ],
+        );
+
+        for (const transfer of transfers) {
+          if (
+            transfer.tenantId !== completion.tenantId ||
+            transfer.fulfillmentId !== completion.fulfillmentId
+          ) {
+            throw conflict(
+              "commerce.fulfillment_settlement_mismatch",
+              "Settlement transfer does not match fulfillment completion",
+            );
+          }
+          await postTransferWithClient(client, transfer);
+        }
+
+        return completionFromDefinition(inserted.rows[0]!.definition);
       });
     },
 
