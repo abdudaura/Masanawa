@@ -43,6 +43,7 @@ export interface AgentConversationService {
     readonly text: string;
     readonly requestId: RequestId;
     readonly correlationId: CorrelationId;
+    readonly onTextDelta?: (delta: string) => void | Promise<void>;
   }): Promise<{
     readonly reply: string;
     readonly agentRunId: string;
