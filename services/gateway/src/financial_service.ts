@@ -286,6 +286,23 @@ function conversionFailed(status: string): boolean {
   return ["failed", "rejected", "cancelled", "canceled", "expired"].includes(status);
 }
 
+function numberToPlainDecimal(value: number): string {
+  const text = String(value);
+  if (!/[eE]/u.test(text)) return text;
+  const match = /^(-?)(\d+)(?:\.(\d+))?[eE]([+-]?\d+)$/u.exec(text);
+  if (!match) throw new Error("financial.crypto.amount_unavailable");
+  const sign = match[1] ?? "";
+  const integer = match[2] ?? "";
+  const fraction = match[3] ?? "";
+  const exponent = Number(match[4]);
+  if (!Number.isSafeInteger(exponent)) throw new Error("financial.crypto.amount_unavailable");
+  const digits = integer + fraction;
+  const decimalAt = integer.length + exponent;
+  if (decimalAt <= 0) return sign + "0." + "0".repeat(-decimalAt) + digits;
+  if (decimalAt >= digits.length) return sign + digits + "0".repeat(decimalAt - digits.length);
+  return sign + digits.slice(0, decimalAt) + "." + digits.slice(decimalAt);
+}
+
 function decimalUnits(value: string, allowZero = false): bigint {
   const normalized = value.trim();
   if (!/^(?:0|[1-9]\d*)(?:\.\d{1,18})?$/u.test(normalized)) {
@@ -401,7 +418,7 @@ export function createFinancialService(input: {
       !Number.isFinite(numericAmount) ||
       numericAmount <= 0 ||
       fractionalDigits > 6 ||
-      normalizeCryptoAmount(String(numericAmount)) !== amount
+      normalizeCryptoAmount(numberToPlainDecimal(numericAmount)) !== amount
     ) {
       throw new Error("financial.crypto.amount_unavailable");
     }
@@ -488,8 +505,8 @@ export function createFinancialService(input: {
       providerCode,
       targetProviderCode,
       amount,
-      minimumAmount: normalizeCryptoAmount(String(quote.minimum.minimumAmount)),
-      estimatedTargetAmount: normalizeCryptoAmount(String(quote.estimate.estimatedAmount)),
+      minimumAmount: normalizeCryptoAmount(numberToPlainDecimal(quote.minimum.minimumAmount)),
+      estimatedTargetAmount: normalizeCryptoAmount(numberToPlainDecimal(quote.estimate.estimatedAmount)),
       quotedAt: now(),
     });
   }
