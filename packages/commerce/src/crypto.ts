@@ -52,6 +52,7 @@ export interface CryptoLedgerEntry {
   readonly direction: "credit" | "debit";
   readonly reason:
     | "provider-deposit"
+    | "provider-refund"
     | "withdrawal-reserve"
     | "withdrawal-release"
     | "conversion-debit"
