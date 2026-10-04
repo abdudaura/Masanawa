@@ -6,6 +6,7 @@ import type {
 } from "@masanawa/contracts";
 import type {
   CommerceAccountRef,
+  CommerceFulfillmentAdmission,
   CommerceLedgerTransfer,
   CommerceQuote,
   OfferRevision,
@@ -26,6 +27,18 @@ export interface CommerceRepository {
     readonly tenantId: TenantId;
   }): Promise<readonly OfferRevision[]>;
   createQuote(input: CommerceQuote): Promise<CommerceQuote>;
+  readQuote(input: {
+    readonly tenantId: TenantId;
+    readonly quoteId: import("@masanawa/contracts").QuoteId;
+  }): Promise<CommerceQuote | null>;
+  admitFulfillment(input: {
+    readonly admission: CommerceFulfillmentAdmission;
+    readonly transfers: readonly CommerceLedgerTransfer[];
+  }): Promise<CommerceFulfillmentAdmission>;
+  readFulfillmentForQuote(input: {
+    readonly tenantId: TenantId;
+    readonly quoteId: import("@masanawa/contracts").QuoteId;
+  }): Promise<CommerceFulfillmentAdmission | null>;
   postTransfer(input: CommerceLedgerTransfer): Promise<CommerceLedgerTransfer>;
   readBalance(input: CommerceAccountRef): Promise<number>;
   readCreatorCommercialSnapshot(input: {
