@@ -8,8 +8,10 @@ import type {
   CharacterSkillAssignmentRepository,
 } from "@masanawa/agents";
 import { parseCanonicalId, readRequiredEnv } from "@masanawa/contracts";
-import type { CryptoRepository } from "@masanawa/commerce";
+import type { BillingQuoteRepository, CryptoRepository } from "@masanawa/commerce";
 import { NowPaymentsClient, NowPaymentsPayoutClient } from "@masanawa/nowpayments";
+import { FlutterwaveBillsClient, FlutterwaveFundingClient, FlutterwaveHttpTransport } from "@masanawa/providers";
+import type { PlatformSessionRepository } from "@masanawa/security";
 import {
   createDrainState,
   readNodeServiceRuntimeConfig,
@@ -29,6 +31,8 @@ import {
   createPostgresCryptoRepository,
   createPostgresServiceDependency,
   createPostgresBillingFulfillmentStore,
+  createPostgresBillingQuoteRepository,
+  createPostgresPlatformSessionRepository,
   createPostgresProviderWebhookRepository,
   createPostgresChannelAdmission,
 } from "@masanawa/postgres";
@@ -64,6 +68,16 @@ import {
   type ReadinessCheck,
 } from "./app.js";
 import { createBillingFinancialService } from "./financial_billing.js";
+import {
+  createCustomerAuthService,
+  createHttpSmsOtpDelivery,
+  createPlatformCustomerSessionAuthorizer,
+  createPlatformSessionFinancialAuthorizer,
+  createResendOtpDelivery,
+  type CustomerAuthService,
+  type PlatformCustomerSessionAuthorizer,
+} from "./customer_auth.js";
+import { createBillingCheckoutService, type BillingCheckoutService } from "./billing_checkout.js";
 
 export type ServiceSignal = "SIGINT" | "SIGTERM";
 
@@ -84,6 +98,8 @@ export interface ServiceDatabaseDependency {
     identity: Readonly<{ tenantId: string; userId: string }>,
   ) => ReturnType<typeof createPostgresBillingFulfillmentStore>;
   readonly providerWebhooks?: ReturnType<typeof createPostgresProviderWebhookRepository>;
+  readonly billingQuotes?: BillingQuoteRepository;
+  readonly platformSessions?: PlatformSessionRepository;
   readonly channelAdmission?: ReturnType<typeof createPostgresChannelAdmission>;
   close(): Promise<void>;
 }
@@ -163,6 +179,8 @@ function createDefaultDatabaseDependency(
     billingStore: (identity: Readonly<{ tenantId: string; userId: string }>) =>
       createPostgresBillingFulfillmentStore(database.pool, identity),
     providerWebhooks: createPostgresProviderWebhookRepository(database.pool),
+    billingQuotes: createPostgresBillingQuoteRepository(database.pool),
+    platformSessions: createPostgresPlatformSessionRepository(database.pool),
     channelAdmission: createPostgresChannelAdmission(database.pool),
     close: database.close,
   });
@@ -279,6 +297,42 @@ export async function startGatewayService(
         : `https://${rawPublicBaseUrl}`)
     : undefined;
 
+  let customerAuth: CustomerAuthService | undefined = options.appOptions?.customerAuth;
+  let customerSessionAuthorizer: PlatformCustomerSessionAuthorizer | undefined;
+  const platformTenantRaw = env["MASANAWA_PLATFORM_TENANT_ID"]?.trim();
+  const otpPepper = env["MASANAWA_AUTH_OTP_PEPPER"]?.trim();
+  if (platformTenantRaw && otpPepper && database.platformSessions) {
+    const platformTenantId = parseCanonicalId("tenant", platformTenantRaw);
+    customerSessionAuthorizer = createPlatformCustomerSessionAuthorizer({
+      repository: database.platformSessions,
+    });
+    // A caller-injected authorizer wins in tests/controlled embedding. Otherwise
+    // public platform sessions supersede the Alpha shared token for money routes.
+    if (!options.financialAuthorizer) {
+      financialAuthorizer = createPlatformSessionFinancialAuthorizer({
+        repository: database.platformSessions,
+      });
+    }
+
+    if (!customerAuth) {
+      const resendApiKey = env["RESEND_API_KEY"]?.trim();
+      const resendFrom = env["MASANAWA_AUTH_EMAIL_FROM"]?.trim();
+      const smsEndpoint = env["MASANAWA_AUTH_SMS_ENDPOINT"]?.trim();
+      const smsToken = env["MASANAWA_AUTH_SMS_TOKEN"]?.trim();
+      customerAuth = createCustomerAuthService({
+        repository: database.platformSessions,
+        tenantId: platformTenantId,
+        otpPepper,
+        ...(resendApiKey && resendFrom
+          ? { emailDelivery: createResendOtpDelivery({ apiKey: resendApiKey, from: resendFrom }) }
+          : {}),
+        ...(smsEndpoint && smsToken
+          ? { smsDelivery: createHttpSmsOtpDelivery({ endpoint: smsEndpoint, bearerToken: smsToken }) }
+          : {}),
+      });
+    }
+  }
+
   const composedFinancial =
     options.appOptions?.financial ??
     (financialAuthorizer &&
@@ -331,31 +385,99 @@ export async function startGatewayService(
       : undefined);
 
 
+  const flutterwaveSecretKey = env["FLUTTERWAVE_SECRET_KEY"]?.trim();
+  const flutterwaveRelayUrl = env["FLUTTERWAVE_RELAY_URL"]?.trim();
+  const flutterwaveRelayToken = env["MASANAWA_FLUTTERWAVE_RELAY_TOKEN"]?.trim();
+  const flutterwaveRelayProtocol =
+    env["FLUTTERWAVE_RELAY_PROTOCOL"] === "dual-header" ? "dual-header" as const : "bearer" as const;
+  const flutterwaveTransport =
+    flutterwaveSecretKey &&
+    (Boolean(flutterwaveRelayUrl) === Boolean(flutterwaveRelayToken))
+      ? new FlutterwaveHttpTransport(
+          flutterwaveRelayUrl && flutterwaveRelayToken
+            ? {
+                baseUrl: flutterwaveRelayUrl,
+                relayToken: flutterwaveRelayToken,
+                relayProtocol: flutterwaveRelayProtocol,
+              }
+            : {},
+        )
+      : undefined;
+  const flutterwaveBills =
+    flutterwaveSecretKey && flutterwaveTransport
+      ? new FlutterwaveBillsClient({
+          secretKey: flutterwaveSecretKey,
+          transport: flutterwaveTransport,
+          country: "NG",
+        })
+      : undefined;
+  const flutterwaveFunding =
+    flutterwaveSecretKey && flutterwaveTransport
+      ? new FlutterwaveFundingClient({
+          secretKey: flutterwaveSecretKey,
+          transport: flutterwaveTransport,
+        })
+      : undefined;
+
   const composedBilling =
     options.appOptions?.billingFinancial ??
     (env["FLUTTERWAVE_BILLS_ENABLED"] === "true" &&
     financialAuthorizer &&
     database.billingStore &&
+    database.billingQuotes &&
     database.providerWebhooks &&
-    env["FLUTTERWAVE_SECRET_KEY"]?.trim() &&
+    flutterwaveSecretKey &&
+    flutterwaveBills &&
     env["FLUTTERWAVE_WEBHOOK_SECRET_HASH"]?.trim() &&
     env["FLUTTERWAVE_WEBHOOK_URL"]?.trim()
       ? createBillingFinancialService({
           billingStore: database.billingStore,
           webhookRepository: database.providerWebhooks,
           authorizer: financialAuthorizer,
-          flutterwaveSecretKey: env["FLUTTERWAVE_SECRET_KEY"],
+          flutterwaveSecretKey,
           flutterwaveWebhookHash: env["FLUTTERWAVE_WEBHOOK_SECRET_HASH"],
           flutterwaveWebhookUrl: env["FLUTTERWAVE_WEBHOOK_URL"],
-          ...(env["FLUTTERWAVE_RELAY_URL"]?.trim()
-            ? { flutterwaveRelayUrl: env["FLUTTERWAVE_RELAY_URL"] }
-            : {}),
-          ...(env["FLUTTERWAVE_RELAY_PROTOCOL"] === "dual-header"
+          providerClient: flutterwaveBills,
+          billingFunding: database.billingQuotes,
+          ...(flutterwaveRelayUrl ? { flutterwaveRelayUrl } : {}),
+          ...(flutterwaveRelayProtocol === "dual-header"
             ? { flutterwaveRelayProtocol: "dual-header" as const }
             : {}),
-          ...(env["MASANAWA_FLUTTERWAVE_RELAY_TOKEN"]?.trim()
-            ? { flutterwaveRelayToken: env["MASANAWA_FLUTTERWAVE_RELAY_TOKEN"] }
-            : {}),
+          ...(flutterwaveRelayToken ? { flutterwaveRelayToken } : {}),
+        })
+      : undefined);
+
+  const feeBasisPoints = Number(env["MASANAWA_BILLING_FEE_BPS"] ?? "0");
+  const feeFixedKobo = Number(env["MASANAWA_BILLING_FEE_FIXED_KOBO"] ?? "0");
+  const billingActionSecret = env["MASANAWA_BILLING_ACTION_SECRET"]?.trim();
+  const billingRedirectUrl =
+    env["MASANAWA_BILLING_REDIRECT_URL"]?.trim() ??
+    (publicBaseUrl ? `${publicBaseUrl.replace(/\/$/u, "")}/billing/return` : undefined);
+  const composedBillingCheckout: BillingCheckoutService | undefined =
+    options.appOptions?.billingCheckout ??
+    (env["FLUTTERWAVE_BILLS_ENABLED"] === "true" &&
+    customerSessionAuthorizer &&
+    database.billingQuotes &&
+    flutterwaveBills &&
+    flutterwaveFunding &&
+    composedBilling &&
+    billingActionSecret &&
+    billingRedirectUrl &&
+    Number.isSafeInteger(feeBasisPoints) &&
+    feeBasisPoints >= 0 &&
+    feeBasisPoints <= 10_000 &&
+    Number.isSafeInteger(feeFixedKobo) &&
+    feeFixedKobo >= 0
+      ? createBillingCheckoutService({
+          sessions: customerSessionAuthorizer,
+          quotes: database.billingQuotes,
+          catalog: flutterwaveBills,
+          funding: flutterwaveFunding,
+          billing: composedBilling,
+          actionSecret: billingActionSecret,
+          redirectUrl: billingRedirectUrl,
+          feeBasisPoints,
+          feeFixedKobo,
         })
       : undefined);
 
@@ -401,6 +523,8 @@ export async function startGatewayService(
         : {}),
       ...(composedFinancial ? { financial: composedFinancial } : {}),
       ...(composedBilling ? { billingFinancial: composedBilling } : {}),
+      ...(customerAuth ? { customerAuth } : {}),
+      ...(composedBillingCheckout ? { billingCheckout: composedBillingCheckout } : {}),
       ...(composedWhatsAppIngress ? { whatsAppIngress: composedWhatsAppIngress } : {}),
       ...(composedTelegramIngress ? { telegramIngress: composedTelegramIngress } : {}),
       readinessChecks: [
