@@ -120,3 +120,17 @@ export interface CharacterVersionReferenceReader {
     readonly characterVersionId: CharacterVersionId;
   }): Promise<void>;
 }
+
+
+/** Narrow runtime read port. Relationship existence does not grant execution authority. */
+export interface UserRelationshipReader {
+  readForUserCharacter(input: {
+    readonly tenantId: TenantId;
+    readonly userId: UserId;
+    readonly characterId: CharacterId;
+  }): Promise<UserCharacterRelationship | null>;
+  listForUser(input: {
+    readonly tenantId: TenantId;
+    readonly userId: UserId;
+  }): Promise<readonly UserCharacterRelationship[]>;
+}
