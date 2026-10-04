@@ -78,4 +78,51 @@ describe("NOWPayments catalog", () => {
     const routes = await client.listEligiblePaymentRoutes();
     expect(routes.map((x) => x.route.providerCode)).toEqual(["BTC", "USDTTRC20"]);
   });
+
+  it("checks provider minimum before requesting an estimate", async () => {
+    const requested: string[] = [];
+    const client = new NowPaymentsClient({
+      apiKey: "secret",
+      fetch: async (input) => {
+        const url = String(input);
+        requested.push(url);
+        if (url.includes("/min-amount?")) {
+          return new Response(
+            JSON.stringify({
+              currency_from: "USD",
+              currency_to: "USDTTRC20",
+              min_amount: 5,
+            }),
+            { status: 200, headers: { "content-type": "application/json" } },
+          );
+        }
+        return new Response(
+          JSON.stringify({
+            currency_from: "USD",
+            currency_to: "USDTTRC20",
+            amount_from: 10,
+            estimated_amount: 9.8,
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      },
+    });
+
+    await expect(
+      client.quotePayment({
+        amount: 4,
+        currencyFrom: "USD",
+        currencyTo: "USDTTRC20",
+      }),
+    ).rejects.toThrow("nowpayments.amount.below_minimum");
+    expect(requested).toHaveLength(1);
+
+    const quote = await client.quotePayment({
+      amount: 10,
+      currencyFrom: "USD",
+      currencyTo: "USDTTRC20",
+    });
+    expect(quote.estimate.estimatedAmount).toBe(9.8);
+    expect(requested).toHaveLength(3);
+  });
 });
