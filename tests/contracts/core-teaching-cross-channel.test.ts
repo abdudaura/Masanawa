@@ -5,6 +5,7 @@ import {
   type RequestId,
 } from "@masanawa/contracts";
 import {
+  createTeachingRuntimeBinding,
   TeachingRuntimeCoordinator,
   type TeachingProgressKey,
   type TeachingProgressPort,
@@ -55,6 +56,15 @@ function plan(): TeachingLessonPlan {
     resources: [],
     uncertaintyNotes: [],
   };
+}
+
+function binding(active: TeachingLessonPlan) {
+  return createTeachingRuntimeBinding({
+    relationshipId: active.learner.relationshipId,
+    skillVersionId: active.skillVersionId,
+    skillKey: "core.teaching",
+    guideContentHash: `sha256:${"a".repeat(64)}`,
+  });
 }
 
 function rubric(active: TeachingLessonPlan): TeachingSelectableExerciseRubric {
@@ -136,7 +146,7 @@ describe("Core Teaching cross-channel acceptance", () => {
       progress: durable,
       presentation: surfaces.adapter("app"),
     });
-    const appStart = await app.resume(active);
+    const appStart = await app.resume(binding(active), active);
     expect(appStart).toMatchObject({
       kind: "lesson-step",
       continuationReason: "start",
@@ -146,7 +156,7 @@ describe("Core Teaching cross-channel acceptance", () => {
     const requestId = createCanonicalId("request");
     surfaces.failNext = true;
     await expect(
-      app.submitSelection({
+      app.submitSelection(binding(active), {
         requestId,
         plan: active,
         rubric: rubric(active),
@@ -173,7 +183,7 @@ describe("Core Teaching cross-channel acceptance", () => {
       progress: durable,
       presentation: surfaces.adapter("whatsapp"),
     });
-    const retry = await whatsapp.submitSelection({
+    const retry = await whatsapp.submitSelection(binding(active), {
       requestId,
       plan: active,
       rubric: rubric(active),
@@ -200,7 +210,7 @@ describe("Core Teaching cross-channel acceptance", () => {
       progress: durable,
       presentation: surfaces.adapter("telegram"),
     });
-    const resumed = await telegram.resume(active);
+    const resumed = await telegram.resume(binding(active), active);
     expect(resumed).toMatchObject({
       kind: "lesson-step",
       continuationReason: "advance",
@@ -220,7 +230,7 @@ describe("Core Teaching cross-channel acceptance", () => {
     const coordinator = new TeachingRuntimeCoordinator({ progress: durable });
     const requestId = createCanonicalId("request");
 
-    await coordinator.submitSelection({
+    await coordinator.submitSelection(binding(plan), {
       requestId,
       plan: active,
       rubric: rubric(active),
@@ -241,7 +251,7 @@ describe("Core Teaching cross-channel acceptance", () => {
         relationshipId: createCanonicalId("relationship"),
       },
     };
-    const otherResume = await coordinator.resume(other);
+    const otherResume = await coordinator.resume(binding(other), other);
     expect(otherResume).toMatchObject({
       kind: "lesson-step",
       continuationReason: "start",
@@ -255,7 +265,7 @@ describe("Core Teaching cross-channel acceptance", () => {
     const app = new TeachingRuntimeCoordinator({ progress: durable });
     const requestId = createCanonicalId("request");
 
-    await app.submitSelection({
+    await app.submitSelection(binding(active), {
       requestId,
       plan: active,
       rubric: rubric(active),
@@ -271,7 +281,7 @@ describe("Core Teaching cross-channel acceptance", () => {
 
     const whatsapp = new TeachingRuntimeCoordinator({ progress: durable });
     await expect(
-      whatsapp.submitSelection({
+      whatsapp.submitSelection(binding(active), {
         requestId,
         plan: active,
         rubric: rubric(active),
