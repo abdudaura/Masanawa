@@ -2445,6 +2445,7 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
   StreamSubscription<Duration>? _positionSub;
   bool _playing = false;
   bool _broken = false;
+  bool _speakerOn = true;
   Duration _position = Duration.zero;
   Duration _duration = Duration.zero;
   double _speed = 1;
@@ -2491,7 +2492,23 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
     try {
       if (_broken && mounted) setState(() => _broken = false);
       final session = await AudioSession.instance;
-      await session.configure(AudioSessionConfiguration.speech());
+      await session.configure(
+        AudioSessionConfiguration(
+          avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
+          avAudioSessionCategoryOptions:
+              AVAudioSessionCategoryOptions.allowBluetooth,
+          avAudioSessionMode: AVAudioSessionMode.spokenAudio,
+          androidAudioAttributes: const AndroidAudioAttributes(
+            contentType: AndroidAudioContentType.speech,
+            usage: AndroidAudioUsage.voiceCommunication,
+          ),
+          androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
+          androidWillPauseWhenDucked: true,
+        ),
+      );
+      try {
+        await AndroidAudioManager().setSpeakerphoneOn(_speakerOn);
+      } catch (_) {}
       await _ensurePlayer();
       if (_playing) {
         await _player!.pause();
@@ -2533,6 +2550,16 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
         Duration(milliseconds: (totalMs * fraction).round()),
       );
     } catch (_) {}
+  }
+
+  Future<void> _toggleAudioRoute() async {
+    final next = !_speakerOn;
+    try {
+      await AndroidAudioManager().setSpeakerphoneOn(next);
+      if (mounted) setState(() => _speakerOn = next);
+    } catch (_) {
+      if (mounted) setState(() => _speakerOn = next);
+    }
   }
 
   Future<void> _cycleSpeed() async {
@@ -2639,8 +2666,17 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
               ],
             ),
           ),
-          const SizedBox(width: 4),
-          Icon(Icons.graphic_eq, size: 18, color: u.textMuted),
+          const SizedBox(width: 2),
+          IconButton(
+            tooltip: _speakerOn ? 'Use earpiece' : 'Use speaker',
+            visualDensity: VisualDensity.compact,
+            iconSize: 18,
+            onPressed: _toggleAudioRoute,
+            icon: Icon(
+              _speakerOn ? Icons.volume_up_outlined : Icons.hearing_outlined,
+              color: u.textMuted,
+            ),
+          ),
         ],
       ),
     );
