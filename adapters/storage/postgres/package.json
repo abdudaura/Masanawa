@@ -25,7 +25,8 @@
     "@masanawa/tools": "workspace:*",
     "@masanawa/world": "workspace:*",
     "pg": "8.23.0",
-    "@masanawa/agents": "workspace:*"
+    "@masanawa/agents": "workspace:*",
+    "@masanawa/commerce": "workspace:*"
   },
   "devDependencies": {
     "@types/pg": "8.23.1",
