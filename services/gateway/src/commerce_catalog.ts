@@ -5,16 +5,42 @@ import {
   type TenantId,
   type UserId,
 } from "@masanawa/contracts";
-import type { CommerceRepository, CommerceQuote } from "@masanawa/commerce";
 import type {
-  CharacterOwnershipReader,
-  UserRelationshipReader,
-} from "@masanawa/identity";
+  CommerceRepository,
+  CommerceQuote,
+  OfferId,
+} from "@masanawa/commerce";
 import {
   evaluateSkillEligibility,
   restoreSkillRegistry,
   type SkillRepository,
 } from "@masanawa/skills";
+
+export interface UserRelationshipReader {
+  readForUserCharacter(input: Readonly<{
+    tenantId: TenantId;
+    userId: UserId;
+    characterId: import("@masanawa/contracts").CharacterId;
+  }>): Promise<unknown | null>;
+}
+
+export interface CharacterOwnershipReader {
+  readForCharacter(input: Readonly<{
+    tenantId: TenantId;
+    characterId: import("@masanawa/contracts").CharacterId;
+  }>): Promise<Readonly<{
+    kind: "platform" | "personal-clone";
+    ownerUserId: UserId | null;
+  }> | null>;
+}
+
+function parseOfferId(value: string): OfferId {
+  const normalized = value.trim();
+  if (!/^offer_[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(normalized)) {
+    throw new TypeError("offerId is invalid");
+  }
+  return normalized as OfferId;
+}
 
 export interface CommerceUserAuthority {
   readonly tenantId: TenantId;
