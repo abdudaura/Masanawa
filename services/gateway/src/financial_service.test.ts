@@ -192,6 +192,8 @@ function setup(
       return value;
     }),
     beginProviderDispatch: vi.fn(async () => ({ intent: currentIntent, shouldDispatch })),
+    readAggregateLiability: vi.fn(async () =>
+      pooledCustodyLiabilityCoverageSatisfied === false ? "101" : "0"),
   } as unknown as CryptoRepository;
   const service = createFinancialService({
     authorizer: createFixedFinancialAuthorizer({ token: "fixture-token", tenantId, userId }),
@@ -203,9 +205,6 @@ function setup(
       account: evidence,
       routes: [{ providerCode: "USDTTRC20", asset: "USDT", network: "tron",
         operations: { deposit: true, convert: null, withdraw: true }, estimatedNetworkFeeUsd: null }],
-      ...(pooledCustodyLiabilityCoverageSatisfied === undefined
-        ? {}
-        : { pooledCustodyLiabilityCoverageSatisfied }),
     }) }),
     ...(enableConversions ? {
       conversionEvidence: async () => ({
@@ -216,9 +215,6 @@ function setup(
           { providerCode: "BTC", asset: "BTC", network: null,
             operations: { deposit: true, convert: true, withdraw: true }, estimatedNetworkFeeUsd: null },
         ],
-        ...(pooledCustodyLiabilityCoverageSatisfied === undefined
-          ? {}
-          : { pooledCustodyLiabilityCoverageSatisfied }),
       }),
     } : {}),
     ...(payoutVerificationCodeProvider === undefined
@@ -695,10 +691,12 @@ describe("financial service recovery and admission", () => {
   it("fresh account and exact-route evidence qualify withdrawals", async () => {
     expect((await setup(intent, account).service.capabilities({ authorizationHeader })).withdrawals).toBe(true);
   });
-  it("allows pooled custody only when the canonical ledger proves aggregate liability coverage", async () => {
+  it("allows pooled custody only when live custody covers canonical aggregate liabilities", async () => {
     const pooled = { ...account, customerManagementEnabled: false };
-    expect((await setup(intent, pooled).service.capabilities({ authorizationHeader })).withdrawals).toBe(false);
-    expect((await setup(intent, pooled, true).service.capabilities({ authorizationHeader })).withdrawals).toBe(true);
+    expect((await setup(intent, pooled, false).service.capabilities({ authorizationHeader })).withdrawals)
+      .toBe(false);
+    expect((await setup(intent, pooled, true).service.capabilities({ authorizationHeader })).withdrawals)
+      .toBe(true);
   });
   it.each([
     { custodyEnabled: false }, { payoutEnabled: null }, { customerManagementEnabled: false },
