@@ -11,6 +11,7 @@ import type {
 } from "./teaching.js";
 import {
   createTeachingRuntimeBinding,
+  createTeachingRuntimeBindingFromAdmission,
   createTeachingSelectionActionBinding,
   fingerprintTeachingLessonPlan,
   fingerprintTeachingSelectionAttempt,
@@ -874,5 +875,82 @@ describe("Teaching lesson plan identity", () => {
     await expect(
       coordinator.resume(binding(drifted), drifted),
     ).rejects.toThrow(/different lesson plan/);
+  });
+});
+
+
+describe("Teaching admission evidence bridge", () => {
+  it("creates a Teaching runtime binding from the exact admitted root revision pin", () => {
+    const active = lesson();
+    const result = createTeachingRuntimeBindingFromAdmission({
+      relationshipId: active.learner.relationshipId,
+      admission: {
+        revisionPin: {
+          rootSkillVersionId: active.skillVersionId,
+          orderedVersions: [
+            {
+              skillVersionId: active.skillVersionId,
+              key: "core.teaching",
+              definitionHash: `sha256:${"d".repeat(64)}`,
+            },
+          ],
+          contentHash: `sha256:${"e".repeat(64)}`,
+        },
+      },
+      guideContentHash: `sha256:${"a".repeat(64)}`,
+    });
+
+    expect(result).toEqual({
+      relationshipId: active.learner.relationshipId,
+      skillVersionId: active.skillVersionId,
+      skillKey: "core.teaching",
+      guideContentHash: `sha256:${"a".repeat(64)}`,
+    });
+  });
+
+  it("refuses an admitted non-Teaching root even when the SkillVersionId is canonical", () => {
+    const active = lesson();
+    expect(() =>
+      createTeachingRuntimeBindingFromAdmission({
+        relationshipId: active.learner.relationshipId,
+        admission: {
+          revisionPin: {
+            rootSkillVersionId: active.skillVersionId,
+            orderedVersions: [
+              {
+                skillVersionId: active.skillVersionId,
+                key: "research.web",
+                definitionHash: `sha256:${"d".repeat(64)}`,
+              },
+            ],
+            contentHash: `sha256:${"e".repeat(64)}`,
+          },
+        },
+        guideContentHash: `sha256:${"a".repeat(64)}`,
+      }),
+    ).toThrow(/must pin core\.teaching/);
+  });
+
+  it("refuses malformed admission revision evidence", () => {
+    const active = lesson();
+    expect(() =>
+      createTeachingRuntimeBindingFromAdmission({
+        relationshipId: active.learner.relationshipId,
+        admission: {
+          revisionPin: {
+            rootSkillVersionId: active.skillVersionId,
+            orderedVersions: [
+              {
+                skillVersionId: active.skillVersionId,
+                key: "core.teaching",
+                definitionHash: `sha256:${"d".repeat(64)}`,
+              },
+            ],
+            contentHash: "not-a-hash",
+          },
+        },
+        guideContentHash: `sha256:${"a".repeat(64)}`,
+      }),
+    ).toThrow(/revision pin hash/);
   });
 });
