@@ -153,4 +153,52 @@ describeDatabase("persistent Agent Float allocation PostgreSQL acceptance", () =
     await expect(pool.query("DELETE FROM commerce.ledger_entries WHERE tenant_id=$1 AND ledger_entry_id=$2",
       [f.command.tenantId, receipt.ledgerEntryId])).rejects.toThrow();
   });
+
+  it.each(["amount", "customer", "character", "reason", "timestamp", "quote", "fulfillment", "source", "destination"])(
+    "rejects a persisted receipt linked to mismatched ledger %s", async mismatch => {
+      const f = await fixture();
+      const createdAt = nowInstant();
+      const ledgerEntryId = createCanonicalId("ledger-entry");
+      await f.repository.postTransfer({
+        schemaVersion: 1, tenantId: f.command.tenantId, ledgerEntryId,
+        debit: mismatch === "source"
+          ? { tenantId: f.command.tenantId, kind: "external-clearing", userId: null, characterId: null }
+          : f.customer,
+        credit: mismatch === "destination" ? { ...f.customer, userId: createCanonicalId("user") } : {
+          ...f.agentFloat,
+          userId: mismatch === "customer" ? createCanonicalId("user") : f.command.userId,
+          characterId: mismatch === "character" ? createCanonicalId("character") : f.command.characterId,
+        },
+        amountCredits: mismatch === "amount" ? 50 : f.command.amountCredits,
+        reason: mismatch === "reason" ? "customer-topup" : "agent-float-topup",
+        quoteId: mismatch === "quote" ? createCanonicalId("quote") : null,
+        fulfillmentId: mismatch === "fulfillment" ? createCanonicalId("fulfillment") : null,
+        createdAt,
+      });
+      const receipt = { ...f.command, ledgerEntryId,
+        createdAt: mismatch === "timestamp" ? "2000-01-01T00:00:00.000Z" : createdAt };
+      await expect(pool.query(`INSERT INTO commerce.agent_float_allocations(
+        tenant_id,user_id,request_id,character_id,amount_credits,ledger_entry_id,definition,created_at
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8)`, [
+        receipt.tenantId, receipt.userId, receipt.requestId, receipt.characterId,
+        receipt.amountCredits, ledgerEntryId, JSON.stringify(receipt), receipt.createdAt,
+      ])).rejects.toMatchObject({ code: "23514" });
+      expect(await f.repository.readAgentFloatAllocation(f.command)).toBeNull();
+    },
+  );
+
+  it("cannot attach a second request identity to an already receipted transfer", async () => {
+    const f = await fixture();
+    const receipt = await f.repository.allocateAgentFloat(f.command);
+    const alias = { ...receipt, requestId: createCanonicalId("request") };
+    await expect(pool.query(`INSERT INTO commerce.agent_float_allocations(
+      tenant_id,user_id,request_id,character_id,amount_credits,ledger_entry_id,definition,created_at
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8)`, [
+      alias.tenantId, alias.userId, alias.requestId, alias.characterId,
+      alias.amountCredits, alias.ledgerEntryId, JSON.stringify(alias), alias.createdAt,
+    ])).rejects.toMatchObject({ code: "23505" });
+    expect(await f.repository.readAgentFloatAllocation(alias)).toBeNull();
+    expect(await f.repository.readBalance(f.customer)).toBe(40);
+    expect(await f.repository.readBalance(f.agentFloat)).toBe(60);
+  });
 });

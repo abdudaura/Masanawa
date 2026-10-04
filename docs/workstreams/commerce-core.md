@@ -44,14 +44,20 @@ were present in main/open PRs at selection time. Recheck before writes and commi
 
 - Implemented: immutable tenant/user/RequestId command receipts, atomic customer-credit
   to Agent Float transfer, exact replay, changed-payload conflict rejection and scoped reads.
+  Database receipt insertion now validates exact ledger custody (accounts, amount, reason,
+  timestamp and absence of quote/fulfillment links); ledger aliases are also rejected.
 - Verified: claim published and read back before edits; 39 Commerce/architecture tests;
-  8 SQL persistence acceptance cases on PGlite PostgreSQL 18.3; Commerce, Postgres and
+  18 SQL persistence acceptance cases on PGlite PostgreSQL 18.3; Commerce, Postgres and
   Gateway strict typechecks; Gateway dependency build; whitespace checks.
 - PGlite serializes its connections. Separate-session PostgreSQL concurrency qualification
   remains required using the checked-in integration suite and MASANAWA_TEST_DATABASE_URL.
 - Deployed: no. Migration 0004 is new and unapplied. Tasks 133–134 remain open.
 - Rechecked: main remains at the base SHA; PRs 89, 91 and 44 do not overlap owned paths.
-- Implementation commit: fea199c3f11f73e4faca9f09513739ce43e662ff.
+- Initial implementation commit: fea199c3f11f73e4faca9f09513739ce43e662ff.
+- Custody hardening: publication SHA recorded in PR evidence.
+- Latest checks: all 18 SQL cases passed on a fresh PGlite database, including nine
+  mismatched-custody variants and duplicate-ledger alias rejection; strict Postgres
+  typecheck and whitespace checks passed. Earlier 39 test/build evidence remains valid.
 
 ### Next integration step
 
