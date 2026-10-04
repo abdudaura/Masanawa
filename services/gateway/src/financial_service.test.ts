@@ -385,6 +385,158 @@ describe("financial service recovery and admission", () => {
     })).rejects.toThrow("financial.crypto.withdrawal_below_minimum");
     expect(crypto.reserveWithdrawal).not.toHaveBeenCalled();
   });
+  it("advertises conversions only with fresh custody, conversion and two-route evidence", async () => {
+    expect((await setup(intent, account).service.capabilities({ authorizationHeader })).conversions)
+      .toBe(false);
+    const enabled = setup(
+      intent, account, undefined, undefined, undefined, false, true,
+    ).service;
+    await expect(enabled.capabilities({ authorizationHeader }))
+      .resolves.toMatchObject({ conversions: true, conversionReason: null });
+    const stale = { ...account, observedAt: "2026-10-04T20:00:00Z" };
+    const staleService = setup(
+      intent, stale, undefined, undefined, undefined, false, true,
+    ).service;
+    await expect(staleService.capabilities({ authorizationHeader }))
+      .resolves.toMatchObject({ conversions: false });
+  });
+
+  it("quotes a qualified custody conversion without reserving user balance", async () => {
+    const { service, crypto, fetch } = setup(
+      null, account, undefined, undefined, undefined, false, true,
+    );
+    await expect(service.quoteConversion({
+      authorizationHeader,
+      providerCode: "USDTTRC20",
+      targetProviderCode: "BTC",
+      amount: "10",
+    })).resolves.toEqual({
+      providerCode: "USDTTRC20",
+      targetProviderCode: "BTC",
+      amount: "10",
+      minimumAmount: "1",
+      estimatedTargetAmount: "0.00016",
+      quotedAt: at,
+    });
+    expect(crypto.reserveConversion).not.toHaveBeenCalled();
+    expect(fetch).toHaveBeenCalledTimes(3);
+  });
+
+  it("reserves, dispatches and binds a custody conversion exactly once", async () => {
+    const { service, crypto, fetch } = setup(
+      null, account, undefined, undefined, undefined, true, true,
+    );
+    await expect(service.createConversion({
+      authorizationHeader,
+      requestId,
+      providerCode: "USDTTRC20",
+      targetProviderCode: "BTC",
+      amount: "10",
+    })).resolves.toMatchObject({
+      requestId,
+      asset: "USDTTRC20",
+      targetAsset: "BTC",
+      amount: "10",
+      targetAmount: null,
+      status: "processing",
+      providerConversionId: "conversion-1",
+    });
+    expect(crypto.reserveConversion).toHaveBeenCalledOnce();
+    expect(crypto.bindProviderConversion).toHaveBeenCalledWith(expect.objectContaining({
+      tenantId, userId, requestId, providerConversionId: "conversion-1",
+    }));
+    const urls = fetch.mock.calls.map((call) => String(call[0]));
+    expect(urls).toContain("https://api.nowpayments.io/v1/conversion");
+  });
+
+  it("reconciles a completed conversion to the exact target amount", async () => {
+    const { service, crypto } = setup(
+      conversionIntent, account, undefined, undefined, undefined, false, true,
+    );
+    await expect(service.refreshConversion({ authorizationHeader, requestId }))
+      .resolves.toMatchObject({
+        status: "succeeded",
+        providerConversionId: "conversion-1",
+        targetAmount: "0.00016",
+      });
+    expect(crypto.settleConversion).toHaveBeenCalledWith(expect.objectContaining({
+      tenantId, userId, requestId, succeeded: true,
+      targetAmount: "0.00016", providerReference: "conversion-1",
+    }));
+  });
+
+  it("rejects changed provider conversion evidence before settlement", async () => {
+    const { service, crypto, fetch } = setup(
+      conversionIntent, account, undefined, undefined, undefined, false, true,
+    );
+    fetch.mockImplementation(async (request: Parameters<typeof globalThis.fetch>[0]) => {
+      const url = String(request);
+      if (url.endsWith("/auth")) return new Response(JSON.stringify({ token: "fixture-jwt" }));
+      if (url.includes("/conversion?")) return new Response(JSON.stringify({
+        data: [{
+          conversion_id: "conversion-1",
+          status: "completed",
+          from_currency: "usdttrc20",
+          to_currency: "eth",
+          from_amount: "10",
+          to_amount: "0.004",
+        }],
+      }));
+      return new Response("{}");
+    });
+    await expect(service.refreshConversion({ authorizationHeader, requestId }))
+      .rejects.toThrow("nowpayments.conversion.evidence_mismatch");
+    expect(crypto.settleConversion).not.toHaveBeenCalled();
+  });
+
+  it("rejects changed conversion replay before provider or balance access", async () => {
+    const { service, crypto, fetch } = setup(conversionIntent);
+    await expect(service.createConversion({
+      authorizationHeader,
+      requestId,
+      providerCode: "USDTTRC20",
+      targetProviderCode: "ETH",
+      amount: "10",
+    })).rejects.toThrow("financial.crypto.request_conflict");
+    expect(crypto.reserveConversion).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("rejects insufficient merchant custody before reserving a conversion", async () => {
+    const { service, crypto, fetch } = setup(
+      null, account, undefined, undefined, undefined, false, true,
+    );
+    fetch.mockImplementation(async (request: Parameters<typeof globalThis.fetch>[0]) => {
+      const url = String(request);
+      if (url.includes("/min-amount?")) {
+        return new Response(JSON.stringify({
+          currency_from: "usdttrc20", currency_to: "btc", min_amount: "1",
+        }));
+      }
+      if (url.includes("/estimate?")) {
+        return new Response(JSON.stringify({
+          currency_from: "usdttrc20", currency_to: "btc",
+          amount_from: "10", estimated_amount: "0.00016",
+        }));
+      }
+      if (url.endsWith("/balance")) {
+        return new Response(JSON.stringify({
+          usdttrc20: { amount: "9.999999", pendingAmount: "0" },
+          btc: { amount: "1", pendingAmount: "0" },
+        }));
+      }
+      return new Response("{}");
+    });
+    await expect(service.createConversion({
+      authorizationHeader,
+      requestId,
+      providerCode: "USDTTRC20",
+      targetProviderCode: "BTC",
+      amount: "10",
+    })).rejects.toThrow("financial.crypto.provider_balance_unavailable");
+    expect(crypto.reserveConversion).not.toHaveBeenCalled();
+  });
+
   it("settles an exact signed terminal payout callback once", async () => {
     const { service, crypto } = setup(withdrawalIntent, account);
     const payout = {
