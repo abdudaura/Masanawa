@@ -8,4 +8,4 @@ Continues #104 without overwriting its branch. Exact owned paths: apps/mobile/li
 
 No Commerce, Teaching, channel, Gateway, migration, deployment or root-config ownership is claimed. User assignment is the continuation authority; PR #104 remains the integration dependency. Findings: initial push links emitted before app subscribes; foreground pushes navigate immediately; OS links have no native Dart delivery; Live audio restarts AudioTrack for every chunk; async socket events can overlap; mute before setup does not persist; call interruptions are not subscribed.
 
-Status: claim published before edits; implementation/checks pending. Flutter/Android SDK absent in this workspace; real Flutter compile and device verification remain required.
+Status: implementation review complete; 11 Flutter regression cases added but not executable here (Flutter missing, command exit 127). Delimiter/conflict-marker scan and Android XML parse passed. See docs/MOBILE-SHELL-RECOVERY.md for findings, changes, build commands and device acceptance. PR #125 is stacked on #104 and remains draft; no main merge/deployment/APK qualification is claimed.

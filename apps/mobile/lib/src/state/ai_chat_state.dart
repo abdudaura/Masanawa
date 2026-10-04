@@ -17,6 +17,7 @@ import '../core/live_pcm_audio.dart';
 import '../core/network/api_client.dart';
 import '../core/request_id.dart';
 import '../agents/agent_shell.dart';
+import '../core/mobile_push.dart';
 import '../chat/shell_action_coordinator.dart';
 import '../chat/shell_action_journal.dart';
 import '../chat/shell_document.dart';
@@ -396,6 +397,8 @@ class AiChatController extends Notifier<AiChatState> {
       }
       _eventSubscriptions.clear();
       _actionCoordinators.clear();
+      _eventCursors.clear();
+      state = state.copyWith(shellConfigs: {});
     });
     return const AiChatState();
   }
@@ -423,13 +426,17 @@ class AiChatController extends Notifier<AiChatState> {
 
   Future<void> syncFromServer(String characterId) async {
     final transport = _shellTransport;
+    final generation = _connectionGeneration;
+    final threadGeneration = _threadGenerations[characterId] ?? 0;
     if (transport == null || await _offlineNow()) return;
+    if (_disposed || generation != _connectionGeneration) return;
     try {
       final results = await Future.wait<dynamic>([
         transport.loadShellConfig(characterId),
         transport.loadHistory(characterId, limit: 100),
       ]);
-      if (_disposed) return;
+      if (_disposed || generation != _connectionGeneration ||
+          threadGeneration != (_threadGenerations[characterId] ?? 0)) return;
       final config = results[0] as AgentShellConfig;
       final history = results[1] as List<AgentHistoryMessage>;
       state = state.copyWith(
@@ -437,7 +444,13 @@ class AiChatController extends Notifier<AiChatState> {
       );
       _mergeServerHistory(characterId, history);
       await _reconcilePendingTurns(characterId, transport);
+      if (_disposed || generation != _connectionGeneration ||
+          threadGeneration != (_threadGenerations[characterId] ?? 0)) return;
       _startEventStream(characterId, transport);
+      if (state.openThreadId == characterId) {
+        unawaited(MobilePushService.instance
+            .registerForCharacter(transport, characterId).catchError((_) {}));
+      }
     } catch (_) {
       // A cached conversation remains usable while the canonical service is unavailable.
     }
@@ -499,7 +512,9 @@ class AiChatController extends Notifier<AiChatState> {
     String characterId,
     AgentShellTransport transport,
   ) async {
+    final generation = _connectionGeneration;
     final thread = threadOf(characterId);
+    final threadGeneration = _threadGenerations[characterId] ?? 0;
     for (final message in thread.messages.where(
       (m) => m.isUser &&
           m.requestId != null &&
@@ -507,6 +522,8 @@ class AiChatController extends Notifier<AiChatState> {
     )) {
       try {
         final status = await transport.turnStatus(characterId, message.requestId!);
+        if (_disposed || generation != _connectionGeneration ||
+            threadGeneration != (_threadGenerations[characterId] ?? 0)) return;
         if (status.state == 'completed') {
           _setDelivery(characterId, message.id, 'delivered');
           final assistantExists = threadOf(characterId).messages.any(
@@ -536,29 +553,41 @@ class AiChatController extends Notifier<AiChatState> {
     String characterId,
     AgentShellTransport transport,
   ) {
+    final generation = _connectionGeneration;
     if (_eventSubscriptions.containsKey(characterId)) return;
     _eventSubscriptions[characterId] = transport
         .events(characterId, after: _eventCursors[characterId])
         .listen(
       (event) {
+        if (_disposed || generation != _connectionGeneration) return;
         if (event.cursor.isNotEmpty) _eventCursors[characterId] = event.cursor;
         _applyShellEvent(characterId, event);
       },
       onError: (_) {
+        if (_disposed || generation != _connectionGeneration) return;
         _eventSubscriptions.remove(characterId);
         if (!_disposed && state.online) {
           Future<void>.delayed(
             const Duration(seconds: 2),
-            () => syncFromServer(characterId),
+            () {
+              if (!_disposed && generation == _connectionGeneration) {
+                unawaited(syncFromServer(characterId));
+              }
+            },
           );
         }
       },
       onDone: () {
+        if (_disposed || generation != _connectionGeneration) return;
         _eventSubscriptions.remove(characterId);
         if (!_disposed && state.online) {
           Future<void>.delayed(
             const Duration(milliseconds: 400),
-            () => syncFromServer(characterId),
+            () {
+              if (!_disposed && generation == _connectionGeneration) {
+                unawaited(syncFromServer(characterId));
+              }
+            },
           );
         }
       },
