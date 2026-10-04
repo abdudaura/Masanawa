@@ -896,7 +896,10 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
             { additionalProperties: false },
           ),
           body: Type.Object(
-            { quoteRevision: Type.Integer({ minimum: 1 }) },
+            {
+              quoteRevision: Type.Integer({ minimum: 1 }),
+              checkoutEmail: Type.Optional(Type.String({ minLength: 3, maxLength: 320 })),
+            },
             { additionalProperties: false },
           ),
         },
@@ -907,6 +910,9 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
             authorizationHeader: request.headers.authorization as string | undefined,
             quoteId: request.params.quoteId,
             quoteRevision: request.body.quoteRevision,
+            ...(request.body.checkoutEmail === undefined
+              ? {}
+              : { checkoutEmail: request.body.checkoutEmail }),
           });
         } catch (error) {
           return billingError(error, reply);
