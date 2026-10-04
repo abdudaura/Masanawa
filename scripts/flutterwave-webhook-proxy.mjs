@@ -8,6 +8,282 @@ import { resolve } from "node:path";
 export const FLUTTERWAVE_WEBHOOK_PATH = "/webhooks/flutterwave";
 export const MAX_WEBHOOK_BYTES = 1024 * 1024;
 
+export const FLUTTERWAVE_OPERATOR_TEST_PATH = "/ops/flutterwave/test-airtime";
+
+async function flutterwaveJson(secretKey, path, options = {}, fetchImpl = fetch) {
+  const response = await fetchImpl(`https://api.flutterwave.com${path}`, {
+    ...options,
+    headers: {
+      authorization: `Bearer ${secretKey}`,
+      accept: "application/json",
+      "content-type": "application/json",
+      ...(options.headers ?? {}),
+    },
+    redirect: "error",
+    signal: options.signal ?? AbortSignal.timeout(15000),
+  });
+  let body = null;
+  try {
+    body = await response.json();
+  } catch {
+    body = null;
+  }
+  return { status: response.status, body };
+}
+
+function providerMessage(body) {
+  return typeof body?.message === "string" ? body.message.slice(0, 300) : null;
+}
+
+function normalizeBillRows(body) {
+  return body?.status === "success" && Array.isArray(body?.data) ? body.data : null;
+}
+
+export async function executeOperatorAirtimeTest({
+  secretKey,
+  phone,
+  amount,
+  reference,
+  callbackUrl,
+  fetchImpl = fetch,
+}) {
+  const existing = await flutterwaveJson(
+    secretKey,
+    `/v3/bills/${encodeURIComponent(reference)}?verbose=1`,
+    { method: "GET" },
+    fetchImpl,
+  );
+  if (existing.status === 200 && existing.body?.status === "success") {
+    return {
+      outcome: "existing_reference",
+      providerStatus: existing.body?.data?.status ?? null,
+      reference,
+      providerReference: existing.body?.data?.flw_ref ?? existing.body?.data?.tx_ref ?? null,
+      httpStatus: existing.status,
+    };
+  }
+  if (existing.status !== 404) {
+    return {
+      outcome: "precheck_failed",
+      reference,
+      httpStatus: existing.status,
+      providerStatus: existing.body?.status ?? null,
+      message: providerMessage(existing.body),
+    };
+  }
+
+  const categories = await flutterwaveJson(
+    secretKey,
+    "/v3/top-bill-categories?country=NG",
+    { method: "GET" },
+    fetchImpl,
+  );
+  const categoryRows = normalizeBillRows(categories.body);
+  if (categories.status !== 200 || !categoryRows) {
+    return {
+      outcome: "catalog_unavailable",
+      stage: "categories",
+      reference,
+      httpStatus: categories.status,
+      providerStatus: categories.body?.status ?? null,
+      message: providerMessage(categories.body),
+    };
+  }
+  const airtimeCategory = categoryRows.find((row) =>
+    /airtime/i.test(`${row?.name ?? ""} ${row?.code ?? ""} ${row?.description ?? ""}`),
+  );
+  if (!airtimeCategory?.code) {
+    return { outcome: "catalog_unavailable", stage: "airtime_category", reference, httpStatus: 422 };
+  }
+
+  const billers = await flutterwaveJson(
+    secretKey,
+    `/v3/bills/${encodeURIComponent(String(airtimeCategory.code))}/billers?country=NG`,
+    { method: "GET" },
+    fetchImpl,
+  );
+  const billerRows = normalizeBillRows(billers.body);
+  if (billers.status !== 200 || !billerRows) {
+    return {
+      outcome: "catalog_unavailable",
+      stage: "billers",
+      reference,
+      httpStatus: billers.status,
+      providerStatus: billers.body?.status ?? null,
+      message: providerMessage(billers.body),
+    };
+  }
+  const airtel = billerRows.find((row) =>
+    /airtel/i.test(`${row?.name ?? ""} ${row?.biller_code ?? row?.code ?? ""}`),
+  );
+  const billerCode = airtel?.biller_code ?? airtel?.code;
+  if (!billerCode) {
+    return { outcome: "catalog_unavailable", stage: "airtel_biller", reference, httpStatus: 422 };
+  }
+
+  const items = await flutterwaveJson(
+    secretKey,
+    `/v3/billers/${encodeURIComponent(String(billerCode))}/items`,
+    { method: "GET" },
+    fetchImpl,
+  );
+  const itemRows = normalizeBillRows(items.body);
+  if (items.status !== 200 || !itemRows?.length) {
+    return {
+      outcome: "catalog_unavailable",
+      stage: "items",
+      reference,
+      httpStatus: items.status,
+      providerStatus: items.body?.status ?? null,
+      message: providerMessage(items.body),
+    };
+  }
+  const item =
+    itemRows.find((row) =>
+      /airtime|top.?up|recharge/i.test(`${row?.name ?? ""} ${row?.label_name ?? ""}`),
+    ) ?? itemRows[0];
+  if (!item?.item_code) {
+    return { outcome: "catalog_unavailable", stage: "airtel_item", reference, httpStatus: 422 };
+  }
+
+  let payment;
+  try {
+    payment = await flutterwaveJson(
+      secretKey,
+      `/v3/billers/${encodeURIComponent(String(billerCode))}/items/${encodeURIComponent(String(item.item_code))}/payment`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          country: "NG",
+          customer_id: phone,
+          amount,
+          reference,
+          ...(callbackUrl ? { callback_url: callbackUrl } : {}),
+        }),
+      },
+      fetchImpl,
+    );
+  } catch {
+    payment = { status: 0, body: null };
+  }
+
+  if (payment.status === 200 && payment.body?.status === "success") {
+    return {
+      outcome: "submitted",
+      reference: payment.body?.data?.customer_reference ?? reference,
+      providerReference: payment.body?.data?.flw_ref ?? payment.body?.data?.tx_ref ?? null,
+      providerStatus: payment.body?.data?.status ?? null,
+      amount: payment.body?.data?.amount ?? amount,
+      httpStatus: payment.status,
+    };
+  }
+
+  let reconcile;
+  try {
+    reconcile = await flutterwaveJson(
+      secretKey,
+      `/v3/bills/${encodeURIComponent(reference)}?verbose=1`,
+      { method: "GET" },
+      fetchImpl,
+    );
+  } catch {
+    reconcile = { status: 0, body: null };
+  }
+  if (reconcile.status === 200 && reconcile.body?.status === "success") {
+    return {
+      outcome: "reconciled_after_ambiguous_dispatch",
+      reference,
+      providerReference: reconcile.body?.data?.flw_ref ?? reconcile.body?.data?.tx_ref ?? null,
+      providerStatus: reconcile.body?.data?.status ?? null,
+      httpStatus: reconcile.status,
+    };
+  }
+  return {
+    outcome: payment.status === 0 || payment.status >= 500 ? "outcome_unknown" : "dispatch_rejected",
+    reference,
+    httpStatus: payment.status,
+    providerStatus: payment.body?.status ?? null,
+    message: providerMessage(payment.body),
+    reconcileHttpStatus: reconcile.status,
+  };
+}
+
+export function createOperatorAirtimeTestHandler({
+  operatorToken,
+  secretKey,
+  phone,
+  amount,
+  reference,
+  callbackUrl,
+  expectedEgressIp,
+  fetchImpl = fetch,
+  logger = console,
+}) {
+  let consumed = false;
+  return async function handleOperatorAirtimeTest(request, response) {
+    if (request.method !== "POST") {
+      response.setHeader("allow", "POST");
+      sendJson(response, 405, { ok: false, code: "method_not_allowed" });
+      return;
+    }
+    const url = new URL(request.url ?? "/", "http://masanawa.local");
+    const token = url.searchParams.get("token");
+    if (!constantTimeSecretMatch(token, operatorToken)) {
+      sendJson(response, 401, { ok: false, code: "invalid_operator_token" });
+      return;
+    }
+    if (consumed) {
+      sendJson(response, 409, { ok: false, code: "operator_test_already_consumed", reference });
+      return;
+    }
+    consumed = true;
+
+    if (expectedEgressIp) {
+      try {
+        const ipResponse = await fetchImpl("https://api.ipify.org?format=json", {
+          signal: AbortSignal.timeout(8000),
+        });
+        const ipBody = await ipResponse.json();
+        if (ipBody?.ip !== expectedEgressIp) {
+          logger.warn?.("Flutterwave operator test skipped because runtime egress changed", {
+            expectedEgressIp,
+            actualEgressIp: typeof ipBody?.ip === "string" ? ipBody.ip : null,
+          });
+          sendJson(response, 409, {
+            ok: false,
+            code: "egress_ip_changed",
+            expectedEgressIp,
+            actualEgressIp: typeof ipBody?.ip === "string" ? ipBody.ip : null,
+          });
+          return;
+        }
+      } catch {
+        sendJson(response, 503, { ok: false, code: "egress_ip_unverifiable" });
+        return;
+      }
+    }
+
+    const result = await executeOperatorAirtimeTest({
+      secretKey,
+      phone,
+      amount,
+      reference,
+      callbackUrl,
+      fetchImpl,
+    });
+    logger.info?.("Flutterwave operator airtime test completed", {
+      outcome: result.outcome,
+      reference: result.reference,
+      providerStatus: result.providerStatus ?? null,
+      httpStatus: result.httpStatus ?? null,
+    });
+    sendJson(response, result.outcome === "submitted" || result.outcome === "existing_reference" || result.outcome === "reconciled_after_ambiguous_dispatch" ? 200 : 502, {
+      ok: result.outcome === "submitted" || result.outcome === "existing_reference" || result.outcome === "reconciled_after_ambiguous_dispatch",
+      ...result,
+    });
+  };
+}
+
 export function constantTimeSecretMatch(actual, expected) {
   if (typeof actual !== "string" || typeof expected !== "string" || !actual || !expected) return false;
   const left = createHash("sha256").update(actual, "utf8").digest();
@@ -208,10 +484,32 @@ export function createProxyServer({
     fetchImpl,
     logger,
   });
+  const operatorToken = process.env.FLUTTERWAVE_OPERATOR_TEST_TOKEN?.trim();
+  const operatorPhone = process.env.FLUTTERWAVE_OPERATOR_TEST_PHONE?.trim();
+  const operatorAmount = process.env.FLUTTERWAVE_OPERATOR_TEST_AMOUNT?.trim();
+  const operatorReference = process.env.FLUTTERWAVE_OPERATOR_TEST_REFERENCE?.trim();
+  const operatorHandler =
+    operatorToken && operatorPhone && operatorAmount && operatorReference
+      ? createOperatorAirtimeTestHandler({
+          operatorToken,
+          secretKey: flutterwaveSecretKey,
+          phone: operatorPhone,
+          amount: operatorAmount,
+          reference: operatorReference,
+          callbackUrl: process.env.FLUTTERWAVE_WEBHOOK_URL?.trim(),
+          expectedEgressIp: process.env.FLUTTERWAVE_OPERATOR_EXPECTED_EGRESS_IP?.trim(),
+          fetchImpl,
+          logger,
+        })
+      : null;
   const server = createServer((request, response) => {
     const path = new URL(request.url ?? "/", "http://masanawa.local").pathname;
     if (path === FLUTTERWAVE_WEBHOOK_PATH) {
       void webhookHandler(request, response);
+      return;
+    }
+    if (path === FLUTTERWAVE_OPERATOR_TEST_PATH && operatorHandler) {
+      void operatorHandler(request, response);
       return;
     }
     proxyHttpRequest(request, response, upstreamPort);
@@ -265,6 +563,19 @@ export function startHostedAlphaWithFlutterwaveWebhook() {
     flutterwaveSecretKey,
   });
 
+  if (process.env.MASANAWA_EGRESS_IP_PROBE === "1") {
+    fetch("https://api.ipify.org?format=json")
+      .then((response) => response.json())
+      .then((body) => {
+        if (typeof body?.ip === "string") {
+          console.info("Masanawa runtime egress IPv4", { ip: body.ip });
+        }
+      })
+      .catch((error) => {
+        console.warn("Masanawa runtime egress probe failed", { message: error?.message ?? "unknown" });
+      });
+  }
+
   const shutdown = (signal) => {
     server.close(() => {
       if (!child.killed) child.kill(signal);
@@ -283,3 +594,5 @@ export function startHostedAlphaWithFlutterwaveWebhook() {
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
   startHostedAlphaWithFlutterwaveWebhook();
 }
+
+// egress probe deployment trigger
