@@ -188,6 +188,7 @@ class MasanawaAgentTransport implements AgentTransport {
     required AgentSessionBinding binding,
     required String text,
     void Function(String delta)? onTextDelta,
+    Future<void> Function(Uint8List pcmChunk)? onAudioPcmChunk,
   }) async {
     final token = CancelToken();
     _turnTokens[binding.characterId]?.cancel('Superseded by a new turn');
@@ -208,6 +209,13 @@ class MasanawaAgentTransport implements AgentTransport {
             if (delta is String && delta.isNotEmpty) {
               streamedText += delta;
               onTextDelta(delta);
+            }
+            continue;
+          }
+          if (type == 'audio') {
+            final data = event['dataBase64'];
+            if (data is String && data.isNotEmpty && onAudioPcmChunk != null) {
+              await onAudioPcmChunk(base64Decode(data));
             }
             continue;
           }
