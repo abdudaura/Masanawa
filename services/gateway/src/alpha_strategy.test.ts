@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createCanonicalId } from "@masanawa/contracts";
 import type { AgentInferenceProvider } from "@masanawa/agents";
+import type { SkillGuideRepository, SkillRepository } from "@masanawa/skills";
 import { createAlphaInferenceStrategy } from "./alpha_strategy.js";
 
 function request() {
@@ -8,6 +9,7 @@ function request() {
     agentRunId: createCanonicalId("agent-run"),
     characterSessionId: createCanonicalId("character-session"),
     characterVersionId: createCanonicalId("character-version"),
+    skillVersionIds: [],
     presentation: {
       displayName: "Amina",
       roleLabel: "Research Assistant",
@@ -20,6 +22,30 @@ function request() {
   };
 }
 
+const skills: SkillRepository = {
+  async registerBatch() {
+    return [];
+  },
+  async readSnapshot() {
+    return { skills: [], versions: [], readiness: [] };
+  },
+  async putReadiness() {
+    throw new Error("not used");
+  },
+};
+
+const guides: SkillGuideRepository = {
+  async putGuide() {
+    throw new Error("not used");
+  },
+  async readGuide() {
+    return null;
+  },
+  async readGuides() {
+    return [];
+  },
+};
+
 describe("Alpha inference strategy", () => {
   it("keeps Character presentation in strategy instructions while inference remains provider-neutral", async () => {
     let captured: Parameters<AgentInferenceProvider["generate"]>[0] | undefined;
@@ -29,7 +55,7 @@ describe("Alpha inference strategy", () => {
         return { text: "  Hello back  " };
       },
     };
-    const strategy = createAlphaInferenceStrategy({ inference });
+    const strategy = createAlphaInferenceStrategy({ inference, skills, guides });
 
     const result = await strategy.execute(request());
 
@@ -46,6 +72,8 @@ describe("Alpha inference strategy", () => {
           return { text: "   " };
         },
       },
+      skills,
+      guides,
     });
 
     await expect(strategy.execute(request())).rejects.toThrow(
