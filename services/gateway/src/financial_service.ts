@@ -64,13 +64,17 @@ export interface FinancialWithdrawalView {
   readonly outcomeUnknown: boolean;
 }
 
+export type FinancialWithdrawalNetworkFeeMode = "sender" | "receiver";
+
 export interface FinancialWithdrawalQuote {
   readonly providerCode: string;
   readonly amount: string;
   readonly destinationAddress: string;
   readonly minimumAmount: string;
   readonly networkFee: string;
+  readonly networkFeeMode: FinancialWithdrawalNetworkFeeMode;
   readonly feePayer: CryptoWithdrawalFeePayer;
+  readonly estimatedReceiveAmount: string;
   readonly addressValidated: true;
   readonly quotedAt: Instant;
 }
@@ -327,6 +331,14 @@ function amountAtLeast(left: string, right: string): boolean {
   return decimalUnits(left) >= decimalUnits(right);
 }
 
+function decimalFromUnits(units: bigint): string {
+  if (units < 0n) throw new Error("financial.crypto.amount_unavailable");
+  const raw = units.toString().padStart(19, "0");
+  const whole = raw.slice(0, -18).replace(/^0+(?=\d)/u, "") || "0";
+  const fraction = raw.slice(-18).replace(/0+$/u, "");
+  return fraction ? `${whole}.${fraction}` : whole;
+}
+
 export function createFinancialService(input: {
   readonly authorizer: FinancialAuthorizer;
   readonly crypto: CryptoRepository;
@@ -341,7 +353,13 @@ export function createFinancialService(input: {
     readonly account: NowPaymentsAccountEvidence;
     readonly routes: readonly NowPaymentsCurrencyEvidence[];
   }>;
-  readonly withdrawalFeePayer?: CryptoWithdrawalFeePayer;
+  /**
+   * Must match the NOWPayments dashboard payout network-fee setting.
+   * "receiver": network fee reduces what the destination receives.
+   * "sender": Masanawa/custody pays network fee on top of the requested amount.
+   * Omission fails withdrawal capability closed.
+   */
+  readonly withdrawalNetworkFeeMode?: FinancialWithdrawalNetworkFeeMode;
   /**
    * Standard NOWPayments wallet payouts are whitelist-controlled. This callback
    * must prove that the exact destination, not merely its syntax, is approved
@@ -375,7 +393,7 @@ export function createFinancialService(input: {
   const ipnCallbackUrl = new URL("/v1/financial/nowpayments/ipn", base).toString();
   const payoutIpnCallbackUrl =
     new URL("/v1/financial/nowpayments/payout-ipn", base).toString();
-  const withdrawalFeePayer = input.withdrawalFeePayer ?? "user";
+  const withdrawalNetworkFeeMode = input.withdrawalNetworkFeeMode ?? null;
 
   async function authority(header: string | undefined) {
     return input.authorizer.authorize({ authorizationHeader: header });
@@ -436,7 +454,8 @@ export function createFinancialService(input: {
       !input.nowPaymentsPayout ||
       !input.nowPaymentsCustody ||
       !input.withdrawalEvidence ||
-      !input.withdrawalDestinationApproved
+      !input.withdrawalDestinationApproved ||
+      withdrawalNetworkFeeMode === null
     ) return null;
     const evidence = await input.withdrawalEvidence();
     assertFreshAccountEvidence(evidence.account, { now: new Date(now()) });
@@ -509,14 +528,28 @@ export function createFinancialService(input: {
     if (!amountAtLeast(amount, minimumAmount)) {
       throw new Error("financial.crypto.withdrawal_below_minimum");
     }
+    if (withdrawalNetworkFeeMode === null) {
+      throw new Error("financial.crypto.withdrawal_fee_mode_unavailable");
+    }
     const providerBalance = balances.find((entry) => entry.currency === providerCode);
+    const amountUnits = decimalUnits(amount);
+    const feeUnits = decimalUnits(fee.fee, true);
     const requiredProviderUnits =
-      decimalUnits(amount) + decimalUnits(fee.fee, true);
+      withdrawalNetworkFeeMode === "sender"
+        ? amountUnits + feeUnits
+        : amountUnits;
     if (
       providerBalance === undefined ||
       decimalUnits(providerBalance.available, true) < requiredProviderUnits
     ) {
       throw new Error("financial.crypto.provider_balance_unavailable");
+    }
+    const receiveUnits =
+      withdrawalNetworkFeeMode === "receiver"
+        ? amountUnits - feeUnits
+        : amountUnits;
+    if (receiveUnits <= 0n) {
+      throw new Error("financial.crypto.withdrawal_fee_exceeds_amount");
     }
     return Object.freeze({
       providerCode,
@@ -524,7 +557,9 @@ export function createFinancialService(input: {
       destinationAddress: validated.address,
       minimumAmount,
       networkFee: fee.fee,
-      feePayer: withdrawalFeePayer,
+      networkFeeMode: withdrawalNetworkFeeMode,
+      feePayer: withdrawalNetworkFeeMode === "receiver" ? "user" : "platform",
+      estimatedReceiveAmount: decimalFromUnits(receiveUnits),
       addressValidated: true as const,
       quotedAt: now(),
     });
@@ -860,13 +895,13 @@ export function createFinancialService(input: {
         updatedAt: createdAt,
       };
       const admitted =
-        quote.networkFee === "0"
-          ? await input.crypto.reserveWithdrawal(withdrawalIntent)
-          : await input.crypto.reserveWithdrawalWithFee({
+        quote.networkFee !== "0" && quote.networkFeeMode === "sender"
+          ? await input.crypto.reserveWithdrawalWithFee({
               intent: withdrawalIntent,
               networkFee: quote.networkFee,
-              feePayer: withdrawalFeePayer,
-            });
+              feePayer: "platform",
+            })
+          : await input.crypto.reserveWithdrawal(withdrawalIntent);
 
       assertFinancialReplay(admitted, terms);
       const dispatch = await input.crypto.beginProviderDispatch({
