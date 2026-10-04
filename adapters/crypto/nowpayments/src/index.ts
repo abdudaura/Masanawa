@@ -1,4 +1,11 @@
 export {
+  assertFreshAccountEvidence,
+  qualifyAccountCapability,
+  type AccountCapabilityQualification,
+  type NowPaymentsAccountCapability,
+  type NowPaymentsAccountEvidence,
+} from "./account.js";
+export {
   normalizeAvailableCurrencies,
   qualifyRoute,
   splitProviderCurrency,
