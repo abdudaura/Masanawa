@@ -75,8 +75,8 @@ async function updateIntentWithClient(
         SET operation=$4, asset=$5, network=$6, amount=$7::numeric,
             target_asset=$8, destination_address=$9, provider=$10,
             provider_payment_id=$11, provider_payout_id=$12, pay_address=$13,
-            provider_pay_amount=$14::numeric, status=$15, definition=$16::jsonb,
-            updated_at=$17
+            provider_pay_amount=$14::numeric, provider_dispatch_started_at=$15,
+            status=$16, definition=$17::jsonb, updated_at=$18
       WHERE tenant_id=$1 AND user_id=$2 AND request_id=$3`,
     [
       normalized.tenantId,
@@ -93,6 +93,7 @@ async function updateIntentWithClient(
       normalized.providerPayoutId,
       normalized.payAddress,
       normalized.providerPayAmount,
+      normalized.providerDispatchStartedAt,
       normalized.status,
       canonicalJson(normalized),
       normalized.updatedAt,
@@ -192,13 +193,13 @@ export function createPostgresCryptoRepository(pool: Pool): CryptoRepository {
           `INSERT INTO commerce.crypto_intents(
              tenant_id,user_id,request_id,operation,asset,network,amount,target_asset,
              destination_address,provider,provider_payment_id,provider_payout_id,
-             pay_address,provider_pay_amount,status,definition,created_at,updated_at
-           ) VALUES ($1,$2,$3,$4,$5,$6,$7::numeric,$8,$9,$10,$11,$12,$13,$14::numeric,$15,$16::jsonb,$17,$18)`,
+             pay_address,provider_pay_amount,provider_dispatch_started_at,status,definition,created_at,updated_at
+           ) VALUES ($1,$2,$3,$4,$5,$6,$7::numeric,$8,$9,$10,$11,$12,$13,$14::numeric,$15,$16,$17::jsonb,$18,$19)`,
           [
             intent.tenantId,intent.userId,intent.requestId,intent.operation,intent.asset,
             intent.network,intent.amount,intent.targetAsset,intent.destinationAddress,
             intent.provider,intent.providerPaymentId,intent.providerPayoutId,intent.payAddress,
-            intent.providerPayAmount,intent.status,canonicalJson(intent),intent.createdAt,intent.updatedAt,
+            intent.providerPayAmount,intent.providerDispatchStartedAt,intent.status,canonicalJson(intent),intent.createdAt,intent.updatedAt,
           ],
         );
         return intent;
@@ -256,6 +257,28 @@ export function createPostgresCryptoRepository(pool: Pool): CryptoRepository {
         },
         { isolation: "repeatable read", readOnly: true },
       );
+    },
+
+    async beginProviderDispatch(input) {
+      return withTransaction(pool, async (client) => {
+        const key = {
+          tenantId: parseCanonicalId("tenant", input.tenantId),
+          userId: parseCanonicalId("user", input.userId),
+          requestId: parseCanonicalId("request", input.requestId),
+        };
+        const current = await readIntentWithClient(client, key, true);
+        if (!current) throw new Error("crypto.intent.unavailable");
+        if (current.providerDispatchStartedAt !== null) {
+          return Object.freeze({ intent: current, shouldDispatch: false });
+        }
+        const next = await updateIntentWithClient(client, {
+          ...current,
+          providerDispatchStartedAt: input.updatedAt,
+          status: current.status === "quoted" ? "processing" : current.status,
+          updatedAt: input.updatedAt,
+        });
+        return Object.freeze({ intent: next, shouldDispatch: true });
+      });
     },
 
     async bindProviderPayment(input) {
@@ -384,12 +407,12 @@ export function createPostgresCryptoRepository(pool: Pool): CryptoRepository {
         await client.query(
           `INSERT INTO commerce.crypto_intents(
              tenant_id,user_id,request_id,operation,asset,network,amount,target_asset,
-             destination_address,provider,status,definition,created_at,updated_at
-           ) VALUES ($1,$2,$3,$4,$5,$6,$7::numeric,$8,$9,$10,$11,$12::jsonb,$13,$14)`,
+             destination_address,provider,provider_dispatch_started_at,status,definition,created_at,updated_at
+           ) VALUES ($1,$2,$3,$4,$5,$6,$7::numeric,$8,$9,$10,$11,$12,$13::jsonb,$14,$15)`,
           [
             intent.tenantId,intent.userId,intent.requestId,intent.operation,intent.asset,
             intent.network,intent.amount,intent.targetAsset,intent.destinationAddress,
-            intent.provider,"processing",canonicalJson({...intent,status:"processing"}),intent.createdAt,intent.updatedAt,
+            intent.provider,intent.providerDispatchStartedAt,"processing",canonicalJson({...intent,status:"processing"}),intent.createdAt,intent.updatedAt,
           ],
         );
         await postLedger(client, {
