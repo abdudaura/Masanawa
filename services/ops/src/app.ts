@@ -406,6 +406,18 @@ export function createOpsApp(options: OpsAppOptions = {}) {
       }),
     );
 
+    app.get("/v1/admin/memory-jobs", async (request) => [
+      ...await systemAdmin.listMemoryJobs({
+        authorizationHeader: request.headers.authorization,
+      }),
+    ]);
+
+    app.get("/v1/admin/queue-issues", async (request) => [
+      ...await systemAdmin.listQueueIssues({
+        authorizationHeader: request.headers.authorization,
+      }),
+    ]);
+
     app.get("/v1/admin/worlds", async (request) => [
       ...await systemAdmin.listWorlds({
         authorizationHeader: request.headers.authorization,
