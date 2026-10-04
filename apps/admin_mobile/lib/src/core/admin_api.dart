@@ -438,6 +438,99 @@ class AdminAuditEvent {
       );
 }
 
+
+class AdminSystemSnapshot {
+  const AdminSystemSnapshot({
+    required this.memory,
+    required this.queues,
+  });
+
+  final Map<String, dynamic> memory;
+  final Map<String, dynamic> queues;
+
+  factory AdminSystemSnapshot.fromJson(Map<String, dynamic> json) =>
+      AdminSystemSnapshot(
+        memory: Map<String, dynamic>.from(json['memory'] as Map),
+        queues: Map<String, dynamic>.from(json['queues'] as Map),
+      );
+}
+
+class AdminWorld {
+  const AdminWorld({
+    required this.worldId,
+    required this.status,
+    required this.policyRevision,
+    required this.currentGenerationNumber,
+    required this.simulationTime,
+    required this.revision,
+    required this.updatedAt,
+  });
+
+  final String worldId;
+  final String status;
+  final int policyRevision;
+  final int currentGenerationNumber;
+  final String simulationTime;
+  final int revision;
+  final String updatedAt;
+
+  factory AdminWorld.fromJson(Map<String, dynamic> json) => AdminWorld(
+        worldId: json['worldId'] as String,
+        status: json['status'] as String,
+        policyRevision: json['policyRevision'] as int? ?? 0,
+        currentGenerationNumber:
+            json['currentGenerationNumber'] as int? ?? 0,
+        simulationTime: json['simulationTime'] as String,
+        revision: json['revision'] as int? ?? 0,
+        updatedAt: json['updatedAt'] as String,
+      );
+}
+
+class AdminApproval {
+  const AdminApproval({
+    required this.approvalId,
+    required this.operationId,
+    required this.kind,
+    required this.state,
+    required this.action,
+    required this.actionVersion,
+    required this.resourceKey,
+    required this.riskClass,
+    required this.requestedAt,
+    required this.expiresAt,
+    required this.decidedAt,
+    required this.approverKey,
+  });
+
+  final String approvalId;
+  final String operationId;
+  final String kind;
+  final String state;
+  final String action;
+  final String actionVersion;
+  final String resourceKey;
+  final String riskClass;
+  final String requestedAt;
+  final String expiresAt;
+  final String? decidedAt;
+  final String? approverKey;
+
+  factory AdminApproval.fromJson(Map<String, dynamic> json) => AdminApproval(
+        approvalId: json['approvalId'] as String,
+        operationId: json['operationId'] as String,
+        kind: json['kind'] as String,
+        state: json['state'] as String,
+        action: json['action'] as String,
+        actionVersion: json['actionVersion'] as String,
+        resourceKey: json['resourceKey'] as String,
+        riskClass: json['riskClass'] as String,
+        requestedAt: json['requestedAt'] as String,
+        expiresAt: json['expiresAt'] as String,
+        decidedAt: json['decidedAt'] as String?,
+        approverKey: json['approverKey'] as String?,
+      );
+}
+
 class AdminApi {
   AdminApi({required this.token, Dio? dio})
       : _dio = dio ??
@@ -638,6 +731,32 @@ class AdminApi {
     );
     return _list(response.data)
         .map((item) => AdminAuditEvent.fromJson(_map(item)))
+        .toList(growable: false);
+  }
+
+
+  Future<AdminSystemSnapshot> systemSnapshot() async {
+    final response = await _request(
+      () => _dio.get<dynamic>('/v1/admin/system', options: _auth),
+    );
+    return AdminSystemSnapshot.fromJson(_map(response.data));
+  }
+
+  Future<List<AdminWorld>> worlds() async {
+    final response = await _request(
+      () => _dio.get<dynamic>('/v1/admin/worlds', options: _auth),
+    );
+    return _list(response.data)
+        .map((item) => AdminWorld.fromJson(_map(item)))
+        .toList(growable: false);
+  }
+
+  Future<List<AdminApproval>> approvals() async {
+    final response = await _request(
+      () => _dio.get<dynamic>('/v1/admin/approvals', options: _auth),
+    );
+    return _list(response.data)
+        .map((item) => AdminApproval.fromJson(_map(item)))
         .toList(growable: false);
   }
 
