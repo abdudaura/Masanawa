@@ -163,6 +163,79 @@ describe("Gemini Alpha inference provider", () => {
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
+  it("streams Gemini SSE deltas while assembling the final reply", async () => {
+    const deltas: string[] = [];
+    const fetchImpl = vi.fn(async (url: string | URL | Request) => {
+      expect(String(url)).toContain(":streamGenerateContent?alt=sse");
+      return new Response(
+        [
+          'data: {"candidates":[{"content":{"parts":[{"text":"Hello "}]}}]}',
+          'data: {"candidates":[{"content":{"parts":[{"text":"world"}]}}]}',
+          "",
+        ].join("\n"),
+        { status: 200, headers: { "content-type": "text/event-stream" } },
+      );
+    });
+    const provider = createGeminiAlphaInferenceProvider({
+      apiKey: "dev-key",
+      model: "gemini-test",
+      fetchImpl: fetchImpl as typeof fetch,
+    });
+
+    await expect(
+      provider.generate(
+        {
+          systemInstructions: ["Be helpful."],
+          input: { kind: "text", text: "Hi" },
+        },
+        {
+          signal: new AbortController().signal,
+          maxOutputTokens: 512,
+          onTextDelta: async (delta) => {
+            deltas.push(delta);
+          },
+        },
+      ),
+    ).resolves.toEqual({ text: "Hello world" });
+    expect(deltas).toEqual(["Hello ", "world"]);
+  });
+
+  it("sends grouped attachments together in one Gemini request", async () => {
+    const fetchImpl = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body));
+      expect(body.contents[0].parts).toEqual([
+        { text: "Compare these files." },
+        { inline_data: { mime_type: "image/jpeg", data: "YWJj" } },
+        { text: "notes.txt:\nhello" },
+      ]);
+      return response("Compared");
+    });
+    const provider = createGeminiAlphaInferenceProvider({
+      apiKey: "dev-key",
+      model: "gemini-test",
+      fetchImpl: fetchImpl as typeof fetch,
+    });
+
+    await expect(
+      provider.generate({
+        systemInstructions: ["Be helpful."],
+        input: {
+          kind: "media-set",
+          caption: "Compare these files.",
+          media: [
+            { mimeType: "image/jpeg", dataBase64: "YWJj", name: "photo.jpg" },
+            {
+              mimeType: "text/plain",
+              dataBase64: Buffer.from("hello").toString("base64"),
+              name: "notes.txt",
+            },
+          ],
+        },
+      }),
+    ).resolves.toEqual({ text: "Compared" });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
   it("preserves media MIME/data only at the inference adapter boundary", async () => {
     const fetchImpl = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
       const body = JSON.parse(String(init?.body)) as {
