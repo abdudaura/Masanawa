@@ -187,6 +187,8 @@ class ChatThread {
     this.pinned = false,
     this.archived = false,
     this.scrollOffset = 0,
+    this.draftAttachments = const [],
+    this.draftVoice,
   }) : updatedAt = updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
 
   final String characterId;
@@ -200,6 +202,8 @@ class ChatThread {
   final bool pinned;
   final bool archived;
   final double scrollOffset;
+  final List<ChatAttachment> draftAttachments;
+  final ChatAttachment? draftVoice;
 
   AiChatMessage? get lastMessage => messages.isEmpty ? null : messages.last;
 
@@ -214,6 +218,9 @@ class ChatThread {
     bool? pinned,
     bool? archived,
     double? scrollOffset,
+    List<ChatAttachment>? draftAttachments,
+    ChatAttachment? draftVoice,
+    bool clearDraftVoice = false,
   }) => ChatThread(
     characterId: characterId,
     messages: messages ?? this.messages,
@@ -226,6 +233,8 @@ class ChatThread {
     pinned: pinned ?? this.pinned,
     archived: archived ?? this.archived,
     scrollOffset: scrollOffset ?? this.scrollOffset,
+    draftAttachments: draftAttachments ?? this.draftAttachments,
+    draftVoice: clearDraftVoice ? null : (draftVoice ?? this.draftVoice),
   );
 
   Map<String, dynamic> toJson() => {
@@ -240,6 +249,9 @@ class ChatThread {
     if (pinned) 'pinned': true,
     if (archived) 'archived': true,
     if (scrollOffset > 0) 'scrollOffset': scrollOffset,
+    if (draftAttachments.isNotEmpty)
+      'draftAttachments': [for (final item in draftAttachments) item.toJson()],
+    if (draftVoice != null) 'draftVoice': draftVoice!.toJson(),
   };
 
   factory ChatThread.fromJson(Map<String, dynamic> json) {
@@ -260,6 +272,15 @@ class ChatThread {
       pinned: json['pinned'] as bool? ?? false,
       archived: json['archived'] as bool? ?? false,
       scrollOffset: (json['scrollOffset'] as num?)?.toDouble() ?? 0,
+      draftAttachments: [
+        for (final raw in (json['draftAttachments'] as List? ?? const []))
+          if (raw is Map) ChatAttachment.fromJson(raw.cast<String, dynamic>()),
+      ],
+      draftVoice: json['draftVoice'] is Map
+          ? ChatAttachment.fromJson(
+              (json['draftVoice'] as Map).cast<String, dynamic>(),
+            )
+          : null,
     );
   }
 }
@@ -976,6 +997,36 @@ class AiChatController extends Notifier<AiChatState> {
       threads: {
         ...state.threads,
         characterId: thread.copyWith(scrollOffset: safe),
+      },
+    );
+    _save();
+  }
+
+  void setDraftAttachments(
+    String characterId,
+    List<ChatAttachment> attachments,
+  ) {
+    final thread = threadOf(characterId);
+    state = state.copyWith(
+      threads: {
+        ...state.threads,
+        characterId: thread.copyWith(
+          draftAttachments: List.unmodifiable(attachments),
+        ),
+      },
+    );
+    _save();
+  }
+
+  void setDraftVoice(String characterId, ChatAttachment? attachment) {
+    final thread = threadOf(characterId);
+    state = state.copyWith(
+      threads: {
+        ...state.threads,
+        characterId: thread.copyWith(
+          draftVoice: attachment,
+          clearDraftVoice: attachment == null,
+        ),
       },
     );
     _save();
