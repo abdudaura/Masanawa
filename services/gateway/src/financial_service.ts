@@ -98,7 +98,7 @@ export interface FinancialConversionQuote {
 }
 
 export interface FinancialCapabilities {
-  readonly deposits: true;
+  readonly deposits: boolean;
   readonly withdrawals: boolean;
   readonly conversions: boolean;
   readonly payoutReason: string | null;
@@ -381,9 +381,27 @@ export function createFinancialService(input: {
     return input.authorizer.authorize({ authorizationHeader: header });
   }
 
+  async function qualifiedDepositRoutes(): Promise<readonly NowPaymentsCurrencyEvidence[]> {
+    if (!input.nowPaymentsCustody) return Object.freeze([]);
+    const signal = AbortSignal.timeout(15_000);
+    const [routes, balances] = await Promise.all([
+      input.nowPayments.listEligiblePaymentRoutes({
+        operation: "deposit",
+        signal,
+      }),
+      input.nowPaymentsCustody.readBalances(signal),
+    ]);
+    const custodyCurrencies = new Set(balances.map((entry) => entry.currency));
+    return Object.freeze(
+      routes
+        .map((entry) => entry.route)
+        .filter((route) => custodyCurrencies.has(route.providerCode)),
+    );
+  }
+
   async function currentDepositRoute(providerCode: string) {
-    const routes = await input.nowPayments.listEligiblePaymentRoutes({ operation: "deposit" });
-    return routes.find((candidate) => candidate.route.providerCode === providerCode)?.route ?? null;
+    const routes = await qualifiedDepositRoutes();
+    return routes.find((route) => route.providerCode === providerCode) ?? null;
   }
 
   async function routesCoveredByCustody(
@@ -655,8 +673,12 @@ export function createFinancialService(input: {
   return Object.freeze<FinancialService>({
     async capabilities(request) {
       const auth = await authority(request.authorizationHeader);
+      let deposits = false;
       let withdrawals = false;
       let conversions = false;
+      try {
+        deposits = (await qualifiedDepositRoutes()).length > 0;
+      } catch { /* Unknown custody evidence denies admission. */ }
       try {
         const routes = await qualifiedWithdrawalRoutes(auth);
         withdrawals = routes !== null && routes.length > 0;
@@ -666,7 +688,7 @@ export function createFinancialService(input: {
         conversions = routes !== null && routes.length > 1;
       } catch { /* Unknown/stale evidence denies admission. */ }
       return Object.freeze({
-        deposits: true as const,
+        deposits,
         withdrawals,
         conversions,
         payoutReason:
@@ -682,10 +704,7 @@ export function createFinancialService(input: {
 
     async listDepositRoutes(request) {
       await authority(request.authorizationHeader);
-      const qualified = await input.nowPayments.listEligiblePaymentRoutes({
-        operation: "deposit",
-      });
-      return Object.freeze(qualified.map((entry) => entry.route));
+      return qualifiedDepositRoutes();
     },
 
     async listConversionRoutes(request) {
