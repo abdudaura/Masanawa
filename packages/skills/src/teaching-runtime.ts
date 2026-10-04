@@ -65,6 +65,58 @@ export interface TeachingRuntimeBinding {
   readonly guideContentHash: string;
 }
 
+export interface TeachingAdmissionEvidence {
+  readonly revisionPin: {
+    readonly rootSkillVersionId: SkillVersionId;
+    readonly orderedVersions: readonly {
+      readonly skillVersionId: SkillVersionId;
+      readonly key: string;
+      readonly definitionHash: string;
+    }[];
+    readonly contentHash: string;
+  };
+}
+
+export function createTeachingRuntimeBindingFromAdmission(input: {
+  readonly relationshipId: RelationshipId;
+  readonly admission: TeachingAdmissionEvidence;
+  readonly guideContentHash: string;
+}): TeachingRuntimeBinding {
+  const root = input.admission.revisionPin.rootSkillVersionId;
+  if (!isCanonicalId("skill-version", root)) {
+    throw new TypeError("Teaching admission root SkillVersionId is invalid");
+  }
+  if (
+    typeof input.admission.revisionPin.contentHash !== "string" ||
+    !/^sha256:[0-9a-f]{64}$/u.test(
+      input.admission.revisionPin.contentHash.toLowerCase(),
+    )
+  ) {
+    throw new TypeError("Teaching admission revision pin hash is invalid");
+  }
+
+  const rootEntry = input.admission.revisionPin.orderedVersions.find(
+    (entry) => entry.skillVersionId === root,
+  );
+  if (
+    rootEntry === undefined ||
+    rootEntry.key !== coreTeachingSkillKey ||
+    typeof rootEntry.definitionHash !== "string" ||
+    !/^sha256:[0-9a-f]{64}$/u.test(rootEntry.definitionHash.toLowerCase())
+  ) {
+    throw new TypeError(
+      "Teaching admission must pin core.teaching as the exact root SkillVersion",
+    );
+  }
+
+  return createTeachingRuntimeBinding({
+    relationshipId: input.relationshipId,
+    skillVersionId: root,
+    skillKey: rootEntry.key,
+    guideContentHash: input.guideContentHash,
+  });
+}
+
 export function createTeachingRuntimeBinding(input: {
   readonly relationshipId: RelationshipId;
   readonly skillVersionId: SkillVersionId;
