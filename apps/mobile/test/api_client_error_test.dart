@@ -96,7 +96,8 @@ void main() {
         requestOptions: ro,
         type: DioExceptionType.connectionError,
       ));
-      expect(e.message, 'Could not reach UNigeria. Check your connection.');
+      expect(e.message, 'Check your connection and try again.');
     });
   });
 }
+

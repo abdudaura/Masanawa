@@ -4,38 +4,62 @@ param(
   [switch]$Install
 )
 
-$ErrorActionPreference = "Stop"
+# Native warnings may use stderr; failure is determined by exit status.
+$ErrorActionPreference = "Continue"
+$gateway = [Uri]$GatewayUrl.TrimEnd('/')
+$localGateway = $gateway.IsLoopback
+if (-not $gateway.IsAbsoluteUri -or $gateway.UserInfo -or $gateway.Query -or $gateway.Fragment -or
+    ($gateway.AbsolutePath -ne '/') -or
+    ($gateway.Scheme -ne 'https' -and -not ($localGateway -and $gateway.Scheme -eq 'http'))) {
+  throw "Use an HTTPS Gateway address, or localhost for USB testing."
+}
+$GatewayUrl = $gateway.AbsoluteUri.TrimEnd('/')
+if ($AlphaToken -match '\s') { throw "Alpha token must not contain whitespace." }
 
-if ([string]::IsNullOrWhiteSpace($AlphaToken)) {
-  throw "Set ALPHA_DEV_ACCESS_TOKEN or pass -AlphaToken."
+# Check the selected server before compiling an unusable APK.
+try {
+  $ready = Invoke-RestMethod -Uri "$GatewayUrl/readyz" -TimeoutSec 20 -ErrorAction Stop
+  if ($ready.status -ne 'ready') { throw "Gateway is not ready." }
+  if (-not [string]::IsNullOrWhiteSpace($AlphaToken)) {
+    $directory = Invoke-RestMethod -Uri "$GatewayUrl/v1/agent/directory" -TimeoutSec 20 `
+      -Headers @{ Authorization = "Bearer $AlphaToken" } -ErrorAction Stop
+    Write-Host "Gateway verified. Agents:" @($directory.agents).Count
+  }
+} catch {
+  throw "Could not verify the selected Gateway. Start it first, and use its own Alpha token."
 }
 
 Push-Location (Join-Path $PSScriptRoot "..")
+$definesPath = Join-Path ([System.IO.Path]::GetTempPath()) ([System.IO.Path]::GetRandomFileName())
 try {
   flutter pub get
-
-  $flutterArgs = @(
-    "build", "apk", "--debug",
-    "--dart-define=AGENT_RUNTIME_ENABLED=true",
-    "--dart-define=AGENT_BASE_URL=$GatewayUrl",
-    "--dart-define=ALPHA_DEV_ACCESS_TOKEN=$AlphaToken",
-    "--dart-define=ALPHA_TTS_ENABLED=true"
-  )
-  & flutter @flutterArgs
+  if ($LASTEXITCODE -ne 0) { throw "Flutter dependency installation failed." }
+  $defines = @{
+    AGENT_RUNTIME_ENABLED = 'true'
+    AGENT_BASE_URL = $GatewayUrl
+    ALPHA_TTS_ENABLED = 'true'
+  }
+  if (-not [string]::IsNullOrWhiteSpace($AlphaToken)) { $defines.ALPHA_DEV_ACCESS_TOKEN = $AlphaToken }
+  [System.IO.File]::WriteAllText($definesPath, ($defines | ConvertTo-Json), [System.Text.UTF8Encoding]::new($false))
+  flutter build apk --debug "--dart-define-from-file=$definesPath"
   if ($LASTEXITCODE -ne 0) { throw "Flutter build failed." }
-
   $apk = Join-Path (Get-Location) "build\app\outputs\flutter-apk\app-debug.apk"
-  Write-Host ""
   Write-Host "Alpha APK:" $apk
-
+  Write-Host "Gateway:" $GatewayUrl
+  if ([string]::IsNullOrWhiteSpace($AlphaToken)) {
+    Write-Host "After installing: test login, Settings > Developer > Connect test app. Enter this Gateway's Alpha token."
+  }
   if ($Install) {
-    adb reverse tcp:3000 tcp:3000
-    if ($LASTEXITCODE -ne 0) { throw "adb reverse failed." }
+    if ($localGateway) {
+      $port = $gateway.Port
+      adb reverse "tcp:$port" "tcp:$port"
+      if ($LASTEXITCODE -ne 0) { throw "adb reverse failed." }
+    }
     adb install -r $apk
     if ($LASTEXITCODE -ne 0) { throw "APK install failed." }
-    Write-Host ""
-    Write-Host "Installed. The debug app can reach the laptop Gateway at http://127.0.0.1:3000"
+    Write-Host "Installed. Gateway:" $GatewayUrl
   }
 } finally {
+  Remove-Item $definesPath -Force -ErrorAction SilentlyContinue
   Pop-Location
 }

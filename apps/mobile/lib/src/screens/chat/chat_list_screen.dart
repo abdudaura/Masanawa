@@ -31,16 +31,16 @@ class ChatListScreen extends ConsumerWidget {
   }
 
   String _partLabel(AgentMessagePartKind kind) => switch (kind) {
-        AgentMessagePartKind.audio => 'Voice response',
-        AgentMessagePartKind.image => 'Image',
-        AgentMessagePartKind.file => 'File',
-        AgentMessagePartKind.artifact => 'Work result',
-        AgentMessagePartKind.work => 'Work update',
-        AgentMessagePartKind.approval => 'Approval needed',
-        AgentMessagePartKind.operation => 'Action update',
-        AgentMessagePartKind.callResult => 'Call result',
-        AgentMessagePartKind.status => 'Status update',
-      };
+    AgentMessagePartKind.audio => 'Voice response',
+    AgentMessagePartKind.image => 'Image',
+    AgentMessagePartKind.file => 'File',
+    AgentMessagePartKind.artifact => 'Work result',
+    AgentMessagePartKind.work => 'Work update',
+    AgentMessagePartKind.approval => 'Approval needed',
+    AgentMessagePartKind.operation => 'Action update',
+    AgentMessagePartKind.callResult => 'Call result',
+    AgentMessagePartKind.status => 'Status update',
+  };
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -48,12 +48,13 @@ class ChatListScreen extends ConsumerWidget {
     final chat = ref.watch(aiChatProvider);
     final directory = ref.watch(agentDirectoryProvider);
     final session = ref.watch(sessionProvider);
-    final userName =
-        session is SessionSignedIn ? session.user.name : 'Masanawa';
+    final userName = session is SessionSignedIn
+        ? session.user.name
+        : 'Masanawa';
 
-    final threads = chat.chatList.where(
-      (thread) => directory.find(thread.characterId) != null,
-    ).toList();
+    final threads = chat.chatList
+        .where((thread) => directory.find(thread.characterId) != null)
+        .toList();
 
     return Scaffold(
       backgroundColor: u.surfaceBg,
@@ -90,6 +91,8 @@ class ChatListScreen extends ConsumerWidget {
       body: threads.isEmpty
           ? _EmptyChats(
               loading: directory.loading,
+              error: directory.error,
+              hasAgents: directory.agents.isNotEmpty,
               onStart: () => context.push('/agents'),
             )
           : RefreshIndicator(
@@ -97,11 +100,8 @@ class ChatListScreen extends ConsumerWidget {
                   ref.read(agentDirectoryProvider.notifier).refresh(),
               child: ListView.separated(
                 itemCount: threads.length,
-                separatorBuilder: (_, __) => Divider(
-                  height: 1,
-                  indent: 76,
-                  color: u.structuralBorder,
-                ),
+                separatorBuilder: (_, __) =>
+                    Divider(height: 1, indent: 76, color: u.structuralBorder),
                 itemBuilder: (context, index) {
                   final thread = threads[index];
                   final agent = directory.find(thread.characterId)!;
@@ -199,10 +199,17 @@ class ChatListScreen extends ConsumerWidget {
 }
 
 class _EmptyChats extends StatelessWidget {
-  const _EmptyChats({required this.loading, required this.onStart});
+  const _EmptyChats({
+    required this.loading,
+    required this.onStart,
+    required this.hasAgents,
+    this.error,
+  });
 
   final bool loading;
   final VoidCallback onStart;
+  final bool hasAgents;
+  final String? error;
 
   @override
   Widget build(BuildContext context) {
@@ -216,7 +223,12 @@ class _EmptyChats extends StatelessWidget {
             Icon(Icons.mic_none_outlined, size: 58, color: u.brand),
             const SizedBox(height: 18),
             Text(
-              loading ? 'Loading your agents…' : 'Talk to an agent',
+              loading
+                  ? 'Loading your agents…'
+                  : error ??
+                        (hasAgents
+                            ? 'Talk to an agent'
+                            : 'No agents are available right now.'),
               style: TextStyle(
                 color: u.textPrimary,
                 fontSize: 19,
@@ -225,7 +237,7 @@ class _EmptyChats extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Voice first, with every file and work result kept in the conversation.',
+              hasAgents ? 'Choose an agent to start a conversation.' : 'Your conversations are still here. Please try again shortly.',
               textAlign: TextAlign.center,
               style: TextStyle(color: u.textMuted, fontSize: 14, height: 1.5),
             ),
@@ -233,7 +245,7 @@ class _EmptyChats extends StatelessWidget {
             FilledButton.icon(
               onPressed: loading ? null : onStart,
               icon: const Icon(Icons.groups_outlined),
-              label: const Text('Choose an agent'),
+              label: Text(hasAgents ? 'Choose an agent' : 'View agents'),
             ),
           ],
         ),

@@ -1,5 +1,37 @@
 # Continue Here
 
+## Mobile testing checkpoint — 2026-10-04
+
+The user built an installable debug APK locally and pushed build fixes to main
+as `bf8d0530bb06794420542ab0910459d808df4177`. That APK targets the laptop
+Gateway and the locally generated Alpha token; it is not a hosted build.
+Do not restart cloud APK compilation to solve its directory connection failure.
+
+The mobile testing slice adds debug-only, securely stored Gateway/token setup
+with authorized directory verification; user-safe recovery messages; roster
+retention on transient refresh failures; stale refresh rejection; 75-second chat
+response timeout; explicit retry without duplicate user bubbles; and removal
+of the permanent switch to the legacy preview endpoint after a Gateway error.
+It also carries the already-tested splash lifecycle fix from PR #89.
+The build helpers validate the selected Gateway, use temporary Dart-define files,
+and only run USB reverse for a loopback Gateway. Existing local storage/theme
+build fixes and the user's cleaned lockfile are preserved.
+
+Verification: Flutter 3.47.6 / Dart 3.13.5; mobile analysis has no compilation
+errors (existing warnings/info remain), 51 Flutter tests pass, and three Node
+hosted-smoke tests pass. See apps/mobile/README.md for exact install/connect
+steps. The hosted Gateway's /readyz returned 200; authenticated hosted checks
+are being performed through the operator smoke path. Physical recording/TTS,
+device restart/retry and full live inference are not implied by unit tests.
+
+PR #89 remains the unmerged runtime work on task073-inference-hardening.
+Its recorded 515 PostgreSQL-backed tests and CI runner allocation blocker are
+preserved. No Task 072–076 completion, Skill execution, Resend sending or
+real-device qualification is claimed by this mobile slice.
+
+
+
+
 ## APK compilation checkpoint — 2026-10-04 08:00 UTC
 
 This section supersedes older pending mobile-test statements below.

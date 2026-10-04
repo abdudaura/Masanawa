@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../agents/agent_directory.dart';
+import '../../agents/agent_feedback.dart';
+import '../../state/session_state.dart';
 import '../../state/agent_directory_state.dart';
 import '../../state/ai_chat_state.dart';
 import '../../theme/masanawa_theme.dart';
@@ -41,7 +44,7 @@ class AgentListScreen extends ConsumerWidget {
             Text(
               directory.loading
                   ? 'Loading…'
-                  : '${directory.agents.length} configured',
+                  : '${directory.agents.length} ${directory.agents.length == 1 ? 'agent' : 'agents'}',
               style: TextStyle(color: u.textMuted, fontSize: 12.5),
             ),
           ],
@@ -78,7 +81,7 @@ class AgentListScreen extends ConsumerWidget {
               Icon(Icons.groups_outlined, size: 52, color: u.brand),
               const SizedBox(height: 16),
               Text(
-                directory.error ?? 'No agents configured yet',
+                directory.error ?? 'No agents are available right now.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: u.textPrimary,
@@ -88,62 +91,109 @@ class AgentListScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Agents appear here after an administrator configures a Character for this account.',
+                directory.error == null
+                    ? 'Please check back soon.'
+                    : 'Your conversations are still here.',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: u.textMuted, height: 1.4),
               ),
               const SizedBox(height: 18),
               OutlinedButton.icon(
-                onPressed: () =>
-                    ref.read(agentDirectoryProvider.notifier).refresh(),
+                onPressed: () async {
+                  if (directory.recovery == AgentRecovery.signIn) {
+                    await ref.read(sessionProvider.notifier).logout();
+                  } else if (kDebugMode &&
+                      directory.recovery == AgentRecovery.reconnect) {
+                    if (context.mounted) context.push('/developer');
+                  } else {
+                    await ref.read(agentDirectoryProvider.notifier).refresh();
+                  }
+                },
                 icon: const Icon(Icons.refresh),
-                label: const Text('Refresh'),
+                label: Text(
+                  directory.error == null
+                      ? 'Refresh'
+                      : (directory.recovery == AgentRecovery.reconnect &&
+                                !kDebugMode
+                            ? 'Try again'
+                            : AgentFeedback(
+                                directory.error!,
+                                recovery: directory.recovery,
+                              ).actionLabel),
+                ),
               ),
+              if (kDebugMode && directory.error != null)
+                TextButton(
+                  onPressed: () => context.push('/developer'),
+                  child: const Text('Connection settings'),
+                ),
             ],
           ),
         ),
       );
     }
 
-    return ListView.separated(
-      itemCount: directory.agents.length,
-      separatorBuilder: (_, __) => Divider(
-        height: 1,
-        indent: 76,
-        color: u.structuralBorder,
-      ),
-      itemBuilder: (context, index) {
-        final agent = directory.agents[index];
-        return ListTile(
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-          leading: _AgentAvatar(agent: agent),
-          title: Text(
-            agent.displayName,
-            style: TextStyle(
-              color: u.textPrimary,
-              fontSize: 16.5,
-              fontWeight: FontWeight.w700,
+    return Column(
+      children: [
+        if (directory.error != null)
+          MaterialBanner(
+            content: Text(directory.error!),
+            actions: [
+              TextButton(
+                onPressed: directory.loading
+                    ? null
+                    : () => ref.read(agentDirectoryProvider.notifier).refresh(),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () =>
+                ref.read(agentDirectoryProvider.notifier).refresh(),
+            child: ListView.separated(
+              physics: const AlwaysScrollableScrollPhysics(),
+              itemCount: directory.agents.length,
+              separatorBuilder: (_, __) =>
+                  Divider(height: 1, indent: 76, color: u.structuralBorder),
+              itemBuilder: (context, index) {
+                final agent = directory.agents[index];
+                return ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 7,
+                  ),
+                  leading: _AgentAvatar(agent: agent),
+                  title: Text(
+                    agent.displayName,
+                    style: TextStyle(
+                      color: u.textPrimary,
+                      fontSize: 16.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 3),
+                    child: Text(
+                      agent.roleLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: u.textMuted, fontSize: 14),
+                    ),
+                  ),
+                  trailing: Icon(Icons.chat_bubble_outline, color: u.brand),
+                  onTap: () {
+                    ref
+                        .read(aiChatProvider.notifier)
+                        .seedGreeting(agent.characterId, agent.greeting);
+                    context.push('/chat/${agent.characterId}');
+                  },
+                );
+              },
             ),
           ),
-          subtitle: Padding(
-            padding: const EdgeInsets.only(top: 3),
-            child: Text(
-              agent.roleLabel,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: u.textMuted, fontSize: 14),
-            ),
-          ),
-          trailing: Icon(Icons.chat_bubble_outline, color: u.brand),
-          onTap: () {
-            ref
-                .read(aiChatProvider.notifier)
-                .seedGreeting(agent.characterId, agent.greeting);
-            context.push('/chat/${agent.characterId}');
-          },
-        );
-      },
+        ),
+      ],
     );
   }
 }
@@ -162,8 +212,9 @@ class _AgentAvatar extends StatelessWidget {
         CircleAvatar(
           radius: 26,
           backgroundColor: u.brand,
-          foregroundImage:
-              image != null && image.isNotEmpty ? NetworkImage(image) : null,
+          foregroundImage: image != null && image.isNotEmpty
+              ? NetworkImage(image)
+              : null,
           child: image == null || image.isEmpty
               ? Text(
                   agent.initial,

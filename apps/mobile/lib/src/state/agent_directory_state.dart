@@ -3,18 +3,23 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../agents/agent_directory.dart';
+import '../agents/agent_feedback.dart';
 import '../core/providers.dart';
+import '../core/network/api_client.dart';
+import 'session_state.dart';
 
 class AgentDirectoryState {
   const AgentDirectoryState({
     this.agents = const [],
     this.loading = true,
     this.error,
+    this.recovery = AgentRecovery.retry,
   });
 
   final List<AgentDirectoryEntry> agents;
   final bool loading;
   final String? error;
+  final AgentRecovery recovery;
 
   AgentDirectoryEntry? find(String characterId) {
     for (final agent in agents) {
@@ -28,35 +33,63 @@ class AgentDirectoryState {
     bool? loading,
     String? error,
     bool clearError = false,
-  }) =>
-      AgentDirectoryState(
-        agents: agents ?? this.agents,
-        loading: loading ?? this.loading,
-        error: clearError ? null : (error ?? this.error),
-      );
+    AgentRecovery? recovery,
+  }) => AgentDirectoryState(
+    agents: agents ?? this.agents,
+    loading: loading ?? this.loading,
+    error: clearError ? null : (error ?? this.error),
+    recovery: recovery ?? this.recovery,
+  );
 }
 
 class AgentDirectoryController extends Notifier<AgentDirectoryState> {
+  int _request = 0;
+  bool _disposed = false;
   @override
   AgentDirectoryState build() {
+    ref.watch(agentDirectoryTransportProvider);
+    ref.watch(
+      sessionProvider.select(
+        (session) =>
+            session is SessionSignedIn ? session.tokens.accessToken : null,
+      ),
+    );
+    _disposed = false;
+    ref.onDispose(() {
+      _disposed = true;
+      _request++;
+    });
     scheduleMicrotask(refresh);
     return const AgentDirectoryState();
   }
 
   Future<void> refresh() async {
+    if (_disposed) return;
+    final request = ++_request;
     state = state.copyWith(loading: true, clearError: true);
     try {
-      final agents =
-          await ref.read(agentDirectoryTransportProvider).loadDirectory();
+      final agents = await ref
+          .read(agentDirectoryTransportProvider)
+          .loadDirectory();
+      if (_disposed || request != _request) return;
       state = AgentDirectoryState(
         agents: List.unmodifiable(agents),
         loading: false,
       );
-    } catch (_) {
-      state = const AgentDirectoryState(
-        agents: [],
+    } catch (error) {
+      if (_disposed || request != _request) return;
+      final feedback = AgentFeedback.fromError(error);
+      state = state.copyWith(
+        // Transient failure must not erase the last successfully loaded roster.
+        // Authorization failures remove it so another account cannot reuse it.
+        agents:
+            error is ApiException &&
+                (error.statusCode == 401 || error.statusCode == 403)
+            ? const []
+            : null,
         loading: false,
-        error: 'Could not load your agents.',
+        error: feedback.message,
+        recovery: feedback.recovery,
       );
     }
   }
@@ -64,5 +97,5 @@ class AgentDirectoryController extends Notifier<AgentDirectoryState> {
 
 final agentDirectoryProvider =
     NotifierProvider<AgentDirectoryController, AgentDirectoryState>(
-  AgentDirectoryController.new,
-);
+      AgentDirectoryController.new,
+    );

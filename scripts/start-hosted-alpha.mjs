@@ -90,4 +90,14 @@ async function start() {
   // This infrastructure table holds bootstrap references only. Identity remains canonical.
   const { startGatewayService } = await import("../services/gateway/dist/main.js");
   await startGatewayService();
+  if (process.argv.includes('--verify')) {
+    try {
+      const { verifyHostedAlpha } = await import('./verify-hosted-alpha.mjs');
+      const result = await verifyHostedAlpha({ baseUrl: `http://127.0.0.1:${process.env.PORT ?? 3000}`,
+        token: process.env.MASANAWA_ALPHA_DEV_TOKEN });
+      console.info(`Hosted Alpha verification: ${JSON.stringify(result)}`);
+    } catch (error) {
+      console.error(`Hosted Alpha verification failed: ${error.message}`);
+    }
+  }
 }

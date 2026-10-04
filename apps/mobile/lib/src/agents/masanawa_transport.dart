@@ -26,17 +26,26 @@ class _GatewayClient {
     required Dio dio,
     required this.baseUrl,
     this.readAccessToken,
-  }) : dio = Dio(dio.options);
+  }) : dio = Dio(dio.options.copyWith(baseUrl: baseUrl)) {
+    // Keep injected adapters available for tests; never copy legacy interceptors.
+    this.dio.httpClientAdapter = dio.httpClientAdapter;
+  }
 
   final Dio dio;
   final String baseUrl;
   final String? Function()? readAccessToken;
 
-  Options get options {
+  Options options({bool turn = false}) {
     final token = readAccessToken?.call();
-    return Options(headers: {
-      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
-    });
+    return Options(
+      followRedirects: false,
+      receiveTimeout: turn
+          ? const Duration(seconds: 75)
+          : const Duration(seconds: 15),
+      headers: {
+        if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+      },
+    );
   }
 
   Future<Map<String, dynamic>> post(
@@ -47,7 +56,9 @@ class _GatewayClient {
       final res = await dio.post<Map<String, dynamic>>(
         '$baseUrl$path',
         data: body,
-        options: options,
+        options: options(
+          turn: path.endsWith('/turn') || path.endsWith('/media-turn'),
+        ),
       );
       final data = res.data;
       if (data == null) throw const ApiException('Empty response from server');
@@ -61,7 +72,7 @@ class _GatewayClient {
     try {
       final res = await dio.get<Map<String, dynamic>>(
         '$baseUrl$path',
-        options: options,
+        options: options(),
       );
       final data = res.data;
       if (data == null) throw const ApiException('Empty response from server');
@@ -80,10 +91,10 @@ class MasanawaAgentDirectoryTransport implements AgentDirectoryTransport {
     required String baseUrl,
     String? Function()? readAccessToken,
   }) : _client = _GatewayClient(
-          dio: dio,
-          baseUrl: baseUrl,
-          readAccessToken: readAccessToken,
-        );
+         dio: dio,
+         baseUrl: baseUrl,
+         readAccessToken: readAccessToken,
+       );
 
   final _GatewayClient _client;
 
@@ -106,10 +117,10 @@ class MasanawaAgentTransport implements AgentTransport {
     required String baseUrl,
     String? Function()? readAccessToken,
   }) : _client = _GatewayClient(
-          dio: dio,
-          baseUrl: baseUrl,
-          readAccessToken: readAccessToken,
-        );
+         dio: dio,
+         baseUrl: baseUrl,
+         readAccessToken: readAccessToken,
+       );
 
   final _GatewayClient _client;
 
@@ -137,10 +148,7 @@ class MasanawaAgentTransport implements AgentTransport {
   }) async {
     final data = await _client.post(
       '/v1/agent/sessions/${binding.characterSessionId}/turn',
-      {
-        'characterId': binding.characterId,
-        'text': text,
-      },
+      {'characterId': binding.characterId, 'text': text},
     );
     final reply = data['reply'];
     if (reply is! String) {
