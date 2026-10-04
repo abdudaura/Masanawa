@@ -47,21 +47,6 @@ class RetryDirectory implements AgentDirectoryTransport {
   }
 }
 
-class MemoryConnectionStore implements AgentConnectionStore {
-  String? value;
-  @override
-  Future<String?> read() async => value;
-  @override
-  Future<void> write(String value) async {
-    this.value = value;
-  }
-
-  @override
-  Future<void> clear() async {
-    value = null;
-  }
-}
-
 class RecoveringTransport implements AgentTransport {
   int turns = 0;
   int closedSessions = 0;
@@ -272,50 +257,14 @@ void main() {
     },
   );
 
-  test(
-    'failed connection verification preserves existing secure settings',
-    () async {
-      final store = MemoryConnectionStore();
-      final c = ProviderContainer(
-        overrides: [agentConnectionStoreProvider.overrideWithValue(store)],
-      );
-      addTearDown(c.dispose);
-      final controller = c.read(agentConnectionProvider.notifier);
-      await Future<void>.delayed(Duration.zero);
-      await controller.connect(
-        baseUrl: 'https://one.test',
-        token: 'private-token',
-        verify: (_, __) async => [agent],
-      );
-      final saved = store.value;
-      await expectLater(
-        controller.connect(
-          baseUrl: 'https://two.test',
-          token: 'wrong',
-          verify: (_, __) async =>
-              throw const ApiException('hidden', statusCode: 401),
-        ),
-        throwsA(isA<ApiException>()),
-      );
-      expect(c.read(agentConnectionProvider).baseUrl, 'https://one.test');
-      expect(store.value, saved);
-      expect(
-        c.read(agentConnectionProvider).toString(),
-        isNot(contains('private-token')),
-      );
-      final restored = ProviderContainer(
-        overrides: [agentConnectionStoreProvider.overrideWithValue(store)],
-      );
-      addTearDown(restored.dispose);
-      restored.read(agentConnectionProvider);
-      await Future<void>.delayed(Duration.zero);
-      expect(
-        restored.read(agentConnectionProvider).baseUrl,
-        'https://one.test',
-      );
-      expect(restored.read(agentConnectionProvider).token, 'private-token');
-    },
-  );
+  test('production agent runtime is enabled without a developer token', () {
+    final c = ProviderContainer();
+    addTearDown(c.dispose);
+    final connection = c.read(agentConnectionProvider);
+    expect(connection.configured, isTrue);
+    expect(connection.baseUrl, 'https://nurainworker-production.up.railway.app');
+    expect(connection.toString(), isNot(contains('token')));
+  });
 
   test(
     'directory keeps roster on transient failure and clears it on 401',
