@@ -130,6 +130,7 @@ export function createAgentConversationService(input: {
           characterSessionId,
           characterVersionId: session.characterVersionId,
           presentation: admission.presentation,
+          ...(request.onTextDelta ? { onTextDelta: request.onTextDelta } : {}),
           input: Object.freeze({ kind: "text" as const, text }),
         });
         selectionGate.close();
