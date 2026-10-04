@@ -1497,6 +1497,8 @@ class _DocTile extends StatelessWidget {
   }
 }
 
+_VoiceBubbleState? _activeVoiceBubble;
+
 class _VoiceBubble extends StatefulWidget {
   const _VoiceBubble({required this.attachment});
   final ChatAttachment attachment;
@@ -1508,40 +1510,77 @@ class _VoiceBubble extends StatefulWidget {
 class _VoiceBubbleState extends State<_VoiceBubble> {
   AudioPlayer? _player;
   StreamSubscription<PlayerState>? _stateSub;
+  StreamSubscription<Duration>? _positionSub;
   bool _playing = false;
   bool _broken = false;
+  Duration _position = Duration.zero;
+  Duration _duration = Duration.zero;
+  double _speed = 1;
 
   @override
   void dispose() {
+    if (identical(_activeVoiceBubble, this)) _activeVoiceBubble = null;
     _stateSub?.cancel();
+    _positionSub?.cancel();
     _player?.dispose();
     super.dispose();
+  }
+
+  Future<void> _pauseFromAnotherBubble() async {
+    if (!_playing) return;
+    await _player?.pause();
+    if (mounted) setState(() => _playing = false);
+  }
+
+  Future<void> _ensurePlayer() async {
+    if (_player != null) return;
+    final player = AudioPlayer();
+    _player = player;
+    _stateSub = player.playerStateStream.listen((state) {
+      if (!mounted) return;
+      if (state.processingState == ProcessingState.completed) {
+        setState(() {
+          _playing = false;
+          _position = Duration.zero;
+        });
+        player.seek(Duration.zero);
+      }
+    });
+    _positionSub = player.positionStream.listen((value) {
+      if (mounted) setState(() => _position = value);
+    });
+    final duration = await player.setFilePath(widget.attachment.path);
+    _duration = duration ??
+        Duration(milliseconds: widget.attachment.durationMs ?? 0);
+    await player.setSpeed(_speed);
   }
 
   Future<void> _toggle() async {
     try {
       if (_broken && mounted) setState(() => _broken = false);
-      _player ??= AudioPlayer();
-      // Subscribe once per player; re-toggling must not stack listeners.
-      _stateSub ??= _player!.playerStateStream.listen((s) {
-        if (s.processingState == ProcessingState.completed && mounted) {
-          setState(() => _playing = false);
-        }
-      });
+      await _ensurePlayer();
       if (_playing) {
         await _player!.pause();
         if (mounted) setState(() => _playing = false);
         return;
       }
-      await _player!.setFilePath(widget.attachment.path);
-      if (!mounted) return;
-      setState(() => _playing = true);
-      unawaited(_player!.play());
+      final other = _activeVoiceBubble;
+      if (other != null && !identical(other, this)) {
+        await other._pauseFromAnotherBubble();
+      }
+      _activeVoiceBubble = this;
+      if (_position >= _duration && _duration > Duration.zero) {
+        await _player!.seek(Duration.zero);
+      }
+      await _player!.play();
+      if (mounted) setState(() => _playing = true);
     } catch (_) {
       await _player?.dispose();
       _player = null;
       await _stateSub?.cancel();
       _stateSub = null;
+      await _positionSub?.cancel();
+      _positionSub = null;
       if (mounted) {
         setState(() {
           _playing = false;
@@ -1551,26 +1590,62 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
     }
   }
 
+  Future<void> _seek(double fraction) async {
+    try {
+      await _ensurePlayer();
+      final totalMs = _duration.inMilliseconds;
+      if (totalMs <= 0) return;
+      await _player!.seek(
+        Duration(milliseconds: (totalMs * fraction).round()),
+      );
+    } catch (_) {}
+  }
+
+  Future<void> _cycleSpeed() async {
+    final next = _speed == 1
+        ? 1.5
+        : _speed == 1.5
+        ? 2.0
+        : 1.0;
+    setState(() => _speed = next);
+    try {
+      await _ensurePlayer();
+      await _player!.setSpeed(next);
+    } catch (_) {}
+  }
+
   @override
   Widget build(BuildContext context) {
     final u = context.masanawa;
-    final total = formatDurationMs(widget.attachment.durationMs ?? 0);
+    final fallbackMs = widget.attachment.durationMs ?? 0;
+    final totalMs = _duration.inMilliseconds > 0
+        ? _duration.inMilliseconds
+        : fallbackMs;
+    final progress = totalMs <= 0
+        ? 0.0
+        : (_position.inMilliseconds / totalMs).clamp(0.0, 1.0);
+    final remaining = totalMs <= 0
+        ? formatDurationMs(fallbackMs)
+        : formatDurationMs(
+            (totalMs - _position.inMilliseconds).clamp(0, totalMs),
+          );
+
     return SizedBox(
-      width: 200,
+      width: 235,
       child: Row(
         children: [
           GestureDetector(
             onTap: _toggle,
             child: Container(
-              width: 38,
-              height: 38,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 color: u.brand.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 _broken
-                    ? Icons.error_outline
+                    ? Icons.refresh
                     : _playing
                     ? Icons.pause
                     : Icons.play_arrow,
@@ -1578,28 +1653,56 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  height: 3,
-                  decoration: BoxDecoration(
-                    color: u.textMuted.withValues(alpha: 0.35),
-                    borderRadius: BorderRadius.circular(2),
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    trackHeight: 2,
+                    thumbShape: const RoundSliderThumbShape(
+                      enabledThumbRadius: 5,
+                    ),
+                    overlayShape: SliderComponentShape.noOverlay,
+                  ),
+                  child: Slider(
+                    value: progress,
+                    onChanged: _broken ? null : _seek,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  _broken ? 'Unavailable' : total,
-                  style: TextStyle(color: u.textMuted, fontSize: 11),
+                Row(
+                  children: [
+                    Text(
+                      _broken ? 'Tap to retry' : remaining,
+                      style: TextStyle(color: u.textMuted, fontSize: 11),
+                    ),
+                    const Spacer(),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: _cycleSpeed,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 2,
+                        ),
+                        child: Text(
+                          '${_speed.toStringAsFixed(_speed == 1 ? 0 : 1)}×',
+                          style: TextStyle(
+                            color: u.textMuted,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
           const SizedBox(width: 4),
-          Icon(Icons.mic, size: 16, color: u.textMuted),
+          Icon(Icons.graphic_eq, size: 18, color: u.textMuted),
         ],
       ),
     );
