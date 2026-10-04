@@ -74,6 +74,7 @@ class RecoveringTransport implements AgentTransport {
     required AgentSessionBinding binding,
     required String text,
     void Function(String delta)? onTextDelta,
+    Future<void> Function(Uint8List pcmChunk)? onAudioPcmChunk,
   }) async {
     turns++;
     if (pending != null) return pending!.future;
