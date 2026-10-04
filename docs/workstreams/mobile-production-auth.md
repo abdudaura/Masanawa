@@ -26,6 +26,8 @@ Finish the production-authentication cleanup that the prior Android-shell window
 - adapters/storage/postgres/src/identity/platform-session.ts (new narrow external-session identity bridge)
 - adapters/storage/postgres/src/identity/index.ts (export only)
 - services/gateway/src/main.ts (authorizer composition only)
+- services/gateway/src/app.ts (Gateway PlatformError HTTP mapping only)
+- services/gateway/src/alpha_dev.ts (auth error normalization only)
 - services/gateway/package.json if a verification dependency is required
 - focused Gateway auth tests
 - this claim
