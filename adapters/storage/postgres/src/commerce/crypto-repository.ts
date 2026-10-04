@@ -218,6 +218,24 @@ export function createPostgresCryptoRepository(pool: Pool): CryptoRepository {
       );
     },
 
+    async readIntentByRequestId(input) {
+      const tenantId = parseCanonicalId("tenant", input.tenantId);
+      const requestId = parseCanonicalId("request", input.requestId);
+      return withTransaction(
+        pool,
+        async (client) => {
+          const result = await client.query<{ definition: unknown }>(
+            `SELECT definition FROM commerce.crypto_intents
+              WHERE tenant_id=$1 AND request_id=$2 LIMIT 2`,
+            [tenantId, requestId],
+          );
+          if (result.rows.length > 1) throw new Error("crypto.intent.identity_ambiguous");
+          return result.rows[0] ? intentFrom(result.rows[0].definition) : null;
+        },
+        { isolation: "repeatable read", readOnly: true },
+      );
+    },
+
     async listIntents(input) {
       const tenantId = parseCanonicalId("tenant", input.tenantId);
       const userId = parseCanonicalId("user", input.userId);
