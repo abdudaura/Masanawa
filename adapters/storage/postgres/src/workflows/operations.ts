@@ -69,7 +69,8 @@ function bindingRecord(row: BindingRow): PersistedWorkflowOperationBinding {
 function bindingFingerprint(
   input: Omit<PersistedWorkflowOperationBinding, "bindingFingerprint">,
 ): string {
-  return fingerprintCanonicalJson(input);
+  const { boundAt: _boundAt, ...semanticBinding } = input;
+  return fingerprintCanonicalJson(semanticBinding);
 }
 
 export async function bindWorkflowTaskOperation(
