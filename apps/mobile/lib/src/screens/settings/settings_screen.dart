@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../state/ai_chat_state.dart';
 import '../../state/agent_directory_state.dart';
 import '../../state/creator_economy_state.dart';
+import '../../state/creator_skills_state.dart';
 import '../../state/session_state.dart';
 import '../../core/providers.dart';
 import '../../theme/masanawa_theme.dart';
@@ -98,6 +99,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final directory = ref.watch(agentDirectoryProvider);
     final economy = ref.watch(creatorEconomyProvider);
     final economySnapshot = economy.asData?.value;
+    final creatorSkills = ref.watch(creatorSkillsProvider);
     final supportAgents = directory.agents
         .where((agent) => agent.supportAgent)
         .toList(growable: false);
@@ -261,6 +263,73 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ]),
           ),
           const SizedBox(height: 16),
+          if (economySnapshot?.hasClone == true)
+            creatorSkills.when(
+              data: (skills) {
+                if (skills.isEmpty) return const SizedBox.shrink();
+                return _Card(children: [
+                  ListTile(
+                    leading: Icon(Icons.extension_outlined, color: u.brand),
+                    title: const Text('Clone Skills'),
+                    subtitle: const Text(
+                      'Add specialist abilities. Masanawa handles the technical setup.',
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  for (var index = 0; index < skills.length; index++) ...[
+                    Builder(
+                      builder: (context) {
+                        final skill = skills[index];
+                        return SwitchListTile(
+                          value: skill.enabled,
+                          title: Text(skill.displayName),
+                          subtitle: Text(skill.description),
+                          onChanged: (enabled) async {
+                            try {
+                              await ref
+                                  .read(creatorSkillsProvider.notifier)
+                                  .setEnabled(skill, enabled);
+                            } catch (_) {
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Could not update this Skill. Please try again.',
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                        );
+                      },
+                    ),
+                    if (index != skills.length - 1)
+                      const Divider(height: 1),
+                  ],
+                ]);
+              },
+              loading: () => _Card(children: const [
+                ListTile(
+                  leading: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  title: Text('Loading clone Skills…'),
+                ),
+              ]),
+              error: (_, __) => _Card(children: [
+                ListTile(
+                  leading: Icon(Icons.sync_problem_outlined, color: u.brand),
+                  title: const Text('Clone Skills unavailable'),
+                  subtitle: const Text('Tap to try again'),
+                  onTap: () =>
+                      ref.read(creatorSkillsProvider.notifier).refresh(),
+                ),
+              ]),
+            ),
+          if (economySnapshot?.hasClone == true)
+            const SizedBox(height: 16),
           if (supportAgents.isNotEmpty) ...[
             _Card(children: [
               ListTile(
