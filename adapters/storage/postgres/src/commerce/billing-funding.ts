@@ -267,6 +267,31 @@ export function createPostgresBillingQuoteRepository(pool: Pool): BillingQuoteRe
       });
     },
 
+    async requestFundedRefund(input) {
+      return withTransaction(pool, async (client) => {
+        const row = await locked(client,input);
+        assertRevision(row,input.quoteRevision);
+        if (
+          row.state === "refund-pending" ||
+          row.state === "refund-dispatching" ||
+          row.state === "refund-submitted" ||
+          row.state === "refunded"
+        ) {
+          return quote(row);
+        }
+        if (row.state !== "funded" || row.fulfillment_reference !== null) {
+          throw new Error("financial.billing.funded_refund_not_allowed");
+        }
+        const result = await client.query<BillingQuoteRow>(
+          `UPDATE commerce.billing_quotes
+              SET state='refund-pending',settlement_state='failed',updated_at=$4
+            WHERE tenant_id=$1 AND user_id=$2 AND quote_id=$3 RETURNING *`,
+          [input.tenantId,input.userId,input.quoteId,input.requestedAt],
+        );
+        return quote(result.rows[0]!);
+      });
+    },
+
     async reserveConfirmedBill(input) {
       const tenantId = parseCanonicalId("tenant", input.tenantId);
       const userId = parseCanonicalId("user", input.userId);
