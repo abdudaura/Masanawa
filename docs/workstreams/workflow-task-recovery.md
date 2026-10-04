@@ -1,6 +1,6 @@
 # Workstream claim — workflow-task-recovery
 
-Status: active
+Status: implementation complete; PostgreSQL verification evidence pending
 Owner: this isolated stacked workstream
 Started: 2026-10-04 19:26 Africa/Lagos
 Base: work/workflow-task-leasing-20261004 @ b35e22489acc16b3cea19a898669cf234502ef59
@@ -37,3 +37,22 @@ This workstream does not modify Task 084-087 implementation files, checkpoint/ve
 - concurrent recovery workers cannot adopt the same stale Task twice.
 
 Task 089 checkpoint/version compatibility remains separate.
+
+
+## Implementation handoff
+
+Implemented on branch `work/workflow-task-recovery-20261004` in draft PR #111.
+
+The slice now provides:
+
+- Task heartbeat timestamp + adoption counter;
+- current-owner/current-fence/unexpired heartbeat renewal;
+- heartbeat expiry extension without Task revision/fence churn;
+- Tenant-scoped stale running-Task discovery;
+- atomic expired-lease adoption with `SKIP LOCKED`;
+- preserved original `started_at`;
+- incremented Task revision, lease fence and adoption count on takeover;
+- stale crashed-worker invalidation after adoption;
+- focused PostgreSQL acceptance for heartbeat, expiry, takeover and concurrent recovery.
+
+Task 089 checkpoint/version compatibility remains out of scope.
