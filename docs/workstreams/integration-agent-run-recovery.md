@@ -31,10 +31,10 @@ Record executable commands and limitations without changing canonical task statu
 
 ## Status
 
-Implementation: not started
-Verification: not started
+Implementation: complete on branch
+Verification: static diff review complete; Foundation CI run 37220620769 failed before checkout (runner_id=0, zero steps); PostgreSQL execution still required
 Deployment: not applicable
-Last update: 2026-10-04 18:28 Africa/Lagos
+Last update: 2026-10-04 18:31 Africa/Lagos
 
 ## Collision check
 
@@ -44,4 +44,16 @@ all files currently changed by #89, #96, #97 and #98.
 
 ## Handoff evidence
 
-Pending implementation and verification.
+Implementation commits:
+- `1a984b3d25c08d952aeec23b2f888c185a50fb29` — recovery acceptance test
+- `8bcdc62b48be1e84b7cfbb178d3ddc127a08446b` — acceptance scope/evidence note
+
+PR: #99, stacked on PR #89.
+
+Hosted check: Foundation CI run 37220620769 / job 111490034030 failed with
+`runner_id=0`, no runner name and zero steps. No repository code or test executed,
+so this is not a test failure and not a pass.
+
+Required next evidence: run the focused PostgreSQL 18 command in
+`docs/AGENT-RUN-RECOVERY-ACCEPTANCE.md`, then the normal Task 072 gate. Preserve the
+stacked base unless PR #89 changes; rebase only with explicit collision review.
