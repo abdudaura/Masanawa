@@ -59,7 +59,7 @@ export function createGeminiLiveAudioRenderer(input: {
       if (!value) throw new TypeError("Native audio text is required");
       if (value.length > 16_000) throw new RangeError("Native audio text is too long");
 
-      const WebSocketCtor = (globalThis as unknown as { WebSocket?: typeof WebSocket }).WebSocket;
+      const WebSocketCtor = (globalThis as { WebSocket?: any }).WebSocket;
       if (!WebSocketCtor) throw new Error("WebSocket runtime unavailable");
 
       const url =
