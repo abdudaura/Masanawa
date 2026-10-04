@@ -54,7 +54,8 @@ Implementation: substantially complete in PR #128:
 Verification:
 - PR is mergeable and based directly on main 24c8ed783cc2b4797e2c915a698b69ee997f3995.
 - GitHub Actions Foundation CI and Mobile Build currently fail before executing any step (runner allocation failure; jobs contain zero steps), so no passing CI is claimed.
-- Source audit found no remaining mobile Developer route, devLogin, AgentConnectionStore, connection.token, or Alpha mobile token references in the changed runtime paths.
+- Source audit found no remaining mobile Developer route, devLogin, AgentConnectionStore, connection.token, Alpha mobile token, old billing-worker Gateway URL, or stale Developer instructions in the changed runtime paths.
+- Local TypeScript parser accepted the exact new production-auth and PostgreSQL identity-bridge source files with no syntax diagnostics.
 
 Infrastructure findings:
 - `nurainworker-production.up.railway.app` currently belongs to the active billing worker and starts `scripts/flutterwave-webhook-proxy.mjs`; it is NOT the agent Gateway and must not be reused by the APK.
