@@ -3,6 +3,7 @@ import type { Instant } from "@masanawa/contracts";
 import { nowInstant, parseCanonicalId } from "@masanawa/contracts";
 import type { AgentDirectoryService } from "./agent_directory.js";
 import type { AgentConversationService } from "./agent_conversation_contract.js";
+import type { CreatorCloneService } from "./creator_clone.js";
 import {
   admitTelemetryCorrelation,
   injectCorrelationHeaders,
@@ -21,6 +22,7 @@ export interface GatewayAppOptions {
   readonly isDraining?: () => boolean;
   readonly agentDirectory?: AgentDirectoryService;
   readonly agentConversation?: AgentConversationService;
+  readonly creatorClone?: CreatorCloneService;
 }
 
 const HealthResponseSchema = Type.Object(
@@ -196,6 +198,54 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     );
   }
 
+
+
+  if (options.creatorClone) {
+    const creatorClone = options.creatorClone;
+    app.post(
+      "/creator/clone",
+      {
+        schema: {
+          body: Type.Object(
+            {
+              displayName: Type.String({ minLength: 1, maxLength: 120 }),
+              biography: Type.String({ minLength: 1, maxLength: 1000 }),
+              languages: Type.Array(
+                Type.String({ minLength: 1, maxLength: 120 }),
+                { minItems: 1, maxItems: 16 },
+              ),
+              personality: Type.Array(
+                Type.String({ minLength: 1, maxLength: 120 }),
+                { minItems: 1, maxItems: 24 },
+              ),
+              expertise: Type.Array(
+                Type.String({ minLength: 1, maxLength: 120 }),
+                { minItems: 1, maxItems: 32 },
+              ),
+            },
+            { additionalProperties: false },
+          ),
+          response: {
+            200: Type.Object(
+              {
+                created: Type.Boolean(),
+                characterId: Type.String(),
+                characterVersionId: Type.String(),
+                relationshipId: Type.String(),
+                displayName: Type.String(),
+              },
+              { additionalProperties: false },
+            ),
+          },
+        },
+      },
+      async (request) =>
+        creatorClone.create({
+          authorizationHeader: request.headers.authorization,
+          ...request.body,
+        }),
+    );
+  }
 
   if (options.agentConversation) {
     const conversation = options.agentConversation;
