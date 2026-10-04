@@ -70,6 +70,35 @@ describe("production mobile authentication", () => {
     );
   });
 
+  it("treats auth-service outages as retryable unavailability, not invalid login", async () => {
+    const verifier = createPlatformSessionVerifier({
+      baseUrl: "https://platform.example",
+      fetchImpl: (async () =>
+        new Response("upstream unavailable", { status: 503 })) as typeof fetch,
+    });
+
+    await expect(verifier.verify("Bearer still-valid")).rejects.toMatchObject({
+      code: "gateway.platform_session_unavailable",
+      category: "unavailable",
+      retryable: true,
+    });
+  });
+
+  it("treats auth-service network failures as retryable unavailability", async () => {
+    const verifier = createPlatformSessionVerifier({
+      baseUrl: "https://platform.example",
+      fetchImpl: (async () => {
+        throw new Error("network secret");
+      }) as typeof fetch,
+    });
+
+    await expect(verifier.verify("Bearer still-valid")).rejects.toMatchObject({
+      code: "gateway.platform_session_unavailable",
+      category: "unavailable",
+      retryable: true,
+    });
+  });
+
   it("shows support agents plus user relationships, but not another user's clone", async () => {
     const tenantId = createCanonicalId("tenant");
     const userId = createCanonicalId("user");
