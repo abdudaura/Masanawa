@@ -50,21 +50,62 @@ class _GatewayClient {
 
   Future<Map<String, dynamic>> post(
     String path,
-    Map<String, dynamic> body,
-  ) async {
+    Map<String, dynamic> body, {
+    CancelToken? cancelToken,
+    void Function(int sent, int total)? onSendProgress,
+  }) async {
     try {
       final res = await dio.post<Map<String, dynamic>>(
         '$baseUrl$path',
         data: body,
         options: options(
-          turn: path.endsWith('/turn') || path.endsWith('/media-turn'),
+          turn: path.endsWith('/turn') ||
+              path.endsWith('/media-turn') ||
+              path.endsWith('/media-set-turn'),
         ),
+        cancelToken: cancelToken,
+        onSendProgress: onSendProgress,
       );
       final data = res.data;
       if (data == null) throw const ApiException('Empty response from server');
       return data;
     } on DioException catch (e) {
       throw mapDioError(e);
+    }
+  }
+
+  Stream<Map<String, dynamic>> postStream(
+    String path,
+    Map<String, dynamic> body, {
+    CancelToken? cancelToken,
+  }) async* {
+    try {
+      final res = await dio.post<ResponseBody>(
+        '$baseUrl$path',
+        data: body,
+        options: options(turn: true).copyWith(
+          responseType: ResponseType.stream,
+        ),
+        cancelToken: cancelToken,
+      );
+      final bodyStream = res.data?.stream;
+      if (bodyStream == null) {
+        throw const ApiException('Empty response from server');
+      }
+      await for (final line in bodyStream
+          .transform(utf8.decoder)
+          .transform(const LineSplitter())) {
+        final trimmed = line.trim();
+        if (trimmed.isEmpty) continue;
+        final decoded = jsonDecode(trimmed);
+        if (decoded is Map) {
+          yield decoded.cast<String, dynamic>();
+        }
+      }
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    } on FormatException {
+      throw const ApiException('Invalid streaming response from server');
     }
   }
 
@@ -123,6 +164,7 @@ class MasanawaAgentTransport implements AgentTransport {
        );
 
   final _GatewayClient _client;
+  final Map<String, CancelToken> _turnTokens = {};
 
   @override
   Future<AgentSessionBinding> openSession(String characterId) async {
@@ -145,15 +187,78 @@ class MasanawaAgentTransport implements AgentTransport {
   Future<AgentTurnResult> sendTurn({
     required AgentSessionBinding binding,
     required String text,
+    void Function(String delta)? onTextDelta,
+    Future<void> Function(Uint8List pcmChunk)? onAudioPcmChunk,
   }) async {
-    final data = await _client.post(
-      '/v1/agent/sessions/${binding.characterSessionId}/turn',
-      {'characterId': binding.characterId, 'text': text},
-    );
-    final reply = data['reply'];
-    if (reply is! String) {
-      throw const ApiException('Agent service unavailable');
+    final token = CancelToken();
+    _turnTokens[binding.characterId]?.cancel('Superseded by a new turn');
+    _turnTokens[binding.characterId] = token;
+
+    try {
+      if (onTextDelta != null) {
+        var streamedText = '';
+        Map<String, dynamic>? done;
+        await for (final event in _client.postStream(
+          '/v1/agent/sessions/${binding.characterSessionId}/turn-stream',
+          {'characterId': binding.characterId, 'text': text},
+          cancelToken: token,
+        )) {
+          final type = event['type'];
+          if (type == 'delta') {
+            final delta = event['text'];
+            if (delta is String && delta.isNotEmpty) {
+              streamedText += delta;
+              onTextDelta(delta);
+            }
+            continue;
+          }
+          if (type == 'audio') {
+            final data = event['dataBase64'];
+            if (data is String && data.isNotEmpty && onAudioPcmChunk != null) {
+              await onAudioPcmChunk(base64Decode(data));
+            }
+            continue;
+          }
+          if (type == 'error') {
+            throw const ApiException('Agent streaming turn failed');
+          }
+          if (type == 'done') done = event;
+        }
+        final data = done;
+        if (data == null) {
+          throw const ApiException('Agent stream ended unexpectedly');
+        }
+        final finalReply = data['reply'];
+        final reply = finalReply is String && finalReply.isNotEmpty
+            ? finalReply
+            : streamedText;
+        if (reply.isEmpty) {
+          throw const ApiException('Agent service returned no result');
+        }
+        return _turnResultFromData(data, reply: reply);
+      }
+
+      final data = await _client.post(
+        '/v1/agent/sessions/${binding.characterSessionId}/turn',
+        {'characterId': binding.characterId, 'text': text},
+        cancelToken: token,
+      );
+      final reply = data['reply'];
+      if (reply is! String || reply.isEmpty) {
+        throw const ApiException('Agent service unavailable');
+      }
+      return _turnResultFromData(data, reply: reply);
+    } finally {
+      if (identical(_turnTokens[binding.characterId], token)) {
+        _turnTokens.remove(binding.characterId);
+      }
     }
+  }
+
+  AgentTurnResult _turnResultFromData(
+    Map<String, dynamic> data, {
+    required String reply,
+  }) {
     final rawParts = data['parts'];
     final parts = <AgentMessagePart>[];
     if (rawParts is List) {
@@ -161,16 +266,11 @@ class MasanawaAgentTransport implements AgentTransport {
         if (raw is Map) {
           try {
             parts.add(AgentMessagePart.fromJson(raw.cast<String, dynamic>()));
-          } catch (_) {
-            // Unknown future part types must not break the conversation.
-          }
+          } catch (_) {}
         }
       }
     }
     final runId = data['agentRunId'];
-    if (reply.isEmpty && parts.isEmpty) {
-      throw const ApiException('Agent service returned no result');
-    }
     final audioBase64 = data['audioBase64'];
     final audioMimeType = data['audioMimeType'];
     final audioDurationMs = data['audioDurationMs'];
@@ -192,25 +292,106 @@ class MasanawaAgentTransport implements AgentTransport {
     required Uint8List bytes,
     required String mimeType,
     required String caption,
+    void Function(int sent, int total)? onUploadProgress,
   }) async {
-    final data = await _client.post(
-      '/v1/agent/sessions/${binding.characterSessionId}/media-turn',
-      {
-        'characterId': binding.characterId,
-        'caption': caption,
-        'mimeType': mimeType,
-        'dataBase64': base64Encode(bytes),
-      },
-    );
+    final token = CancelToken();
+    _turnTokens[binding.characterId]?.cancel('Superseded by a new turn');
+    _turnTokens[binding.characterId] = token;
+    late final Map<String, dynamic> data;
+    try {
+      data = await _client.post(
+        '/v1/agent/sessions/${binding.characterSessionId}/media-turn',
+        {
+          'characterId': binding.characterId,
+          'caption': caption,
+          'mimeType': mimeType,
+          'dataBase64': base64Encode(bytes),
+        },
+        cancelToken: token,
+        onSendProgress: onUploadProgress,
+      );
+    } finally {
+      if (identical(_turnTokens[binding.characterId], token)) {
+        _turnTokens.remove(binding.characterId);
+      }
+    }
     final reply = data['reply'];
     if (reply is! String || reply.isEmpty) {
       throw const ApiException('Agent media service unavailable');
     }
+    final rawParts = data['parts'];
+    final parts = <AgentMessagePart>[];
+    if (rawParts is List) {
+      for (final raw in rawParts) {
+        if (raw is Map) {
+          try {
+            parts.add(AgentMessagePart.fromJson(raw.cast<String, dynamic>()));
+          } catch (_) {}
+        }
+      }
+    }
     final runId = data['agentRunId'];
+    final audioBase64 = data['audioBase64'];
+    final audioMimeType = data['audioMimeType'];
+    final audioDurationMs = data['audioDurationMs'];
     return AgentTurnResult(
       text: reply,
+      parts: List.unmodifiable(parts),
       agentRunId: runId is String && runId.isNotEmpty ? runId : null,
+      audioBytes: audioBase64 is String && audioBase64.isNotEmpty
+          ? base64Decode(audioBase64)
+          : null,
+      audioMimeType: audioMimeType is String ? audioMimeType : null,
+      audioDurationMs: audioDurationMs is num ? audioDurationMs.round() : null,
     );
+  }
+
+  @override
+  Future<AgentTurnResult> sendMediaSetTurn({
+    required AgentSessionBinding binding,
+    required List<AgentMediaInput> media,
+    required String caption,
+    void Function(int sent, int total)? onUploadProgress,
+  }) async {
+    if (media.isEmpty || media.length > 8) {
+      throw const ApiException('Invalid attachment set');
+    }
+    final token = CancelToken();
+    _turnTokens[binding.characterId]?.cancel('Superseded by a new turn');
+    _turnTokens[binding.characterId] = token;
+    try {
+      final data = await _client.post(
+        '/v1/agent/sessions/${binding.characterSessionId}/media-set-turn',
+        {
+          'characterId': binding.characterId,
+          'caption': caption,
+          'media': [
+            for (final item in media)
+              {
+                'mimeType': item.mimeType,
+                'dataBase64': base64Encode(item.bytes),
+                if (item.name != null) 'name': item.name,
+              },
+          ],
+        },
+        cancelToken: token,
+        onSendProgress: onUploadProgress,
+      );
+      final reply = data['reply'];
+      if (reply is! String || reply.isEmpty) {
+        throw const ApiException('Agent media service unavailable');
+      }
+      return _turnResultFromData(data, reply: reply);
+    } finally {
+      if (identical(_turnTokens[binding.characterId], token)) {
+        _turnTokens.remove(binding.characterId);
+      }
+    }
+  }
+
+  @override
+  void cancelTurn(String characterId) {
+    _turnTokens.remove(characterId)?.cancel('Stopped by user');
   }
 
   @override
