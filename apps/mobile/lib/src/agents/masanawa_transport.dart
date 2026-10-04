@@ -171,10 +171,18 @@ class MasanawaAgentTransport implements AgentTransport {
     if (reply.isEmpty && parts.isEmpty) {
       throw const ApiException('Agent service returned no result');
     }
+    final audioBase64 = data['audioBase64'];
+    final audioMimeType = data['audioMimeType'];
+    final audioDurationMs = data['audioDurationMs'];
     return AgentTurnResult(
       text: reply,
       parts: List.unmodifiable(parts),
       agentRunId: runId is String && runId.isNotEmpty ? runId : null,
+      audioBytes: audioBase64 is String && audioBase64.isNotEmpty
+          ? base64Decode(audioBase64)
+          : null,
+      audioMimeType: audioMimeType is String ? audioMimeType : null,
+      audioDurationMs: audioDurationMs is num ? audioDurationMs.round() : null,
     );
   }
 
