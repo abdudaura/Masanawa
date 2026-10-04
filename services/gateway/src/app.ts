@@ -230,6 +230,64 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
 
 
     app.post(
+      "/v1/agent/sessions/:characterSessionId/turn-stream",
+      {
+        schema: {
+          params: AgentSessionParamsSchema,
+          body: AgentTurnBodySchema,
+        },
+      },
+      async (request, reply) => {
+        reply.hijack();
+        reply.raw.statusCode = 200;
+        reply.raw.setHeader("content-type", "application/x-ndjson; charset=utf-8");
+        reply.raw.setHeader("cache-control", "no-cache, no-transform");
+        reply.raw.setHeader("x-content-type-options", "nosniff");
+
+        const emit = (event: Record<string, unknown>) => {
+          if (!reply.raw.destroyed && !reply.raw.writableEnded) {
+            reply.raw.write(JSON.stringify(event) + "\n");
+          }
+        };
+
+        try {
+          const result = await conversation.turn({
+            authorizationHeader: request.headers.authorization,
+            characterSessionId: request.params.characterSessionId,
+            characterId: request.body.characterId,
+            text: request.body.text,
+            requestId: parseCanonicalId(
+              "request",
+              request.headers["x-request-id"] as string,
+            ),
+            correlationId: parseCanonicalId(
+              "correlation",
+              request.headers["x-correlation-id"] as string,
+            ),
+            onTextDelta: async (delta) => {
+              if (delta) emit({ type: "delta", text: delta });
+            },
+          });
+          emit({
+            type: "done",
+            agentRunId: result.agentRunId,
+            parts: [...result.parts],
+            ...(result.audioBase64 ? { audioBase64: result.audioBase64 } : {}),
+            ...(result.audioMimeType ? { audioMimeType: result.audioMimeType } : {}),
+            ...(result.audioDurationMs !== undefined
+              ? { audioDurationMs: result.audioDurationMs }
+              : {}),
+          });
+        } catch {
+          emit({ type: "error", code: "turn_failed" });
+        } finally {
+          if (!reply.raw.writableEnded) reply.raw.end();
+        }
+      },
+    );
+
+
+    app.post(
       "/v1/agent/sessions/:characterSessionId/media-turn",
       {
         bodyLimit: 13_000_000,
