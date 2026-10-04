@@ -1,0 +1,91 @@
+import {
+  createCanonicalId,
+  nowInstant,
+  type CharacterId,
+  type ExternalSubjectRef,
+  type RelationshipId,
+  type TenantId,
+  type UserId,
+} from "@masanawa/contracts";
+import { createPostgresIdentityRepository } from "./repository.js";
+import { withTransaction } from "../transaction.js";
+import type { Pool } from "pg";
+
+export interface PostgresPlatformIdentityBridge {
+  resolveOrCreateUser(input: {
+    readonly tenantId: TenantId;
+    readonly externalUserId: string;
+  }): Promise<UserId>;
+  relationshipFor(input: {
+    readonly tenantId: TenantId;
+    readonly userId: UserId;
+    readonly characterId: CharacterId;
+  }): Promise<RelationshipId>;
+}
+
+function subject(externalUserId: string): ExternalSubjectRef {
+  const value = externalUserId.trim();
+  if (!value || value.length > 512 || /[\r\n\0]/u.test(value)) {
+    throw new TypeError("External platform user id is invalid");
+  }
+  return Object.freeze({
+    system: "unigeria",
+    namespace: "platform-user",
+    value,
+    subjectKind: "user" as const,
+    authenticationStrength: "strong" as const,
+    observedAt: nowInstant(),
+    provenance: Object.freeze({ source: "platform-session" }),
+  });
+}
+
+export function createPostgresPlatformIdentityBridge(
+  pool: Pool,
+): PostgresPlatformIdentityBridge {
+  return Object.freeze({
+    async resolveOrCreateUser(input) {
+      return withTransaction(pool, async (client) => {
+        const externalSubject = subject(input.externalUserId);
+        await client.query(
+          "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+          [`${input.tenantId}|unigeria|platform-user|${externalSubject.value}`],
+        );
+        const repository = createPostgresIdentityRepository(client);
+        const existing = await repository.resolveUserByExternalIdentity(
+          input.tenantId,
+          externalSubject,
+        );
+        if (existing) return existing;
+
+        const userId = createCanonicalId("user");
+        const now = nowInstant();
+        await repository.createUser({
+          tenantId: input.tenantId,
+          userId,
+          createdAt: now,
+        });
+        await repository.linkExternalUserIdentity({
+          tenantId: input.tenantId,
+          userId,
+          subject: externalSubject,
+          linkedAt: now,
+        });
+        return userId;
+      });
+    },
+
+    async relationshipFor(input) {
+      return withTransaction(pool, async (client) => {
+        const repository = createPostgresIdentityRepository(client);
+        const relationship = await repository.getOrCreateRelationship({
+          tenantId: input.tenantId,
+          relationshipId: createCanonicalId("relationship"),
+          userId: input.userId,
+          characterId: input.characterId,
+          createdAt: nowInstant(),
+        });
+        return relationship.relationshipId;
+      });
+    },
+  });
+}
