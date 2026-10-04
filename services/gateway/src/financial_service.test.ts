@@ -63,6 +63,7 @@ function setup(
   shouldDispatch = false,
   enableConversions = false,
   destinationApproved = true,
+  withdrawalNetworkFeeMode: "sender" | "receiver" | null = "receiver",
 ) {
   const payload = { payment_id: "123", order_id: tenantId+"."+requestId, price_amount: "10",
     price_currency: "usdttrc20", pay_currency: "usdttrc20", pay_amount: "10",
@@ -232,6 +233,9 @@ function setup(
     nowPaymentsPayout: new NowPaymentsPayoutClient({ apiKey: "fixture-key", email: "test@example.com", password: "fixture-password", fetch }),
     nowPaymentsIpnSecret: "fixture-ipn", publicBaseUrl: "https://example.com", now: () => at,
     withdrawalDestinationApproved: vi.fn(async () => destinationApproved),
+    ...(withdrawalNetworkFeeMode === null
+      ? {}
+      : { withdrawalNetworkFeeMode }),
     ...(evidence === undefined ? {} : { withdrawalEvidence: async () => ({
       account: evidence,
       routes: [{ providerCode: "USDTTRC20", asset: "USDT", network: "tron",
@@ -433,32 +437,43 @@ describe("financial service recovery and admission", () => {
       authorizationHeader, providerCode: "USDTTRC20", amount: "10", destinationAddress: "address",
     })).resolves.toEqual({
       providerCode: "USDTTRC20", amount: "10", destinationAddress: "address",
-      minimumAmount: "1", networkFee: "0.1", feePayer: "user",
+      minimumAmount: "1", networkFee: "0.1",
+      networkFeeMode: "receiver", feePayer: "user",
+      estimatedReceiveAmount: "9.9",
       addressValidated: true, quotedAt: at,
     });
     expect(crypto.reserveWithdrawal).not.toHaveBeenCalled();
-    expect(fetch).toHaveBeenCalledTimes(5);
+    expect(fetch).toHaveBeenCalledTimes(6);
   });
-  it("uses the canonical repository fee reserve for non-zero provider fees", async () => {
+  it("receiver fee mode debits only principal and reports the reduced receive estimate", async () => {
     const { service, crypto } = setup(null, account);
     await expect(service.createWithdrawal({
       authorizationHeader, requestId, providerCode: "USDTTRC20",
       amount: "10", destinationAddress: "address",
     })).resolves.toMatchObject({ status: "processing", amount: "10" });
-    expect(crypto.reserveWithdrawalWithFee).toHaveBeenCalledWith(expect.objectContaining({
-      networkFee: "0.1",
-      feePayer: "user",
-      intent: expect.objectContaining({ operation: "withdraw", amount: "10" }),
+    expect(crypto.reserveWithdrawal).toHaveBeenCalledWith(expect.objectContaining({
+      operation: "withdraw", amount: "10",
     }));
-    expect(crypto.reserveWithdrawal).not.toHaveBeenCalled();
+    expect(crypto.reserveWithdrawalWithFee).not.toHaveBeenCalled();
   });
-  it("uses the canonical fee-aware reserve hook when a network fee is quoted", async () => {
+  it("sender fee mode records a platform-paid fee without debiting the user for the estimate", async () => {
     const reserveWithFee = vi.fn(async (value: {
       readonly intent: CryptoIntent;
       readonly networkFee: string;
       readonly quotedAt: ReturnType<typeof toInstant>;
     }) => value.intent);
-    const { service, crypto } = setup(null, account, undefined, reserveWithFee);
+    const { service, crypto } = setup(
+      null, account, undefined, reserveWithFee,
+      undefined, false, false, true, "sender",
+    );
+    await expect(service.quoteWithdrawal({
+      authorizationHeader, providerCode: "USDTTRC20",
+      amount: "10", destinationAddress: "address",
+    })).resolves.toMatchObject({
+      networkFeeMode: "sender",
+      feePayer: "platform",
+      estimatedReceiveAmount: "10",
+    });
     await expect(service.createWithdrawal({
       authorizationHeader, requestId, providerCode: "USDTTRC20",
       amount: "10", destinationAddress: "address",
@@ -469,6 +484,10 @@ describe("financial service recovery and admission", () => {
       intent: expect.objectContaining({ operation: "withdraw", amount: "10" }),
     }));
     expect(crypto.reserveWithdrawal).not.toHaveBeenCalled();
+    expect(crypto.reserveWithdrawalWithFee).toHaveBeenCalledWith(expect.objectContaining({
+      feePayer: "platform",
+      networkFee: "0.1",
+    }));
   });
   it("releases a payout reserve on deterministic provider rejection", async () => {
     const { service, crypto, fetch } = setup(
@@ -567,8 +586,11 @@ describe("financial service recovery and admission", () => {
     const calledUrls = fetch.mock.calls.map((call) => String(call[0]));
     expect(calledUrls).toContain("https://api.nowpayments.io/v1/payout/batch-1/verify");
   });
-  it("rejects provider custody insufficiency before reserving customer principal", async () => {
-    const { service, crypto, fetch } = setup(null, account);
+  it("sender fee mode requires custody to cover principal plus estimated fee", async () => {
+    const { service, crypto, fetch } = setup(
+      null, account, undefined, undefined,
+      undefined, false, false, true, "sender",
+    );
     fetch.mockImplementation(async (request: Parameters<typeof globalThis.fetch>[0]) => {
       const url = String(request);
       if (url.endsWith("/auth")) return new Response(JSON.stringify({ token: "fixture-jwt" }));
