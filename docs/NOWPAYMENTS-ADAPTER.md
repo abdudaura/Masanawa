@@ -94,3 +94,22 @@ than treating this adapter as a wallet.
 
 No live credential, payment, IPN delivery, account eligibility, payout, custody,
 conversion, NGN settlement, deployment or production certification is claimed here.
+
+
+## Read-only production probe
+
+`runReadOnlyNowPaymentsProbe` provides a bounded integration smoke test that never
+returns the API key, request headers or raw provider bodies. It performs:
+
+1. `GET /v1/status`;
+2. authenticated `GET /v1/currencies`;
+3. optionally, `GET /v1/min-amount` for an explicitly chosen pair.
+
+A successful result exposes only reachability/authentication booleans, currency count,
+a bounded sample of provider currency codes and optional normalized minimum evidence.
+The current NOWPayments API documentation describes status and currency discovery as
+the first API integration checks. citeturn683464search0turn683464search1
+
+This probe is intentionally not an HTTP route by itself. The shared Gateway/integration
+owner may call it from an authenticated operator-only diagnostic surface or one-shot
+deployment verification. It must never be exposed to unauthenticated public clients.
