@@ -103,6 +103,9 @@ const AgentTurnResponseSchema = Type.Object(
     reply: Type.String(),
     agentRunId: Type.String(),
     parts: Type.Array(Type.Unknown()),
+    audioBase64: Type.Optional(Type.String()),
+    audioMimeType: Type.Optional(Type.String()),
+    audioDurationMs: Type.Optional(Type.Number()),
   },
   { additionalProperties: false },
 );
@@ -216,6 +219,11 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
           reply: result.reply,
           agentRunId: result.agentRunId,
           parts: [...result.parts],
+          ...(result.audioBase64 ? { audioBase64: result.audioBase64 } : {}),
+          ...(result.audioMimeType ? { audioMimeType: result.audioMimeType } : {}),
+          ...(result.audioDurationMs !== undefined
+            ? { audioDurationMs: result.audioDurationMs }
+            : {}),
         };
       },
     );
@@ -252,6 +260,11 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
           reply: result.reply,
           agentRunId: result.agentRunId,
           parts: [...result.parts],
+          ...(result.audioBase64 ? { audioBase64: result.audioBase64 } : {}),
+          ...(result.audioMimeType ? { audioMimeType: result.audioMimeType } : {}),
+          ...(result.audioDurationMs !== undefined
+            ? { audioDurationMs: result.audioDurationMs }
+            : {}),
         };
       },
     );
