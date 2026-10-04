@@ -12,7 +12,6 @@ import '../../core/providers.dart';
 import '../../theme/masanawa_theme.dart';
 import '../../tokens/masanawa_tokens.dart';
 import '../../core/mobile_push.dart';
-import '../../state/agent_directory_state.dart';
 
 /// Settings + profile. The only secondary screen: account card, two local
 /// toggles, clear-chat, log out. No feature links.
