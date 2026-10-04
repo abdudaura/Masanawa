@@ -1,4 +1,9 @@
 export {
+  NowPaymentsPayoutClient,
+  type NowPaymentsCreatedPayout,
+  type NowPaymentsPayoutClientOptions,
+} from "./payout.js";
+export {
   runReadOnlyNowPaymentsProbe,
   type NowPaymentsReadOnlyProbeResult,
 } from "./probe.js";
