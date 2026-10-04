@@ -3,6 +3,7 @@ import type { Instant } from "@masanawa/contracts";
 import { nowInstant, parseCanonicalId } from "@masanawa/contracts";
 import type { AgentDirectoryService } from "./agent_directory.js";
 import type { AgentConversationService } from "./agent_conversation_contract.js";
+import type { FinancialService } from "./financial_service.js";
 import {
   admitTelemetryCorrelation,
   injectCorrelationHeaders,
@@ -21,6 +22,7 @@ export interface GatewayAppOptions {
   readonly isDraining?: () => boolean;
   readonly agentDirectory?: AgentDirectoryService;
   readonly agentConversation?: AgentConversationService;
+  readonly financial?: FinancialService;
 }
 
 const HealthResponseSchema = Type.Object(
@@ -467,6 +469,148 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
           characterId: request.body.characterId,
         });
         return { closed: true as const };
+      },
+    );
+  }
+
+
+  if (options.financial) {
+    const financial = options.financial;
+
+    app.get(
+      "/v1/financial/crypto/routes",
+      {
+        schema: {
+          response: {
+            200: Type.Object(
+              {
+                routes: Type.Array(
+                  Type.Object(
+                    {
+                      providerCode: Type.String(),
+                      asset: Type.String(),
+                      network: Type.Union([Type.String(), Type.Null()]),
+                    },
+                    { additionalProperties: true },
+                  ),
+                ),
+              },
+              { additionalProperties: false },
+            ),
+          },
+        },
+      },
+      async (request) => ({
+        routes: (await financial.listDepositRoutes({
+          authorizationHeader: request.headers.authorization,
+        })).map((route) => ({
+          providerCode: route.providerCode,
+          asset: route.asset,
+          network: route.network,
+        })),
+      }),
+    );
+
+    app.post(
+      "/v1/financial/crypto/deposits",
+      {
+        schema: {
+          body: Type.Object(
+            {
+              requestId: Type.String(),
+              providerCode: Type.String({ minLength: 2, maxLength: 32 }),
+              amount: Type.String({ minLength: 1, maxLength: 80 }),
+            },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request) =>
+        financial.createDeposit({
+          authorizationHeader: request.headers.authorization,
+          requestId: request.body.requestId,
+          providerCode: request.body.providerCode,
+          amount: request.body.amount,
+        }),
+    );
+
+    app.get(
+      "/v1/financial/crypto/balances/:providerCode",
+      {
+        schema: {
+          params: Type.Object(
+            { providerCode: Type.String({ minLength: 2, maxLength: 32 }) },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request) =>
+        financial.readBalance({
+          authorizationHeader: request.headers.authorization,
+          providerCode: request.params.providerCode,
+        }),
+    );
+
+    app.get(
+      "/v1/financial/crypto/history",
+      {
+        schema: {
+          querystring: Type.Object(
+            { limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })) },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request) => ({
+        intents: await financial.listHistory({
+          authorizationHeader: request.headers.authorization,
+          ...(request.query.limit === undefined ? {} : { limit: request.query.limit }),
+        }),
+      }),
+    );
+
+    app.get(
+      "/v1/financial/crypto/intents/:requestId",
+      {
+        schema: {
+          params: Type.Object(
+            { requestId: Type.String() },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request, reply) => {
+        const intent = await financial.readIntent({
+          authorizationHeader: request.headers.authorization,
+          requestId: request.params.requestId,
+        });
+        if (!intent) {
+          reply.code(404);
+          return { error: "intent_not_found" };
+        }
+        return intent;
+      },
+    );
+
+    app.post(
+      "/v1/financial/nowpayments/ipn",
+      {
+        bodyLimit: 256_000,
+        schema: {
+          headers: Type.Object(
+            { "x-nowpayments-sig": Type.String({ minLength: 128, maxLength: 128 }) },
+            { additionalProperties: true },
+          ),
+          body: Type.Unknown(),
+        },
+      },
+      async (request, reply) => {
+        await financial.handleNowPaymentsIpn({
+          signature: request.headers["x-nowpayments-sig"],
+          payload: request.body,
+        });
+        reply.code(202);
+        return { accepted: true as const };
       },
     );
   }
