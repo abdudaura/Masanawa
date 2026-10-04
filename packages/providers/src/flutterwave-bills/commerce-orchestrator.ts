@@ -212,6 +212,7 @@ export class BillingCommerceOrchestrator {
     itemName: string;
     customerId: string;
     amount: string;
+    recipientValidation?: "required" | "not-required";
     signal?: AbortSignal;
   }>): Promise<BillingFulfillmentRecord> {
     const preparedBase = {
@@ -228,49 +229,53 @@ export class BillingCommerceOrchestrator {
       currency: "NGN" as const,
     };
 
-    const validation = await this.#provider.validateCustomer(
-      preparedBase.itemCode,
-      preparedBase.customerId,
-      input.signal,
-    );
-    if (!validation.valid) {
-      throw new BillingCommerceError(
-        "recipient_invalid",
-        "The bill recipient could not be validated",
+    let customerName: string | null = null;
+    if ((input.recipientValidation ?? "required") === "required") {
+      const validation = await this.#provider.validateCustomer(
+        preparedBase.itemCode,
+        preparedBase.customerId,
+        input.signal,
       );
-    }
-    if (
-      validation.customer !== preparedBase.customerId ||
-      validation.billerCode !== preparedBase.billerCode
-    ) {
-      throw new BillingCommerceError(
-        "recipient_mismatch",
-        "Provider validation did not match the selected bill",
-      );
-    }
-    if (
-      validation.minimum !== null &&
-      Number(preparedBase.amount) < Number(validation.minimum)
-    ) {
-      throw new BillingCommerceError(
-        "amount_below_minimum",
-        "Bill amount is below the provider minimum",
-      );
-    }
-    if (
-      validation.maximum !== null &&
-      Number(validation.maximum) > 0 &&
-      Number(preparedBase.amount) > Number(validation.maximum)
-    ) {
-      throw new BillingCommerceError(
-        "amount_above_maximum",
-        "Bill amount exceeds the provider maximum",
-      );
+      if (!validation.valid) {
+        throw new BillingCommerceError(
+          "recipient_invalid",
+          "The bill recipient could not be validated",
+        );
+      }
+      if (
+        validation.customer !== preparedBase.customerId ||
+        validation.billerCode !== preparedBase.billerCode
+      ) {
+        throw new BillingCommerceError(
+          "recipient_mismatch",
+          "Provider validation did not match the selected bill",
+        );
+      }
+      if (
+        validation.minimum !== null &&
+        Number(preparedBase.amount) < Number(validation.minimum)
+      ) {
+        throw new BillingCommerceError(
+          "amount_below_minimum",
+          "Bill amount is below the provider minimum",
+        );
+      }
+      if (
+        validation.maximum !== null &&
+        Number(validation.maximum) > 0 &&
+        Number(preparedBase.amount) > Number(validation.maximum)
+      ) {
+        throw new BillingCommerceError(
+          "amount_above_maximum",
+          "Bill amount exceeds the provider maximum",
+        );
+      }
+      customerName = validation.name;
     }
 
     const prepared: PreparedBillPurchase = Object.freeze({
       ...preparedBase,
-      customerName: validation.name,
+      customerName,
     });
     const initial: BillingFulfillmentRecord = Object.freeze({
       ...prepared,
