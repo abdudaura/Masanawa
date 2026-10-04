@@ -246,49 +246,282 @@ class AgentsPage extends StatefulWidget {
 class _AgentsPageState extends State<AgentsPage> {
   late Future<List<AgentPresentation>> _future = widget.api.agents();
 
+  Future<void> _edit(AgentPresentation agent) async {
+    final changed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => AgentEditorScreen(api: widget.api, agent: agent),
+      ),
+    );
+    if (changed == true && mounted) {
+      setState(() => _future = widget.api.agents());
+    }
+  }
+
   @override
   Widget build(BuildContext context) =>
       AsyncPanel<List<AgentPresentation>>(
         future: _future,
         onRetry: () => setState(() => _future = widget.api.agents()),
-        builder: (items) => ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Text('Agents', style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 12),
-            if (items.isEmpty)
-              const Card(
-                child: ListTile(title: Text('No configured agents')),
-              )
-            else
-              ...items.map(
-                (agent) => Card(
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: context.masanawa.surfaceMuted,
-                      child: Icon(
-                        Icons.smart_toy_outlined,
-                        color: context.masanawa.brand,
+        builder: (items) => RefreshIndicator(
+          onRefresh: () async {
+            final next = widget.api.agents();
+            setState(() => _future = next);
+            await next;
+          },
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16),
+            children: [
+              Text('Agents', style: Theme.of(context).textTheme.headlineSmall),
+              const SizedBox(height: 4),
+              Text(
+                'Manage what users see and which Skills each agent may use.',
+                style: TextStyle(color: context.masanawa.textMuted),
+              ),
+              const SizedBox(height: 12),
+              if (items.isEmpty)
+                const Card(
+                  child: ListTile(title: Text('No configured agents')),
+                )
+              else
+                ...items.map(
+                  (agent) => Card(
+                    child: ListTile(
+                      onTap: () => _edit(agent),
+                      leading: CircleAvatar(
+                        backgroundColor: context.masanawa.surfaceMuted,
+                        child: Icon(
+                          Icons.smart_toy_outlined,
+                          color: context.masanawa.brand,
+                        ),
                       ),
-                    ),
-                    title: Text(agent.displayName),
-                    subtitle: Text(
-                      '${agent.roleLabel}\n${agent.about}',
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    isThreeLine: true,
-                    trailing: Icon(
-                      agent.visibleInUserApp
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
+                      title: Text(agent.displayName),
+                      subtitle: Text(
+                        '${agent.roleLabel}\n${agent.about}',
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      isThreeLine: true,
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            agent.visibleInUserApp
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.chevron_right),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       );
+}
+
+class AgentEditorScreen extends StatefulWidget {
+  const AgentEditorScreen({
+    super.key,
+    required this.api,
+    required this.agent,
+  });
+
+  final AdminApi api;
+  final AgentPresentation agent;
+
+  @override
+  State<AgentEditorScreen> createState() => _AgentEditorScreenState();
+}
+
+class _AgentEditorScreenState extends State<AgentEditorScreen> {
+  late AgentPresentation _agent = widget.agent;
+  late final TextEditingController _name =
+      TextEditingController(text: _agent.displayName);
+  late final TextEditingController _role =
+      TextEditingController(text: _agent.roleLabel);
+  late final TextEditingController _about =
+      TextEditingController(text: _agent.about);
+  late final TextEditingController _greeting =
+      TextEditingController(text: _agent.greeting ?? '');
+  late final TextEditingController _sort =
+      TextEditingController(text: _agent.sortOrder.toString());
+
+  late Future<_AgentEditorData> _future = _load();
+  bool _visible = false;
+  bool _saving = false;
+  String? _error;
+
+  Future<_AgentEditorData> _load() async {
+    _visible = _agent.visibleInUserApp;
+    final skills = await widget.api.skills();
+    final assignment = await widget.api.agentSkills(_agent.characterId);
+    return _AgentEditorData(
+      skills: skills,
+      selected: assignment?.skillVersionIds.toSet() ?? <String>{},
+      assignmentRevision: assignment?.revision,
+    );
+  }
+
+  Future<void> _save(_AgentEditorData data) async {
+    final sort = int.tryParse(_sort.text.trim());
+    if (_name.text.trim().isEmpty || _role.text.trim().isEmpty || sort == null) {
+      setState(() => _error = 'Name, role and a valid sort order are required.');
+      return;
+    }
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      _agent = await widget.api.updateAgentPresentation(
+        _agent,
+        displayName: _name.text,
+        roleLabel: _role.text,
+        about: _about.text,
+        greeting: _greeting.text,
+        visibleInUserApp: _visible,
+        sortOrder: sort,
+      );
+      await widget.api.updateAgentSkills(
+        _agent.characterId,
+        skillVersionIds: data.selected.toList(growable: false),
+        expectedRevision: data.assignmentRevision,
+      );
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (error) {
+      if (mounted) setState(() => _error = error.toString());
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _role.dispose();
+    _about.dispose();
+    _greeting.dispose();
+    _sort.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('Edit agent')),
+        body: AsyncPanel<_AgentEditorData>(
+          future: _future,
+          onRetry: () => setState(() => _future = _load()),
+          builder: (data) => StatefulBuilder(
+            builder: (context, setInnerState) => ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                TextField(
+                  controller: _name,
+                  decoration: const InputDecoration(labelText: 'Display name'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _role,
+                  decoration: const InputDecoration(labelText: 'Role label'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _about,
+                  minLines: 3,
+                  maxLines: 5,
+                  decoration: const InputDecoration(labelText: 'About'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _greeting,
+                  minLines: 2,
+                  maxLines: 4,
+                  decoration: const InputDecoration(
+                    labelText: 'Greeting',
+                    hintText: 'Optional',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _sort,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Sort order'),
+                ),
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: _visible,
+                  onChanged: (value) {
+                    setState(() => _visible = value);
+                    setInnerState(() {});
+                  },
+                  title: const Text('Visible in customer app'),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  'Assigned Skills',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                ...data.skills.map(
+                  (skill) => CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    value: data.selected.contains(skill.skillVersionId),
+                    onChanged: (checked) {
+                      setInnerState(() {
+                        if (checked == true) {
+                          data.selected.add(skill.skillVersionId);
+                        } else {
+                          data.selected.remove(skill.skillVersionId);
+                        }
+                      });
+                    },
+                    title: Text(skill.displayName),
+                    subtitle: Text(
+                      '${skill.key} · ${skill.version} · ${skill.readiness}',
+                    ),
+                  ),
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    _error!,
+                    style: TextStyle(color: context.masanawa.emergency),
+                  ),
+                ],
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: _saving ? null : () => _save(data),
+                  icon: _saving
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.save_outlined),
+                  label: Text(_saving ? 'Saving…' : 'Save agent'),
+                ),
+                const SizedBox(height: 32),
+              ],
+            ),
+          ),
+        ),
+      );
+}
+
+class _AgentEditorData {
+  _AgentEditorData({
+    required this.skills,
+    required this.selected,
+    required this.assignmentRevision,
+  });
+
+  final List<AdminSkill> skills;
+  final Set<String> selected;
+  final int? assignmentRevision;
 }
 
 class SkillsPage extends StatefulWidget {
