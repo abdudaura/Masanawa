@@ -224,7 +224,27 @@ describePostgres("workflow Task retry acceptance", () => {
       tenantId: run.tenantId,
       limit: 10,
     });
-    expect(released).toEqual([firstLease.taskId]);
+    expect(released).toHaveLength(1);
+    expect(released[0]!.taskId).toBe(firstLease.taskId);
+
+    const retryOutbox = await pool.query<{
+      event_type: string;
+      aggregate_id: string;
+      payload: { taskId: string; failureCount: number };
+    }>(
+      `SELECT event_type, aggregate_id, payload
+         FROM events.outbox
+        WHERE outbox_event_id = $1`,
+      [released[0]!.outboxEventId],
+    );
+    expect(retryOutbox.rows[0]).toMatchObject({
+      event_type: "workflow.task.retry-ready.v1",
+      aggregate_id: firstLease.taskId,
+      payload: {
+        taskId: firstLease.taskId,
+        failureCount: 1,
+      },
+    });
 
     const retryState = await readWorkflowTaskRetryState(pool, {
       tenantId: run.tenantId,
@@ -415,9 +435,9 @@ describePostgres("workflow Task retry acceptance", () => {
 
       expect(a).toHaveLength(1);
       expect(b).toHaveLength(1);
-      expect(a[0]).not.toBe(b[0]);
+      expect(a[0]!.taskId).not.toBe(b[0]!.taskId);
 
-      const all = new Set([...a, ...b]);
+      const all = new Set([...a, ...b].map((item) => item.taskId));
       expect(all).toEqual(new Set(leases.map((lease) => lease.taskId)));
 
       const none = await releaseDueWorkflowTaskRetries(pool, {
