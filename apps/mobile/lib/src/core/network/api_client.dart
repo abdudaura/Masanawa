@@ -55,12 +55,10 @@ class ApiClient {
               !path.contains('/auth/refresh') &&
               !path.contains('/auth/otp') &&
               !path.contains('/auth/verify');
-          if (e.response?.statusCode == 401 && canRefresh && !_refreshing) {
-            _refreshing = true;
+          if (e.response?.statusCode == 401 && canRefresh) {
             try {
-              final newToken = await onUnauthorized!();
+              final newToken = await refreshAccessToken();
               if (newToken != null && newToken.isNotEmpty) {
-                accessToken = newToken;
                 final opts = e.requestOptions;
                 opts.headers['Authorization'] = 'Bearer $newToken';
                 final retried = await dio.fetch(opts);
@@ -70,8 +68,6 @@ class ApiClient {
             } catch (_) {
               // Refresh failed → the original 401 propagates (the session
               // controller already cleared the session on its side).
-            } finally {
-              _refreshing = false;
             }
           }
           handler.next(e);
@@ -81,7 +77,7 @@ class ApiClient {
   }
 
   final Dio dio;
-  bool _refreshing = false;
+  Future<String?>? _refreshFuture;
 
   /// Access token attached to protected requests by the session controller.
   String? accessToken;
@@ -90,6 +86,25 @@ class ApiClient {
   /// access token or null when rotation fails (sign-out). Wired by the session
   /// controller — never set by API surfaces.
   Future<String?> Function()? onUnauthorized;
+
+  /// Shares one refresh rotation across API and Gateway clients. This prevents
+  /// concurrent expired-token requests from racing the single-use refresh token.
+  Future<String?> refreshAccessToken() {
+    final active = _refreshFuture;
+    if (active != null) return active;
+    final callback = onUnauthorized;
+    if (callback == null) return Future<String?>.value(null);
+
+    late final Future<String?> future;
+    future = callback().then((token) {
+      if (token != null && token.isNotEmpty) accessToken = token;
+      return token;
+    }).whenComplete(() {
+      if (identical(_refreshFuture, future)) _refreshFuture = null;
+    });
+    _refreshFuture = future;
+    return future;
+  }
 
   // ---- Auth (U-p2-01) ----
 
