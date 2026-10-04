@@ -1,6 +1,6 @@
 # Independent app shell contract
 
-Status: renderer implementation on PR #91; not yet a verified or deployed release.
+Status: renderer and live mobile/Gateway integration are combined on draft PR #104; not yet a verified or deployed release.
 
 ## Update boundary
 
@@ -57,29 +57,44 @@ Example:
 }
 ```
 
-## Required integration before release
+## Integrated release contract
 
-The current chat screen does not bind onAction. Therefore action buttons are disabled,
-not falsely connected to transactions. The next integration owner must bind the
-ShellActionHandler to the canonical authenticated Gateway action dispatcher and
-replace/update the message document with the authoritative result.
+PR #104 now binds `MessagePartsView.onAction` to the authenticated shell action
+dispatcher. The mobile host persists the exact action terms in encrypted storage before
+submission, the Gateway authorizes the Character/session, and the server records
+idempotent document/revision action state before any executor side effect. The client
+never blindly replays an ambiguous action: it queries the original action status and
+requires authoritative acceptance.
 
-Server requirements: validate user/session/document/revision/token/expiry; allowlist
-action and input IDs; validate values; recheck prices, fees and recipient; distinguish
-selection from transaction confirmation; persist idempotency and recover results after
-timeouts; execute only through existing commerce/Skill authority. An agent's narration
-never proves payment or fulfillment. A retry after an ambiguous timeout must query
-the original action result, not issue a new financial command.
+The mobile shell transmits `ShellDocument.capabilities` through
+`GET /agent/shell/config`. The server enables shell documents/actions/revisions only
+when the client declares the complete v1 primitive set. Minimum and recommended app
+versions are server-controlled. Unknown/unsupported document content still falls back
+to readable text and disabled controls.
 
-ShellDocument.capabilities exposes the exact supported version, primitives and limits.
-It is not yet transmitted by the chat transport: negotiate it through the owning Gateway
-contract before server authors depend on new components. Server authors must provide readable text for app, WhatsApp, Telegram and
-voice. Voice selects the same authorized action; do not create a second money path.
+Canonical mobile endpoints use the `/agent/**` prefix:
+- directory and default-support-agent preference;
+- session open/turn/turn-stream/media/media-set/close;
+- shell config/history/turn status/events/action status/action dispatch;
+- presence, push registration and Live voice token minting.
 
-Further shell work: authenticated dispatcher, document patch/revision lifecycle,
-capability negotiation, durable action-result recovery, selectable voice options,
-native compatibility and responsive accessibility
-verification. Coordinate shared Gateway/controller paths before editing.
+`/v1/**` remains the operations/admin namespace; do not reintroduce
+`/v1/agent/**` in the mobile transport.
+
+Server requirements remain unchanged: validate user/session/document/revision/token/
+expiry, allowlist action and input IDs, validate values, recheck prices/fees/recipient,
+separate selection from consequential confirmation, and execute only through canonical
+Commerce/Skill authority. Narrative text never proves payment or fulfillment.
+
+Server-backed completed history, RequestId turn recovery, realtime event reconciliation,
+presence, push/deep-link hooks, offline queue state and Gemini Live direct-client voice
+are integrated. Push is inert unless Firebase build defines and server service-account
+configuration are supplied.
+
+Remaining release verification is environmental rather than an intentionally unwired
+feature: run repository TypeScript checks, Flutter analyze/tests, an APK build, and
+physical-device interaction before merging/releasing. GitHub Actions currently allocates
+no runner (`runner_id: 0`, zero job steps), so its red status is not a test result.
 
 ## Durable selection integration
 
@@ -105,11 +120,12 @@ recoverable identity. Accepted selection does not imply product fulfillment.
 
 ## Ownership and release dependencies
 
-PR #89 currently changes Gateway composition/conversation contracts and the mobile
-session, transport, chat controller and screen. This window does not edit those paths.
-PR #91 owns only the renderer/model/coordinator/tests and its scoped documentation.
-Integration must bind these ports, transmit capabilities, emit documents and implement
-authoritative result/revision recovery. Financial execution remains with existing owners.
+PR #104 is the integration owner for the mobile-shell/Gateway paths listed in
+`docs/workstreams/integration-mobile-shell.md`. It rebased onto current `main` and
+preserves creator-economy/default-agent work already merged there. Commerce settlement,
+provider adapters, Teaching internals and WhatsApp/Telegram ingress remain owned by
+their respective workstreams. Shell action execution is still a delegated server port;
+this PR does not invent a second transaction engine.
 
 ## Verification
 
@@ -141,3 +157,17 @@ Verification: 28 pure Dart tests pass (18 prior + 10 live-session/selection case
 
 Encrypted persistence checkpoint: EncryptedShellActionJournal and FlutterShellEncryptedStore implemented using existing flutter_secure_storage dependency. The journal serializes competing claims in the UI isolate, preserves pending records across instances/restarts, fails closed on corruption/unavailable storage/full journal, and invalidates all old instances at logout through namespace generations. No plaintext fallback or silent pending eviction. Server idempotency remains mandatory; do not share this native journal across isolates. Concrete journal is not yet composed into the #89-owned screen/transport.
 Verification: 34 pure Dart tests pass, including six encrypted-journal behavior cases; journal Dart analysis passes. Secure-storage adapter source is formatted but native plugin/device encryption is not verified. Flutter tool successfully cloned and SDK bootstrap began, but automatic approval review rejected startup because it attempted to contact cloud metadata (possible instance credential exposure). That route was stopped; do not bypass rejection. Full Flutter/APK verification remains blocked until a safe/local runner is available. Gateway/screen integration still needs explicit ownership transfer from #89; #90 and #92 ownership preserved. Not merged/deployed or fully implemented end-to-end.
+
+
+## PR #104 verification addendum
+
+The integration rebase repaired migration numbering, Gateway composition, Alpha
+authorization, conversation streaming/media-set contracts, the mobile PUT helper,
+canonical `/agent/**` routing and the unsupported-action pending-state bug. Server
+tests were added for shell capability negotiation and action replay semantics, and
+conversation route tests now cover media sets.
+
+The checked-in PowerShell smoke runner performs `flutter pub get`, `flutter analyze`,
+`flutter test`, debug APK build, hosted Gateway readiness, optional Gwani/Gwana roster
+verification, and optional device install. Firebase defines are forwarded only when
+present in environment variables. Do not put secrets in the script or repository.
