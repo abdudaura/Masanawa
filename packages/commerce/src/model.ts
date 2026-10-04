@@ -58,6 +58,7 @@ export interface CommerceLedgerTransfer {
   readonly amountCredits: number;
   readonly reason:
     | "customer-topup"
+    | "customer-payment"
     | "agent-float-topup"
     | "fulfillment-reserve"
     | "fulfillment-release"
@@ -286,5 +287,100 @@ export function normalizeCommerceQuote(input: CommerceQuote): CommerceQuote {
     platformMarginCredits: margin,
     expiresAt,
     createdAt,
+  });
+}
+
+
+export interface CommerceFulfillmentAdmission {
+  readonly schemaVersion: 1;
+  readonly tenantId: TenantId;
+  readonly fulfillmentId: FulfillmentId;
+  readonly quoteId: QuoteId;
+  readonly offerId: OfferId;
+  readonly offerRevision: number;
+  readonly skillVersionId: SkillVersionId;
+  readonly originatingCharacterId: CharacterId;
+  readonly executorCharacterId: CharacterId;
+  readonly creatorUserId: UserId | null;
+  readonly fundingSource: "agent-float" | "platform";
+  readonly reserveCredits: number;
+  readonly creatorCommissionCredits: number;
+  readonly platformRevenueCredits: number;
+  readonly state: "admitted";
+  readonly createdAt: Instant;
+}
+
+export function normalizeCommerceFulfillmentAdmission(
+  input: CommerceFulfillmentAdmission,
+): CommerceFulfillmentAdmission {
+  if (input.schemaVersion !== 1) {
+    throw new TypeError("Unsupported fulfillment admission schema");
+  }
+  if (!isCanonicalId("fulfillment", input.fulfillmentId)) {
+    throw new TypeError("fulfillmentId is invalid");
+  }
+  if (!isCanonicalId("quote", input.quoteId)) {
+    throw new TypeError("fulfillment quoteId is invalid");
+  }
+  if (!isCanonicalId("offer", input.offerId)) {
+    throw new TypeError("fulfillment offerId is invalid");
+  }
+  if (!isCanonicalId("skill-version", input.skillVersionId)) {
+    throw new TypeError("fulfillment SkillVersionId is invalid");
+  }
+  if (!isCanonicalId("character", input.originatingCharacterId)) {
+    throw new TypeError("fulfillment originating CharacterId is invalid");
+  }
+  if (!isCanonicalId("character", input.executorCharacterId)) {
+    throw new TypeError("fulfillment executor CharacterId is invalid");
+  }
+  if (
+    input.creatorUserId !== null &&
+    !isCanonicalId("user", input.creatorUserId)
+  ) {
+    throw new TypeError("fulfillment creator UserId is invalid");
+  }
+  if (!Number.isSafeInteger(input.offerRevision) || input.offerRevision < 1) {
+    throw new RangeError("fulfillment offerRevision is invalid");
+  }
+  const reserveCredits = credits(
+    input.reserveCredits,
+    "fulfillment.reserveCredits",
+  );
+  const creatorCommissionCredits = credits(
+    input.creatorCommissionCredits,
+    "fulfillment.creatorCommissionCredits",
+  );
+  const platformRevenueCredits = credits(
+    input.platformRevenueCredits,
+    "fulfillment.platformRevenueCredits",
+  );
+  if (
+    input.fundingSource !== "agent-float" &&
+    input.fundingSource !== "platform"
+  ) {
+    throw new TypeError("fulfillment fundingSource is invalid");
+  }
+  if (input.state !== "admitted") {
+    throw new TypeError("fulfillment initial state must be admitted");
+  }
+
+  return Object.freeze({
+    schemaVersion: 1,
+    tenantId: parseCanonicalId("tenant", input.tenantId),
+    fulfillmentId: input.fulfillmentId,
+    quoteId: input.quoteId,
+    offerId: input.offerId,
+    offerRevision: input.offerRevision,
+    skillVersionId: input.skillVersionId,
+    originatingCharacterId: input.originatingCharacterId,
+    executorCharacterId: input.executorCharacterId,
+    creatorUserId: input.creatorUserId,
+    fundingSource: input.fundingSource,
+    reserveCredits,
+    creatorCommissionCredits,
+    platformRevenueCredits,
+    state: "admitted",
+    createdAt: toInstant(input.createdAt),
   });
 }
