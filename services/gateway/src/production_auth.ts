@@ -82,31 +82,59 @@ export function createPlatformSessionVerifier(input: {
   return Object.freeze({
     async verify(authorizationHeader) {
       const token = requireBearer(authorizationHeader);
-      const response = await fetchImpl(`${baseUrl}/auth/me`, {
-        method: "GET",
-        headers: {
-          authorization: `Bearer ${token}`,
-          accept: "application/json",
-        },
-        signal: AbortSignal.timeout(10_000),
-      });
+      let response: Response;
+      try {
+        response = await fetchImpl(`${baseUrl}/auth/me`, {
+          method: "GET",
+          headers: {
+            authorization: `Bearer ${token}`,
+            accept: "application/json",
+          },
+          signal: AbortSignal.timeout(10_000),
+        });
+      } catch {
+        throw new PlatformError({
+          code: "gateway.platform_session_unavailable",
+          category: "unavailable",
+          message: "Platform session verification is unavailable",
+          retryable: true,
+        });
+      }
+      if (response.status === 401 || response.status === 403) {
+        throw new PlatformError({
+          code: "gateway.platform_session_invalid",
+          category: "authentication",
+          message: "Platform session authorization denied",
+          retryable: false,
+        });
+      }
       if (!response.ok) {
         throw new PlatformError({
-      code: "gateway.platform_session_invalid",
-      category: "authentication",
-      message: "Platform session authorization denied",
-      retryable: false,
-    });
+          code: "gateway.platform_session_unavailable",
+          category: response.status === 429 ? "rate-limit" : "unavailable",
+          message: "Platform session verification is unavailable",
+          retryable: true,
+        });
       }
-      const body = await response.json() as Record<string, unknown>;
+      let body: Record<string, unknown>;
+      try {
+        body = await response.json() as Record<string, unknown>;
+      } catch {
+        throw new PlatformError({
+          code: "gateway.platform_session_unavailable",
+          category: "unavailable",
+          message: "Platform session verification is unavailable",
+          retryable: true,
+        });
+      }
       const id = body.id;
       if (typeof id !== "string" || !id.trim() || id.length > 512) {
         throw new PlatformError({
-      code: "gateway.platform_session_invalid",
-      category: "authentication",
-      message: "Platform session authorization denied",
-      retryable: false,
-    });
+          code: "gateway.platform_session_unavailable",
+          category: "unavailable",
+          message: "Platform session verification is unavailable",
+          retryable: true,
+        });
       }
       return Object.freeze({ externalUserId: id.trim() });
     },
