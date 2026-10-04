@@ -392,7 +392,7 @@ export async function completeDevicePairing(
     readonly at: Instant;
   },
 ): Promise<RegisteredDevice> {
-  return withTransaction(pool, async (client) => {
+  const outcome = await withTransaction(pool, async (client) => {
     const challengeResult = await client.query<ChallengeRow>(
       `SELECT ${challengeColumns}
          FROM devices.pairing_challenges
@@ -404,12 +404,7 @@ export async function completeDevicePairing(
     );
     const challenge = challengeResult.rows[0];
     if (!challenge) {
-      throw new PlatformError({
-        code: "devices.pairing_not_found",
-        category: "not-found",
-        message: "Pairing challenge does not exist for this Device and tenant",
-        retryable: false,
-      });
+      return Object.freeze({ kind: "not-found" as const });
     }
 
     const device = await loadDevice(
@@ -419,12 +414,7 @@ export async function completeDevicePairing(
       true,
     );
     if (!device) {
-      throw new PlatformError({
-        code: "devices.not_found",
-        category: "not-found",
-        message: "Device does not exist in the requested tenant",
-        retryable: false,
-      });
+      return Object.freeze({ kind: "device-not-found" as const });
     }
 
     if (challenge.state === "consumed") {
@@ -432,14 +422,12 @@ export async function completeDevicePairing(
         device.state === "active" &&
         pairingMatches(input.secret, challenge.secret_hash)
       ) {
-        return deviceRecord(device);
+        return Object.freeze({
+          kind: "paired" as const,
+          device: deviceRecord(device),
+        });
       }
-      throw new PlatformError({
-        code: "devices.pairing_already_consumed",
-        category: "conflict",
-        message: "Pairing challenge has already been consumed",
-        retryable: false,
-      });
+      return Object.freeze({ kind: "already-consumed" as const });
     }
 
     if (
@@ -454,12 +442,7 @@ export async function completeDevicePairing(
           [input.tenantId, input.pairingRequestId],
         );
       }
-      throw new PlatformError({
-        code: "devices.pairing_expired",
-        category: "authorization",
-        message: "Pairing challenge has expired",
-        retryable: false,
-      });
+      return Object.freeze({ kind: "expired" as const });
     }
 
     if (!pairingMatches(input.secret, challenge.secret_hash)) {
@@ -471,30 +454,16 @@ export async function completeDevicePairing(
           WHERE tenant_id = $1 AND pairing_request_id = $2`,
         [input.tenantId, input.pairingRequestId, attempts],
       );
-      throw new PlatformError({
-        code:
-          attempts >= 5
-            ? "devices.pairing_locked"
-            : "devices.pairing_secret_invalid",
-        category: "authorization",
-        message:
-          attempts >= 5
-            ? "Pairing challenge is locked after repeated invalid secrets"
-            : "Pairing secret is invalid",
-        retryable: false,
+      return Object.freeze({
+        kind: attempts >= 5 ? "locked" as const : "invalid-secret" as const,
       });
     }
 
     if (device.state !== "pending-pairing") {
-      throw new PlatformError({
-        code: "devices.pairing_device_state_conflict",
-        category: "conflict",
-        message: "Device is not awaiting pairing",
-        retryable: false,
-      });
+      return Object.freeze({ kind: "device-state-conflict" as const });
     }
 
-    await client.query(
+    const consumed = await client.query(
       `UPDATE devices.pairing_challenges
           SET state = 'consumed',
               consumed_at = $3
@@ -503,6 +472,9 @@ export async function completeDevicePairing(
           AND state = 'pending'`,
       [input.tenantId, input.pairingRequestId, input.at],
     );
+    if (consumed.rowCount !== 1) {
+      return Object.freeze({ kind: "already-consumed" as const });
+    }
 
     const updated = await client.query<DeviceRow>(
       `UPDATE devices.devices
@@ -524,6 +496,58 @@ export async function completeDevicePairing(
         retryable: false,
       });
     }
-    return deviceRecord(updated.rows[0]!);
+    return Object.freeze({
+      kind: "paired" as const,
+      device: deviceRecord(updated.rows[0]!),
+    });
+  });
+
+  if (outcome.kind === "paired") {
+    return outcome.device;
+  }
+
+  const errorByKind = {
+    "not-found": {
+      code: "devices.pairing_not_found",
+      category: "not-found",
+      message: "Pairing challenge does not exist for this Device and tenant",
+    },
+    "device-not-found": {
+      code: "devices.not_found",
+      category: "not-found",
+      message: "Device does not exist in the requested tenant",
+    },
+    "already-consumed": {
+      code: "devices.pairing_already_consumed",
+      category: "conflict",
+      message: "Pairing challenge has already been consumed",
+    },
+    "expired": {
+      code: "devices.pairing_expired",
+      category: "authorization",
+      message: "Pairing challenge has expired",
+    },
+    "locked": {
+      code: "devices.pairing_locked",
+      category: "authorization",
+      message: "Pairing challenge is locked after repeated invalid secrets",
+    },
+    "invalid-secret": {
+      code: "devices.pairing_secret_invalid",
+      category: "authorization",
+      message: "Pairing secret is invalid",
+    },
+    "device-state-conflict": {
+      code: "devices.pairing_device_state_conflict",
+      category: "conflict",
+      message: "Device is not awaiting pairing",
+    },
+  } as const;
+  const error = errorByKind[outcome.kind];
+  throw new PlatformError({
+    code: error.code,
+    category: error.category,
+    message: error.message,
+    retryable: false,
   });
 }
