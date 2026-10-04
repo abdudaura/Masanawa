@@ -590,7 +590,15 @@ export function createPostgresCryptoRepository(pool: Pool): CryptoRepository {
         };
         const current = await readIntentWithClient(client, key, true);
         if (!current || current.operation !== "withdraw") throw new Error("crypto.withdraw.intent_unavailable");
-        if (current.status === "succeeded" || current.status === "failed") return current;
+        if (current.status === "succeeded" || current.status === "failed") {
+          if (
+            (current.status === "succeeded" && !input.succeeded) ||
+            (current.status === "failed" && input.succeeded)
+          ) {
+            throw new Error("crypto.withdraw.terminal_conflict");
+          }
+          return current;
+        }
         if (!input.succeeded) {
           await postLedger(client, {
             tenantId: current.tenantId, userId: current.userId, requestId: current.requestId,
@@ -687,25 +695,37 @@ export function createPostgresCryptoRepository(pool: Pool): CryptoRepository {
           throw new Error("crypto.convert.intent_unavailable");
         }
         if (
-          input.providerReference !== null &&
           current.providerConversionId !== null &&
-          current.providerConversionId !== undefined &&
-          current.providerConversionId !== input.providerReference
+          current.providerConversionId !== undefined
         ) {
+          if (input.providerReference !== current.providerConversionId) {
+            throw new Error("crypto.provider_conversion.intent_mismatch");
+          }
+        } else if (input.providerReference !== null) {
           throw new Error("crypto.provider_conversion.intent_mismatch");
+        }
+        const targetAmount = input.succeeded
+          ? input.targetAmount === null
+            ? (() => { throw new Error("crypto.convert.target_amount_required"); })()
+            : decimal(input.targetAmount)
+          : input.targetAmount === null
+            ? null
+            : (() => { throw new Error("crypto.convert.target_amount_unexpected"); })();
+        if (input.succeeded && (current.providerConversionId ?? null) === null) {
+          throw new Error("crypto.provider_conversion.unbound");
         }
         if (current.status === "succeeded" || current.status === "failed") {
           if (
             (current.status === "succeeded" && !input.succeeded) ||
-            (current.status === "failed" && input.succeeded)
+            (current.status === "failed" && input.succeeded) ||
+            (current.status === "succeeded" &&
+              (current.providerTargetAmount ?? null) !== targetAmount)
           ) {
             throw new Error("crypto.convert.terminal_conflict");
           }
           return current;
         }
         if (input.succeeded) {
-          if (input.targetAmount === null) throw new Error("crypto.convert.target_amount_required");
-          const targetAmount = decimal(input.targetAmount);
           await postLedger(client, {
             tenantId: current.tenantId, userId: current.userId, requestId: current.requestId,
             asset: current.targetAsset, network: current.targetNetwork ?? null,
@@ -722,7 +742,7 @@ export function createPostgresCryptoRepository(pool: Pool): CryptoRepository {
         }
         return updateIntentWithClient(client, {
           ...current,
-          providerTargetAmount: input.succeeded ? decimal(input.targetAmount!) : null,
+          providerTargetAmount: targetAmount,
           status: input.succeeded ? "succeeded" : "failed",
           updatedAt: input.updatedAt,
         });
