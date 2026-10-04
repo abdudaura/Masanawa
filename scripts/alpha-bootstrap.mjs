@@ -89,6 +89,7 @@ function authoredSkill({
   capability,
   guide,
   discovery,
+  billingMode = "none",
 }) {
   const skillId = createCanonicalId("skill");
   const skillVersionId = createCanonicalId("skill-version");
@@ -115,8 +116,9 @@ function authoredSkill({
       sideEffectClass: "none",
       sensitivity: "internal",
       costClass: "free",
-      billingMode: "none",
-      confirmationPolicy: "not-required",
+      billingMode,
+      confirmationPolicy:
+        billingMode === "none" ? "not-required" : "required",
       idempotencyMode: "not-required",
       reconciliationMode: "none",
       timeoutMs: 30_000,
@@ -368,6 +370,45 @@ const personalSkills = [
   }),
 ];
 
+const paidSkills = [
+  authoredSkill({
+    key: "services.business-plan",
+    displayName: "Business Plan Service",
+    description:
+      "Produces a structured business plan as a paid Masanawa service after an approved quote.",
+    activationExamples: [
+      "Create a full business plan for me",
+      "I want to order a business plan",
+    ],
+    negativeActivationExamples: [
+      "I only want a quick business idea",
+      "Do not charge me for a business plan",
+    ],
+    capability: "services.business-plan.fulfill",
+    billingMode: "quoted",
+    guide: {
+      triggerDescription:
+        "Use only inside an admitted paid fulfillment when the customer ordered the Business Plan Service.",
+      instructions: [
+        "# Paid Business Plan Service",
+        "This Skill is executed only after a canonical Masanawa quote and fulfillment admission.",
+        "Build a professional plan from the customer's supplied facts and authorized context.",
+        "Cover executive summary, customer/problem, offer, market assumptions, acquisition, operations, revenue model, costs, risks, milestones, and next actions when relevant.",
+        "Clearly label assumptions and never fabricate current market research, financial history, customers, partners, licenses, or external validation.",
+        "The result must be substantially more complete than ordinary conversational brainstorming.",
+      ].join("\n\n"),
+    },
+    discovery: {
+      priority: 95,
+      phrases: ["order a business plan", "paid business plan", "full business plan"],
+      allOf: [["business", "plan", "order"]],
+      anyOf: ["business plan", "proposal"],
+      noneOf: ["do not charge me"],
+      minScore: 25,
+    },
+  }),
+];
+
 const characters = [
   {
     key: "gwani",
@@ -400,7 +441,18 @@ try {
     await identity.createTenant({ tenantId, createdAt: at });
     await identity.createUser({ tenantId, userId, createdAt: at });
 
-    for (const character of characters) {
+    for (const [index, item] of paidSkills.entries()) {
+    await distribution.put({
+      schemaVersion: 1,
+      skillVersionId: item.version.skillVersionId,
+      audiences: ["personal-clone", "platform-support"],
+      installMode: "optional",
+      category: "business-services",
+      sortOrder: 100 + index,
+    });
+  }
+
+  for (const character of characters) {
       await identity.createCharacter({
         tenantId,
         characterId: character.characterId,
@@ -474,7 +526,7 @@ try {
   const preferences = createPostgresUserAgentPreferenceRepository(pool);
   const commerce = createPostgresCommerceRepository(pool);
 
-  const allSkills = [...supportSkills, ...personalSkills];
+  const allSkills = [...supportSkills, ...personalSkills, ...paidSkills];
   await skills.registerBatch(allSkills.map((item) => item.version));
   for (const item of allSkills) {
     await guides.putGuide(item.guide);
@@ -548,13 +600,38 @@ try {
         schemaVersion: 1,
         tenantId,
         characterId: character.characterId,
-        skillVersionIds: supportSkills.map(
+        skillVersionIds: [...supportSkills, ...paidSkills].map(
           (item) => item.version.skillVersionId,
         ),
         revision: 1,
       },
     });
   }
+
+  const businessPlanSkill = paidSkills.find(
+    (item) => item.version.key === "services.business-plan",
+  );
+  if (!businessPlanSkill) throw new Error("Business Plan Skill seed is missing");
+  const businessPlanOfferId = createCanonicalId("offer");
+  await commerce.registerOfferRevision({
+    schemaVersion: 1,
+    tenantId,
+    offerId: businessPlanOfferId,
+    revision: 1,
+    key: "business-plan.standard",
+    title: "Business Plan",
+    description:
+      "A structured business plan prepared through a Masanawa agent after quote approval.",
+    skillVersionId: businessPlanSkill.version.skillVersionId,
+    priceCredits: 100,
+    fulfillmentReserveCredits: 50,
+    creatorCommissionCredits: 30,
+    fallbackCommissionCredits: 10,
+    platformMarginCredits: 20,
+    active: true,
+    regions: [],
+    createdAt: at,
+  });
 
   await commerce.postTransfer({
     schemaVersion: 1,
@@ -636,9 +713,10 @@ try {
       `Assigned support Skills: ${supportSkills
         .map((item) => item.version.key)
         .join(", ")}`,
-      `Optional personal-clone Skills: ${personalSkills
+      `Optional personal-clone Skills: ${[...personalSkills, ...paidSkills]
         .map((item) => item.version.key)
         .join(", ")}`,
+      "Seeded paid Offer: business-plan.standard / 100 Credits",
       "",
     ].join("\n"),
   );
