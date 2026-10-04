@@ -316,7 +316,7 @@ void main() {
     addTearDown(c.dispose);
     final connection = c.read(agentConnectionProvider);
     expect(connection.configured, isTrue);
-    expect(connection.baseUrl, 'https://nurainworker-production.up.railway.app');
+    expect(connection.baseUrl, 'https://gateway.masanawa.com');
     expect(connection.toString(), isNot(contains('token')));
   });
 
