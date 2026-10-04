@@ -4,7 +4,7 @@ import type {
   CharacterSkillAssignment,
   CharacterSkillAssignmentRepository,
 } from "@masanawa/agents";
-import type { CharacterId, TenantId } from "@masanawa/contracts";
+import { nowInstant, type CharacterId, type TenantId } from "@masanawa/contracts";
 import type { CharacterVersionReferenceReader } from "@masanawa/identity";
 import type { SkillRepository } from "@masanawa/skills";
 
@@ -164,7 +164,7 @@ export function createAgentAdminService(input: {
           state: request.state,
           advertised: request.advertised,
           reasonCode: request.reasonCode,
-          checkedAt: new Date().toISOString() as never,
+          checkedAt: nowInstant(),
         },
       });
       return Object.freeze({
