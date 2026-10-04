@@ -244,10 +244,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               runSpacing: 12,
               alignment: WrapAlignment.center,
               children: [
-                // Token roles: brand → doc, verified → gallery, warning → camera.
+                // Attachment actions follow the active Agent Blue theme.
                 _AttachOption(
                   icon: Icons.insert_drive_file,
-                  color: const Color(0xFF047857),
+                  color: context.masanawa.brand,
                   label: 'Document',
                   onTap: () {
                     Navigator.of(sheetContext).pop();
@@ -256,7 +256,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 ),
                 _AttachOption(
                   icon: Icons.photo,
-                  color: const Color(0xFF1D4ED8),
+                  color: context.masanawa.verified,
                   label: 'Gallery',
                   onTap: () {
                     Navigator.of(sheetContext).pop();
@@ -265,7 +265,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 ),
                 _AttachOption(
                   icon: Icons.camera_alt,
-                  color: const Color(0xFFD97706),
+                  color: context.masanawa.warning,
                   label: 'Camera',
                   onTap: () {
                     Navigator.of(sheetContext).pop();
@@ -356,10 +356,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           ),
         );
       }
-      if (attachments.isNotEmpty) {
-        await ref
-            .read(aiChatProvider.notifier)
-            .sendAttachments(widget.characterId, attachments);
+      if (attachments.isNotEmpty && mounted) {
+        _stageAttachments(attachments);
       }
     } catch (_) {
       if (mounted) _comingSoon('Photos');
