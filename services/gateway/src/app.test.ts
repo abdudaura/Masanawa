@@ -142,6 +142,34 @@ describe("gateway service bootstrap", () => {
     expect(forbidden.body).not.toContain("private relationship detail");
   });
 
+  it("preserves schema validation as a safe 400 response", async () => {
+    const app = createGatewayApp({
+      agentDirectory: {
+        async list() {
+          return [];
+        },
+        async setDefaultPlatformAgent() {
+          throw new Error("should not run");
+        },
+      },
+    });
+    apps.push(app);
+
+    const response = await app.inject({
+      method: "PUT",
+      url: "/agent/preferences/default",
+      payload: {},
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toEqual({
+      error: {
+        code: "gateway.invalid_request",
+        message: "Invalid request",
+      },
+    });
+  });
+
   it("fails readiness closed when a probe throws", async () => {
     const app = createGatewayApp({
       readinessChecks: [
