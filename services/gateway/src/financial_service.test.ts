@@ -24,7 +24,7 @@ function setup(existing: CryptoIntent | null = intent, evidence?: NowPaymentsAcc
   const payload = { payment_id: "123", order_id: tenantId+"."+requestId, price_amount: "10",
     price_currency: "usdttrc20", pay_currency: "usdttrc20", pay_amount: "10",
     actually_paid: "10", payment_status: "finished" };
-  const fetch = vi.fn(async (request: RequestInfo | URL) => {
+  const fetch = vi.fn(async (request: Parameters<typeof globalThis.fetch>[0]) => {
     const url = String(request);
     if (url.endsWith("/auth")) return new Response(JSON.stringify({ token: "fixture-jwt" }));
     if (url.includes("/payout/validate-address")) return new Response(JSON.stringify({ valid: true }));
@@ -118,7 +118,7 @@ describe("financial service recovery and admission", () => {
   });
   it("rejects provider custody insufficiency before reserving customer principal", async () => {
     const { service, crypto, fetch } = setup(null, account);
-    fetch.mockImplementation(async (request: RequestInfo | URL) => {
+    fetch.mockImplementation(async (request: Parameters<typeof globalThis.fetch>[0]) => {
       const url = String(request);
       if (url.includes("/payout/validate-address")) return new Response("{}");
       if (url.includes("/payout/fee?")) return new Response(JSON.stringify({ fee: "0.5" }));
@@ -133,7 +133,7 @@ describe("financial service recovery and admission", () => {
   });
   it("rejects a provider-invalid destination before reserving customer principal", async () => {
     const { service, crypto, fetch } = setup(null, account);
-    fetch.mockImplementation(async (request: RequestInfo | URL) => {
+    fetch.mockImplementation(async (request: Parameters<typeof globalThis.fetch>[0]) => {
       const url = String(request);
       if (url.includes("/payout/validate-address")) return new Response("invalid", { status: 400 });
       if (url.includes("/payout/fee?")) return new Response(JSON.stringify({ fee: "0.1" }));
@@ -148,7 +148,7 @@ describe("financial service recovery and admission", () => {
   });
   it("rejects a withdrawal below the live provider minimum before reservation", async () => {
     const { service, crypto, fetch } = setup(null, account);
-    fetch.mockImplementation(async (request: RequestInfo | URL) => {
+    fetch.mockImplementation(async (request: Parameters<typeof globalThis.fetch>[0]) => {
       const url = String(request);
       if (url.includes("/payout/validate-address")) return new Response("{}");
       if (url.includes("/payout/fee?")) return new Response(JSON.stringify({ fee: "0.1" }));
