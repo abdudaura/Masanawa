@@ -23,6 +23,7 @@ import { parsePaymentStatus, type NowPaymentsPaymentStatus } from "./status.js";
 export interface NowPaymentsClientOptions {
   readonly apiKey: string;
   readonly baseUrl?: string;
+  readonly relayToken?: string;
   readonly fetch?: typeof globalThis.fetch;
 }
 
@@ -41,6 +42,7 @@ function query(params: Readonly<Record<string, string | number>>): string {
 export class NowPaymentsClient {
   readonly #apiKey: string;
   readonly #baseUrl: string;
+  readonly #relayToken: string | null;
   readonly #fetch: typeof globalThis.fetch;
 
   constructor(options: NowPaymentsClientOptions) {
@@ -48,6 +50,9 @@ export class NowPaymentsClient {
     if (apiKey.length === 0) throw new Error("nowpayments.api_key.required");
     this.#apiKey = apiKey;
     this.#baseUrl = (options.baseUrl ?? "https://api.nowpayments.io/v1").replace(/\/+$/, "");
+    const relayToken = options.relayToken?.trim() ?? "";
+    if (relayToken.length > 1024) throw new Error("nowpayments.relay_token.invalid");
+    this.#relayToken = relayToken || null;
     this.#fetch = options.fetch ?? globalThis.fetch;
   }
 
@@ -218,6 +223,9 @@ export class NowPaymentsClient {
       const headers: Record<string, string> = {
         "x-api-key": this.#apiKey,
         accept: "application/json",
+        ...(this.#relayToken === null
+          ? {}
+          : { "x-masanawa-relay-token": this.#relayToken }),
       };
       if (input.body !== undefined) headers["content-type"] = "application/json";
       const init: RequestInit = { method: input.method, headers };
