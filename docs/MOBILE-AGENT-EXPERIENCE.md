@@ -118,6 +118,16 @@ Text remains available, but the UI should not visually suggest that typing is th
 
 Agent voice output is a first-class message part and may be accompanied by a transcript rather than duplicating long text.
 
+## Selectable commerce interaction
+
+Follow `docs/DIGITAL-COMMERCE-LAUNCH.md`. Render authorized quick replies, product
+cards, recipients, amounts/accounts, quote confirmation, transaction status and receipts
+inside chat. Voice and taps share server-owned state. Actions bind current authority,
+conversation, transaction/revision, expiry and idempotency identity.
+Use short lists/search/more-options; never dump the full crypto catalog into chat.
+Do not infer success from a tap, payment submission or timeout.
+Show checking until provider reconciliation resolves an uncertain outcome.
+
 ## Chat is the work surface
 
 Agent results return into the same conversation as typed message parts.
@@ -270,8 +280,7 @@ Real Alpha behavior:
 - canonical AgentRun creation and terminal state for each text/media turn;
 - text conversation through a temporary replaceable Gemini executor;
 - real recorded voice/image/document bytes as multimodal input;
-- optional Android-local TTS for spoken presentation of the canonical text
-  reply;
+- Gemini Live native audio is the current direction; the historical optional Android-local TTS path is retired;
 - Developer diagnostics showing Gateway health/readiness and latest AgentRun.
 
 Debug-only Scenario Lab behavior:
