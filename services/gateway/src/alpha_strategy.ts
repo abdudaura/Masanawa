@@ -35,10 +35,15 @@ export function createAlphaInferenceStrategy(input: {
         "This Alpha strategy is temporary. Do not claim tools, files, calls, memory, live data, or side effects unless the runtime actually provides them.",
       ];
 
-      const result = await generateAgentInference(input.inference, {
-        systemInstructions: Object.freeze(instructions),
-        input: request.input,
-      }, limits);
+      const result = await generateAgentInference(
+        input.inference,
+        {
+          systemInstructions: Object.freeze(instructions),
+          input: request.input,
+        },
+        limits,
+        request.onTextDelta,
+      );
       const reply = result.text.trim();
       return Object.freeze({
         reply,
