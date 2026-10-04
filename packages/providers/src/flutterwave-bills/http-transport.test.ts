@@ -75,4 +75,20 @@ describe("FlutterwaveHttpTransport", () => {
       "Flutterwave HTTP timeout is invalid",
     );
   });
+  it("uses distinct client and upstream credentials for the fixed-IP relay and forbids redirects", async () => {
+    let seen: RequestInit | undefined;
+    const transport = new FlutterwaveHttpTransport({baseUrl: "https://relay.example.test", relayToken: "relay-secret", relayProtocol: "dual-header", fetchImpl: async (_url, init) => { seen = init; return new Response("{}", {status: 200}); }});
+    await transport.request({method: "GET", path: "/v3/top-bill-categories", headers: {authorization: "Bearer provider-secret"}});
+    const headers = new Headers(seen?.headers);
+    expect(headers.get("authorization")).toBe("Bearer provider-secret");
+    expect(headers.get("x-masanawa-relay-token")).toBe("relay-secret");
+    expect(seen?.redirect).toBe("error");
+  });
+
+  it("rejects dual-header mode without authentication and credential-bearing base URLs", () => {
+    expect(() => new FlutterwaveHttpTransport({relayProtocol: "dual-header"})).toThrow("protocol is invalid");
+    expect(() => new FlutterwaveHttpTransport({baseUrl: "https://user:secret@relay.example.test"})).toThrow("must not contain credentials");
+  });
+
 });
+

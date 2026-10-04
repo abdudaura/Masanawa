@@ -1,3 +1,4 @@
+import type { BillingFundingAuthority } from "@masanawa/commerce";
 import {
   BillingCommerceOrchestrator,
   FlutterwaveBillsClient,
@@ -16,6 +17,9 @@ export interface BillingFinancialService {
   purchase(input: Readonly<{
     authorizationHeader: string | undefined;
     requestId: string;
+    quoteId?: string;
+    quoteRevision?: number;
+    categoryCode?: string;
     billerCode: string;
     itemCode: string;
     itemName: string;
@@ -67,7 +71,9 @@ export function createBillingFinancialService(input: Readonly<{
   flutterwaveWebhookUrl: string;
   flutterwaveRelayUrl?: string;
   flutterwaveRelayToken?: string;
+  flutterwaveRelayProtocol?: "bearer" | "dual-header";
   providerClient?: FlutterwaveBillsClient;
+  billingFunding?: BillingFundingAuthority;
 }>): BillingFinancialService {
   const secretKey = input.flutterwaveSecretKey.trim();
   const webhookHash = input.flutterwaveWebhookHash.trim();
@@ -89,6 +95,7 @@ export function createBillingFinancialService(input: Readonly<{
           ? new FlutterwaveHttpTransport({
               baseUrl: relayUrl,
               relayToken,
+              ...(input.flutterwaveRelayProtocol === undefined ? {} : { relayProtocol: input.flutterwaveRelayProtocol }),
             })
           : new FlutterwaveHttpTransport(),
       country: "NG",
@@ -104,6 +111,14 @@ export function createBillingFinancialService(input: Readonly<{
       provider,
       store: input.billingStore(identity),
     });
+  }
+
+  async function settle(identity: Readonly<{ tenantId: string; userId: string }>, record: BillingFulfillmentRecord) {
+    if (record.state === "succeeded" || record.state === "failed" || record.state === "reversed") {
+      if (!input.billingFunding) throw new Error("financial.billing.funding_unavailable");
+      await input.billingFunding.settleBill({ ...identity, fulfillmentReference: record.fulfillmentReference,
+        state: record.state, providerReference: record.providerReference });
+    }
   }
 
   return Object.freeze<BillingFinancialService>({
@@ -124,10 +139,25 @@ export function createBillingFinancialService(input: Readonly<{
 
     async purchase(request) {
       const identity = await input.authorizer.authorize({ authorizationHeader: request.authorizationHeader });
+      if (!input.billingFunding) throw new Error("financial.billing.funding_unavailable");
+      if (!request.quoteId?.trim() || !Number.isSafeInteger(request.quoteRevision) ||
+          (request.quoteRevision ?? 0) < 1) throw new Error("financial.billing.confirmed_quote_required");
       const items = await provider.listItems(request.billerCode, request.signal);
       const selected = items.find((item) => item.itemCode === request.itemCode);
       if (!selected || selected.billerCode !== request.billerCode) {
         throw new Error("financial.billing.catalog_item_unavailable");
+      }
+      let recipientValidation: "required" | "not-required" = "required";
+      if (request.categoryCode) {
+        const categories = await provider.listCategories(request.signal);
+        const category = categories.find((entry) => entry.code === request.categoryCode);
+        if (!category) throw new Error("financial.billing.catalog_category_unavailable");
+        const billers = await provider.listBillers(category.code, request.signal);
+        if (!billers.some((entry) => entry.billerCode === selected.billerCode)) throw new Error("financial.billing.catalog_biller_mismatch");
+        if (category.code === "AIRTIME" || category.code === "MOBILEDATA") {
+          if (!/^(?:0[789]\d{9}|\+?234[789]\d{9})$/u.test(request.customerId)) throw new Error("financial.billing.phone_invalid");
+          recipientValidation = "not-required";
+        }
       }
       const service = orchestrator(identity);
       const prepared = await service.prepare({
@@ -138,10 +168,17 @@ export function createBillingFinancialService(input: Readonly<{
         customerId: request.customerId,
         amount: request.amount,
         catalogAmount: selected.amount,
-        ...(request.recipientValidation === undefined
-          ? {}
-          : { recipientValidation: request.recipientValidation }),
+        // Recipient validation policy must be supplied by trusted catalog policy,
+        // never overridden by a customer request.
+        recipientValidation,
         ...(request.signal === undefined ? {} : { signal: request.signal }),
+      });
+      await input.billingFunding.reserveConfirmedBill({
+        tenantId: identity.tenantId, userId: identity.userId,
+        quoteId: request.quoteId, quoteRevision: request.quoteRevision!,
+        fulfillmentReference: prepared.fulfillmentReference,
+        billerCode: prepared.billerCode, itemCode: prepared.itemCode,
+        customerId: prepared.customerId, amount: prepared.amount, currency: "NGN",
       });
       if (
         prepared.state === "succeeded" ||
@@ -149,12 +186,15 @@ export function createBillingFinancialService(input: Readonly<{
         prepared.state === "reversed" ||
         prepared.state === "manual_review"
       ) {
+        await settle(identity, prepared);
         return prepared;
       }
-      return service.dispatch(prepared.fulfillmentReference, {
+      const dispatched = await service.dispatch(prepared.fulfillmentReference, {
         callbackUrl,
         ...(request.signal === undefined ? {} : { signal: request.signal }),
       });
+      await settle(identity, dispatched);
+      return dispatched;
     },
 
     async readPurchase(request) {
@@ -163,10 +203,13 @@ export function createBillingFinancialService(input: Readonly<{
       const current = await input.billingStore(identity).read(request.reference);
       if (!current) throw new Error("financial.billing_not_found");
       if (!request.refresh ||
-          ["succeeded","failed","reversed","manual_review"].includes(current.state)) {
+          ["failed","reversed","manual_review"].includes(current.state)) {
+        await settle(identity, current);
         return current;
       }
-      return service.reconcile(request.reference, request.signal);
+      const reconciled = await service.reconcile(request.reference, request.signal);
+      await settle(identity, reconciled);
+      return reconciled;
     },
 
     async receiveWebhook(request) {
@@ -187,3 +230,4 @@ export function createBillingFinancialService(input: Readonly<{
     },
   });
 }
+

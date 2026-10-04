@@ -38,7 +38,7 @@ describe("projectBillingReceipt", () => {
         { label: "Provider reference", value: "BP-1" },
       ],
       canRetry: false,
-      canRefresh: false,
+      canRefresh: true,
     });
   });
 
@@ -65,4 +65,10 @@ describe("projectBillingReceipt", () => {
       canRefresh: false,
     });
   });
+  it("shows the verified delivery token only for successful purchases", () => {
+    expect(projectBillingReceipt({...record("succeeded"), deliveryCode: "TOKEN123"}).rows).toContainEqual({label: "Delivery code", value: "TOKEN123"});
+    expect(projectBillingReceipt({...record("manual_review"), deliveryCode: "TOKEN123"}).rows).not.toContainEqual({label: "Delivery code", value: "TOKEN123"});
+  });
+
 });
+

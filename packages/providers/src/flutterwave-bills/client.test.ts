@@ -137,4 +137,27 @@ describe("FlutterwaveBillsClient", () => {
       expect(String(error)).not.toContain("secret provider detail");
     }
   });
+  it("recognizes only the live provider's exact missing-reference response", async () => {
+    const client = new FlutterwaveBillsClient({ secretKey: "secret", transport: transport(async () => ({status: 400, body: {status: "error", message: "Transaction not found"}})) });
+    await expect(client.getStatus("missing")).resolves.toBeNull();
+    const rejected = new FlutterwaveBillsClient({ secretKey: "secret", transport: transport(async () => ({status: 400, body: {status: "error", message: "Invalid authorization"}})) });
+    await expect(rejected.getStatus("missing")).rejects.toMatchObject({code: "status_unavailable"});
+  });
+
+  it("keeps malformed accepted payment evidence ambiguous", async () => {
+    const client = new FlutterwaveBillsClient({ secretKey: "secret", transport: transport(async () => ({status: 200, body: {status: "success", data: {amount: "broken"}}})) });
+    await expect(client.createPayment({billerCode: "B", itemCode: "I", customerId: "C", amount: "100", reference: "ref"})).rejects.toMatchObject({outcomeUnknown: true});
+  });
+
+  it("rejects decimal zero before making a provider request", async () => {
+    const client = new FlutterwaveBillsClient({ secretKey: "secret", transport: transport(async () => { throw new Error("should not dispatch"); }) });
+    await expect(client.createPayment({billerCode: "B", itemCode: "I", customerId: "C", amount: "0.00", reference: "ref"})).rejects.toMatchObject({code: "invalid_amount"});
+  });
+
+  it("does not treat a duplicate-reference rejection as permission to buy again", async () => {
+    const client = new FlutterwaveBillsClient({secretKey: "secret", transport: transport(async () => ({status: 400, body: {status: "error", message: "Duplicate Reference"}}))});
+    await expect(client.createPayment({billerCode: "B", itemCode: "I", customerId: "C", amount: "100", reference: "existing"})).rejects.toMatchObject({outcomeUnknown: true});
+  });
+
 });
+

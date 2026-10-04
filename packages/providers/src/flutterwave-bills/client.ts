@@ -303,7 +303,7 @@ export class FlutterwaveBillsClient {
   }>): Promise<FlutterwaveBillReceipt> {
     const reference = textValue(input.reference, "reference", 128);
     const amount = decimal(input.amount, "payment amount");
-    if (amount === "0") throw new FlutterwaveBillProviderError("invalid_amount", "Bill payment amount must be greater than zero");
+    if (/^0(?:\.0+)?$/u.test(amount)) throw new FlutterwaveBillProviderError("invalid_amount", "Bill payment amount must be greater than zero");
     const response = await this.#request({
       method: "POST",
       path: `/v3/billers/${encodeSegment(input.billerCode, "biller code")}/items/${encodeSegment(input.itemCode, "item code")}/payment`,
@@ -321,9 +321,19 @@ export class FlutterwaveBillsClient {
       throw new FlutterwaveBillProviderError("dispatch_outcome_unknown", "Flutterwave bill dispatch outcome is unknown; reconcile by reference before any retry", { outcomeUnknown: true });
     }
     if (response.status !== 200) {
-      throw new FlutterwaveBillProviderError("dispatch_rejected", "Flutterwave rejected the bill dispatch");
+      if (response.status === 401 || response.status === 403) {
+        throw new FlutterwaveBillProviderError("dispatch_rejected", "Flutterwave rejected the bill dispatch");
+      }
+      // Duplicate-reference and timeout responses can describe an already accepted
+      // transaction. Only reconciliation may establish its actual disposition.
+      throw new FlutterwaveBillProviderError("dispatch_outcome_unknown", "Flutterwave bill dispatch outcome is unknown; reconcile by reference before any retry", { outcomeUnknown: true });
     }
-    return this.#receipt(successfulData(response.body), reference);
+    try {
+      return this.#receipt(successfulData(response.body), reference);
+    } catch {
+      // An accepted HTTP response with malformed evidence cannot prove rejection.
+      throw new FlutterwaveBillProviderError("dispatch_outcome_unknown", "Flutterwave bill dispatch outcome is unknown; reconcile by reference before any retry", { outcomeUnknown: true });
+    }
   }
 
   async getStatus(reference: string, signal?: AbortSignal): Promise<FlutterwaveBillReceipt | null> {
@@ -336,6 +346,10 @@ export class FlutterwaveBillsClient {
       ...(signal === undefined ? {} : { signal }),
     });
     if (response.status === 404) return null;
+    // The live Bills API uses 400 for this specific absent-reference response.
+    if (response.status === 400 && typeof response.body === "object" && response.body !== null &&
+        (response.body as JsonRecord).status === "error" &&
+        (response.body as JsonRecord).message === "Transaction not found") return null;
     if (response.status !== 200) throw new FlutterwaveBillProviderError("status_unavailable", "Flutterwave bill status is unavailable", { retryable: response.status >= 500 });
     return this.#receipt(successfulData(response.body), normalizedReference);
   }
@@ -355,3 +369,4 @@ export class FlutterwaveBillsClient {
     });
   }
 }
+

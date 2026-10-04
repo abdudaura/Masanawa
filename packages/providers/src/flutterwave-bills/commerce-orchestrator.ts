@@ -31,6 +31,7 @@ export type BillingFulfillmentRecord = PreparedBillPurchase &
     providerReference: string | null;
     providerStatus: string | null;
     lastEvidenceAt: string | null;
+    deliveryCode?: string | null;
   }>;
 
 export interface BillingFulfillmentStore {
@@ -118,14 +119,17 @@ function decimalParts(value: string): readonly [bigint, number] {
   return [BigInt(whole + fraction), fraction.length] as const;
 }
 
-function decimalEqual(left: string, right: string): boolean {
+function decimalCompare(left: string, right: string): number {
   const [leftValue, leftScale] = decimalParts(left);
   const [rightValue, rightScale] = decimalParts(right);
-  if (leftScale === rightScale) return leftValue === rightValue;
-  if (leftScale > rightScale) {
-    return leftValue === rightValue * 10n ** BigInt(leftScale - rightScale);
-  }
-  return leftValue * 10n ** BigInt(rightScale - leftScale) === rightValue;
+  const scale = Math.max(leftScale, rightScale);
+  const l = leftValue * 10n ** BigInt(scale - leftScale);
+  const r = rightValue * 10n ** BigInt(scale - rightScale);
+  return l < r ? -1 : l > r ? 1 : 0;
+}
+
+function decimalEqual(left: string, right: string): boolean {
+  return decimalCompare(left, right) === 0;
 }
 
 function nowIso(now: () => Date): string {
@@ -142,7 +146,7 @@ function sameIdentity(
     existing.itemCode === prepared.itemCode &&
     existing.itemName === prepared.itemName &&
     existing.customerId === prepared.customerId &&
-    existing.amount === prepared.amount &&
+    decimalEqual(existing.amount, prepared.amount) &&
     existing.currency === prepared.currency
   );
 }
@@ -152,7 +156,7 @@ function nextRecord(
   patch: Partial<
     Pick<
       BillingFulfillmentRecord,
-      "state" | "providerReference" | "providerStatus" | "lastEvidenceAt"
+      "state" | "providerReference" | "providerStatus" | "lastEvidenceAt" | "deliveryCode"
     >
   >,
 ): BillingFulfillmentRecord {
@@ -194,12 +198,15 @@ function evaluateReceipt(
       providerReference: receipt.providerReference,
       providerStatus: receipt.status,
       lastEvidenceAt: at,
+      deliveryCode: amountMatches && customerMatches && currencyMatches &&
+        typeof receipt.extra === "string" && receipt.extra.trim().length > 0 && receipt.extra.trim().length <= 1000
+          ? receipt.extra.trim() : current.deliveryCode ?? null,
     });
   }
 
   if (receipt.status === "failed") {
     return nextRecord(current, {
-      state: "failed",
+      state: amountMatches && customerMatches && currencyMatches ? "failed" : "manual_review",
       providerReference: receipt.providerReference,
       providerStatus: receipt.status,
       lastEvidenceAt: at,
@@ -208,7 +215,7 @@ function evaluateReceipt(
 
   if (receipt.status === "reversed") {
     return nextRecord(current, {
-      state: "reversed",
+      state: amountMatches && customerMatches && currencyMatches ? "reversed" : "manual_review",
       providerReference: receipt.providerReference,
       providerStatus: receipt.status,
       lastEvidenceAt: at,
@@ -295,7 +302,7 @@ export class BillingCommerceOrchestrator {
       }
       if (
         validation.minimum !== null &&
-        Number(preparedBase.amount) < Number(validation.minimum)
+        decimalCompare(preparedBase.amount, providerCatalogAmount(validation.minimum)) < 0
       ) {
         throw new BillingCommerceError(
           "amount_below_minimum",
@@ -304,8 +311,8 @@ export class BillingCommerceOrchestrator {
       }
       if (
         validation.maximum !== null &&
-        Number(validation.maximum) > 0 &&
-        Number(preparedBase.amount) > Number(validation.maximum)
+        !zeroDecimal(providerCatalogAmount(validation.maximum)) &&
+        decimalCompare(preparedBase.amount, validation.maximum) > 0
       ) {
         throw new BillingCommerceError(
           "amount_above_maximum",
@@ -364,8 +371,9 @@ export class BillingCommerceOrchestrator {
       }),
     );
 
+    let receipt: FlutterwaveBillReceipt;
     try {
-      const receipt = await this.#provider.createPayment({
+      receipt = await this.#provider.createPayment({
         billerCode: dispatching.billerCode,
         itemCode: dispatching.itemCode,
         customerId: dispatching.customerId,
@@ -374,16 +382,10 @@ export class BillingCommerceOrchestrator {
         ...(options?.callbackUrl ? { callbackUrl: options.callbackUrl } : {}),
         ...(options?.signal === undefined ? {} : { signal: options.signal }),
       });
-      const evaluated = evaluateReceipt(
-        dispatching,
-        receipt,
-        nowIso(this.#now),
-      );
-      return await this.#store.compareAndSet(dispatching.revision, evaluated);
     } catch (error) {
       if (
-        error instanceof FlutterwaveBillProviderError &&
-        error.outcomeUnknown
+        !(error instanceof FlutterwaveBillProviderError &&
+          error.code === "dispatch_rejected" && !error.outcomeUnknown)
       ) {
         return await this.#store.compareAndSet(
           dispatching.revision,
@@ -412,6 +414,12 @@ export class BillingCommerceOrchestrator {
       }
       throw error;
     }
+    // Persistence failure after dispatch leaves the durable dispatching guard intact.
+    // A later attempt must requery rather than make a second provider payment.
+    return await this.#store.compareAndSet(
+      dispatching.revision,
+      evaluateReceipt(dispatching, receipt, nowIso(this.#now)),
+    );
   }
 
   async reconcile(
@@ -420,7 +428,6 @@ export class BillingCommerceOrchestrator {
   ): Promise<BillingFulfillmentRecord> {
     const current = await this.#required(reference);
     if (
-      current.state === "succeeded" ||
       current.state === "failed" ||
       current.state === "reversed" ||
       current.state === "manual_review"
@@ -432,6 +439,7 @@ export class BillingCommerceOrchestrator {
       current.fulfillmentReference,
       signal,
     );
+    if (current.state === "succeeded" && (receipt === null || receipt.status === "pending" || receipt.status === "unknown")) return current;
     if (receipt === null) {
       if (current.state === "checking") return current;
       return await this.#store.compareAndSet(
@@ -460,3 +468,4 @@ export class BillingCommerceOrchestrator {
     return record;
   }
 }
+

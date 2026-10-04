@@ -407,4 +407,56 @@ describe("BillingCommerceOrchestrator", () => {
       expect(error).toMatchObject({ code: "fulfillment_not_found" });
     }
   });
+  it("does not reset dispatch protection when result persistence fails", async () => {
+    const store = new MemoryStore();
+    const original = store.compareAndSet.bind(store);
+    let failOnce = true;
+    store.compareAndSet = async (revision, next) => {
+      if (next.state === "succeeded" && failOnce) { failOnce = false; throw new Error("database unavailable"); }
+      return original(revision, next);
+    };
+    let dispatches = 0;
+    const orchestrator = new BillingCommerceOrchestrator({store, provider: provider({async createPayment(input) { dispatches++; return provider().createPayment(input); }})});
+    await orchestrator.prepare(purchase);
+    await expect(orchestrator.dispatch(purchase.fulfillmentReference)).rejects.toThrow("database unavailable");
+    await expect(store.read(purchase.fulfillmentReference)).resolves.toMatchObject({state: "dispatching"});
+    await expect(orchestrator.dispatch(purchase.fulfillmentReference)).resolves.toMatchObject({state: "succeeded"});
+    expect(dispatches).toBe(1);
+  });
+
+  it("reconciles untyped provider failures without a second dispatch", async () => {
+    let dispatches = 0;
+    const orchestrator = new BillingCommerceOrchestrator({store: new MemoryStore(), provider: provider({async createPayment() { dispatches++; throw new Error("unknown failure"); }, async getStatus() { return null; }})});
+    await orchestrator.prepare(purchase);
+    await expect(orchestrator.dispatch(purchase.fulfillmentReference)).resolves.toMatchObject({state: "checking"});
+    await orchestrator.dispatch(purchase.fulfillmentReference);
+    expect(dispatches).toBe(1);
+  });
+
+  it("does not accept a mismatched reversal as refund evidence", async () => {
+    const orchestrator = new BillingCommerceOrchestrator({store: new MemoryStore(), provider: provider({async createPayment(input) { return {...await provider().createPayment(input), status: "reversed", amount: "1"}; }})});
+    await orchestrator.prepare(purchase);
+    await expect(orchestrator.dispatch(purchase.fulfillmentReference)).resolves.toMatchObject({state: "manual_review"});
+  });
+
+  it("recovers a delayed prepaid token without purchasing again", async () => {
+    let dispatches = 0;
+    const orchestrator = new BillingCommerceOrchestrator({store: new MemoryStore(), provider: provider({
+      async createPayment(input) { dispatches++; return provider().createPayment(input); },
+      async getStatus(reference) { return {...(await provider().getStatus(reference))!, extra: "TOKEN114700005707123"}; },
+    })});
+    await orchestrator.prepare(purchase);
+    await orchestrator.dispatch(purchase.fulfillmentReference);
+    await expect(orchestrator.reconcile(purchase.fulfillmentReference)).resolves.toMatchObject({state: "succeeded", deliveryCode: "TOKEN114700005707123"});
+    expect(dispatches).toBe(1);
+  });
+
+  it("retains successful evidence if a later requery temporarily finds no record", async () => {
+    const orchestrator = new BillingCommerceOrchestrator({store: new MemoryStore(), provider: provider({async getStatus() { return null; }})});
+    await orchestrator.prepare(purchase);
+    await orchestrator.dispatch(purchase.fulfillmentReference);
+    await expect(orchestrator.reconcile(purchase.fulfillmentReference)).resolves.toMatchObject({state: "succeeded"});
+  });
+
 });
+

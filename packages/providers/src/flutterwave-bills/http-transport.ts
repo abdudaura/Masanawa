@@ -5,12 +5,14 @@ export class FlutterwaveHttpTransport implements FlutterwaveBillsTransport {
   readonly #fetch: typeof fetch;
   readonly #timeoutMs: number;
   readonly #relayToken: string | null;
+  readonly #relayProtocol: "bearer" | "dual-header";
 
   constructor(input?: Readonly<{
     baseUrl?: string;
     fetchImpl?: typeof fetch;
     timeoutMs?: number;
     relayToken?: string;
+    relayProtocol?: "bearer" | "dual-header";
   }>) {
     const baseUrl = (input?.baseUrl ?? "https://api.flutterwave.com").replace(/\/+$/u, "");
     const parsedBase = new URL(baseUrl);
@@ -25,6 +27,14 @@ export class FlutterwaveHttpTransport implements FlutterwaveBillsTransport {
       throw new TypeError("Flutterwave relay token is invalid");
     }
     this.#relayToken = relayToken || null;
+    this.#relayProtocol = input?.relayProtocol ?? "bearer";
+    if (!["bearer", "dual-header"].includes(this.#relayProtocol) ||
+        (this.#relayProtocol === "dual-header" && this.#relayToken === null)) {
+      throw new TypeError("Flutterwave relay protocol is invalid");
+    }
+    if (parsedBase.username || parsedBase.password || parsedBase.search || parsedBase.hash) {
+      throw new TypeError("Flutterwave HTTP base URL must not contain credentials, query or fragment");
+    }
     if (!Number.isSafeInteger(this.#timeoutMs) || this.#timeoutMs < 1_000 || this.#timeoutMs > 120_000) {
       throw new TypeError("Flutterwave HTTP timeout is invalid");
     }
@@ -46,11 +56,14 @@ export class FlutterwaveHttpTransport implements FlutterwaveBillsTransport {
         ? input.headers
         : Object.freeze({
             ...input.headers,
-            authorization: `Bearer ${this.#relayToken}`,
+            ...(this.#relayProtocol === "dual-header"
+              ? { "x-masanawa-relay-token": this.#relayToken }
+              : { authorization: `Bearer ${this.#relayToken}` }),
           });
 
     const response = await this.#fetch(url, {
       method: input.method,
+      redirect: "error",
       headers,
       ...(input.body === undefined ? {} : { body: JSON.stringify(input.body) }),
       signal,
@@ -68,3 +81,4 @@ export class FlutterwaveHttpTransport implements FlutterwaveBillsTransport {
     return Object.freeze({ status: response.status, body });
   }
 }
+

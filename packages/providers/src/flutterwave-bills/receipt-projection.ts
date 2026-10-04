@@ -58,6 +58,8 @@ export function projectBillingReceipt(
         : []),
       Object.freeze({ label: "Amount", value: `NGN ${record.amount}` }),
       Object.freeze({ label: "Reference", value: record.fulfillmentReference }),
+      ...(record.state === "succeeded" && record.deliveryCode
+        ? [Object.freeze({ label: "Delivery code", value: record.deliveryCode })] : []),
       ...(record.providerReference
         ? [
             Object.freeze({
@@ -69,6 +71,7 @@ export function projectBillingReceipt(
     ]),
     canRetry: record.state === "ready",
     canRefresh:
-      record.state === "dispatching" || record.state === "checking",
+      record.state === "dispatching" || record.state === "checking" || record.state === "succeeded",
   });
 }
+

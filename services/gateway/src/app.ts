@@ -753,6 +753,9 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
         schema: {
           body: Type.Object({
             requestId: Type.String({ minLength: 9, maxLength: 160 }),
+            quoteId: Type.String({ minLength: 1, maxLength: 160 }),
+            quoteRevision: Type.Integer({ minimum: 1 }),
+            categoryCode: Type.Optional(Type.String({ minLength: 1, maxLength: 128 })),
             billerCode: Type.String({ minLength: 1, maxLength: 128 }),
             itemCode: Type.String({ minLength: 1, maxLength: 128 }),
             itemName: Type.String({ minLength: 1, maxLength: 300 }),
@@ -768,6 +771,9 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
           return await billing.purchase({
             authorizationHeader: request.headers.authorization as string | undefined,
             requestId: request.body.requestId,
+            quoteId: request.body.quoteId,
+            quoteRevision: request.body.quoteRevision,
+            ...(request.body.categoryCode === undefined ? {} : { categoryCode: request.body.categoryCode }),
             billerCode: request.body.billerCode,
             itemCode: request.body.itemCode,
             itemName: request.body.itemName,
@@ -978,3 +984,4 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
 
   return app;
 }
+

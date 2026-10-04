@@ -171,11 +171,13 @@ describe("BillingFinancialService catalog authority", () => {
       flutterwaveWebhookHash: "test-hash",
       flutterwaveWebhookUrl: "https://example.com/webhooks/flutterwave",
       providerClient,
+      billingFunding: { async reserveConfirmedBill() {}, async settleBill() {} },
     });
 
     const result = await service.purchase({
       authorizationHeader: "Bearer test",
       requestId: "billing-request-123",
+      quoteId: "confirmed-quote-123", quoteRevision: 1,
       billerCode: "BIL119",
       itemCode: "AIRTIME",
       itemName: "Tampered Cheap Product",
@@ -197,4 +199,21 @@ describe("BillingFinancialService catalog authority", () => {
       reference: "billing-request-123",
     });
   });
+  it("never calls a provider without canonical verified funding and a confirmed quote", async () => {
+    let calls = 0;
+    const identity = {tenantId: createCanonicalId("tenant"), userId: createCanonicalId("user")};
+    const base = {
+      billingStore: () => new MemoryStore(),
+      webhookRepository: {async admitProviderWebhook() { return {duplicate: false}; }},
+      authorizer: {async authorize() { return identity; }},
+      flutterwaveSecretKey: "secret", flutterwaveWebhookHash: "hash", flutterwaveWebhookUrl: "https://example.com/webhooks/flutterwave",
+      providerClient: new FlutterwaveBillsClient({secretKey: "secret", transport: {async request() {calls++; throw new Error("must not call provider"); }}}),
+    };
+    const request = {authorizationHeader: "Bearer test", requestId: "billing-request", billerCode: "B", itemCode: "I", itemName: "Bill", customerId: "Customer", amount: "100", catalogAmount: "100"};
+    await expect(createBillingFinancialService(base).purchase(request)).rejects.toThrow("funding_unavailable");
+    await expect(createBillingFinancialService({...base, billingFunding: {async reserveConfirmedBill() {}, async settleBill() {}}}).purchase(request)).rejects.toThrow("confirmed_quote_required");
+    expect(calls).toBe(0);
+  });
+
 });
+

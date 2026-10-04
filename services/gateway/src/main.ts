@@ -350,6 +350,9 @@ export async function startGatewayService(
           ...(env["FLUTTERWAVE_RELAY_URL"]?.trim()
             ? { flutterwaveRelayUrl: env["FLUTTERWAVE_RELAY_URL"] }
             : {}),
+          ...(env["FLUTTERWAVE_RELAY_PROTOCOL"] === "dual-header"
+            ? { flutterwaveRelayProtocol: "dual-header" as const }
+            : {}),
           ...(env["MASANAWA_FLUTTERWAVE_RELAY_TOKEN"]?.trim()
             ? { flutterwaveRelayToken: env["MASANAWA_FLUTTERWAVE_RELAY_TOKEN"] }
             : {}),
@@ -446,3 +449,4 @@ if (isDirectExecution()) {
     process.exitCode = 1;
   });
 }
+
