@@ -2,6 +2,7 @@ import Fastify from "fastify";
 import type { Instant } from "@masanawa/contracts";
 import { nowInstant, parseCanonicalId } from "@masanawa/contracts";
 import type { AgentAdminService } from "./agent_admin.js";
+import type { PlatformAdminService } from "./platform_admin.js";
 import {
   admitTelemetryCorrelation,
   injectCorrelationHeaders,
@@ -19,6 +20,7 @@ export interface OpsAppOptions {
   readonly now?: () => Instant;
   readonly isDraining?: () => boolean;
   readonly agentAdmin?: AgentAdminService;
+  readonly platformAdmin?: PlatformAdminService;
 }
 
 const HealthResponseSchema = Type.Object(
@@ -120,6 +122,23 @@ const PutSkillsBodySchema = Type.Object(
 
 const CharacterParamsSchema = Type.Object(
   { characterId: Type.String() },
+  { additionalProperties: false },
+);
+
+const UserParamsSchema = Type.Object(
+  { userId: Type.String() },
+  { additionalProperties: false },
+);
+
+const PutUserStateBodySchema = Type.Object(
+  {
+    state: Type.Union([
+      Type.Literal("active"),
+      Type.Literal("disabled"),
+      Type.Literal("archived"),
+    ]),
+    expectedRevision: Type.Integer({ minimum: 1 }),
+  },
   { additionalProperties: false },
 );
 
@@ -285,6 +304,88 @@ export function createOpsApp(options: OpsAppOptions = {}) {
         return { ...assignment, skillVersionIds: [...assignment.skillVersionIds] };
       },
     );
+  }
+
+
+  if (options.platformAdmin) {
+    const platformAdmin = options.platformAdmin;
+
+    app.get("/v1/admin/summary", async (request) =>
+      platformAdmin.summary({
+        authorizationHeader: request.headers.authorization,
+      }),
+    );
+
+    app.get("/v1/admin/users", async (request) => [
+      ...await platformAdmin.listUsers({
+        authorizationHeader: request.headers.authorization,
+      }),
+    ]);
+
+    app.put(
+      "/v1/admin/users/:userId/state",
+      {
+        schema: {
+          params: UserParamsSchema,
+          body: PutUserStateBodySchema,
+        },
+      },
+      async (request) =>
+        platformAdmin.setUserState({
+          authorizationHeader: request.headers.authorization,
+          userId: request.params.userId,
+          state: request.body.state,
+          expectedRevision: request.body.expectedRevision,
+        }),
+    );
+
+    app.get("/v1/admin/agent-runs", async (request) => [
+      ...await platformAdmin.listAgentRuns({
+        authorizationHeader: request.headers.authorization,
+      }),
+    ]);
+
+    app.get("/v1/admin/offers", async (request) => [
+      ...await platformAdmin.listOffers({
+        authorizationHeader: request.headers.authorization,
+      }),
+    ]);
+
+    app.get("/v1/admin/fulfillments", async (request) => [
+      ...await platformAdmin.listFulfillments({
+        authorizationHeader: request.headers.authorization,
+      }),
+    ]);
+
+    app.get("/v1/admin/ledger", async (request) => [
+      ...await platformAdmin.listLedger({
+        authorizationHeader: request.headers.authorization,
+      }),
+    ]);
+
+    app.get("/v1/admin/operations", async (request) => [
+      ...await platformAdmin.listOperations({
+        authorizationHeader: request.headers.authorization,
+      }),
+    ]);
+
+    app.get("/v1/admin/reconciliation", async (request) => [
+      ...await platformAdmin.listReconciliation({
+        authorizationHeader: request.headers.authorization,
+      }),
+    ]);
+
+    app.get("/v1/admin/provider-credentials", async (request) => [
+      ...await platformAdmin.listCredentialRefs({
+        authorizationHeader: request.headers.authorization,
+      }),
+    ]);
+
+    app.get("/v1/admin/audit", async (request) => [
+      ...await platformAdmin.listAuditEvents({
+        authorizationHeader: request.headers.authorization,
+      }),
+    ]);
   }
 
   app.get(
