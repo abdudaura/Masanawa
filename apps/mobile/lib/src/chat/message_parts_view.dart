@@ -21,7 +21,11 @@ class MessagePartsView extends StatelessWidget {
       children: [
         for (final part in parts) ...[
           if (part.document != null)
-            ShellDocumentView(document: part.document!, onAction: onAction)
+            ShellDocumentView(
+              key: ValueKey(part.document!.id),
+              document: part.document!,
+              onAction: onAction,
+            )
           else
             _PartCard(part: part),
           if (part != parts.last) const SizedBox(height: 7),
@@ -37,28 +41,28 @@ class _PartCard extends StatelessWidget {
   final AgentMessagePart part;
 
   IconData get icon => switch (part.kind) {
-        AgentMessagePartKind.audio => Icons.graphic_eq,
-        AgentMessagePartKind.image => Icons.image_outlined,
-        AgentMessagePartKind.file => Icons.insert_drive_file_outlined,
-        AgentMessagePartKind.artifact => Icons.auto_awesome_outlined,
-        AgentMessagePartKind.work => Icons.work_outline,
-        AgentMessagePartKind.approval => Icons.approval_outlined,
-        AgentMessagePartKind.operation => Icons.sync_alt,
-        AgentMessagePartKind.callResult => Icons.call_outlined,
-        AgentMessagePartKind.status => Icons.info_outline,
-      };
+    AgentMessagePartKind.audio => Icons.graphic_eq,
+    AgentMessagePartKind.image => Icons.image_outlined,
+    AgentMessagePartKind.file => Icons.insert_drive_file_outlined,
+    AgentMessagePartKind.artifact => Icons.auto_awesome_outlined,
+    AgentMessagePartKind.work => Icons.work_outline,
+    AgentMessagePartKind.approval => Icons.approval_outlined,
+    AgentMessagePartKind.operation => Icons.sync_alt,
+    AgentMessagePartKind.callResult => Icons.call_outlined,
+    AgentMessagePartKind.status => Icons.info_outline,
+  };
 
   String get fallbackTitle => switch (part.kind) {
-        AgentMessagePartKind.audio => 'Voice response',
-        AgentMessagePartKind.image => 'Image',
-        AgentMessagePartKind.file => 'File',
-        AgentMessagePartKind.artifact => 'Work result',
-        AgentMessagePartKind.work => 'Work update',
-        AgentMessagePartKind.approval => 'Approval needed',
-        AgentMessagePartKind.operation => 'Action update',
-        AgentMessagePartKind.callResult => 'Call result',
-        AgentMessagePartKind.status => 'Status',
-      };
+    AgentMessagePartKind.audio => 'Voice response',
+    AgentMessagePartKind.image => 'Image',
+    AgentMessagePartKind.file => 'File',
+    AgentMessagePartKind.artifact => 'Work result',
+    AgentMessagePartKind.work => 'Work update',
+    AgentMessagePartKind.approval => 'Approval needed',
+    AgentMessagePartKind.operation => 'Action update',
+    AgentMessagePartKind.callResult => 'Call result',
+    AgentMessagePartKind.status => 'Status',
+  };
 
   Future<void> _openFile() async {
     final value = part.file?.previewUrl ?? part.file?.downloadUrl;
