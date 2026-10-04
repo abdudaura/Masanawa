@@ -27,4 +27,3 @@ export * from "./agents/selection.js";
 
 export * from "./agents/mobile-shell.js";
 
-export * from "./identity/platform-session.js";
