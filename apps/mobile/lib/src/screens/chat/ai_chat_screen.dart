@@ -2045,8 +2045,16 @@ class _AttachmentGallery extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final imageAttachments =
+        attachments.where((item) => item.kind == 'image').toList();
+    final imagePaths = imageAttachments.map((item) => item.path).toList();
+
     if (attachments.length == 1) {
-      return _AttachmentView(attachment: attachments.first);
+      return _AttachmentView(
+        attachment: attachments.first,
+        imagePaths: imagePaths,
+        imageIndex: 0,
+      );
     }
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 260),
@@ -2057,7 +2065,13 @@ class _AttachmentGallery extends StatelessWidget {
           for (final attachment in attachments)
             SizedBox(
               width: attachment.kind == 'image' ? 126 : 250,
-              child: _AttachmentView(attachment: attachment),
+              child: _AttachmentView(
+                attachment: attachment,
+                imagePaths: imagePaths,
+                imageIndex: attachment.kind == 'image'
+                    ? imageAttachments.indexOf(attachment)
+                    : 0,
+              ),
             ),
         ],
       ),
@@ -2066,15 +2080,25 @@ class _AttachmentGallery extends StatelessWidget {
 }
 
 class _AttachmentView extends StatelessWidget {
-  const _AttachmentView({required this.attachment});
+  const _AttachmentView({
+    required this.attachment,
+    this.imagePaths = const [],
+    this.imageIndex = 0,
+  });
 
   final ChatAttachment attachment;
+  final List<String> imagePaths;
+  final int imageIndex;
 
   @override
   Widget build(BuildContext context) {
     switch (attachment.kind) {
       case 'image':
-        return _ImageAttachment(path: attachment.path);
+        return _ImageAttachment(
+          path: attachment.path,
+          galleryPaths: imagePaths.isEmpty ? [attachment.path] : imagePaths,
+          initialIndex: imageIndex,
+        );
       case 'voice':
         return _VoiceBubble(attachment: attachment);
       case 'video':
@@ -2086,47 +2110,26 @@ class _AttachmentView extends StatelessWidget {
 }
 
 class _ImageAttachment extends StatelessWidget {
-  const _ImageAttachment({required this.path});
+  const _ImageAttachment({
+    required this.path,
+    required this.galleryPaths,
+    required this.initialIndex,
+  });
+
   final String path;
+  final List<String> galleryPaths;
+  final int initialIndex;
 
   @override
   Widget build(BuildContext context) {
     final file = File(path);
     return GestureDetector(
-      onTap: () => showDialog<void>(
-        context: context,
-        builder: (_) => Dialog.fullscreen(
-          backgroundColor: Colors.black,
-          child: SafeArea(
-            child: Stack(
-              children: [
-                Center(
-                  child: InteractiveViewer(
-                    minScale: 0.7,
-                    maxScale: 5,
-                    child: Image.file(
-                      file,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => const Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Text(
-                          'Photo no longer available on this device.',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  top: 8,
-                  left: 8,
-                  child: IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ),
-              ],
-            ),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          fullscreenDialog: true,
+          builder: (_) => _ImageGalleryViewer(
+            paths: galleryPaths,
+            initialIndex: initialIndex,
           ),
         ),
       ),
@@ -2135,6 +2138,7 @@ class _ImageAttachment extends StatelessWidget {
         child: Image.file(
           file,
           width: 220,
+          height: galleryPaths.length > 1 ? 126 : null,
           fit: BoxFit.cover,
           errorBuilder: (_, __, ___) => Container(
             width: 220,
@@ -2147,6 +2151,102 @@ class _ImageAttachment extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ImageGalleryViewer extends StatefulWidget {
+  const _ImageGalleryViewer({
+    required this.paths,
+    required this.initialIndex,
+  });
+
+  final List<String> paths;
+  final int initialIndex;
+
+  @override
+  State<_ImageGalleryViewer> createState() => _ImageGalleryViewerState();
+}
+
+class _ImageGalleryViewerState extends State<_ImageGalleryViewer> {
+  late final PageController _controller;
+  late int _index;
+
+  @override
+  void initState() {
+    super.initState();
+    _index = widget.initialIndex.clamp(0, widget.paths.length - 1);
+    _controller = PageController(initialPage: _index);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        backgroundColor: Colors.black,
+        body: SafeArea(
+          child: Stack(
+            children: [
+              PageView.builder(
+                controller: _controller,
+                itemCount: widget.paths.length,
+                onPageChanged: (index) => setState(() => _index = index),
+                itemBuilder: (_, index) => Center(
+                  child: InteractiveViewer(
+                    minScale: 0.7,
+                    maxScale: 5,
+                    child: Image.file(
+                      File(widget.paths[index]),
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Text(
+                          'Photo no longer available on this device.',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 8,
+                left: 8,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ),
+              if (widget.paths.length > 1)
+                Positioned(
+                  top: 16,
+                  left: 0,
+                  right: 0,
+                  child: IgnorePointer(
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Text(
+                          '${_index + 1}/${widget.paths.length}',
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
 }
 
 class _VideoAttachment extends StatefulWidget {
