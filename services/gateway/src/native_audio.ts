@@ -81,9 +81,10 @@ export function createGeminiLiveAudioRenderer(input: {
         const chunks: Buffer[] = [];
         let settled = false;
         let sentTurn = false;
+        let timer: ReturnType<typeof setTimeout> | undefined;
 
         const cleanup = () => {
-          clearTimeout(timer);
+          if (timer !== undefined) clearTimeout(timer);
           signal?.removeEventListener("abort", onAbort);
         };
 
@@ -97,16 +98,14 @@ export function createGeminiLiveAudioRenderer(input: {
 
         const onAbort = () =>
           finishError(new Error("Gemini Live audio cancelled"));
-        signal?.addEventListener("abort", onAbort, { once: true });
 
-        const abort = () => finishError(new Error("Gemini Live audio cancelled"));
+        signal?.addEventListener("abort", onAbort, { once: true });
         if (signal?.aborted) {
-          abort();
+          onAbort();
           return;
         }
-        signal?.addEventListener("abort", abort, { once: true });
 
-        const timer = setTimeout(
+        timer = setTimeout(
           () => finishError(new Error("Gemini Live audio timed out")),
           timeoutMs,
         );
