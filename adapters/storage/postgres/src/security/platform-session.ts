@@ -182,6 +182,13 @@ export function createPostgresPlatformSessionRepository(pool: Pool): PlatformSes
            ON CONFLICT (tenant_id) DO NOTHING`,
           [input.tenantId,input.createdAt],
         );
+        const tenant = await client.query<{ state: string }>(
+          `SELECT state FROM identity.tenants WHERE tenant_id=$1 FOR SHARE`,
+          [input.tenantId],
+        );
+        if (tenant.rows[0]?.state !== "active") {
+          throw new Error("auth.tenant_inactive");
+        }
         const external = subject(input.channel,input.identifier,input.createdAt);
         const existingUser = await resolveUserByExternalIdentity(client,input.tenantId,external);
         if (existingUser) {
@@ -230,9 +237,11 @@ export function createPostgresPlatformSessionRepository(pool: Pool): PlatformSes
              FROM security.platform_sessions s
              JOIN identity.users u
                ON u.tenant_id=s.tenant_id AND u.user_id=s.user_id
+             JOIN identity.tenants t
+               ON t.tenant_id=s.tenant_id
             WHERE s.access_hash=$1 AND s.revoked_at IS NULL
               AND s.access_expires_at>$2 AND s.refresh_expires_at>$2
-              AND u.state='active'`,
+              AND u.state='active' AND t.state='active'`,
           [input.accessHash,input.at],
         );
         const row = result.rows[0];
@@ -247,11 +256,22 @@ export function createPostgresPlatformSessionRepository(pool: Pool): PlatformSes
     async rotateRefresh(input) {
       return withTransaction(pool, async (client) => {
         const result = await client.query<{ tenant_id: string; user_id: string }>(
-          `UPDATE security.platform_sessions
+          `UPDATE security.platform_sessions s
               SET access_hash=$2,refresh_hash=$3,access_expires_at=$4,
                   refresh_expires_at=$5,updated_at=$6
-            WHERE refresh_hash=$1 AND revoked_at IS NULL AND refresh_expires_at>$6
-            RETURNING tenant_id,user_id`,
+            WHERE s.refresh_hash=$1
+              AND s.revoked_at IS NULL
+              AND s.refresh_expires_at>$6
+              AND EXISTS (
+                SELECT 1
+                  FROM identity.users u
+                  JOIN identity.tenants t ON t.tenant_id=u.tenant_id
+                 WHERE u.tenant_id=s.tenant_id
+                   AND u.user_id=s.user_id
+                   AND u.state='active'
+                   AND t.state='active'
+              )
+            RETURNING s.tenant_id,s.user_id`,
           [
             input.refreshHash,input.nextAccessHash,input.nextRefreshHash,
             input.accessExpiresAt,input.refreshExpiresAt,input.rotatedAt,
