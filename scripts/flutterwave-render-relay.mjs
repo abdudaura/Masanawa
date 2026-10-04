@@ -48,8 +48,8 @@ function safePath(pathname) {
   return ALLOWED_PATHS.some((pattern) => pattern.test(pathname));
 }
 
-if (!RELAY_TOKEN || !FLUTTERWAVE_SECRET_KEY) {
-  throw new Error("Missing MASANAWA_FLUTTERWAVE_RELAY_TOKEN or FLUTTERWAVE_SECRET_KEY");
+if (!RELAY_TOKEN) {
+  throw new Error("Missing MASANAWA_FLUTTERWAVE_RELAY_TOKEN");
 }
 
 const server = createServer(async (request, response) => {
@@ -69,6 +69,10 @@ const server = createServer(async (request, response) => {
 
     if ((request.method !== "GET" && request.method !== "POST") || !safePath(url.pathname)) {
       sendJson(response, 404, { ok: false, code: "not_allowed" });
+      return;
+    }
+    if (!FLUTTERWAVE_SECRET_KEY) {
+      sendJson(response, 503, { ok: false, code: "flutterwave_secret_not_configured" });
       return;
     }
 
