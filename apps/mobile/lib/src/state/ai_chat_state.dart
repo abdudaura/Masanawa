@@ -27,6 +27,7 @@ class ChatAttachment {
     this.name,
     this.sizeBytes,
     this.durationMs,
+    this.waveform = const [],
   });
 
   final String kind;
@@ -34,6 +35,7 @@ class ChatAttachment {
   final String? name;
   final int? sizeBytes;
   final int? durationMs;
+  final List<double> waveform;
 
   String get label => switch (kind) {
     'image' => '📷 Photo',
@@ -48,6 +50,7 @@ class ChatAttachment {
     if (name != null) 'name': name,
     if (sizeBytes != null) 'sizeBytes': sizeBytes,
     if (durationMs != null) 'durationMs': durationMs,
+    if (waveform.isNotEmpty) 'waveform': waveform,
   };
 
   factory ChatAttachment.fromJson(Map<String, dynamic> json) => ChatAttachment(
@@ -56,6 +59,10 @@ class ChatAttachment {
     name: json['name'] as String?,
     sizeBytes: json['sizeBytes'] as int?,
     durationMs: json['durationMs'] as int?,
+    waveform: [
+      for (final value in (json['waveform'] as List? ?? const []))
+        if (value is num) value.toDouble().clamp(0.0, 1.0),
+    ],
   );
 }
 
@@ -593,6 +600,7 @@ class AiChatController extends Notifier<AiChatState> {
           path: path,
           durationMs: result.audioDurationMs,
           sizeBytes: audio.length,
+          waveform: _pcmWaveform(audio),
         );
       }
       if (streamMessageId != null) {
@@ -1198,6 +1206,31 @@ class AiChatController extends Notifier<AiChatState> {
     _bindings.clear();
     state = state.copyWith(threads: {}, sendingIn: {});
     _save();
+  }
+
+  List<double> _pcmWaveform(Uint8List wavBytes, {int bars = 36}) {
+    if (wavBytes.length <= 44 || bars < 1) return const [];
+    final pcm = wavBytes.sublist(44);
+    final sampleCount = pcm.length ~/ 2;
+    if (sampleCount < bars) return const [];
+    final samplesPerBar = (sampleCount / bars).floor().clamp(1, sampleCount);
+    final values = <double>[];
+    for (var bar = 0; bar < bars; bar++) {
+      final startSample = bar * samplesPerBar;
+      if (startSample >= sampleCount) break;
+      final endSample = ((bar + 1) * samplesPerBar).clamp(0, sampleCount);
+      var peak = 0;
+      for (var sample = startSample; sample < endSample; sample++) {
+        final offset = sample * 2;
+        if (offset + 1 >= pcm.length) break;
+        var value = pcm[offset] | (pcm[offset + 1] << 8);
+        if (value >= 0x8000) value -= 0x10000;
+        final magnitude = value.abs();
+        if (magnitude > peak) peak = magnitude;
+      }
+      values.add((peak / 32768).clamp(0.06, 1.0).toDouble());
+    }
+    return List.unmodifiable(values);
   }
 
   String _newId() => 'm-${DateTime.now().microsecondsSinceEpoch}-${_seq++}';
