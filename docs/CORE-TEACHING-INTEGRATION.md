@@ -133,3 +133,22 @@ Relationship/SkillVersion. This does not replace #89 readiness/authority admissi
 makes its result explicit at the Teaching integration boundary so a caller cannot
 accidentally invoke Teaching with an arbitrary SkillVersion or another user's
 Relationship.
+
+
+## Evidence-capable teaching claims
+
+`TeachingEvidencePort` is the explicit seam for current, specialist or source-dependent
+teaching claims. Core Teaching never chooses a provider or grants Tool authority.
+
+Behavior:
+- the request is exact Relationship + SkillVersion + lesson-step scoped;
+- without a configured evidence resolver, the coordinator returns
+  `status: insufficient` with an explicit uncertainty note;
+- `status: verified` requires at least one bounded evidence record with exact SHA-256
+  content hash and checked timestamp;
+- malformed evidence or "verified" with no evidence is rejected;
+- cross-Relationship/Skill evidence requests fail before resolver use.
+
+The #89 runtime owner should implement this port by invoking its already-admitted
+evidence-capable Tool/Skill path after current authority/readiness checks. Search/provider
+credentials must never enter Teaching domain objects.
