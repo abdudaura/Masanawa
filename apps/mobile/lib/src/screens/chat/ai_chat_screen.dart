@@ -205,7 +205,15 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       final dir = await getTemporaryDirectory();
       final path =
           '${dir.path}/masanawa_voice_${DateTime.now().microsecondsSinceEpoch}.m4a';
-      await _recorder.start(const RecordConfig(), path: path);
+      await _recorder.start(
+        const RecordConfig(
+          encoder: AudioEncoder.aacLc,
+          bitRate: 64000,
+          sampleRate: 16000,
+          numChannels: 1,
+        ),
+        path: path,
+      );
       setState(() {
         _recording = true;
         _recSeconds = 0;
@@ -584,84 +592,117 @@ class _Composer extends StatelessWidget {
           children: [
             Expanded(
               child: Container(
+                constraints: const BoxConstraints(minHeight: 52),
                 decoration: BoxDecoration(
                   color: u.surfaceCard,
-                  borderRadius: BorderRadius.circular(999),
+                  borderRadius: BorderRadius.circular(26),
                   border: Border.all(color: u.structuralBorder),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    IconButton(
+                    _ComposerIcon(
                       tooltip: 'Emoji',
-                      icon: Icon(
-                        Icons.emoji_emotions_outlined,
-                        color: u.textMuted,
-                      ),
+                      icon: Icons.emoji_emotions_outlined,
                       onPressed: onEmojiToggle,
                     ),
                     Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: TextField(
-                          controller: controller,
-                          minLines: 1,
-                          maxLines: 4,
-                          textInputAction: TextInputAction.send,
-                          onSubmitted: (_) => onSend(),
-                          decoration: const InputDecoration(
-                            hintText: 'Type or tap the mic to talk',
-                            border: InputBorder.none,
-                            isDense: true,
-                            contentPadding: EdgeInsets.symmetric(vertical: 10),
-                          ),
+                      child: TextField(
+                        controller: controller,
+                        minLines: 1,
+                        maxLines: 5,
+                        keyboardType: TextInputType.multiline,
+                        textCapitalization: TextCapitalization.sentences,
+                        decoration: const InputDecoration(
+                          hintText: 'Message',
+                          border: InputBorder.none,
+                          isDense: true,
+                          contentPadding: EdgeInsets.fromLTRB(2, 15, 6, 14),
                         ),
                       ),
                     ),
-                    IconButton(
+                    _ComposerIcon(
                       tooltip: 'Attach',
-                      icon: Icon(Icons.attach_file, color: u.textMuted),
+                      icon: Icons.attach_file,
                       onPressed: onAttach,
                     ),
-                    IconButton(
-                      tooltip: 'Camera',
-                      icon: Icon(Icons.camera_alt_outlined, color: u.textMuted),
-                      onPressed: onCamera,
-                    ),
+                    if (!hasText)
+                      _ComposerIcon(
+                        tooltip: 'Camera',
+                        icon: Icons.camera_alt_outlined,
+                        onPressed: onCamera,
+                      ),
                   ],
                 ),
               ),
             ),
             const SizedBox(width: 6),
-            GestureDetector(
-              onTap: hasText ? onSend : onMic,
-              child: Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: u.brand,
-                  shape: BoxShape.circle,
-                ),
-                child: sending && !hasText
-                    ? const Center(
-                        child: SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
+            Semantics(
+              button: true,
+              label: hasText ? 'Send message' : 'Record voice note',
+              child: Material(
+                color: u.brand,
+                shape: const CircleBorder(),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: sending ? null : (hasText ? onSend : onMic),
+                  child: SizedBox(
+                    width: 52,
+                    height: 52,
+                    child: sending
+                        ? const Center(
+                            child: SizedBox(
+                              width: 19,
+                              height: 19,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            ),
+                          )
+                        : AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 160),
+                            child: Icon(
+                              hasText ? Icons.send_rounded : Icons.mic_rounded,
+                              key: ValueKey(hasText),
+                              color: Colors.white,
+                              size: 23,
+                            ),
                           ),
-                        ),
-                      )
-                    : Icon(
-                        hasText ? Icons.send : Icons.mic,
-                        color: Colors.white,
-                        size: 22,
-                      ),
+                  ),
+                ),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ComposerIcon extends StatelessWidget {
+  const _ComposerIcon({
+    required this.tooltip,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    return SizedBox(
+      width: 40,
+      height: 48,
+      child: IconButton(
+        tooltip: tooltip,
+        padding: EdgeInsets.zero,
+        visualDensity: VisualDensity.compact,
+        icon: Icon(icon, color: u.textMuted, size: 22),
+        onPressed: onPressed,
       ),
     );
   }
