@@ -171,6 +171,14 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           widget.characterId,
           attachments,
           caption: text,
+          replyToId: reply?.id,
+          replyPreview: reply == null
+              ? null
+              : (reply.text.isNotEmpty
+                  ? reply.text
+                  : reply.allAttachments.isNotEmpty
+                  ? reply.allAttachments.first.label
+                  : 'Message'),
         ),
       );
       return;
@@ -515,6 +523,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       kind: 'voice',
       path: path!,
       durationMs: seconds * 1000,
+      waveform: _compactWaveform(_amplitudes),
     );
     setState(() {
       _pendingVoice = attachment;
@@ -539,11 +548,24 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   Future<void> _sendPendingVoice() async {
     final pending = _pendingVoice;
     if (pending == null) return;
-    setState(() => _pendingVoice = null);
-    ref.read(aiChatProvider.notifier).setDraftVoice(widget.characterId, null);
-    await ref.read(aiChatProvider.notifier).sendAttachment(
+    final reply = _replyingTo;
+    setState(() {
+      _pendingVoice = null;
+      _replyingTo = null;
+    });
+    final ctl = ref.read(aiChatProvider.notifier);
+    ctl.setDraftVoice(widget.characterId, null);
+    await ctl.sendAttachment(
       widget.characterId,
       pending,
+      replyToId: reply?.id,
+      replyPreview: reply == null
+          ? null
+          : (reply.text.isNotEmpty
+              ? reply.text
+              : reply.allAttachments.isNotEmpty
+              ? reply.allAttachments.first.label
+              : 'Message'),
     );
   }
 
@@ -554,6 +576,23 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     if (pending != null) {
       try { await File(pending.path).delete(); } catch (_) {}
     }
+  }
+
+  List<double> _compactWaveform(List<double> source, {int bars = 36}) {
+    if (source.isEmpty) return const [];
+    if (source.length <= bars) return List.unmodifiable(source);
+    final result = <double>[];
+    final bucket = source.length / bars;
+    for (var i = 0; i < bars; i++) {
+      final start = (i * bucket).floor();
+      final end = ((i + 1) * bucket).ceil().clamp(start + 1, source.length);
+      var peak = 0.0;
+      for (var j = start; j < end; j++) {
+        if (source[j] > peak) peak = source[j];
+      }
+      result.add(peak.clamp(0.06, 1.0).toDouble());
+    }
+    return List.unmodifiable(result);
   }
 
   String get _recClock {
@@ -1051,6 +1090,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     final attachments = message.allAttachments
         .where((item) => File(item.path).existsSync())
         .toList();
+    if (message.text.isEmpty && attachments.isEmpty) return;
     await SharePlus.instance.share(
       ShareParams(
         text: message.text.isEmpty ? null : message.text,
@@ -1635,6 +1675,106 @@ class _VoicePreviewBar extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _PendingAttachmentStrip extends StatelessWidget {
+  const _PendingAttachmentStrip({
+    required this.attachments,
+    required this.onRemove,
+  });
+
+  final List<ChatAttachment> attachments;
+  final ValueChanged<int> onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    return Container(
+      height: 92,
+      margin: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+      decoration: BoxDecoration(
+        color: u.surfaceCard,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: u.structuralBorder),
+      ),
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: attachments.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 6),
+        itemBuilder: (_, index) {
+          final attachment = attachments[index];
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: attachment.kind == 'image' ? 74 : 120,
+                height: 78,
+                decoration: BoxDecoration(
+                  color: u.surfaceMuted,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: u.structuralBorder),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: attachment.kind == 'image'
+                    ? Image.file(
+                        File(attachment.path),
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) =>
+                            const Center(child: Icon(Icons.broken_image_outlined)),
+                      )
+                    : Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              attachment.kind == 'video'
+                                  ? Icons.videocam_outlined
+                                  : Icons.insert_drive_file_outlined,
+                              color: u.brand,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              attachment.name ?? attachment.label,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: u.textPrimary,
+                                fontSize: 10.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+              ),
+              Positioned(
+                top: -4,
+                right: -4,
+                child: Material(
+                  color: u.surfaceCard,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: () => onRemove(index),
+                    child: Padding(
+                      padding: const EdgeInsets.all(3),
+                      child: Icon(
+                        Icons.close,
+                        size: 15,
+                        color: u.textPrimary,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -2466,6 +2606,16 @@ class _DocTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final u = context.masanawa;
+    final name = attachment.name ?? 'Document';
+    final dot = name.lastIndexOf('.');
+    final typeLabel = dot > 0 && dot < name.length - 1
+        ? name.substring(dot + 1).toUpperCase()
+        : (lookupMimeType(attachment.path)?.split('/').last.toUpperCase() ??
+              'FILE');
+    final meta = [
+      typeLabel,
+      if (attachment.sizeBytes != null) formatBytes(attachment.sizeBytes!),
+    ].join(' · ');
     return Container(
       width: 220,
       padding: const EdgeInsets.all(10),
@@ -2491,16 +2641,88 @@ class _DocTile extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                if (attachment.sizeBytes != null)
-                  Text(
-                    formatBytes(attachment.sizeBytes!),
-                    style: TextStyle(color: u.textMuted, fontSize: 11.5),
-                  ),
+                Text(
+                  meta,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: u.textMuted, fontSize: 11.5),
+                ),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _VoiceWaveform extends StatelessWidget {
+  const _VoiceWaveform({
+    required this.values,
+    required this.progress,
+    required this.enabled,
+    required this.onSeek,
+  });
+
+  final List<double> values;
+  final double progress;
+  final bool enabled;
+  final ValueChanged<double> onSeek;
+
+  List<double> _fallback() {
+    const bars = 34;
+    return List<double>.generate(bars, (index) {
+      final wave = ((index * 17 + 11) % 23) / 23;
+      return 0.2 + (wave * 0.8);
+    }, growable: false);
+  }
+
+  void _seekFromDx(double dx, double width) {
+    if (!enabled || width <= 0) return;
+    onSeek((dx / width).clamp(0.0, 1.0).toDouble());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    final bars = values.isEmpty ? _fallback() : values;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: (details) => _seekFromDx(details.localPosition.dx, width),
+          onHorizontalDragUpdate: (details) =>
+              _seekFromDx(details.localPosition.dx, width),
+          child: SizedBox(
+            height: 34,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                for (var i = 0; i < bars.length; i++) ...[
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: Container(
+                        width: 2,
+                        height:
+                            (5 + bars[i].clamp(0.0, 1.0) * 23).toDouble(),
+                        decoration: BoxDecoration(
+                          color: (i / bars.length) <= progress
+                              ? u.brand
+                              : u.textMuted.withValues(alpha: .42),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (i != bars.length - 1) const SizedBox(width: 1),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -2693,18 +2915,11 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SliderTheme(
-                  data: SliderTheme.of(context).copyWith(
-                    trackHeight: 2,
-                    thumbShape: const RoundSliderThumbShape(
-                      enabledThumbRadius: 5,
-                    ),
-                    overlayShape: SliderComponentShape.noOverlay,
-                  ),
-                  child: Slider(
-                    value: progress,
-                    onChanged: _broken ? null : _seek,
-                  ),
+                _VoiceWaveform(
+                  values: widget.attachment.waveform,
+                  progress: progress,
+                  enabled: !_broken,
+                  onSeek: _seek,
                 ),
                 Row(
                   children: [
