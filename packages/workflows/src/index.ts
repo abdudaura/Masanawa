@@ -6,3 +6,5 @@ export * from "./checkpoint-model.js";
 export * from "./checkpoint.js";
 export * from "./retry-model.js";
 export * from "./retry.js";
+export * from "./human-request-model.js";
+export * from "./human-request.js";
