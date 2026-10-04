@@ -100,3 +100,21 @@ export interface UserCharacterRelationship {
   readonly createdAt: Instant;
   readonly updatedAt: Instant;
 }
+
+
+export const characterOwnershipKinds = [
+  "platform",
+  "personal-clone",
+  "business",
+] as const;
+
+export type CharacterOwnershipKind =
+  (typeof characterOwnershipKinds)[number];
+
+export interface CharacterOwnership {
+  readonly tenantId: TenantId;
+  readonly characterId: CharacterId;
+  readonly kind: CharacterOwnershipKind;
+  readonly ownerUserId: UserId | null;
+  readonly createdAt: Instant;
+}
