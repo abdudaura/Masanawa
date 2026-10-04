@@ -8,6 +8,7 @@ import {
   createTeachingRuntimeBinding,
   createTeachingSelectionActionBinding,
   createTeachingChannelSelectionBinding,
+  createTeachingChannelSingleSelectProjection,
   resolveTeachingChannelSelection,
   TeachingRuntimeCoordinator,
   resolveTeachingShellAction,
@@ -236,14 +237,33 @@ describe("Core Teaching cross-channel acceptance", () => {
       progress: durable,
       presentation: surfaces.adapter("whatsapp"),
     });
-    const channelBinding = createTeachingChannelSelectionBinding({
+    const channelProjection = createTeachingChannelSingleSelectProjection({
+      binding: binding(active),
+      card: {
+        relationshipId: active.learner.relationshipId,
+        skillVersionId: active.skillVersionId,
+        lessonStepKey: "common-denominator",
+        exerciseKey: "common-denominator-choice",
+        prompt: "Which is a common denominator for 1/2 and 1/3?",
+        kind: "single-select",
+        options: [
+          { optionKey: "six", label: "6" },
+          { optionKey: "five", label: "5" },
+        ],
+      },
       action,
-      callbackToken: "tch_cb_fractions_six_1",
-      optionKey: "six",
+      callbackTokens: {
+        six: "tch_cb_fractions_six_1",
+        five: "tch_cb_fractions_five1",
+      },
     });
+    const selectedBinding = channelProjection.bindings.find(
+      (entry) => entry.optionKey === "six",
+    );
+    expect(selectedBinding).toBeDefined();
     const whatsappSelection = resolveTeachingChannelSelection({
       selectionId: "tch_cb_fractions_six_1",
-      binding: channelBinding,
+      binding: selectedBinding!,
       now: toInstant("2026-10-04T17:00:10.000Z"),
     });
     const retry = await whatsapp.submitOpaqueSelection({
