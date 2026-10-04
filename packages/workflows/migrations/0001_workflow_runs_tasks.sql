@@ -22,6 +22,7 @@ CREATE TABLE workflows.workflow_runs (
   failure_message text,
   cancellation_reason text,
   PRIMARY KEY (tenant_id, workflow_run_id),
+  UNIQUE (tenant_id, workflow_run_id, workflow_version_id, graph_signature),
   CHECK (updated_at >= created_at),
   CHECK (
     (state = 'pending' AND started_at IS NULL)
@@ -66,8 +67,12 @@ CREATE TABLE workflows.tasks (
   cancellation_reason text,
   PRIMARY KEY (tenant_id, task_id),
   UNIQUE (tenant_id, admission_request_id),
-  FOREIGN KEY (tenant_id, workflow_run_id)
-    REFERENCES workflows.workflow_runs(tenant_id, workflow_run_id),
+  FOREIGN KEY (
+    tenant_id, workflow_run_id, workflow_version_id, graph_signature
+  )
+    REFERENCES workflows.workflow_runs(
+      tenant_id, workflow_run_id, workflow_version_id, graph_signature
+    ),
   FOREIGN KEY (tenant_id, parent_task_id)
     REFERENCES workflows.tasks(tenant_id, task_id)
     DEFERRABLE INITIALLY DEFERRED,
@@ -106,3 +111,56 @@ COMMENT ON TABLE workflows.workflow_runs IS
 
 COMMENT ON TABLE workflows.tasks IS
   'Canonical Task state. Admission request identity is durable and each committed admission must be paired transactionally with canonical events.outbox publication.';
+
+
+CREATE OR REPLACE FUNCTION workflows.validate_task_lineage()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  parent_row workflows.tasks%ROWTYPE;
+BEGIN
+  IF NEW.lineage_depth = 0 THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT *
+    INTO parent_row
+    FROM workflows.tasks
+   WHERE tenant_id = NEW.tenant_id
+     AND task_id = NEW.parent_task_id;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Workflow Task parent does not exist'
+      USING ERRCODE = '23514';
+  END IF;
+
+  IF parent_row.workflow_run_id IS DISTINCT FROM NEW.workflow_run_id
+     OR parent_row.workflow_version_id IS DISTINCT FROM NEW.workflow_version_id
+     OR parent_row.graph_signature IS DISTINCT FROM NEW.graph_signature
+     OR parent_row.root_task_id IS DISTINCT FROM NEW.root_task_id
+     OR parent_row.lineage_depth + 1 <> NEW.lineage_depth THEN
+    RAISE EXCEPTION 'Workflow Task lineage does not match parent'
+      USING ERRCODE = '23514';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER workflow_tasks_validate_lineage
+BEFORE INSERT OR UPDATE OF
+  parent_task_id,
+  root_task_id,
+  lineage_depth,
+  workflow_run_id,
+  workflow_version_id,
+  graph_signature
+ON workflows.tasks
+FOR EACH ROW
+EXECUTE FUNCTION workflows.validate_task_lineage();
+
+CREATE UNIQUE INDEX workflow_task_ready_outbox_once
+  ON events.outbox (tenant_id, aggregate_id, event_type)
+  WHERE aggregate_type = 'workflow-task'
+    AND event_type = 'workflow.task.ready.v1';
