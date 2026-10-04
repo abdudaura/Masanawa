@@ -307,3 +307,36 @@ describe("Teaching selection replay identity", () => {
     expect(progress.attempts.size).toBe(1);
   });
 });
+
+
+describe("Teaching runtime admission binding", () => {
+  it("rejects non-Teaching skill keys at the integration boundary", () => {
+    const active = lesson();
+    expect(() =>
+      createTeachingRuntimeBinding({
+        relationshipId: active.learner.relationshipId,
+        skillVersionId: active.skillVersionId,
+        skillKey: "research.web",
+        guideContentHash: `sha256:${"a".repeat(64)}`,
+      }),
+    ).toThrow(/requires core\.teaching/);
+  });
+
+  it("rejects a lesson or exercise outside the admitted Relationship/SkillVersion", async () => {
+    const active = lesson();
+    const progress = new MemoryProgressPort();
+    const coordinator = new TeachingRuntimeCoordinator({ progress });
+    const admitted = binding(active);
+    const otherPlan: TeachingLessonPlan = {
+      ...active,
+      learner: {
+        ...active.learner,
+        relationshipId: createCanonicalId("relationship"),
+      },
+    };
+
+    await expect(
+      coordinator.resume(admitted, otherPlan),
+    ).rejects.toThrow(/must match the admitted Relationship and SkillVersion/);
+  });
+});
