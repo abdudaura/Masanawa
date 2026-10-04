@@ -53,7 +53,7 @@ export function createPostgresProviderWebhookRepository(
   pool: Pool,
 ): ProviderWebhookRepository {
   return Object.freeze({
-    async admitProviderWebhook(input) {
+    async admitProviderWebhook(input: Parameters<ProviderWebhookRepository["admitProviderWebhook"]>[0]) {
       const provider = bounded(input.provider, "provider", 64);
       const fingerprint = bounded(input.fingerprint, "fingerprint", 160);
       const eventKey = bounded(input.eventKey, "eventKey", 256);
@@ -86,7 +86,7 @@ export function createPostgresBillingFulfillmentStore(
   const userId = bounded(owner.userId, "userId", 160);
 
   return Object.freeze({
-    async createIfAbsent(input) {
+    async createIfAbsent(input: BillingFulfillmentRecord) {
       const record = normalizeBillingRecord(input);
       const now = record.lastEvidenceAt ?? new Date().toISOString();
       return withTransaction(pool, async (client) => {
@@ -134,7 +134,7 @@ export function createPostgresBillingFulfillmentStore(
       });
     },
 
-    async read(reference) {
+    async read(reference: string) {
       return withTransaction(
         pool,
         async (client) => {
@@ -156,7 +156,7 @@ export function createPostgresBillingFulfillmentStore(
       );
     },
 
-    async compareAndSet(expectedRevision, input) {
+    async compareAndSet(expectedRevision: number, input: BillingFulfillmentRecord) {
       const record = normalizeBillingRecord(input);
       if (record.revision !== expectedRevision + 1) {
         throw new Error("financial.billing_revision_invalid");
