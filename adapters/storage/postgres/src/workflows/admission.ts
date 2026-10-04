@@ -311,6 +311,19 @@ export async function admitWorkflowTask(
   pool: Pool,
   input: AdmitWorkflowTaskInput,
 ): Promise<Readonly<{ task: TaskRecord; outboxEventId: string }>> {
+  if (
+    input.task.state !== "ready" ||
+    input.task.revision !== 1 ||
+    input.task.startedAt !== null ||
+    input.task.terminalAt !== null ||
+    input.task.waitReason !== null ||
+    input.task.failure !== null ||
+    input.task.cancellationReason !== null
+  ) {
+    throw new TypeError(
+      "workflow task admission requires a fresh ready Task at revision 1",
+    );
+  }
   if (!input.destination.trim()) {
     throw new TypeError("workflow task destination is required");
   }
