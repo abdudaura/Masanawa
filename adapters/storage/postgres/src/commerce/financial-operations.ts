@@ -58,6 +58,7 @@ export interface FinancialOperationsRepository {
     tenantId: string;
     orderId: string;
   }>): Promise<CryptoPaymentIntent | null>;
+  readCryptoPaymentByOrderIdGlobal(orderId: string): Promise<CryptoPaymentIntent | null>;
   compareAndSetCryptoPayment(
     expectedRevision: number,
     next: CryptoPaymentIntent,
@@ -229,6 +230,16 @@ export function createPostgresFinancialOperationsRepository(
           `SELECT definition FROM commerce.crypto_payment_intents
            WHERE tenant_id=$1 AND order_id=$2`,
           [input.tenantId,bounded(input.orderId, "orderId", 128)],
+        );
+        return result.rows[0] ? cryptoFromRow(result.rows[0].definition) : null;
+      }, { isolation: "repeatable read", readOnly: true });
+    },
+
+    async readCryptoPaymentByOrderIdGlobal(orderId) {
+      return withTransaction(pool, async (client) => {
+        const result = await client.query<{ definition: unknown }>(
+          `SELECT definition FROM commerce.crypto_payment_intents WHERE order_id=$1`,
+          [bounded(orderId, "orderId", 128)],
         );
         return result.rows[0] ? cryptoFromRow(result.rows[0].definition) : null;
       }, { isolation: "repeatable read", readOnly: true });
