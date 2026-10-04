@@ -257,11 +257,7 @@ export function createCryptoFinancialService(input: Readonly<{
       const current =
         (await input.repository.readCryptoPaymentByProviderId(evidence.paymentId)) ??
         (evidence.orderId
-          ? await input.repository.readCryptoPaymentByOrderId({
-              tenantId:
-                (await input.repository.readCryptoPaymentByProviderId(evidence.paymentId))?.tenantId ?? "",
-              orderId: evidence.orderId,
-            }).catch(() => null)
+          ? await input.repository.readCryptoPaymentByOrderIdGlobal(evidence.orderId)
           : null);
       if (!current) {
         await input.repository.admitProviderWebhook({
