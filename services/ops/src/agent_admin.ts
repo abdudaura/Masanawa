@@ -27,6 +27,7 @@ export type AgentAdminCapability =
   | "audit.read"
   | "memory.admin.read"
   | "world.admin.read"
+  | "world.admin.write"
   | "approvals.admin.read"
   | "queues.admin.read";
 
