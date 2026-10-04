@@ -5,44 +5,28 @@ import {
   parseCanonicalId,
 } from "@masanawa/contracts";
 import type {
-  AgentStrategyRequest,
-  AgentSkillSelectionAdmission,
   AgentRunRepository,
-  CharacterContextCompiler,
   AgentStrategy,
   CharacterSessionRepository,
   MobileShellRepository,
   MobileTurnCommand,
 } from "@masanawa/agents";
-import { AgentInferenceError } from "@masanawa/agents";
 import type {
   AgentConversationAuthorizer,
   AgentConversationService,
 } from "./agent_conversation_contract.js";
 import type { NativeAudioRenderer } from "./native_audio.js";
 
-function skillSelectionGate(selection: AgentSkillSelectionAdmission | undefined,
-  custody: Pick<Parameters<AgentSkillSelectionAdmission["prepare"]>[0], "authority" | "session" | "run">) {
-  let open = true;
-  function assertOpen() {
-    if (!open) throw new PlatformError({ code: "agents.selection_turn_closed", category: "conflict",
-      message: "Skill selection is outside its admitted strategy turn.", retryable: false });
-  }
-  const prepareSkillSelection: NonNullable<AgentStrategyRequest["prepareSkillSelection"]> = async choice => {
-    assertOpen();
-    const result = await selection!.prepare({ ...custody, skillVersionId: choice.skillVersionId, tools: choice.tools });
-    assertOpen();
-    return result;
-  };
-  return { request: selection ? { prepareSkillSelection } : {}, close() { open = false; } };
-}
-
 function hashTurnPayload(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex");
 }
 
 function replayTurn(command: MobileTurnCommand) {
-  if (command.state === "completed" && command.reply !== null && command.agentRunId !== null) {
+  if (
+    command.state === "completed" &&
+    command.reply !== null &&
+    command.agentRunId !== null
+  ) {
     return Object.freeze({
       reply: command.reply,
       agentRunId: command.agentRunId,
@@ -70,8 +54,6 @@ export function createAgentConversationService(input: {
   readonly runs: AgentRunRepository;
   readonly authorizer: AgentConversationAuthorizer;
   readonly strategy: AgentStrategy;
-  readonly contextCompiler?: CharacterContextCompiler;
-  readonly skillSelection?: AgentSkillSelectionAdmission;
   readonly nativeAudio?: NativeAudioRenderer;
   readonly mobileShell?: MobileShellRepository;
   readonly sessionDurationMs: number;
@@ -83,10 +65,25 @@ export function createAgentConversationService(input: {
     throw new RangeError("Alpha session duration must be at least one minute");
   }
 
+  async function renderAudio(
+    reply: string,
+    signal?: AbortSignal,
+    onAudioPcmChunk?: (dataBase64: string) => void | Promise<void>,
+  ) {
+    if (!input.nativeAudio || signal?.aborted) return undefined;
+    return input.nativeAudio
+      .render(
+        reply,
+        signal,
+        onAudioPcmChunk
+          ? async (chunk) => onAudioPcmChunk(chunk.toString("base64"))
+          : undefined,
+      )
+      .catch(() => undefined);
+  }
+
   return Object.freeze({
-    async open(
-      request: Parameters<AgentConversationService["open"]>[0],
-    ) {
+    async open(request) {
       const characterId = parseCanonicalId("character", request.characterId);
       const admission = await input.authorizer.authorize({
         authorizationHeader: request.authorizationHeader,
@@ -108,9 +105,7 @@ export function createAgentConversationService(input: {
       return Object.freeze({ characterSessionId });
     },
 
-    async turn(
-      request: Parameters<AgentConversationService["turn"]>[0],
-    ) {
+    async turn(request) {
       const characterSessionId = parseCanonicalId(
         "character-session",
         request.characterSessionId,
@@ -149,8 +144,7 @@ export function createAgentConversationService(input: {
       }
 
       const agentRunId = createCanonicalId("agent-run");
-          skillVersionIds: session.bindings.skillVersionIds,
-      const run = await input.runs.create({
+      await input.runs.create({
         authority: admission.authority,
         scope: admission.scope,
         agentRunId,
@@ -170,22 +164,19 @@ export function createAgentConversationService(input: {
         },
       });
 
-      const selectionGate = skillSelectionGate(input.skillSelection, { authority: admission.authority, session, run });
       try {
-        const context = await input.contextCompiler?.compile({ authority: admission.authority, session, run,
-          recallQuery: text.slice(0, 2000) });
         const result = await input.strategy.execute({
-          ...(context ? { context } : {}),
-          ...selectionGate.request,
           agentRunId,
           characterSessionId,
           characterVersionId: session.characterVersionId,
+          skillVersionIds: session.bindings.skillVersionIds,
           presentation: admission.presentation,
           ...(request.signal ? { signal: request.signal } : {}),
-          ...(request.onTextDelta ? { onTextDelta: request.onTextDelta } : {}),
+          ...(request.onTextDelta
+            ? { onTextDelta: request.onTextDelta }
+            : {}),
           input: Object.freeze({ kind: "text" as const, text }),
         });
-        selectionGate.close();
         const reply = result.reply.trim();
         if (!reply) throw new Error("empty strategy reply");
 
@@ -195,6 +186,7 @@ export function createAgentConversationService(input: {
           agentRunId,
           outcome: { state: "completed" },
         });
+
         if (input.mobileShell) {
           await input.mobileShell.completeTurn({
             scope: admission.scope,
@@ -216,19 +208,11 @@ export function createAgentConversationService(input: {
           });
         }
 
-        const audio = input.nativeAudio && !request.signal?.aborted
-          ? await input.nativeAudio
-              .render(
-                reply,
-                request.signal,
-                request.onAudioPcmChunk
-                  ? async (chunk) => {
-                      await request.onAudioPcmChunk!(chunk.toString("base64"));
-                    }
-                  : undefined,
-              )
-              .catch(() => undefined)
-          : undefined;
+        const audio = await renderAudio(
+          reply,
+          request.signal,
+          request.onAudioPcmChunk,
+        );
         return Object.freeze({
           reply,
           agentRunId,
@@ -242,7 +226,6 @@ export function createAgentConversationService(input: {
             : {}),
         });
       } catch (error) {
-        selectionGate.close();
         await input.runs
           .finish({
             authority: admission.authority,
@@ -250,35 +233,37 @@ export function createAgentConversationService(input: {
             agentRunId,
             outcome: {
               state: "failed",
-              failureCode: error instanceof AgentInferenceError
-                ? error.code : "alpha.strategy_failed",
+              failureCode: "alpha.strategy_failed",
             },
           })
           .catch(() => undefined);
         if (input.mobileShell) {
-          const failureCode =
-            error instanceof AgentInferenceError ? error.code : "alpha.strategy_failed";
-          await input.mobileShell.failTurn({
-            scope: admission.scope,
-            requestId: request.requestId,
-            agentRunId,
-            failureCode,
-          }).catch(() => undefined);
-          await input.mobileShell.appendEvent({
-            scope: admission.scope,
-            characterSessionId,
-            type: "turn.failed",
-            payload: { requestId: request.requestId, agentRunId, failureCode },
-          }).catch(() => undefined);
+          await input.mobileShell
+            .failTurn({
+              scope: admission.scope,
+              requestId: request.requestId,
+              agentRunId,
+              failureCode: "alpha.strategy_failed",
+            })
+            .catch(() => undefined);
+          await input.mobileShell
+            .appendEvent({
+              scope: admission.scope,
+              characterSessionId,
+              type: "turn.failed",
+              payload: {
+                requestId: request.requestId,
+                agentRunId,
+                failureCode: "alpha.strategy_failed",
+              },
+            })
+            .catch(() => undefined);
         }
         throw error;
       }
     },
-          skillVersionIds: session.bindings.skillVersionIds,
 
-    async mediaTurn(
-      request: Parameters<AgentConversationService["mediaTurn"]>[0],
-    ) {
+    async mediaTurn(request) {
       const characterSessionId = parseCanonicalId(
         "character-session",
         request.characterSessionId,
@@ -325,7 +310,7 @@ export function createAgentConversationService(input: {
       }
 
       const agentRunId = createCanonicalId("agent-run");
-      const run = await input.runs.create({
+      await input.runs.create({
         authority: admission.authority,
         scope: admission.scope,
         agentRunId,
@@ -345,16 +330,12 @@ export function createAgentConversationService(input: {
         },
       });
 
-      const selectionGate = skillSelectionGate(input.skillSelection, { authority: admission.authority, session, run });
       try {
-        const context = await input.contextCompiler?.compile({ authority: admission.authority, session, run,
-          ...(caption?.trim() ? { recallQuery: caption.slice(0, 2000) } : {}) });
         const result = await input.strategy.execute({
-          ...(context ? { context } : {}),
-          ...selectionGate.request,
           agentRunId,
           characterSessionId,
           characterVersionId: session.characterVersionId,
+          skillVersionIds: session.bindings.skillVersionIds,
           presentation: admission.presentation,
           ...(request.signal ? { signal: request.signal } : {}),
           input: Object.freeze({
@@ -364,7 +345,6 @@ export function createAgentConversationService(input: {
             dataBase64: request.dataBase64,
           }),
         });
-        selectionGate.close();
         const reply = result.reply.trim();
         if (!reply) throw new Error("empty strategy reply");
 
@@ -374,6 +354,7 @@ export function createAgentConversationService(input: {
           agentRunId,
           outcome: { state: "completed" },
         });
+
         if (input.mobileShell) {
           await input.mobileShell.completeTurn({
             scope: admission.scope,
@@ -395,11 +376,7 @@ export function createAgentConversationService(input: {
           });
         }
 
-        const audio = input.nativeAudio && !request.signal?.aborted
-          ? await input.nativeAudio
-              .render(reply, request.signal)
-              .catch(() => undefined)
-          : undefined;
+        const audio = await renderAudio(reply, request.signal);
         return Object.freeze({
           reply,
           agentRunId,
@@ -413,7 +390,6 @@ export function createAgentConversationService(input: {
             : {}),
         });
       } catch (error) {
-        selectionGate.close();
         await input.runs
           .finish({
             authority: admission.authority,
@@ -421,34 +397,25 @@ export function createAgentConversationService(input: {
             agentRunId,
             outcome: {
               state: "failed",
-              failureCode: error instanceof AgentInferenceError
-                ? error.code : "alpha.media_strategy_failed",
+              failureCode: "alpha.media_strategy_failed",
             },
           })
           .catch(() => undefined);
         if (input.mobileShell) {
-          const failureCode =
-            error instanceof AgentInferenceError ? error.code : "alpha.strategy_failed";
-          await input.mobileShell.failTurn({
-            scope: admission.scope,
-            requestId: request.requestId,
-            agentRunId,
-            failureCode,
-          }).catch(() => undefined);
-          await input.mobileShell.appendEvent({
-            scope: admission.scope,
-            characterSessionId,
-            type: "turn.failed",
-            payload: { requestId: request.requestId, agentRunId, failureCode },
-          }).catch(() => undefined);
+          await input.mobileShell
+            .failTurn({
+              scope: admission.scope,
+              requestId: request.requestId,
+              agentRunId,
+              failureCode: "alpha.media_strategy_failed",
+            })
+            .catch(() => undefined);
         }
         throw error;
       }
     },
 
-    async mediaSetTurn(
-      request: Parameters<AgentConversationService["mediaSetTurn"]>[0],
-    ) {
+    async mediaSetTurn(request) {
       const characterSessionId = parseCanonicalId(
         "character-session",
         request.characterSessionId,
@@ -499,10 +466,16 @@ export function createAgentConversationService(input: {
           requestId: request.requestId,
           kind: "media-set",
           userText: caption,
-          payloadHash: hashTurnPayload(JSON.stringify([
-            caption,
-            ...media.map((item) => [item.mimeType, item.name ?? "", item.dataBase64]),
-          ])),
+          payloadHash: hashTurnPayload(
+            JSON.stringify([
+              caption,
+              ...media.map((item) => [
+                item.mimeType,
+                item.name ?? "",
+                item.dataBase64,
+              ]),
+            ]),
+          ),
         });
         if (claim.state === "existing") return replayTurn(claim.command);
         await input.mobileShell.appendEvent({
@@ -514,7 +487,7 @@ export function createAgentConversationService(input: {
       }
 
       const agentRunId = createCanonicalId("agent-run");
-      const run = await input.runs.create({
+      await input.runs.create({
         authority: admission.authority,
         scope: admission.scope,
         agentRunId,
@@ -534,24 +507,12 @@ export function createAgentConversationService(input: {
         },
       });
 
-      const selectionGate = skillSelectionGate(input.skillSelection, {
-        authority: admission.authority,
-        session,
-        run,
-      });
       try {
-        const context = await input.contextCompiler?.compile({
-          authority: admission.authority,
-          session,
-          run,
-          ...(caption ? { recallQuery: caption.slice(0, 2000) } : {}),
-        });
         const result = await input.strategy.execute({
-          ...(context ? { context } : {}),
-          ...selectionGate.request,
           agentRunId,
           characterSessionId,
           characterVersionId: session.characterVersionId,
+          skillVersionIds: session.bindings.skillVersionIds,
           presentation: admission.presentation,
           ...(request.signal ? { signal: request.signal } : {}),
           input: Object.freeze({
@@ -560,7 +521,6 @@ export function createAgentConversationService(input: {
             media: Object.freeze(media),
           }),
         });
-        selectionGate.close();
         const reply = result.reply.trim();
         if (!reply) throw new Error("empty strategy reply");
 
@@ -591,11 +551,7 @@ export function createAgentConversationService(input: {
           });
         }
 
-        const audio = input.nativeAudio && !request.signal?.aborted
-          ? await input.nativeAudio
-              .render(reply, request.signal)
-              .catch(() => undefined)
-          : undefined;
+        const audio = await renderAudio(reply, request.signal);
         return Object.freeze({
           reply,
           agentRunId,
@@ -609,7 +565,6 @@ export function createAgentConversationService(input: {
             : {}),
         });
       } catch (error) {
-        selectionGate.close();
         await input.runs
           .finish({
             authority: admission.authority,
@@ -617,36 +572,25 @@ export function createAgentConversationService(input: {
             agentRunId,
             outcome: {
               state: "failed",
-              failureCode:
-                error instanceof AgentInferenceError
-                  ? error.code
-                  : "alpha.media_strategy_failed",
+              failureCode: "alpha.media_set_strategy_failed",
             },
           })
           .catch(() => undefined);
         if (input.mobileShell) {
-          const failureCode =
-            error instanceof AgentInferenceError ? error.code : "alpha.strategy_failed";
-          await input.mobileShell.failTurn({
-            scope: admission.scope,
-            requestId: request.requestId,
-            agentRunId,
-            failureCode,
-          }).catch(() => undefined);
-          await input.mobileShell.appendEvent({
-            scope: admission.scope,
-            characterSessionId,
-            type: "turn.failed",
-            payload: { requestId: request.requestId, agentRunId, failureCode },
-          }).catch(() => undefined);
+          await input.mobileShell
+            .failTurn({
+              scope: admission.scope,
+              requestId: request.requestId,
+              agentRunId,
+              failureCode: "alpha.media_set_strategy_failed",
+            })
+            .catch(() => undefined);
         }
         throw error;
       }
     },
 
-    async close(
-      request: Parameters<AgentConversationService["close"]>[0],
-    ) {
+    async close(request) {
       const characterSessionId = parseCanonicalId(
         "character-session",
         request.characterSessionId,
