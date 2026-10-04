@@ -1,4 +1,10 @@
 export {
+  canonicalizeIpnPayload,
+  parseVerifiedPaymentIpn,
+  verifyIpnSignature,
+  type NowPaymentsIpnEvidence,
+} from "./ipn.js";
+export {
   isTerminalPaymentStatus,
   parsePaymentStatus,
   paymentDisposition,
