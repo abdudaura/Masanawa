@@ -173,6 +173,15 @@ export function createPostgresPlatformSessionRepository(pool: Pool): PlatformSes
         await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
           `auth:identity:${input.tenantId}:${input.channel}:${input.identifier}`,
         ]);
+        // Public customer onboarding may be the first writer for the platform
+        // tenant. Provision that canonical Identity owner idempotently before
+        // creating a User so first signup cannot fail its tenant FK.
+        await client.query(
+          `INSERT INTO identity.tenants(tenant_id,created_at,updated_at)
+           VALUES ($1,$2,$2)
+           ON CONFLICT (tenant_id) DO NOTHING`,
+          [input.tenantId,input.createdAt],
+        );
         const external = subject(input.channel,input.identifier,input.createdAt);
         const existingUser = await resolveUserByExternalIdentity(client,input.tenantId,external);
         if (existingUser) {
