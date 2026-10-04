@@ -47,7 +47,7 @@ export function registerAgentShellRoutes(app: FastifyInstance, options: ShellOpt
   if (options.agentShell) {
     const shell = options.agentShell;
 
-    app.get("/v1/agent/shell/config", async (request) => {
+    app.get("/agent/shell/config", async (request) => {
       const query = request.query as Record<string, unknown>;
       let capabilities: Readonly<Record<string, unknown>> | undefined;
       if (typeof query.capabilities === "string" && query.capabilities.length <= 4096) {
@@ -70,7 +70,7 @@ export function registerAgentShellRoutes(app: FastifyInstance, options: ShellOpt
       });
     });
 
-    app.get("/v1/agent/history", async (request) => {
+    app.get("/agent/history", async (request) => {
       const query = request.query as Record<string, unknown>;
       return {
         messages: [
@@ -86,7 +86,7 @@ export function registerAgentShellRoutes(app: FastifyInstance, options: ShellOpt
       };
     });
 
-    app.get("/v1/agent/turns/:requestId/status", async (request) => {
+    app.get("/agent/turns/:requestId/status", async (request) => {
       const query = request.query as Record<string, unknown>;
       const params = request.params as Record<string, unknown>;
       return shell.turnStatus({
@@ -96,7 +96,7 @@ export function registerAgentShellRoutes(app: FastifyInstance, options: ShellOpt
       });
     });
 
-    app.get("/v1/agent/events", async (request) => {
+    app.get("/agent/events", async (request) => {
       const query = request.query as Record<string, unknown>;
       return {
         events: [
@@ -112,7 +112,7 @@ export function registerAgentShellRoutes(app: FastifyInstance, options: ShellOpt
       };
     });
 
-    app.get("/v1/agent/events/stream", async (request, reply) => {
+    app.get("/agent/events/stream", async (request, reply) => {
       const query = request.query as Record<string, unknown>;
       const characterId = text(query.characterId, "characterId", 160);
       const limit = query.limit === undefined ? 100 : integer(query.limit, "limit", 1, 100);
@@ -150,7 +150,7 @@ export function registerAgentShellRoutes(app: FastifyInstance, options: ShellOpt
       if (!reply.raw.writableEnded) reply.raw.end();
     });
 
-    app.post("/v1/agent/sessions/:characterSessionId/actions", async (request) => {
+    app.post("/agent/sessions/:characterSessionId/actions", async (request) => {
       const body = request.body as Record<string, unknown>;
       const params = request.params as Record<string, unknown>;
       return shell.dispatchAction({
@@ -171,7 +171,7 @@ export function registerAgentShellRoutes(app: FastifyInstance, options: ShellOpt
       });
     });
 
-    app.post("/v1/agent/presence", async (request) => {
+    app.post("/agent/presence", async (request) => {
       const body = request.body as Record<string, unknown>;
       const state = text(body.state, "state", 32);
       if (!["available","listening","working","on_call","offline"].includes(state)) {
@@ -185,7 +185,7 @@ export function registerAgentShellRoutes(app: FastifyInstance, options: ShellOpt
       });
     });
 
-    app.get("/v1/agent/actions/status", async (request) => {
+    app.get("/agent/actions/status", async (request) => {
       const query = request.query as Record<string, unknown>;
       return {
         record: await shell.actionStatus({
@@ -199,7 +199,7 @@ export function registerAgentShellRoutes(app: FastifyInstance, options: ShellOpt
   }
 
   if (options.liveVoiceTokens) {
-    app.post("/v1/agent/live/token", async (request) => {
+    app.post("/agent/live/token", async (request) => {
       const body = request.body as Record<string, unknown>;
       return options.liveVoiceTokens!.mint({
         authorizationHeader: request.headers.authorization,
@@ -209,7 +209,7 @@ export function registerAgentShellRoutes(app: FastifyInstance, options: ShellOpt
   }
 
   if (options.mobilePush) {
-    app.post("/v1/agent/push/register", async (request) => {
+    app.post("/agent/push/register", async (request) => {
       const body = request.body as Record<string, unknown>;
       const platform = text(body.platform, "platform", 16);
       if (platform !== "android" && platform !== "ios") {
@@ -224,7 +224,7 @@ export function registerAgentShellRoutes(app: FastifyInstance, options: ShellOpt
       });
     });
 
-    app.post("/v1/agent/push/unregister", async (request) => {
+    app.post("/agent/push/unregister", async (request) => {
       const body = request.body as Record<string, unknown>;
       return options.mobilePush!.unregister({
         authorizationHeader: request.headers.authorization,
