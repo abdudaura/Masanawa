@@ -1,0 +1,33 @@
+# Workstream claim — integration-financial-ops
+
+- Owner/window: ChatGPT financial operations integration window — 2026-10-04
+- Branch: `work/integration-financial-ops-20261004`
+- Base SHA: `39e893e58ef2b89beaf94116366ad8fd7fc713c2`
+- Workstream: integration
+- Purpose: make the already-built NOWPayments, Commerce, Flutterwave, chat-action and channel slices operational together on the active runtime without overwriting their specialist branches.
+- Imported source branches:
+  - PR #90 `work/commerce-core-float-commands-20261004`
+  - PR #91 `chat-shell-dynamic-renderer`
+  - PR #92 `work/channels-webhook-ingress-20261004`
+  - PR #95/#97 Flutterwave billing stack
+  - PR #98 NOWPayments/runtime live integration (base of this branch)
+- Integration-owned shared paths:
+  - `docs/workstreams/integration-financial-ops.md`
+  - `services/gateway/src/commerce_*.ts`
+  - `services/gateway/src/financial_*.ts`
+  - `services/gateway/src/channel_*.ts`
+  - `services/gateway/src/app.ts` (composition only; preserve runtime behavior)
+  - `services/gateway/package.json` (dependency wiring only)
+  - `adapters/storage/postgres/src/commerce/**`
+  - `adapters/storage/postgres/src/index.ts` (exports/composition only)
+  - `packages/commerce/**`
+  - `packages/providers/src/flutterwave-bills/**`
+  - `adapters/channels/messaging/**`
+  - `apps/mobile/lib/src/chat/**`
+  - `apps/mobile/test/shell_*.dart`
+  - `pnpm-lock.yaml`
+  - `scripts/financial-*.mjs`
+  - financial integration docs/tests created by this branch
+- Collision rule: specialist branches remain untouched. Shared files are changed only on this isolated integration branch and must preserve every runtime change present in the base.
+- Current step: claim published before importing or editing shared implementation.
+- Production goal: customer quote/payment/status/reconciliation, signed NOWPayments IPN, durable Commerce ledger/idempotency, NGN billing seams, authenticated channel actions, dynamic app receipts, production migrations, live deployment verification and recovery controls.
