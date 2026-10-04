@@ -1,0 +1,236 @@
+import { describe, expect, it } from "vitest";
+import {
+  createCanonicalId,
+  toInstant,
+  type RequestId,
+} from "@masanawa/contracts";
+import type {
+  TeachingLessonPlan,
+  TeachingProgressHandoff,
+  TeachingSelectableExerciseRubric,
+} from "./teaching.js";
+import {
+  TeachingRuntimeCoordinator,
+  type TeachingProgressKey,
+  type TeachingProgressPort,
+  type TeachingRuntimeProjection,
+  type TeachingSelectionAttempt,
+} from "./teaching-runtime.js";
+
+function lesson(): TeachingLessonPlan {
+  return {
+    skillVersionId: createCanonicalId("skill-version"),
+    learner: {
+      relationshipId: createCanonicalId("relationship"),
+      topic: "Fractions",
+      level: "beginner",
+      goals: ["Add fractions with unlike denominators"],
+      language: "en",
+      accessibilityPreferences: [],
+      preferredModalities: ["text"],
+    },
+    sequenceTitle: "Fractions",
+    steps: [
+      {
+        stepKey: "common-denominator",
+        title: "Find a common denominator",
+        objective: "Find equivalent fractions with a shared denominator.",
+        explanation: "Use a common multiple of both denominators.",
+        examples: ["1/2 + 1/3"],
+        workedSolutions: ["1/2 = 3/6 and 1/3 = 2/6"],
+        exercisePrompts: ["Rewrite 1/4 and 1/6 with a common denominator"],
+        resourceKeys: [],
+      },
+      {
+        stepKey: "add-numerators",
+        title: "Add numerators",
+        objective: "Add equivalent fractions once denominators match.",
+        explanation: "Keep the common denominator and add numerators.",
+        examples: ["3/6 + 2/6"],
+        workedSolutions: ["3/6 + 2/6 = 5/6"],
+        exercisePrompts: ["Add 5/12 + 1/12"],
+        resourceKeys: [],
+      },
+    ],
+    resources: [],
+    uncertaintyNotes: [],
+  };
+}
+
+function rubric(plan: TeachingLessonPlan): TeachingSelectableExerciseRubric {
+  return {
+    relationshipId: plan.learner.relationshipId,
+    skillVersionId: plan.skillVersionId,
+    lessonStepKey: "common-denominator",
+    exerciseKey: "denominator-choice",
+    kind: "single-select",
+    allowedOptionKeys: ["six", "five"],
+    correctOptionKeys: ["six"],
+    correctFeedback: "Correct. Six is divisible by both 2 and 3.",
+    retryFeedback: "Try a number divisible by both denominators.",
+    alternativeExplanation: "List multiples of 2 and 3 and find the first overlap.",
+  };
+}
+
+class MemoryProgressPort implements TeachingProgressPort {
+  progress: TeachingProgressHandoff | null = null;
+  readonly attempts = new Map<RequestId, TeachingSelectionAttempt>();
+
+  async load(key: TeachingProgressKey): Promise<TeachingProgressHandoff | null> {
+    if (
+      this.progress !== null &&
+      (this.progress.relationshipId !== key.relationshipId ||
+        this.progress.skillVersionId !== key.skillVersionId)
+    ) {
+      return null;
+    }
+    return this.progress;
+  }
+
+  async commitSelectionAttempt(
+    attempt: TeachingSelectionAttempt,
+  ): Promise<"stored" | "replay"> {
+    const existing = this.attempts.get(attempt.requestId);
+    if (existing !== undefined) {
+      expect(existing.relationshipId).toBe(attempt.relationshipId);
+      expect(existing.skillVersionId).toBe(attempt.skillVersionId);
+      expect(existing.exerciseKey).toBe(attempt.exerciseKey);
+      expect(existing.selectedOptionKeys).toEqual(attempt.selectedOptionKeys);
+      return "replay";
+    }
+    this.attempts.set(attempt.requestId, attempt);
+    this.progress = attempt.progress;
+    return "stored";
+  }
+}
+
+describe("TeachingRuntimeCoordinator", () => {
+  it("resumes at the first step when no durable progress exists", async () => {
+    const progress = new MemoryProgressPort();
+    const coordinator = new TeachingRuntimeCoordinator({ progress });
+    const projection = await coordinator.resume(lesson());
+
+    expect(projection).toMatchObject({
+      kind: "lesson-step",
+      continuationReason: "start",
+      sequenceCompleted: false,
+      step: { stepKey: "common-denominator" },
+    });
+  });
+
+  it("publishes only the client-safe exercise card", async () => {
+    const plan = lesson();
+    const progress = new MemoryProgressPort();
+    const published: TeachingRuntimeProjection[] = [];
+    const coordinator = new TeachingRuntimeCoordinator({
+      progress,
+      presentation: {
+        async publish(projection) {
+          published.push(projection);
+        },
+      },
+    });
+
+    const projection = await coordinator.presentExercise({
+      relationshipId: plan.learner.relationshipId,
+      skillVersionId: plan.skillVersionId,
+      lessonStepKey: "common-denominator",
+      exerciseKey: "denominator-choice",
+      prompt: "Which is a common denominator for 1/2 and 1/3?",
+      kind: "single-select",
+      options: [
+        { optionKey: "six", label: "6" },
+        { optionKey: "five", label: "5" },
+      ],
+    });
+
+    expect(projection.kind).toBe("exercise");
+    if (projection.kind === "exercise") {
+      expect(projection.card).not.toHaveProperty("correctOptionKeys");
+    }
+    expect(published).toEqual([projection]);
+  });
+
+  it("persists one scoped selection attempt before returning feedback", async () => {
+    const plan = lesson();
+    const progress = new MemoryProgressPort();
+    const coordinator = new TeachingRuntimeCoordinator({ progress });
+    const requestId = createCanonicalId("request");
+
+    const result = await coordinator.submitSelection({
+      requestId,
+      plan,
+      rubric: rubric(plan),
+      submission: {
+        relationshipId: plan.learner.relationshipId,
+        skillVersionId: plan.skillVersionId,
+        lessonStepKey: "common-denominator",
+        exerciseKey: "denominator-choice",
+        selectedOptionKeys: ["six"],
+      },
+      recordedAt: toInstant("2026-10-04T16:00:00.000Z"),
+    });
+
+    expect(result).toMatchObject({
+      kind: "feedback",
+      persistence: "stored",
+      evaluation: { correct: true, nextCheckpointState: "ready-to-advance" },
+      continuation: {
+        reason: "advance",
+        nextStep: { stepKey: "add-numerators" },
+      },
+    });
+    expect(progress.attempts.get(requestId)?.progress.checkpointState).toBe(
+      "ready-to-advance",
+    );
+  });
+
+  it("replays the same durable RequestId without creating a second attempt", async () => {
+    const plan = lesson();
+    const progress = new MemoryProgressPort();
+    const coordinator = new TeachingRuntimeCoordinator({ progress });
+    const requestId = createCanonicalId("request");
+    const input = {
+      requestId,
+      plan,
+      rubric: rubric(plan),
+      submission: {
+        relationshipId: plan.learner.relationshipId,
+        skillVersionId: plan.skillVersionId,
+        lessonStepKey: "common-denominator",
+        exerciseKey: "denominator-choice",
+        selectedOptionKeys: ["six"],
+      },
+      recordedAt: toInstant("2026-10-04T16:00:00.000Z"),
+    } as const;
+
+    await coordinator.submitSelection(input);
+    const replay = await coordinator.submitSelection(input);
+
+    expect(replay).toMatchObject({ kind: "feedback", persistence: "replay" });
+    expect(progress.attempts.size).toBe(1);
+  });
+
+  it("fails before persistence when submission scope does not match the lesson", async () => {
+    const plan = lesson();
+    const progress = new MemoryProgressPort();
+    const coordinator = new TeachingRuntimeCoordinator({ progress });
+
+    await expect(
+      coordinator.submitSelection({
+        requestId: createCanonicalId("request"),
+        plan,
+        rubric: rubric(plan),
+        submission: {
+          relationshipId: createCanonicalId("relationship"),
+          skillVersionId: plan.skillVersionId,
+          lessonStepKey: "common-denominator",
+          exerciseKey: "denominator-choice",
+          selectedOptionKeys: ["six"],
+        },
+        recordedAt: toInstant("2026-10-04T16:00:00.000Z"),
+      }),
+    ).rejects.toThrow(/match rubric scope/);
+    expect(progress.attempts.size).toBe(0);
+  });
+});
