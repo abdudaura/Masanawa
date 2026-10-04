@@ -4,3 +4,5 @@ export * from "./run-model.js";
 export * from "./run-state.js";
 export * from "./checkpoint-model.js";
 export * from "./checkpoint.js";
+export * from "./schedule-model.js";
+export * from "./schedule.js";
