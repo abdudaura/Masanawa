@@ -186,6 +186,15 @@ export interface PlatformAdminService {
   }): Promise<readonly PlatformAdminAuditEvent[]>;
 }
 
+class AdminConflictError extends Error {
+  readonly statusCode = 409;
+
+  constructor(message: string) {
+    super(message);
+    this.name = "AdminConflictError";
+  }
+}
+
 function boundedLimit(value: number | undefined): number {
   if (value === undefined) return 100;
   if (!Number.isInteger(value) || value < 1) return 100;
@@ -380,7 +389,7 @@ export function createPlatformAdminService(input: {
       );
       const row = result.rows[0];
       if (!row) {
-        throw new Error("User state changed or user was not found");
+        throw new AdminConflictError("User state changed or user was not found");
       }
       const counts = await input.database.query<{
         identity_count: string | number;
