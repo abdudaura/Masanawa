@@ -1,4 +1,11 @@
 export {
+  isTerminalPaymentStatus,
+  parsePaymentStatus,
+  paymentDisposition,
+  type NowPaymentsPaymentStatus,
+  type PaymentDisposition,
+} from "./status.js";
+export {
   assertFreshAccountEvidence,
   qualifyAccountCapability,
   type AccountCapabilityQualification,
