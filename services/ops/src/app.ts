@@ -155,6 +155,17 @@ const CharacterParamsSchema = Type.Object(
 );
 
 
+
+const WorldParamsSchema = Type.Object(
+  { worldId: Type.String() },
+  { additionalProperties: false },
+);
+
+const PutWorldStateBodySchema = Type.Object(
+  { expectedRevision: Type.Integer({ minimum: 1 }) },
+  { additionalProperties: false },
+);
+
 const OfferParamsSchema = Type.Object(
   { offerId: Type.String() },
   { additionalProperties: false },
@@ -501,6 +512,38 @@ export function createOpsApp(options: OpsAppOptions = {}) {
         authorizationHeader: request.headers.authorization,
       }),
     ]);
+
+    app.put(
+      "/v1/admin/worlds/:worldId/pause",
+      {
+        schema: {
+          params: WorldParamsSchema,
+          body: PutWorldStateBodySchema,
+        },
+      },
+      async (request) =>
+        systemAdmin.pauseWorld({
+          authorizationHeader: request.headers.authorization,
+          worldId: request.params.worldId,
+          expectedRevision: request.body.expectedRevision,
+        }),
+    );
+
+    app.put(
+      "/v1/admin/worlds/:worldId/resume",
+      {
+        schema: {
+          params: WorldParamsSchema,
+          body: PutWorldStateBodySchema,
+        },
+      },
+      async (request) =>
+        systemAdmin.resumeWorld({
+          authorizationHeader: request.headers.authorization,
+          worldId: request.params.worldId,
+          expectedRevision: request.body.expectedRevision,
+        }),
+    );
 
     app.get("/v1/admin/approvals", async (request) => [
       ...await systemAdmin.listApprovals({
