@@ -976,6 +976,29 @@ class AdminApi {
         .toList(growable: false);
   }
 
+
+  Future<AdminWorld> pauseWorld(AdminWorld world) async {
+    final response = await _request(
+      () => _dio.put<dynamic>(
+        '/v1/admin/worlds/${Uri.encodeComponent(world.worldId)}/pause',
+        options: _auth,
+        data: {'expectedRevision': world.revision},
+      ),
+    );
+    return AdminWorld.fromJson(_map(response.data));
+  }
+
+  Future<AdminWorld> resumeWorld(AdminWorld world) async {
+    final response = await _request(
+      () => _dio.put<dynamic>(
+        '/v1/admin/worlds/${Uri.encodeComponent(world.worldId)}/resume',
+        options: _auth,
+        data: {'expectedRevision': world.revision},
+      ),
+    );
+    return AdminWorld.fromJson(_map(response.data));
+  }
+
   Future<List<AdminApproval>> approvals() async {
     final response = await _request(
       () => _dio.get<dynamic>('/v1/admin/approvals', options: _auth),
