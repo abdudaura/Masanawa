@@ -232,6 +232,7 @@ class MasanawaAgentTransport implements AgentTransport {
         '/v1/agent/sessions/${binding.characterSessionId}/turn',
         {'characterId': binding.characterId, 'text': text},
         cancelToken: token,
+        onSendProgress: onUploadProgress,
       );
       final reply = data['reply'];
       if (reply is! String || reply.isEmpty) {
@@ -282,6 +283,7 @@ class MasanawaAgentTransport implements AgentTransport {
     required Uint8List bytes,
     required String mimeType,
     required String caption,
+    void Function(int sent, int total)? onUploadProgress,
   }) async {
     final token = CancelToken();
     _turnTokens[binding.characterId]?.cancel('Superseded by a new turn');
