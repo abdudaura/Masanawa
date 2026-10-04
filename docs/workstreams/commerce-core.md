@@ -6,9 +6,10 @@
 - Base main SHA: 3906419669203844018b6687ad06ab2af48654eb
 - Task references: 133–134 (bounded commercial groundwork; neither gate is closed)
 - Selected scope: persistent Agent Float allocation commands with atomic ledger transfer
-  and replay/conflict protection inside the canonical Commerce repository.
+  and replay/conflict protection inside the canonical Commerce repository, plus bounded
+  user-scoped receipt history with keyset pagination and optional Character filtering.
 - Last update: 2026-10-04
-- Current step: implementation complete; review and coordinated integration pending.
+- Current step: bounded, scoped Float allocation receipt history and restart recovery.
 
 ## Exact owned paths
 
@@ -52,7 +53,8 @@ were present in main/open PRs at selection time. Recheck before writes and commi
 - PGlite serializes its connections. Separate-session PostgreSQL concurrency qualification
   remains required using the checked-in integration suite and MASANAWA_TEST_DATABASE_URL.
 - Deployed: no. Migration 0004 is new and unapplied. Tasks 133–134 remain open.
-- Rechecked: main remains at the base SHA; PRs 89, 91 and 44 do not overlap owned paths.
+- Rechecked: main remains at the base SHA; PRs 89, 91, 92 and 44 do not overlap owned paths.
+  PR 92 owns channel ingress; no channel paths are edited here.
 - Initial implementation commit: fea199c3f11f73e4faca9f09513739ce43e662ff.
 - Custody hardening implementation: e3d08e0a01b2c7b6b1c737e2683baa6132cad505.
 - Latest checks: all 18 SQL cases passed on a fresh PGlite database, including nine
