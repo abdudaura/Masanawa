@@ -8,7 +8,6 @@ import '../agents/creator_skills.dart';
 import '../agents/agent_session.dart';
 import '../agents/masanawa_transport.dart';
 import '../core/network/api_client.dart';
-import '../state/agent_connection_state.dart';
 
 final dioProvider = Provider<Dio>((ref) {
   return Dio(
@@ -26,67 +25,44 @@ final apiClientProvider = Provider<ApiClient>((ref) {
   return ApiClient(dio: ref.watch(dioProvider));
 });
 
-final agentDirectoryTransportProvider = Provider<AgentDirectoryTransport>((
-  ref,
-) {
-  final connection = ref.watch(agentConnectionProvider);
-  if (!connection.configured) return const UnavailableAgentDirectoryTransport();
+String? _sessionToken(Ref ref) => ref.read(apiClientProvider).accessToken;
+
+final agentDirectoryTransportProvider = Provider<AgentDirectoryTransport>((ref) {
   return MasanawaAgentDirectoryTransport(
     dio: ref.watch(dioProvider),
-    baseUrl: connection.baseUrl,
-    readAccessToken: () =>
-        connection.token ?? ref.read(apiClientProvider).accessToken,
+    baseUrl: kAgentBaseUrl,
+    readAccessToken: () => _sessionToken(ref),
   );
 });
 
 final agentTransportProvider = Provider<AgentTransport>((ref) {
-  final connection = ref.watch(agentConnectionProvider);
-  if (connection.configured) {
-    return MasanawaAgentTransport(
-      dio: ref.watch(dioProvider),
-      baseUrl: connection.baseUrl,
-      readAccessToken: () =>
-          connection.token ?? ref.read(apiClientProvider).accessToken,
-    );
-  }
-  return PreviewAgentTransport(
-    sendPreview: (message, characterId) =>
-        ref.read(apiClientProvider).aiChat(message, masana: characterId),
+  return MasanawaAgentTransport(
+    dio: ref.watch(dioProvider),
+    baseUrl: kAgentBaseUrl,
+    readAccessToken: () => _sessionToken(ref),
   );
 });
-
 
 final creatorCloneTransportProvider = Provider<CreatorCloneTransport>((ref) {
-  final connection = ref.watch(agentConnectionProvider);
-  if (!connection.configured) return const UnavailableCreatorCloneTransport();
   return MasanawaCreatorCloneTransport(
     dio: ref.watch(dioProvider),
-    baseUrl: connection.baseUrl,
-    readAccessToken: () =>
-        connection.token ?? ref.read(apiClientProvider).accessToken,
+    baseUrl: kAgentBaseUrl,
+    readAccessToken: () => _sessionToken(ref),
   );
 });
-
 
 final creatorEconomyTransportProvider = Provider<CreatorEconomyTransport>((ref) {
-  final connection = ref.watch(agentConnectionProvider);
-  if (!connection.configured) return const UnavailableCreatorEconomyTransport();
   return MasanawaCreatorEconomyTransport(
     dio: ref.watch(dioProvider),
-    baseUrl: connection.baseUrl,
-    readAccessToken: () =>
-        connection.token ?? ref.read(apiClientProvider).accessToken,
+    baseUrl: kAgentBaseUrl,
+    readAccessToken: () => _sessionToken(ref),
   );
 });
 
-
 final creatorSkillTransportProvider = Provider<CreatorSkillTransport>((ref) {
-  final connection = ref.watch(agentConnectionProvider);
-  if (!connection.configured) return const UnavailableCreatorSkillTransport();
   return MasanawaCreatorSkillTransport(
     dio: ref.watch(dioProvider),
-    baseUrl: connection.baseUrl,
-    readAccessToken: () =>
-        connection.token ?? ref.read(apiClientProvider).accessToken,
+    baseUrl: kAgentBaseUrl,
+    readAccessToken: () => _sessionToken(ref),
   );
 });
