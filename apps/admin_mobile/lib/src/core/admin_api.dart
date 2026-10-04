@@ -1,9 +1,16 @@
 import 'package:dio/dio.dart';
 
-const adminBaseUrl = String.fromEnvironment(
-  'ADMIN_BASE_URL',
-  defaultValue: 'https://nurainworker-production.up.railway.app',
-);
+const adminBaseUrl = String.fromEnvironment('ADMIN_BASE_URL');
+
+String requireAdminBaseUrl() {
+  final value = adminBaseUrl.trim();
+  if (value.isEmpty) {
+    throw const AdminApiException(
+      'ADMIN_BASE_URL is not configured for the Ops service.',
+    );
+  }
+  return value;
+}
 
 class AdminApiException implements Exception {
   const AdminApiException(this.message, [this.statusCode]);
@@ -535,7 +542,7 @@ class AdminApi {
   AdminApi({required this.token, Dio? dio})
       : _dio = dio ??
             Dio(BaseOptions(
-              baseUrl: adminBaseUrl,
+              baseUrl: requireAdminBaseUrl(),
               connectTimeout: const Duration(seconds: 10),
               receiveTimeout: const Duration(seconds: 20),
               headers: {'Accept': 'application/json'},
