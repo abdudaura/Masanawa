@@ -190,6 +190,7 @@ export interface TeachingFreeResponseBinding {
   readonly skillVersionId: SkillVersionId;
   readonly lessonStepKey: string;
   readonly exerciseKey: string;
+  readonly cardHash: string;
   readonly expiresAt: Instant;
   readonly bindingHash: string;
 }
@@ -521,6 +522,7 @@ function teachingFreeResponseBindingPayload(input: {
   readonly skillVersionId: SkillVersionId;
   readonly lessonStepKey: string;
   readonly exerciseKey: string;
+  readonly cardHash: string;
   readonly expiresAt: Instant;
 }) {
   return Object.freeze({
@@ -529,6 +531,7 @@ function teachingFreeResponseBindingPayload(input: {
     skillVersionId: input.skillVersionId,
     lessonStepKey: input.lessonStepKey,
     exerciseKey: input.exerciseKey,
+    cardHash: input.cardHash,
     expiresAt: input.expiresAt,
   });
 }
@@ -536,28 +539,29 @@ function teachingFreeResponseBindingPayload(input: {
 export function createTeachingFreeResponseBinding(input: {
   readonly binding: TeachingRuntimeBinding;
   readonly requestId: RequestId;
-  readonly lessonStepKey: string;
-  readonly exerciseKey: string;
+  readonly card: TeachingExerciseCard;
   readonly expiresAt: Instant;
 }): TeachingFreeResponseBinding {
   if (!isCanonicalId("request", input.requestId)) {
     throw new TypeError("Teaching free-response RequestId is invalid");
   }
-  const lessonStepKey = input.lessonStepKey.trim().toLowerCase();
-  const exerciseKey = input.exerciseKey.trim().toLowerCase();
-  if (!/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u.test(lessonStepKey)) {
-    throw new TypeError("Teaching free-response lessonStepKey is invalid");
+  const card = normalizeTeachingExerciseCard(input.card);
+  assertBindingScope(input.binding, card.relationshipId, card.skillVersionId);
+  if (card.kind !== "free-response") {
+    throw new TypeError(
+      "Teaching free-response binding requires a free-response exercise card",
+    );
   }
-  if (!/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u.test(exerciseKey)) {
-    throw new TypeError("Teaching free-response exerciseKey is invalid");
-  }
+  const cardHash =
+    `sha256:${fingerprintCanonicalJson(JSON.parse(canonicalJson(card)))}`;
   const expiresAt = toInstant(input.expiresAt);
   const payload = teachingFreeResponseBindingPayload({
     requestId: input.requestId,
-    relationshipId: input.binding.relationshipId,
-    skillVersionId: input.binding.skillVersionId,
-    lessonStepKey,
-    exerciseKey,
+    relationshipId: card.relationshipId,
+    skillVersionId: card.skillVersionId,
+    lessonStepKey: card.lessonStepKey,
+    exerciseKey: card.exerciseKey,
+    cardHash,
     expiresAt,
   });
   return Object.freeze({
@@ -1092,6 +1096,7 @@ export class TeachingRuntimeCoordinator {
       skillVersionId: input.exercise.skillVersionId,
       lessonStepKey: input.exercise.lessonStepKey,
       exerciseKey: input.exercise.exerciseKey,
+      cardHash: input.exercise.cardHash,
       expiresAt: input.exercise.expiresAt,
     });
     const expectedHash =
