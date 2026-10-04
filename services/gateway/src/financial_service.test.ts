@@ -40,6 +40,13 @@ function setup(
     readonly networkFee: string;
     readonly quotedAt: ReturnType<typeof toInstant>;
   }) => Promise<CryptoIntent>,
+  payoutVerificationCodeProvider?: (input: {
+    readonly batchId: string;
+    readonly tenantId: typeof tenantId;
+    readonly userId: typeof userId;
+    readonly requestId: typeof requestId;
+  }) => Promise<string | null>,
+  shouldDispatch = false,
 ) {
   const payload = { payment_id: "123", order_id: tenantId+"."+requestId, price_amount: "10",
     price_currency: "usdttrc20", pay_currency: "usdttrc20", pay_amount: "10",
@@ -56,6 +63,24 @@ function setup(
     }
     if (url.endsWith("/balance")) {
       return new Response(JSON.stringify({ usdttrc20: { amount: "100", pendingAmount: "0" } }));
+    }
+    if (url.endsWith("/payout")) {
+      return new Response(JSON.stringify({
+        id: "batch-1",
+        withdrawals: [{ id: "withdrawal-1", status: "WAITING" }],
+      }));
+    }
+    if (url.endsWith("/payout/batch-1/verify")) {
+      return new Response(JSON.stringify({ status: "PROCESSING" }));
+    }
+    if (url.includes("/payout?")) {
+      return new Response(JSON.stringify({
+        payouts: [{
+          id: "withdrawal-1", batch_withdrawal_id: "batch-1", payout_status: "PROCESSING",
+          currency: "usdttrc20", amount: "10", address: "address",
+          unique_external_id: tenantId+"."+requestId,
+        }],
+      }));
     }
     return new Response(JSON.stringify(payload));
   });
@@ -77,7 +102,7 @@ function setup(
       currentIntent = value;
       return value;
     }),
-    beginProviderDispatch: vi.fn(async () => ({ intent: currentIntent, shouldDispatch: false })),
+    beginProviderDispatch: vi.fn(async () => ({ intent: currentIntent, shouldDispatch })),
   } as unknown as CryptoRepository;
   const service = createFinancialService({
     authorizer: createFixedFinancialAuthorizer({ token: "fixture-token", tenantId, userId }),
@@ -100,6 +125,9 @@ function setup(
         return reserved;
       },
     }),
+    ...(payoutVerificationCodeProvider === undefined
+      ? {}
+      : { payoutVerificationCodeProvider }),
   });
   return { service, crypto, fetch, payload };
 }
@@ -184,6 +212,29 @@ describe("financial service recovery and admission", () => {
       intent: expect.objectContaining({ operation: "withdraw", amount: "10" }),
     }));
     expect(crypto.reserveWithdrawal).not.toHaveBeenCalled();
+  });
+  it("automatically verifies a dispatched payout using only the server-side merchant code provider", async () => {
+    const reserveWithFee = vi.fn(async (value: {
+      readonly intent: CryptoIntent;
+      readonly networkFee: string;
+      readonly quotedAt: ReturnType<typeof toInstant>;
+    }) => value.intent);
+    const codeProvider = vi.fn(async () => "123456");
+    const { service, fetch } = setup(
+      null, account, undefined, reserveWithFee, codeProvider, true,
+    );
+    await expect(service.createWithdrawal({
+      authorizationHeader, requestId, providerCode: "USDTTRC20",
+      amount: "10", destinationAddress: "address",
+    })).resolves.toMatchObject({
+      status: "processing",
+      providerPayoutId: "batch-1",
+    });
+    expect(codeProvider).toHaveBeenCalledWith({
+      batchId: "batch-1", tenantId, userId, requestId,
+    });
+    const calledUrls = fetch.mock.calls.map((call) => String(call[0]));
+    expect(calledUrls).toContain("https://api.nowpayments.io/v1/payout/batch-1/verify");
   });
   it("rejects provider custody insufficiency before reserving customer principal", async () => {
     const { service, crypto, fetch } = setup(null, account);
