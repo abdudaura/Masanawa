@@ -7,6 +7,7 @@ import {
 import {
   createTeachingRuntimeBinding,
   createTeachingSelectionActionBinding,
+  createTeachingFreeResponseBinding,
   createTeachingChannelSingleSelectProjection,
   resolveTeachingChannelSelection,
   TeachingRuntimeCoordinator,
@@ -523,5 +524,63 @@ describe("Core Teaching durable plan identity", () => {
     await expect(
       telegram.resume(binding(regenerated), regenerated),
     ).rejects.toThrow(/different lesson plan/);
+  });
+});
+
+
+describe("Core Teaching cross-channel free response", () => {
+  it("accepts a server-bound free response on WhatsApp and resumes progress on Telegram", async () => {
+    const active = plan();
+    const durable = new DurableTeachingPort();
+    const exercise = createTeachingFreeResponseBinding({
+      binding: binding(active),
+      requestId: createCanonicalId("request"),
+      card: {
+        relationshipId: active.learner.relationshipId,
+        skillVersionId: active.skillVersionId,
+        lessonStepKey: "common-denominator",
+        exerciseKey: "explain-common-denominator",
+        prompt: "Explain what a common denominator means.",
+        kind: "free-response",
+        options: [],
+      },
+      expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
+    });
+
+    const whatsapp = new TeachingRuntimeCoordinator({ progress: durable });
+    const feedback = await whatsapp.submitFreeResponse({
+      binding: binding(active),
+      exercise,
+      plan: active,
+      responseText:
+        "It is a denominator both fractions can be rewritten to use, such as 6 for halves and thirds.",
+      evaluation: {
+        assessmentKind: "formative",
+        correct: true,
+        feedback: "Correct. You described a shared denominator.",
+        misconception: null,
+        alternativeExplanation: null,
+        nextCheckpointState: "ready-to-advance",
+      },
+      now: toInstant("2026-10-04T19:00:00.000Z"),
+    });
+
+    expect(feedback).toMatchObject({
+      kind: "feedback",
+      persistence: "stored",
+      continuation: {
+        reason: "advance",
+        nextStep: { stepKey: "add-numerators" },
+      },
+    });
+    expect(durable.freeResponses.size).toBe(1);
+
+    const telegram = new TeachingRuntimeCoordinator({ progress: durable });
+    const resumed = await telegram.resume(binding(active), active);
+    expect(resumed).toMatchObject({
+      kind: "lesson-step",
+      continuationReason: "advance",
+      step: { stepKey: "add-numerators" },
+    });
   });
 });
