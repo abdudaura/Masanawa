@@ -498,7 +498,7 @@ export function createFinancialService(input: {
     if (
       !Number.isFinite(numericAmount) ||
       numericAmount <= 0 ||
-      normalizeCryptoAmount(String(numericAmount)) !== amount
+      normalizeCryptoAmount(numberToPlainDecimal(numericAmount)) !== amount
     ) {
       throw new Error("financial.crypto.amount_unavailable");
     }
@@ -691,7 +691,7 @@ export function createFinancialService(input: {
       if (!route) throw new Error("financial.crypto.route_unavailable");
 
       const numericAmount = Number(amount);
-      if (!Number.isFinite(numericAmount) || numericAmount <= 0 || normalizeCryptoAmount(String(numericAmount)) !== amount) {
+      if (!Number.isFinite(numericAmount) || numericAmount <= 0 || normalizeCryptoAmount(numberToPlainDecimal(numericAmount)) !== amount) {
         throw new Error("financial.crypto.amount_unavailable");
       }
 
