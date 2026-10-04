@@ -630,7 +630,7 @@ class AdminApi {
           'greeting': greeting?.trim().isEmpty == true ? null : greeting?.trim(),
           'visibleInUserApp': visibleInUserApp,
           'sortOrder': sortOrder,
-          'expectedRevision': current.revision,
+          'expectedRevision': current.revision > 0 ? current.revision : null,
         },
       ),
     );
