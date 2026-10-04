@@ -175,6 +175,31 @@ describe("NOWPayments payout client", () => {
     expect(url.searchParams.get("batch_id")).toBe("batch-1");
   });
 
+  it("accepts exact payout evidence when unique_external_id is absent", async () => {
+    const fetch = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ token: "fixture-jwt" })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        payouts: [{
+          id: "withdrawal-1",
+          batch_withdrawal_id: "batch-1",
+          payout_status: "FINISHED",
+          currency: "trx",
+          amount: "10",
+          address: "address",
+        }],
+      })));
+    await expect(client(fetch).getPayoutEvidence({ payoutId: "batch-1" }))
+      .resolves.toEqual({
+        batchId: "batch-1",
+        withdrawalId: "withdrawal-1",
+        status: "finished",
+        currency: "TRX",
+        amount: "10",
+        address: "address",
+        uniqueExternalId: null,
+      });
+  });
+
   it("fails closed when batch status evidence is missing or ambiguous", async () => {
     const fetch = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ token: "fixture-jwt" })))
