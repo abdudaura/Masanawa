@@ -27,6 +27,7 @@ class ChatAttachment {
     this.name,
     this.sizeBytes,
     this.durationMs,
+    this.waveform = const [],
   });
 
   final String kind;
@@ -34,6 +35,7 @@ class ChatAttachment {
   final String? name;
   final int? sizeBytes;
   final int? durationMs;
+  final List<double> waveform;
 
   String get label => switch (kind) {
     'image' => '📷 Photo',
@@ -48,6 +50,7 @@ class ChatAttachment {
     if (name != null) 'name': name,
     if (sizeBytes != null) 'sizeBytes': sizeBytes,
     if (durationMs != null) 'durationMs': durationMs,
+    if (waveform.isNotEmpty) 'waveform': waveform,
   };
 
   factory ChatAttachment.fromJson(Map<String, dynamic> json) => ChatAttachment(
@@ -56,6 +59,10 @@ class ChatAttachment {
     name: json['name'] as String?,
     sizeBytes: json['sizeBytes'] as int?,
     durationMs: json['durationMs'] as int?,
+    waveform: [
+      for (final value in (json['waveform'] as List? ?? const []))
+        if (value is num) value.toDouble().clamp(0.0, 1.0).toDouble(),
+    ],
   );
 }
 
@@ -444,6 +451,8 @@ class AiChatController extends Notifier<AiChatState> {
     String characterId,
     ChatAttachment attachment, {
     String? caption,
+    String? replyToId,
+    String? replyPreview,
   }) async {
     if (state.sendingIn.contains(characterId)) return;
     final message = AiChatMessage(
@@ -452,6 +461,8 @@ class AiChatController extends Notifier<AiChatState> {
       text: (caption ?? '').trim(),
       createdAt: DateTime.now(),
       attachment: attachment,
+      replyToId: replyToId,
+      replyPreview: replyPreview,
       deliveryStatus: 'sending',
     );
     if (await _offlineNow()) {
@@ -465,10 +476,18 @@ class AiChatController extends Notifier<AiChatState> {
     String characterId,
     List<ChatAttachment> attachments, {
     String? caption,
+    String? replyToId,
+    String? replyPreview,
   }) async {
     if (attachments.isEmpty || state.sendingIn.contains(characterId)) return;
     if (attachments.length == 1) {
-      await sendAttachment(characterId, attachments.first, caption: caption);
+      await sendAttachment(
+        characterId,
+        attachments.first,
+        caption: caption,
+        replyToId: replyToId,
+        replyPreview: replyPreview,
+      );
       return;
     }
     final bounded = List<ChatAttachment>.unmodifiable(attachments.take(8));
@@ -478,6 +497,8 @@ class AiChatController extends Notifier<AiChatState> {
       text: (caption ?? '').trim(),
       createdAt: DateTime.now(),
       attachments: bounded,
+      replyToId: replyToId,
+      replyPreview: replyPreview,
       deliveryStatus: 'sending',
       uploadProgress: 0,
     );
@@ -518,6 +539,9 @@ class AiChatController extends Notifier<AiChatState> {
       final promptText = userMsg.replyPreview?.trim().isNotEmpty == true
           ? 'Replying to this earlier message:\n"${userMsg.replyPreview}"\n\n${userMsg.text}'
           : userMsg.text;
+      final mediaCaption = userMsg.replyPreview?.trim().isNotEmpty == true
+          ? 'Replying to this earlier message:\n"${userMsg.replyPreview}"\n\n${userMsg.text}'
+          : userMsg.text;
       var livePcmStarted = false;
       DateTime? livePcmStartedAt;
       final result = !hasMedia
@@ -546,13 +570,13 @@ class AiChatController extends Notifier<AiChatState> {
               characterId,
               userMsg.id,
               attachmentSet,
-              caption: userMsg.text,
+              caption: mediaCaption,
             )
           : await _sendMediaViaTransport(
               characterId,
               userMsg.id,
               attachment!,
-              caption: userMsg.text,
+              caption: mediaCaption,
             );
       if (livePcmStarted) {
         final elapsedMs = livePcmStartedAt == null
@@ -593,6 +617,7 @@ class AiChatController extends Notifier<AiChatState> {
           path: path,
           durationMs: result.audioDurationMs,
           sizeBytes: audio.length,
+          waveform: _pcmWaveform(audio),
         );
       }
       if (streamMessageId != null) {
@@ -1182,7 +1207,11 @@ class AiChatController extends Notifier<AiChatState> {
   void clearThread(String characterId) {
     _threadGenerations[characterId] =
         (_threadGenerations[characterId] ?? 0) + 1;
-    _bindings.remove(characterId);
+    final binding = _bindings.remove(characterId);
+    if (binding != null) {
+      unawaited(ref.read(agentTransportProvider).closeSession(binding));
+    }
+    unawaited(LivePcmAudio.stop());
     final threads = {...state.threads}..remove(characterId);
     state = state.copyWith(
       threads: threads,
@@ -1198,6 +1227,33 @@ class AiChatController extends Notifier<AiChatState> {
     _bindings.clear();
     state = state.copyWith(threads: {}, sendingIn: {});
     _save();
+  }
+
+  List<double> _pcmWaveform(Uint8List wavBytes, {int bars = 36}) {
+    if (wavBytes.length <= 44 || bars < 1) return const [];
+    final pcm = wavBytes.sublist(44);
+    final sampleCount = pcm.length ~/ 2;
+    if (sampleCount < bars) return const [];
+    final samplesPerBar =
+        (sampleCount / bars).floor().clamp(1, sampleCount).toInt();
+    final values = <double>[];
+    for (var bar = 0; bar < bars; bar++) {
+      final startSample = bar * samplesPerBar;
+      if (startSample >= sampleCount) break;
+      final endSample =
+          ((bar + 1) * samplesPerBar).clamp(0, sampleCount).toInt();
+      var peak = 0;
+      for (var sample = startSample; sample < endSample; sample++) {
+        final offset = sample * 2;
+        if (offset + 1 >= pcm.length) break;
+        var value = pcm[offset] | (pcm[offset + 1] << 8);
+        if (value >= 0x8000) value -= 0x10000;
+        final magnitude = value.abs();
+        if (magnitude > peak) peak = magnitude;
+      }
+      values.add((peak / 32768).clamp(0.06, 1.0).toDouble());
+    }
+    return List.unmodifiable(values);
   }
 
   String _newId() => 'm-${DateTime.now().microsecondsSinceEpoch}-${_seq++}';
