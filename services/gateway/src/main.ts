@@ -536,6 +536,7 @@ export async function startGatewayService(
     config,
     address: lifecycle.address,
     app,
+    ...(pushSender ? { pushSender } : {}),
     isDraining: drain.isDraining,
     drain: drain.beginDraining,
     shutdown: (reason: ServiceSignal | "manual" = "manual") =>
