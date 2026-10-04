@@ -317,7 +317,7 @@ export function createPlatformCustomerSessionAuthorizer(input: Readonly<{
 }>): PlatformCustomerSessionAuthorizer {
   const now = input.now ?? (() => new Date().toISOString());
   return Object.freeze({
-    async authorize(request) {
+    async authorize(request: Parameters<PlatformCustomerSessionAuthorizer["authorize"]>[0]) {
       const token = bearer(request.authorizationHeader);
       if (!token) throw new Error("financial.auth.unauthorized");
       let accessHash: string;
@@ -339,7 +339,7 @@ export function createPlatformSessionFinancialAuthorizer(input: Readonly<{
 }>): FinancialAuthorizer {
   const now = input.now ?? (() => new Date().toISOString());
   return Object.freeze({
-    async authorize(request) {
+    async authorize(request: Parameters<FinancialAuthorizer["authorize"]>[0]) {
       const token = bearer(request.authorizationHeader);
       if (!token) throw new Error("financial.auth.unauthorized");
       let accessHash: string;
@@ -365,7 +365,7 @@ export function createResendOtpDelivery(input: Readonly<{
   if (!apiKey || !from) throw new TypeError("Resend OTP delivery configuration is incomplete");
   const fetchImpl = input.fetchImpl ?? fetch;
   return Object.freeze({
-    async send(request) {
+    async send(request: Parameters<OtpDelivery["send"]>[0]) {
       const response = await fetchImpl("https://api.resend.com/emails", {
         method: "POST",
         headers: {
@@ -397,7 +397,7 @@ export function createHttpSmsOtpDelivery(input: Readonly<{
   if (!token) throw new TypeError("SMS OTP bearer token is required");
   const fetchImpl = input.fetchImpl ?? fetch;
   return Object.freeze({
-    async send(request) {
+    async send(request: Parameters<OtpDelivery["send"]>[0]) {
       const response = await fetchImpl(endpoint, {
         method: "POST",
         headers: {
