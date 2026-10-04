@@ -6,7 +6,15 @@ const statuses = new Set([
   "failed", "rejected", "rejected_not_checked", "cancelled", "canceled",
 ]);
 
-export interface FinancialPayoutEvidence {
+export interface PayoutBindingEvidence {
+  readonly batchId: string;
+  readonly currency: string;
+  readonly amount: string;
+  readonly address: string;
+  readonly uniqueExternalId: string;
+}
+
+export interface FinancialPayoutEvidence extends PayoutBindingEvidence {
   readonly batchId: string;
   readonly withdrawalId: string;
   readonly status: string;
@@ -92,7 +100,7 @@ export function parseVerifiedPayoutIpn(input: {
 }
 
 export function assertPayoutEvidence(
-  evidence: FinancialPayoutEvidence,
+  evidence: PayoutBindingEvidence,
   expected: {
     readonly batchId: string;
     readonly currency: string;
