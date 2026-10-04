@@ -2,9 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createCanonicalId,
   type CharacterId,
-  type RelationshipId,
   type TenantId,
-  type UserId,
 } from "@masanawa/contracts";
 import type {
   AgentPresentation,
