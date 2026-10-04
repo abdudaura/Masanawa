@@ -29,6 +29,7 @@
 - Last update: 2026-10-04 18:32 +01.
 - Implementation status: implemented on branch, 14 exact claimed files.
 - Verification status: source/diff and changed-file scope reviewed. Foundation CI run 967 on head `656eed9be8067b6e974399a5f53a0394e828ce5a` failed before exposing executable job steps/logs, so no application test pass or failure is claimed from CI.
+- Current HEAD: `790bdbffe51443837b99e967c26d1e97b67fc314`.
 - Deployment status: not deployed.
 - Collision rule: no edits outside the exact owned paths above.
 
