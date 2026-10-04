@@ -301,7 +301,9 @@ export function createFinancialService(input: {
     amount: string,
     address: string,
   ): Promise<FinancialWithdrawalQuote> {
-    if (!input.nowPaymentsPayout) throw new Error("financial.crypto.withdrawal_unavailable");
+    if (!input.nowPaymentsPayout || !input.nowPaymentsCustody) {
+      throw new Error("financial.crypto.withdrawal_unavailable");
+    }
 
     const numericAmount = Number(amount);
     const fractionalDigits = amount.includes(".") ? amount.length - amount.indexOf(".") - 1 : 0;
