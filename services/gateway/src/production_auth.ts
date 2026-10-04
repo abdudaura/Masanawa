@@ -1,6 +1,7 @@
 import {
   createCanonicalId,
   parseCanonicalId,
+  PlatformError,
   type CharacterId,
   type RelationshipId,
   type TenantId,
@@ -53,11 +54,21 @@ function normalizeOrigin(value: string): string {
 
 function requireBearer(header: string | undefined): string {
   if (!header?.startsWith("Bearer ")) {
-    throw new Error("Platform session authorization denied");
+    throw new PlatformError({
+      code: "gateway.platform_session_invalid",
+      category: "authentication",
+      message: "Platform session authorization denied",
+      retryable: false,
+    });
   }
   const token = header.slice("Bearer ".length).trim();
   if (!token || token.length > 8192 || /\s/u.test(token)) {
-    throw new Error("Platform session authorization denied");
+    throw new PlatformError({
+      code: "gateway.platform_session_invalid",
+      category: "authentication",
+      message: "Platform session authorization denied",
+      retryable: false,
+    });
   }
   return token;
 }
@@ -80,12 +91,22 @@ export function createPlatformSessionVerifier(input: {
         signal: AbortSignal.timeout(10_000),
       });
       if (!response.ok) {
-        throw new Error("Platform session authorization denied");
+        throw new PlatformError({
+      code: "gateway.platform_session_invalid",
+      category: "authentication",
+      message: "Platform session authorization denied",
+      retryable: false,
+    });
       }
       const body = await response.json() as Record<string, unknown>;
       const id = body.id;
       if (typeof id !== "string" || !id.trim() || id.length > 512) {
-        throw new Error("Platform session authorization denied");
+        throw new PlatformError({
+      code: "gateway.platform_session_invalid",
+      category: "authentication",
+      message: "Platform session authorization denied",
+      retryable: false,
+    });
       }
       return Object.freeze({ externalUserId: id.trim() });
     },
@@ -161,7 +182,12 @@ export function createProductionAuthorizers(input: {
         characterId,
       });
       if (!presentation || !presentation.visibleInUserApp) {
-        throw new Error("Character is not available to this user");
+        throw new PlatformError({
+          code: "gateway.character_forbidden",
+          category: "authorization",
+          message: "Character is not available to this user",
+          retryable: false,
+        });
       }
       const existingCharacterIds =
         await input.identities.listCharacterIdsForUser({
@@ -174,7 +200,12 @@ export function createProductionAuthorizers(input: {
         characterId,
       });
       if (!alreadyRelated && profile?.supportAgent !== true) {
-        throw new Error("Character is not available to this user");
+        throw new PlatformError({
+          code: "gateway.character_forbidden",
+          category: "authorization",
+          message: "Character is not available to this user",
+          retryable: false,
+        });
       }
       const relationshipId = await input.identities.relationshipFor({
         tenantId: user.tenantId,
