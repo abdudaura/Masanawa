@@ -4,15 +4,27 @@ export class FlutterwaveHttpTransport implements FlutterwaveBillsTransport {
   readonly #baseUrl: string;
   readonly #fetch: typeof fetch;
   readonly #timeoutMs: number;
+  readonly #relayToken: string | null;
 
   constructor(input?: Readonly<{
     baseUrl?: string;
     fetchImpl?: typeof fetch;
     timeoutMs?: number;
+    relayToken?: string;
   }>) {
-    this.#baseUrl = (input?.baseUrl ?? "https://api.flutterwave.com").replace(/\/+$/u, "");
+    const baseUrl = (input?.baseUrl ?? "https://api.flutterwave.com").replace(/\/+$/u, "");
+    const parsedBase = new URL(baseUrl);
+    if (parsedBase.protocol !== "https:") {
+      throw new TypeError("Flutterwave HTTP base URL must use HTTPS");
+    }
+    this.#baseUrl = parsedBase.toString().replace(/\/+$/u, "");
     this.#fetch = input?.fetchImpl ?? fetch;
     this.#timeoutMs = input?.timeoutMs ?? 15_000;
+    const relayToken = input?.relayToken?.trim() ?? "";
+    if (relayToken.length > 1024) {
+      throw new TypeError("Flutterwave relay token is invalid");
+    }
+    this.#relayToken = relayToken || null;
     if (!Number.isSafeInteger(this.#timeoutMs) || this.#timeoutMs < 1_000 || this.#timeoutMs > 120_000) {
       throw new TypeError("Flutterwave HTTP timeout is invalid");
     }
@@ -29,9 +41,17 @@ export class FlutterwaveHttpTransport implements FlutterwaveBillsTransport {
       ? AbortSignal.any([input.signal, timeout])
       : timeout;
 
+    const headers =
+      this.#relayToken === null
+        ? input.headers
+        : Object.freeze({
+            ...input.headers,
+            authorization: `Bearer ${this.#relayToken}`,
+          });
+
     const response = await this.#fetch(url, {
       method: input.method,
-      headers: input.headers,
+      headers,
       ...(input.body === undefined ? {} : { body: JSON.stringify(input.body) }),
       signal,
     });
