@@ -412,6 +412,7 @@ class AiChatController extends Notifier<AiChatState> {
               error.statusCode == 404)) {
         _bindings.remove(characterId);
       }
+      _setDelivery(characterId, userMsg.id, 'failed');
       final feedback = AgentFeedback.fromError(error, conversation: true);
       _appendAi(
         characterId,
@@ -554,7 +555,7 @@ class AiChatController extends Notifier<AiChatState> {
       createdAt: DateTime.now(),
       deliveryStatus: 'streaming',
     );
-    final sending = {...state.sendingIn}..remove(characterId);
+    final sending = {...state.sendingIn};
     state = state.copyWith(
       threads: {
         ...state.threads,
@@ -571,30 +572,58 @@ class AiChatController extends Notifier<AiChatState> {
     unawaited(_streamReply(characterId, id, text));
   }
 
-  Future<void> _streamReply(String characterId, String messageId, String text) async {
+  Future<void> _streamReply(
+    String characterId,
+    String messageId,
+    String text,
+  ) async {
+    final generation = _threadGenerations[characterId] ?? 0;
     if (text.isEmpty) {
-      _updateMessage(characterId, messageId, (m) => m.copyWith(deliveryStatus: 'delivered'));
+      _updateMessage(
+        characterId,
+        messageId,
+        (m) => m.copyWith(deliveryStatus: 'delivered'),
+      );
+      state = state.copyWith(
+        sendingIn: {...state.sendingIn}..remove(characterId),
+      );
       return;
     }
-    final words = text.split(RegExp(r'(?<=\\s)'));
+
+    final runes = text.runes.toList(growable: false);
     final buffer = StringBuffer();
-    for (var i = 0; i < words.length; i++) {
-      if (_disposed) return;
-      buffer.write(words[i]);
-      if (i % 3 == 2 || i == words.length - 1) {
-        _updateMessage(
-          characterId,
-          messageId,
-          (m) => m.copyWith(
-            text: buffer.toString(),
-            deliveryStatus: i == words.length - 1 ? 'delivered' : 'streaming',
-          ),
-          persist: i == words.length - 1,
-        );
-        if (i != words.length - 1) {
-          await Future<void>.delayed(const Duration(milliseconds: 28));
-        }
+    for (var i = 0; i < runes.length; i++) {
+      if (_disposed ||
+          generation != (_threadGenerations[characterId] ?? 0)) {
+        return;
       }
+      buffer.writeCharCode(runes[i]);
+      final isBoundary =
+          i == runes.length - 1 ||
+          (i > 0 && i % 18 == 0) ||
+          runes[i] == 10;
+      if (!isBoundary) continue;
+
+      final complete = i == runes.length - 1;
+      _updateMessage(
+        characterId,
+        messageId,
+        (m) => m.copyWith(
+          text: buffer.toString(),
+          deliveryStatus: complete ? 'delivered' : 'streaming',
+        ),
+        persist: complete,
+      );
+      if (!complete) {
+        await Future<void>.delayed(const Duration(milliseconds: 24));
+      }
+    }
+
+    if (!_disposed &&
+        generation == (_threadGenerations[characterId] ?? 0)) {
+      state = state.copyWith(
+        sendingIn: {...state.sendingIn}..remove(characterId),
+      );
     }
   }
 
@@ -698,9 +727,22 @@ class AiChatController extends Notifier<AiChatState> {
 
   void stopGeneration(String characterId) {
     _threadGenerations[characterId] = (_threadGenerations[characterId] ?? 0) + 1;
+    final thread = threadOf(characterId);
+    final messages = [
+      for (final message in thread.messages)
+        if (!message.isUser && message.deliveryStatus == 'streaming')
+          message.copyWith(deliveryStatus: 'stopped')
+        else
+          message,
+    ];
     state = state.copyWith(
+      threads: {
+        ...state.threads,
+        characterId: thread.copyWith(messages: messages),
+      },
       sendingIn: {...state.sendingIn}..remove(characterId),
     );
+    _save();
   }
 
   Future<void> newContext(String characterId) async {
@@ -743,7 +785,6 @@ class AiChatController extends Notifier<AiChatState> {
     bool persist = true,
   }) {
     final thread = threadOf(characterId);
-    var changed = false;
     final messages = [
       for (final m in thread.messages)
         if (m.id == messageId) ...[
@@ -752,8 +793,6 @@ class AiChatController extends Notifier<AiChatState> {
           m,
     ];
     if (!thread.messages.any((m) => m.id == messageId)) return;
-    changed = true;
-    if (!changed) return;
     state = state.copyWith(
       threads: {
         ...state.threads,
