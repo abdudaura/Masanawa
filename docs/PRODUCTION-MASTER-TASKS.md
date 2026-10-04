@@ -163,6 +163,12 @@ Task 070 acceptance (satisfied on merged main):
     replaceable Gemini development executor, optional Android-local TTS and a
     debug Scenario Lab. This is continuous product testing infrastructure, not
     completion of Tasks 073+.
+  - 2026-10-04: both isolated PostgreSQL 18.6/pgvector 0.8.6 runtime
+    acceptance suites pass (19 tests) through standard `pnpm alpha:verify`,
+    alongside 344 unit/architecture tests. Frozen-lockfile install, typecheck and build
+    also pass. The full serial suite passes all 515 tests in 95 files without
+    skips; extended limits accommodate emulation. See
+    `docs/TASK-072-VERIFICATION.md`; hosted CI is still pending.
   - Task 072 remains unchecked until its required verification actually runs
     and passes; GitHub-hosted Actions have recently failed before checkout
     because no runner was allocated.

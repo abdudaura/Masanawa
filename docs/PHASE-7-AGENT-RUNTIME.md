@@ -397,3 +397,20 @@ Verification: runtime gate passed 344 tests plus Gateway/Ops builds/typechecks.
 Full Vitest passed 437 tests with 78 database-dependent skips. Fifteen new checks
 cover invalid limits, hung providers, abort/error redaction, cleanup, late results,
 output bounds, control forwarding and text/media failed-run custody.
+
+## 2026-10-04 real runtime acceptance evidence
+
+The standard `pnpm alpha:verify` now passes against isolated PostgreSQL 18.6
+and pgvector 0.8.6: relevant dependency builds/typechecks, 344 unit/architecture
+tests and all 19 real CharacterSession/AgentRun acceptance cases. The full serial
+PostgreSQL suite passes all 515 tests in 95 files with zero skips; extended limits
+accommodate emulation. Test fixtures
+use the database clock for admitted timestamps; production authority checks are
+unchanged. The full workspace install/typecheck/build also passed. See
+`docs/TASK-072-VERIFICATION.md` for the broader suite and CI evidence.
+
+Verification fixes are published in PR #89 as
+`4b00d0919666f574174fede81dffdea4819f2c58`. Its Foundation CI run 37182128896
+still failed before any steps with runner_id=0. Task 072 remains current until
+the canonical implementation-head and merged-main CI gate passes; Task 073
+provider-neutral groundwork does not bypass that gate.

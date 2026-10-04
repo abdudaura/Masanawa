@@ -1,5 +1,23 @@
 # Continue Here
 
+## Task 072 real PostgreSQL verification checkpoint
+
+The 2026-10-04 closure attempt runs PostgreSQL 18.6 with pgvector 0.8.6 in
+an isolated disposable QEMU guest, without the user's laptop or hosted Alpha
+data. The standard `pnpm alpha:verify` passes: 344 unit/architecture tests and
+19 real PostgreSQL tests (ten CharacterSession and nine AgentRun), with the
+command's default limits. A serial run with extended limits also passed all 19.
+Fixtures use the database admission clock for authority and canonical timestamps;
+production authorization checks are unchanged. Source scanners now exclude
+Next.js build output and installed dependencies, so checks remain valid after
+a workspace build. Frozen-lockfile install, full workspace typecheck and full
+workspace build have run successfully. The final full serial database suite
+passes all 515 tests in 95 files, with zero skips and extended limits for CPU
+emulation. See `docs/TASK-072-VERIFICATION.md` for
+precise results and limits. Task 072 still requires a successful Foundation CI
+gate on the implementation head and merged main. Run 37178168912 attempt 2
+failed with zero steps and runner_id=0; do not record it as a passing gate.
+
 This is the mandatory handoff entry point for every new Masanawa implementation session.
 
 ## Railway replacement / encrypted Gemini import checkpoint
