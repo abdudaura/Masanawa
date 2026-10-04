@@ -51,6 +51,12 @@ export class NowPaymentsClient {
     this.#fetch = options.fetch ?? globalThis.fetch;
   }
 
+  async checkApiStatus(signal?: AbortSignal): Promise<true> {
+    const response = await this.#request("/status", withSignal({ method: "GET" as const }, signal));
+    await response.text();
+    return true;
+  }
+
   async listPaymentCurrencies(signal?: AbortSignal): Promise<readonly NowPaymentsCurrencyEvidence[]> {
     const response = await this.#request("/currencies", withSignal({ method: "GET" as const }, signal));
     const body = (await response.json()) as CurrenciesResponse;
