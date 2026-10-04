@@ -29,6 +29,7 @@ interface BillingQuoteRow {
   checkout_url: string | null;
   provider_transaction_id: string | null;
   provider_reference: string | null;
+  bill_provider_reference: string | null;
   payment_verified_at: Date | string | null;
   fulfillment_reference: string | null;
   settlement_state: "succeeded" | "failed" | "reversed" | null;
@@ -71,6 +72,7 @@ function quote(row: BillingQuoteRow): BillingQuote {
     checkoutUrl: row.checkout_url,
     providerTransactionId: row.provider_transaction_id,
     providerReference: row.provider_reference,
+    billProviderReference: row.bill_provider_reference,
     paymentVerifiedAt: iso(row.payment_verified_at),
     fulfillmentReference: row.fulfillment_reference,
     settlementState: row.settlement_state,
@@ -297,7 +299,7 @@ export function createPostgresBillingQuoteRepository(pool: Pool): BillingQuoteRe
         const row = result.rows[0];
         if (!row) throw new Error("financial.billing.reserve_not_found");
         if (row.settlement_state === input.state &&
-            (row.provider_reference ?? null) === input.providerReference) return;
+            (row.bill_provider_reference ?? null) === input.providerReference) return;
         if (row.state === "refunded") return;
         if (row.state === "succeeded" && input.state !== "reversed") {
           throw new Error("financial.billing.settlement_conflict");
@@ -307,7 +309,7 @@ export function createPostgresBillingQuoteRepository(pool: Pool): BillingQuoteRe
         await client.query(
           `UPDATE commerce.billing_quotes
               SET state=$4,settlement_state=$5,
-                  provider_reference=COALESCE($6,provider_reference),
+                  bill_provider_reference=COALESCE($6,bill_provider_reference),
                   updated_at=clock_timestamp()
             WHERE tenant_id=$1 AND user_id=$2 AND fulfillment_reference=$3`,
           [input.tenantId,input.userId,input.fulfillmentReference,nextState,input.state,input.providerReference],
