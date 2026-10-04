@@ -102,7 +102,7 @@ export function createGeminiLiveAudioRenderer(input: {
           }));
         });
 
-        socket.addEventListener("message", (event) => {
+        socket.addEventListener("message", (event: { data: unknown }) => {
           try {
             if (typeof event.data !== "string") return;
             const message = JSON.parse(event.data) as LiveMessage;
