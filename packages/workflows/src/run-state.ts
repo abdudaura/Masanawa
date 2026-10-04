@@ -1,3 +1,4 @@
+import type { WorkflowVersion } from "./model.js";
 import {
   workflowRunLimits,
   type TaskState,
@@ -378,5 +379,51 @@ export function assertTaskBelongsToRun(
     task.graphSignature !== run.graphSignature
   ) {
     fail("Task is not pinned to the supplied WorkflowRun identity/version/graph");
+  }
+}
+
+
+export function assertWorkflowRunMatchesVersion(
+  run: WorkflowRun,
+  version: WorkflowVersion,
+): void {
+  if (
+    run.tenantId !== version.tenantId ||
+    run.workflowId !== version.workflowId ||
+    run.workflowVersionId !== version.workflowVersionId ||
+    run.graphSignature !== version.graphSignature
+  ) {
+    fail("WorkflowRun is not pinned to the supplied WorkflowVersion identity/graph");
+  }
+}
+
+export function assertChildTaskLineage(
+  child: WorkflowTask,
+  parent: WorkflowTask,
+): void {
+  assertTaskBelongsToRun(child, {
+    tenantId: parent.tenantId,
+    workflowRunId: parent.workflowRunId,
+    workflowId: "" as WorkflowRun["workflowId"],
+    workflowVersionId: parent.workflowVersionId,
+    graphSignature: parent.graphSignature,
+    initiatedByUserId: null,
+    state: "running",
+    revision: 1,
+    createdAt: parent.createdAt,
+    updatedAt: parent.updatedAt,
+    startedAt: parent.startedAt ?? parent.createdAt,
+    terminalAt: null,
+    waitReason: null,
+    failure: null,
+    cancellationReason: null,
+  });
+
+  if (
+    child.lineage.parentTaskId !== parent.taskId ||
+    child.lineage.rootTaskId !== parent.lineage.rootTaskId ||
+    child.lineage.depth !== parent.lineage.depth + 1
+  ) {
+    fail("Task lineage does not match the supplied parent Task");
   }
 }
