@@ -6,6 +6,12 @@ import {
   type RouteQualification,
 } from "./catalog.js";
 import {
+  normalizeCreatePaymentInput,
+  parseCreatedPayment,
+  type CreateNowPaymentsPaymentInput,
+  type NowPaymentsCreatedPayment,
+} from "./payment.js";
+import {
   assertAboveMinimum,
   parseEstimate,
   parseMinimumAmount,
@@ -42,7 +48,7 @@ export class NowPaymentsClient {
   }
 
   async listPaymentCurrencies(signal?: AbortSignal): Promise<readonly NowPaymentsCurrencyEvidence[]> {
-    const response = await this.#request("/currencies", signal);
+    const response = await this.#request("/currencies", { method: "GET", signal });
     const body = (await response.json()) as CurrenciesResponse;
     if (!Array.isArray(body.currencies) || !body.currencies.every((value) => typeof value === "string")) {
       throw new Error("nowpayments.currencies.invalid_response");
@@ -60,7 +66,7 @@ export class NowPaymentsClient {
         currency_from: input.currencyFrom,
         currency_to: input.currencyTo,
       })}`,
-      input.signal,
+      { method: "GET", signal: input.signal },
     );
     return parseMinimumAmount(await response.json(), {
       currencyFrom: input.currencyFrom,
@@ -83,7 +89,7 @@ export class NowPaymentsClient {
         currency_from: input.currencyFrom,
         currency_to: input.currencyTo,
       })}`,
-      input.signal,
+      { method: "GET", signal: input.signal },
     );
     return parseEstimate(await response.json(), input);
   }
@@ -103,6 +109,32 @@ export class NowPaymentsClient {
     return Object.freeze({ minimum, estimate });
   }
 
+  async createPayment(
+    input: CreateNowPaymentsPaymentInput & { readonly signal?: AbortSignal },
+  ): Promise<{
+    readonly minimum: NowPaymentsMinimumAmount;
+    readonly estimate: NowPaymentsEstimate;
+    readonly payment: NowPaymentsCreatedPayment;
+  }> {
+    const preflight = await this.quotePayment({
+      amount: input.priceAmount,
+      currencyFrom: input.priceCurrency,
+      currencyTo: input.payCurrency,
+      signal: input.signal,
+    });
+    const requestBody = normalizeCreatePaymentInput(input);
+    const response = await this.#request("/payment", {
+      method: "POST",
+      body: JSON.stringify(requestBody),
+      signal: input.signal,
+    });
+    const payment = parseCreatedPayment(await response.json());
+    if (payment.orderId !== null && payment.orderId !== input.orderId) {
+      throw new Error("nowpayments.payment.order_mismatch");
+    }
+    return Object.freeze({ ...preflight, payment });
+  }
+
   async getPaymentStatus(input: {
     readonly paymentId: string | number;
     readonly signal?: AbortSignal;
@@ -111,7 +143,10 @@ export class NowPaymentsClient {
     if (!/^[A-Za-z0-9_-]{1,128}$/.test(paymentId)) {
       throw new Error("nowpayments.payment_id.invalid");
     }
-    const response = await this.#request(`/payment/${encodeURIComponent(paymentId)}`, input.signal);
+    const response = await this.#request(`/payment/${encodeURIComponent(paymentId)}`, {
+      method: "GET",
+      signal: input.signal,
+    });
     const body = (await response.json()) as { readonly payment_status?: unknown };
     return parsePaymentStatus(body.payment_status);
   }
@@ -141,14 +176,24 @@ export class NowPaymentsClient {
     );
   }
 
-  async #request(path: string, signal?: AbortSignal): Promise<Response> {
+  async #request(
+    path: string,
+    input: {
+      readonly method: "GET" | "POST";
+      readonly body?: string;
+      readonly signal?: AbortSignal;
+    },
+  ): Promise<Response> {
     let response: Response;
     try {
-      const init: RequestInit = {
-        method: "GET",
-        headers: { "x-api-key": this.#apiKey, accept: "application/json" },
+      const headers: Record<string, string> = {
+        "x-api-key": this.#apiKey,
+        accept: "application/json",
       };
-      if (signal !== undefined) init.signal = signal;
+      if (input.body !== undefined) headers["content-type"] = "application/json";
+      const init: RequestInit = { method: input.method, headers };
+      if (input.body !== undefined) init.body = input.body;
+      if (input.signal !== undefined) init.signal = input.signal;
       response = await this.#fetch(`${this.#baseUrl}${path}`, init);
     } catch {
       throw new Error("nowpayments.transport.unavailable");
