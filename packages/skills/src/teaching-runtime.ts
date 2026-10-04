@@ -199,6 +199,7 @@ export interface TeachingFreeResponseAttempt {
   readonly requestId: RequestId;
   readonly payloadHash: string;
   readonly planHash: string;
+  readonly cardHash: string;
   readonly relationshipId: RelationshipId;
   readonly skillVersionId: SkillVersionId;
   readonly lessonStepKey: string;
@@ -576,6 +577,7 @@ export function fingerprintTeachingFreeResponseAttempt(input: {
   readonly skillVersionId: SkillVersionId;
   readonly lessonStepKey: string;
   readonly exerciseKey: string;
+  readonly cardHash: string;
   readonly responseText: string;
 }): string {
   assertScope(input.relationshipId, input.skillVersionId);
@@ -583,11 +585,16 @@ export function fingerprintTeachingFreeResponseAttempt(input: {
   if (responseText.length < 1 || responseText.length > 16_384) {
     throw new TypeError("Teaching free-response text is invalid");
   }
+  const cardHash = input.cardHash.trim().toLowerCase();
+  if (!/^sha256:[0-9a-f]{64}$/u.test(cardHash)) {
+    throw new TypeError("Teaching free-response cardHash is invalid");
+  }
   return `sha256:${fingerprintCanonicalJson({
     relationshipId: input.relationshipId,
     skillVersionId: input.skillVersionId,
     lessonStepKey: input.lessonStepKey.trim().toLowerCase(),
     exerciseKey: input.exerciseKey.trim().toLowerCase(),
+    cardHash,
     responseText,
   })}`;
 }
@@ -1168,6 +1175,7 @@ export class TeachingRuntimeCoordinator {
       skillVersionId: input.exercise.skillVersionId,
       lessonStepKey: input.exercise.lessonStepKey,
       exerciseKey: input.exercise.exerciseKey,
+      cardHash: input.exercise.cardHash,
       responseText,
     });
     const persistence = await this.#progress.commitFreeResponseAttempt(
@@ -1175,6 +1183,7 @@ export class TeachingRuntimeCoordinator {
         requestId: input.exercise.requestId,
         payloadHash,
         planHash,
+        cardHash: input.exercise.cardHash,
         relationshipId: input.exercise.relationshipId,
         skillVersionId: input.exercise.skillVersionId,
         lessonStepKey: input.exercise.lessonStepKey,
