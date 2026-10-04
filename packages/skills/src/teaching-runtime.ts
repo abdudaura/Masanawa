@@ -25,6 +25,28 @@ import {
   type TeachingSelectionSubmission,
 } from "./teaching.js";
 
+export const teachingArtifactKinds = [
+  "diagram",
+  "worksheet",
+  "table",
+  "image",
+  "document",
+] as const;
+export type TeachingArtifactKind = (typeof teachingArtifactKinds)[number];
+
+export interface TeachingArtifactPresentation {
+  readonly relationshipId: RelationshipId;
+  readonly skillVersionId: SkillVersionId;
+  readonly lessonStepKey: string;
+  readonly artifactKey: string;
+  readonly kind: TeachingArtifactKind;
+  readonly title: string;
+  readonly reference: string;
+  readonly mimeType: string;
+  readonly contentHash: string;
+  readonly altText: string;
+}
+
 export interface TeachingProgressKey {
   readonly relationshipId: RelationshipId;
   readonly skillVersionId: SkillVersionId;
@@ -98,6 +120,12 @@ export type TeachingRuntimeProjection =
       relationshipId: RelationshipId;
       skillVersionId: SkillVersionId;
       card: TeachingExerciseCard;
+    }>
+  | Readonly<{
+      kind: "artifact";
+      relationshipId: RelationshipId;
+      skillVersionId: SkillVersionId;
+      artifact: TeachingArtifactPresentation;
     }>
   | Readonly<{
       kind: "feedback";
@@ -196,6 +224,55 @@ function continuationProjection(
   });
 }
 
+function normalizeTeachingArtifactPresentation(
+  input: TeachingArtifactPresentation,
+): TeachingArtifactPresentation {
+  assertScope(input.relationshipId, input.skillVersionId);
+  const artifactKey = input.artifactKey.trim().toLowerCase();
+  const lessonStepKey = input.lessonStepKey.trim().toLowerCase();
+  if (!/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u.test(artifactKey)) {
+    throw new TypeError("Teaching artifact key is invalid");
+  }
+  if (!/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u.test(lessonStepKey)) {
+    throw new TypeError("Teaching artifact lessonStepKey is invalid");
+  }
+  if (!(teachingArtifactKinds as readonly string[]).includes(input.kind)) {
+    throw new TypeError("Teaching artifact kind is invalid");
+  }
+  const title = input.title.trim();
+  const reference = input.reference.trim();
+  const mimeType = input.mimeType.trim().toLowerCase();
+  const altText = input.altText.trim();
+  const contentHash = input.contentHash.trim().toLowerCase();
+  if (title.length < 1 || title.length > 300) {
+    throw new TypeError("Teaching artifact title is invalid");
+  }
+  if (reference.length < 1 || reference.length > 2000) {
+    throw new TypeError("Teaching artifact reference is invalid");
+  }
+  if (!/^[a-z0-9.+-]+\/[a-z0-9.+-]+$/u.test(mimeType)) {
+    throw new TypeError("Teaching artifact mimeType is invalid");
+  }
+  if (altText.length < 1 || altText.length > 2000) {
+    throw new TypeError("Teaching artifact altText is invalid");
+  }
+  if (!/^sha256:[0-9a-f]{64}$/u.test(contentHash)) {
+    throw new TypeError("Teaching artifact contentHash is invalid");
+  }
+  return Object.freeze({
+    relationshipId: input.relationshipId,
+    skillVersionId: input.skillVersionId,
+    lessonStepKey,
+    artifactKey,
+    kind: input.kind,
+    title,
+    reference,
+    mimeType,
+    contentHash,
+    altText,
+  });
+}
+
 export class TeachingRuntimeCoordinator {
   readonly #progress: TeachingProgressPort;
   readonly #presentation: TeachingPresentationPort | undefined;
@@ -244,6 +321,26 @@ export class TeachingRuntimeCoordinator {
       relationshipId: card.relationshipId,
       skillVersionId: card.skillVersionId,
       card,
+    });
+    await this.#presentation?.publish(projection);
+    return projection;
+  }
+
+  async presentArtifact(
+    binding: TeachingRuntimeBinding,
+    artifactInput: TeachingArtifactPresentation,
+  ): Promise<TeachingRuntimeProjection> {
+    const artifact = normalizeTeachingArtifactPresentation(artifactInput);
+    assertBindingScope(
+      binding,
+      artifact.relationshipId,
+      artifact.skillVersionId,
+    );
+    const projection = Object.freeze({
+      kind: "artifact" as const,
+      relationshipId: artifact.relationshipId,
+      skillVersionId: artifact.skillVersionId,
+      artifact,
     });
     await this.#presentation?.publish(projection);
     return projection;
