@@ -14,6 +14,7 @@ import type {
   SkillRepository,
 } from "@masanawa/skills";
 import type {
+  CharacterOwnershipReader,
   PersonalCloneProvisioningRepository,
   UserRelationshipReader,
 } from "@masanawa/identity";
@@ -33,6 +34,7 @@ import {
   createPostgresAgentPresentationRepository,
   createPostgresAgentRunRepository,
   createPostgresCharacterSessionRepository,
+  createPostgresCharacterOwnershipReader,
   createPostgresCharacterSkillAssignmentRepository,
   createPostgresCommerceRepository,
   createPostgresPlatformAgentProfileRepository,
@@ -55,6 +57,10 @@ import {
 } from "./creator_clone.js";
 import { createCreatorEconomyService } from "./creator_economy.js";
 import { createCreatorSkillService } from "./creator_skills.js";
+import {
+  createCommerceCatalogService,
+  type CommerceUserAuthorizer,
+} from "./commerce_catalog.js";
 import type {
   AgentConversationAuthorizer,
 } from "./agent_conversation_contract.js";
@@ -62,6 +68,7 @@ import {
   createAlphaDevAuthorizer,
   createAlphaDirectoryAuthorizer,
   createAlphaCreatorAuthorizer,
+  createAlphaCommerceAuthorizer,
   parseAlphaDevIds,
   parseAlphaRelationshipMap,
 } from "./alpha_dev.js";
@@ -94,6 +101,7 @@ export interface ServiceDatabaseDependency {
   readonly personalClones?: PersonalCloneProvisioningRepository;
   readonly relationships?: UserRelationshipReader;
   readonly commerce?: CommerceRepository;
+  readonly ownerships?: CharacterOwnershipReader;
   close(): Promise<void>;
 }
 
@@ -113,6 +121,7 @@ export interface StartGatewayServiceOptions {
   readonly agentDirectoryAuthorizer?: AgentDirectoryAuthorizer;
   readonly agentConversationAuthorizer?: AgentConversationAuthorizer;
   readonly creatorCloneAuthorizer?: CreatorCloneAuthorizer;
+  readonly commerceAuthorizer?: CommerceUserAuthorizer;
   readonly agentStrategy?: AgentStrategy;
 }
 
@@ -174,6 +183,7 @@ function createDefaultDatabaseDependency(
     personalClones: createPostgresPersonalCloneProvisioningRepository(database.pool),
     relationships: createPostgresUserRelationshipReader(database.pool),
     commerce: createPostgresCommerceRepository(database.pool),
+    ownerships: createPostgresCharacterOwnershipReader(database.pool),
     close: database.close,
   });
 }
@@ -208,6 +218,7 @@ export async function startGatewayService(
   let directoryAuthorizer = options.agentDirectoryAuthorizer;
   let conversationAuthorizer = options.agentConversationAuthorizer;
   let creatorCloneAuthorizer = options.creatorCloneAuthorizer;
+  let commerceAuthorizer = options.commerceAuthorizer;
   let strategy = options.agentStrategy;
 
   if (alphaEnabled(env)) {
@@ -248,6 +259,11 @@ export async function startGatewayService(
       tenantId: ids.tenantId,
       userId: ids.userId,
     });
+    commerceAuthorizer ??= createAlphaCommerceAuthorizer({
+      token,
+      tenantId: ids.tenantId,
+      userId: ids.userId,
+    });
     conversationAuthorizer ??= createAlphaDevAuthorizer({
       config: {
         token,
@@ -282,6 +298,22 @@ export async function startGatewayService(
           ...(database.userAgentPreferences
             ? { userPreferences: database.userAgentPreferences }
             : {}),
+        })
+      : undefined);
+
+  const composedCommerceCatalog =
+    options.appOptions?.commerceCatalog ??
+    (commerceAuthorizer &&
+    database.commerce &&
+    database.relationships &&
+    database.ownerships &&
+    database.skills
+      ? createCommerceCatalogService({
+          authorizer: commerceAuthorizer,
+          commerce: database.commerce,
+          relationships: database.relationships,
+          ownerships: database.ownerships,
+          skills: database.skills,
         })
       : undefined);
 
@@ -357,6 +389,9 @@ export async function startGatewayService(
         ? { creatorEconomy: composedCreatorEconomy }
         : {}),
       ...(composedCreatorSkills ? { creatorSkills: composedCreatorSkills } : {}),
+      ...(composedCommerceCatalog
+        ? { commerceCatalog: composedCommerceCatalog }
+        : {}),
       readinessChecks: [
         ...(options.appOptions?.readinessChecks ?? []),
         database.readinessCheck,
