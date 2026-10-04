@@ -1,6 +1,6 @@
 # Workstream claim — workflow-task-retries
 
-Status: active
+Status: implementation complete; unit/PostgreSQL verification evidence pending
 Owner: this isolated stacked workstream
 Started: 2026-10-04 19:33 Africa/Lagos
 Base: work/workflow-checkpoints-20261004 @ 4703606a86993bee852d9d0de49f99d1e1874ed5
@@ -43,3 +43,26 @@ This workstream does not modify Task 084-089 implementation files, human approva
 - concurrent due-retry release does not duplicate work.
 
 Task 091+ remains separate.
+
+
+## Implementation handoff
+
+Implemented on branch `work/workflow-task-retries-20261004` in draft PR #114.
+
+The slice now provides:
+
+- bounded deterministic retry policy;
+- capped exponential backoff;
+- retry attempt ceiling;
+- uncertain/operator-sensitive → needs-attention;
+- non-retryable/exhausted → dead-letter;
+- durable retry state/failure count;
+- current lease/fence requirement for failure recording;
+- stale failure-count rejection;
+- retry-backoff waiting state;
+- due retry release with `FOR UPDATE SKIP LOCKED`;
+- atomic canonical retry-ready outbox publication;
+- lease-fence progression on re-checkout;
+- focused unit + PostgreSQL acceptance coverage.
+
+Task 091 human-in-loop approvals remains out of scope.
