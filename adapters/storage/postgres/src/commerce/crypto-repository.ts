@@ -413,10 +413,9 @@ export function createPostgresCryptoRepository(pool: Pool): CryptoRepository {
         const current = await readIntentWithClient(client, { tenantId, userId, requestId }, true);
         if (!current || current.operation !== "deposit") throw new Error("crypto.intent.unavailable");
 
-        const belongs =
-          current.providerPaymentId === event.paymentId ||
-          (event.parentPaymentId !== null && current.providerPaymentId === event.parentPaymentId);
-        if (!belongs) throw new Error("crypto.provider_payment.intent_mismatch");
+        if (current.providerPaymentId !== event.paymentId) {
+          throw new Error("crypto.provider_payment.intent_mismatch");
+        }
 
         const existingEvent = await client.query(
           `SELECT 1 FROM commerce.crypto_provider_events
@@ -450,11 +449,7 @@ export function createPostgresCryptoRepository(pool: Pool): CryptoRepository {
         }
 
         if (event.status === "refunded") {
-          const creditedReference =
-            event.parentPaymentId !== null &&
-            current.providerPaymentId === event.parentPaymentId
-              ? event.parentPaymentId
-              : event.paymentId;
+          const creditedReference = event.paymentId;
           const credited = await client.query<{ amount: string }>(
             `SELECT amount::text AS amount FROM commerce.crypto_ledger_entries
               WHERE tenant_id=$1 AND user_id=$2 AND provider_reference=$3
