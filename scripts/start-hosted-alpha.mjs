@@ -8,6 +8,8 @@ import { createPostgresPool, runMigrations, financialMigrationRoots } from "@mas
 import { decryptNurainGeminiCredentials } from "./import-nurain-gemini.mjs";
 import { selectAlphaGeminiCredentials } from "./alpha-credential-selection.mjs";
 
+let initializationStage = "startup";
+
 function safeInitializationFailure(error) {
   const message = error instanceof Error ? error.message : "";
   const migration = /^Applied migration changed: ([a-z0-9_-]+\/\d{4,}_[a-z0-9_-]+\.sql)$/u.exec(message);
@@ -46,15 +48,17 @@ if (missing.length) {
 } else {
   try { await start(); } catch (error) {
     // Keep connection strings, bootstrap output, SQL and provider keys out of hosted logs.
-    console.error(`Hosted Alpha initialization failed: ${safeInitializationFailure(error)}`);
+    console.error(`Hosted Alpha initialization failed at ${initializationStage}: ${safeInitializationFailure(error)}`);
     process.exitCode = 1;
   }
 }
 
 async function start() {
+  initializationStage = "admin_url";
   const adminUrl = new URL(process.env.MASANAWA_BOOTSTRAP_ADMIN_DATABASE_URL);
   if (!["postgres:", "postgresql:"].includes(adminUrl.protocol)) throw new Error("Invalid database protocol");
   const databaseName = "masanawa_alpha";
+  initializationStage = "admin_database";
   const admin = createPostgresPool({ connectionString: adminUrl.toString(), applicationName: "masanawa-alpha-provision", max: 1 });
   try {
     const version = await admin.query("SHOW server_version_num");
@@ -62,6 +66,7 @@ async function start() {
     const existing = await admin.query("SELECT 1 FROM pg_database WHERE datname = $1", [databaseName]);
     if (!existing.rowCount) await admin.query('CREATE DATABASE "masanawa_alpha" TEMPLATE template0');
   } finally { await admin.end(); }
+  initializationStage = "alpha_database";
   adminUrl.pathname = `/${databaseName}`;
   const connectionString = adminUrl.toString();
   const pool = createPostgresPool({ connectionString, applicationName: "masanawa-alpha-initialize", max: 2 });
@@ -80,15 +85,18 @@ async function start() {
       values = existing.rows[0].identity_references;
       // Upgrade the registered Alpha through checksum-checked, transactional migrations;
       // never rerun bootstrap or replace its canonical identities.
+      initializationStage = "migrations";
       await runMigrations(pool, financialMigrationRoots());
     }
     else {
       // Never adopt an unrelated existing database or silently add a second Alpha.
+      initializationStage = "bootstrap_preflight";
       const canonical = await client.query("SELECT to_regclass('identity.tenants') AS tenants");
       if (canonical.rows[0].tenants) throw new Error("Existing unregistered canonical database requires operator adoption");
       const directory = mkdtempSync(join(tmpdir(), "masanawa-alpha-"));
       try {
         const output = join(directory, "config.json");
+        initializationStage = "canonical_bootstrap";
         const result = spawnSync(process.execPath, ["--conditions=production", "scripts/alpha-bootstrap.mjs", "--output", output],
           { env: { ...process.env, MASANAWA_DATABASE_URL: connectionString, DATABASE_URL: connectionString }, stdio: "pipe" });
         if (result.status !== 0 || result.error) throw new Error("Canonical bootstrap failed");
@@ -101,10 +109,12 @@ async function start() {
     await client.query("SELECT pg_advisory_unlock(hashtext($1))", [key]);
     client.release(); await pool.end();
   }
+  initializationStage = "deployment_references";
   const allowed = ["MASANAWA_ALPHA_ENABLED", "MASANAWA_ALPHA_TENANT_ID", "MASANAWA_ALPHA_USER_ID", "MASANAWA_ALPHA_POLICY_REVISION", "MASANAWA_ALPHA_RELATIONSHIPS_JSON"];
   if (Object.keys(values).some(name => !allowed.includes(name)) || allowed.some(name => typeof values[name] !== "string" || !values[name])) throw new Error("Invalid deployment references");
   Object.assign(process.env, values, { MASANAWA_DATABASE_URL: connectionString, DATABASE_URL: connectionString });
   // This infrastructure table holds bootstrap references only. Identity remains canonical.
+  initializationStage = "gateway_import";
   const { startGatewayService } = await import("../services/gateway/dist/main.js");
   if (process.argv.includes("--verify-credentials")) {
     const keys = JSON.parse(process.env.MASANAWA_ALPHA_GEMINI_API_KEYS_JSON ?? JSON.stringify([process.env.MASANAWA_ALPHA_GEMINI_API_KEY]));
@@ -118,7 +128,9 @@ async function start() {
     }));
     console.info(`Hosted Alpha credential metadata checks: ${JSON.stringify(results)}`);
   }
+  initializationStage = "gateway_start";
   await startGatewayService();
+  initializationStage = "running";
   if (process.argv.includes("--verify-stream")) {
     try {
       const baseUrl = `http://127.0.0.1:${process.env.PORT ?? 3000}`;
