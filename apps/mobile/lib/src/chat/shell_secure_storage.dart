@@ -16,4 +16,7 @@ class FlutterShellEncryptedStore implements ShellEncryptedStore {
       storage.write(key: key, value: value);
   @override
   Future<void> delete(String key) => storage.delete(key: key);
+
+  @override
+  Future<Map<String, String>> readAll() => storage.readAll();
 }
