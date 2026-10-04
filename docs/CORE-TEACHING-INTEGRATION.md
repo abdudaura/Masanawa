@@ -152,3 +152,36 @@ Behavior:
 The #89 runtime owner should implement this port by invoking its already-admitted
 evidence-capable Tool/Skill path after current authority/readiness checks. Search/provider
 credentials must never enter Teaching domain objects.
+
+
+## Opaque Teaching action binding
+
+Selectable Teaching exercises now have an explicit server-owned action binding.
+
+The server binding contains:
+- opaque `actionKey`;
+- canonical `RequestId`;
+- exact RelationshipId + SkillVersionId;
+- exact lesson step + exercise;
+- hidden normalized rubric;
+- expiry;
+- deterministic binding hash over that server-side payload.
+
+The client-visible exercise projection contains only the safe exercise card and opaque
+`actionKey`. It never receives the rubric, correct option keys, RelationshipId selection
+authority, SkillVersion selection authority or RequestId construction authority.
+
+Before a selectable card is published, `presentBoundExercise()` verifies that:
+- the card and action binding have identical Relationship/Skill/lesson/exercise scope;
+- visible exercise kind matches the hidden rubric kind;
+- visible option keys exactly equal the rubric's allowed option set;
+- the server-side binding payload still matches its stored binding hash.
+
+When a selection returns, the client supplies only `actionKey + selectedOptionKeys`.
+`resolveTeachingOpaqueSelection()` reconstructs the full scoped submission from the
+server binding, rejects action swapping, rejects expiry, rejects binding tampering and
+then uses the binding's canonical RequestId for replay-safe persistence.
+
+The binding hash is an integrity fingerprint for server-held state, not a bearer
+credential or client-authentication mechanism. #91/#92 must keep the full binding
+server-side and expose only the opaque action key.
