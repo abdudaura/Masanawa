@@ -9,12 +9,6 @@ const token = "0123456789abcdef0123456789abcdef";
 
 describe("Ops bootstrap admin authorization", () => {
   it("requires token and tenant together", () => {
-    expect(
-      readBootstrapAdminAuthConfig({
-        MASANAWA_OPS_ADMIN_TOKEN: token,
-      }),
-    ).toThrow;
-
     expect(() =>
       readBootstrapAdminAuthConfig({
         MASANAWA_OPS_ADMIN_TOKEN: token,
