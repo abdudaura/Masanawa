@@ -27,6 +27,8 @@ export interface BillingQuote {
   readonly checkoutUrl: string | null;
   readonly providerTransactionId: string | null;
   readonly providerReference: string | null;
+  /** Flutterwave bill-payment provider reference; kept separate from funding evidence. */
+  readonly billProviderReference: string | null;
   readonly paymentVerifiedAt: string | null;
   readonly fulfillmentReference: string | null;
   readonly settlementState: "succeeded" | "failed" | "reversed" | null;
@@ -115,7 +117,7 @@ export function createBillingQuote(input: Readonly<{
     serviceAmountKobo: input.serviceAmountKobo, feeAmountKobo: input.feeAmountKobo,
     totalAmountKobo, currency: "NGN" as const, state: "quoted" as const,
     confirmedAt: null, expiresAt, checkoutTxRef: null, checkoutUrl: null,
-    providerTransactionId: null, providerReference: null, paymentVerifiedAt: null,
+    providerTransactionId: null, providerReference: null, billProviderReference: null, paymentVerifiedAt: null,
     fulfillmentReference: null, settlementState: null, refundReference: null,
     createdAt, updatedAt: createdAt,
   });
