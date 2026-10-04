@@ -163,3 +163,79 @@ export function normalizeCryptoLedgerEntry(input: CryptoLedgerEntry): CryptoLedg
     createdAt: toInstant(input.createdAt),
   });
 }
+
+
+export interface CryptoProviderPaymentEvent {
+  readonly paymentId: string;
+  readonly parentPaymentId: string | null;
+  readonly orderId: RequestId;
+  readonly status:
+    | "waiting"
+    | "confirming"
+    | "confirmed"
+    | "sending"
+    | "partially_paid"
+    | "finished"
+    | "failed"
+    | "refunded"
+    | "expired";
+  readonly priceAmount: string;
+  readonly priceCurrency: string;
+  readonly payAmount: string;
+  readonly payCurrency: string;
+  readonly actuallyPaid: string;
+  readonly payloadHash: string;
+  readonly observedAt: Instant;
+}
+
+export interface CryptoIntentHistoryQuery {
+  readonly tenantId: TenantId;
+  readonly userId: UserId;
+  readonly limit?: number;
+}
+
+export interface CryptoRepository {
+  createIntent(input: CryptoIntent): Promise<CryptoIntent>;
+  readIntent(input: {
+    readonly tenantId: TenantId;
+    readonly userId: UserId;
+    readonly requestId: RequestId;
+  }): Promise<CryptoIntent | null>;
+  listIntents(input: CryptoIntentHistoryQuery): Promise<readonly CryptoIntent[]>;
+  bindProviderPayment(input: {
+    readonly tenantId: TenantId;
+    readonly userId: UserId;
+    readonly requestId: RequestId;
+    readonly providerPaymentId: string;
+    readonly payAddress: string;
+    readonly providerPayAmount: string;
+    readonly updatedAt: Instant;
+  }): Promise<CryptoIntent>;
+  applyProviderPaymentEvent(input: {
+    readonly tenantId: TenantId;
+    readonly userId: UserId;
+    readonly event: CryptoProviderPaymentEvent;
+  }): Promise<CryptoIntent>;
+  readBalance(input: {
+    readonly tenantId: TenantId;
+    readonly userId: UserId;
+    readonly asset: string;
+    readonly network: string | null;
+  }): Promise<string>;
+  reserveWithdrawal(input: CryptoIntent): Promise<CryptoIntent>;
+  bindProviderPayout(input: {
+    readonly tenantId: TenantId;
+    readonly userId: UserId;
+    readonly requestId: RequestId;
+    readonly providerPayoutId: string;
+    readonly updatedAt: Instant;
+  }): Promise<CryptoIntent>;
+  settleWithdrawal(input: {
+    readonly tenantId: TenantId;
+    readonly userId: UserId;
+    readonly requestId: RequestId;
+    readonly succeeded: boolean;
+    readonly providerReference: string | null;
+    readonly updatedAt: Instant;
+  }): Promise<CryptoIntent>;
+}
