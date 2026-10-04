@@ -11,6 +11,15 @@ This document answers four questions that every implementation phase must be jud
 
 It does not replace the domain model, architecture, rewrite plan or ADRs. It gives those documents a product-level target.
 
+## Launch priority and unresolved broader scope
+
+`docs/DIGITAL-COMMERCE-LAUNCH.md` is the canonical current launch overlay:
+frequent digitally fulfilled purchases, required data/crypto families, Flutterwave
+billing, NOWPayments crypto on eligible inexpensive networks, and selectable voice-friendly
+chat. The broad capabilities below remain the long-term vision; they are not all
+approved launch commitments. Proposed deferrals require the user's decision.
+Preserve reusable foundations; do not build every vision family before proving purchases.
+
 ## 1. Masanawa in one sentence
 
 Masanawa is a platform for creating persistent AI beings that can maintain identity, memory, relationships and goals; perceive and communicate across channels; perform useful work through tools and workflows; live continuously in a governed world; and optionally inhabit digital or physical device embodiments such as a dedicated Android phone.
