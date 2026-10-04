@@ -441,18 +441,7 @@ try {
     await identity.createTenant({ tenantId, createdAt: at });
     await identity.createUser({ tenantId, userId, createdAt: at });
 
-    for (const [index, item] of paidSkills.entries()) {
-    await distribution.put({
-      schemaVersion: 1,
-      skillVersionId: item.version.skillVersionId,
-      audiences: ["personal-clone", "platform-support"],
-      installMode: "optional",
-      category: "business-services",
-      sortOrder: 100 + index,
-    });
-  }
-
-  for (const character of characters) {
+    for (const character of characters) {
       await identity.createCharacter({
         tenantId,
         characterId: character.characterId,
@@ -560,6 +549,16 @@ try {
       installMode: "optional",
       category: "productivity",
       sortOrder: index,
+    });
+  }
+  for (const [index, item] of paidSkills.entries()) {
+    await distribution.put({
+      schemaVersion: 1,
+      skillVersionId: item.version.skillVersionId,
+      audiences: ["personal-clone", "platform-support"],
+      installMode: "optional",
+      category: "business-services",
+      sortOrder: 100 + index,
     });
   }
 
@@ -695,11 +694,6 @@ try {
       `MASANAWA_ALPHA_RELATIONSHIPS_JSON='${relationshipMap}'`,
       "MASANAWA_ALPHA_GEMINI_API_KEY=<your-dev-key>",
       "MASANAWA_ALPHA_GEMINI_MODEL=<model-name>",
-      "",
-      "Mobile build defines:",
-      "AGENT_RUNTIME_ENABLED=true",
-      "AGENT_BASE_URL=<your-dev-gateway-url>",
-      `ALPHA_DEV_ACCESS_TOKEN=${devToken}`,
       "",
       ...characters.flatMap((character) => [
         `Seeded Character: ${character.displayName} / ${character.characterId}`,
