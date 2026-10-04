@@ -20,7 +20,7 @@ Status: mandatory implementation coordination guidance, 2026-10-04.
 | bills-flutterwave | bill catalog, recipient validation, fulfillment/requery | billing/provider adapters |
 | chat-actions | selectable cards, action protocol, app renderers, voice selection | message contracts and apps/mobile |
 | channels | mandatory WhatsApp and Telegram ingress, identity linking, options and receipts | channel adapters and Gateway routing |
-| skills-clones | Core provisioning, enrollment, certification, support/clone configuration | Skills/Agents/Identity boundaries |
+| skills-clones | Core teaching/provisioning, enrollment, certification, support/clone configuration | Skills/Agents/Identity boundaries |
 | integration | composition, migrations, evidence, cross-stream contracts and guiding docs | shared integration points |
 
 These are ownership categories, not separate runtime authorities or new numbered milestones.
@@ -45,6 +45,18 @@ Claims are coordination records, not an automatic distributed lock.
 Shared contract changes land first or are explicitly referenced by dependent branches.
 Do not invent duplicate IDs, wallet systems, action protocols, transaction state machines,
 Skill registries or channel-specific financial logic.
+
+## Collision prevention
+
+A claim must be confirmed visible before editing. Re-read the claim after publishing
+and immediately before touching shared files. If another window owns any required path,
+do not edit it: publish the dependency/request and work elsewhere until ownership is
+explicitly transferred. Branch isolation does not authorize conflicting shared changes.
+Never overwrite, revert, cherry-pick or merge another window's unfinished work without
+explicit coordinated ownership. Before every commit inspect the diff: commit only owned
+workstream changes; preserve all unrelated changes. If a collision is detected, stop
+writes to the affected paths and reconcile before continuing.
+These procedures reduce collisions; documentation alone cannot guarantee race-free writes.
 
 ## Safe integration
 
