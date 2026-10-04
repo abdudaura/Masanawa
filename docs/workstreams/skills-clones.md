@@ -2,7 +2,8 @@
 
 - Owner/window: ChatGPT window 2026-10-04 17:48 +01
 - Branch: `work/skills-clones-core-teaching-20261004`
-- Base: current `main` at branch creation
+- Base SHA: `3906419669203844018b6687ad06ab2af48654eb`
+- Draft PR: #94
 - Task references: Core Teaching requirement in `CONTINUE-HERE.md`, `docs/SKILL-DESIGN.md`, and `docs/DIGITAL-COMMERCE-LAUNCH.md`; Phase 6 canonical Skills boundaries remain authoritative.
 - Owned paths:
   - `docs/workstreams/skills-clones.md`
@@ -11,12 +12,13 @@
   - `packages/skills/src/teaching.test.ts`
   - `packages/skills/src/index.ts` only for the teaching export
 - Explicitly not owned: Gateway, mobile, channels/adapters, Commerce, NOWPayments, Agent runtime, migrations, package/root config, lockfile, deployment, existing Skill model/registry/guide files.
-- Shared-contract dependencies: canonical Skills IDs/contracts and existing Relationship/Memory/Workflow boundaries are consumed by reference only; no shared owner contract changes are planned.
-- Current step: claim publication before implementation.
-- Last update: 2026-10-04 17:48 +01.
-- Implementation: not started.
-- Verification: not started.
+- Shared-contract dependencies: canonical Skills IDs/contracts and existing Relationship/Memory/Workflow boundaries are consumed by reference only; no shared owner contract changes were made.
+- Current step: domain-contract implementation complete; awaiting executable verification/integration.
+- Last update: 2026-10-04 17:53 +01.
+- Implementation: exact SkillVersion + Relationship-scoped learner context, adaptive lesson/resource evidence, formative evaluation and progress-handoff contracts implemented; no persistence/channel/runtime integration claimed.
+- Verification: changed-file audit confirms exactly the five owned paths. Foundation CI run 882 on implementation head `c4ee85315a7cad1d7a80fefb5c161f7e27b91972` completed failure with the single `check` job exposing no steps/logs; this is runner allocation/non-execution evidence, not a code test result. Local executable tests were not available in this connector-only window.
 - Deployment: not attempted.
-- Handoff evidence: this claim/PR; exact implementation HEAD and checks will be recorded before release.
+- Known gaps: author/certify exact Core Teaching SkillVersion + SkillGuide/resources; bind current runtime assignment/readiness; persist progress through canonical Relationship Memory/Workflow; project exercises through chat-actions; app/WhatsApp/Telegram rehearsals and physical voice verification.
+- Handoff evidence: PR #94; implementation head `c4ee85315a7cad1d7a80fefb5c161f7e27b91972`; CI run 882; changed paths listed above.
 
-Collision rule: if another visible claim begins owning any listed path before implementation, stop writes to that path and coordinate rather than overwrite.
+Collision rule: this claim remains active. Do not edit these owned paths from another window without explicit transfer; coordinate shared integration through the owning workstreams.
