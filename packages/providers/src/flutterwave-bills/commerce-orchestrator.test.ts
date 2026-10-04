@@ -84,6 +84,7 @@ const purchase = {
   itemName: "Electricity",
   customerId: "0025401100",
   amount: "24900.00",
+  catalogAmount: "24900",
 };
 
 describe("BillingCommerceOrchestrator", () => {
@@ -155,6 +156,19 @@ describe("BillingCommerceOrchestrator", () => {
     await expect(
       orchestrator.prepare({ ...purchase, amount: "25000.00" }),
     ).rejects.toMatchObject({ code: "fulfillment_reference_conflict" });
+  });
+
+  it("rejects a confirmed amount that differs from the selected live catalog item", async () => {
+    const orchestrator = new BillingCommerceOrchestrator({
+      provider: provider(),
+      store: new MemoryStore(),
+    });
+    await expect(
+      orchestrator.prepare({
+        ...purchase,
+        amount: "25000.00",
+      }),
+    ).rejects.toMatchObject({ code: "catalog_amount_mismatch" });
   });
 
   it("dispatches exact prepared terms and succeeds only on matching provider evidence", async () => {
@@ -246,6 +260,33 @@ describe("BillingCommerceOrchestrator", () => {
     expect(result.state).toBe("succeeded");
     expect(dispatches).toBe(0);
     expect(checks).toBe(1);
+  });
+
+  it("accepts equivalent decimal formatting in provider success evidence", async () => {
+    const store = new MemoryStore();
+    const orchestrator = new BillingCommerceOrchestrator({
+      store,
+      provider: provider({
+        async createPayment(input) {
+          return {
+            reference: input.reference,
+            providerReference: "BP-EQ",
+            status: "successful",
+            amount: "24900",
+            currency: "NGN",
+            customerId: input.customerId,
+            product: input.itemCode,
+            productName: "Electricity",
+            extra: null,
+          };
+        },
+      }),
+    });
+    await orchestrator.prepare(purchase);
+    await expect(orchestrator.dispatch("fulfillment-123")).resolves.toMatchObject({
+      state: "succeeded",
+      providerReference: "BP-EQ",
+    });
   });
 
   it("fails closed to manual review when successful evidence has a different amount", async () => {
