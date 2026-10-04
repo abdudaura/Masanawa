@@ -20,7 +20,7 @@ const String kAgentBaseUrl = String.fromEnvironment(
 
 const bool kAgentRuntimeEnabled = bool.fromEnvironment(
   'AGENT_RUNTIME_ENABLED',
-  defaultValue: false,
+  defaultValue: true,
 );
 
 bool get isAgentRuntimeConfigured =>
