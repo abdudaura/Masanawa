@@ -15,6 +15,7 @@ import {
   createTeachingRuntimeBindingFromAdmission,
   createTeachingSelectionActionBinding,
   createTeachingChannelSelectionBinding,
+  createTeachingChannelSingleSelectProjection,
   resolveTeachingChannelSelection,
   fingerprintTeachingLessonPlan,
   fingerprintTeachingSelectionAttempt,
@@ -1106,5 +1107,136 @@ describe("Teaching channel callback binding", () => {
         optionKey: "six",
       }),
     ).toThrow(/callback token is invalid/);
+  });
+});
+
+
+describe("Teaching outbound channel option projection", () => {
+  it("emits provider-safe labels and compact selection ids without exposing action/rubric data", () => {
+    const active = lesson();
+    const admitted = binding(active);
+    const action = createTeachingSelectionActionBinding({
+      binding: admitted,
+      actionKey: "teach.action.denominator-choice.outbound",
+      requestId: createCanonicalId("request"),
+      rubric: rubric(active),
+      expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
+    });
+
+    const projection = createTeachingChannelSingleSelectProjection({
+      binding: admitted,
+      card: {
+        relationshipId: active.learner.relationshipId,
+        skillVersionId: active.skillVersionId,
+        lessonStepKey: "common-denominator",
+        exerciseKey: "denominator-choice",
+        prompt: "Which denominator works for 1/2 and 1/3?",
+        kind: "single-select",
+        options: [
+          { optionKey: "six", label: "6" },
+          { optionKey: "five", label: "5" },
+        ],
+      },
+      action,
+      callbackTokens: {
+        six: "tch_cb_six_0001",
+        five: "tch_cb_five_0001",
+      },
+    });
+
+    expect(projection.options).toEqual([
+      { optionKey: "six", label: "6", selectionId: "tch_cb_six_0001" },
+      { optionKey: "five", label: "5", selectionId: "tch_cb_five_0001" },
+    ]);
+    expect(JSON.stringify(projection.options)).not.toContain(action.actionKey);
+    expect(JSON.stringify(projection.options)).not.toContain("correctOptionKeys");
+    expect(projection.bindings).toHaveLength(2);
+    expect(projection.bindings.every((item) => item.callbackToken.length <= 64)).toBe(true);
+  });
+
+  it("requires one unique callback token for every visible option", () => {
+    const active = lesson();
+    const admitted = binding(active);
+    const action = createTeachingSelectionActionBinding({
+      binding: admitted,
+      actionKey: "teach.action.denominator-choice.outbound2",
+      requestId: createCanonicalId("request"),
+      rubric: rubric(active),
+      expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
+    });
+    const card = {
+      relationshipId: active.learner.relationshipId,
+      skillVersionId: active.skillVersionId,
+      lessonStepKey: "common-denominator",
+      exerciseKey: "denominator-choice",
+      prompt: "Choose.",
+      kind: "single-select" as const,
+      options: [
+        { optionKey: "six", label: "6" },
+        { optionKey: "five", label: "5" },
+      ],
+    };
+
+    expect(() =>
+      createTeachingChannelSingleSelectProjection({
+        binding: admitted,
+        card,
+        action,
+        callbackTokens: { six: "tch_cb_same_0001" },
+      }),
+    ).toThrow(/cover every visible option exactly/);
+
+    expect(() =>
+      createTeachingChannelSingleSelectProjection({
+        binding: admitted,
+        card,
+        action,
+        callbackTokens: {
+          six: "tch_cb_same_0001",
+          five: "tch_cb_same_0001",
+        },
+      }),
+    ).toThrow(/must be unique/);
+  });
+
+  it("refuses multi-select channel projection until a real multi-selection channel flow exists", () => {
+    const active = lesson();
+    const admitted = binding(active);
+    const multiRubric = {
+      ...rubric(active),
+      kind: "multi-select" as const,
+      allowedOptionKeys: ["six", "twelve"],
+      correctOptionKeys: ["six", "twelve"],
+    };
+    const action = createTeachingSelectionActionBinding({
+      binding: admitted,
+      actionKey: "teach.action.denominator-choice.multi-outbound",
+      requestId: createCanonicalId("request"),
+      rubric: multiRubric,
+      expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
+    });
+
+    expect(() =>
+      createTeachingChannelSingleSelectProjection({
+        binding: admitted,
+        card: {
+          relationshipId: active.learner.relationshipId,
+          skillVersionId: active.skillVersionId,
+          lessonStepKey: "common-denominator",
+          exerciseKey: "denominator-choice",
+          prompt: "Choose all valid answers.",
+          kind: "multi-select",
+          options: [
+            { optionKey: "six", label: "6" },
+            { optionKey: "twelve", label: "12" },
+          ],
+        },
+        action,
+        callbackTokens: {
+          six: "tch_cb_six_multi",
+          twelve: "tch_cb_twelve_multi",
+        },
+      }),
+    ).toThrow(/supports single-select only/);
   });
 });
