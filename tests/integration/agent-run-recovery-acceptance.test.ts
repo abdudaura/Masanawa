@@ -16,6 +16,7 @@ import {
   createPostgresCharacterSessionRepository,
   createPostgresIdentityRepository,
   createPostgresPool,
+  revokeAuthorityContext,
   runMigrations,
   setPolicyRevision,
   withTransaction,
@@ -776,6 +777,214 @@ describePostgres("AgentRun restart and replay acceptance", () => {
     });
     expect(recovered.characterVersionId).toBe(f.characterVersionId);
     expect(recovered).toEqual(created);
+  });
+
+
+  it("fails closed after policy replacement and authority revocation across restart", async () => {
+    const f = await fixture();
+    const agentRunId = createCanonicalId("agent-run");
+    const repository = createPostgresAgentRunRepository(pool);
+    const created = await repository.create({
+      authority: f.authority,
+      scope: f.scope,
+      agentRunId,
+      characterSessionId: f.characterSessionId,
+      characterVersionId: f.characterVersionId,
+      lineage: {
+        parentAgentRunId: null,
+        rootAgentRunId: agentRunId,
+        depth: 0,
+      },
+      trace: {
+        requestId: createCanonicalId("request"),
+        correlationId: createCanonicalId("correlation"),
+        taskId: null,
+        workflowRunId: null,
+        operationIds: [],
+      },
+    });
+
+    await withTransaction(pool, async (client) => {
+      await setPolicyRevision(client, f.scope.tenantId, "policy-2");
+    });
+    await reconnect("stale-policy");
+    const staleRepository = createPostgresAgentRunRepository(pool);
+    await expect(
+      staleRepository.read({
+        authority: f.authority,
+        scope: f.scope,
+        agentRunId,
+      }),
+    ).rejects.toMatchObject({
+      code: "authority.stale_policy",
+      category: "authorization",
+      retryable: false,
+    });
+
+    const refreshedAuthority = createAuthorityContext({
+      issuedAt: await databaseNow(),
+      tenantId: f.scope.tenantId,
+      principal: { kind: "user", userId: f.scope.userId },
+      scopes: [],
+      capabilities: [
+        "agents.run.read",
+        "agents.run.finish",
+      ],
+      resourceScope: {
+        relationshipIds: [f.scope.relationshipId],
+      },
+      policyRevision: "policy-2",
+      approvalIds: [],
+      delegationChain: [],
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+    });
+
+    await expect(
+      staleRepository.read({
+        authority: refreshedAuthority,
+        scope: f.scope,
+        agentRunId,
+      }),
+    ).resolves.toEqual(created);
+
+    await withTransaction(pool, async (client) => {
+      await revokeAuthorityContext(client, {
+        tenantId: f.scope.tenantId,
+        authorityContextId: refreshedAuthority.authorityContextId,
+        reasonCode: "acceptance.revoked",
+      });
+    });
+    await reconnect("revoked-authority");
+    const revokedRepository = createPostgresAgentRunRepository(pool);
+    await expect(
+      revokedRepository.finish({
+        authority: refreshedAuthority,
+        scope: f.scope,
+        agentRunId,
+        outcome: { state: "completed" },
+      }),
+    ).rejects.toMatchObject({
+      code: "authority.revoked",
+      category: "authorization",
+      retryable: false,
+    });
+  });
+
+  it("reconciles exact replay after session closure but rejects new work after restart", async () => {
+    const f = await fixture();
+    const repository = createPostgresAgentRunRepository(pool);
+    const sessions = createPostgresCharacterSessionRepository(pool, {
+      maxDurationMs: sessionMaxMs,
+    });
+    const agentRunId = createCanonicalId("agent-run");
+    const input = {
+      authority: f.authority,
+      scope: f.scope,
+      agentRunId,
+      characterSessionId: f.characterSessionId,
+      characterVersionId: f.characterVersionId,
+      lineage: {
+        parentAgentRunId: null,
+        rootAgentRunId: agentRunId,
+        depth: 0,
+      },
+      trace: {
+        requestId: createCanonicalId("request"),
+        correlationId: createCanonicalId("correlation"),
+        taskId: null,
+        workflowRunId: null,
+        operationIds: [],
+      },
+    } as const;
+    const created = await repository.create(input);
+
+    await sessions.close({
+      authority: f.authority,
+      scope: f.scope,
+      characterSessionId: f.characterSessionId,
+      expectedRevision: 1,
+    });
+
+    await reconnect("closed-session");
+    const restartedRepository = createPostgresAgentRunRepository(pool);
+    await expect(restartedRepository.create(input)).resolves.toEqual(created);
+
+    const newRunId = createCanonicalId("agent-run");
+    await expect(
+      restartedRepository.create({
+        ...input,
+        agentRunId: newRunId,
+        lineage: {
+          parentAgentRunId: null,
+          rootAgentRunId: newRunId,
+          depth: 0,
+        },
+        trace: {
+          ...input.trace,
+          requestId: createCanonicalId("request"),
+        },
+      }),
+    ).rejects.toMatchObject({
+      code: "agents.run_conflict",
+      category: "conflict",
+      retryable: false,
+    });
+  });
+
+  it("rejects an expired AuthorityContext after process recreation", async () => {
+    const f = await fixture();
+    const agentRunId = createCanonicalId("agent-run");
+    const repository = createPostgresAgentRunRepository(pool);
+    await repository.create({
+      authority: f.authority,
+      scope: f.scope,
+      agentRunId,
+      characterSessionId: f.characterSessionId,
+      characterVersionId: f.characterVersionId,
+      lineage: {
+        parentAgentRunId: null,
+        rootAgentRunId: agentRunId,
+        depth: 0,
+      },
+      trace: {
+        requestId: createCanonicalId("request"),
+        correlationId: createCanonicalId("correlation"),
+        taskId: null,
+        workflowRunId: null,
+        operationIds: [],
+      },
+    });
+
+    const expiredAuthority = createAuthorityContext({
+      issuedAt: f.authority.issuedAt,
+      expiresAt: f.authority.issuedAt,
+      tenantId: f.scope.tenantId,
+      principal: { kind: "user", userId: f.scope.userId },
+      scopes: [],
+      capabilities: ["agents.run.read"],
+      resourceScope: {
+        relationshipIds: [f.scope.relationshipId],
+      },
+      policyRevision: "policy-1",
+      approvalIds: [],
+      delegationChain: [],
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+    });
+
+    await reconnect("expired-authority");
+    await expect(
+      createPostgresAgentRunRepository(pool).read({
+        authority: expiredAuthority,
+        scope: f.scope,
+        agentRunId,
+      }),
+    ).rejects.toMatchObject({
+      code: "agents.run_access_denied",
+      category: "authorization",
+      retryable: false,
+    });
   });
 
 });
