@@ -132,6 +132,15 @@ export interface PlatformAdminAuditEvent {
   readonly sensitivity: string;
 }
 
+export interface PlatformAdminCredentialCommands {
+  revoke(input: {
+    readonly tenantId: TenantId;
+    readonly credentialRefId: string;
+    readonly providerId: string;
+    readonly slotKey: string;
+  }): Promise<boolean>;
+}
+
 export interface PlatformAdminOfferCommands {
   setEnabled(input: {
     readonly tenantId: TenantId;
@@ -195,6 +204,12 @@ export interface PlatformAdminService {
     readonly authorizationHeader: string | undefined;
     readonly limit?: number;
   }): Promise<readonly PlatformAdminCredentialRef[]>;
+  revokeCredentialRef(input: {
+    readonly authorizationHeader: string | undefined;
+    readonly credentialRefId: string;
+    readonly providerId: string;
+    readonly slotKey: string;
+  }): Promise<{ readonly revoked: boolean }>;
   listAuditEvents(input: {
     readonly authorizationHeader: string | undefined;
     readonly limit?: number;
@@ -235,6 +250,7 @@ export function createPlatformAdminService(input: {
   readonly database: PlatformAdminQuery;
   readonly authorizer: AgentAdminAuthorizer;
   readonly offerCommands?: PlatformAdminOfferCommands;
+  readonly credentialCommands?: PlatformAdminCredentialCommands;
 }): PlatformAdminService {
   const authorize = async (
     authorizationHeader: string | undefined,
@@ -248,6 +264,7 @@ export function createPlatformAdminService(input: {
       | "operations.read"
       | "reconciliation.read"
       | "providers.credentials.read"
+      | "providers.credentials.write"
       | "audit.read",
   ) => input.authorizer.authorize({ authorizationHeader, capability });
 
@@ -711,6 +728,23 @@ export function createPlatformAdminService(input: {
         createdAt: iso(row.created_at),
         updatedAt: iso(row.updated_at),
       }));
+    },
+
+    async revokeCredentialRef(request) {
+      const authority = await authorize(
+        request.authorizationHeader,
+        "providers.credentials.write",
+      );
+      if (!input.credentialCommands) {
+        throw new Error("Provider credential administration is unavailable");
+      }
+      const revoked = await input.credentialCommands.revoke({
+        tenantId: tenant(authority),
+        credentialRefId: request.credentialRefId,
+        providerId: request.providerId,
+        slotKey: request.slotKey,
+      });
+      return { revoked };
     },
 
     async listAuditEvents(request) {
