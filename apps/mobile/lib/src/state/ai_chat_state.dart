@@ -498,6 +498,7 @@ class AiChatController extends Notifier<AiChatState> {
           ? 'Replying to this earlier message:\n"${userMsg.replyPreview}"\n\n${userMsg.text}'
           : userMsg.text;
       var livePcmStarted = false;
+      DateTime? livePcmStartedAt;
       final result = !hasMedia
           ? await _sendViaTransport(
               characterId,
@@ -510,6 +511,9 @@ class AiChatController extends Notifier<AiChatState> {
               onAudioPcmChunk: (chunk) async {
                 if (!livePcmStarted) {
                   livePcmStarted = await LivePcmAudio.start(sampleRate: 24000);
+                  if (livePcmStarted) {
+                    livePcmStartedAt = DateTime.now();
+                  }
                 }
                 if (livePcmStarted) {
                   await LivePcmAudio.write(chunk);
@@ -530,9 +534,14 @@ class AiChatController extends Notifier<AiChatState> {
               caption: userMsg.text,
             );
       if (livePcmStarted) {
+        final elapsedMs = livePcmStartedAt == null
+            ? 0
+            : DateTime.now().difference(livePcmStartedAt!).inMilliseconds;
+        final expectedMs = result.audioDurationMs ?? elapsedMs;
+        final drainMs = (expectedMs - elapsedMs + 220).clamp(220, 30000).toInt();
         unawaited(
           Future<void>.delayed(
-            const Duration(milliseconds: 300),
+            Duration(milliseconds: drainMs),
             LivePcmAudio.stop,
           ),
         );
