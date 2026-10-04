@@ -44,6 +44,7 @@ export interface AgentConversationService {
     readonly requestId: RequestId;
     readonly correlationId: CorrelationId;
     readonly onTextDelta?: (delta: string) => void | Promise<void>;
+    readonly signal?: AbortSignal;
   }): Promise<{
     readonly reply: string;
     readonly agentRunId: string;
@@ -62,6 +63,7 @@ export interface AgentConversationService {
     readonly dataBase64: string;
     readonly requestId: RequestId;
     readonly correlationId: CorrelationId;
+    readonly signal?: AbortSignal;
   }): Promise<{
     readonly reply: string;
     readonly agentRunId: string;
@@ -83,6 +85,7 @@ export interface AgentConversationService {
     }[];
     readonly requestId: RequestId;
     readonly correlationId: CorrelationId;
+    readonly signal?: AbortSignal;
   }): Promise<{
     readonly reply: string;
     readonly agentRunId: string;
