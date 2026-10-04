@@ -77,9 +77,9 @@ export class NowPaymentsPayoutClient {
     readonly ipnCallbackUrl?: string;
     readonly signal?: AbortSignal;
   }): Promise<NowPaymentsCreatedPayout> {
-    const token = await this.authenticate(input.signal);
-    const amount = Number(input.amount);
-    if (!Number.isFinite(amount) || amount <= 0) throw new Error("nowpayments.payout.amount.invalid");
+    const exactAmount = input.amount.trim().replace(/\.0+$/, "").replace(/(\.\d*?[1-9])0+$/, "$1");
+    const amount = Number(exactAmount);
+    if (!Number.isFinite(amount) || amount <= 0 || !/^(?:0|[1-9]\d*)(?:\.\d{1,18})?$/.test(exactAmount) || String(amount) !== exactAmount) throw new Error("nowpayments.payout.amount.invalid");
     const currency = nonEmpty(input.currency, "nowpayments.payout.currency.invalid", 32).toLowerCase();
     const address = nonEmpty(input.address, "nowpayments.payout.address.invalid", 512);
 
@@ -90,6 +90,7 @@ export class NowPaymentsPayoutClient {
       withdrawal.ipn_callback_url = callback.toString();
     }
 
+    const token = await this.authenticate(input.signal);
     const response = await this.#request("/payout", {
       method: "POST",
       body: JSON.stringify({
@@ -184,3 +185,4 @@ export class NowPaymentsPayoutClient {
     return response;
   }
 }
+
