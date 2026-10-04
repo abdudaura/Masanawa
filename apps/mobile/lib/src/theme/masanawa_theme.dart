@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../tokens/masanawa_tokens.dart';
 
-/// Resolves the Naija Green palette for the active brightness.
+/// Resolves the Masanawa Agent Blue palette for the active brightness.
 ///
 /// The palette is token-driven only — semantic roles fixed by BRAND-KIT §3.
 /// Widget code never reads raw hex; it reads this extension off the Theme.
@@ -121,7 +121,7 @@ class MasanawaColors extends ThemeExtension<MasanawaColors> {
   }
 }
 
-/// Extension: `context.masanawa` — the Naija Green semantic palette from the
+/// Extension: `context.masanawa` — the Agent Blue semantic palette from the
 /// active ThemeData. Widget code reads colors from here only (design DoD).
 extension MasanawaContext on BuildContext {
   MasanawaColors get masanawa => Theme.of(this).extension<MasanawaColors>()!;
@@ -156,6 +156,50 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
           bodyColor: scheme.onSurface,
           displayColor: scheme.onSurface,
         ),
+    appBarTheme: AppBarTheme(
+      backgroundColor: masanawa.surfaceCard,
+      foregroundColor: masanawa.textPrimary,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+    ),
+    navigationBarTheme: NavigationBarThemeData(
+      backgroundColor: masanawa.surfaceCard,
+      indicatorColor: masanawa.brand.withValues(alpha: 0.14),
+      labelTextStyle: WidgetStatePropertyAll(
+        TextStyle(color: masanawa.textPrimary),
+      ),
+    ),
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: masanawa.brand,
+      foregroundColor: Colors.white,
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: masanawa.surfaceMuted,
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: masanawa.structuralBorder),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: masanawa.brand, width: 1.6),
+      ),
+    ),
+    textSelectionTheme: TextSelectionThemeData(
+      cursorColor: masanawa.brand,
+      selectionColor: masanawa.brand.withValues(alpha: 0.22),
+      selectionHandleColor: masanawa.brand,
+    ),
+    progressIndicatorTheme: ProgressIndicatorThemeData(
+      color: masanawa.brand,
+      linearTrackColor: masanawa.surfaceMuted,
+    ),
+    dividerTheme: DividerThemeData(color: masanawa.structuralBorder),
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: masanawa.brandStrong,
+      contentTextStyle: const TextStyle(color: Colors.white),
+      behavior: SnackBarBehavior.floating,
+    ),
     splashFactory: InkSparkle.splashFactory,
     visualDensity: VisualDensity.standard,
   );
