@@ -42,6 +42,7 @@ import {
 } from "./alpha_dev.js";
 import { createGeminiAlphaInferencePool, parseAlphaGeminiKeys } from "./alpha_executor.js";
 import { createAlphaInferenceStrategy } from "./alpha_strategy.js";
+import { createGeminiLiveAudioRenderer } from "./native_audio.js";
 import {
   createGatewayApp,
   type GatewayAppOptions,
@@ -169,6 +170,7 @@ export async function startGatewayService(
   let directoryAuthorizer = options.agentDirectoryAuthorizer;
   let conversationAuthorizer = options.agentConversationAuthorizer;
   let strategy = options.agentStrategy;
+  let nativeAudio;
 
   if (alphaEnabled(env)) {
     if (
@@ -217,6 +219,12 @@ export async function startGatewayService(
         model: requiredAlphaEnv(env, "MASANAWA_ALPHA_GEMINI_MODEL"),
       }),
     });
+    nativeAudio = createGeminiLiveAudioRenderer({
+      apiKey: requiredAlphaEnv(env, "MASANAWA_ALPHA_GEMINI_API_KEY"),
+      model: env.MASANAWA_ALPHA_GEMINI_LIVE_MODEL ?? "gemini-3.8-live",
+      voiceName: env.MASANAWA_ALPHA_GEMINI_LIVE_VOICE ?? "Kore",
+    });
+
   }
 
   const composedDirectory =
