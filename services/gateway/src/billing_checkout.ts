@@ -412,7 +412,7 @@ export function createBillingCheckoutService(input: Readonly<{
     });
   }
 
-  return Object.freeze({
+  const service: BillingCheckoutService = {
     async createQuote(request) {
       const owner = await identity(request.authorizationHeader);
       const categories = await input.catalog.listCategories(request.signal);
@@ -610,7 +610,7 @@ export function createBillingCheckoutService(input: Readonly<{
         at: now(),
       });
       const result = request.actionId === "billing.checkout.start"
-        ? await this.startCheckout({
+        ? await service.startCheckout({
             authorizationHeader: request.authorizationHeader,
             quoteId: owned.quote.quoteId,
             quoteRevision: owned.quote.revision,
@@ -619,7 +619,7 @@ export function createBillingCheckoutService(input: Readonly<{
               : {}),
           })
         : request.actionId === "billing.checkout.verify"
-          ? await this.verifyAndPurchase({
+          ? await service.verifyAndPurchase({
               authorizationHeader: request.authorizationHeader,
               quoteId: owned.quote.quoteId,
               quoteRevision: owned.quote.revision,
@@ -636,5 +636,6 @@ export function createBillingCheckoutService(input: Readonly<{
         } : {}),
       });
     },
-  });
+  };
+  return Object.freeze(service);
 }
