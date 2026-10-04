@@ -17,3 +17,7 @@ Implementation/tests/deployment: pending. Production deployment remains with the
 Replay validation now checks operation, exact asset/network, exact decimal amount, destination, target asset and provider. Applied to initial reads, create/reserve admission results and dispatch custody results, so concurrent reuse cannot silently change terms. Unknown dispatch remains protected by the existing no-redispatch guard.
 
 Verification: Vitest 5.0.3, 1 file / 10 tests passed locally; precision regression distinguishes amounts differing beyond JavaScript floating-point precision. Full Gateway typecheck/integration, PostgreSQL acceptance and hosted deployment are not claimed. PR #124 is the reviewable continuation; production source and credentials untouched. Other listed commercial gaps remain open.
+
+## Continued recovery scope
+
+User explicitly directed continued work. Additional exact owned paths: adapters/crypto/nowpayments/src/client.ts (read-only full payment evidence method), services/gateway/src/financial_payment_evidence.ts and its test. Existing readIntent route will reconcile an authenticated bound deposit from complete provider evidence; status strings alone cannot authorize credits. No billing/shared route/deployment edits.
