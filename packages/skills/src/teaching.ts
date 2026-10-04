@@ -1,10 +1,26 @@
 import {
   isCanonicalId,
+  normalizeCapabilityKey,
   toInstant,
   type Instant,
   type RelationshipId,
+  type SkillId,
   type SkillVersionId,
 } from "@masanawa/contracts";
+import {
+  normalizeSkillCertification,
+  type SkillCertification,
+} from "./certification.js";
+import {
+  normalizeSkillGuide,
+  type SkillGuide,
+  type SkillGuideResource,
+} from "./guide.js";
+import {
+  normalizeSkillVersionDefinition,
+  type SkillProvenance,
+  type SkillVersion,
+} from "./model.js";
 
 export const teachingLevels = [
   "beginner",
@@ -330,4 +346,203 @@ export function normalizeTeachingProgressHandoff(
     nextSteps: boundedList(input.nextSteps, "teaching.progress.nextSteps", 32, 1000),
     recordedAt: toInstant(input.recordedAt),
   });
+}
+
+
+export const coreTeachingSkillKey = "core.teaching";
+
+export const requiredCoreTeachingRehearsalCases = [
+  "activation.teaching-request",
+  "negative.non-teaching-request",
+  "contract.language-switching",
+  "contract.misconception-correction",
+  "recovery.failed-understanding",
+  "contract.relationship-continuity",
+  "recovery.source-uncertainty",
+  "contract.relationship-privacy",
+] as const;
+
+export interface CoreTeachingSkillBundleInput {
+  readonly skillId: SkillId;
+  readonly skillVersionId: SkillVersionId;
+  readonly version: string;
+  readonly provenance: SkillProvenance;
+  readonly certification: SkillCertification;
+  readonly guideResources?: readonly SkillGuideResource[];
+}
+
+export interface CoreTeachingSkillBundle {
+  readonly skillVersion: SkillVersion;
+  readonly guide: SkillGuide;
+}
+
+function requireCoreTeachingCertification(
+  certification: SkillCertification,
+): void {
+  const evidence = new Map(
+    certification.cases.map((item) => [item.caseKey, item] as const),
+  );
+  for (const caseKey of requiredCoreTeachingRehearsalCases) {
+    const item = evidence.get(caseKey);
+    if (item === undefined || item.outcome !== "passed") {
+      throw new TypeError(
+        `Core Teaching certification requires passed rehearsal evidence for ${caseKey}`,
+      );
+    }
+  }
+}
+
+const coreTeachingInstructions = `
+Core principle:
+Teach adaptively in manageable steps while preserving learner privacy, evidence quality,
+and continuity. Teaching is not ordinary answer generation: establish what the learner is
+trying to understand, teach it, check understanding, correct misconceptions, and leave a
+clear next checkpoint.
+
+Operating pattern:
+1. Establish or infer topic, learner level, goals, language, accessibility preferences,
+   and preferred text/voice modality. Do not force a long intake when the request is clear.
+2. Propose a short adaptive sequence and begin with the smallest useful next concept.
+3. Explain with concrete examples. For procedural or quantitative material, include
+   worked solutions before asking the learner to generalize.
+4. Ask bounded practice/formative questions and evaluate the learner's answer.
+5. When an answer is wrong or uncertain, identify the misconception without shaming,
+   explain it differently, and retry at an appropriate difficulty.
+6. Advance only when the current checkpoint has enough evidence of understanding.
+7. Preserve a Relationship-scoped progress handoff: demonstrated understanding,
+   misconceptions to revisit, current checkpoint, and next steps.
+8. If the learner changes language, preserve the same lesson state and terminology
+   meaning rather than restarting or inventing a second learner profile.
+
+Evidence and resources:
+- Load subject resources or subskills progressively only when needed.
+- For current, specialist, safety-sensitive, or source-dependent claims, use the
+  appropriate evidence-capable Tool/Skill path when available.
+- Never fabricate a quote, citation, curriculum requirement, or source.
+- If evidence is missing or capability is insufficient, state the uncertainty and teach
+  the stable underlying concept instead of guessing.
+
+Assessment boundary:
+- Core Teaching may provide practice and formative assessment.
+- It must never represent a formative result as verified certification, examination
+  authority, credential, or regulated qualification.
+- Paid courses, exam preparation, and assessed credentials require separately approved
+  Offers/workflows.
+
+Channel and privacy boundary:
+- App, WhatsApp, Telegram, and voice are presentation/transport surfaces for the same
+  teaching state; never create channel-specific learner truth.
+- Learning progress is private Relationship-scoped state. Do not promote it to shared
+  Character or World truth.
+- Skill guidance does not grant Tool authority, persistence authority, payment authority,
+  or certification authority.
+`.trim();
+
+export function createCoreTeachingSkillBundle(
+  input: CoreTeachingSkillBundleInput,
+): CoreTeachingSkillBundle {
+  const certification = normalizeSkillCertification(
+    input.certification,
+    input.skillVersionId,
+  );
+  requireCoreTeachingCertification(certification);
+
+  const skillVersion = normalizeSkillVersionDefinition({
+    skillId: input.skillId,
+    skillVersionId: input.skillVersionId,
+    key: coreTeachingSkillKey,
+    version: input.version,
+    displayName: "Core Teaching",
+    description:
+      "Use for adaptive teaching, tutoring, explanation, guided practice, and learner understanding checks across broad topics.",
+    activationExamples: [
+      "Teach me quadratic equations from the beginning",
+      "Explain this topic step by step and quiz me",
+      "Help me understand this in Hausa",
+      "Tutor me until I can solve this myself",
+    ],
+    negativeActivationExamples: [
+      "Just chat with me casually",
+      "Buy a data bundle for this phone number",
+      "Send this message to my contact",
+      "What is the current weather?",
+    ],
+    capabilities: [normalizeCapabilityKey("teaching.core")],
+    requiredToolCapabilities: [],
+    toolReferences: [],
+    requiredAuthorityCapabilities: [],
+    dependencies: [],
+    inputSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["relationshipId", "topic", "language"],
+      properties: {
+        relationshipId: { type: "string" },
+        topic: { type: "string" },
+        level: { type: "string" },
+        goals: { type: "array" },
+        language: { type: "string" },
+        accessibilityPreferences: { type: "array" },
+        preferredModalities: { type: "array" },
+      },
+    },
+    outputSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["lesson", "checkpoint"],
+      properties: {
+        lesson: { type: "object" },
+        checkpoint: { type: "object" },
+        formativeEvaluation: { type: ["object", "null"] },
+      },
+    },
+    visibility: "model-visible",
+    riskClass: "read-only",
+    sideEffectClass: "none",
+    sensitivity: "private",
+    costClass: "free",
+    billingMode: "none",
+    confirmationPolicy: "not-required",
+    idempotencyMode: "not-required",
+    reconciliationMode: "none",
+    timeoutMs: 120_000,
+    provenance: input.provenance,
+    certification,
+  });
+
+  const guide = normalizeSkillGuide({
+    schemaVersion: 1,
+    skillVersionId: input.skillVersionId,
+    triggerDescription:
+      "Use when the user wants to learn, be taught, understand, practise, revise, or receive tutoring on a topic.",
+    instructions: coreTeachingInstructions,
+    resources: input.guideResources ?? [],
+    discovery: {
+      priority: 90,
+      phrases: [
+        "teach me",
+        "tutor me",
+        "help me understand",
+        "explain step by step",
+        "quiz me",
+      ],
+      allOf: [
+        ["help", "learn"],
+        ["explain", "practice"],
+      ],
+      anyOf: [
+        "learn",
+        "lesson",
+        "practice",
+        "study",
+        "teach",
+        "tutor",
+        "understand",
+      ],
+      noneOf: [],
+      minScore: 15,
+    },
+  });
+
+  return Object.freeze({ skillVersion, guide });
 }
