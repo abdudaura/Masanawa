@@ -2561,7 +2561,8 @@ describePostgres("PostgreSQL 18 foundation integration", () => {
   });
 
   it("recovers outbox work after an injected worker crash and fences the stale worker", async () => {
-    const occurredAt = toInstant(new Date());
+    // The outbox claims availability against PostgreSQL time, not the test host clock.
+    const occurredAt = toInstant((await pool.query<{ at: Date }>("SELECT clock_timestamp() AS at")).rows[0]!.at);
     const event: PlatformEvent<{ message: string }> = {
       eventId: createCanonicalId("event"),
       eventType: "message.requested",

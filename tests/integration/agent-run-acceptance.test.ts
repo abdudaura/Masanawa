@@ -214,7 +214,7 @@ describePostgres("AgentRun PostgreSQL 18 acceptance", () => {
       relationshipId: createCanonicalId("relationship"),
     };
     const characterVersionId = createCanonicalId("character-version");
-    const at = toInstant(new Date());
+    const at = toInstant((await pool.query<{ at: Date }>("SELECT clock_timestamp() AS at")).rows[0]!.at);
     const constitution = {
       schemaVersion: 1,
       displayName: "Amina",
@@ -268,7 +268,10 @@ describePostgres("AgentRun PostgreSQL 18 acceptance", () => {
       await setPolicyRevision(client, scope.tenantId, "policy-1");
     });
 
+    // Admission uses the database clock; fixtures must not assume synchronized hosts.
+    const issuedAt = toInstant((await pool.query<{ at: Date }>("SELECT clock_timestamp() AS at")).rows[0]!.at);
     const authority = createAuthorityContext({
+      issuedAt,
       tenantId: scope.tenantId,
       principal: { kind: "user", userId: scope.userId },
       scopes: [],
@@ -320,7 +323,7 @@ describePostgres("AgentRun PostgreSQL 18 acceptance", () => {
 
   it("recalls indexed canonical Memory only from the session Relationship", async () => {
     const f = await contextFixture();
-    const at = toInstant(new Date());
+    const at = toInstant((await pool.query<{ at: Date }>("SELECT clock_timestamp() AS at")).rows[0]!.at);
     const generation = createCanonicalId("memory-projection-generation");
     const otherRelationship = createCanonicalId("relationship");
     await withTransaction(pool, async client => {
@@ -361,7 +364,7 @@ describePostgres("AgentRun PostgreSQL 18 acceptance", () => {
 
   it("admits only approved public events from explicitly scoped Worlds", async () => {
     const f = await contextFixture();
-    const at = toInstant(new Date());
+    const at = toInstant((await pool.query<{ at: Date }>("SELECT clock_timestamp() AS at")).rows[0]!.at);
     const worldId = createCanonicalId("world");
     const otherWorldId = createCanonicalId("world");
     await withTransaction(pool, async client => {
@@ -406,7 +409,7 @@ describePostgres("AgentRun PostgreSQL 18 acceptance", () => {
 
   it("admits current exact Skill selection and rejects changed assignment/readiness", async () => {
     const f=await contextFixture(), skill=skillVersion("acceptance.selection");
-    const at=toInstant(new Date()), skills=createPostgresSkillRepository(pool);
+    const at=toInstant((await pool.query<{ at: Date }>("SELECT clock_timestamp() AS at")).rows[0]!.at), skills=createPostgresSkillRepository(pool);
     await skills.registerBatch([skill]);
     await skills.putReadiness({readiness:{skillVersionId:skill.skillVersionId,state:"ready",
       advertised:true,reasonCode:null,checkedAt:at},expectedRevision:null});
@@ -430,7 +433,7 @@ describePostgres("AgentRun PostgreSQL 18 acceptance", () => {
 
   it("loads exact Constitution after a newer version becomes active without mutating run history", async () => {
     const f = await contextFixture();
-    const newerId = createCanonicalId("character-version"), at = toInstant(new Date());
+    const newerId = createCanonicalId("character-version"), at = toInstant((await pool.query<{ at: Date }>("SELECT clock_timestamp() AS at")).rows[0]!.at);
     await withTransaction(pool, async client => {
       const identity = createPostgresIdentityRepository(client);
       await identity.createCharacterVersion({ tenantId: f.scope.tenantId, characterId: f.scope.characterId,

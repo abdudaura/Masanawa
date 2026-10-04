@@ -60,7 +60,7 @@ describePostgres("CharacterSession PostgreSQL 18 acceptance", () => {
     const constitution = { schemaVersion: 1, displayName: "Amina", biography: "", personality: [], boundaries: [],
       disclosurePolicy: {}, languages: ["ha"], voiceReferences: [], appearanceReferences: [], expertise: [] } as const;
     await withTransaction(pool, async client => {
-      const identity = createPostgresIdentityRepository(client), at = toInstant(new Date());
+      const identity = createPostgresIdentityRepository(client), at = toInstant((await client.query<{ at: Date }>("SELECT clock_timestamp() AS at")).rows[0]!.at);
       await identity.createTenant({ tenantId: scope.tenantId, createdAt: at });
       await identity.createUser({ tenantId: scope.tenantId, userId: scope.userId, createdAt: at });
       await identity.createCharacter({ tenantId: scope.tenantId, characterId: scope.characterId, createdAt: at });
@@ -72,7 +72,9 @@ describePostgres("CharacterSession PostgreSQL 18 acceptance", () => {
       await identity.getOrCreateRelationship({ ...scope, createdAt: at });
       await setPolicyRevision(client, scope.tenantId, "policy-1");
     });
-    const authority = createAuthorityContext({ tenantId: scope.tenantId, principal: { kind: "user", userId: scope.userId },
+    // Admission uses the database clock; fixtures must not assume synchronized hosts.
+    const issuedAt = toInstant((await pool.query<{ at: Date }>("SELECT clock_timestamp() AS at")).rows[0]!.at);
+    const authority = createAuthorityContext({ issuedAt, tenantId: scope.tenantId, principal: { kind: "user", userId: scope.userId },
       capabilities: ["create", "read", "update", "close", "reset"].map(action => `agents.session.${action}`),
       scopes: [], resourceScope: { relationshipIds: [scope.relationshipId], taskIds: [taskId], workflowRunIds: [workflowRunId] },
       policyRevision: "policy-1", approvalIds: [], delegationChain: [],
@@ -102,7 +104,7 @@ describePostgres("CharacterSession PostgreSQL 18 acceptance", () => {
     await expect(store.read({ ...f.input, scope: { ...f.scope, relationshipId: other.scope.relationshipId } })).rejects.toMatchObject({ code: "agents.session_access_denied" });
     const privateScope = { ...f.scope, userId: createCanonicalId("user"), relationshipId: createCanonicalId("relationship") };
     await withTransaction(pool, async client => {
-      const identity = createPostgresIdentityRepository(client), at = toInstant(new Date());
+      const identity = createPostgresIdentityRepository(client), at = toInstant((await client.query<{ at: Date }>("SELECT clock_timestamp() AS at")).rows[0]!.at);
       await identity.createUser({ tenantId: privateScope.tenantId, userId: privateScope.userId, createdAt: at });
       await identity.getOrCreateRelationship({ ...privateScope, createdAt: at });
     });
@@ -161,7 +163,7 @@ describePostgres("CharacterSession PostgreSQL 18 acceptance", () => {
       reasonCode: "skill.disabled", checkedAt: toInstant(new Date()) }, expectedRevision: null });
     const newCharacterVersionId = createCanonicalId("character-version");
     await withTransaction(pool, async client => {
-      const identity = createPostgresIdentityRepository(client), at = toInstant(new Date());
+      const identity = createPostgresIdentityRepository(client), at = toInstant((await client.query<{ at: Date }>("SELECT clock_timestamp() AS at")).rows[0]!.at);
       await identity.createCharacterVersion({ tenantId: f.scope.tenantId, characterId: f.scope.characterId,
         characterVersionId: newCharacterVersionId, versionNumber: 2, constitution: f.constitution, createdAt: at });
       await identity.publishCharacterVersion({ tenantId: f.scope.tenantId, characterVersionId: newCharacterVersionId, publishedAt: at });
@@ -262,7 +264,7 @@ describePostgres("CharacterSession PostgreSQL 18 acceptance", () => {
     try {
       await locker.query("BEGIN");
       await locker.query("SELECT 1 FROM agents.character_sessions WHERE character_session_id = $1 FOR UPDATE", [f.input.characterSessionId]);
-      const expiresAt = toInstant(new Date(Date.now() + 1500));
+      const expiresAt = toInstant((await pool.query<{ at: Date }>("SELECT clock_timestamp() + interval '1500 milliseconds' AS at")).rows[0]!.at);
       const authority: AuthorityContext = createAuthorityContext({ ...f.authority, expiresAt });
       const pending = store.updateBindings({ ...f.input, authority, expectedRevision: 1 }).then(
         value => ({ value }), error => ({ error: error as { code: string } }));
@@ -273,7 +275,7 @@ describePostgres("CharacterSession PostgreSQL 18 acceptance", () => {
         if (Date.now() > deadline) throw new Error("Session wait was not observed");
         await new Promise(resolve => setTimeout(resolve, 10));
       }
-      await pool.query("SELECT pg_sleep($1)", [Math.max(0, (Date.parse(expiresAt) - Date.now()) / 1000) + 0.025]);
+      await pool.query("SELECT pg_sleep(GREATEST(0, EXTRACT(EPOCH FROM ($1::timestamptz - clock_timestamp()))) + 0.025)", [expiresAt]);
       await locker.query("COMMIT");
       expect(await pending).toMatchObject({ error: { code: "agents.session_access_denied" } });
       expect((await pool.query("SELECT revision FROM agents.character_sessions")).rows[0]?.revision).toBe("1");
