@@ -1,5 +1,17 @@
 # Continue Here
 
+## Core teaching and ownership checkpoint — 2026-10-04
+
+Teaching is required Core: detailed adaptive lessons across topics, worked examples,
+exercises/selectable answers, voice/text and private durable learner progress in app,
+WhatsApp and Telegram. Read `docs/SKILL-DESIGN.md` for acceptance requirements.
+Paid course/exam Offers remain proposals. Do not claim teaching implementation complete.
+Before editing, read `docs/MULTI-WINDOW-WORK.md`, inspect current main/branches/PRs and
+visible workstream claims, then publish and verify a non-overlapping ownership claim.
+Never edit another window's owned paths or commit unrelated changes; coordinate shared
+contracts, migrations and deployment. If ownership is unclear, choose independent work.
+
+
 ## Mandatory multi-window and economy checkpoint — 2026-10-04
 
 Read `docs/MULTI-WINDOW-WORK.md` before choosing implementation ownership.
