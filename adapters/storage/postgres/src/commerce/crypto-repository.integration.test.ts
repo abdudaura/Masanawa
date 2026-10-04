@@ -202,6 +202,15 @@ describeDatabase("crypto conversion and payout fee PostgreSQL acceptance", () =>
       updatedAt: instant(13),
     });
     expect(replayed).toEqual(settled);
+    await expect(f.repository.settleConversion({
+      tenantId: f.tenantId,
+      userId: f.userId,
+      requestId: intent.requestId,
+      succeeded: true,
+      targetAmount: "0.00065",
+      providerReference: "conversion-1",
+      updatedAt: instant(14),
+    })).rejects.toThrow("crypto.convert.terminal_conflict");
 
     const counts = await pool.query<{ reason: string; count: string }>(
       `SELECT reason, count(*)::text AS count
@@ -214,6 +223,20 @@ describeDatabase("crypto conversion and payout fee PostgreSQL acceptance", () =>
       { reason: "conversion-credit", count: "1" },
       { reason: "conversion-debit", count: "1" },
     ]);
+  });
+
+  it("will not credit a successful conversion before provider identity is bound", async () => {
+    const f = await fundedFixture();
+    const intent = conversionIntent(f.tenantId, f.userId, "10");
+    await f.repository.reserveConversion(intent);
+    await expect(f.repository.settleConversion({
+      tenantId: f.tenantId, userId: f.userId, requestId: intent.requestId,
+      succeeded: true, targetAmount: "0.00016",
+      providerReference: null, updatedAt: instant(15),
+    })).rejects.toThrow("crypto.provider_conversion.unbound");
+    expect(await f.repository.readBalance({
+      tenantId: f.tenantId, userId: f.userId, asset: "BTC", network: null,
+    })).toBe("0");
   });
 
   it("releases source principal exactly once when conversion fails", async () => {
@@ -311,6 +334,20 @@ describeDatabase("crypto conversion and payout fee PostgreSQL acceptance", () =>
       { reason: "withdrawal-release", count: "1" },
       { reason: "withdrawal-reserve", count: "1" },
     ]);
+  });
+
+  it("rejects a contradictory terminal withdrawal replay", async () => {
+    const f = await fundedFixture();
+    const intent = withdrawalIntent(f.tenantId, f.userId);
+    await f.repository.reserveWithdrawal(intent);
+    await f.repository.settleWithdrawal({
+      tenantId: f.tenantId, userId: f.userId, requestId: intent.requestId,
+      succeeded: true, providerReference: "withdrawal-ok", updatedAt: instant(45),
+    });
+    await expect(f.repository.settleWithdrawal({
+      tenantId: f.tenantId, userId: f.userId, requestId: intent.requestId,
+      succeeded: false, providerReference: "withdrawal-failed", updatedAt: instant(46),
+    })).rejects.toThrow("crypto.withdraw.terminal_conflict");
   });
 
   it("does not charge the user when the platform is the declared network-fee payer", async () => {
