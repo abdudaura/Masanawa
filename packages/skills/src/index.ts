@@ -18,3 +18,4 @@ export * from "./guide.js";
 export * from "./guide-repository.js";
 export * from "./distribution.js";
 export * from "./teaching.js";
+export * from "./teaching-runtime.js";
