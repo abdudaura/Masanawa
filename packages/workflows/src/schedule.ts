@@ -37,7 +37,7 @@ function normalizeSpec(spec: WorkflowScheduleSpec): WorkflowScheduleSpec {
     return Object.freeze({
       kind: "once",
       at: validInstant(spec.at, "schedule.once.at"),
-    }) as WorkflowScheduleSpec;
+    });
   }
 
   if (
@@ -73,7 +73,7 @@ function normalizeSpec(spec: WorkflowScheduleSpec): WorkflowScheduleSpec {
     everyMs: spec.everyMs,
     maxOccurrences: spec.maxOccurrences,
     endAt,
-  }) as WorkflowScheduleSpec;
+  });
 }
 
 export function createWorkflowSchedule(
