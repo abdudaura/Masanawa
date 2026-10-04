@@ -9,6 +9,7 @@ import type {
   UserAgentPreferenceRepository,
 } from "@masanawa/agents";
 import type {
+  SkillDistributionRepository,
   SkillGuideRepository,
   SkillRepository,
 } from "@masanawa/skills";
@@ -36,6 +37,7 @@ import {
   createPostgresCommerceRepository,
   createPostgresPlatformAgentProfileRepository,
   createPostgresSkillGuideRepository,
+  createPostgresSkillDistributionRepository,
   createPostgresSkillRepository,
   createPostgresUserAgentPreferenceRepository,
   createPostgresPersonalCloneProvisioningRepository,
@@ -52,6 +54,7 @@ import {
   type CreatorCloneAuthorizer,
 } from "./creator_clone.js";
 import { createCreatorEconomyService } from "./creator_economy.js";
+import { createCreatorSkillService } from "./creator_skills.js";
 import type {
   AgentConversationAuthorizer,
 } from "./agent_conversation_contract.js";
@@ -87,6 +90,7 @@ export interface ServiceDatabaseDependency {
   readonly userAgentPreferences?: UserAgentPreferenceRepository;
   readonly skills?: SkillRepository;
   readonly skillGuides?: SkillGuideRepository;
+  readonly skillDistribution?: SkillDistributionRepository;
   readonly personalClones?: PersonalCloneProvisioningRepository;
   readonly relationships?: UserRelationshipReader;
   readonly commerce?: CommerceRepository;
@@ -166,6 +170,7 @@ function createDefaultDatabaseDependency(
     userAgentPreferences: createPostgresUserAgentPreferenceRepository(database.pool),
     skills: createPostgresSkillRepository(database.pool),
     skillGuides: createPostgresSkillGuideRepository(database.pool),
+    skillDistribution: createPostgresSkillDistributionRepository(database.pool),
     personalClones: createPostgresPersonalCloneProvisioningRepository(database.pool),
     relationships: createPostgresUserRelationshipReader(database.pool),
     commerce: createPostgresCommerceRepository(database.pool),
@@ -280,6 +285,24 @@ export async function startGatewayService(
         })
       : undefined);
 
+  const composedCreatorSkills =
+    options.appOptions?.creatorSkills ??
+    (creatorCloneAuthorizer &&
+    database.personalClones &&
+    database.characterSkillAssignments &&
+    database.skills &&
+    database.skillGuides &&
+    database.skillDistribution
+      ? createCreatorSkillService({
+          authorizer: creatorCloneAuthorizer,
+          personalClones: database.personalClones,
+          assignments: database.characterSkillAssignments,
+          skills: database.skills,
+          guides: database.skillGuides,
+          distribution: database.skillDistribution,
+        })
+      : undefined);
+
   const composedCreatorEconomy =
     options.appOptions?.creatorEconomy ??
     (creatorCloneAuthorizer &&
@@ -333,6 +356,7 @@ export async function startGatewayService(
       ...(composedCreatorEconomy
         ? { creatorEconomy: composedCreatorEconomy }
         : {}),
+      ...(composedCreatorSkills ? { creatorSkills: composedCreatorSkills } : {}),
       readinessChecks: [
         ...(options.appOptions?.readinessChecks ?? []),
         database.readinessCheck,
