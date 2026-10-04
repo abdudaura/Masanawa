@@ -12,6 +12,10 @@ import type {
   SkillGuideRepository,
   SkillRepository,
 } from "@masanawa/skills";
+import type {
+  PersonalCloneProvisioningRepository,
+  UserRelationshipReader,
+} from "@masanawa/identity";
 import { readRequiredEnv } from "@masanawa/contracts";
 import {
   createDrainState,
@@ -32,6 +36,8 @@ import {
   createPostgresSkillGuideRepository,
   createPostgresSkillRepository,
   createPostgresUserAgentPreferenceRepository,
+  createPostgresPersonalCloneProvisioningRepository,
+  createPostgresUserRelationshipReader,
   createPostgresServiceDependency,
 } from "@masanawa/postgres";
 import {
@@ -73,6 +79,8 @@ export interface ServiceDatabaseDependency {
   readonly userAgentPreferences?: UserAgentPreferenceRepository;
   readonly skills?: SkillRepository;
   readonly skillGuides?: SkillGuideRepository;
+  readonly personalClones?: PersonalCloneProvisioningRepository;
+  readonly relationships?: UserRelationshipReader;
   close(): Promise<void>;
 }
 
@@ -148,6 +156,8 @@ function createDefaultDatabaseDependency(
     userAgentPreferences: createPostgresUserAgentPreferenceRepository(database.pool),
     skills: createPostgresSkillRepository(database.pool),
     skillGuides: createPostgresSkillGuideRepository(database.pool),
+    personalClones: createPostgresPersonalCloneProvisioningRepository(database.pool),
+    relationships: createPostgresUserRelationshipReader(database.pool),
     close: database.close,
   });
 }
@@ -214,6 +224,7 @@ export async function startGatewayService(
       tenantId: ids.tenantId,
       userId: ids.userId,
       relationshipIds,
+      ...(database.relationships ? { relationships: database.relationships } : {}),
     });
     conversationAuthorizer ??= createAlphaDevAuthorizer({
       config: {
@@ -225,6 +236,7 @@ export async function startGatewayService(
       },
       presentations: database.agentPresentations,
       skillAssignments: database.characterSkillAssignments,
+      ...(database.relationships ? { relationships: database.relationships } : {}),
     });
     strategy ??= createAlphaInferenceStrategy({
       inference: createGeminiAlphaInferenceProvider({
