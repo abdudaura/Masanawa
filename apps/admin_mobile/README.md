@@ -1,36 +1,37 @@
 # Masanawa Admin Mobile
 
-Separate Android-first Flutter operations console derived from the customer mobile shell without copying customer chat, media, commerce, creator or wallet UX.
+Masanawa Admin is a separately installable Android-first Flutter control plane for managing the Masanawa platform from a phone or tablet. It is intentionally independent of the customer app.
 
-## Implemented
+Android application id: `ng.masanawa.admin`.
 
-- Agent Blue identity and theme.
-- Independent Android application id: `ng.masanawa.admin`.
-- Secure operator credential storage.
-- Ops health and readiness overview.
-- Agent listing and presentation editing.
-- Skill catalog.
-- Per-Agent Skill assignment editing.
-- Explicit placeholders for Users and Transactions until scoped admin server contracts exist.
+## Current control areas
 
-## Ops API
+- Overview — Ops readiness plus platform-wide operational counts.
+- Users — identity/relationship counts and revision-checked activate/disable/archive.
+- Agents — discover all canonical Characters, configure first presentation, edit presentation/visibility/order and assign Skills.
+- Skills — catalog and readiness.
+- Runtime — recent AgentRuns, failures and trace correlation.
+- Commerce — Offers, fulfillments and ledger activity.
+- Operations — consequential Operations and reconciliation cases.
+- Providers — encrypted credential metadata only; never plaintext/ciphertext.
+- System — Memory/extraction health, inbox/outbox recovery queues, Worlds and approval metadata.
+- Modules — readiness map for Channels, Devices, Workflows, Social/Studio, Plugins and Agent Phone as their canonical contracts land.
+- Audit — security-safe audit metadata.
 
-The current app uses:
+See `docs/ADMIN-CONTROL-PLANE.md` for the complete capability and dependency matrix.
 
-- `GET /healthz`
-- `GET /readyz`
-- `GET /v1/agents`
-- `PUT /v1/agents/:characterId/presentation`
-- `GET /v1/skills`
-- `GET /v1/agents/:characterId/skills`
-- `PUT /v1/agents/:characterId/skills`
+## Security
 
-Operator credentials are stored with `flutter_secure_storage`; no admin credential is committed.
+The app never talks directly to PostgreSQL/Supabase. All data is served through tenant-scoped Ops capabilities. Provider secret material and sensitive event payloads are not projected to the app.
 
-Run with:
+The current operator credential screen is bootstrap authentication. It stores the bearer credential using `flutter_secure_storage` and validates it against the protected `/v1/admin/summary` route. Production admin identity/roles remain a platform prerequisite.
+
+## Run
+
+The Ops endpoint is deliberately required; the admin app does not default to the customer Gateway.
 
 ```bash
 flutter run --dart-define=ADMIN_BASE_URL=https://your-ops-host
 ```
 
-The production admin identity/login flow is still a backend dependency; the current credential screen is a secure bootstrap surface, not the intended final login UX.
+No admin credential is committed to the repository.
