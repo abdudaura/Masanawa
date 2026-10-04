@@ -6,10 +6,12 @@ import 'package:dio/dio.dart';
 import '../chat/message_parts.dart';
 import '../core/network/api_client.dart';
 import 'agent_directory.dart';
-import 'creator_clone.dart';
-import 'creator_economy.dart';
 import 'creator_skills.dart';
+import 'creator_economy.dart';
+import 'creator_clone.dart';
 import 'agent_session.dart';
+import 'agent_shell.dart';
+import '../chat/shell_document.dart';
 
 const String kAgentBaseUrl = String.fromEnvironment(
   'AGENT_BASE_URL',
@@ -38,7 +40,7 @@ class _GatewayClient {
   final String baseUrl;
   final String? Function()? readAccessToken;
 
-  Options options({bool turn = false}) {
+  Options options({bool turn = false, String? requestId}) {
     final token = readAccessToken?.call();
     return Options(
       followRedirects: false,
@@ -47,6 +49,7 @@ class _GatewayClient {
           : const Duration(seconds: 15),
       headers: {
         if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+        if (requestId != null && requestId.isNotEmpty) 'x-request-id': requestId,
       },
     );
   }
@@ -56,6 +59,7 @@ class _GatewayClient {
     Map<String, dynamic> body, {
     CancelToken? cancelToken,
     void Function(int sent, int total)? onSendProgress,
+    String? requestId,
   }) async {
     try {
       final res = await dio.post<Map<String, dynamic>>(
@@ -65,27 +69,10 @@ class _GatewayClient {
           turn: path.endsWith('/turn') ||
               path.endsWith('/media-turn') ||
               path.endsWith('/media-set-turn'),
+          requestId: requestId,
         ),
         cancelToken: cancelToken,
         onSendProgress: onSendProgress,
-      );
-      final data = res.data;
-      if (data == null) throw const ApiException('Empty response from server');
-      return data;
-    } on DioException catch (e) {
-      throw mapDioError(e);
-    }
-  }
-
-  Future<Map<String, dynamic>> put(
-    String path,
-    Map<String, dynamic> body,
-  ) async {
-    try {
-      final res = await dio.put<Map<String, dynamic>>(
-        '$baseUrl$path',
-        data: body,
-        options: options(),
       );
       final data = res.data;
       if (data == null) throw const ApiException('Empty response from server');
@@ -99,12 +86,13 @@ class _GatewayClient {
     String path,
     Map<String, dynamic> body, {
     CancelToken? cancelToken,
+    String? requestId,
   }) async* {
     try {
       final res = await dio.post<ResponseBody>(
         '$baseUrl$path',
         data: body,
-        options: options(turn: true).copyWith(
+        options: options(turn: true, requestId: requestId).copyWith(
           responseType: ResponseType.stream,
         ),
         cancelToken: cancelToken,
@@ -127,6 +115,29 @@ class _GatewayClient {
       throw mapDioError(e);
     } on FormatException {
       throw const ApiException('Invalid streaming response from server');
+    }
+  }
+
+  Stream<Map<String, dynamic>> getStream(String path) async* {
+    try {
+      final res = await dio.get<ResponseBody>(
+        '$baseUrl$path',
+        options: options(turn: true).copyWith(responseType: ResponseType.stream),
+      );
+      final bodyStream = res.data?.stream;
+      if (bodyStream == null) throw const ApiException('Empty response from server');
+      await for (final line in bodyStream
+          .transform(utf8.decoder)
+          .transform(const LineSplitter())) {
+        final value = line.trim();
+        if (value.isEmpty) continue;
+        final decoded = jsonDecode(value);
+        if (decoded is Map) yield decoded.cast<String, dynamic>();
+      }
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    } on FormatException {
+      throw const ApiException('Invalid event stream');
     }
   }
 
@@ -171,7 +182,6 @@ class MasanawaAgentDirectoryTransport implements AgentDirectoryTransport {
           AgentDirectoryEntry.fromJson(item.cast<String, dynamic>()),
     ];
   }
-
   @override
   Future<void> setDefaultPlatformAgent(String characterId) async {
     await _client.put('/v1/agent/preferences/default', {
@@ -179,9 +189,6 @@ class MasanawaAgentDirectoryTransport implements AgentDirectoryTransport {
     });
   }
 }
-
-
-
 
 class MasanawaCreatorSkillTransport implements CreatorSkillTransport {
   MasanawaCreatorSkillTransport({
@@ -283,7 +290,7 @@ class MasanawaCreatorCloneTransport implements CreatorCloneTransport {
   }
 }
 
-class MasanawaAgentTransport implements AgentTransport {
+class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
   MasanawaAgentTransport({
     required Dio dio,
     required String baseUrl,
@@ -320,6 +327,7 @@ class MasanawaAgentTransport implements AgentTransport {
     required String text,
     void Function(String delta)? onTextDelta,
     Future<void> Function(Uint8List pcmChunk)? onAudioPcmChunk,
+    String? requestId,
   }) async {
     final token = CancelToken();
     _turnTokens[binding.characterId]?.cancel('Superseded by a new turn');
@@ -333,6 +341,7 @@ class MasanawaAgentTransport implements AgentTransport {
           '/v1/agent/sessions/${binding.characterSessionId}/turn-stream',
           {'characterId': binding.characterId, 'text': text},
           cancelToken: token,
+          requestId: requestId,
         )) {
           final type = event['type'];
           if (type == 'delta') {
@@ -373,6 +382,7 @@ class MasanawaAgentTransport implements AgentTransport {
         '/v1/agent/sessions/${binding.characterSessionId}/turn',
         {'characterId': binding.characterId, 'text': text},
         cancelToken: token,
+        requestId: requestId,
       );
       final reply = data['reply'];
       if (reply is! String || reply.isEmpty) {
@@ -424,6 +434,7 @@ class MasanawaAgentTransport implements AgentTransport {
     required String mimeType,
     required String caption,
     void Function(int sent, int total)? onUploadProgress,
+    String? requestId,
   }) async {
     final token = CancelToken();
     _turnTokens[binding.characterId]?.cancel('Superseded by a new turn');
@@ -440,6 +451,7 @@ class MasanawaAgentTransport implements AgentTransport {
         },
         cancelToken: token,
         onSendProgress: onUploadProgress,
+        requestId: requestId,
       );
     } finally {
       if (identical(_turnTokens[binding.characterId], token)) {
@@ -483,6 +495,7 @@ class MasanawaAgentTransport implements AgentTransport {
     required List<AgentMediaInput> media,
     required String caption,
     void Function(int sent, int total)? onUploadProgress,
+    String? requestId,
   }) async {
     if (media.isEmpty || media.length > 8) {
       throw const ApiException('Invalid attachment set');
@@ -507,6 +520,7 @@ class MasanawaAgentTransport implements AgentTransport {
         },
         cancelToken: token,
         onSendProgress: onUploadProgress,
+        requestId: requestId,
       );
       final reply = data['reply'];
       if (reply is! String || reply.isEmpty) {
@@ -523,6 +537,185 @@ class MasanawaAgentTransport implements AgentTransport {
   @override
   void cancelTurn(String characterId) {
     _turnTokens.remove(characterId)?.cancel('Stopped by user');
+  }
+
+  @override
+  Future<AgentShellConfig> loadShellConfig(String characterId) async {
+    final query = <String, String>{
+      'characterId': characterId,
+      'clientVersion': kMasanawaShellVersion,
+      'capabilities': jsonEncode(ShellDocument.capabilities),
+    };
+    final path = '/v1/agent/shell/config?${Uri(queryParameters: query).query}';
+    return AgentShellConfig.fromJson(await _client.get(path));
+  }
+
+  @override
+  Future<List<AgentHistoryMessage>> loadHistory(
+    String characterId, {
+    int limit = 100,
+    String? before,
+  }) async {
+    final query = <String, String>{
+      'characterId': characterId,
+      'limit': '$limit',
+      if (before != null && before.isNotEmpty) 'before': before,
+    };
+    final path = '/v1/agent/history?${Uri(queryParameters: query).query}';
+    final data = await _client.get(path);
+    final raw = data['messages'];
+    if (raw is! List) throw const ApiException('Invalid conversation history');
+    return [
+      for (final item in raw)
+        if (item is Map)
+          AgentHistoryMessage.fromJson(item.cast<String, dynamic>()),
+    ];
+  }
+
+  @override
+  Future<AgentTurnStatus> turnStatus(
+    String characterId,
+    String requestId,
+  ) async {
+    final path =
+        '/v1/agent/turns/${Uri.encodeComponent(requestId)}/status'
+        '?characterId=${Uri.encodeQueryComponent(characterId)}';
+    final data = await _client.get(path);
+    return AgentTurnStatus(
+      state: data['state'] as String? ?? 'missing',
+      reply: data['reply'] as String?,
+      parts: [
+        for (final raw in (data['parts'] as List? ?? const []))
+          if (raw is Map) raw.cast<String, dynamic>(),
+      ],
+      agentRunId: data['agentRunId'] as String?,
+      failureCode: data['failureCode'] as String?,
+    );
+  }
+
+  @override
+  Stream<AgentShellEvent> events(
+    String characterId, {
+    String? after,
+  }) async* {
+    var cursor = after;
+    while (true) {
+      final query = <String, String>{
+        'characterId': characterId,
+        if (cursor != null && cursor.isNotEmpty) 'after': cursor,
+        'limit': '100',
+      };
+      final path = '/v1/agent/events/stream?${Uri(queryParameters: query).query}';
+      await for (final raw in _client.getStream(path)) {
+        final parsed = AgentShellEvent.fromJson(raw);
+        if (parsed.cursor.isNotEmpty) cursor = parsed.cursor;
+        yield parsed;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+    }
+  }
+
+  @override
+  Future<void> dispatchAction({
+    required String characterId,
+    required String characterSessionId,
+    required ShellAction action,
+  }) async {
+    await _client.post(
+      '/v1/agent/sessions/${Uri.encodeComponent(characterSessionId)}/actions',
+      {
+        'characterId': characterId,
+        'documentId': action.documentId,
+        'revision': action.revision,
+        'nodeId': action.nodeId,
+        'actionId': action.actionId,
+        'token': action.token,
+        'values': action.values,
+      },
+    );
+  }
+
+  @override
+  Future<bool> actionAccepted({
+    required String characterId,
+    required ShellAction action,
+  }) async {
+    final query = <String, String>{
+      'characterId': characterId,
+      'documentId': action.documentId,
+      'revision': '${action.revision}',
+    };
+    final data = await _client.get(
+      '/v1/agent/actions/status?${Uri(queryParameters: query).query}',
+    );
+    final record = data['record'];
+    return record is Map && record['state'] == 'accepted';
+  }
+
+  @override
+  Future<AgentLiveVoiceGrant> mintLiveVoiceGrant(String characterId) async {
+    final data = await _client.post(
+      '/v1/agent/live/token',
+      {'characterId': characterId},
+    );
+    final expiresAt = DateTime.tryParse(data['expiresAt'] as String? ?? '');
+    final token = data['token'];
+    final websocketUrl = data['websocketUrl'];
+    final model = data['model'];
+    final voiceName = data['voiceName'];
+    if (token is! String ||
+        websocketUrl is! String ||
+        model is! String ||
+        voiceName is! String ||
+        expiresAt == null) {
+      throw const ApiException('Invalid live voice grant');
+    }
+    return AgentLiveVoiceGrant(
+      token: token,
+      websocketUrl: websocketUrl,
+      model: model,
+      voiceName: voiceName,
+      expiresAt: expiresAt,
+    );
+  }
+
+  @override
+  Future<void> setPresence({
+    required String characterId,
+    required String state,
+    int durationMs = 60000,
+  }) async {
+    await _client.post('/v1/agent/presence', {
+      'characterId': characterId,
+      'state': state,
+      'durationMs': durationMs,
+    });
+  }
+
+  @override
+  Future<void> registerPush({
+    required String characterId,
+    required String installationId,
+    required String platform,
+    required String token,
+  }) async {
+    await _client.post('/v1/agent/push/register', {
+      'characterId': characterId,
+      'installationId': installationId,
+      'platform': platform,
+      'token': token,
+    });
+  }
+
+  @override
+  Future<void> unregisterPush({
+    required String characterId,
+    required String installationId,
+  }) async {
+    await _client.post('/v1/agent/push/unregister', {
+      'characterId': characterId,
+      'installationId': installationId,
+    });
   }
 
   @override

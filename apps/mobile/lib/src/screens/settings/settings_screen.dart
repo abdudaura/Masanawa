@@ -11,6 +11,8 @@ import '../../state/session_state.dart';
 import '../../core/providers.dart';
 import '../../theme/masanawa_theme.dart';
 import '../../tokens/masanawa_tokens.dart';
+import '../../core/mobile_push.dart';
+import '../../state/agent_directory_state.dart';
 
 /// Settings + profile. The only secondary screen: account card, two local
 /// toggles, clear-chat, log out. No feature links.
@@ -418,7 +420,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               title: const Text('Notifications'),
               subtitle: const Text('Replies and updates'),
               value: _notifications,
-              onChanged: (v) => setState(() => _notifications = v),
+              onChanged: (v) async {
+                if (v) {
+                  final allowed =
+                      await MobilePushService.instance.requestPermission();
+                  if (!mounted) return;
+                  setState(() => _notifications = allowed);
+                  if (allowed) {
+                    await ref
+                        .read(agentDirectoryProvider.notifier)
+                        .refresh();
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Notifications are disabled. You can enable them in system settings.',
+                        ),
+                      ),
+                    );
+                  }
+                } else {
+                  await MobilePushService.instance.unregister();
+                  if (mounted) setState(() => _notifications = false);
+                }
+              },
             ),
             const Divider(height: 1),
             ListTile(
@@ -466,6 +491,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     color: u.emergency, fontWeight: FontWeight.w600),
               ),
               onTap: () async {
+                await MobilePushService.instance.unregister();
+                await ref.read(aiChatProvider.notifier).clearSecureShellState();
+                ref.read(aiChatProvider.notifier).clearAll();
                 await ref.read(sessionProvider.notifier).logout();
                 if (context.mounted) context.go('/phone-login');
               },

@@ -50,6 +50,85 @@ class ChatListScreen extends ConsumerWidget {
     AgentMessagePartKind.status => 'Status update',
   };
 
+  List<(ChatThread, AgentMessagePart)> _activity(
+    Iterable<ChatThread> threads,
+  ) {
+    final items = <(ChatThread, AgentMessagePart)>[];
+    for (final thread in threads) {
+      for (final message in thread.messages.reversed) {
+        for (final part in message.parts.reversed) {
+          final status = part.status?.toLowerCase();
+          final activeWork = part.kind == AgentMessagePartKind.work &&
+              !{'completed', 'fulfilled', 'cancelled'}.contains(status);
+          final needsAttention =
+              part.kind == AgentMessagePartKind.approval ||
+              (part.kind == AgentMessagePartKind.status &&
+                  status == 'failed') ||
+              status == 'waiting_for_approval' ||
+              status == 'waiting_for_input';
+          if (activeWork || needsAttention) {
+            items.add((thread, part));
+          }
+        }
+      }
+    }
+    return items.take(20).toList(growable: false);
+  }
+
+  Future<void> _showActivity(
+    BuildContext context,
+    AgentDirectoryState directory,
+    List<(ChatThread, AgentMessagePart)> items,
+  ) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            const ListTile(
+              title: Text('Agent activity'),
+              subtitle: Text('Work, approvals and items needing attention'),
+            ),
+            for (final item in items)
+              Builder(
+                builder: (_) {
+                  final agent = directory.find(item.$1.characterId);
+                  final part = item.$2;
+                  return ListTile(
+                    leading: Icon(
+                      part.kind == AgentMessagePartKind.approval
+                          ? Icons.approval_outlined
+                          : part.status == 'failed'
+                              ? Icons.error_outline
+                              : Icons.work_outline,
+                    ),
+                    title: Text(
+                      part.title ??
+                          (agent?.displayName ?? 'Agent') +
+                              (part.kind == AgentMessagePartKind.approval
+                                  ? ' needs approval'
+                                  : ' is working'),
+                    ),
+                    subtitle: Text(
+                      part.body ?? part.status ?? 'Open conversation',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      context.push('/chat/${item.$1.characterId}');
+                    },
+                  );
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _threadActions(
     BuildContext context,
     WidgetRef ref,
@@ -209,6 +288,12 @@ class ChatListScreen extends ConsumerWidget {
     final threads = chat.chatList
         .where((thread) => directory.find(thread.characterId) != null)
         .toList();
+    final activity = _activity(threads);
+    final attention = activity.where((item) =>
+        item.$2.kind == AgentMessagePartKind.approval ||
+        item.$2.status == 'failed' ||
+        item.$2.status == 'waiting_for_approval' ||
+        item.$2.status == 'waiting_for_input').length;
 
     return Scaffold(
       backgroundColor: u.surfaceBg,
@@ -218,6 +303,55 @@ class ChatListScreen extends ConsumerWidget {
         elevation: 0,
         automaticallyImplyLeading: false,
         title: const MasanawaWordmark(light: true),
+        bottom: activity.isEmpty && chat.online
+            ? null
+            : PreferredSize(
+                preferredSize: const Size.fromHeight(38),
+                child: InkWell(
+                  onTap: activity.isEmpty
+                      ? null
+                      : () => _showActivity(context, directory, activity),
+                  child: Container(
+                    width: double.infinity,
+                    color: Colors.white.withValues(alpha: .13),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          chat.online
+                              ? Icons.work_outline
+                              : Icons.cloud_off_outlined,
+                          color: Colors.white,
+                          size: 17,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            !chat.online
+                                ? 'Offline · cached conversations available'
+                                : attention > 0
+                                    ? '$attention need attention · ${activity.length} active'
+                                    : '${activity.length} active work item${activity.length == 1 ? '' : 's'}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12.5,
+                            ),
+                          ),
+                        ),
+                        if (activity.isNotEmpty)
+                          const Icon(
+                            Icons.chevron_right,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
         actions: [
           if (chat.threads.values.any((t) => t.archived))
             IconButton(
