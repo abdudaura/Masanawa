@@ -105,6 +105,18 @@ function binding(active: TeachingLessonPlan) {
   });
 }
 
+function freeResponseCard(plan: TeachingLessonPlan) {
+  return {
+    relationshipId: plan.learner.relationshipId,
+    skillVersionId: plan.skillVersionId,
+    lessonStepKey: "common-denominator",
+    exerciseKey: "explain-common-denominator",
+    prompt: "Explain what a common denominator means.",
+    kind: "free-response" as const,
+    options: [],
+  };
+}
+
 function rubric(plan: TeachingLessonPlan): TeachingSelectableExerciseRubric {
   return {
     relationshipId: plan.learner.relationshipId,
@@ -1301,6 +1313,26 @@ describe("Teaching outbound channel option projection", () => {
 
 
 describe("Teaching durable free-response flow", () => {
+  it("refuses to create a free-response binding from a selectable card", () => {
+    const active = lesson();
+    expect(() =>
+      createTeachingFreeResponseBinding({
+        binding: binding(active),
+        requestId: createCanonicalId("request"),
+        card: {
+          relationshipId: active.learner.relationshipId,
+          skillVersionId: active.skillVersionId,
+          lessonStepKey: "common-denominator",
+          exerciseKey: "denominator-choice",
+          prompt: "Choose.",
+          kind: "single-select",
+          options: [{ optionKey: "six", label: "6" }],
+        },
+        expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
+      }),
+    ).toThrow(/requires a free-response exercise card/);
+  });
+
   it("persists a positively evaluated free response and advances exactly once", async () => {
     const active = lesson();
     const progress = new MemoryProgressPort();
@@ -1308,8 +1340,7 @@ describe("Teaching durable free-response flow", () => {
     const exercise = createTeachingFreeResponseBinding({
       binding: binding(active),
       requestId: createCanonicalId("request"),
-      lessonStepKey: "common-denominator",
-      exerciseKey: "explain-common-denominator",
+      card: freeResponseCard(active),
       expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
     });
 
@@ -1368,8 +1399,7 @@ describe("Teaching durable free-response flow", () => {
     const exercise = createTeachingFreeResponseBinding({
       binding: binding(active),
       requestId: createCanonicalId("request"),
-      lessonStepKey: "common-denominator",
-      exerciseKey: "explain-common-denominator",
+      card: freeResponseCard(active),
       expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
     });
 
@@ -1407,8 +1437,7 @@ describe("Teaching durable free-response flow", () => {
     const exercise = createTeachingFreeResponseBinding({
       binding: binding(active),
       requestId: createCanonicalId("request"),
-      lessonStepKey: "common-denominator",
-      exerciseKey: "explain-common-denominator",
+      card: freeResponseCard(active),
       expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
     });
     const evaluation = {
@@ -1448,8 +1477,7 @@ describe("Teaching durable free-response flow", () => {
     const exercise = createTeachingFreeResponseBinding({
       binding: binding(active),
       requestId: createCanonicalId("request"),
-      lessonStepKey: "common-denominator",
-      exerciseKey: "explain-common-denominator",
+      card: freeResponseCard(active),
       expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
     });
     const evaluation = {
