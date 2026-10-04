@@ -147,7 +147,15 @@ export function createAgentConversationService(input: {
 
         const audio = input.nativeAudio && !request.signal?.aborted
           ? await input.nativeAudio
-              .render(reply, request.signal)
+              .render(
+                reply,
+                request.signal,
+                request.onAudioPcmChunk
+                  ? async (chunk) => {
+                      await request.onAudioPcmChunk!(chunk.toString("base64"));
+                    }
+                  : undefined,
+              )
               .catch(() => undefined)
           : undefined;
         return Object.freeze({
