@@ -119,3 +119,18 @@ client ordering. An incorrect or unknown evaluation cannot be labelled advance-r
 This remains domain logic only. Persisting attempts, rate limits, durable checkpoints and
 mapping opaque chat actions to submissions belong to the canonical runtime/Workflow/chat
 owners.
+
+
+## Exact Guide certification and required channel rehearsals
+
+Production authoring now separates Guide construction from bundle admission. The exact
+Guide is normalized first and produces a deterministic SHA-256 content hash. The
+Core Teaching bundle requires the certification input to name that exact Guide hash;
+changing instructions or the Guide resource index invalidates the binding and requires
+new certification evidence.
+
+Core Teaching certification also fails closed unless passed rehearsal evidence covers
+the required launch surfaces and continuity invariants, including app, WhatsApp,
+Telegram and voice/text parity. These are certification requirements only: this branch
+does not claim those channel integrations have run or passed. Their real evidence must
+come from the owning runtime/channel test environments.
