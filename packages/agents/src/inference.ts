@@ -73,6 +73,40 @@ export function snapshotAgentInferenceRequest(request: AgentInferenceRequest): A
       input = Object.freeze({ kind: "media", caption, mimeType, dataBase64 });
       break;
     }
+    case "media-set": {
+      const caption = boundedText(request.input.caption, 32_000, true);
+      if (!Array.isArray(request.input.media) ||
+          request.input.media.length < 2 ||
+          request.input.media.length > 8) {
+        throw new TypeError("Invalid inference media set");
+      }
+      let aggregate = 0;
+      const media = request.input.media.map((item) => {
+        const mimeType = boundedText(item.mimeType, 128);
+        const dataBase64 = boundedText(item.dataBase64, 12_000_000);
+        const name = item.name === undefined
+          ? undefined
+          : boundedText(item.name, 240, true);
+        aggregate += dataBase64.length;
+        if (aggregate > 16_000_000 ||
+            !/^[a-z0-9.+-]+\/[a-z0-9.+-]+$/u.test(mimeType) ||
+            dataBase64.length % 4 !== 0 ||
+            !/^[A-Za-z0-9+/]*={0,2}$/u.test(dataBase64)) {
+          throw new TypeError("Invalid inference media set");
+        }
+        return Object.freeze({
+          mimeType,
+          dataBase64,
+          ...(name ? { name } : {}),
+        });
+      });
+      input = Object.freeze({
+        kind: "media-set",
+        caption,
+        media: Object.freeze(media),
+      });
+      break;
+    }
     default:
       throw new TypeError("Invalid inference input kind");
   }
