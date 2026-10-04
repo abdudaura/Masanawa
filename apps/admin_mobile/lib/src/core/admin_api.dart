@@ -161,6 +161,43 @@ class PlatformSummary {
       );
 }
 
+
+class AdminCharacter {
+  const AdminCharacter({
+    required this.characterId,
+    required this.state,
+    required this.activeCharacterVersionId,
+    required this.revision,
+    required this.configuredInUserApp,
+    required this.visibleInUserApp,
+    required this.displayName,
+    required this.roleLabel,
+    required this.updatedAt,
+  });
+
+  final String characterId;
+  final String state;
+  final String? activeCharacterVersionId;
+  final int revision;
+  final bool configuredInUserApp;
+  final bool? visibleInUserApp;
+  final String? displayName;
+  final String? roleLabel;
+  final String updatedAt;
+
+  factory AdminCharacter.fromJson(Map<String, dynamic> json) => AdminCharacter(
+        characterId: json['characterId'] as String,
+        state: json['state'] as String,
+        activeCharacterVersionId: json['activeCharacterVersionId'] as String?,
+        revision: json['revision'] as int? ?? 1,
+        configuredInUserApp: json['configuredInUserApp'] as bool? ?? false,
+        visibleInUserApp: json['visibleInUserApp'] as bool?,
+        displayName: json['displayName'] as String?,
+        roleLabel: json['roleLabel'] as String?,
+        updatedAt: json['updatedAt'] as String,
+      );
+}
+
 class AdminUser {
   const AdminUser({
     required this.userId,
@@ -644,6 +681,51 @@ class AdminApi {
       () => _dio.get<dynamic>('/v1/admin/summary', options: _auth),
     );
     return PlatformSummary.fromJson(_map(response.data));
+  }
+
+
+  Future<List<AdminCharacter>> characters() async {
+    final response = await _request(
+      () => _dio.get<dynamic>('/v1/admin/characters', options: _auth),
+    );
+    return _list(response.data)
+        .map((item) => AdminCharacter.fromJson(_map(item)))
+        .toList(growable: false);
+  }
+
+  Future<AgentPresentation> configureCharacter(
+    AdminCharacter character, {
+    required String displayName,
+    required String roleLabel,
+    required String about,
+    required String? greeting,
+    required bool visibleInUserApp,
+    required int sortOrder,
+  }) async {
+    final versionId = character.activeCharacterVersionId;
+    if (versionId == null || versionId.isEmpty) {
+      throw const AdminApiException(
+        'This Character has no active CharacterVersion to publish.',
+      );
+    }
+    final response = await _request(
+      () => _dio.put<dynamic>(
+        '/v1/agents/${Uri.encodeComponent(character.characterId)}/presentation',
+        options: _auth,
+        data: {
+          'schemaVersion': 1,
+          'characterVersionId': versionId,
+          'displayName': displayName.trim(),
+          'roleLabel': roleLabel.trim(),
+          'about': about.trim(),
+          'greeting': greeting?.trim().isEmpty == true ? null : greeting?.trim(),
+          'visibleInUserApp': visibleInUserApp,
+          'sortOrder': sortOrder,
+          'expectedRevision': null,
+        },
+      ),
+    );
+    return AgentPresentation.fromJson(_map(response.data));
   }
 
   Future<List<AdminUser>> users() async {
