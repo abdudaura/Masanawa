@@ -507,4 +507,36 @@ describePostgres("workflow usage and operator visibility acceptance", () => {
       retryable: false,
     });
   });
+
+  it("rejects usage linked to an Operation owned by another Tenant", async () => {
+    const firstRun = await createRun();
+    const secondRun = await createRun();
+    const operationId = createCanonicalId("operation");
+
+    await pool.query(
+      `INSERT INTO events.operations (
+         operation_id, tenant_id, kind, idempotency_key,
+         authority_scope_hash, request_fingerprint, state
+       )
+       VALUES ($1,$2,'workflow.test','cross-tenant-operation',
+               'scope-hash','request-fingerprint','prepared')`,
+      [operationId, firstRun.tenantId],
+    );
+
+    const usage = usageInput(secondRun, {
+      operationId,
+      evidenceKey: "scope:mismatch:operation",
+      occurredAt: await databaseNow(),
+    });
+
+    const client = await pool.connect();
+    try {
+      await expect(
+        appendWorkflowUsageEvidence(client, usage),
+      ).rejects.toBeDefined();
+    } finally {
+      client.release();
+    }
+  });
+
 });
