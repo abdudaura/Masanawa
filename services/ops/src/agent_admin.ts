@@ -13,7 +13,16 @@ export type AgentAdminCapability =
   | "agents.presentation.write"
   | "agents.skills.read"
   | "agents.skills.write"
-  | "skills.catalog.read";
+  | "skills.catalog.read"
+  | "platform.summary.read"
+  | "identity.users.read"
+  | "identity.users.write"
+  | "agents.runs.read"
+  | "commerce.read"
+  | "operations.read"
+  | "reconciliation.read"
+  | "providers.credentials.read"
+  | "audit.read";
 
 export interface AgentAdminAuthority {
   readonly tenantId: TenantId;
