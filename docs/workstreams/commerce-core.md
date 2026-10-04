@@ -54,7 +54,7 @@ were present in main/open PRs at selection time. Recheck before writes and commi
 - Deployed: no. Migration 0004 is new and unapplied. Tasks 133–134 remain open.
 - Rechecked: main remains at the base SHA; PRs 89, 91 and 44 do not overlap owned paths.
 - Initial implementation commit: fea199c3f11f73e4faca9f09513739ce43e662ff.
-- Custody hardening: publication SHA recorded in PR evidence.
+- Custody hardening implementation: e3d08e0a01b2c7b6b1c737e2683baa6132cad505.
 - Latest checks: all 18 SQL cases passed on a fresh PGlite database, including nine
   mismatched-custody variants and duplicate-ledger alias rejection; strict Postgres
   typecheck and whitespace checks passed. Earlier 39 test/build evidence remains valid.
