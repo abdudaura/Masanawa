@@ -8,7 +8,10 @@ import type { CreatorEconomyService } from "./creator_economy.js";
 import type { CreatorSkillService } from "./creator_skills.js";
 import type { CommerceCatalogService } from "./commerce_catalog.js";
 import type { CommerceFulfillmentService } from "./commerce_fulfillment.js";
-import type { AgentShellService, LiveVoiceTokenService } from "./agent_shell_contract.js";
+import type {
+  AgentShellService,
+  LiveVoiceTokenService,
+} from "./agent_shell_contract.js";
 import { registerAgentShellRoutes } from "./agent_shell_routes.js";
 import type { MobilePushRegistrationService } from "./mobile_push.js";
 import {
@@ -124,33 +127,11 @@ const AgentMediaTurnBodySchema = Type.Object(
   { additionalProperties: false },
 );
 
-const AgentMediaSetTurnBodySchema = Type.Object(
-  {
-    characterId: Type.String(),
-    caption: Type.String({ maxLength: 32000 }),
-    media: Type.Array(
-      Type.Object(
-        {
-          mimeType: Type.String({ minLength: 3, maxLength: 160 }),
-          dataBase64: Type.String({ minLength: 1, maxLength: 12000000 }),
-          name: Type.Optional(Type.String({ maxLength: 240 })),
-        },
-        { additionalProperties: false },
-      ),
-      { minItems: 2, maxItems: 8 },
-    ),
-  },
-  { additionalProperties: false },
-);
-
 const AgentTurnResponseSchema = Type.Object(
   {
     reply: Type.String(),
     agentRunId: Type.String(),
     parts: Type.Array(Type.Unknown()),
-    audioBase64: Type.Optional(Type.String()),
-    audioMimeType: Type.Optional(Type.String()),
-    audioDurationMs: Type.Optional(Type.Number()),
   },
   { additionalProperties: false },
 );
@@ -193,6 +174,28 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
 
     request.headers.traceparent = headers.traceparent;
     request.headers["x-request-id"] = headers["x-request-id"];
+    request.headers["x-correlation-id"] = headers["x-correlation-id"];
+    reply.headers(headers);
+  });
+
+
+  if (options.agentDirectory) {
+    const directory = options.agentDirectory;
+    app.get(
+      "/agent/directory",
+      {
+        schema: {
+          response: { 200: AgentDirectoryResponseSchema },
+        },
+      },
+      async (request) => ({
+        agents: [
+          ...(await directory.list({
+            authorizationHeader: request.headers.authorization,
+          })),
+        ],
+      }),
+    );
 
     app.put(
       "/agent/preferences/default",
@@ -447,8 +450,8 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
           amountCredits: request.body.amountCredits,
         }),
     );
-    request.headers["x-correlation-id"] = headers["x-correlation-id"];
-    reply.headers(headers);
+  }
+
   if (options.creatorClone) {
     const creatorClone = options.creatorClone;
     app.post(
@@ -495,34 +498,12 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
         }),
     );
   }
-  });
-
-
-  if (options.agentDirectory) {
-    const directory = options.agentDirectory;
-    app.get(
-      "/v1/agent/directory",
-      {
-        schema: {
-          response: { 200: AgentDirectoryResponseSchema },
-        },
-      },
-      async (request) => ({
-        agents: [
-          ...(await directory.list({
-            authorizationHeader: request.headers.authorization,
-          })),
-        ],
-      }),
-    );
-  }
-
 
   if (options.agentConversation) {
     const conversation = options.agentConversation;
 
     app.post(
-      "/v1/agent/sessions/open",
+      "/agent/sessions/open",
       {
         schema: {
           body: AgentSessionOpenBodySchema,
@@ -537,7 +518,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     );
 
     app.post(
-      "/v1/agent/sessions/:characterSessionId/turn",
+      "/agent/sessions/:characterSessionId/turn",
       {
         schema: {
           params: AgentSessionParamsSchema,
@@ -545,128 +526,32 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
           response: { 200: AgentTurnResponseSchema },
         },
       },
-      async (request, reply) => {
-        const controller = new AbortController();
-        let finished = false;
-        const abort = () => {
-          if (!finished) controller.abort();
+      async (request) => {
+        const result = await conversation.turn({
+          authorizationHeader: request.headers.authorization,
+          characterSessionId: request.params.characterSessionId,
+          characterId: request.body.characterId,
+          text: request.body.text,
+          requestId: parseCanonicalId(
+            "request",
+            request.headers["x-request-id"] as string,
+          ),
+          correlationId: parseCanonicalId(
+            "correlation",
+            request.headers["x-correlation-id"] as string,
+          ),
+        });
+        return {
+          reply: result.reply,
+          agentRunId: result.agentRunId,
+          parts: [...result.parts],
         };
-        reply.raw.once("close", abort);
-        try {
-          const result = await conversation.turn({
-            authorizationHeader: request.headers.authorization,
-            characterSessionId: request.params.characterSessionId,
-            characterId: request.body.characterId,
-            text: request.body.text,
-            requestId: parseCanonicalId(
-              "request",
-              request.headers["x-request-id"] as string,
-            ),
-            correlationId: parseCanonicalId(
-              "correlation",
-              request.headers["x-correlation-id"] as string,
-            ),
-            signal: controller.signal,
-          });
-          return {
-            reply: result.reply,
-            agentRunId: result.agentRunId,
-            parts: [...result.parts],
-            ...(result.audioBase64 ? { audioBase64: result.audioBase64 } : {}),
-            ...(result.audioMimeType ? { audioMimeType: result.audioMimeType } : {}),
-            ...(result.audioDurationMs !== undefined
-              ? { audioDurationMs: result.audioDurationMs }
-              : {}),
-          };
-        } finally {
-          finished = true;
-          reply.raw.off("close", abort);
-        }
       },
     );
 
 
     app.post(
-      "/v1/agent/sessions/:characterSessionId/turn-stream",
-      {
-        schema: {
-          params: AgentSessionParamsSchema,
-          body: AgentTurnBodySchema,
-        },
-      },
-      async (request, reply) => {
-        reply.hijack();
-        reply.raw.statusCode = 200;
-        reply.raw.setHeader("content-type", "application/x-ndjson; charset=utf-8");
-        reply.raw.setHeader("cache-control", "no-cache, no-transform");
-        reply.raw.setHeader("x-content-type-options", "nosniff");
-
-        const controller = new AbortController();
-        let finished = false;
-        const abort = () => {
-          if (!finished) controller.abort();
-        };
-        reply.raw.once("close", abort);
-
-        const emit = (event: Record<string, unknown>) => {
-          if (!reply.raw.destroyed && !reply.raw.writableEnded) {
-            reply.raw.write(JSON.stringify(event) + "\n");
-          }
-        };
-
-        try {
-          const result = await conversation.turn({
-            authorizationHeader: request.headers.authorization,
-            characterSessionId: request.params.characterSessionId,
-            characterId: request.body.characterId,
-            text: request.body.text,
-            requestId: parseCanonicalId(
-              "request",
-              request.headers["x-request-id"] as string,
-            ),
-            correlationId: parseCanonicalId(
-              "correlation",
-              request.headers["x-correlation-id"] as string,
-            ),
-            onTextDelta: async (delta) => {
-              if (delta) emit({ type: "delta", text: delta });
-            },
-            onAudioPcmChunk: async (dataBase64) => {
-              if (dataBase64) {
-                emit({
-                  type: "audio",
-                  mimeType: "audio/pcm;rate=24000",
-                  sampleRate: 24000,
-                  dataBase64,
-                });
-              }
-            },
-            signal: controller.signal,
-          });
-          emit({
-            type: "done",
-            reply: result.reply,
-            agentRunId: result.agentRunId,
-            parts: [...result.parts],
-            ...(result.audioBase64 ? { audioBase64: result.audioBase64 } : {}),
-            ...(result.audioMimeType ? { audioMimeType: result.audioMimeType } : {}),
-            ...(result.audioDurationMs !== undefined
-              ? { audioDurationMs: result.audioDurationMs }
-              : {}),
-          });
-        } catch {
-          emit({ type: "error", code: "turn_failed" });
-        } finally {
-          finished = true;
-          reply.raw.off("close", abort);
-          if (!reply.raw.writableEnded) reply.raw.end();
-        }
-      },
-    );
-
-
-    app.post(
-      "/v1/agent/sessions/:characterSessionId/media-turn",
+      "/agent/sessions/:characterSessionId/media-turn",
       {
         bodyLimit: 13_000_000,
         schema: {
@@ -675,102 +560,33 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
           response: { 200: AgentTurnResponseSchema },
         },
       },
-      async (request, reply) => {
-        const controller = new AbortController();
-        let finished = false;
-        const abort = () => {
-          if (!finished) controller.abort();
+      async (request) => {
+        const result = await conversation.mediaTurn({
+          authorizationHeader: request.headers.authorization,
+          characterSessionId: request.params.characterSessionId,
+          characterId: request.body.characterId,
+          caption: request.body.caption,
+          mimeType: request.body.mimeType,
+          dataBase64: request.body.dataBase64,
+          requestId: parseCanonicalId(
+            "request",
+            request.headers["x-request-id"] as string,
+          ),
+          correlationId: parseCanonicalId(
+            "correlation",
+            request.headers["x-correlation-id"] as string,
+          ),
+        });
+        return {
+          reply: result.reply,
+          agentRunId: result.agentRunId,
+          parts: [...result.parts],
         };
-        reply.raw.once("close", abort);
-        try {
-          const result = await conversation.mediaTurn({
-            authorizationHeader: request.headers.authorization,
-            characterSessionId: request.params.characterSessionId,
-            characterId: request.body.characterId,
-            caption: request.body.caption,
-            mimeType: request.body.mimeType,
-            dataBase64: request.body.dataBase64,
-            requestId: parseCanonicalId(
-              "request",
-              request.headers["x-request-id"] as string,
-            ),
-            correlationId: parseCanonicalId(
-              "correlation",
-              request.headers["x-correlation-id"] as string,
-            ),
-            signal: controller.signal,
-          });
-          return {
-            reply: result.reply,
-            agentRunId: result.agentRunId,
-            parts: [...result.parts],
-            ...(result.audioBase64 ? { audioBase64: result.audioBase64 } : {}),
-            ...(result.audioMimeType ? { audioMimeType: result.audioMimeType } : {}),
-            ...(result.audioDurationMs !== undefined
-              ? { audioDurationMs: result.audioDurationMs }
-              : {}),
-          };
-        } finally {
-          finished = true;
-          reply.raw.off("close", abort);
-        }
       },
     );
 
     app.post(
-      "/v1/agent/sessions/:characterSessionId/media-set-turn",
-      {
-        bodyLimit: 17_000_000,
-        schema: {
-          params: AgentSessionParamsSchema,
-          body: AgentMediaSetTurnBodySchema,
-          response: { 200: AgentTurnResponseSchema },
-        },
-      },
-      async (request, reply) => {
-        const controller = new AbortController();
-        let finished = false;
-        const abort = () => {
-          if (!finished) controller.abort();
-        };
-        reply.raw.once("close", abort);
-        try {
-          const result = await conversation.mediaSetTurn({
-            authorizationHeader: request.headers.authorization,
-            characterSessionId: request.params.characterSessionId,
-            characterId: request.body.characterId,
-            caption: request.body.caption,
-            media: request.body.media,
-            requestId: parseCanonicalId(
-              "request",
-              request.headers["x-request-id"] as string,
-            ),
-            correlationId: parseCanonicalId(
-              "correlation",
-              request.headers["x-correlation-id"] as string,
-            ),
-            signal: controller.signal,
-          });
-          return {
-            reply: result.reply,
-            agentRunId: result.agentRunId,
-            parts: [...result.parts],
-            ...(result.audioBase64 ? { audioBase64: result.audioBase64 } : {}),
-            ...(result.audioMimeType ? { audioMimeType: result.audioMimeType } : {}),
-            ...(result.audioDurationMs !== undefined
-              ? { audioDurationMs: result.audioDurationMs }
-              : {}),
-          };
-        } finally {
-          finished = true;
-          reply.raw.off("close", abort);
-        }
-      },
-    );
-
-
-    app.post(
-      "/v1/agent/sessions/:characterSessionId/close",
+      "/agent/sessions/:characterSessionId/close",
       {
         schema: {
           params: AgentSessionParamsSchema,
@@ -799,7 +615,9 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
 
   registerAgentShellRoutes(app, {
     ...(options.agentShell ? { agentShell: options.agentShell } : {}),
-    ...(options.liveVoiceTokens ? { liveVoiceTokens: options.liveVoiceTokens } : {}),
+    ...(options.liveVoiceTokens
+      ? { liveVoiceTokens: options.liveVoiceTokens }
+      : {}),
     ...(options.mobilePush ? { mobilePush: options.mobilePush } : {}),
   });
 
