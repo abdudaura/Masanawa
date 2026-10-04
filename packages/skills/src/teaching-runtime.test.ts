@@ -14,6 +14,8 @@ import {
   createTeachingRuntimeBinding,
   createTeachingRuntimeBindingFromAdmission,
   createTeachingSelectionActionBinding,
+  createTeachingChannelSelectionBinding,
+  resolveTeachingChannelSelection,
   fingerprintTeachingLessonPlan,
   fingerprintTeachingSelectionAttempt,
   resolveTeachingOpaqueSelection,
@@ -991,5 +993,118 @@ describe("Teaching admission evidence bridge", () => {
         guideContentHash: `sha256:${"a".repeat(64)}`,
       }),
     ).toThrow(/exact root SkillVersion/);
+  });
+});
+
+
+describe("Teaching channel callback binding", () => {
+  it("maps a compact provider callback token to the same opaque Teaching selection", () => {
+    const active = lesson();
+    const admitted = binding(active);
+    const action = createTeachingSelectionActionBinding({
+      binding: admitted,
+      actionKey: "teach.action.denominator-choice.channel",
+      requestId: createCanonicalId("request"),
+      rubric: rubric(active),
+      expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
+    });
+    const channel = createTeachingChannelSelectionBinding({
+      action,
+      callbackToken: "tch_cb_AbC12345",
+      optionKey: "six",
+    });
+
+    expect(
+      resolveTeachingChannelSelection({
+        selectionId: "tch_cb_AbC12345",
+        binding: channel,
+        now: toInstant("2026-10-04T18:40:00.000Z"),
+      }),
+    ).toEqual({
+      actionKey: action.actionKey,
+      selectedOptionKeys: ["six"],
+    });
+    expect(channel.callbackToken.length).toBeLessThanOrEqual(64);
+  });
+
+  it("rejects provider callback tokens for options not allowed by the hidden rubric", () => {
+    const active = lesson();
+    const action = createTeachingSelectionActionBinding({
+      binding: binding(active),
+      actionKey: "teach.action.denominator-choice.channel2",
+      requestId: createCanonicalId("request"),
+      rubric: rubric(active),
+      expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
+    });
+
+    expect(() =>
+      createTeachingChannelSelectionBinding({
+        action,
+        callbackToken: "tch_cb_AbC12346",
+        optionKey: "forged-option",
+      }),
+    ).toThrow(/must be allowed by the server rubric/);
+  });
+
+  it("rejects callback swapping, expiry and binding tampering", () => {
+    const active = lesson();
+    const action = createTeachingSelectionActionBinding({
+      binding: binding(active),
+      actionKey: "teach.action.denominator-choice.channel3",
+      requestId: createCanonicalId("request"),
+      rubric: rubric(active),
+      expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
+    });
+    const channel = createTeachingChannelSelectionBinding({
+      action,
+      callbackToken: "tch_cb_AbC12347",
+      optionKey: "six",
+    });
+
+    expect(() =>
+      resolveTeachingChannelSelection({
+        selectionId: "tch_cb_Different",
+        binding: channel,
+        now: toInstant("2026-10-04T18:40:00.000Z"),
+      }),
+    ).toThrow(/does not match binding/);
+
+    expect(() =>
+      resolveTeachingChannelSelection({
+        selectionId: channel.callbackToken,
+        binding: channel,
+        now: toInstant("2100-01-01T00:00:00.000Z"),
+      }),
+    ).toThrow(/expired/);
+
+    expect(() =>
+      resolveTeachingChannelSelection({
+        selectionId: channel.callbackToken,
+        binding: {
+          ...channel,
+          optionKey: "five",
+        },
+        now: toInstant("2026-10-04T18:40:00.000Z"),
+      }),
+    ).toThrow(/binding hash does not match payload/);
+  });
+
+  it("enforces the common Telegram-safe 64-character callback limit", () => {
+    const active = lesson();
+    const action = createTeachingSelectionActionBinding({
+      binding: binding(active),
+      actionKey: "teach.action.denominator-choice.channel4",
+      requestId: createCanonicalId("request"),
+      rubric: rubric(active),
+      expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
+    });
+
+    expect(() =>
+      createTeachingChannelSelectionBinding({
+        action,
+        callbackToken: "x".repeat(65),
+        optionKey: "six",
+      }),
+    ).toThrow(/callback token is invalid/);
   });
 });
