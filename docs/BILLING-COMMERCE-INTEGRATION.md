@@ -20,7 +20,7 @@ windows own authenticated transport and UI binding.
 2. The user sees the exact product, recipient/account and final price and explicitly
    confirms that quote.
 3. Commerce admits one fulfillment and persists one immutable fulfillment reference.
-4. Billing validates the recipient against the exact provider item and biller.
+4. Billing validates the recipient against the exact provider item and biller for bill types that require validation. Flutterwave documents airtime and mobile-data bills as not requiring this validation step; those flows still bind the exact catalog item, phone recipient and provider amount.
 5. The integration persists the validated provider terms under that same fulfillment
    reference.
 6. Dispatch first moves the record to `dispatching`; only then may the provider POST run.
@@ -58,7 +58,6 @@ the classic timeout-after-success duplicate-bill failure.
 No conflicting shared path is edited here. Integration still requires the current owners
 to bind these contracts to:
 
-- Security CredentialRef resolution for the Flutterwave secret;
 - canonical Commerce Offer/quote/admission/reserve/settlement/refund persistence;
 - the durable billing fulfillment store implementation;
 - authenticated Gateway action confirmation and idempotency identity;
@@ -68,5 +67,14 @@ to bind these contracts to:
 - production environment registration, Flutterwave account qualification and any
   provider IP allow-list requirement.
 
-Those steps are composition/deployment work, not permission to duplicate the commerce,
-wallet, action or channel state machines.
+The provider-side implementation in this branch also includes a production HTTPS transport,
+Security CredentialRef-resolved client construction, and deterministic catalog-to-Offer-draft
+projection. The raw secret is resolved at the adapter edge for each operation rather than
+stored in a configuration object.
+
+Flutterwave currently documents Nigerian bill payments as requiring completed profile/KYC,
+a funded source balance and server-IP whitelisting. Those are provider-account launch
+requirements, not code-side defaults.
+
+Those remaining steps are composition/deployment work, not permission to duplicate the
+commerce, wallet, action or channel state machines.
