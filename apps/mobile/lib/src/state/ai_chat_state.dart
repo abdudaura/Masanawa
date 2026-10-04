@@ -363,10 +363,18 @@ class AiChatController extends Notifier<AiChatState> {
   final Map<String, String> _eventCursors = {};
   final Map<String, ShellActionCoordinator> _actionCoordinators = {};
   final Map<String, EncryptedShellActionJournal> _actionJournals = {};
+  String? _cacheOwnerId;
+  int _cacheGeneration = 0;
 
   @override
   AiChatState build() {
-    scheduleMicrotask(_load);
+    final initialSession = ref.read(sessionProvider);
+    _cacheOwnerId =
+        initialSession is SessionSignedIn ? initialSession.user.id : null;
+    final initialOwner = _cacheOwnerId;
+    if (initialOwner != null && initialOwner.isNotEmpty) {
+      scheduleMicrotask(() => _load(initialOwner, _cacheGeneration));
+    }
     try {
       _connectivitySub = Connectivity().onConnectivityChanged.listen(
         (results) {
@@ -388,6 +396,14 @@ class AiChatController extends Notifier<AiChatState> {
         unawaited(subscription.cancel());
       }
       _eventSubscriptions.clear();
+    });
+    ref.listen(sessionProvider, (previous, next) {
+      final nextOwner = next is SessionSignedIn ? next.user.id : null;
+      if (nextOwner == _cacheOwnerId) return;
+      final previousOwner = _cacheOwnerId;
+      _cacheOwnerId = nextOwner;
+      final generation = ++_cacheGeneration;
+      unawaited(_handleOwnerChange(previousOwner, nextOwner, generation));
     });
     ref.listen(agentTransportProvider, (_, __) {
       _connectionGeneration++;
@@ -748,9 +764,10 @@ class AiChatController extends Notifier<AiChatState> {
     await coordinator.submit(action);
   }
 
-  Future<void> clearSecureShellState() async {
+  Future<void> clearSecureShellState({String? ownerId}) async {
     final session = ref.read(sessionProvider);
-    final userId = session is SessionSignedIn ? session.user.id : null;
+    final userId = ownerId ??
+        (session is SessionSignedIn ? session.user.id : null);
     final journals = [..._actionJournals.values];
     _actionJournals.clear();
     _actionCoordinators.clear();
@@ -1678,14 +1695,12 @@ class AiChatController extends Notifier<AiChatState> {
 
   String _newId() => 'm-${DateTime.now().microsecondsSinceEpoch}-${_seq++}';
 
-  Future<File?> _threadsFile() async {
+  Future<File?> _threadsFile(String ownerId) async {
     try {
-      final session = ref.read(sessionProvider);
-      if (session is! SessionSignedIn || session.user.id.isEmpty) return null;
+      if (ownerId.isEmpty) return null;
       final dir = await getApplicationDocumentsDirectory();
-      final owner = base64Url
-          .encode(utf8.encode(session.user.id))
-          .replaceAll('=', '');
+      final owner =
+          base64Url.encode(utf8.encode(ownerId)).replaceAll('=', '');
       return File('${dir.path}/masanawa_threads_v2_$owner.json');
     } catch (_) {
       return null;
@@ -1702,17 +1717,76 @@ class AiChatController extends Notifier<AiChatState> {
     }
   }
 
-  Future<void> _load() async {
+  Future<void> _deleteThreadCache(String ownerId) async {
+    try {
+      final file = await _threadsFile(ownerId);
+      if (file != null && await file.exists()) await file.delete();
+    } catch (_) {
+      // Account cleanup remains best effort locally; server history is canonical.
+    }
+  }
+
+  Future<void> _handleOwnerChange(
+    String? previousOwner,
+    String? nextOwner,
+    int generation,
+  ) async {
+    _connectionGeneration++;
+    final ids = <String>{...state.threads.keys, ..._bindings.keys};
+    for (final id in ids) {
+      _threadGenerations[id] = (_threadGenerations[id] ?? 0) + 1;
+    }
+    final transport = ref.read(agentTransportProvider);
+    final bindings = [..._bindings.values];
+    _bindings.clear();
+    final subscriptions = [..._eventSubscriptions.values];
+    _eventSubscriptions.clear();
+    _eventCursors.clear();
+    state = state.copyWith(
+      threads: {},
+      sendingIn: {},
+      shellConfigs: {},
+      clearOpen: true,
+    );
+
+    if (previousOwner != null && previousOwner.isNotEmpty) {
+      await clearSecureShellState(ownerId: previousOwner);
+      await _deleteThreadCache(previousOwner);
+    }
+    await Future.wait([
+      for (final binding in bindings)
+        transport.closeSession(binding).catchError((_) {}),
+      for (final subscription in subscriptions)
+        subscription.cancel().catchError((_) {}),
+      LivePcmAudio.stop().catchError((_) {}),
+    ]);
+
+    if (_disposed ||
+        generation != _cacheGeneration ||
+        nextOwner == null ||
+        nextOwner.isEmpty ||
+        nextOwner != _cacheOwnerId) {
+      return;
+    }
+    await _load(nextOwner, generation);
+  }
+
+  Future<void> _load(String ownerId, int generation) async {
     try {
       await _deleteLegacyThreadCache();
-      final file = await _threadsFile();
+      final file = await _threadsFile(ownerId);
       if (file == null || !await file.exists()) return;
       final raw = jsonDecode(await file.readAsString());
       final list = (raw as List? ?? [])
           .map((e) => ChatThread.fromJson((e as Map).cast<String, dynamic>()))
           .where((t) => t.characterId.isNotEmpty)
           .toList();
-      if (_disposed || list.isEmpty) return;
+      if (_disposed ||
+          generation != _cacheGeneration ||
+          ownerId != _cacheOwnerId ||
+          list.isEmpty) {
+        return;
+      }
       state = state.copyWith(
         threads: {for (final t in list) t.characterId: t, ...state.threads},
       );
@@ -1722,8 +1796,10 @@ class AiChatController extends Notifier<AiChatState> {
   }
 
   Future<void> _save() async {
+    final ownerId = _cacheOwnerId;
+    if (ownerId == null || ownerId.isEmpty) return;
     try {
-      final file = await _threadsFile();
+      final file = await _threadsFile(ownerId);
       if (file == null) return;
       final list = state.threads.values.map((t) => t.toJson()).toList();
       await file.writeAsString(jsonEncode(list));
