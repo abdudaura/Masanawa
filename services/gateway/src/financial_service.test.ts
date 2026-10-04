@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { createHmac } from "node:crypto";
 import { createCanonicalId, toInstant } from "@masanawa/contracts";
 import type { CryptoIntent, CryptoRepository } from "@masanawa/commerce";
-import { canonicalizeIpnPayload, NowPaymentsClient, NowPaymentsPayoutClient, type NowPaymentsAccountEvidence } from "@masanawa/nowpayments";
+import { canonicalizeIpnPayload, NowPaymentsClient, NowPaymentsCustodyClient, NowPaymentsPayoutClient, type NowPaymentsAccountEvidence } from "@masanawa/nowpayments";
 import { createFinancialService, createFixedFinancialAuthorizer } from "./financial_service.js";
 
 const tenantId = createCanonicalId("tenant"), userId = createCanonicalId("user");
@@ -34,6 +34,9 @@ function setup(existing: CryptoIntent | null = intent, evidence?: NowPaymentsAcc
     if (url.includes("/payout-withdrawal/min-amount/")) {
       return new Response(JSON.stringify({ success: true, result: "1" }));
     }
+    if (url.endsWith("/balance")) {
+      return new Response(JSON.stringify({ usdttrc20: { amount: "100", pendingAmount: "0" } }));
+    }
     return new Response(JSON.stringify(payload));
   });
   const crypto = {
@@ -47,6 +50,7 @@ function setup(existing: CryptoIntent | null = intent, evidence?: NowPaymentsAcc
   const service = createFinancialService({
     authorizer: createFixedFinancialAuthorizer({ token: "fixture-token", tenantId, userId }),
     crypto, nowPayments: new NowPaymentsClient({ apiKey: "fixture-key", fetch }),
+    nowPaymentsCustody: new NowPaymentsCustodyClient({ apiKey: "fixture-key", email: "test@example.com", password: "fixture-password", fetch }),
     nowPaymentsPayout: new NowPaymentsPayoutClient({ apiKey: "fixture-key", email: "test@example.com", password: "fixture-password", fetch }),
     nowPaymentsIpnSecret: "fixture-ipn", publicBaseUrl: "https://example.com", now: () => at,
     ...(evidence === undefined ? {} : { withdrawalEvidence: async () => ({
@@ -110,7 +114,22 @@ describe("financial service recovery and admission", () => {
       minimumAmount: "1", networkFee: "0.1", addressValidated: true, quotedAt: at,
     });
     expect(crypto.reserveWithdrawal).not.toHaveBeenCalled();
-    expect(fetch).toHaveBeenCalledTimes(3);
+    expect(fetch).toHaveBeenCalledTimes(4);
+  });
+  it("rejects provider custody insufficiency before reserving customer principal", async () => {
+    const { service, crypto, fetch } = setup(null, account);
+    fetch.mockImplementation(async (request: RequestInfo | URL) => {
+      const url = String(request);
+      if (url.includes("/payout/validate-address")) return new Response("{}");
+      if (url.includes("/payout/fee?")) return new Response(JSON.stringify({ fee: "0.5" }));
+      if (url.includes("/payout-withdrawal/min-amount/")) return new Response(JSON.stringify({ success: true, result: "1" }));
+      if (url.endsWith("/balance")) return new Response(JSON.stringify({ usdttrc20: { amount: "10.4", pendingAmount: "0" } }));
+      return new Response("{}");
+    });
+    await expect(service.createWithdrawal({
+      authorizationHeader, requestId, providerCode: "USDTTRC20", amount: "10", destinationAddress: "address",
+    })).rejects.toThrow("financial.crypto.provider_balance_unavailable");
+    expect(crypto.reserveWithdrawal).not.toHaveBeenCalled();
   });
   it("rejects a provider-invalid destination before reserving customer principal", async () => {
     const { service, crypto, fetch } = setup(null, account);
@@ -119,6 +138,7 @@ describe("financial service recovery and admission", () => {
       if (url.includes("/payout/validate-address")) return new Response("invalid", { status: 400 });
       if (url.includes("/payout/fee?")) return new Response(JSON.stringify({ fee: "0.1" }));
       if (url.includes("/payout-withdrawal/min-amount/")) return new Response(JSON.stringify({ success: true, result: "1" }));
+      if (url.endsWith("/balance")) return new Response(JSON.stringify({ usdttrc20: { amount: "100", pendingAmount: "0" } }));
       return new Response("{}");
     });
     await expect(service.createWithdrawal({
@@ -133,6 +153,7 @@ describe("financial service recovery and admission", () => {
       if (url.includes("/payout/validate-address")) return new Response("{}");
       if (url.includes("/payout/fee?")) return new Response(JSON.stringify({ fee: "0.1" }));
       if (url.includes("/payout-withdrawal/min-amount/")) return new Response(JSON.stringify({ success: true, result: "20" }));
+      if (url.endsWith("/balance")) return new Response(JSON.stringify({ usdttrc20: { amount: "100", pendingAmount: "0" } }));
       return new Response("{}");
     });
     await expect(service.createWithdrawal({
