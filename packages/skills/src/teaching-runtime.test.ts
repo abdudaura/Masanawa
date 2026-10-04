@@ -340,3 +340,92 @@ describe("Teaching runtime admission binding", () => {
     ).rejects.toThrow(/must match the admitted Relationship and SkillVersion/);
   });
 });
+
+
+describe("Teaching artifact presentation", () => {
+  it("publishes an immutable authorized diagram projection", async () => {
+    const active = lesson();
+    const progress = new MemoryProgressPort();
+    const published: TeachingRuntimeProjection[] = [];
+    const coordinator = new TeachingRuntimeCoordinator({
+      progress,
+      presentation: {
+        async publish(projection) {
+          published.push(projection);
+        },
+      },
+    });
+
+    const projection = await coordinator.presentArtifact(binding(active), {
+      relationshipId: active.learner.relationshipId,
+      skillVersionId: active.skillVersionId,
+      lessonStepKey: "common-denominator",
+      artifactKey: "fraction-bars",
+      kind: "diagram",
+      title: "Fraction bars for one half and one third",
+      reference: "artifact://teaching/fractions/fraction-bars-v1",
+      mimeType: "image/svg+xml",
+      contentHash: `sha256:${"b".repeat(64)}`,
+      altText: "Two horizontal fraction bars showing one half and one third.",
+    });
+
+    expect(projection).toMatchObject({
+      kind: "artifact",
+      artifact: {
+        artifactKey: "fraction-bars",
+        kind: "diagram",
+        mimeType: "image/svg+xml",
+      },
+    });
+    if (projection.kind === "artifact") {
+      expect(Object.isFrozen(projection.artifact)).toBe(true);
+      expect(projection.artifact).not.toHaveProperty("toolCredential");
+      expect(projection.artifact).not.toHaveProperty("providerId");
+    }
+    expect(published).toEqual([projection]);
+  });
+
+  it("rejects artifacts outside the admitted learner scope", async () => {
+    const active = lesson();
+    const coordinator = new TeachingRuntimeCoordinator({
+      progress: new MemoryProgressPort(),
+    });
+
+    await expect(
+      coordinator.presentArtifact(binding(active), {
+        relationshipId: createCanonicalId("relationship"),
+        skillVersionId: active.skillVersionId,
+        lessonStepKey: "common-denominator",
+        artifactKey: "fraction-bars",
+        kind: "diagram",
+        title: "Fraction bars",
+        reference: "artifact://teaching/fractions/fraction-bars-v1",
+        mimeType: "image/svg+xml",
+        contentHash: `sha256:${"b".repeat(64)}`,
+        altText: "Fraction bars.",
+      }),
+    ).rejects.toThrow(/must match the admitted Relationship and SkillVersion/);
+  });
+
+  it("rejects unverified artifact bytes without an exact content hash", async () => {
+    const active = lesson();
+    const coordinator = new TeachingRuntimeCoordinator({
+      progress: new MemoryProgressPort(),
+    });
+
+    await expect(
+      coordinator.presentArtifact(binding(active), {
+        relationshipId: active.learner.relationshipId,
+        skillVersionId: active.skillVersionId,
+        lessonStepKey: "common-denominator",
+        artifactKey: "worksheet",
+        kind: "worksheet",
+        title: "Practice worksheet",
+        reference: "artifact://teaching/fractions/worksheet-v1",
+        mimeType: "application/pdf",
+        contentHash: "unknown",
+        altText: "Fraction practice worksheet.",
+      }),
+    ).rejects.toThrow(/contentHash/);
+  });
+});
