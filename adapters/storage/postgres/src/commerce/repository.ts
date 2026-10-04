@@ -160,6 +160,29 @@ export function createPostgresCommerceRepository(pool: Pool): CommerceRepository
       }, { isolation: "repeatable read", readOnly: true });
     },
 
+    async listActiveOffers(input) {
+      return withTransaction(
+        pool,
+        async (client) => {
+          const result = await client.query<{ definition: OfferRevision }>(
+            `SELECT r.definition
+               FROM commerce.offer_heads h
+               JOIN commerce.offer_revisions r
+                 ON r.tenant_id = h.tenant_id
+                AND r.offer_id = h.offer_id
+                AND r.revision = h.current_revision
+              WHERE h.tenant_id = $1 AND h.enabled = true
+              ORDER BY r.definition ->> 'title', h.offer_id`,
+            [input.tenantId],
+          );
+          return Object.freeze(
+            result.rows.map((row) => offerFromDefinition(row.definition)),
+          );
+        },
+        { isolation: "repeatable read", readOnly: true },
+      );
+    },
+
     async createQuote(input) {
       const quote = normalizeCommerceQuote(input);
       return withTransaction(pool, async (client) => {
