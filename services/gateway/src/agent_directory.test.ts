@@ -3,7 +3,7 @@ import type {
   AgentPresentation,
   AgentPresentationRepository,
 } from "@masanawa/agents";
-import type { TenantId } from "@masanawa/contracts";
+import type { TenantId, UserId } from "@masanawa/contracts";
 import {
   createAgentDirectoryService,
   type AgentDirectoryAuthorizer,
@@ -11,6 +11,8 @@ import {
 
 const tenantId =
   "tenant_00000000-0000-4000-8000-000000000001" as TenantId;
+const userId =
+  "user_00000000-0000-4000-8000-000000000004" as UserId;
 
 const presentation: AgentPresentation = {
   schemaVersion: 1,
@@ -48,7 +50,7 @@ describe("mobile agent directory", () => {
       async authorize(input) {
         expect(input.capability).toBe("agents.directory.read");
         expect(input.authorizationHeader).toBe("Bearer user");
-        return { tenantId };
+        return { tenantId, userId };
       },
     };
 
@@ -70,6 +72,10 @@ describe("mobile agent directory", () => {
         greeting: "What should we work on?",
         presence: "available",
         activeWorkCount: 0,
+        supportAgent: false,
+        defaultPlatformAgent: false,
+        voiceProvider: null,
+        voiceName: null,
       },
     ]);
     expect(entries[0]).not.toHaveProperty("skillVersionIds");
