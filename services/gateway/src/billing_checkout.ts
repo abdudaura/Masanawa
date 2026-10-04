@@ -70,6 +70,34 @@ function money(kobo: number): string {
   return `₦${formatNgnKobo(kobo)}`;
 }
 
+function presentationRevision(quote: BillingQuote): number {
+  // Presentation revisions are monotonic workflow stages. Economic quote
+  // revision stays immutable and continues to bind money/action authority.
+  switch (quote.state) {
+    case "quoted":
+    case "confirmed":
+      return 1;
+    case "checkout-created":
+      return 2;
+    case "funded":
+      return 3;
+    case "reserved":
+      return 4;
+    case "succeeded":
+      return 5;
+    case "refund-pending":
+      return 5;
+    case "refund-dispatching":
+      return 6;
+    case "refund-submitted":
+      return 7;
+    case "refunded":
+      return 8;
+    case "expired":
+      return 9;
+  }
+}
+
 function documentFor(quote: BillingQuote, actionSecret: string, requireEmail = false): unknown {
   const phase = quotePhase(quote);
   const documentId = `billing:${quote.quoteId}`;
@@ -86,7 +114,7 @@ function documentFor(quote: BillingQuote, actionSecret: string, requireEmail = f
     return Object.freeze({
       version: 1,
       id: documentId,
-      revision: quote.revision,
+      revision: presentationRevision(quote),
       expiresAt: expiry,
       fallback: `Confirm ${quote.itemName} for ${money(quote.totalAmountKobo)}.`,
       nodes: [
@@ -156,7 +184,7 @@ function documentFor(quote: BillingQuote, actionSecret: string, requireEmail = f
   return Object.freeze({
     version: 1,
     id: documentId,
-    revision: quote.revision + (phase === "quoted" ? 0 : 1),
+    revision: presentationRevision(quote),
     ...(phase === "checkout" ? { expiresAt: expiry } : {}),
     fallback: statusText,
     nodes,
@@ -598,8 +626,7 @@ export function createBillingCheckoutService(input: Readonly<{
 
     async executeShellAction(request) {
       const owned = await ownedQuote(request.authorizationHeader,request.documentId.replace(/^billing:/u,""));
-      if (request.revision !== owned.quote.revision &&
-          request.revision !== owned.quote.revision + 1) {
+      if (request.revision !== presentationRevision(owned.quote)) {
         throw new Error("financial.billing.shell_revision_conflict");
       }
       verifyBillingActionToken({
