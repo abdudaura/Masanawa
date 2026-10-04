@@ -141,8 +141,9 @@ describe("customer authentication", () => {
       isNewUser: true,
     });
 
-    const customer = createPlatformCustomerSessionAuthorizer({ repository });
-    const financial = createPlatformSessionFinancialAuthorizer({ repository });
+    const authorizationNow = () => "2026-10-04T20:00:10.000Z";
+    const customer = createPlatformCustomerSessionAuthorizer({ repository, now: authorizationNow });
+    const financial = createPlatformSessionFinancialAuthorizer({ repository, now: authorizationNow });
     await expect(customer.authorize({
       authorizationHeader: `Bearer ${signedIn.accessToken}`,
     })).resolves.toMatchObject({ tenantId, profile: { name: "Amina" } });
