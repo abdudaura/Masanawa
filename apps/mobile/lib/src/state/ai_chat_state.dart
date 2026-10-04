@@ -64,6 +64,7 @@ class AiChatMessage {
     required this.text,
     required this.createdAt,
     this.attachment,
+    this.attachments = const [],
     this.parts = const [],
     this.replyToId,
     this.replyPreview,
@@ -71,6 +72,7 @@ class AiChatMessage {
     this.editedAt,
     this.deleted = false,
     this.deliveryStatus = 'sent',
+    this.uploadProgress,
   });
 
   final String id;
@@ -78,6 +80,7 @@ class AiChatMessage {
   final String text;
   final DateTime createdAt;
   final ChatAttachment? attachment;
+  final List<ChatAttachment> attachments;
   final List<AgentMessagePart> parts;
   final String? replyToId;
   final String? replyPreview;
@@ -85,10 +88,17 @@ class AiChatMessage {
   final DateTime? editedAt;
   final bool deleted;
   final String deliveryStatus;
+  final double? uploadProgress;
+
+  List<ChatAttachment> get allAttachments => [
+    if (attachment != null) attachment!,
+    ...attachments,
+  ];
 
   AiChatMessage copyWith({
     String? text,
     ChatAttachment? attachment,
+    List<ChatAttachment>? attachments,
     List<AgentMessagePart>? parts,
     String? replyToId,
     String? replyPreview,
@@ -96,12 +106,14 @@ class AiChatMessage {
     DateTime? editedAt,
     bool? deleted,
     String? deliveryStatus,
+    double? uploadProgress,
   }) => AiChatMessage(
     id: id,
     isUser: isUser,
     text: text ?? this.text,
     createdAt: createdAt,
     attachment: attachment ?? this.attachment,
+    attachments: attachments ?? this.attachments,
     parts: parts ?? this.parts,
     replyToId: replyToId ?? this.replyToId,
     replyPreview: replyPreview ?? this.replyPreview,
@@ -109,6 +121,7 @@ class AiChatMessage {
     editedAt: editedAt ?? this.editedAt,
     deleted: deleted ?? this.deleted,
     deliveryStatus: deliveryStatus ?? this.deliveryStatus,
+    uploadProgress: uploadProgress ?? this.uploadProgress,
   );
 
   Map<String, dynamic> toJson() => {
@@ -117,6 +130,8 @@ class AiChatMessage {
     'text': text,
     'createdAt': createdAt.toIso8601String(),
     if (attachment != null) 'attachment': attachment!.toJson(),
+    if (attachments.isNotEmpty)
+      'attachments': [for (final item in attachments) item.toJson()],
     if (parts.isNotEmpty) 'parts': [for (final part in parts) part.toJson()],
     if (replyToId != null) 'replyToId': replyToId,
     if (replyPreview != null) 'replyPreview': replyPreview,
@@ -124,6 +139,7 @@ class AiChatMessage {
     if (editedAt != null) 'editedAt': editedAt!.toIso8601String(),
     if (deleted) 'deleted': true,
     if (deliveryStatus != 'sent') 'deliveryStatus': deliveryStatus,
+    if (uploadProgress != null) 'uploadProgress': uploadProgress,
   };
 
   factory AiChatMessage.fromJson(Map<String, dynamic> json) => AiChatMessage(
@@ -137,6 +153,10 @@ class AiChatMessage {
         : ChatAttachment.fromJson(
             (json['attachment'] as Map).cast<String, dynamic>(),
           ),
+    attachments: [
+      for (final raw in (json['attachments'] as List? ?? const []))
+        if (raw is Map) ChatAttachment.fromJson(raw.cast<String, dynamic>()),
+    ],
     parts: [
       for (final raw in (json['parts'] as List? ?? const []))
         if (raw is Map) AgentMessagePart.fromJson(raw.cast<String, dynamic>()),
@@ -147,6 +167,7 @@ class AiChatMessage {
     editedAt: DateTime.tryParse(json['editedAt'] as String? ?? ''),
     deleted: json['deleted'] as bool? ?? false,
     deliveryStatus: json['deliveryStatus'] as String? ?? 'sent',
+    uploadProgress: (json['uploadProgress'] as num?)?.toDouble(),
   );
 }
 
@@ -406,6 +427,33 @@ class AiChatController extends Notifier<AiChatState> {
     await _dispatchUserMessage(characterId, message);
   }
 
+  Future<void> sendAttachments(
+    String characterId,
+    List<ChatAttachment> attachments, {
+    String? caption,
+  }) async {
+    if (attachments.isEmpty || state.sendingIn.contains(characterId)) return;
+    if (attachments.length == 1) {
+      await sendAttachment(characterId, attachments.first, caption: caption);
+      return;
+    }
+    final bounded = List<ChatAttachment>.unmodifiable(attachments.take(8));
+    final message = AiChatMessage(
+      id: _newId(),
+      isUser: true,
+      text: (caption ?? '').trim(),
+      createdAt: DateTime.now(),
+      attachments: bounded,
+      deliveryStatus: 'sending',
+      uploadProgress: 0,
+    );
+    if (await _offlineNow()) {
+      await _enqueueMessage(characterId, message);
+      return;
+    }
+    await _dispatchUserMessage(characterId, message);
+  }
+
   Future<void> _dispatchUserMessage(
     String characterId,
     AiChatMessage userMsg, {
@@ -429,12 +477,14 @@ class AiChatController extends Notifier<AiChatState> {
       return;
     try {
       final attachment = userMsg.attachment;
+      final attachmentSet = userMsg.attachments;
+      final hasMedia = attachment != null || attachmentSet.isNotEmpty;
       final streamMessageId =
-          attachment == null ? _beginAiStream(characterId) : null;
+          !hasMedia ? _beginAiStream(characterId) : null;
       final promptText = userMsg.replyPreview?.trim().isNotEmpty == true
           ? 'Replying to this earlier message:\n"${userMsg.replyPreview}"\n\n${userMsg.text}'
           : userMsg.text;
-      final result = attachment == null
+      final result = !hasMedia
           ? await _sendViaTransport(
               characterId,
               promptText,
@@ -444,9 +494,16 @@ class AiChatController extends Notifier<AiChatState> {
                 }
               },
             )
+          : attachmentSet.isNotEmpty
+          ? await _sendMediaSetViaTransport(
+              characterId,
+              userMsg.id,
+              attachmentSet,
+              caption: userMsg.text,
+            )
           : await _sendMediaViaTransport(
               characterId,
-              attachment,
+              attachment!,
               caption: userMsg.text,
             );
       if (_disposed ||
@@ -456,7 +513,14 @@ class AiChatController extends Notifier<AiChatState> {
       if (connectionGeneration != _connectionGeneration) {
         throw const ApiException('Connection changed');
       }
-      _setDelivery(characterId, userMsg.id, 'delivered');
+      _updateMessage(
+        characterId,
+        userMsg.id,
+        (message) => message.copyWith(
+          deliveryStatus: 'delivered',
+          uploadProgress: message.allAttachments.length > 1 ? 1.0 : null,
+        ),
+      );
       ChatAttachment? replyAudio;
       if (result.audioBytes case final audio? when audio.isNotEmpty) {
         final dir = await getTemporaryDirectory();
@@ -577,6 +641,70 @@ class AiChatController extends Notifier<AiChatState> {
       bytes: bytes,
       mimeType: mimeType,
       caption: caption,
+    );
+  }
+
+  Future<AgentTurnResult> _sendMediaSetViaTransport(
+    String characterId,
+    String messageId,
+    List<ChatAttachment> attachments, {
+    required String caption,
+  }) async {
+    final media = <AgentMediaInput>[];
+    var totalBytes = 0;
+    for (final attachment in attachments) {
+      final file = File(attachment.path);
+      final bytes = await file.readAsBytes();
+      if (bytes.isEmpty || bytes.length > 8 * 1024 * 1024) {
+        throw const ApiException(
+          'Each attachment must be between 1 byte and 8 MB',
+          code: 'ATTACHMENT_TOO_LARGE',
+        );
+      }
+      totalBytes += bytes.length;
+      if (totalBytes > 12 * 1024 * 1024) {
+        throw const ApiException(
+          'Combined attachments must be 12 MB or smaller',
+          code: 'ATTACHMENT_TOO_LARGE',
+        );
+      }
+      final mimeType = attachment.kind == 'voice'
+          ? 'audio/m4a'
+          : lookupMimeType(
+                  attachment.path,
+                  headerBytes: bytes.take(16).toList(),
+                ) ??
+                switch (attachment.kind) {
+                  'image' => 'image/jpeg',
+                  'video' => 'video/mp4',
+                  _ => 'application/octet-stream',
+                };
+      media.add(
+        AgentMediaInput(
+          bytes: bytes,
+          mimeType: mimeType,
+          name: attachment.name,
+        ),
+      );
+    }
+    final transport = ref.read(agentTransportProvider);
+    final binding = await _bindingFor(characterId, transport);
+    return transport.sendMediaSetTurn(
+      binding: binding,
+      media: media,
+      caption: caption,
+      onUploadProgress: (sent, total) {
+        if (total <= 0) return;
+        _updateMessage(
+          characterId,
+          messageId,
+          (message) => message.copyWith(
+            deliveryStatus: sent >= total ? 'processing' : 'uploading',
+            uploadProgress: (sent / total).clamp(0.0, 1.0).toDouble(),
+          ),
+          persist: false,
+        );
+      },
     );
   }
 
