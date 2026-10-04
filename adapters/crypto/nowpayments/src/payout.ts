@@ -3,6 +3,7 @@ export interface NowPaymentsPayoutClientOptions {
   readonly email: string;
   readonly password: string;
   readonly baseUrl?: string;
+  readonly relayToken?: string;
   readonly fetch?: typeof globalThis.fetch;
 }
 
@@ -181,6 +182,7 @@ export class NowPaymentsPayoutClient {
   readonly #email: string;
   readonly #password: string;
   readonly #baseUrl: string;
+  readonly #relayToken: string | null;
   readonly #fetch: typeof globalThis.fetch;
 
   constructor(options: NowPaymentsPayoutClientOptions) {
@@ -188,6 +190,9 @@ export class NowPaymentsPayoutClient {
     this.#email = nonEmpty(options.email, "nowpayments.payout.email.required", 320);
     this.#password = nonEmpty(options.password, "nowpayments.payout.password.required", 512);
     this.#baseUrl = (options.baseUrl ?? "https://api.nowpayments.io/v1").replace(/\/+$/u, "");
+    const relayToken = options.relayToken?.trim() ?? "";
+    if (relayToken.length > 1024) throw new Error("nowpayments.relay_token.invalid");
+    this.#relayToken = relayToken || null;
     this.#fetch = options.fetch ?? globalThis.fetch;
   }
 
@@ -426,6 +431,9 @@ export class NowPaymentsPayoutClient {
     const headers: Record<string, string> = {
       "x-api-key": this.#apiKey,
       accept: "application/json",
+      ...(this.#relayToken === null
+        ? {}
+        : { "x-masanawa-relay-token": this.#relayToken }),
     };
     if (input.body !== undefined) headers["content-type"] = "application/json";
     if (input.authenticated && input.token) headers.authorization = `Bearer ${input.token}`;
