@@ -15,13 +15,8 @@ export interface PayoutBindingEvidence {
 }
 
 export interface FinancialPayoutEvidence extends PayoutBindingEvidence {
-  readonly batchId: string;
   readonly withdrawalId: string;
   readonly status: string;
-  readonly currency: string;
-  readonly amount: string;
-  readonly address: string;
-  readonly uniqueExternalId: string;
   readonly payloadHash: string;
 }
 
