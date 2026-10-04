@@ -205,21 +205,26 @@ export function createCustomerAuthService(input: Readonly<{
       }
       if (!/^\d{6}$/u.test(request.code)) throw new CustomerAuthError("OTP_INVALID", 400);
       const verifiedAt = now();
-      const result = await input.repository.consumeOtpChallenge({
+      const codeHash = hashOtpCode({
+        pepper: input.otpPepper,
         tenantId: input.tenantId,
         channel: normalized.channel,
         identifier: normalized.identifier,
-        codeHash: hashOtpCode({
-          pepper: input.otpPepper,
-          tenantId: input.tenantId,
-          channel: normalized.channel,
-          identifier: normalized.identifier,
-          code: request.code,
-        }),
-        consumedAt: verifiedAt,
+        code: request.code,
       });
-      if (result === "locked") throw new CustomerAuthError("OTP_LOCKED", 429);
-      if (result !== "accepted") throw new CustomerAuthError("OTP_INVALID", 400);
+      // Prove possession first without burning the one-time challenge. A new
+      // user may need to supply a name in a second request from the existing
+      // mobile onboarding flow.
+      const validation = await input.repository.consumeOtpChallenge({
+        tenantId: input.tenantId,
+        channel: normalized.channel,
+        identifier: normalized.identifier,
+        codeHash,
+        consumedAt: verifiedAt,
+        consume: false,
+      });
+      if (validation === "locked") throw new CustomerAuthError("OTP_LOCKED", 429);
+      if (validation !== "accepted") throw new CustomerAuthError("OTP_INVALID", 400);
 
       let profile = await input.repository.resolveProfile({
         tenantId: input.tenantId,
@@ -227,19 +232,30 @@ export function createCustomerAuthService(input: Readonly<{
         identifier: normalized.identifier,
         observedAt: verifiedAt,
       });
-      let isNewUser = false;
+      const isNewUser = profile === null;
+      const name = request.name?.trim();
+      if (!profile && !name) throw new CustomerAuthError("NAME_REQUIRED_ON_SIGNUP", 400);
+
+      // Consume atomically only when this request can actually complete sign-in.
+      const consumed = await input.repository.consumeOtpChallenge({
+        tenantId: input.tenantId,
+        channel: normalized.channel,
+        identifier: normalized.identifier,
+        codeHash,
+        consumedAt: verifiedAt,
+      });
+      if (consumed === "locked") throw new CustomerAuthError("OTP_LOCKED", 429);
+      if (consumed !== "accepted") throw new CustomerAuthError("OTP_INVALID", 400);
+
       if (!profile) {
-        const name = request.name?.trim();
-        if (!name) throw new CustomerAuthError("NAME_REQUIRED_ON_SIGNUP", 400);
         profile = await input.repository.createProfile({
           tenantId: input.tenantId,
           channel: normalized.channel,
           identifier: normalized.identifier,
-          name,
+          name: name!,
           locale: "en-NG",
           createdAt: verifiedAt,
         });
-        isNewUser = true;
       }
       return issueTokens(
         Object.freeze({ tenantId: profile.tenantId, userId: profile.userId, profile }),
