@@ -14,6 +14,7 @@ import {
   createTeachingRuntimeBinding,
   createTeachingRuntimeBindingFromAdmission,
   createTeachingSelectionActionBinding,
+  createTeachingFreeResponseBinding,
   createTeachingChannelSelectionBinding,
   createTeachingChannelSingleSelectProjection,
   resolveTeachingChannelSelection,
@@ -1295,5 +1296,207 @@ describe("Teaching outbound channel option projection", () => {
         },
       }),
     ).toThrow(/supports single-select only/);
+  });
+});
+
+
+describe("Teaching durable free-response flow", () => {
+  it("persists a positively evaluated free response and advances exactly once", async () => {
+    const active = lesson();
+    const progress = new MemoryProgressPort();
+    const coordinator = new TeachingRuntimeCoordinator({ progress });
+    const exercise = createTeachingFreeResponseBinding({
+      binding: binding(active),
+      requestId: createCanonicalId("request"),
+      lessonStepKey: "common-denominator",
+      exerciseKey: "explain-common-denominator",
+      expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
+    });
+
+    const result = await coordinator.submitFreeResponse({
+      binding: binding(active),
+      exercise,
+      plan: active,
+      responseText:
+        "A common denominator is a number both denominators divide into, such as 6 for 2 and 3.",
+      evaluation: {
+        assessmentKind: "formative",
+        correct: true,
+        feedback: "Correct. You explained the shared multiple idea.",
+        misconception: null,
+        alternativeExplanation: null,
+        nextCheckpointState: "ready-to-advance",
+      },
+      now: toInstant("2026-10-04T18:50:00.000Z"),
+    });
+
+    expect(result).toMatchObject({
+      kind: "feedback",
+      persistence: "stored",
+      evaluation: { correct: true },
+      continuation: {
+        reason: "advance",
+        nextStep: { stepKey: "add-numerators" },
+      },
+    });
+    expect(progress.freeResponses.size).toBe(1);
+
+    const replay = await coordinator.submitFreeResponse({
+      binding: binding(active),
+      exercise,
+      plan: active,
+      responseText:
+        "A common denominator is a number both denominators divide into, such as 6 for 2 and 3.",
+      evaluation: {
+        assessmentKind: "formative",
+        correct: true,
+        feedback: "Correct. You explained the shared multiple idea.",
+        misconception: null,
+        alternativeExplanation: null,
+        nextCheckpointState: "ready-to-advance",
+      },
+      now: toInstant("2026-10-04T18:50:05.000Z"),
+    });
+    expect(replay).toMatchObject({ kind: "feedback", persistence: "replay" });
+    expect(progress.freeResponses.size).toBe(1);
+  });
+
+  it("persists a wrong free response as reteaching evidence", async () => {
+    const active = lesson();
+    const progress = new MemoryProgressPort();
+    const coordinator = new TeachingRuntimeCoordinator({ progress });
+    const exercise = createTeachingFreeResponseBinding({
+      binding: binding(active),
+      requestId: createCanonicalId("request"),
+      lessonStepKey: "common-denominator",
+      exerciseKey: "explain-common-denominator",
+      expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
+    });
+
+    const result = await coordinator.submitFreeResponse({
+      binding: binding(active),
+      exercise,
+      plan: active,
+      responseText: "You just add 2 and 3 to get the denominator.",
+      evaluation: {
+        assessmentKind: "formative",
+        correct: false,
+        feedback: "Not yet. Denominators are not added directly.",
+        misconception: "Adds unlike denominators directly.",
+        alternativeExplanation:
+          "List multiples of 2 and 3 and find a shared multiple.",
+        nextCheckpointState: "needs-reteaching",
+      },
+      now: toInstant("2026-10-04T18:51:00.000Z"),
+    });
+
+    expect(result).toMatchObject({
+      kind: "feedback",
+      evaluation: { correct: false },
+      continuation: {
+        reason: "reteach-current",
+        nextStep: { stepKey: "common-denominator" },
+      },
+    });
+  });
+
+  it("rejects changed free-response text under the same RequestId", async () => {
+    const active = lesson();
+    const progress = new MemoryProgressPort();
+    const coordinator = new TeachingRuntimeCoordinator({ progress });
+    const exercise = createTeachingFreeResponseBinding({
+      binding: binding(active),
+      requestId: createCanonicalId("request"),
+      lessonStepKey: "common-denominator",
+      exerciseKey: "explain-common-denominator",
+      expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
+    });
+    const evaluation = {
+      assessmentKind: "formative" as const,
+      correct: null,
+      feedback: "Keep explaining your reasoning.",
+      misconception: null,
+      alternativeExplanation: null,
+      nextCheckpointState: "in-progress" as const,
+    };
+
+    await coordinator.submitFreeResponse({
+      binding: binding(active),
+      exercise,
+      plan: active,
+      responseText: "First explanation.",
+      evaluation,
+      now: toInstant("2026-10-04T18:52:00.000Z"),
+    });
+
+    await expect(
+      coordinator.submitFreeResponse({
+        binding: binding(active),
+        exercise,
+        plan: active,
+        responseText: "A changed explanation.",
+        evaluation,
+        now: toInstant("2026-10-04T18:52:10.000Z"),
+      }),
+    ).rejects.toThrow(/payload conflict/);
+  });
+
+  it("rejects expired, tampered, and cross-Relationship free-response bindings", async () => {
+    const active = lesson();
+    const progress = new MemoryProgressPort();
+    const coordinator = new TeachingRuntimeCoordinator({ progress });
+    const exercise = createTeachingFreeResponseBinding({
+      binding: binding(active),
+      requestId: createCanonicalId("request"),
+      lessonStepKey: "common-denominator",
+      exerciseKey: "explain-common-denominator",
+      expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
+    });
+    const evaluation = {
+      assessmentKind: "formative" as const,
+      correct: null,
+      feedback: "Continue.",
+      misconception: null,
+      alternativeExplanation: null,
+      nextCheckpointState: "in-progress" as const,
+    };
+
+    await expect(
+      coordinator.submitFreeResponse({
+        binding: binding(active),
+        exercise,
+        plan: active,
+        responseText: "Explanation.",
+        evaluation,
+        now: toInstant("2100-01-01T00:00:00.000Z"),
+      }),
+    ).rejects.toThrow(/expired/);
+
+    await expect(
+      coordinator.submitFreeResponse({
+        binding: binding(active),
+        exercise: { ...exercise, exerciseKey: "forged" },
+        plan: active,
+        responseText: "Explanation.",
+        evaluation,
+        now: toInstant("2026-10-04T18:53:00.000Z"),
+      }),
+    ).rejects.toThrow(/binding hash does not match payload/);
+
+    await expect(
+      coordinator.submitFreeResponse({
+        binding: createTeachingRuntimeBinding({
+          relationshipId: createCanonicalId("relationship"),
+          skillVersionId: active.skillVersionId,
+          skillKey: "core.teaching",
+          guideContentHash: `sha256:${"a".repeat(64)}`,
+        }),
+        exercise,
+        plan: active,
+        responseText: "Explanation.",
+        evaluation,
+        now: toInstant("2026-10-04T18:53:00.000Z"),
+      }),
+    ).rejects.toThrow(/must match the admitted Relationship and SkillVersion/);
   });
 });
