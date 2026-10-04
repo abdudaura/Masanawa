@@ -38,11 +38,17 @@ class AgentTurnResult {
     required this.text,
     this.parts = const [],
     this.agentRunId,
+    this.audioBytes,
+    this.audioMimeType,
+    this.audioDurationMs,
   });
 
   final String text;
   final List<AgentMessagePart> parts;
   final String? agentRunId;
+  final Uint8List? audioBytes;
+  final String? audioMimeType;
+  final int? audioDurationMs;
 }
 
 abstract class AgentTransport {
