@@ -7,7 +7,7 @@ export interface FinancialReplayTerms {
   readonly destinationAddress: string | null;
 }
 export function assertFinancialReplay(
-  intent: FinancialReplayTerms & { readonly targetAsset: string | null; readonly provider: string },
+  intent: Omit<FinancialReplayTerms, "operation"> & { readonly operation: string; readonly targetAsset: string | null; readonly provider: string },
   expected: FinancialReplayTerms,
 ): void {
   if (intent.operation !== expected.operation || intent.asset !== expected.asset ||
