@@ -6,6 +6,19 @@ Status: canonical progress ledger.
 
 Masanawa production is tracked as **150 numbered milestone tasks**. Tasks are not equal in effort, so the number is a deterministic tracker rather than a linear percent-complete estimate. A task becomes COMPLETE only when its acceptance evidence is merged to `main`. New discoveries should be absorbed into the relevant task acceptance criteria whenever possible so numbering remains stable.
 
+## Current launch overlay
+
+`docs/DIGITAL-COMMERCE-LAUNCH.md` records current provider/product decisions and
+required corrections. Flutterwave owns selected bill integration and NOWPayments
+selected crypto integration; exclude Ethereum-mainnet ERC-20 and filter exact networks
+by current fees/operation eligibility. Required data/crypto families are distinct
+from proposed airtime/electricity/TV and broader scope awaiting user decision.
+Tasks 075-076, 080, 086-094, 097-099 and 133-134 must absorb selectable chat,
+durable purchase execution, idempotent financial commands, exact reservations,
+validated settlement, asset-specific ledgers and failure/refund/reconciliation gates.
+Task 067 acceptance must bind actual rehearsal evidence to Guide/resource content.
+No task completion or deployment is inferred from this planning overlay.
+
 ## Current position
 
 Merged `main` satisfies Tasks **001-071**.
