@@ -5,11 +5,9 @@ import {
   verifyFlutterwaveV3Webhook,
   type BillingFulfillmentRecord,
 } from "@masanawa/providers";
-import {
-  type FinancialOperationsRepository,
-} from "@masanawa/postgres";
+import type { ProviderWebhookRepository } from "@masanawa/postgres";
 import type { BillingFulfillmentStore } from "@masanawa/providers";
-import type { FinancialAuthorizer } from "./financial_crypto.js";
+import type { FinancialAuthorizer } from "./financial_service.js";
 
 export interface BillingFinancialService {
   listCategories(input: Readonly<{ authorizationHeader?: string; signal?: AbortSignal }>): Promise<unknown>;
@@ -39,12 +37,6 @@ export interface BillingFinancialService {
   }>): Promise<Readonly<{ duplicate: boolean; reference: string | null }>>;
 }
 
-function publicCallback(baseUrl: string): string {
-  const base = new URL(baseUrl);
-  if (base.protocol !== "https:") throw new Error("financial.public_url.https_required");
-  return new URL("/v1/webhooks/flutterwave", base).toString();
-}
-
 function referenceFromWebhook(payload: Readonly<Record<string, unknown>>): string | null {
   const candidates = [
     payload.reference,
@@ -68,11 +60,11 @@ function referenceFromWebhook(payload: Readonly<Record<string, unknown>>): strin
 
 export function createBillingFinancialService(input: Readonly<{
   billingStore: (identity: Readonly<{ tenantId: string; userId: string }>) => BillingFulfillmentStore;
-  repository: FinancialOperationsRepository;
+  webhookRepository: ProviderWebhookRepository;
   authorizer: FinancialAuthorizer;
   flutterwaveSecretKey: string;
   flutterwaveWebhookHash: string;
-  publicBaseUrl: string;
+  flutterwaveWebhookUrl: string;
 }>): BillingFinancialService {
   const secretKey = input.flutterwaveSecretKey.trim();
   const webhookHash = input.flutterwaveWebhookHash.trim();
@@ -84,7 +76,11 @@ export function createBillingFinancialService(input: Readonly<{
     transport: new FlutterwaveHttpTransport(),
     country: "NG",
   });
-  const callbackUrl = publicCallback(input.publicBaseUrl);
+  const callbackUrl = (() => {
+    const url = new URL(input.flutterwaveWebhookUrl);
+    if (url.protocol !== "https:") throw new Error("flutterwave.webhook_url.https_required");
+    return url.toString();
+  })();
 
   function orchestrator(identity: Readonly<{ tenantId: string; userId: string }>) {
     return new BillingCommerceOrchestrator({
@@ -95,22 +91,22 @@ export function createBillingFinancialService(input: Readonly<{
 
   return Object.freeze({
     async listCategories(request) {
-      input.authorizer.authorize(request.authorizationHeader);
+      await input.authorizer.authorize({ authorizationHeader: request.authorizationHeader });
       return provider.listCategories(request.signal);
     },
 
     async listBillers(request) {
-      input.authorizer.authorize(request.authorizationHeader);
+      await input.authorizer.authorize({ authorizationHeader: request.authorizationHeader });
       return provider.listBillers(request.categoryCode, request.signal);
     },
 
     async listItems(request) {
-      input.authorizer.authorize(request.authorizationHeader);
+      await input.authorizer.authorize({ authorizationHeader: request.authorizationHeader });
       return provider.listItems(request.billerCode, request.signal);
     },
 
     async purchase(request) {
-      const identity = input.authorizer.authorize(request.authorizationHeader);
+      const identity = await input.authorizer.authorize({ authorizationHeader: request.authorizationHeader });
       const service = orchestrator(identity);
       const prepared = await service.prepare({
         fulfillmentReference: request.requestId,
@@ -140,7 +136,7 @@ export function createBillingFinancialService(input: Readonly<{
     },
 
     async readPurchase(request) {
-      const identity = input.authorizer.authorize(request.authorizationHeader);
+      const identity = await input.authorizer.authorize({ authorizationHeader: request.authorizationHeader });
       const service = orchestrator(identity);
       const current = await input.billingStore(identity).read(request.reference);
       if (!current) throw new Error("financial.billing_not_found");
@@ -158,7 +154,7 @@ export function createBillingFinancialService(input: Readonly<{
         expectedSecretHash: webhookHash,
       });
       const reference = referenceFromWebhook(evidence.payload);
-      const admission = await input.repository.admitProviderWebhook({
+      const admission = await input.webhookRepository.admitProviderWebhook({
         provider: "flutterwave",
         fingerprint: evidence.fingerprint,
         eventKey: reference === null ? `event:${evidence.event}` : `bill:${reference}:${evidence.event}`,
