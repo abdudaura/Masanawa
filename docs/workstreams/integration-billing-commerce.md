@@ -11,12 +11,19 @@
   - `packages/providers/src/flutterwave-bills/commerce-orchestrator.test.ts`
   - `packages/providers/src/flutterwave-bills/receipt-projection.ts`
   - `packages/providers/src/flutterwave-bills/receipt-projection.test.ts`
+  - `packages/providers/src/flutterwave-bills/http-transport.ts`
+  - `packages/providers/src/flutterwave-bills/http-transport.test.ts`
+  - `packages/providers/src/flutterwave-bills/credential-client.ts`
+  - `packages/providers/src/flutterwave-bills/credential-client.test.ts`
+  - `packages/providers/src/flutterwave-bills/catalog-projection.ts`
+  - `packages/providers/src/flutterwave-bills/catalog-projection.test.ts`
 - Dependencies:
   - consumes Flutterwave adapter contracts from stacked PR #95;
   - consumes canonical Commerce Offer/quote/fulfillment/ledger through injected ports only;
-  - CredentialRef resolution, persistent repository implementation, Gateway routes, chat-action projection, app/WhatsApp/Telegram transport binding and production deployment remain owned by their current workstreams.
-- Safety invariants: server-owned quote terms and fulfillment reference only; validated recipient binding; no blind redispatch after ambiguous provider outcome; exact requery before retry; provider evidence must match expected amount/recipient/reference before success; duplicate confirmation/retry reuses one fulfillment identity; provider response never becomes ledger authority by itself.
-- Current step: claim publication before implementation.
-- Verification: pending.
+  - uses existing Security CredentialRef contracts through the public `@masanawa/security` API without modifying Security-owned files;
+  - persistent repository implementation, Gateway routes, chat-action projection, app/WhatsApp/Telegram transport binding and production deployment remain owned by their current workstreams.
+- Safety invariants: server-owned quote terms and fulfillment reference only; validated recipient binding; no blind redispatch after ambiguous provider outcome; exact requery before retry; provider evidence must match expected amount/recipient/reference before success; duplicate confirmation/retry reuses one fulfillment identity; provider response never becomes ledger authority by itself; raw Flutterwave credentials exist only inside `CredentialSecret.use(...)`.
+- Current step: provider-edge completion: orchestration, production HTTP transport, scoped credential construction, catalog projection and regression coverage.
+- Verification: Foundation CI run 937 started for implementation head but failed before exposing executable job steps/logs; application pass/fail is therefore not established by that run.
 - Deployment: none.
 - Collision rule: no edits outside the exact owned paths above.
