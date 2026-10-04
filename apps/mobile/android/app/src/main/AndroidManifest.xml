@@ -13,7 +13,8 @@
     <application
         android:label="Masanawa"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@drawable/masanawa_agent_logo"
+        android:roundIcon="@drawable/masanawa_agent_logo">
         <activity
             android:name=".MainActivity"
             android:exported="true"
