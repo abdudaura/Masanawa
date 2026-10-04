@@ -6,6 +6,7 @@ import type {
 import type { CharacterVersionReferenceReader } from "@masanawa/identity";
 import type { SkillRepository } from "@masanawa/skills";
 import type { CommerceRepository } from "@masanawa/commerce";
+import type { WorldRepository } from "@masanawa/world";
 import { readRequiredEnv } from "@masanawa/contracts";
 import {
   createDrainState,
@@ -22,6 +23,7 @@ import {
   createPostgresCharacterVersionReferenceReader,
   createPostgresCommerceRepository,
   createPostgresServiceDependency,
+  createPostgresWorldRepository,
   createPostgresSkillRepository,
 } from "@masanawa/postgres";
 import {
@@ -57,6 +59,7 @@ export interface ServiceDatabaseDependency {
   readonly characterVersions?: CharacterVersionReferenceReader;
   readonly skills?: SkillRepository;
   readonly commerce?: CommerceRepository;
+  readonly worlds?: WorldRepository;
   readonly platformAdminDatabase?: PlatformAdminQuery;
   close(): Promise<void>;
 }
@@ -126,6 +129,7 @@ function createDefaultDatabaseDependency(
       createPostgresCharacterVersionReferenceReader(database.pool),
     skills: createPostgresSkillRepository(database.pool),
     commerce: createPostgresCommerceRepository(database.pool),
+    worlds: createPostgresWorldRepository(database.pool),
     platformAdminDatabase: database.pool as unknown as PlatformAdminQuery,
     close: database.close,
   });
@@ -171,6 +175,7 @@ export async function startOpsService(
       ? createSystemAdminService({
           database: database.platformAdminDatabase,
           authorizer: adminAuthorizer,
+          ...(database.worlds ? { worlds: database.worlds } : {}),
         })
       : undefined);
 
