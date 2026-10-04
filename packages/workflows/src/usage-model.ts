@@ -6,6 +6,7 @@ import type {
   TaskId,
   TenantId,
   WorkflowRunId,
+  WorkflowVersionId,
 } from "@masanawa/contracts";
 
 export const workflowUsageLimits = Object.freeze({
@@ -54,7 +55,7 @@ export interface WorkflowUsageTotals {
 export interface WorkflowOperatorSummary {
   readonly tenantId: TenantId;
   readonly workflowRunId: WorkflowRunId;
-  readonly workflowVersionId: string;
+  readonly workflowVersionId: WorkflowVersionId;
   readonly graphSignature: string;
   readonly runState: string;
   readonly runRevision: number;
