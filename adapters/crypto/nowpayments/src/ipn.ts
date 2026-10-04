@@ -7,8 +7,14 @@ type JsonValue = JsonPrimitive | readonly JsonValue[] | { readonly [key: string]
 export interface NowPaymentsIpnEvidence {
   readonly paymentId: string;
   readonly purchaseId: string | null;
+  readonly parentPaymentId: string | null;
   readonly orderId: string | null;
   readonly status: NowPaymentsPaymentStatus;
+  readonly priceAmount: number;
+  readonly priceCurrency: string;
+  readonly payAmount: number;
+  readonly payCurrency: string;
+  readonly actuallyPaid: number;
   readonly payloadHash: string;
 }
 
@@ -98,6 +104,24 @@ function optionalIdentity(value: unknown, code: string): string | null {
   return stringIdentity(value, code);
 }
 
+function paymentAmount(value: unknown, code: string, allowZero = false): number {
+  const parsed =
+    typeof value === "number"
+      ? value
+      : typeof value === "string" && value.trim() !== ""
+        ? Number(value)
+        : Number.NaN;
+  if (!Number.isFinite(parsed) || parsed < 0 || (!allowZero && parsed === 0)) throw new Error(code);
+  return parsed;
+}
+
+function paymentCurrency(value: unknown): string {
+  if (typeof value !== "string") throw new Error("nowpayments.ipn.currency.invalid");
+  const normalized = value.trim().toUpperCase();
+  if (!/^[A-Z0-9_-]{2,32}$/.test(normalized)) throw new Error("nowpayments.ipn.currency.invalid");
+  return normalized;
+}
+
 export function parseVerifiedPaymentIpn(input: {
   readonly payload: unknown;
   readonly signature: string;
@@ -113,8 +137,21 @@ export function parseVerifiedPaymentIpn(input: {
   return Object.freeze({
     paymentId: stringIdentity(payload.payment_id, "nowpayments.ipn.payment_id.invalid"),
     purchaseId: optionalIdentity(payload.purchase_id, "nowpayments.ipn.purchase_id.invalid"),
+    parentPaymentId: optionalIdentity(
+      payload.parent_payment_id,
+      "nowpayments.ipn.parent_payment_id.invalid",
+    ),
     orderId: optionalIdentity(payload.order_id, "nowpayments.ipn.order_id.invalid"),
     status: parsePaymentStatus(payload.payment_status),
+    priceAmount: paymentAmount(payload.price_amount, "nowpayments.ipn.price_amount.invalid"),
+    priceCurrency: paymentCurrency(payload.price_currency),
+    payAmount: paymentAmount(payload.pay_amount, "nowpayments.ipn.pay_amount.invalid"),
+    payCurrency: paymentCurrency(payload.pay_currency),
+    actuallyPaid: paymentAmount(
+      payload.actually_paid,
+      "nowpayments.ipn.actually_paid.invalid",
+      true,
+    ),
     payloadHash: createHash("sha256").update(canonical, "utf8").digest("hex"),
   });
 }
