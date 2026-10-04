@@ -33,11 +33,11 @@ export function createGeminiAlphaInferencePool(input: {
   const providers = keys.map(apiKey => createGeminiAlphaInferenceProvider({ ...input, apiKey }));
   let next = 0;
   return Object.freeze({
-    async generate(request: Parameters<AgentInferenceProvider["generate"]>[0]) {
+    async generate(request: Parameters<AgentInferenceProvider["generate"]>[0], controls?: Parameters<AgentInferenceProvider["generate"]>[1]) {
       const provider = providers[next]!;
       next = (next + 1) % providers.length;
       // No automatic retries across keys: shared-project quotas remain shared.
-      return provider.generate(request);
+      return provider.generate(request, controls);
     },
   });
 }
@@ -70,8 +70,11 @@ export function createGeminiAlphaInferenceProvider(input: {
   return Object.freeze({
     async generate(
       incoming: Parameters<AgentInferenceProvider["generate"]>[0],
+      controls?: Parameters<AgentInferenceProvider["generate"]>[1],
     ) {
       const request = snapshotAgentInferenceRequest(incoming);
+      const maxOutputTokens = controls?.maxOutputTokens ?? 2048;
+      if (!Number.isSafeInteger(maxOutputTokens) || maxOutputTokens < 128 || maxOutputTokens > 8192) throw new RangeError("Invalid inference token limit");
       const userParts =
         request.input.kind === "text"
           ? [{ text: request.input.text }]
@@ -98,6 +101,7 @@ export function createGeminiAlphaInferenceProvider(input: {
         `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
         {
           method: "POST",
+          ...(controls ? { signal: controls.signal } : {}),
           headers: { "content-type": "application/json", "x-goog-api-key": apiKey },
           body: JSON.stringify({
             system_instruction: {
@@ -111,7 +115,7 @@ export function createGeminiAlphaInferenceProvider(input: {
             ],
             generationConfig: {
               temperature: 0.4,
-              maxOutputTokens: 2048,
+              maxOutputTokens,
             },
           }),
         },

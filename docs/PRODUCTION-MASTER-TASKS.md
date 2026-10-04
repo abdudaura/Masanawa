@@ -192,6 +192,10 @@ Task 070 acceptance (satisfied on merged main):
     to the current turn. Default Alpha catalog/Tool composition and execution
     integration remain open; this work does not complete Task 075.
 - [ ] **076** Implement run budgets, token/cost/time/tool guards.
+  - Inference-attempt groundwork adds provider-neutral deadlines, abort propagation,
+    bounded output characters and requested output-token ceilings. Alpha defaults
+    to 60 seconds, 2,048 output tokens and 16,000 output characters. Full durable
+    run/cost/token accounting and Tool/multi-step budgets remain open.
 - [ ] **077** Implement foreground conversational strategy.
 - [ ] **078** Implement research/multi-step strategy.
 - [ ] **079** Implement background/delegated specialist strategy.

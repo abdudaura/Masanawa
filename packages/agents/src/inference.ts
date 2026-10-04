@@ -1,3 +1,4 @@
+import { normalizeAgentInferenceLimits, type AgentInferenceLimits } from "./inference_limits.js";
 import { PlatformError } from "@masanawa/contracts";
 import type {
   AgentInferenceProvider,
@@ -7,6 +8,8 @@ import type {
 } from "./strategy.js";
 
 export const agentInferenceFailureCodes = [
+  "inference.deadline_exceeded",
+  "inference.output_limit_exceeded",
   "inference.unavailable",
   "inference.rate_limited",
   "inference.rejected",
@@ -18,6 +21,8 @@ export type AgentInferenceFailureCode = (typeof agentInferenceFailureCodes)[numb
 export class AgentInferenceError extends PlatformError {
   constructor(code: AgentInferenceFailureCode) {
     const descriptions = {
+      "inference.deadline_exceeded": ["unavailable", "Inference exceeded its time limit.", true],
+      "inference.output_limit_exceeded": ["unavailable", "Inference exceeded its output limit.", false],
       "inference.unavailable": ["unavailable", "Inference is temporarily unavailable.", true],
       "inference.rate_limited": ["rate-limit", "Inference capacity is temporarily limited.", true],
       "inference.rejected": ["unavailable", "Inference could not fulfill this request.", false],
@@ -78,12 +83,30 @@ export function snapshotAgentInferenceRequest(request: AgentInferenceRequest): A
 export async function generateAgentInference(
   provider: AgentInferenceProvider,
   request: AgentInferenceRequest,
+  configuredLimits: Partial<AgentInferenceLimits> = {},
 ): Promise<AgentInferenceResult> {
+  const limits = normalizeAgentInferenceLimits(configuredLimits);
   const snapshot = snapshotAgentInferenceRequest(request);
+  const controller = new AbortController();
+  const startedAt = performance.now();
+  let timedOut = false;
+  let timer!: ReturnType<typeof setTimeout>;
+  const deadline = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => {
+      timedOut = true; controller.abort();
+      reject(new AgentInferenceError("inference.deadline_exceeded"));
+    }, limits.timeoutMs);
+  });
   let result: AgentInferenceResult;
   try {
-    result = await provider.generate(snapshot);
+    result = await Promise.race([provider.generate(snapshot, Object.freeze({
+      signal: controller.signal, maxOutputTokens: limits.maxOutputTokens,
+    })), deadline]);
+    if (timedOut || performance.now() - startedAt >= limits.timeoutMs) {
+      controller.abort(); throw new AgentInferenceError("inference.deadline_exceeded");
+    }
   } catch (error) {
+    if (timedOut) throw new AgentInferenceError("inference.deadline_exceeded");
     if (error instanceof AgentInferenceError) {
       // Reconstruct from an allowlist rather than trusting mutable error metadata.
       if ((agentInferenceFailureCodes as readonly string[]).includes(error.code)) {
@@ -91,14 +114,22 @@ export async function generateAgentInference(
       }
     }
     throw new AgentInferenceError("inference.unavailable");
+  } finally {
+    clearTimeout(timer);
   }
   try {
     const text = result?.text;
     if (typeof text !== "string" || text.length > 128_000 || !text.trim()) {
       throw new TypeError("Invalid response");
     }
+    if (text.length > limits.maxOutputCharacters) {
+      throw new AgentInferenceError("inference.output_limit_exceeded");
+    }
     return Object.freeze({ text: text.trim() });
-  } catch {
+  } catch (error) {
+    if (error instanceof AgentInferenceError && error.code === "inference.output_limit_exceeded") {
+      throw new AgentInferenceError("inference.output_limit_exceeded");
+    }
     throw new AgentInferenceError("inference.invalid_response");
   }
 }

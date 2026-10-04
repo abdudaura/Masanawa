@@ -89,3 +89,62 @@ describe("provider-neutral inference admission", () => {
     expect(JSON.stringify(error)).not.toContain("secret");
   });
 });
+
+describe("bounded inference attempts", () => {
+  it.each([
+    {timeoutMs:0}, {timeoutMs:120001}, {timeoutMs:NaN},
+    {maxOutputTokens:127}, {maxOutputTokens:8193}, {maxOutputCharacters:0},
+  ])("rejects invalid limits before contacting inference: %j", async limits => {
+    const provider={generate:vi.fn()};await expect(generateAgentInference(provider,request(),limits)).rejects.toThrow();
+    expect(provider.generate).not.toHaveBeenCalled();
+  });
+  it("aborts a hung provider and rejects its later response", async () => {
+    vi.useFakeTimers();
+    try {
+      let finish!:(value:{text:string})=>void;
+      let signal!:AbortSignal;
+      const pending=generateAgentInference({generate(_input,controls){
+        signal=controls!.signal;return new Promise(resolve=>{finish=resolve;});
+      }},request(),{timeoutMs:100});
+      const failure=expect(pending).rejects.toMatchObject({code:"inference.deadline_exceeded"});
+      await vi.advanceTimersByTimeAsync(100);await failure;
+      expect(signal.aborted).toBe(true);finish({text:"Late response must not complete the turn"});
+      await Promise.resolve();expect(vi.getTimerCount()).toBe(0);
+    } finally {vi.useRealTimers();}
+  });
+  it("keeps deadline errors safe when a vendor rejects on abort", async () => {
+    vi.useFakeTimers();
+    try {
+      const pending=generateAgentInference({generate(_input,controls){return new Promise((_resolve,reject)=>{
+        controls!.signal.addEventListener("abort",()=>reject(new Error("private vendor secret")),{once:true});
+      });}},request(),{timeoutMs:100});
+      const caught=pending.catch(error=>error);await vi.advanceTimersByTimeAsync(100);
+      const error=await caught;expect(error.code).toBe("inference.deadline_exceeded");
+      expect(JSON.stringify(error)).not.toContain("secret");
+    } finally {vi.useRealTimers();}
+  });
+  it("cleans up the timer after early failures", async () => {
+    vi.useFakeTimers();
+    try {
+      await expect(generateAgentInference({async generate(){throw new Error("vendor");}},request())).rejects.toThrow();
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {vi.useRealTimers();}
+  });
+  it("rejects output beyond the configured character bound", async () => {
+    await expect(generateAgentInference({async generate(){return {text:"oversized"};}},request(),
+      {maxOutputCharacters:4})).rejects.toMatchObject({code:"inference.output_limit_exceeded",retryable:false});
+  });
+  it("snapshots limits separately from the inference envelope", async () => {
+    const limits={maxOutputTokens:512};let finish!:(value:{text:string})=>void;
+    const pending=generateAgentInference({generate(input,controls){
+      expect(Object.keys(input).sort()).toEqual(["input","systemInstructions"]);
+      expect(controls?.maxOutputTokens).toBe(512);expect(Object.isFrozen(controls)).toBe(true);
+      return new Promise(resolve=>{finish=resolve;});}},request(),limits);
+    limits.maxOutputTokens=8192;finish({text:"Admitted"});expect(await pending).toEqual({text:"Admitted"});
+  });
+  it("rejects a response beyond the monotonic deadline even before the timer fires",async()=>{
+    const clock=vi.spyOn(performance,"now").mockReturnValueOnce(0).mockReturnValueOnce(101);
+    try {await expect(generateAgentInference({async generate(){return {text:"Late"};}},request(),{timeoutMs:100}))
+      .rejects.toMatchObject({code:"inference.deadline_exceeded"});}finally{clock.mockRestore();}
+  });
+});

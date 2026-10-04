@@ -1,13 +1,16 @@
 import type {
+  AgentInferenceLimits,
   AgentInferenceProvider,
   AgentStrategy,
 } from "@masanawa/agents";
 import { PlatformError } from "@masanawa/contracts";
-import { generateAgentInference } from "@masanawa/agents";
+import { normalizeAgentInferenceLimits, generateAgentInference } from "@masanawa/agents";
 
 export function createAlphaInferenceStrategy(input: {
   readonly inference: AgentInferenceProvider;
+  readonly limits?: Partial<AgentInferenceLimits>;
 }): AgentStrategy {
+  const limits = normalizeAgentInferenceLimits(input.limits);
   return Object.freeze({
     async execute(
       request: Parameters<AgentStrategy["execute"]>[0],
@@ -35,7 +38,7 @@ export function createAlphaInferenceStrategy(input: {
       const result = await generateAgentInference(input.inference, {
         systemInstructions: Object.freeze(instructions),
         input: request.input,
-      });
+      }, limits);
       const reply = result.text.trim();
       return Object.freeze({
         reply,

@@ -172,3 +172,16 @@ describe("Gemini Alpha inference provider", () => {
     ).resolves.toEqual({ text: "Heard" });
   });
 });
+
+describe("Gemini inference controls",()=>{
+  it("forwards abort and exact output-token ceiling through the credential pool",async()=>{
+    const controller=new AbortController();
+    const pool=createGeminiAlphaInferencePool({apiKeys:["first","second"],model:"replaceable-model",
+      fetchImpl:(async(_url,init)=>{
+        expect(init?.signal).toBe(controller.signal);
+        expect(JSON.parse(String(init?.body)).generationConfig.maxOutputTokens).toBe(512);
+        return response("Bounded");}) as typeof fetch});
+    expect(await pool.generate({systemInstructions:["Hello"],input:{kind:"text",text:"Hi"}},
+      {signal:controller.signal,maxOutputTokens:512})).toEqual({text:"Bounded"});
+  });
+});

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   createCanonicalId,
   nowInstant,
@@ -128,6 +128,32 @@ describe("Alpha conversation service", () => {
     expect(result.reply).toBe("Prepared only");expect(selected).toBe(true);expect(finished).toBe(true);
     await expect(retained!({skillVersionId,tools:[]})).rejects.toMatchObject({code:"agents.selection_turn_closed"});
     const late=expect(pending).rejects.toMatchObject({code:"agents.selection_turn_closed"});release();await late;
+  });
+
+  it.each(["text","media"] as const)("records the runtime deadline as a failed AgentRun for %s",async kind=>{
+    vi.useFakeTimers();
+    try {
+      const f=fixture(),session=sessionFor(f),outcomes:Parameters<AgentRunRepository["finish"]>[0][]=[];
+      let signal:AbortSignal|undefined;
+      const service=createAgentConversationService({
+        sessions:{async create(){return session;},async read(){return session;},async close(){return session;},
+          async reset(){throw new Error("unused");},async updateBindings(){throw new Error("unused");}},
+        runs:{async create(){return {} as never;},async read(){throw new Error("unused");},
+          async finish(input){outcomes.push(input);return {} as never;}},
+        authorizer:{async authorize(){return f.admission;}},sessionDurationMs:60_000,
+        strategy:createAlphaInferenceStrategy({limits:{timeoutMs:100},inference:{generate(_input,controls){
+          signal=controls?.signal;return new Promise(()=>{});}}}),
+      });
+      const request={authorizationHeader:"Bearer alpha",characterId:f.scope.characterId,
+        characterSessionId:session.characterSessionId,requestId:createCanonicalId("request"),correlationId:createCanonicalId("correlation")};
+      const pending=kind==="text"?service.turn({...request,text:"Hello"}):
+        service.mediaTurn({...request,caption:"",mimeType:"audio/mp4",dataBase64:"YWJj"});
+      const failure=expect(pending).rejects.toMatchObject({code:"inference.deadline_exceeded"});
+      await vi.advanceTimersByTimeAsync(0);await vi.advanceTimersByTimeAsync(100);await failure;
+      expect(signal?.aborted).toBe(true);expect(outcomes).toHaveLength(1);
+      expect(outcomes[0]?.outcome).toEqual({state:"failed",failureCode:"inference.deadline_exceeded"});
+      expect(vi.getTimerCount()).toBe(0);
+    }finally{vi.useRealTimers();}
   });
 
   it("replaces inference providers while retaining exact session/version/run custody", async () => {

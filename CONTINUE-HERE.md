@@ -716,3 +716,35 @@ Verification: expanded runtime gate passed 329 tests plus Gateway/Ops builds and
 relevant typechecks. Full Vitest passed 422 tests with 78 database-dependent skips.
 Task 072 remains current; Tasks 073–075 are not complete. No PostgreSQL acceptance,
 hosted deployment, Flutter/APK build or device test is claimed.
+
+
+## Task 076 bounded inference-attempt checkpoint (not complete)
+
+Agents now owns normalized per-attempt inference limits: default 60-second
+deadline, 2,048 requested output tokens and 16,000 output characters. Invalid
+limits fail before dispatch; the hard supported ceilings are 120 seconds, 8,192
+requested output tokens and 128,000 characters. Alpha strategy captures limits
+at composition, so configuration changes cannot expand an admitted attempt.
+
+The common inference boundary races generation against a deadline, aborts the
+provider signal, cleans up timers and rejects late responses even when an adapter
+ignores cancellation. A monotonic elapsed-time check rejects results beyond the
+deadline before a delayed timer callback runs. Output over the configured bound
+fails admission. Safe typed errors are inference.deadline_exceeded and
+inference.output_limit_exceeded; raw vendor errors remain redacted.
+
+Gemini receives the abort signal and exact output-token ceiling through both the
+single-key adapter and credential pool. The inference envelope still contains
+only system instructions and transient input. There are no automatic retries
+or credential cycling after a timeout. Text/media Gateway journeys verify that
+the deadline is recorded through the existing failed AgentRun transition.
+
+These are attempt guards, not full durable AgentRun budgets, cost/usage accounting
+or Tool/multi-step limits. A token ceiling requested from an adapter is not a
+measured provider usage or billing receipt. Task 076 is not complete, and Task 072
+remains current. No PostgreSQL acceptance or mobile/cloud deployment is claimed.
+
+Verification: runtime gate passed 344 tests plus Gateway/Ops builds/typechecks.
+Full Vitest passed 437 tests with 78 database-dependent skips. Fifteen new checks
+cover invalid limits, hung providers, abort/error redaction, cleanup, late results,
+output bounds, control forwarding and text/media failed-run custody.

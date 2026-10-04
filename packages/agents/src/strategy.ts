@@ -73,6 +73,11 @@ export interface AgentInferenceResult {
   readonly text: string;
 }
 
+export interface AgentInferenceControls {
+  readonly signal: AbortSignal;
+  readonly maxOutputTokens: number;
+}
+
 export interface AgentInferenceProvider {
-  generate(input: AgentInferenceRequest): Promise<AgentInferenceResult>;
+  generate(input: AgentInferenceRequest, controls?: AgentInferenceControls): Promise<AgentInferenceResult>;
 }

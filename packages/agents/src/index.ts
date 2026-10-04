@@ -9,3 +9,5 @@ export * from "./inference.js";
 export * from "./context.js";
 
 export * from "./selection.js";
+
+export * from "./inference_limits.js";
