@@ -254,3 +254,5 @@ test("operator handler refuses purchase when runtime egress IP changed", async (
   }
   assert.equal(providerCalls, 0);
 });
+
+// live qualification deployment trigger
