@@ -9,6 +9,7 @@
   - `docs/workstreams/integration-flutterwave-webhook-live.md`
   - `scripts/flutterwave-webhook-proxy.mjs`
   - `scripts/flutterwave-webhook-proxy.test.mjs`
+  - `scripts/flutterwave-qualification-trigger.mjs`
 - Shared/deployment operations:
   - Railway production worker start command may be changed to launch the owned proxy wrapper.
   - Railway production worker source may be repointed to this branch after review.
