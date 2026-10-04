@@ -2,7 +2,7 @@ import { fileURLToPath } from "node:url";
 import { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createCanonicalId, nowInstant, toInstant } from "@masanawa/contracts";
-import type { CommerceFulfillmentAdmission, CommerceLedgerTransfer, CommerceQuote } from "@masanawa/commerce";
+import type { CommerceFulfillmentAdmission, CommerceLedgerTransfer, CommerceQuote, OfferId } from "@masanawa/commerce";
 import { runMigrations } from "../migrations.js";
 import { createPostgresCommerceRepository } from "./repository.js";
 
@@ -24,7 +24,7 @@ describeDatabase("commerce paid fulfillment PostgreSQL acceptance", () => {
     const tenantId = createCanonicalId("tenant");
     const createdAt = nowInstant();
     const quote: CommerceQuote = {
-      schemaVersion: 1, tenantId, quoteId: createCanonicalId("quote"), offerId: createCanonicalId("offer"),
+      schemaVersion: 1, tenantId, quoteId: createCanonicalId("quote"), offerId: "offer_0194c2d2-6c00-7abc-8abc-1234567890ab" as OfferId,
       offerRevision: 1, customerUserId: createCanonicalId("user"), originatingCharacterId: createCanonicalId("character"),
       creatorUserId: createCanonicalId("user"), priceCredits: 100, creatorCommissionCredits: 30,
       fulfillmentReserveCredits: 50, platformMarginCredits: 20, createdAt,
