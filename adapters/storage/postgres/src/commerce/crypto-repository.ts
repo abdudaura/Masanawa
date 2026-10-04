@@ -450,25 +450,35 @@ export function createPostgresCryptoRepository(pool: Pool): CryptoRepository {
         }
 
         if (event.status === "refunded") {
+          const creditedReference =
+            event.parentPaymentId !== null &&
+            current.providerPaymentId === event.parentPaymentId
+              ? event.parentPaymentId
+              : event.paymentId;
           const credited = await client.query<{ amount: string }>(
             `SELECT amount::text AS amount FROM commerce.crypto_ledger_entries
               WHERE tenant_id=$1 AND user_id=$2 AND provider_reference=$3
                 AND reason='provider-deposit' LIMIT 1`,
-            [tenantId,userId,event.paymentId],
+            [tenantId,userId,creditedReference],
           );
           if (credited.rows[0]) {
             await postLedger(client, {
               tenantId,userId,requestId,asset:current.asset,network:current.network,
               amount:credited.rows[0].amount,direction:"debit",reason:"provider-refund",
-              providerReference:`refund:${event.paymentId}`,createdAt:event.observedAt,
+              providerReference:`refund:${creditedReference}`,createdAt:event.observedAt,
             });
           }
         }
 
-        const terminal = ["succeeded","refunded"].includes(current.status);
+        const nextIntentStatus =
+          current.status === "refunded"
+            ? "refunded"
+            : current.status === "succeeded" && nextStatus !== "refunded"
+              ? "succeeded"
+              : nextStatus;
         return updateIntentWithClient(client, {
           ...current,
-          status: terminal && nextStatus !== current.status ? current.status : nextStatus,
+          status: nextIntentStatus,
           updatedAt: event.observedAt,
         });
       });
