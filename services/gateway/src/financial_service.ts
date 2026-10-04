@@ -269,9 +269,11 @@ export function createFinancialService(input: {
     if (!input.nowPaymentsPayout) throw new Error("financial.crypto.withdrawal_unavailable");
 
     const numericAmount = Number(amount);
+    const fractionalDigits = amount.includes(".") ? amount.length - amount.indexOf(".") - 1 : 0;
     if (
       !Number.isFinite(numericAmount) ||
       numericAmount <= 0 ||
+      fractionalDigits > 6 ||
       normalizeCryptoAmount(String(numericAmount)) !== amount
     ) {
       throw new Error("financial.crypto.amount_unavailable");
