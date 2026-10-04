@@ -293,10 +293,24 @@ class AiChatController extends Notifier<AiChatState> {
       if (connectionGeneration != _connectionGeneration) {
         throw const ApiException('Connection changed');
       }
+      ChatAttachment? replyAudio;
+      if (result.audioBytes case final audio? when audio.isNotEmpty) {
+        final dir = await getTemporaryDirectory();
+        final path =
+            '${dir.path}/masanawa_reply_${DateTime.now().microsecondsSinceEpoch}.wav';
+        await File(path).writeAsBytes(audio, flush: true);
+        replyAudio = ChatAttachment(
+          kind: 'voice',
+          path: path,
+          durationMs: result.audioDurationMs,
+          sizeBytes: audio.length,
+        );
+      }
       _appendAi(
         characterId,
         result.text,
         parts: result.parts,
+        attachment: replyAudio,
         agentRunId: result.agentRunId,
       );
     } catch (error) {
@@ -436,6 +450,7 @@ class AiChatController extends Notifier<AiChatState> {
     String characterId,
     String text, {
     List<AgentMessagePart> parts = const [],
+    ChatAttachment? attachment,
     String? agentRunId,
   }) {
     if (_disposed) return;
@@ -446,6 +461,7 @@ class AiChatController extends Notifier<AiChatState> {
       isUser: false,
       text: text,
       parts: parts,
+      attachment: attachment,
       createdAt: DateTime.now(),
     );
     final sending = {...state.sendingIn}..remove(characterId);
