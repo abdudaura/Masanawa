@@ -15,6 +15,7 @@ import {
   type TeachingProgressPort,
   type TeachingRuntimeProjection,
   type TeachingSelectionAttempt,
+  type TeachingFreeResponseAttempt,
   type TeachingLessonPlan,
   type TeachingProgressHandoff,
   type TeachingSelectableExerciseRubric,
@@ -88,6 +89,7 @@ function rubric(active: TeachingLessonPlan): TeachingSelectableExerciseRubric {
 
 class DurableTeachingPort implements TeachingProgressPort {
   readonly attempts = new Map<RequestId, TeachingSelectionAttempt>();
+  readonly freeResponses = new Map<RequestId, TeachingFreeResponseAttempt>();
   readonly progress = new Map<
     string,
     { readonly planHash: string; readonly progress: TeachingProgressHandoff }
@@ -117,6 +119,30 @@ class DurableTeachingPort implements TeachingProgressPort {
       return "replay";
     }
     this.attempts.set(attempt.requestId, attempt);
+    this.progress.set(
+      this.#key({
+        relationshipId: attempt.relationshipId,
+        skillVersionId: attempt.skillVersionId,
+      }),
+      {
+        planHash: attempt.planHash,
+        progress: attempt.progress,
+      },
+    );
+    return "stored";
+  }
+
+  async commitFreeResponseAttempt(
+    attempt: TeachingFreeResponseAttempt,
+  ): Promise<"stored" | "replay"> {
+    const existing = this.freeResponses.get(attempt.requestId);
+    if (existing !== undefined) {
+      if (existing.payloadHash !== attempt.payloadHash) {
+        throw new TypeError("request payload conflict");
+      }
+      return "replay";
+    }
+    this.freeResponses.set(attempt.requestId, attempt);
     this.progress.set(
       this.#key({
         relationshipId: attempt.relationshipId,
