@@ -4,7 +4,10 @@ param(
   [switch]$Install
 )
 
-$ErrorActionPreference = "Stop"
+# "Continue" on purpose: flutter/adb write routine warnings to stderr, which
+# PowerShell would otherwise turn into terminating errors. Every native call
+# below is still gated by an explicit $LASTEXITCODE check.
+$ErrorActionPreference = "Continue"
 
 if ([string]::IsNullOrWhiteSpace($AlphaToken)) {
   throw "Set ALPHA_DEV_ACCESS_TOKEN or pass -AlphaToken."

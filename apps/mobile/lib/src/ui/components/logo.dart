@@ -45,7 +45,7 @@ class MasanawaMark extends StatelessWidget {
           height: size,
           fit: BoxFit.cover,
           errorBuilder: (errorContext, error, stackTrace) {
-            final fallback = errorContext.unigeria;
+            final fallback = errorContext.masanawa;
             return Container(
               color: fallback.brand,
               child: Center(
