@@ -359,13 +359,10 @@ export function createFinancialService(input: {
     }
     assertPayoutEvidence({
       batchId: evidence.batchId,
-      withdrawalId: "reconciled",
-      status: "processing",
       currency: evidence.currency,
       amount: evidence.amount,
       address: evidence.address,
       uniqueExternalId: evidence.uniqueExternalId,
-      payloadHash: "reconciled",
     }, {
       batchId: intent.providerPayoutId,
       currency: intent.asset,
