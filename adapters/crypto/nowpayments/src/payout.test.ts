@@ -88,7 +88,7 @@ describe("NOWPayments payout client", () => {
       .mockResolvedValueOnce(new Response("invalid payout", { status: 422 }));
     await expect(client(rejectedFetch).createPayout({
       amount: "10", currency: "trx", address: "address",
-    })).rejects.toThrow("nowpayments.payout.request_rejected");
+    })).rejects.toThrow("nowpayments.payout.dispatch_rejected");
 
     const transportFetch = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ token: "fixture-jwt" })))
@@ -96,6 +96,15 @@ describe("NOWPayments payout client", () => {
     await expect(client(transportFetch).createPayout({
       amount: "10", currency: "trx", address: "address",
     })).rejects.toThrow("nowpayments.payout.transport.unavailable");
+  });
+
+  it("classifies authentication failure as definitely pre-dispatch", async () => {
+    const fetch = vi.fn(async () => new Response("denied", { status: 401 }));
+    await expect(client(fetch).createPayout({
+      amount: "10", currency: "trx", address: "address",
+    })).rejects.toThrow("nowpayments.payout.authentication_unavailable");
+    expect(fetch).toHaveBeenCalledOnce();
+    expect(String(fetch.mock.calls[0]?.[0])).toContain("/v1/auth");
   });
 
   it("preserves batch and individual withdrawal identity from creation", async () => {
