@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   createCanonicalId,
   isCanonicalId,
+  PlatformError,
   toInstant,
 } from "@masanawa/contracts";
 import { parseTraceparent } from "@masanawa/telemetry";
@@ -75,6 +76,70 @@ describe("gateway service bootstrap", () => {
     const parsed = parseTraceparent(traceparent);
     expect(parsed?.traceId).toBe("4bf92f3577b34da6a3ce929d0e0e4736");
     expect(parsed?.spanId).not.toBe("00f067aa0ba902b7");
+  });
+
+  it("maps authentication and authorization failures without leaking internals", async () => {
+    const authenticationApp = createGatewayApp({
+      agentDirectory: {
+        async list() {
+          throw new PlatformError({
+            code: "gateway.platform_session_invalid",
+            category: "authentication",
+            message: "private upstream auth detail",
+            retryable: false,
+          });
+        },
+        async setDefaultPlatformAgent() {
+          throw new Error("unused");
+        },
+      },
+    });
+    apps.push(authenticationApp);
+
+    const unauthorized = await authenticationApp.inject({
+      method: "GET",
+      url: "/agent/directory",
+      headers: { authorization: "Bearer expired" },
+    });
+    expect(unauthorized.statusCode).toBe(401);
+    expect(unauthorized.json()).toEqual({
+      error: {
+        code: "gateway.platform_session_invalid",
+        message: "Authentication required",
+      },
+    });
+    expect(unauthorized.body).not.toContain("private upstream auth detail");
+
+    const authorizationApp = createGatewayApp({
+      agentDirectory: {
+        async list() {
+          throw new PlatformError({
+            code: "gateway.character_forbidden",
+            category: "authorization",
+            message: "private relationship detail",
+            retryable: false,
+          });
+        },
+        async setDefaultPlatformAgent() {
+          throw new Error("unused");
+        },
+      },
+    });
+    apps.push(authorizationApp);
+
+    const forbidden = await authorizationApp.inject({
+      method: "GET",
+      url: "/agent/directory",
+      headers: { authorization: "Bearer valid" },
+    });
+    expect(forbidden.statusCode).toBe(403);
+    expect(forbidden.json()).toEqual({
+      error: {
+        code: "gateway.character_forbidden",
+        message: "Not authorized",
+      },
+    });
+    expect(forbidden.body).not.toContain("private relationship detail");
   });
 
   it("fails readiness closed when a probe throws", async () => {
