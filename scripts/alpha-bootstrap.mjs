@@ -8,6 +8,7 @@ import {
   platformProductMigrationRoots,
   createPostgresAgentPresentationRepository,
   createPostgresCharacterSkillAssignmentRepository,
+  createPostgresCommerceRepository,
   createPostgresIdentityRepository,
   createPostgresPlatformAgentProfileRepository,
   createPostgresPool,
@@ -362,6 +363,7 @@ try {
   const presentations = createPostgresAgentPresentationRepository(pool);
   const profiles = createPostgresPlatformAgentProfileRepository(pool);
   const preferences = createPostgresUserAgentPreferenceRepository(pool);
+  const commerce = createPostgresCommerceRepository(pool);
 
   await skills.registerBatch(supportSkills.map((item) => item.version));
   for (const item of supportSkills) {
@@ -423,6 +425,29 @@ try {
     });
   }
 
+  await commerce.postTransfer({
+    schemaVersion: 1,
+    ledgerEntryId: createCanonicalId("ledger-entry"),
+    tenantId,
+    debit: {
+      tenantId,
+      kind: "external-clearing",
+      userId: null,
+      characterId: null,
+    },
+    credit: {
+      tenantId,
+      kind: "customer-credit",
+      userId,
+      characterId: null,
+    },
+    amountCredits: 1000,
+    reason: "customer-topup",
+    quoteId: null,
+    fulfillmentId: null,
+    createdAt: at,
+  });
+
   const gwani = characters.find((item) => item.key === "gwani");
   if (!gwani) throw new Error("Gwani seed is missing");
   await preferences.put({
@@ -476,6 +501,7 @@ try {
       ]),
       "",
       `Default support Character: Gwani / ${gwani.characterId}`,
+      "Seeded development Credits: 1000",
       `Assigned support Skills: ${supportSkills
         .map((item) => item.version.key)
         .join(", ")}`,
