@@ -69,16 +69,39 @@ function normalizeFailure(
   });
 }
 
+
+function assertChronology(
+  createdAt: string,
+  updatedAt: string,
+  startedAt: string | null,
+  terminalAt: string | null,
+  name: string,
+): void {
+  if (updatedAt < createdAt) {
+    fail(`${name}.updatedAt cannot precede createdAt`);
+  }
+  if (startedAt !== null && (startedAt < createdAt || startedAt > updatedAt)) {
+    fail(`${name}.startedAt must fall between createdAt and updatedAt`);
+  }
+  if (terminalAt !== null && (terminalAt < createdAt || terminalAt > updatedAt)) {
+    fail(`${name}.terminalAt must fall between createdAt and updatedAt`);
+  }
+}
+
 function assertRunShape(run: WorkflowRun): void {
   positiveRevision(run.revision, "workflowRun.revision");
   assertGraphSignature(run.graphSignature);
+  if (!["pending", "running", "waiting", "completed", "failed", "cancelled"].includes(run.state)) {
+    fail("WorkflowRun state is not supported");
+  }
 
   const terminal = ["completed", "failed", "cancelled"].includes(run.state);
+  const requiresStartedAt = ["running", "waiting", "completed", "failed"].includes(run.state);
   if (run.state === "pending" && run.startedAt !== null) {
     fail("pending WorkflowRun cannot have startedAt");
   }
-  if (run.state !== "pending" && run.startedAt === null) {
-    fail("non-pending WorkflowRun requires startedAt");
+  if (requiresStartedAt && run.startedAt === null) {
+    fail("started WorkflowRun state requires startedAt");
   }
   if (terminal !== (run.terminalAt !== null)) {
     fail("WorkflowRun terminalAt must match terminal state");
@@ -92,11 +115,21 @@ function assertRunShape(run: WorkflowRun): void {
   if ((run.state === "cancelled") !== (run.cancellationReason !== null)) {
     fail("WorkflowRun cancellationReason must exist only while cancelled");
   }
+  assertChronology(
+    run.createdAt,
+    run.updatedAt,
+    run.startedAt,
+    run.terminalAt,
+    "workflowRun",
+  );
 }
 
 function assertTaskShape(task: WorkflowTask): void {
   positiveRevision(task.revision, "task.revision");
   assertGraphSignature(task.graphSignature);
+  if (!["pending", "ready", "running", "waiting", "completed", "failed", "cancelled"].includes(task.state)) {
+    fail("Task state is not supported");
+  }
 
   if (
     task.lineage.depth < 0 ||
@@ -123,7 +156,7 @@ function assertTaskShape(task: WorkflowTask): void {
   if (["pending", "ready"].includes(task.state) && task.startedAt !== null) {
     fail("unstarted Task cannot have startedAt");
   }
-  if (!["pending", "ready"].includes(task.state) && task.startedAt === null) {
+  if (["running", "waiting", "completed", "failed"].includes(task.state) && task.startedAt === null) {
     fail("started Task states require startedAt");
   }
   if (terminal !== (task.terminalAt !== null)) {
@@ -138,6 +171,13 @@ function assertTaskShape(task: WorkflowTask): void {
   if ((task.state === "cancelled") !== (task.cancellationReason !== null)) {
     fail("Task cancellationReason must exist only while cancelled");
   }
+  assertChronology(
+    task.createdAt,
+    task.updatedAt,
+    task.startedAt,
+    task.terminalAt,
+    "task",
+  );
 }
 
 export function createWorkflowRun(
