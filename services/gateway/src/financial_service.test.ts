@@ -102,16 +102,14 @@ function setup(
         estimated_amount: "0.00016",
       }));
     }
-    if (url.includes("/conversion?")) {
+    if (url.endsWith("/conversion/conversion-1")) {
       return new Response(JSON.stringify({
-        data: [{
-          conversion_id: "conversion-1",
-          status: "completed",
-          from_currency: "usdttrc20",
-          to_currency: "btc",
-          from_amount: "10",
-          to_amount: "0.00016",
-        }],
+        conversion_id: "conversion-1",
+        status: "completed",
+        from_currency: "usdttrc20",
+        to_currency: "btc",
+        from_amount: "10",
+        to_amount: "0.00016",
       }));
     }
     if (url.endsWith("/conversion") && init?.method === "POST") {
@@ -472,15 +470,13 @@ describe("financial service recovery and admission", () => {
     fetch.mockImplementation(async (request: Parameters<typeof globalThis.fetch>[0]) => {
       const url = String(request);
       if (url.endsWith("/auth")) return new Response(JSON.stringify({ token: "fixture-jwt" }));
-      if (url.includes("/conversion?")) return new Response(JSON.stringify({
-        data: [{
-          conversion_id: "conversion-1",
+      if (url.endsWith("/conversion/conversion-1")) return new Response(JSON.stringify({
+        conversion_id: "conversion-1",
           status: "completed",
           from_currency: "usdttrc20",
           to_currency: "eth",
           from_amount: "10",
           to_amount: "0.004",
-        }],
       }));
       return new Response("{}");
     });
