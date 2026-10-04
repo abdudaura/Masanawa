@@ -229,6 +229,7 @@ export type TeachingRuntimeProjection =
       skillVersionId: SkillVersionId;
       card: TeachingExerciseCard;
       actionKey: string | null;
+      actionExpiresAt: Instant | null;
     }>
   | Readonly<{
       kind: "artifact";
@@ -605,6 +606,7 @@ export class TeachingRuntimeCoordinator {
       skillVersionId: card.skillVersionId,
       card,
       actionKey: null,
+      actionExpiresAt: null,
     });
     await this.#presentation?.publish(projection);
     return projection;
@@ -662,6 +664,7 @@ export class TeachingRuntimeCoordinator {
       skillVersionId: card.skillVersionId,
       card,
       actionKey: action.actionKey,
+      actionExpiresAt: action.expiresAt,
     });
     await this.#presentation?.publish(projection);
     return projection;
