@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@masanawa/contracts": "workspace:*",
+    "@masanawa/commerce": "workspace:*",
     "@masanawa/events": "workspace:*",
     "@masanawa/identity": "workspace:*",
     "@masanawa/memory": "workspace:*",
