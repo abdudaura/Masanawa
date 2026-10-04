@@ -1,0 +1,22 @@
+# Workstream claim — integration-flutterwave-webhook-live
+
+- Owner/window: ChatGPT Flutterwave live webhook integration window — 2026-10-04
+- Branch: `work/integration-flutterwave-webhook-live-20261004`
+- Base SHA: `39e893e58ef2b89beaf94116366ad8fd7fc713c2`
+- Workstream: integration
+- Purpose: expose a live Flutterwave v3 webhook endpoint on the existing Masanawa Railway worker without editing the active Gateway/runtime owner's source paths, while preserving the current NOWPayments integration.
+- Exact owned paths:
+  - `docs/workstreams/integration-flutterwave-webhook-live.md`
+  - `scripts/flutterwave-webhook-proxy.mjs`
+  - `scripts/flutterwave-webhook-proxy.test.mjs`
+- Shared/deployment operations:
+  - Railway production worker start command may be changed to launch the owned proxy wrapper.
+  - Railway production worker source may be repointed to this branch after review.
+  - Existing Flutterwave variables remain service secrets; no secret values are committed.
+- Collision constraints:
+  - do not edit `services/gateway/**`, `scripts/start-hosted-alpha.mjs`, Commerce, mobile, channels, migrations, package exports, root config or lockfile;
+  - preserve PR #98 NOWPayments adapter and pre-deploy checks;
+  - webhook payload is authenticated evidence only and must not directly settle value.
+- Current step: claim published before implementation.
+- Verification/deployment status: not yet implemented, verified or deployed.
+- Handoff: expose `POST /webhooks/flutterwave`, verify `verif-hash` in constant time, bound raw body size, return 200 only for authenticated parseable payloads, and forward all other traffic transparently to the current hosted-alpha Gateway.
