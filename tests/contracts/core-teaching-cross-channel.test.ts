@@ -299,3 +299,81 @@ describe("Core Teaching cross-channel acceptance", () => {
     expect(durable.attempts.size).toBe(1);
   });
 });
+
+
+describe("Core Teaching language and modality continuity", () => {
+  it("keeps progress when the learner switches from English text to Hausa voice", async () => {
+    const active = plan();
+    const durable = new DurableTeachingPort();
+    const coordinator = new TeachingRuntimeCoordinator({ progress: durable });
+
+    await coordinator.submitSelection(binding(active), {
+      requestId: createCanonicalId("request"),
+      plan: active,
+      rubric: rubric(active),
+      submission: {
+        relationshipId: active.learner.relationshipId,
+        skillVersionId: active.skillVersionId,
+        lessonStepKey: "common-denominator",
+        exerciseKey: "common-denominator-choice",
+        selectedOptionKeys: ["six"],
+      },
+      recordedAt: toInstant("2026-10-04T17:10:00.000Z"),
+    });
+
+    const hausaVoice: TeachingLessonPlan = {
+      ...active,
+      learner: {
+        ...active.learner,
+        language: "ha",
+        preferredModalities: ["voice"],
+      },
+    };
+    const resumed = await coordinator.resume(binding(hausaVoice), hausaVoice);
+    expect(resumed).toMatchObject({
+      kind: "lesson-step",
+      continuationReason: "advance",
+      step: { stepKey: "add-numerators" },
+    });
+    if (resumed.kind === "lesson-step") {
+      expect(resumed.relationshipId).toBe(active.learner.relationshipId);
+      expect(resumed.skillVersionId).toBe(active.skillVersionId);
+    }
+  });
+
+  it("reteaches the same step after a wrong answer even when the learner returns on another surface", async () => {
+    const active = plan();
+    const durable = new DurableTeachingPort();
+    const telegram = new TeachingRuntimeCoordinator({ progress: durable });
+
+    const feedback = await telegram.submitSelection(binding(active), {
+      requestId: createCanonicalId("request"),
+      plan: active,
+      rubric: rubric(active),
+      submission: {
+        relationshipId: active.learner.relationshipId,
+        skillVersionId: active.skillVersionId,
+        lessonStepKey: "common-denominator",
+        exerciseKey: "common-denominator-choice",
+        selectedOptionKeys: ["five"],
+      },
+      recordedAt: toInstant("2026-10-04T17:11:00.000Z"),
+    });
+    expect(feedback).toMatchObject({
+      kind: "feedback",
+      evaluation: { correct: false, nextCheckpointState: "needs-reteaching" },
+      continuation: {
+        reason: "reteach-current",
+        nextStep: { stepKey: "common-denominator" },
+      },
+    });
+
+    const app = new TeachingRuntimeCoordinator({ progress: durable });
+    const resumed = await app.resume(binding(active), active);
+    expect(resumed).toMatchObject({
+      kind: "lesson-step",
+      continuationReason: "reteach-current",
+      step: { stepKey: "common-denominator" },
+    });
+  });
+});
