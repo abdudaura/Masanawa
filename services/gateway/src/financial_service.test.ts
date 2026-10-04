@@ -278,7 +278,7 @@ describe("financial service recovery and admission", () => {
       addressValidated: true, quotedAt: at,
     });
     expect(crypto.reserveWithdrawal).not.toHaveBeenCalled();
-    expect(fetch).toHaveBeenCalledTimes(4);
+    expect(fetch).toHaveBeenCalledTimes(5);
   });
   it("uses the canonical repository fee reserve for non-zero provider fees", async () => {
     const { service, crypto } = setup(null, account);
@@ -347,6 +347,7 @@ describe("financial service recovery and admission", () => {
     const { service, crypto, fetch } = setup(null, account);
     fetch.mockImplementation(async (request: Parameters<typeof globalThis.fetch>[0]) => {
       const url = String(request);
+      if (url.endsWith("/auth")) return new Response(JSON.stringify({ token: "fixture-jwt" }));
       if (url.includes("/payout/validate-address")) return new Response("{}");
       if (url.includes("/payout/fee?")) return new Response(JSON.stringify({ fee: "0.5" }));
       if (url.includes("/payout-withdrawal/min-amount/")) return new Response(JSON.stringify({ success: true, result: "1" }));
@@ -362,6 +363,7 @@ describe("financial service recovery and admission", () => {
     const { service, crypto, fetch } = setup(null, account);
     fetch.mockImplementation(async (request: Parameters<typeof globalThis.fetch>[0]) => {
       const url = String(request);
+      if (url.endsWith("/auth")) return new Response(JSON.stringify({ token: "fixture-jwt" }));
       if (url.includes("/payout/validate-address")) return new Response("invalid", { status: 400 });
       if (url.includes("/payout/fee?")) return new Response(JSON.stringify({ fee: "0.1" }));
       if (url.includes("/payout-withdrawal/min-amount/")) return new Response(JSON.stringify({ success: true, result: "1" }));
@@ -377,6 +379,7 @@ describe("financial service recovery and admission", () => {
     const { service, crypto, fetch } = setup(null, account);
     fetch.mockImplementation(async (request: Parameters<typeof globalThis.fetch>[0]) => {
       const url = String(request);
+      if (url.endsWith("/auth")) return new Response(JSON.stringify({ token: "fixture-jwt" }));
       if (url.includes("/payout/validate-address")) return new Response("{}");
       if (url.includes("/payout/fee?")) return new Response(JSON.stringify({ fee: "0.1" }));
       if (url.includes("/payout-withdrawal/min-amount/")) return new Response(JSON.stringify({ success: true, result: "20" }));
@@ -422,7 +425,7 @@ describe("financial service recovery and admission", () => {
       quotedAt: at,
     });
     expect(crypto.reserveConversion).not.toHaveBeenCalled();
-    expect(fetch).toHaveBeenCalledTimes(3);
+    expect(fetch).toHaveBeenCalledTimes(4);
   });
 
   it("reserves, dispatches and binds a custody conversion exactly once", async () => {
@@ -509,6 +512,7 @@ describe("financial service recovery and admission", () => {
     );
     fetch.mockImplementation(async (request: Parameters<typeof globalThis.fetch>[0]) => {
       const url = String(request);
+      if (url.endsWith("/auth")) return new Response(JSON.stringify({ token: "fixture-jwt" }));
       if (url.includes("/min-amount?")) {
         return new Response(JSON.stringify({
           currency_from: "usdttrc20", currency_to: "btc", min_amount: "1",
