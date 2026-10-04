@@ -204,12 +204,12 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     try {
       final files = await FilePicker.pickFiles(allowMultiple: true);
       if (files.isEmpty) return;
+      final attachments = <ChatAttachment>[];
       for (final file in files.take(6)) {
         final path = file.path;
         if (path == null || path.isEmpty) continue;
         final size = await file.length();
-        await ref.read(aiChatProvider.notifier).sendAttachment(
-          widget.characterId,
+        attachments.add(
           ChatAttachment(
             kind: 'doc',
             path: path,
@@ -217,6 +217,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             sizeBytes: size,
           ),
         );
+      }
+      if (attachments.isNotEmpty) {
+        await ref
+            .read(aiChatProvider.notifier)
+            .sendAttachments(widget.characterId, attachments);
       }
     } catch (_) {
       if (mounted) _comingSoon('Documents');
@@ -255,10 +260,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         maxWidth: 1600,
         imageQuality: 85,
       );
+      final attachments = <ChatAttachment>[];
       for (final image in picked.take(8)) {
         final size = await File(image.path).length();
-        await ref.read(aiChatProvider.notifier).sendAttachment(
-          widget.characterId,
+        attachments.add(
           ChatAttachment(
             kind: 'image',
             path: image.path,
@@ -266,6 +271,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             sizeBytes: size,
           ),
         );
+      }
+      if (attachments.isNotEmpty) {
+        await ref
+            .read(aiChatProvider.notifier)
+            .sendAttachments(widget.characterId, attachments);
       }
     } catch (_) {
       if (mounted) _comingSoon('Photos');
@@ -866,10 +876,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     );
     if (target == null) return;
     final ctl = ref.read(aiChatProvider.notifier);
-    if (message.attachment != null) {
-      await ctl.sendAttachment(
+    if (message.allAttachments.isNotEmpty) {
+      await ctl.sendAttachments(
         target.characterId,
-        message.attachment!,
+        message.allAttachments,
         caption: message.text,
       );
     } else if (message.text.isNotEmpty) {
@@ -1543,7 +1553,7 @@ class _ChatBubble extends StatelessWidget {
       (p) => p.kind == AgentMessagePartKind.status && p.status == 'failed',
     );
     final failure = failedParts.isEmpty ? null : failedParts.first;
-    final attachment = message.attachment;
+    final attachments = message.allAttachments;
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: GestureDetector(
@@ -1607,9 +1617,27 @@ class _ChatBubble extends StatelessWidget {
                       ),
                     )
                   else ...[
-                    if (attachment != null) ...[
-                      _AttachmentView(attachment: attachment),
+                    if (attachments.isNotEmpty) ...[
+                      _AttachmentGallery(attachments: attachments),
                       if (message.text.isNotEmpty) const SizedBox(height: 6),
+                    ],
+                    if (message.uploadProgress case final progress?
+                        when message.deliveryStatus == 'uploading' ||
+                            message.deliveryStatus == 'processing') ...[
+                      const SizedBox(height: 6),
+                      LinearProgressIndicator(
+                        value: message.deliveryStatus == 'processing'
+                            ? null
+                            : progress,
+                        minHeight: 3,
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        message.deliveryStatus == 'processing'
+                            ? 'Processing attachments…'
+                            : 'Uploading ${(progress * 100).round()}%',
+                        style: TextStyle(color: u.textMuted, fontSize: 10.5),
+                      ),
                     ],
                     if (message.text.isNotEmpty)
                       _RichMessageText(text: message.text),
@@ -1834,6 +1862,32 @@ class _CodeBlock extends StatelessWidget {
             icon: const Icon(Icons.copy, size: 16),
             onPressed: () => Clipboard.setData(ClipboardData(text: value)),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AttachmentGallery extends StatelessWidget {
+  const _AttachmentGallery({required this.attachments});
+  final List<ChatAttachment> attachments;
+
+  @override
+  Widget build(BuildContext context) {
+    if (attachments.length == 1) {
+      return _AttachmentView(attachment: attachments.first);
+    }
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 260),
+      child: Wrap(
+        spacing: 4,
+        runSpacing: 4,
+        children: [
+          for (final attachment in attachments)
+            SizedBox(
+              width: attachment.kind == 'image' ? 126 : 250,
+              child: _AttachmentView(attachment: attachment),
+            ),
         ],
       ),
     );
