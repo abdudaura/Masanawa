@@ -296,7 +296,7 @@ export function createFinancialService(input: {
       amount,
       destinationAddress: validated.address,
       minimumAmount,
-      networkFee: normalizeCryptoAmount(fee.fee),
+      networkFee: fee.fee,
       addressValidated: true as const,
       quotedAt: now(),
     });
