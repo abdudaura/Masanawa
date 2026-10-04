@@ -436,6 +436,53 @@ describePostgres("workflow control acceptance", () => {
       to: "running",
       at: toInstant(new Date("2026-10-04T18:03:00.000Z")),
     });
+
+    await expect(
+      transitionWorkflowCompensationStep(pool, {
+        tenantId: run.tenantId,
+        workflowRunId: run.workflowRunId,
+        originalOperationId: original.operation.operationId,
+        from: "running",
+        to: "succeeded",
+        at: toInstant(new Date("2026-10-04T18:03:30.000Z")),
+      }),
+    ).rejects.toMatchObject({
+      code: "workflows.compensation_operation_not_succeeded",
+    });
+
+    await withTransaction(pool, async (client) => {
+      await transitionOperation(client, {
+        tenantId: run.tenantId,
+        operationId: compensation.operation.operationId,
+        from: "prepared",
+        to: "authorized",
+      });
+      await transitionOperation(client, {
+        tenantId: run.tenantId,
+        operationId: compensation.operation.operationId,
+        from: "authorized",
+        to: "dispatching",
+      });
+      await transitionOperation(client, {
+        tenantId: run.tenantId,
+        operationId: compensation.operation.operationId,
+        from: "dispatching",
+        to: "dispatched",
+      });
+      await transitionOperation(client, {
+        tenantId: run.tenantId,
+        operationId: compensation.operation.operationId,
+        from: "dispatched",
+        to: "accepted",
+      });
+      await transitionOperation(client, {
+        tenantId: run.tenantId,
+        operationId: compensation.operation.operationId,
+        from: "accepted",
+        to: "succeeded",
+      });
+    });
+
     await transitionWorkflowCompensationStep(pool, {
       tenantId: run.tenantId,
       workflowRunId: run.workflowRunId,
@@ -470,7 +517,7 @@ describePostgres("workflow control acceptance", () => {
     expect(result.rows[0]).toEqual({
       compensation_state: "compensated",
       original_state: "accepted",
-      compensation_state_operation: "prepared",
+      compensation_state_operation: "succeeded",
     });
   });
 });
