@@ -15,7 +15,7 @@ import type {
   CommerceLedgerTransfer,
   CommerceQuote,
   OfferRevision,
-  type OfferId,
+  OfferId,
 } from "./model.js";
 
 export interface CommerceRepository {
