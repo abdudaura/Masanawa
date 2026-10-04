@@ -125,6 +125,35 @@ describe("BillingCommerceOrchestrator", () => {
     expect(validations).toBe(0);
   });
 
+  it("accepts provider-declared variable-value catalog items while enforcing recipient limits", async () => {
+    const store = new MemoryStore();
+    const orchestrator = new BillingCommerceOrchestrator({
+      provider: provider(),
+      store,
+    });
+    await expect(
+      orchestrator.prepare({
+        ...purchase,
+        itemName: "Airtel Airtime",
+        amount: "100",
+        catalogAmount: "0",
+      }),
+    ).resolves.toMatchObject({
+      itemName: "Airtel Airtime",
+      amount: "100",
+      state: "ready",
+    });
+    await expect(
+      orchestrator.prepare({
+        ...purchase,
+        fulfillmentReference: "fulfillment-too-small",
+        itemName: "Airtel Airtime",
+        amount: "10",
+        catalogAmount: "0",
+      }),
+    ).rejects.toMatchObject({ code: "amount_below_minimum" });
+  });
+
   it("rejects a provider validation that does not bind the selected biller", async () => {
     const orchestrator = new BillingCommerceOrchestrator({
       store: new MemoryStore(),
