@@ -45,12 +45,17 @@ import {
   type AgentDirectoryAuthorizer,
 } from "./agent_directory.js";
 import { createAgentConversationService } from "./agent_conversation.js";
+import {
+  createCreatorCloneService,
+  type CreatorCloneAuthorizer,
+} from "./creator_clone.js";
 import type {
   AgentConversationAuthorizer,
 } from "./agent_conversation_contract.js";
 import {
   createAlphaDevAuthorizer,
   createAlphaDirectoryAuthorizer,
+  createAlphaCreatorAuthorizer,
   parseAlphaDevIds,
   parseAlphaRelationshipMap,
 } from "./alpha_dev.js";
@@ -99,6 +104,7 @@ export interface StartGatewayServiceOptions {
   readonly appOptions?: Omit<GatewayAppOptions, "isDraining">;
   readonly agentDirectoryAuthorizer?: AgentDirectoryAuthorizer;
   readonly agentConversationAuthorizer?: AgentConversationAuthorizer;
+  readonly creatorCloneAuthorizer?: CreatorCloneAuthorizer;
   readonly agentStrategy?: AgentStrategy;
 }
 
@@ -191,6 +197,7 @@ export async function startGatewayService(
 
   let directoryAuthorizer = options.agentDirectoryAuthorizer;
   let conversationAuthorizer = options.agentConversationAuthorizer;
+  let creatorCloneAuthorizer = options.creatorCloneAuthorizer;
   let strategy = options.agentStrategy;
 
   if (alphaEnabled(env)) {
@@ -225,6 +232,11 @@ export async function startGatewayService(
       userId: ids.userId,
       relationshipIds,
       ...(database.relationships ? { relationships: database.relationships } : {}),
+    });
+    creatorCloneAuthorizer ??= createAlphaCreatorAuthorizer({
+      token,
+      tenantId: ids.tenantId,
+      userId: ids.userId,
     });
     conversationAuthorizer ??= createAlphaDevAuthorizer({
       config: {
@@ -263,6 +275,20 @@ export async function startGatewayService(
         })
       : undefined);
 
+  const composedCreatorClone =
+    options.appOptions?.creatorClone ??
+    (creatorCloneAuthorizer &&
+    database.personalClones &&
+    database.agentPresentations &&
+    database.characterSkillAssignments
+      ? createCreatorCloneService({
+          authorizer: creatorCloneAuthorizer,
+          personalClones: database.personalClones,
+          presentations: database.agentPresentations,
+          skillAssignments: database.characterSkillAssignments,
+        })
+      : undefined);
+
   const composedConversation =
     options.appOptions?.agentConversation ??
     (conversationAuthorizer &&
@@ -286,6 +312,7 @@ export async function startGatewayService(
       ...(composedConversation
         ? { agentConversation: composedConversation }
         : {}),
+      ...(composedCreatorClone ? { creatorClone: composedCreatorClone } : {}),
       readinessChecks: [
         ...(options.appOptions?.readinessChecks ?? []),
         database.readinessCheck,
