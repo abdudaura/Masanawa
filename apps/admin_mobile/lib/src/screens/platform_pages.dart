@@ -319,6 +319,52 @@ class _ProvidersAdminPageState extends State<ProvidersAdminPage> {
   late Future<List<AdminCredentialRef>> _future =
       widget.api.providerCredentials();
 
+  Future<void> _revoke(AdminCredentialRef credential) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Revoke provider credential?'),
+        content: Text(
+          'This disables ${credential.slotKey} for provider '
+          '${shortId(credential.providerId)}. Running or future provider '
+          'operations may stop using it.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Revoke'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      final revoked = await widget.api.revokeProviderCredential(credential);
+      if (!mounted) return;
+      setState(() => _future = widget.api.providerCredentials());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            revoked
+                ? 'Provider credential revoked.'
+                : 'Credential was already inactive.',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error.toString())),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) => AdminFuture<List<AdminCredentialRef>>(
         future: _future,
@@ -342,9 +388,20 @@ class _ProvidersAdminPageState extends State<ProvidersAdminPage> {
                 'key ${shortId(item.keyId)}',
               ),
               isThreeLine: true,
-              trailing: Chip(
-                label: Text(item.active ? 'active' : 'inactive'),
-              ),
+              trailing: item.active
+                  ? PopupMenuButton<String>(
+                      onSelected: (value) {
+                        if (value == 'revoke') _revoke(item);
+                      },
+                      itemBuilder: (_) => const [
+                        PopupMenuItem(
+                          value: 'revoke',
+                          child: Text('Revoke credential'),
+                        ),
+                      ],
+                      child: const Chip(label: Text('active')),
+                    )
+                  : const Chip(label: Text('inactive')),
             ),
           )).toList(growable: false),
         ),
