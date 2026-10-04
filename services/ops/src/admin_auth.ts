@@ -1,4 +1,4 @@
-import { timingSafeEqual } from "node:crypto";
+import { createHash, timingSafeEqual } from "node:crypto";
 import {
   parseCanonicalId,
   type TenantId,
@@ -21,10 +21,18 @@ function bearerToken(header: string | undefined): string | null {
 }
 
 function constantTimeEqual(left: string, right: string): boolean {
-  const a = Buffer.from(left, "utf8");
-  const b = Buffer.from(right, "utf8");
-  if (a.length !== b.length) return false;
-  return timingSafeEqual(a, b);
+  const digest = (value: string) =>
+    createHash("sha256").update(value, "utf8").digest();
+  return timingSafeEqual(digest(left), digest(right));
+}
+
+class AdminAuthorizationError extends Error {
+  readonly statusCode = 401;
+
+  constructor() {
+    super("Admin authorization denied");
+    this.name = "AdminAuthorizationError";
+  }
 }
 
 export function readBootstrapAdminAuthConfig(
@@ -59,7 +67,7 @@ export function createBootstrapAdminAuthorizer(
     }): Promise<AgentAdminAuthority> {
       const supplied = bearerToken(input.authorizationHeader);
       if (!supplied || !constantTimeEqual(supplied, config.token)) {
-        throw new Error("Admin authorization denied");
+        throw new AdminAuthorizationError();
       }
       return Object.freeze({ tenantId: config.tenantId });
     },
