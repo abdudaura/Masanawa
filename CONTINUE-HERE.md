@@ -1,5 +1,19 @@
 # Continue Here
 
+## Digital commerce direction — 2026-10-04
+
+Read `docs/DIGITAL-COMMERCE-LAUNCH.md` before selecting further product work.
+Required families: data bundles and crypto buy/sell. Selected providers: Flutterwave
+for billing, NOWPayments for crypto. Exclude Ethereum-mainnet ERC-20 routes; dynamically
+filter exact supported asset/network/operation by low-fee and account eligibility.
+Keep crypto selection compact through voice/text search or requested lists.
+Selectable chat actions share authenticated server-owned transaction state.
+The launch overlay records required audit corrections and proposed broader deferrals;
+these are not all implemented, and proposed deferrals await the user decision.
+Do not claim NOWPayments merchant fiat settlement proves customer NGN payouts.
+Preserve current logo/theme and the exclusion of voice transcription.
+
+
 ## Masanawa Agent Blue brand checkpoint — 2026-10-04
 
 The user approved the blue agent/conversation logo generated in ChatGPT and
