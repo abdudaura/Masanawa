@@ -14,6 +14,7 @@ class ChatListScreen extends ConsumerWidget {
   const ChatListScreen({super.key});
 
   String _snippet(ChatThread thread) {
+    if (thread.draft.trim().isNotEmpty) return 'Draft: ${thread.draft.trim()}';
     final last = thread.lastMessage;
     if (last == null) return '';
     if (last.parts.isNotEmpty) {
@@ -42,6 +43,125 @@ class ChatListScreen extends ConsumerWidget {
     AgentMessagePartKind.status => 'Status update',
   };
 
+  Future<void> _threadActions(
+    BuildContext context,
+    WidgetRef ref,
+    ChatThread thread,
+  ) async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: Icon(thread.pinned ? Icons.push_pin_outlined : Icons.push_pin),
+              title: Text(thread.pinned ? 'Unpin' : 'Pin'),
+              onTap: () => Navigator.pop(sheetContext, 'pin'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.archive_outlined),
+              title: const Text('Archive'),
+              onTap: () => Navigator.pop(sheetContext, 'archive'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.edit_outlined),
+              title: const Text('Rename'),
+              onTap: () => Navigator.pop(sheetContext, 'rename'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (action == null || !context.mounted) return;
+    final ctl = ref.read(aiChatProvider.notifier);
+    if (action == 'pin') ctl.togglePin(thread.characterId);
+    if (action == 'archive') ctl.toggleArchive(thread.characterId);
+    if (action == 'rename') {
+      final editor = TextEditingController(text: thread.title ?? '');
+      final value = await showDialog<String>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Rename conversation'),
+          content: TextField(controller: editor, autofocus: true),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, editor.text),
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      );
+      editor.dispose();
+      if (value != null) ctl.renameThread(thread.characterId, value);
+    }
+  }
+
+  Future<void> _showArchived(
+    BuildContext context,
+    WidgetRef ref,
+    AgentDirectoryState directory,
+  ) async {
+    final archived = ref
+        .read(aiChatProvider)
+        .threads
+        .values
+        .where((thread) => thread.archived)
+        .where((thread) => directory.find(thread.characterId) != null)
+        .toList()
+      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: archived.isEmpty
+            ? const Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(child: Text('No archived chats')),
+              )
+            : ListView.builder(
+                shrinkWrap: true,
+                itemCount: archived.length,
+                itemBuilder: (_, index) {
+                  final thread = archived[index];
+                  final agent = directory.find(thread.characterId)!;
+                  return ListTile(
+                    leading: const Icon(Icons.archive_outlined),
+                    title: Text(
+                      thread.title?.trim().isNotEmpty == true
+                          ? thread.title!
+                          : agent.displayName,
+                    ),
+                    subtitle: Text(
+                      _snippet(thread),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: IconButton(
+                      tooltip: 'Unarchive',
+                      icon: const Icon(Icons.unarchive_outlined),
+                      onPressed: () {
+                        ref
+                            .read(aiChatProvider.notifier)
+                            .toggleArchive(thread.characterId);
+                        Navigator.pop(sheetContext);
+                      },
+                    ),
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      context.push('/chat/${thread.characterId}');
+                    },
+                  );
+                },
+              ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final u = context.masanawa;
@@ -65,6 +185,12 @@ class ChatListScreen extends ConsumerWidget {
         automaticallyImplyLeading: false,
         title: const MasanawaWordmark(light: true),
         actions: [
+          if (chat.threads.values.any((t) => t.archived))
+            IconButton(
+              tooltip: 'Archived chats',
+              icon: const Icon(Icons.archive_outlined),
+              onPressed: () => _showArchived(context, ref, directory),
+            ),
           IconButton(
             tooltip: 'Agents',
             icon: const Icon(Icons.groups_outlined),
@@ -128,13 +254,25 @@ class ChatListScreen extends ConsumerWidget {
                               ),
                             ),
                     ),
-                    title: Text(
-                      agent.displayName,
-                      style: TextStyle(
-                        color: u.textPrimary,
-                        fontSize: 16.5,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    title: Row(
+                      children: [
+                        if (thread.pinned) ...[
+                          Icon(Icons.push_pin, size: 14, color: u.brand),
+                          const SizedBox(width: 5),
+                        ],
+                        Expanded(
+                          child: Text(
+                      thread.title?.trim().isNotEmpty == true
+                          ? thread.title!
+                          : agent.displayName,
+                            style: TextStyle(
+                              color: u.textPrimary,
+                              fontSize: 16.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     subtitle: Padding(
                       padding: const EdgeInsets.only(top: 3),
@@ -182,6 +320,7 @@ class ChatListScreen extends ConsumerWidget {
                         ],
                       ],
                     ),
+                    onLongPress: () => _threadActions(context, ref, thread),
                     onTap: () => context.push('/chat/${thread.characterId}'),
                   );
                 },
