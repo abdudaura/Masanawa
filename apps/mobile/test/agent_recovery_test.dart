@@ -123,6 +123,49 @@ class RecoveringTransport implements AgentTransport {
   }
 }
 
+class GatewayContractAdapter implements HttpClientAdapter {
+  final requests = <RequestOptions>[];
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? stream,
+    Future<void>? cancelFuture,
+  ) async {
+    requests.add(options);
+    final path = options.uri.path;
+    final Map<String, dynamic> body = switch (path) {
+      '/creator/skills' => {'skills': <Object>[]},
+      '/creator/economy' || '/creator/float' => {
+          'hasClone': false,
+          'characterId': null,
+          'customerCredits': 0,
+          'agentFloatCredits': 0,
+          'pendingEarningsCredits': 0,
+          'availableEarningsCredits': 0,
+        },
+      '/creator/clone' => {
+          'created': true,
+          'characterId': 'character-clone',
+          'characterVersionId': 'version-clone',
+          'relationshipId': 'relationship-clone',
+          'displayName': 'Clone',
+        },
+      _ => <String, dynamic>{},
+    };
+    return ResponseBody.fromString(
+      jsonEncode(body),
+      200,
+      headers: {
+        Headers.contentTypeHeader: ['application/json'],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
 class RecordingAdapter implements HttpClientAdapter {
   RequestOptions? request;
   @override
@@ -387,6 +430,63 @@ void main() {
 
     expect(transport.closedSessions, 1);
     expect(c.read(aiChatProvider).threads, isEmpty);
+  });
+
+  test('hosted Gateway is the default local connection address', () {
+    expect(
+      kAgentBaseUrl,
+      'https://nurainworker-production.up.railway.app',
+    );
+  });
+
+  test('creator transports use the canonical Gateway route namespace', () async {
+    final adapter = GatewayContractAdapter();
+    final dio = Dio();
+    dio.httpClientAdapter = adapter;
+
+    final skills = MasanawaCreatorSkillTransport(
+      dio: dio,
+      baseUrl: 'https://gateway.test',
+      readAccessToken: () => 'private-token',
+    );
+    await skills.load();
+    await skills.setEnabled('skill-version-1', true);
+
+    final economy = MasanawaCreatorEconomyTransport(
+      dio: dio,
+      baseUrl: 'https://gateway.test',
+      readAccessToken: () => 'private-token',
+    );
+    await economy.load();
+    await economy.allocateFloat(10);
+
+    final clone = MasanawaCreatorCloneTransport(
+      dio: dio,
+      baseUrl: 'https://gateway.test',
+      readAccessToken: () => 'private-token',
+    );
+    await clone.create(
+      displayName: 'Clone',
+      biography: 'Helpful assistant',
+      languages: const ['English'],
+      personality: const ['Calm'],
+      expertise: const ['General'],
+    );
+
+    expect(
+      adapter.requests.map((request) => request.uri.path).toList(),
+      [
+        '/creator/skills',
+        '/creator/skills',
+        '/creator/economy',
+        '/creator/float',
+        '/creator/clone',
+      ],
+    );
+    for (final request in adapter.requests) {
+      expect(request.headers['Authorization'], 'Bearer private-token');
+      expect(request.uri.path, isNot(startsWith('/v1/creator/')));
+    }
   });
 
   test(
