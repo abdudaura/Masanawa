@@ -7,12 +7,14 @@ Base: `24c8ed783cc2b4797e2c915a698b69ee997f3995`
 
 Owned paths:
 - `apps/admin_mobile/**`
+- `services/ops/**`
+- `docs/ADMIN-CONTROL-PLANE.md`
 - `docs/workstreams/mobile-admin-app.md`
 
 Non-owned / read-only dependencies:
 - `apps/mobile/**` is reference-only; no edits in this workstream.
-- Gateway/Ops/shared contracts, migrations, billing, crypto, channels and customer authentication remain owned by their active workstreams.
-- Existing `apps/ops/**` and `services/ops/**` are reference-only.
+- Gateway shared contracts, migrations, billing, crypto, channels and customer authentication remain owned by their active workstreams.
+- Existing `apps/ops/**` remains reference-only; this workstream now owns additive `services/ops/**` admin projections because the user explicitly expanded the task to full-platform administration.
 
 Implemented:
 - separate Android-first Flutter application at `apps/admin_mobile`;
