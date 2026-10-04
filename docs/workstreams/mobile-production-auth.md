@@ -21,6 +21,7 @@ Finish the production-authentication cleanup that the prior Android-shell window
 - apps/mobile/test/session_state_test.dart
 - apps/mobile/test/agent_recovery_test.dart (production-auth regression coverage only)
 - apps/mobile/README.md, apps/mobile/docs/BUILDS.md and apps/mobile/tool/build_alpha.* (remove obsolete client-token instructions only)
+- scripts/alpha-bootstrap.mjs (support-agent seed correctness and removal of obsolete mobile token output only)
 - services/gateway/src/production_auth.ts (new)
 - adapters/storage/postgres/src/identity/platform-session.ts (new narrow external-session identity bridge)
 - adapters/storage/postgres/src/identity/index.ts (export only)
