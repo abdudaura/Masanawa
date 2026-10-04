@@ -128,3 +128,13 @@ this is not Flutter typechecking. The Flutter SDK was unavailable; attempted arc
 retrieval returned 404. Run flutter analyze and flutter test in apps/mobile plus real
 device/Gateway interaction before merging or releasing. No APK, live selectable purchase,
 native compatibility, deployment or numbered task completion is claimed.
+
+## Live document continuation
+
+ShellDocumentSession now maintains scoped immutable server document replacements, exact replay, predecessor revision checks and stale-update rejection. submitted/processing/fulfilled/failed/cancelled are distinct authoritative states. Terminal documents cannot reopen; processing cannot regress to submitted. Only authenticated server receivers may call apply; narrative text never sets fulfillment.
+
+ShellDocumentSessionView listens for accepted updates and replaces one document in place, exposing accessible phase labels and disabling selection outside choosing. Host must clear/close sessions on logout or conversation disposal. This reusable live view is not yet mounted by the integration-owned chat screen.
+
+Session.select resolves an explicit visible ordinal or exact unique label into the same ShellAction token used by buttons. It validates current revision, expiry, supported content, required fields and allowed field IDs. Ambiguous labels, injected values and stale choices fail closed. The speech provider may supply the selector; no transcription or speech parsing is added here.
+
+Verification: 28 pure Dart tests pass (18 prior + 10 live-session/selection cases). Analysis of all four pure production files passes. Formatting parses the live Flutter view; Flutter typechecking/widget/device verification and runtime binding remain pending.
