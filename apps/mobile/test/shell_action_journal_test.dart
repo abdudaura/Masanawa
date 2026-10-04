@@ -17,6 +17,9 @@ class Store implements ShellEncryptedStore {
 
   @override
   Future<void> delete(String key) async => data.remove(key);
+
+  @override
+  Future<Map<String, String>> readAll() async => Map.unmodifiable(data);
 }
 
 const action = ShellAction(
@@ -91,6 +94,42 @@ void main() {
       expect((await journal.read('key-0'))!.state, ShellActionState.pending);
     },
   );
+  test('owner cleanup deletes persisted journals from prior app processes', () async {
+    final store = Store()
+      ..data['masanawa.shell.actions.v1:user-1:session-old'] = '{"version":1,"records":{}}'
+      ..data['masanawa.shell.actions.v1:user-1:session-new'] = '{"version":1,"records":{}}'
+      ..data['masanawa.shell.actions.v1:user-2:session-other'] = '{"version":1,"records":{}}'
+      ..data['unrelated.secure.key'] = 'keep';
+
+    await EncryptedShellActionJournal.clearOwner(
+      store: store,
+      ownerId: 'user-1',
+    );
+
+    expect(
+      store.data.keys.where((key) => key.startsWith('masanawa.shell.actions.v1:user-1:')),
+      isEmpty,
+    );
+    expect(store.data['masanawa.shell.actions.v1:user-2:session-other'], isNotNull);
+    expect(store.data['unrelated.secure.key'], 'keep');
+  });
+
+  test('owner cleanup invalidates an already-open journal', () async {
+    final store = Store();
+    final journal = EncryptedShellActionJournal(
+      store: store,
+      namespace: 'user-1:session-live',
+    );
+    await journal.createPending('key', action);
+
+    await EncryptedShellActionJournal.clearOwner(
+      store: store,
+      ownerId: 'user-1',
+    );
+
+    await expectLater(journal.read('key'), throwsStateError);
+  });
+
   test('logout deletes scoped records and closes the journal', () async {
     final store = Store();
     final journal = EncryptedShellActionJournal(store: store, namespace: 'f');
