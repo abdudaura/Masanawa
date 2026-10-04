@@ -30,7 +30,12 @@ import {
   createPostgresServiceDependency,
   createPostgresBillingFulfillmentStore,
   createPostgresProviderWebhookRepository,
+  createPostgresChannelAdmission,
 } from "@masanawa/postgres";
+import {
+  createWhatsAppIngress,
+  createTelegramIngress,
+} from "@masanawa/messaging-channels";
 import {
   createAgentDirectoryService,
   type AgentDirectoryAuthorizer,
@@ -79,6 +84,7 @@ export interface ServiceDatabaseDependency {
     identity: Readonly<{ tenantId: string; userId: string }>,
   ) => ReturnType<typeof createPostgresBillingFulfillmentStore>;
   readonly providerWebhooks?: ReturnType<typeof createPostgresProviderWebhookRepository>;
+  readonly channelAdmission?: ReturnType<typeof createPostgresChannelAdmission>;
   close(): Promise<void>;
 }
 
@@ -157,6 +163,7 @@ function createDefaultDatabaseDependency(
     billingStore: (identity) =>
       createPostgresBillingFulfillmentStore(database.pool, identity),
     providerWebhooks: createPostgresProviderWebhookRepository(database.pool),
+    channelAdmission: createPostgresChannelAdmission(database.pool),
     close: database.close,
   });
 }
@@ -329,6 +336,9 @@ export async function startGatewayService(
         ? { agentConversation: composedConversation }
         : {}),
       ...(composedFinancial ? { financial: composedFinancial } : {}),
+      ...(composedBilling ? { billingFinancial: composedBilling } : {}),
+      ...(composedWhatsAppIngress ? { whatsAppIngress: composedWhatsAppIngress } : {}),
+      ...(composedTelegramIngress ? { telegramIngress: composedTelegramIngress } : {}),
       readinessChecks: [
         ...(options.appOptions?.readinessChecks ?? []),
         database.readinessCheck,
