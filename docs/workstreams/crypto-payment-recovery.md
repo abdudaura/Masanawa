@@ -27,3 +27,7 @@ User explicitly directed continued work. Additional exact owned paths: adapters/
 Implemented on 115895160b184b1166b1a30e09c7ef028af53c34: readIntent rechecks a bound non-terminal deposit through authenticated GET /payment/:id, bounded by 15 seconds. The new evidence parser checks exact payment/order/asset/decimal principal and required paid amounts; canonical applyProviderPaymentEvent remains the ledger owner. No status-only crediting or redispatch. Provider outage, malformed data and evidence mismatches fail closed. Terminal reads and unbound unknown dispatches do not query or dispatch.
 
 Verification: 23 tests in 2 files passed locally (Vitest 5.0.3), covering exact retries, precision beyond floating-point, wrong payment/order/currency/principal, invalid/absent paid amounts, unsafe numeric IDs and stable admitted evidence hashes. These are unit checks, not complete service or PostgreSQL acceptance. Production unchanged. Conversion, custody/provider balance reconciliation, payout qualification, fees/confirmation and channel/device acceptance remain outstanding.
+
+## Complete service qualification scope
+
+Additional isolated paths: services/gateway/src/financial_service.test.ts; adapters/crypto/nowpayments/src/payout.ts and payout.test.ts. Financial service will require fresh account and exact-route evidence before withdrawal admission. Test snapshot is isolated from the active billing checkout. Shared runtime composition, applied migrations, Commerce storage and deployment remain unowned and unchanged.
