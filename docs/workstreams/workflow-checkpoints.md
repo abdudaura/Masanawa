@@ -1,6 +1,6 @@
 # Workstream claim — workflow-checkpoints
 
-Status: active
+Status: implementation complete; unit/PostgreSQL verification evidence pending
 Owner: this isolated stacked workstream
 Started: 2026-10-04 19:27 Africa/Lagos
 Base: work/workflow-task-recovery-20261004 @ 2e4cb62ff052098f8aa919b68603896a7784f1d3
@@ -44,3 +44,25 @@ This workstream does not modify Task 084-088 implementation files, retry/backoff
 - no authorization/approval context stored as executable authority.
 
 Task 090 remains separate.
+
+
+## Implementation handoff
+
+Implemented on branch `work/workflow-checkpoints-20261004` in draft PR #112.
+
+The slice now provides:
+
+- bounded immutable checkpoint payload values;
+- deterministic checkpoint fingerprinting;
+- sequence/parent lineage;
+- exact WorkflowRun/WorkflowVersion/graph/schema compatibility;
+- rejection of restored authority/credential state;
+- append-only PostgreSQL checkpoint storage;
+- current WorkflowRun revision validation;
+- exact replay reconciliation;
+- changed replay conflict;
+- latest compatible restore lookup;
+- database UPDATE/DELETE immutability;
+- focused unit + PostgreSQL acceptance coverage.
+
+Task 090 retry/backoff/dead-letter policy remains out of scope.
