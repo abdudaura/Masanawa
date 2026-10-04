@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { createCanonicalId, toInstant } from "@masanawa/contracts";
 import {
+  assertChildTaskLineage,
   assertTaskBelongsToRun,
+  assertWorkflowRunMatchesVersion,
   createWorkflowRun,
+  createWorkflowVersion,
   createWorkflowTask,
   transitionWorkflowRun,
   transitionWorkflowTask,
@@ -342,4 +345,82 @@ describe("WorkflowRun and Task canonical state", () => {
       }),
     ).toThrow(/cancellationReason/u);
   });
+
+  it("verifies exact WorkflowVersion pinning", () => {
+    const run = createWorkflowRun(pendingRun());
+    const version = createWorkflowVersion({
+      tenantId: run.tenantId,
+      workflowId: run.workflowId,
+      workflowVersionId: run.workflowVersionId,
+      versionNumber: 1,
+      graph: {
+        entryNodeKeys: ["start"],
+        nodes: [
+          {
+            key: "start",
+            kind: "terminal",
+            label: "Done",
+            executor: null,
+          },
+        ],
+        edges: [],
+      },
+      graphSignature: run.graphSignature,
+      createdAt: t0,
+    });
+
+    expect(() => assertWorkflowRunMatchesVersion(run, version)).not.toThrow();
+
+    expect(() =>
+      assertWorkflowRunMatchesVersion(
+        run,
+        {
+          ...version,
+          workflowVersionId: createCanonicalId("workflow-version"),
+        },
+      ),
+    ).toThrow(/not pinned/u);
+  });
+
+  it("verifies child Task lineage against the actual parent Task", () => {
+    const run = createWorkflowRun(pendingRun());
+    const parent = createWorkflowTask(rootTask(run));
+    const childId = createCanonicalId("task");
+    const child = createWorkflowTask({
+      ...rootTask(run),
+      taskId: childId,
+      nodeKey: "child",
+      lineage: {
+        parentTaskId: parent.taskId,
+        rootTaskId: parent.taskId,
+        depth: 1,
+      },
+    });
+
+    expect(() => assertChildTaskLineage(child, parent)).not.toThrow();
+
+    expect(() =>
+      assertChildTaskLineage(
+        {
+          ...child,
+          lineage: {
+            ...child.lineage,
+            depth: 2,
+          },
+        },
+        parent,
+      ),
+    ).toThrow(/does not match the supplied parent/u);
+
+    expect(() =>
+      assertChildTaskLineage(
+        {
+          ...child,
+          workflowRunId: createCanonicalId("workflow-run"),
+        },
+        parent,
+      ),
+    ).toThrow(/same WorkflowRun\/version\/graph/u);
+  });
+
 });
