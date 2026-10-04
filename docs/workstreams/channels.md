@@ -30,3 +30,5 @@ Deployed: no.
 Handoff: docs/CHANNEL-WEBHOOK-INGRESS.md records exact adoption steps and limitations. Gateway/integration must add the package lock importer, durable custody/dedupe, current account lifecycle, proof-based linking/routing, action reconciliation and outbound outbox/audio delivery. No edits to those owners' paths. Claim remains active pending coordinated adoption; do not take over without explicit transfer. Keep Tasks 072 and 097–108 open until their actual gates pass.
 
 Implementation commit: 157a45f54048d2be7b234df285db8912acd4a075. Source publication preserved the exact base-main tree plus the initial claim and only these 13 owned files. PR #92 remains draft for Gateway/lockfile integration and live channel evidence.
+
+Publication verified: exact handoff commit 9def03b0a63916efb9f9a0c29064605a83c60b5a compares ahead of main with zero behind and exactly 13 owned paths. Foundation CI run 863 failed; this is not a passing CI gate. Local adapter checks above remain the verification evidence.
