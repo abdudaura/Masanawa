@@ -292,6 +292,22 @@ describe("financial service recovery and admission", () => {
       amount: "10", destinationAddress: "address" })).rejects.toThrow("financial.crypto.withdrawal_unavailable");
     expect(crypto.reserveWithdrawal).not.toHaveBeenCalled();
   });
+  it("rejects an unapproved payout destination before provider preflight or reserve", async () => {
+    const { service, crypto, fetch } = setup(
+      null, account, undefined, undefined, undefined, false, false, false,
+    );
+    await expect(service.createWithdrawal({
+      authorizationHeader,
+      requestId,
+      providerCode: "USDTTRC20",
+      amount: "10",
+      destinationAddress: "not-whitelisted",
+    })).rejects.toThrow("financial.crypto.withdrawal_destination_unapproved");
+    expect(fetch).not.toHaveBeenCalled();
+    expect(crypto.reserveWithdrawal).not.toHaveBeenCalled();
+    expect(crypto.reserveWithdrawalWithFee).not.toHaveBeenCalled();
+  });
+
   it("quotes validated withdrawal minimum and current network fee before reservation", async () => {
     const { service, crypto, fetch } = setup(null, account);
     await expect(service.quoteWithdrawal({
