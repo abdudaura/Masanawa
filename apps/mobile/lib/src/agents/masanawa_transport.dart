@@ -7,6 +7,7 @@ import '../chat/message_parts.dart';
 import '../core/network/api_client.dart';
 import 'agent_directory.dart';
 import 'creator_clone.dart';
+import 'creator_economy.dart';
 import 'agent_session.dart';
 
 const String kAgentBaseUrl = String.fromEnvironment(
@@ -178,6 +179,35 @@ class MasanawaAgentDirectoryTransport implements AgentDirectoryTransport {
   }
 }
 
+
+
+class MasanawaCreatorEconomyTransport implements CreatorEconomyTransport {
+  MasanawaCreatorEconomyTransport({
+    required Dio dio,
+    required String baseUrl,
+    String? Function()? readAccessToken,
+  }) : _client = _GatewayClient(
+         dio: dio,
+         baseUrl: baseUrl,
+         readAccessToken: readAccessToken,
+       );
+
+  final _GatewayClient _client;
+
+  @override
+  Future<CreatorEconomySnapshot> load() async {
+    final data = await _client.get('/v1/creator/economy');
+    return CreatorEconomySnapshot.fromJson(data);
+  }
+
+  @override
+  Future<CreatorEconomySnapshot> allocateFloat(int amountCredits) async {
+    final data = await _client.post('/v1/creator/float', {
+      'amountCredits': amountCredits,
+    });
+    return CreatorEconomySnapshot.fromJson(data);
+  }
+}
 
 class MasanawaCreatorCloneTransport implements CreatorCloneTransport {
   MasanawaCreatorCloneTransport({
