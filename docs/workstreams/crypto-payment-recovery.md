@@ -62,3 +62,16 @@ Canonical atomic conversion settlement is a shared dependency: Commerce/PostgreS
 ## Payout callback continuation
 
 The crypto window additionally owns signed NOWPayments payout callback admission and exact binding to the stored withdrawal. The payout callback must be HMAC verified, identify the canonical tenant/request through a provider external id, match the stored batch id, exact asset, exact principal and exact destination, and only then may terminal provider status settle or release the canonical withdrawal reserve. Runtime route composition remains owned by the integration/deployment window.
+
+
+## Canonical ledger ownership transfer — 2026-10-04
+
+PR #102 (`work/integration-financial-ops-20261004`) is merged into this PR's base branch. Its integration claim is therefore no longer an active competing window. The crypto continuation now takes exact ownership of the following remaining crypto-only canonical paths:
+- `packages/commerce/src/crypto.ts`;
+- `adapters/storage/postgres/src/commerce/crypto-repository.ts`;
+- new `packages/commerce/migrations/0007_crypto_conversion_fees.sql`;
+- new crypto repository integration tests required for these changes.
+
+Purpose of the transfer: implement atomic conversion reserve/bind/settle, durable provider conversion identity, durable withdrawal network-fee reserve/release accounting, and reconciliation/liability helpers required by the already-owned financial service. Do not edit unrelated billing, channel, workflow, mobile, deployment, or shared Commerce repository paths.
+
+Applied migrations are immutable. `0005_crypto_assets.sql` will not be modified; all schema evolution is additive in `0007_crypto_conversion_fees.sql`.
