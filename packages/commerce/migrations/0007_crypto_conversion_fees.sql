@@ -1,6 +1,7 @@
 ALTER TABLE commerce.crypto_intents
   ADD COLUMN IF NOT EXISTS target_network text NULL,
   ADD COLUMN IF NOT EXISTS provider_conversion_id text NULL,
+  ADD COLUMN IF NOT EXISTS provider_target_amount numeric(38,18) NULL,
   ADD COLUMN IF NOT EXISTS provider_network_fee numeric(38,18) NULL,
   ADD COLUMN IF NOT EXISTS withdrawal_fee_payer text NULL;
 
@@ -51,3 +52,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS crypto_withdrawal_fee_ledger_once
 CREATE UNIQUE INDEX IF NOT EXISTS crypto_conversion_ledger_once
   ON commerce.crypto_ledger_entries(tenant_id, user_id, request_id, reason)
   WHERE reason IN ('conversion-debit','conversion-credit','conversion-release');
+
+
+ALTER TABLE commerce.crypto_intents
+  DROP CONSTRAINT IF EXISTS crypto_intents_provider_target_amount_check;
+
+ALTER TABLE commerce.crypto_intents
+  ADD CONSTRAINT crypto_intents_provider_target_amount_check
+    CHECK (provider_target_amount IS NULL OR provider_target_amount > 0);
