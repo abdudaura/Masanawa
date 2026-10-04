@@ -1,3 +1,5 @@
+import 'shell_document.dart';
+
 enum AgentMessagePartKind {
   audio,
   image,
@@ -82,6 +84,7 @@ class AgentMessagePart {
     this.file,
     this.referenceId,
     this.actionLabel,
+    this.document,
   });
 
   final AgentMessagePartKind kind;
@@ -97,6 +100,7 @@ class AgentMessagePart {
   /// never authority.
   final String? referenceId;
   final String? actionLabel;
+  final ShellDocument? document;
 
   Map<String, dynamic> toJson() => {
         'kind': switch (kind) {
@@ -110,6 +114,7 @@ class AgentMessagePart {
           AgentMessagePartKind.callResult => 'call_result',
           AgentMessagePartKind.status => 'status',
         },
+        if (document != null) 'document': document!.toJson(),
         if (title != null) 'title': title,
         if (body != null) 'body': body,
         if (status != null) 'status': status,
@@ -122,13 +127,19 @@ class AgentMessagePart {
       };
 
   factory AgentMessagePart.fromJson(Map<String, dynamic> json) {
-    final kind = AgentMessagePartKind.parse(json['kind'] as String?);
-    if (kind == null) throw const FormatException('Unknown message part kind');
+    final kind = AgentMessagePartKind.parse(json['kind'] as String?) ?? AgentMessagePartKind.status;
+    ShellDocument? document;
+    final rawDocument = json['document'];
+    if (rawDocument is Map) {
+      try { document = ShellDocument.fromJson(rawDocument.cast<String, dynamic>()); }
+      on FormatException { /* Retain text fallback on older shells. */ }
+    }
     final rawFile = json['file'];
     return AgentMessagePart(
       kind: kind,
+      document: document,
       title: json['title'] as String?,
-      body: json['body'] as String?,
+      body: json['body'] as String? ?? (rawDocument is Map && rawDocument['fallback'] is String ? rawDocument['fallback'] as String : null),
       status: json['status'] as String?,
       progressCurrent: json['progressCurrent'] as int?,
       progressTotal: json['progressTotal'] as int?,
