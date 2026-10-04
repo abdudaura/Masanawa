@@ -167,6 +167,7 @@ export interface PlatformAgentProfile {
   readonly tenantId: TenantId;
   readonly characterId: CharacterId;
   readonly supportAgent: boolean;
+  readonly defaultForNewUsers: boolean;
   readonly voiceProvider: string;
   readonly voiceName: string;
   readonly revision: number;
@@ -191,6 +192,7 @@ export function normalizePlatformAgentProfile(
     tenantId: parseCanonicalId("tenant", input.tenantId),
     characterId: parseCanonicalId("character", input.characterId),
     supportAgent: input.supportAgent === true,
+    defaultForNewUsers: input.defaultForNewUsers === true,
     voiceProvider: bounded(input.voiceProvider, "voiceProvider", 80).toLowerCase(),
     voiceName: bounded(input.voiceName, "voiceName", 120),
     revision: revision(input.revision),
