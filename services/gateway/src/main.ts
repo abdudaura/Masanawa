@@ -28,7 +28,11 @@ import {
   createPostgresCharacterSkillAssignmentRepository,
   createPostgresCryptoRepository,
   createPostgresServiceDependency,
+  createPostgresFinancialOperationsRepository,
+  createPostgresBillingFulfillmentStore,
+  type FinancialOperationsRepository,
 } from "@masanawa/postgres";
+import { NowPaymentsClient } from "@masanawa/nowpayments";
 import {
   createAgentDirectoryService,
   type AgentDirectoryAuthorizer,
@@ -56,6 +60,12 @@ import {
   type GatewayAppOptions,
   type ReadinessCheck,
 } from "./app.js";
+import {
+  createCryptoFinancialService,
+  createStaticFinancialAuthorizer,
+  type FinancialAuthorizer,
+} from "./financial_crypto.js";
+import { createBillingFinancialService } from "./financial_billing.js";
 
 export type ServiceSignal = "SIGINT" | "SIGTERM";
 
@@ -296,6 +306,62 @@ export async function startGatewayService(
           ...((options.characterContextCompiler ?? database.characterContextCompiler)
             ? { contextCompiler: options.characterContextCompiler ?? database.characterContextCompiler } : {}),
           sessionDurationMs: 24 * 60 * 60 * 1000,
+        })
+      : undefined);
+
+
+  let financialAuthorizer: FinancialAuthorizer | undefined;
+  if (
+    env.MASANAWA_ALPHA_DEV_TOKEN?.trim() &&
+    env.MASANAWA_ALPHA_TENANT_ID?.trim() &&
+    env.MASANAWA_ALPHA_USER_ID?.trim()
+  ) {
+    financialAuthorizer = createStaticFinancialAuthorizer({
+      token: env.MASANAWA_ALPHA_DEV_TOKEN,
+      tenantId: env.MASANAWA_ALPHA_TENANT_ID,
+      userId: env.MASANAWA_ALPHA_USER_ID,
+    });
+  }
+
+  const rawPublicBaseUrl =
+    env.MASANAWA_PUBLIC_BASE_URL?.trim() ||
+    env.RAILWAY_STATIC_URL?.trim() ||
+    env.RAILWAY_PUBLIC_DOMAIN?.trim();
+  const publicBaseUrl = rawPublicBaseUrl
+    ? (/^https:\/\//u.test(rawPublicBaseUrl) ? rawPublicBaseUrl : `https://${rawPublicBaseUrl}`)
+    : undefined;
+
+  const composedCrypto =
+    options.appOptions?.cryptoFinancial ??
+    (financialAuthorizer &&
+    database.financialOperations &&
+    env.NOWPAYMENTS_API_KEY?.trim() &&
+    env.NOWPAYMENTS_IPN_SECRET?.trim() &&
+    publicBaseUrl
+      ? createCryptoFinancialService({
+          client: new NowPaymentsClient({ apiKey: env.NOWPAYMENTS_API_KEY }),
+          repository: database.financialOperations,
+          authorizer: financialAuthorizer,
+          ipnSecret: env.NOWPAYMENTS_IPN_SECRET,
+          publicBaseUrl,
+        })
+      : undefined);
+
+  const composedBilling =
+    options.appOptions?.billingFinancial ??
+    (financialAuthorizer &&
+    database.financialOperations &&
+    database.billingStore &&
+    env.FLUTTERWAVE_SECRET_KEY?.trim() &&
+    env.FLUTTERWAVE_WEBHOOK_HASH?.trim() &&
+    publicBaseUrl
+      ? createBillingFinancialService({
+          billingStore: database.billingStore,
+          repository: database.financialOperations,
+          authorizer: financialAuthorizer,
+          flutterwaveSecretKey: env.FLUTTERWAVE_SECRET_KEY,
+          flutterwaveWebhookHash: env.FLUTTERWAVE_WEBHOOK_HASH,
+          publicBaseUrl,
         })
       : undefined);
 
