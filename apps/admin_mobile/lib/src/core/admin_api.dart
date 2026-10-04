@@ -931,6 +931,23 @@ class AdminApi {
         .toList(growable: false);
   }
 
+
+  Future<bool> revokeProviderCredential(AdminCredentialRef credential) async {
+    final response = await _request(
+      () => _dio.post<dynamic>(
+        '/v1/admin/provider-credentials/'
+        '${Uri.encodeComponent(credential.credentialRefId)}/revoke',
+        options: _auth,
+        data: {
+          'providerId': credential.providerId,
+          'slotKey': credential.slotKey,
+        },
+      ),
+    );
+    final data = _map(response.data);
+    return data['revoked'] as bool? ?? false;
+  }
+
   Future<List<AdminAuditEvent>> auditEvents() async {
     final response = await _request(
       () => _dio.get<dynamic>('/v1/admin/audit', options: _auth),
