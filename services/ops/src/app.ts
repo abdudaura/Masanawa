@@ -3,6 +3,7 @@ import type { Instant } from "@masanawa/contracts";
 import { nowInstant, parseCanonicalId } from "@masanawa/contracts";
 import type { AgentAdminService } from "./agent_admin.js";
 import type { PlatformAdminService } from "./platform_admin.js";
+import type { SystemAdminService } from "./system_admin.js";
 import {
   admitTelemetryCorrelation,
   injectCorrelationHeaders,
@@ -21,6 +22,7 @@ export interface OpsAppOptions {
   readonly isDraining?: () => boolean;
   readonly agentAdmin?: AgentAdminService;
   readonly platformAdmin?: PlatformAdminService;
+  readonly systemAdmin?: SystemAdminService;
 }
 
 const HealthResponseSchema = Type.Object(
@@ -383,6 +385,29 @@ export function createOpsApp(options: OpsAppOptions = {}) {
 
     app.get("/v1/admin/audit", async (request) => [
       ...await platformAdmin.listAuditEvents({
+        authorizationHeader: request.headers.authorization,
+      }),
+    ]);
+  }
+
+
+  if (options.systemAdmin) {
+    const systemAdmin = options.systemAdmin;
+
+    app.get("/v1/admin/system", async (request) =>
+      systemAdmin.snapshot({
+        authorizationHeader: request.headers.authorization,
+      }),
+    );
+
+    app.get("/v1/admin/worlds", async (request) => [
+      ...await systemAdmin.listWorlds({
+        authorizationHeader: request.headers.authorization,
+      }),
+    ]);
+
+    app.get("/v1/admin/approvals", async (request) => [
+      ...await systemAdmin.listApprovals({
         authorizationHeader: request.headers.authorization,
       }),
     ]);
