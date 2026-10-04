@@ -53,10 +53,30 @@ describe("NOWPayments payment creation evidence", () => {
       status: "waiting",
       payAddress: "TExampleAddress",
       priceAmount: 100,
+      priceAmountExact: "100",
       priceCurrency: "USD",
       payAmount: 99.2,
+      payAmountExact: "99.2",
       payCurrency: "USDTTRC20",
       orderId: "order-1",
+    });
+  });
+
+  it("preserves exponent-form provider amounts as plain exact decimals", () => {
+    expect(parseCreatedPayment({
+      payment_id: "small-1",
+      payment_status: "waiting",
+      pay_address: "TExampleAddress",
+      price_amount: 0.00000001,
+      price_currency: "btc",
+      pay_amount: 0.00000001,
+      pay_currency: "btc",
+      order_id: "order-small",
+    })).toMatchObject({
+      priceAmount: 0.00000001,
+      priceAmountExact: "0.00000001",
+      payAmount: 0.00000001,
+      payAmountExact: "0.00000001",
     });
   });
 });
