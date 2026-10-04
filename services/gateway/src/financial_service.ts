@@ -1093,7 +1093,9 @@ export function createFinancialService(input: {
       const evidence = admitPaymentEvidence(payload, {
         paymentId: intent.providerPaymentId,
         orderId: providerOrderId(auth.tenantId, intent.requestId),
-        asset: intent.asset, amount: intent.amount,
+        asset: intent.asset,
+        amount: intent.amount,
+        payAmount: intent.providerPayAmount,
       });
       return input.crypto.applyProviderPaymentEvent({
         tenantId: auth.tenantId, userId: auth.userId,
@@ -1167,6 +1169,7 @@ export function createFinancialService(input: {
         orderId: providerOrderId(intent.tenantId, intent.requestId),
         asset: intent.asset,
         amount: intent.amount,
+        payAmount: intent.providerPayAmount,
       });
       const event: CryptoProviderPaymentEvent = {
         paymentId: evidence.paymentId,
