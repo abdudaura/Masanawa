@@ -1075,6 +1075,15 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
             rawBody: encoded,
             verifHash: typeof verifHash === "string" ? verifHash : null,
           });
+          // Signature/admission is the trust boundary. Once admitted, reconcile
+          // any matching bill reference server-side without impersonating a
+          // customer. Reconciliation failure must not turn a valid webhook into
+          // an authentication failure; customer/status recovery can retry it.
+          if (result.reference && options.billingCheckout) {
+            await options.billingCheckout
+              .reconcileFulfillment({ reference: result.reference })
+              .catch(() => undefined);
+          }
           return { accepted: true, duplicate: result.duplicate };
         } catch {
           reply.code(401);
