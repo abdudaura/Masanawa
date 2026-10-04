@@ -1,6 +1,6 @@
 # Workstream claim — workflow-task-admission
 
-Status: active
+Status: implementation complete; PostgreSQL verification evidence pending
 Owner: this isolated stacked workstream
 Started: 2026-10-04 19:26 Africa/Lagos
 Base: work/workflow-run-task-state-20261004 @ 5d939aca6f053f72f409579b8acb4612249a7816
@@ -40,3 +40,30 @@ Provide PostgreSQL schema and repository APIs that:
 - prove rollback leaves neither Task nor outbox record on failure.
 
 Task 086 remains open until PostgreSQL acceptance executes and canonical task evidence advances.
+
+
+## Implementation handoff
+
+Implemented on branch `work/workflow-task-admission-20261004` in draft PR #107.
+
+The slice now provides:
+
+- WorkflowRun/Task PostgreSQL schema;
+- exact Run/WorkflowVersion/graph custody;
+- root/child lineage shape and persisted-parent validation;
+- idempotent WorkflowRun creation;
+- fresh-ready Task admission only;
+- durable per-Tenant admission RequestId/fingerprint;
+- atomic Task + canonical events.outbox insertion;
+- exact replay to the same Task/outbox identity;
+- changed-request conflict rejection;
+- concurrent exact replay convergence;
+- workflow-specific unique ready-outbox protection;
+- rollback proof path after Task insert / outbox failure;
+- focused PostgreSQL 18 acceptance coverage.
+
+The PostgreSQL package manifest remains untouched because active PR #100 owns it.
+The new workflow adapter is structurally typed until shared manifest integration
+adds `@masanawa/workflows`.
+
+Task 087+ worker leasing/fencing/recovery semantics remain out of scope.
