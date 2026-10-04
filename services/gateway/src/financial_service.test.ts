@@ -286,12 +286,17 @@ describe("financial service recovery and admission", () => {
     expect(crypto.reserveWithdrawal).not.toHaveBeenCalled();
     expect(fetch).toHaveBeenCalledTimes(4);
   });
-  it("requires canonical fee accounting before reserving a non-zero-fee withdrawal", async () => {
+  it("uses the canonical repository fee reserve for non-zero provider fees", async () => {
     const { service, crypto } = setup(null, account);
     await expect(service.createWithdrawal({
       authorizationHeader, requestId, providerCode: "USDTTRC20",
       amount: "10", destinationAddress: "address",
-    })).rejects.toThrow("financial.crypto.withdrawal_fee_settlement_unavailable");
+    })).resolves.toMatchObject({ status: "processing", amount: "10" });
+    expect(crypto.reserveWithdrawalWithFee).toHaveBeenCalledWith(expect.objectContaining({
+      networkFee: "0.1",
+      feePayer: "user",
+      intent: expect.objectContaining({ operation: "withdraw", amount: "10" }),
+    }));
     expect(crypto.reserveWithdrawal).not.toHaveBeenCalled();
   });
   it("uses the canonical fee-aware reserve hook when a network fee is quoted", async () => {
