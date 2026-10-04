@@ -70,18 +70,16 @@ describe("NOWPayments custody client", () => {
     });
   });
 
-  it("reconciles exactly one conversion by authenticated filtered evidence", async () => {
+  it("reconciles a conversion through its authenticated provider identity endpoint", async () => {
     const fetch = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ token: "fixture-jwt" })))
       .mockResolvedValueOnce(new Response(JSON.stringify({
-        data: [{
-          conversion_id: "conversion-7",
-          status: "completed",
-          from_currency: "usdttrc20",
-          to_currency: "btc",
-          from_amount: "10",
-          to_amount: "0.00016",
-        }],
+        conversion_id: "conversion-7",
+        status: "completed",
+        from_currency: "usdttrc20",
+        to_currency: "btc",
+        from_amount: "10",
+        to_amount: "0.00016",
       })));
     await expect(client(fetch).getConversionEvidence({
       conversionId: "conversion-7",
@@ -97,23 +95,20 @@ describe("NOWPayments custody client", () => {
       toAmount: "0.00016",
     });
     const url = new URL(String(fetch.mock.calls[1]?.[0]));
-    expect(url.pathname).toBe("/v1/conversion");
-    expect(url.searchParams.get("id")).toBe("conversion-7");
-    expect(url.searchParams.get("limit")).toBe("2");
+    expect(url.pathname).toBe("/v1/conversion/conversion-7");
+    expect(url.search).toBe("");
   });
 
-  it("rejects changed conversion terms and ambiguous provider evidence", async () => {
+  it("rejects changed conversion terms and changed provider identity", async () => {
     const changedFetch = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ token: "fixture-jwt" })))
       .mockResolvedValueOnce(new Response(JSON.stringify({
-        data: [{
-          conversion_id: "conversion-7",
-          status: "completed",
-          from_currency: "btc",
-          to_currency: "usdttrc20",
-          from_amount: "10",
-          to_amount: "11",
-        }],
+        conversion_id: "conversion-7",
+        status: "completed",
+        from_currency: "btc",
+        to_currency: "usdttrc20",
+        from_amount: "10",
+        to_amount: "11",
       })));
     await expect(client(changedFetch).getConversionEvidence({
       conversionId: "conversion-7",
@@ -122,17 +117,18 @@ describe("NOWPayments custody client", () => {
       fromAmount: "10",
     })).rejects.toThrow("nowpayments.conversion.evidence_mismatch");
 
-    const duplicateFetch = vi.fn()
+    const changedIdFetch = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ token: "fixture-jwt" })))
       .mockResolvedValueOnce(new Response(JSON.stringify({
-        data: [
-          { conversion_id: "same", status: "processing", from_currency: "btc", to_currency: "trx", from_amount: "1" },
-          { conversion_id: "same", status: "processing", from_currency: "btc", to_currency: "trx", from_amount: "1" },
-        ],
+        conversion_id: "other",
+        status: "processing",
+        from_currency: "btc",
+        to_currency: "trx",
+        from_amount: "1",
       })));
-    await expect(client(duplicateFetch).getConversionEvidence({
+    await expect(client(changedIdFetch).getConversionEvidence({
       conversionId: "same",
-    })).rejects.toThrow("nowpayments.conversion.evidence_unavailable");
+    })).rejects.toThrow("nowpayments.conversion.evidence_mismatch");
   });
 
   it("does not admit a completed conversion without an exact target amount", async () => {
