@@ -84,10 +84,13 @@ export function createSystemAdminService(input: {
         authorizationHeader: request.authorizationHeader,
         capability: "memory.admin.read",
       });
-      await input.authorizer.authorize({
+      const queueAuthority = await input.authorizer.authorize({
         authorizationHeader: request.authorizationHeader,
         capability: "queues.admin.read",
       });
+      if (queueAuthority.tenantId !== memoryAuthority.tenantId) {
+        throw new Error("Operator capabilities resolved to different tenants");
+      }
 
       const result = await input.database.query<{
         total_records: string | number;
