@@ -1,6 +1,6 @@
 # Workstream claim — device-registration-pairing
 
-Status: active
+Status: implementation complete; shared integration/PostgreSQL verification pending
 Owner: this isolated workstream
 Started: 2026-10-04 20:28 Africa/Lagos
 Base: main @ 3906419669203844018b6687ad06ab2af48654eb
@@ -59,3 +59,31 @@ This workstream does not modify:
 - no capability/Character assignment inferred from successful pairing.
 
 Task 104 remains open until focused checks/PostgreSQL acceptance execute and canonical task evidence advances.
+
+
+## Implementation handoff
+
+Implemented in draft PR #120.
+
+Delivered:
+
+- canonical tenant-scoped Device registration;
+- server-generated DeviceId;
+- enrollment replay fingerprint/conflict protection;
+- bounded immutable Device metadata/lifecycle contracts;
+- high-entropy one-time pairing secrets;
+- hash-only durable secret custody;
+- constant-time secret verification;
+- one active challenge per unpaired Device;
+- 1-15 minute challenge lifetime;
+- durable five-attempt invalid-secret lockout;
+- atomic challenge consume + Device activation;
+- exact completion replay after response loss;
+- cross-Tenant not-found behavior;
+- focused unit and PostgreSQL acceptance coverage.
+
+Task 105-107 remain explicitly excluded.
+
+Shared integration dependency: the new `packages/devices/package.json`
+workspace importer must be added to `pnpm-lock.yaml` by the lockfile owner.
+This branch intentionally does not edit the shared lockfile.
