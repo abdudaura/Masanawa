@@ -77,7 +77,34 @@ const AgentAdminSkillOptionSchema = Type.Object(
       Type.Literal("unknown"),
     ]),
     advertised: Type.Boolean(),
+    reasonCode: Type.Union([Type.String(), Type.Null()]),
+    checkedAt: Type.Union([Type.String(), Type.Null()]),
+    revision: Type.Union([Type.Integer(), Type.Null()]),
   },
+  { additionalProperties: false },
+);
+
+
+const PutSkillReadinessBodySchema = Type.Object(
+  {
+    state: Type.Union([
+      Type.Literal("ready"),
+      Type.Literal("degraded"),
+      Type.Literal("blocked"),
+      Type.Literal("disabled"),
+    ]),
+    advertised: Type.Boolean(),
+    reasonCode: Type.Union([Type.String({ maxLength: 200 }), Type.Null()]),
+    expectedRevision: Type.Union([
+      Type.Integer({ minimum: 1 }),
+      Type.Null(),
+    ]),
+  },
+  { additionalProperties: false },
+);
+
+const SkillVersionParamsSchema = Type.Object(
+  { skillVersionId: Type.String() },
   { additionalProperties: false },
 );
 
@@ -253,6 +280,26 @@ export function createOpsApp(options: OpsAppOptions = {}) {
           authorizationHeader: request.headers.authorization,
         }),
       ],
+    );
+
+    app.put(
+      "/v1/skills/:skillVersionId/readiness",
+      {
+        schema: {
+          params: SkillVersionParamsSchema,
+          body: PutSkillReadinessBodySchema,
+          response: { 200: AgentAdminSkillOptionSchema },
+        },
+      },
+      async (request) =>
+        agentAdmin.putSkillReadiness({
+          authorizationHeader: request.headers.authorization,
+          skillVersionId: request.params.skillVersionId,
+          state: request.body.state,
+          advertised: request.body.advertised,
+          reasonCode: request.body.reasonCode,
+          expectedRevision: request.body.expectedRevision,
+        }),
     );
 
     app.get(
