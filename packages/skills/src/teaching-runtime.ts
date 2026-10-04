@@ -6,6 +6,7 @@ import {
   type RequestId,
   type SkillVersionId,
 } from "@masanawa/contracts";
+import { canonicalJson, fingerprintCanonicalJson } from "@masanawa/security";
 import {
   evaluateTeachingSelection,
   normalizeTeachingExerciseCard,
@@ -30,6 +31,7 @@ export interface TeachingProgressKey {
 
 export interface TeachingSelectionAttempt {
   readonly requestId: RequestId;
+  readonly payloadHash: string;
   readonly relationshipId: RelationshipId;
   readonly skillVersionId: SkillVersionId;
   readonly lessonStepKey: string;
@@ -84,6 +86,26 @@ export interface TeachingPresentationPort {
 export interface TeachingRuntimeCoordinatorOptions {
   readonly progress: TeachingProgressPort;
   readonly presentation?: TeachingPresentationPort;
+}
+
+export function fingerprintTeachingSelectionAttempt(input: {
+  readonly relationshipId: RelationshipId;
+  readonly skillVersionId: SkillVersionId;
+  readonly lessonStepKey: string;
+  readonly exerciseKey: string;
+  readonly selectedOptionKeys: readonly string[];
+}): string {
+  assertScope(input.relationshipId, input.skillVersionId);
+  const payload = {
+    relationshipId: input.relationshipId,
+    skillVersionId: input.skillVersionId,
+    lessonStepKey: input.lessonStepKey.trim().toLowerCase(),
+    exerciseKey: input.exerciseKey.trim().toLowerCase(),
+    selectedOptionKeys: [...input.selectedOptionKeys]
+      .map((value) => value.trim().toLowerCase())
+      .sort(),
+  };
+  return `sha256:${fingerprintCanonicalJson(JSON.parse(canonicalJson(payload)))}`;
 }
 
 function assertScope(
@@ -221,9 +243,18 @@ export class TeachingRuntimeCoordinator {
       recordedAt: toInstant(input.recordedAt),
     });
 
+    const payloadHash = fingerprintTeachingSelectionAttempt({
+      relationshipId: rubric.relationshipId,
+      skillVersionId: rubric.skillVersionId,
+      lessonStepKey: rubric.lessonStepKey,
+      exerciseKey: rubric.exerciseKey,
+      selectedOptionKeys: input.submission.selectedOptionKeys,
+    });
+
     const persistence = await this.#progress.commitSelectionAttempt(
       Object.freeze({
         requestId: input.requestId,
+        payloadHash,
         relationshipId: rubric.relationshipId,
         skillVersionId: rubric.skillVersionId,
         lessonStepKey: rubric.lessonStepKey,
