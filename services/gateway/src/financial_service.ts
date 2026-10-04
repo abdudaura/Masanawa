@@ -1,3 +1,4 @@
+import { admitPaymentEvidence } from "./financial_payment_evidence.js";
 import { assertFinancialReplay, type FinancialReplayTerms } from "./financial_replay.js";
 import {
   nowInstant,
@@ -519,10 +520,25 @@ export function createFinancialService(input: {
 
     async readIntent(request) {
       const auth = await authority(request.authorizationHeader);
-      return input.crypto.readIntent({
+      const intent = await input.crypto.readIntent({
         tenantId: auth.tenantId,
         userId: auth.userId,
         requestId: parseCanonicalId("request", request.requestId),
+      });
+      if (!intent || intent.operation !== "deposit" || intent.providerPaymentId === null ||
+          ["succeeded", "failed", "refunded", "expired"].includes(intent.status)) return intent;
+      const payload = await input.nowPayments.getPaymentEvidence({
+        paymentId: intent.providerPaymentId,
+        signal: AbortSignal.timeout(15_000),
+      });
+      const evidence = admitPaymentEvidence(payload, {
+        paymentId: intent.providerPaymentId,
+        orderId: providerOrderId(auth.tenantId, intent.requestId),
+        asset: intent.asset, amount: intent.amount,
+      });
+      return input.crypto.applyProviderPaymentEvent({
+        tenantId: auth.tenantId, userId: auth.userId,
+        event: { ...evidence, orderId: intent.requestId, observedAt: now() },
       });
     },
 
