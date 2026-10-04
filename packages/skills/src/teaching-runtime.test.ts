@@ -11,7 +11,9 @@ import type {
 } from "./teaching.js";
 import {
   createTeachingRuntimeBinding,
+  createTeachingSelectionActionBinding,
   fingerprintTeachingSelectionAttempt,
+  resolveTeachingOpaqueSelection,
   TeachingRuntimeCoordinator,
   type TeachingProgressKey,
   type TeachingProgressPort,
@@ -539,5 +541,143 @@ describe("Teaching evidence integration", () => {
         purpose: "specialist-claim",
       }),
     ).rejects.toThrow(/must match the admitted Relationship and SkillVersion/);
+  });
+});
+
+
+describe("Teaching opaque action binding", () => {
+  it("reconstructs the full scoped submission from an opaque client selection", async () => {
+    const active = lesson();
+    const admitted = binding(active);
+    const action = createTeachingSelectionActionBinding({
+      binding: admitted,
+      actionKey: "teach.action.denominator-choice.1",
+      requestId: createCanonicalId("request"),
+      rubric: rubric(active),
+      expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
+    });
+
+    const resolved = resolveTeachingOpaqueSelection({
+      binding: admitted,
+      action,
+      selection: {
+        actionKey: "teach.action.denominator-choice.1",
+        selectedOptionKeys: ["six"],
+      },
+      now: toInstant("2026-10-04T18:00:00.000Z"),
+    });
+
+    expect(resolved).toMatchObject({
+      requestId: action.requestId,
+      rubric: {
+        relationshipId: active.learner.relationshipId,
+        skillVersionId: active.skillVersionId,
+        lessonStepKey: "common-denominator",
+        exerciseKey: "denominator-choice",
+      },
+      submission: {
+        relationshipId: active.learner.relationshipId,
+        skillVersionId: active.skillVersionId,
+        lessonStepKey: "common-denominator",
+        exerciseKey: "denominator-choice",
+        selectedOptionKeys: ["six"],
+      },
+    });
+  });
+
+  it("submits opaque selections with the binding RequestId rather than client scope", async () => {
+    const active = lesson();
+    const admitted = binding(active);
+    const progress = new MemoryProgressPort();
+    const coordinator = new TeachingRuntimeCoordinator({ progress });
+    const action = createTeachingSelectionActionBinding({
+      binding: admitted,
+      actionKey: "teach.action.denominator-choice.2",
+      requestId: createCanonicalId("request"),
+      rubric: rubric(active),
+      expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
+    });
+
+    const result = await coordinator.submitOpaqueSelection({
+      binding: admitted,
+      action,
+      selection: {
+        actionKey: action.actionKey,
+        selectedOptionKeys: ["six"],
+      },
+      plan: active,
+      now: toInstant("2026-10-04T18:01:00.000Z"),
+    });
+
+    expect(result).toMatchObject({
+      kind: "feedback",
+      persistence: "stored",
+      evaluation: { correct: true },
+    });
+    expect(progress.attempts.has(action.requestId)).toBe(true);
+  });
+
+  it("rejects client action swapping and expired action use", () => {
+    const active = lesson();
+    const admitted = binding(active);
+    const action = createTeachingSelectionActionBinding({
+      binding: admitted,
+      actionKey: "teach.action.denominator-choice.3",
+      requestId: createCanonicalId("request"),
+      rubric: rubric(active),
+      expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
+    });
+
+    expect(() =>
+      resolveTeachingOpaqueSelection({
+        binding: admitted,
+        action,
+        selection: {
+          actionKey: "teach.action.different.3",
+          selectedOptionKeys: ["six"],
+        },
+        now: toInstant("2026-10-04T18:02:00.000Z"),
+      }),
+    ).toThrow(/action key does not match/);
+
+    expect(() =>
+      resolveTeachingOpaqueSelection({
+        binding: admitted,
+        action,
+        selection: {
+          actionKey: action.actionKey,
+          selectedOptionKeys: ["six"],
+        },
+        now: toInstant("2100-01-01T00:00:00.000Z"),
+      }),
+    ).toThrow(/expired/);
+  });
+
+  it("rejects tampered server-side action payloads before evaluation", () => {
+    const active = lesson();
+    const admitted = binding(active);
+    const action = createTeachingSelectionActionBinding({
+      binding: admitted,
+      actionKey: "teach.action.denominator-choice.4",
+      requestId: createCanonicalId("request"),
+      rubric: rubric(active),
+      expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
+    });
+    const tampered = {
+      ...action,
+      exerciseKey: "forged-exercise",
+    };
+
+    expect(() =>
+      resolveTeachingOpaqueSelection({
+        binding: admitted,
+        action: tampered,
+        selection: {
+          actionKey: action.actionKey,
+          selectedOptionKeys: ["six"],
+        },
+        now: toInstant("2026-10-04T18:03:00.000Z"),
+      }),
+    ).toThrow(/binding hash does not match payload/);
   });
 });
