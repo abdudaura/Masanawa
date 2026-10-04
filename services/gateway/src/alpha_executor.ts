@@ -132,6 +132,14 @@ export function createGeminiAlphaInferenceProvider(input: {
       }
 
       if (!response.ok) {
+        // Log only bounded protocol metadata; never vendor messages, requests or keys.
+        let providerStatus = "unknown";
+        try {
+          const payload = await response.json() as { error?: { status?: unknown } };
+          const allowed = ["INVALID_ARGUMENT", "PERMISSION_DENIED", "NOT_FOUND", "RESOURCE_EXHAUSTED", "UNAUTHENTICATED", "UNAVAILABLE", "INTERNAL"];
+          if (typeof payload.error?.status === "string" && allowed.includes(payload.error.status)) providerStatus = payload.error.status;
+        } catch { /* Private body intentionally discarded. */ }
+        console.warn(`Alpha inference failure metadata: ${JSON.stringify({ httpStatus: response.status, providerStatus })}`);
         throw new AgentInferenceError(
           response.status === 429 ? "inference.rate_limited" :
           response.status >= 500 || response.status === 408 ? "inference.unavailable" :
