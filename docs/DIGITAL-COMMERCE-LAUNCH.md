@@ -9,6 +9,11 @@ delete roadmap tasks or claim implementation/verification because this plan exis
 
 - Prioritize frequent everyday purchases with complete digital fulfillment.
 - Data bundles and crypto buying/selling are required product families.
+- App, WhatsApp and Telegram are mandatory launch interaction channels.
+- Preserve already implemented features; broader admin/operations capabilities are
+  documented for later implementation, not removed.
+- Customer crypto holding/conversion/withdrawal and creator-funded execution are
+  required directions; see the custody/funding section in CREATOR-CLONE-ECONOMY.md.
 - Flutterwave is the selected billing provider, including bill fulfillment where
   account-enabled services support it. Do not substitute VTpass as the planned default.
 - NOWPayments is the selected crypto provider. Do not substitute Quidax.
@@ -101,12 +106,12 @@ never dispatch a second purchase or provider fallback after an ambiguous dispatc
 | Skills/Tools/provider registries and isolation | substantial verified foundations | Keep as shared infrastructure |
 | Financial reserves, reconciliation, receipts | commerce contracts/admission/completion storage exist; full execution incomplete | Keep and finish |
 | Research, writing, documents | guidance/model capability; external/artifact execution varies | Keep basic; defer paid promotion |
-| WhatsApp and other channels | broader roadmap; separate qualification | Decide primary expansion channel; defer rest |
+| WhatsApp and Telegram | adapters/journeys require qualification | Mandatory launch customer channels |
 | Background work/scheduling | broader Workflow roadmap | Keep purchase recovery; defer general autonomous routines |
-| Agent phone/OmniSIP, SMS/USSD/app automation | planned real-device qualification | Proposed defer from commerce launch |
-| World simulation/social lives | foundations exist; broad product promise | Proposed defer product exposure; preserve isolation |
-| Avatars/video/Studio/social publishing | broader roadmap | Proposed defer |
-| Plugins/MCP/A2A, self-improvement/delegation ecosystem | broader roadmap | Proposed defer |
+| Agent phone/OmniSIP, SMS/USSD/app automation | planned real-device qualification | Later implementation; preserve existing work |
+| World simulation/social lives | foundations exist; broad product promise | Later implementation/exposure; preserve foundations |
+| Avatars/video/Studio/social publishing | broader roadmap | Later implementation; preserve existing work |
+| Plugins/MCP/A2A, self-improvement/delegation ecosystem | broader roadmap | Later implementation; preserve existing work |
 | Multiple business Characters | future ownership class | Proposed defer |
 
 Do not renumber or close Tasks 072-150 to make the launch appear complete.
