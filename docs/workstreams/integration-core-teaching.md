@@ -13,7 +13,7 @@
   - `tests/contracts/core-teaching-cross-channel.test.ts`
   - `docs/CORE-TEACHING-ACCEPTANCE.md`
 - Dependencies: consumes Core Teaching contracts from stacked PR #94; external owners implement the published ports. No edits to their claimed files.
-- Current step: runtime/persistence/presentation bridge, stable replay fingerprint, cross-channel acceptance harness and fail-closed Teaching runtime admission binding implemented; owner composition pending.
-- Verification: changed-file audit covers only claimed integration/acceptance paths. Contract acceptance source now covers app start -> persisted attempt -> lost feedback -> WhatsApp replay -> Telegram resume, cross-Relationship isolation, changed-payload conflict and admitted-binding mismatch. GitHub Actions continues to exhibit zero-step runner allocation failures; latest exact run is checked before handoff.
+- Current step: runtime/persistence/presentation bridge, stable replay fingerprint, cross-channel acceptance, fail-closed admission binding, authorized artifact projection and fail-closed evidence routing implemented; owner composition pending.
+- Verification: claimed integration/acceptance paths only. Contract source covers app -> lost response -> WhatsApp replay -> Telegram resume, Relationship isolation, changed-payload conflict, English-text -> Hausa-voice continuity, reteach continuity, admitted-binding mismatch, authorized artifact projection and verified/insufficient evidence behavior. GitHub Actions zero-step runner issue remains; latest exact run is checked before handoff.
 - Deployment: none. Coordination comments published on PRs #89, #91 and #92; no ownership transfer or foreign-file edits.
 - Collision rule: no Gateway/mobile/channel/chat-renderer/migration/lockfile/shared deployment edits in this workstream.
