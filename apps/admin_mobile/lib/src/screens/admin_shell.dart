@@ -31,6 +31,7 @@ class _AdminShellState extends State<AdminShell> {
     _AdminSection('Commerce', Icons.account_balance_wallet_outlined),
     _AdminSection('Operations', Icons.rule_outlined),
     _AdminSection('Providers', Icons.hub_outlined),
+    _AdminSection('System', Icons.settings_suggest_outlined),
     _AdminSection('Audit', Icons.fact_check_outlined),
   ];
 
@@ -43,6 +44,7 @@ class _AdminShellState extends State<AdminShell> {
         CommerceAdminPage(api: widget.api),
         OperationsAdminPage(api: widget.api),
         ProvidersAdminPage(api: widget.api),
+        SystemAdminPage(api: widget.api),
         AuditAdminPage(api: widget.api),
       ];
 
