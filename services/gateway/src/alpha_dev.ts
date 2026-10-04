@@ -12,14 +12,13 @@ import type {
 } from "@masanawa/agents";
 import { createAuthorityContext } from "@masanawa/security";
 import type { UserRelationshipReader } from "@masanawa/identity";
-import { memoryContextReadCapability } from "@masanawa/memory";
 import type {
   AgentConversationAdmission,
   AgentConversationAuthorizer,
 } from "./agent_conversation_contract.js";
+import type { AgentDirectoryAuthorizer } from "./agent_directory.js";
 import type { CreatorCloneAuthorizer } from "./creator_clone.js";
 import type { CommerceUserAuthorizer } from "./commerce_catalog.js";
-import type { AgentDirectoryAuthorizer } from "./agent_directory.js";
 
 export interface AlphaDevAuthorizerConfig {
   readonly token: string;
@@ -27,19 +26,6 @@ export interface AlphaDevAuthorizerConfig {
   readonly userId: UserId;
   readonly policyRevision: string;
   readonly relationshipIds: Readonly<Record<string, RelationshipId>>;
-}
-
-/** HTTP-edge rejection: Fastify preserves these explicit client status codes. */
-class AlphaAccessError extends Error {
-  readonly statusCode: 401 | 403;
-  readonly code: string;
-  constructor(statusCode: 401 | 403) {
-    super(statusCode === 401 ? "Alpha development authorization required" : "Character access denied");
-    this.name = "AlphaAccessError";
-    this.statusCode = statusCode;
-    this.code = statusCode === 401 ? "ALPHA_UNAUTHORIZED" : "ALPHA_FORBIDDEN";
-  readonly relationships?: UserRelationshipReader;
-  }
 }
 
 function bearerToken(header: string | undefined): string | null {
@@ -52,20 +38,14 @@ export function createAlphaDevAuthorizer(input: {
   readonly config: AlphaDevAuthorizerConfig;
   readonly presentations: AgentPresentationRepository;
   readonly skillAssignments: CharacterSkillAssignmentRepository;
+  readonly relationships?: UserRelationshipReader;
 }): AgentConversationAuthorizer {
   const expectedToken = input.config.token.trim();
   if (expectedToken.length < 24) {
     throw new TypeError("Alpha development token must be at least 24 characters");
   }
   const policyRevision = input.config.policyRevision.trim();
-      const dynamicRelationship = await input.relationships?.readForUserCharacter({
-        tenantId: input.config.tenantId,
-        userId: input.config.userId,
-        characterId,
-      });
-      const relationshipId =
-        dynamicRelationship?.relationshipId ??
-        input.config.relationshipIds[characterId];
+  if (!policyRevision) {
     throw new TypeError("Alpha policy revision is required");
   }
 
@@ -74,13 +54,20 @@ export function createAlphaDevAuthorizer(input: {
       request: Parameters<AgentConversationAuthorizer["authorize"]>[0],
     ): Promise<AgentConversationAdmission> {
       if (bearerToken(request.authorizationHeader) !== expectedToken) {
-        throw new AlphaAccessError(401);
+        throw new Error("Alpha development authorization denied");
       }
 
       const characterId = parseCanonicalId("character", request.characterId);
-      const relationshipId = input.config.relationshipIds[characterId];
+      const dynamicRelationship = await input.relationships?.readForUserCharacter({
+        tenantId: input.config.tenantId,
+        userId: input.config.userId,
+        characterId,
+      });
+      const relationshipId =
+        dynamicRelationship?.relationshipId ??
+        input.config.relationshipIds[characterId];
       if (!relationshipId) {
-        throw new AlphaAccessError(403);
+        throw new Error("Character is not admitted to this Alpha user");
       }
 
       const presentation = await input.presentations.readForCharacter({
@@ -88,7 +75,7 @@ export function createAlphaDevAuthorizer(input: {
         characterId,
       });
       if (!presentation || !presentation.visibleInUserApp) {
-        throw new AlphaAccessError(403);
+        throw new Error("Character is not visible in this Alpha app");
       }
 
       const assignment = await input.skillAssignments.readForCharacter({
@@ -134,7 +121,6 @@ export function createAlphaDevAuthorizer(input: {
             "agents.run.create",
             "agents.run.read",
             "agents.run.finish",
-            memoryContextReadCapability,
           ]),
           resourceScope: Object.freeze({
             relationshipIds: Object.freeze([relationshipId]),
@@ -170,9 +156,7 @@ export function parseAlphaRelationshipMap(
   return Object.freeze(result);
 }
 
-  readonly userId: UserId;
 export function parseAlphaDevIds(input: {
-  readonly relationships?: UserRelationshipReader;
   readonly tenantId: string;
   readonly userId: string;
 }): { readonly tenantId: TenantId; readonly userId: UserId } {
@@ -185,6 +169,22 @@ export function parseAlphaDevIds(input: {
 
 export function createAlphaDirectoryAuthorizer(input: {
   readonly token: string;
+  readonly tenantId: TenantId;
+  readonly userId: UserId;
+  readonly relationshipIds: Readonly<Record<string, RelationshipId>>;
+  readonly relationships?: UserRelationshipReader;
+}): AgentDirectoryAuthorizer {
+  const expectedToken = input.token.trim();
+  if (expectedToken.length < 24) {
+    throw new TypeError("Alpha development token must be at least 24 characters");
+  }
+  return Object.freeze({
+    async authorize(
+      request: Parameters<AgentDirectoryAuthorizer["authorize"]>[0],
+    ) {
+      if (bearerToken(request.authorizationHeader) !== expectedToken) {
+        throw new Error("Alpha development authorization denied");
+      }
       const dynamic =
         (await input.relationships?.listForUser({
           tenantId: input.tenantId,
@@ -198,9 +198,8 @@ export function createAlphaDirectoryAuthorizer(input: {
       for (const relationship of dynamic) {
         characterIds.add(relationship.characterId);
       }
-  readonly tenantId: TenantId;
-  readonly userId: UserId;
-  readonly relationshipIds: Readonly<Record<string, RelationshipId>>;
+      return Object.freeze({
+        tenantId: input.tenantId,
         userId: input.userId,
         characterIds: Object.freeze([...characterIds]),
       });
@@ -249,23 +248,7 @@ export function createAlphaCommerceAuthorizer(input: {
       return Object.freeze({
         tenantId: input.tenantId,
         userId: input.userId,
-  return Object.freeze({
-    async authorize(
-      request: Parameters<AgentDirectoryAuthorizer["authorize"]>[0],
-    ) {
-      if (bearerToken(request.authorizationHeader) !== expectedToken) {
-        throw new AlphaAccessError(401);
-      }
-      return Object.freeze({
-        tenantId: input.tenantId,
-        userId: input.userId,
-        characterIds: Object.freeze(
-          Object.keys(input.relationshipIds).map((id) =>
-            parseCanonicalId("character", id),
-          ),
-        ),
       });
     },
   });
 }
-
