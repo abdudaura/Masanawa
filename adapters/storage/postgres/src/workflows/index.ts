@@ -4,3 +4,4 @@ export * from "./recovery.js";
 export * from "./retries.js";
 export * from "./human-requests.js";
 export * from "./operations.js";
+export * from "./usage.js";
