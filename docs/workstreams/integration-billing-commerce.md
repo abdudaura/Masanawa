@@ -17,6 +17,8 @@
   - `packages/providers/src/flutterwave-bills/credential-client.test.ts`
   - `packages/providers/src/flutterwave-bills/catalog-projection.ts`
   - `packages/providers/src/flutterwave-bills/catalog-projection.test.ts`
+  - `packages/providers/src/flutterwave-bills/webhook.ts`
+  - `packages/providers/src/flutterwave-bills/webhook.test.ts`
 - Dependencies:
   - consumes Flutterwave adapter contracts from stacked PR #95;
   - consumes canonical Commerce Offer/quote/fulfillment/ledger through injected ports only;
