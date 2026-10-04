@@ -22,7 +22,11 @@ export type AgentAdminCapability =
   | "operations.read"
   | "reconciliation.read"
   | "providers.credentials.read"
-  | "audit.read";
+  | "audit.read"
+  | "memory.admin.read"
+  | "world.admin.read"
+  | "approvals.admin.read"
+  | "queues.admin.read";
 
 export interface AgentAdminAuthority {
   readonly tenantId: TenantId;
