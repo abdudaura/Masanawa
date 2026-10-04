@@ -1,6 +1,7 @@
 import {
   createCanonicalId,
   parseCanonicalId,
+  PlatformError,
   type CharacterId,
   type RelationshipId,
   type TenantId,
@@ -54,7 +55,12 @@ export function createAlphaDevAuthorizer(input: {
       request: Parameters<AgentConversationAuthorizer["authorize"]>[0],
     ): Promise<AgentConversationAdmission> {
       if (bearerToken(request.authorizationHeader) !== expectedToken) {
-        throw new Error("Alpha development authorization denied");
+        throw new PlatformError({
+        code: "gateway.alpha_auth_denied",
+        category: "authentication",
+        message: "Alpha development authorization denied",
+        retryable: false,
+      });
       }
 
       const characterId = parseCanonicalId("character", request.characterId);
@@ -67,7 +73,12 @@ export function createAlphaDevAuthorizer(input: {
         dynamicRelationship?.relationshipId ??
         input.config.relationshipIds[characterId];
       if (!relationshipId) {
-        throw new Error("Character is not admitted to this Alpha user");
+        throw new PlatformError({
+        code: "gateway.alpha_character_forbidden",
+        category: "authorization",
+        message: "Character is not admitted to this Alpha user",
+        retryable: false,
+      });
       }
 
       const presentation = await input.presentations.readForCharacter({
@@ -75,7 +86,12 @@ export function createAlphaDevAuthorizer(input: {
         characterId,
       });
       if (!presentation || !presentation.visibleInUserApp) {
-        throw new Error("Character is not visible in this Alpha app");
+        throw new PlatformError({
+        code: "gateway.alpha_character_forbidden",
+        category: "authorization",
+        message: "Character is not visible in this Alpha app",
+        retryable: false,
+      });
       }
 
       const assignment = await input.skillAssignments.readForCharacter({
@@ -183,7 +199,12 @@ export function createAlphaDirectoryAuthorizer(input: {
       request: Parameters<AgentDirectoryAuthorizer["authorize"]>[0],
     ) {
       if (bearerToken(request.authorizationHeader) !== expectedToken) {
-        throw new Error("Alpha development authorization denied");
+        throw new PlatformError({
+        code: "gateway.alpha_auth_denied",
+        category: "authentication",
+        message: "Alpha development authorization denied",
+        retryable: false,
+      });
       }
       const dynamic =
         (await input.relationships?.listForUser({
@@ -220,7 +241,12 @@ export function createAlphaCreatorAuthorizer(input: {
   return Object.freeze<CreatorCloneAuthorizer>({
     async authorize(request) {
       if (bearerToken(request.authorizationHeader) !== expectedToken) {
-        throw new Error("Alpha development authorization denied");
+        throw new PlatformError({
+        code: "gateway.alpha_auth_denied",
+        category: "authentication",
+        message: "Alpha development authorization denied",
+        retryable: false,
+      });
       }
       return Object.freeze({
         tenantId: input.tenantId,
@@ -243,7 +269,12 @@ export function createAlphaCommerceAuthorizer(input: {
   return Object.freeze<CommerceUserAuthorizer>({
     async authorize(request) {
       if (bearerToken(request.authorizationHeader) !== expectedToken) {
-        throw new Error("Alpha development authorization denied");
+        throw new PlatformError({
+        code: "gateway.alpha_auth_denied",
+        category: "authentication",
+        message: "Alpha development authorization denied",
+        retryable: false,
+      });
       }
       return Object.freeze({
         tenantId: input.tenantId,
