@@ -26,6 +26,18 @@ export interface AlphaDevAuthorizerConfig {
   readonly relationshipIds: Readonly<Record<string, RelationshipId>>;
 }
 
+/** HTTP-edge rejection: Fastify preserves these explicit client status codes. */
+class AlphaAccessError extends Error {
+  readonly statusCode: 401 | 403;
+  readonly code: string;
+  constructor(statusCode: 401 | 403) {
+    super(statusCode === 401 ? "Alpha development authorization required" : "Character access denied");
+    this.name = "AlphaAccessError";
+    this.statusCode = statusCode;
+    this.code = statusCode === 401 ? "ALPHA_UNAUTHORIZED" : "ALPHA_FORBIDDEN";
+  }
+}
+
 function bearerToken(header: string | undefined): string | null {
   if (!header?.startsWith("Bearer ")) return null;
   const token = header.slice("Bearer ".length).trim();
@@ -51,13 +63,13 @@ export function createAlphaDevAuthorizer(input: {
       request: Parameters<AgentConversationAuthorizer["authorize"]>[0],
     ): Promise<AgentConversationAdmission> {
       if (bearerToken(request.authorizationHeader) !== expectedToken) {
-        throw new Error("Alpha development authorization denied");
+        throw new AlphaAccessError(401);
       }
 
       const characterId = parseCanonicalId("character", request.characterId);
       const relationshipId = input.config.relationshipIds[characterId];
       if (!relationshipId) {
-        throw new Error("Character is not admitted to this Alpha user");
+        throw new AlphaAccessError(403);
       }
 
       const presentation = await input.presentations.readForCharacter({
@@ -65,7 +77,7 @@ export function createAlphaDevAuthorizer(input: {
         characterId,
       });
       if (!presentation || !presentation.visibleInUserApp) {
-        throw new Error("Character is not visible in this Alpha app");
+        throw new AlphaAccessError(403);
       }
 
       const assignment = await input.skillAssignments.readForCharacter({
@@ -172,7 +184,7 @@ export function createAlphaDirectoryAuthorizer(input: {
       request: Parameters<AgentDirectoryAuthorizer["authorize"]>[0],
     ) {
       if (bearerToken(request.authorizationHeader) !== expectedToken) {
-        throw new Error("Alpha development authorization denied");
+        throw new AlphaAccessError(401);
       }
       return Object.freeze({
         tenantId: input.tenantId,
@@ -185,3 +197,4 @@ export function createAlphaDirectoryAuthorizer(input: {
     },
   });
 }
+
