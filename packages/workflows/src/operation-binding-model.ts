@@ -36,3 +36,22 @@ export interface WorkflowOperationProjection {
   readonly disposition: WorkflowOperationDisposition;
   readonly receiptIds: readonly ExternalReceiptId[];
 }
+
+export type CanonicalOperationState =
+  | "prepared"
+  | "authorized"
+  | "dispatching"
+  | "dispatched"
+  | "accepted"
+  | "rejected"
+  | "partial"
+  | "unknown"
+  | "reconciling"
+  | "succeeded"
+  | "failed";
+
+export type CanonicalReconciliationStatus =
+  | "open"
+  | "checking"
+  | "resolved"
+  | "needs-attention";
