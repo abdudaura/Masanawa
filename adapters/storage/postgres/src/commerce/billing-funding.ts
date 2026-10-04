@@ -116,10 +116,10 @@ export function createPostgresBillingQuoteRepository(pool: Pool): BillingQuoteRe
              tenant_id,user_id,quote_id,revision,state,category_code,biller_code,item_code,
              item_name,customer_id,service_amount_kobo,fee_amount_kobo,total_amount_kobo,
              currency,confirmed_at,expires_at,checkout_tx_ref,checkout_url,
-             provider_transaction_id,provider_reference,payment_verified_at,
+             provider_transaction_id,provider_reference,bill_provider_reference,payment_verified_at,
              fulfillment_reference,settlement_state,refund_reference,created_at,updated_at
            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,
-                     $17,$18,$19,$20,$21,$22,$23,$24,$25,$26)
+                     $17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27)
            ON CONFLICT (tenant_id,user_id,quote_id) DO NOTHING
            RETURNING *`,
           [
@@ -127,8 +127,8 @@ export function createPostgresBillingQuoteRepository(pool: Pool): BillingQuoteRe
             input.billerCode,input.itemCode,input.itemName,input.customerId,input.serviceAmountKobo,
             input.feeAmountKobo,input.totalAmountKobo,input.currency,input.confirmedAt,input.expiresAt,
             input.checkoutTxRef,input.checkoutUrl,input.providerTransactionId,input.providerReference,
-            input.paymentVerifiedAt,input.fulfillmentReference,input.settlementState,input.refundReference,
-            input.createdAt,input.updatedAt,
+            input.billProviderReference,input.paymentVerifiedAt,input.fulfillmentReference,input.settlementState,
+            input.refundReference,input.createdAt,input.updatedAt,
           ],
         );
         if (inserted.rows[0]) return quote(inserted.rows[0]);
@@ -300,7 +300,7 @@ export function createPostgresBillingQuoteRepository(pool: Pool): BillingQuoteRe
         if (!row) throw new Error("financial.billing.reserve_not_found");
         if (row.settlement_state === input.state &&
             (row.bill_provider_reference ?? null) === input.providerReference) return;
-        if (row.state === "refunded" || row.state === "refund-submitted") return;
+        if (row.state === "refunded" || row.state === "refund-submitted" || row.state === "refund-dispatching") return;
         if (row.state === "succeeded" && input.state !== "reversed") {
           throw new Error("financial.billing.settlement_conflict");
         }
@@ -317,6 +317,28 @@ export function createPostgresBillingQuoteRepository(pool: Pool): BillingQuoteRe
       });
     },
 
+    async claimRefundDispatch(input) {
+      return withTransaction(pool, async (client) => {
+        const row = await locked(client, input);
+        if (row.provider_transaction_id !== input.providerTransactionId) {
+          throw new Error("financial.billing.refund_transaction_mismatch");
+        }
+        if (row.state === "refund-dispatching" || row.state === "refund-submitted" || row.state === "refunded") {
+          return quote(row);
+        }
+        if (row.state !== "refund-pending") {
+          throw new Error("financial.billing.refund_not_allowed");
+        }
+        const result = await client.query<BillingQuoteRow>(
+          `UPDATE commerce.billing_quotes
+              SET state='refund-dispatching',updated_at=$4
+            WHERE tenant_id=$1 AND user_id=$2 AND quote_id=$3 RETURNING *`,
+          [input.tenantId,input.userId,input.quoteId,input.claimedAt],
+        );
+        return quote(result.rows[0]!);
+      });
+    },
+
     async recordRefundInitiated(input) {
       return withTransaction(pool, async (client) => {
         const row = await locked(client, input);
@@ -329,7 +351,7 @@ export function createPostgresBillingQuoteRepository(pool: Pool): BillingQuoteRe
           }
           return quote(row);
         }
-        if (row.state !== "refund-submitted") throw new Error("financial.billing.refund_not_complete");
+        if (row.state !== "refund-dispatching") throw new Error("financial.billing.refund_not_dispatching");
         const result = await client.query<BillingQuoteRow>(
           `UPDATE commerce.billing_quotes
               SET state='refund-submitted',refund_reference=$4,updated_at=$5
@@ -352,7 +374,7 @@ export function createPostgresBillingQuoteRepository(pool: Pool): BillingQuoteRe
           }
           return quote(row);
         }
-        if (row.state !== "refund-pending") throw new Error("financial.billing.refund_not_allowed");
+        if (row.state !== "refund-submitted") throw new Error("financial.billing.refund_not_complete");
         const result = await client.query<BillingQuoteRow>(
           `UPDATE commerce.billing_quotes
               SET state='refunded',refund_reference=$4,updated_at=$5
