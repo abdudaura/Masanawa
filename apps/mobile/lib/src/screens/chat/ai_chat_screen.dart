@@ -886,7 +886,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         .where((m) => !m.deleted && m.text.toLowerCase().contains(query))
         .toList();
     if (messages.isEmpty) return;
-    final index = _searchIndex.clamp(0, messages.length - 1);
+    final index = _searchIndex.clamp(0, messages.length - 1).toInt();
     final key = _messageKeys[messages[index].id];
     final target = key?.currentContext;
     if (target != null) {
@@ -894,7 +894,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         target,
         duration: const Duration(milliseconds: 220),
         curve: Curves.easeOut,
-        alignment: .35,
+        alignment: 0.35,
       );
     }
   }
