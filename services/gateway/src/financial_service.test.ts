@@ -26,6 +26,20 @@ const withdrawalIntent: CryptoIntent = {
   status: "processing",
 };
 
+const conversionIntent: CryptoIntent = {
+  ...intent,
+  operation: "convert",
+  targetAsset: "BTC",
+  targetNetwork: null,
+  providerPaymentId: null,
+  providerPayoutId: null,
+  providerConversionId: "conversion-1",
+  providerTargetAmount: null,
+  payAddress: null,
+  providerPayAmount: null,
+  status: "processing",
+};
+
 const account: NowPaymentsAccountEvidence = {
   custodyEnabled: true, customerManagementEnabled: true, conversionEnabled: true,
   payoutEnabled: true, ipWhitelistSatisfied: true,
@@ -47,11 +61,15 @@ function setup(
     readonly requestId: typeof requestId;
   }) => Promise<string | null>,
   shouldDispatch = false,
+  enableConversions = false,
 ) {
   const payload = { payment_id: "123", order_id: tenantId+"."+requestId, price_amount: "10",
     price_currency: "usdttrc20", pay_currency: "usdttrc20", pay_amount: "10",
     actually_paid: "10", payment_status: "finished" };
-  const fetch = vi.fn(async (request: Parameters<typeof globalThis.fetch>[0]) => {
+  const fetch = vi.fn(async (
+    request: Parameters<typeof globalThis.fetch>[0],
+    init?: Parameters<typeof globalThis.fetch>[1],
+  ) => {
     const url = String(request);
     if (url.endsWith("/auth")) return new Response(JSON.stringify({ token: "fixture-jwt" }));
     if (url.includes("/payout/validate-address")) return new Response(JSON.stringify({ valid: true }));
@@ -62,7 +80,49 @@ function setup(
       return new Response(JSON.stringify({ success: true, result: "1" }));
     }
     if (url.endsWith("/balance")) {
-      return new Response(JSON.stringify({ usdttrc20: { amount: "100", pendingAmount: "0" } }));
+      return new Response(JSON.stringify({
+        usdttrc20: { amount: "100", pendingAmount: "0" },
+        btc: { amount: "1", pendingAmount: "0" },
+      }));
+    }
+    if (url.includes("/min-amount?")) {
+      const parsed = new URL(url);
+      return new Response(JSON.stringify({
+        currency_from: parsed.searchParams.get("currency_from"),
+        currency_to: parsed.searchParams.get("currency_to"),
+        min_amount: "1",
+      }));
+    }
+    if (url.includes("/estimate?")) {
+      const parsed = new URL(url);
+      return new Response(JSON.stringify({
+        currency_from: parsed.searchParams.get("currency_from"),
+        currency_to: parsed.searchParams.get("currency_to"),
+        amount_from: parsed.searchParams.get("amount"),
+        estimated_amount: "0.00016",
+      }));
+    }
+    if (url.includes("/conversion?")) {
+      return new Response(JSON.stringify({
+        data: [{
+          conversion_id: "conversion-1",
+          status: "completed",
+          from_currency: "usdttrc20",
+          to_currency: "btc",
+          from_amount: "10",
+          to_amount: "0.00016",
+        }],
+      }));
+    }
+    if (url.endsWith("/conversion") && init?.method === "POST") {
+      return new Response(JSON.stringify({
+        conversion_id: "conversion-1",
+        status: "processing",
+        from_currency: "usdttrc20",
+        to_currency: "btc",
+        from_amount: "10",
+        to_amount: "0.00016",
+      }));
     }
     if (url.endsWith("/payout")) {
       return new Response(JSON.stringify({
@@ -93,6 +153,37 @@ function setup(
       currentIntent = value;
       return value;
     }),
+    reserveWithdrawalWithFee: vi.fn(async (value: {
+      readonly intent: CryptoIntent;
+      readonly networkFee: string;
+      readonly feePayer: "user" | "platform";
+    }) => {
+      const reserved = feeReserve
+        ? await feeReserve({
+            intent: value.intent,
+            networkFee: value.networkFee,
+            quotedAt: at,
+          })
+        : value.intent;
+      currentIntent = reserved;
+      return reserved;
+    }),
+    reserveConversion: vi.fn(async (value: CryptoIntent) => {
+      currentIntent = value;
+      return value;
+    }),
+    bindProviderConversion: vi.fn(async () => {
+      currentIntent = { ...currentIntent, providerConversionId: "conversion-1" };
+      return currentIntent;
+    }),
+    settleConversion: vi.fn(async (value: {
+      readonly succeeded: boolean;
+      readonly targetAmount: string | null;
+    }) => ({
+      ...conversionIntent,
+      providerTargetAmount: value.succeeded ? value.targetAmount : null,
+      status: value.succeeded ? "succeeded" as const : "failed" as const,
+    })),
     settleWithdrawal: vi.fn(async (value: { readonly succeeded: boolean }) => ({
       ...withdrawalIntent,
       status: value.succeeded ? "succeeded" as const : "failed" as const,
@@ -118,13 +209,20 @@ function setup(
         ? {}
         : { pooledCustodyLiabilityCoverageSatisfied }),
     }) }),
-    ...(feeReserve === undefined ? {} : {
-      reserveWithdrawalWithFee: async (value) => {
-        const reserved = await feeReserve(value);
-        currentIntent = reserved;
-        return reserved;
-      },
-    }),
+    ...(enableConversions ? {
+      conversionEvidence: async () => ({
+        account: evidence ?? account,
+        routes: [
+          { providerCode: "USDTTRC20", asset: "USDT", network: "tron",
+            operations: { deposit: true, convert: true, withdraw: true }, estimatedNetworkFeeUsd: null },
+          { providerCode: "BTC", asset: "BTC", network: null,
+            operations: { deposit: true, convert: true, withdraw: true }, estimatedNetworkFeeUsd: null },
+        ],
+        ...(pooledCustodyLiabilityCoverageSatisfied === undefined
+          ? {}
+          : { pooledCustodyLiabilityCoverageSatisfied }),
+      }),
+    } : {}),
     ...(payoutVerificationCodeProvider === undefined
       ? {}
       : { payoutVerificationCodeProvider }),
@@ -182,7 +280,8 @@ describe("financial service recovery and admission", () => {
       authorizationHeader, providerCode: "USDTTRC20", amount: "10", destinationAddress: "address",
     })).resolves.toEqual({
       providerCode: "USDTTRC20", amount: "10", destinationAddress: "address",
-      minimumAmount: "1", networkFee: "0.1", addressValidated: true, quotedAt: at,
+      minimumAmount: "1", networkFee: "0.1", feePayer: "user",
+      addressValidated: true, quotedAt: at,
     });
     expect(crypto.reserveWithdrawal).not.toHaveBeenCalled();
     expect(fetch).toHaveBeenCalledTimes(4);
