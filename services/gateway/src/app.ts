@@ -52,6 +52,10 @@ const AgentDirectoryEntrySchema = Type.Object(
     greeting: Type.Union([Type.String(), Type.Null()]),
     presence: Type.Literal("available"),
     activeWorkCount: Type.Literal(0),
+    supportAgent: Type.Boolean(),
+    defaultPlatformAgent: Type.Boolean(),
+    voiceProvider: Type.Union([Type.String(), Type.Null()]),
+    voiceName: Type.Union([Type.String(), Type.Null()]),
   },
   { additionalProperties: false },
 );
@@ -166,6 +170,29 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
           })),
         ],
       }),
+    );
+
+    app.put(
+      "/agent/preferences/default",
+      {
+        schema: {
+          body: Type.Object(
+            { characterId: Type.String() },
+            { additionalProperties: false },
+          ),
+          response: {
+            200: Type.Object(
+              { characterId: Type.String() },
+              { additionalProperties: false },
+            ),
+          },
+        },
+      },
+      async (request) =>
+        directory.setDefaultPlatformAgent({
+          authorizationHeader: request.headers.authorization,
+          characterId: request.body.characterId,
+        }),
     );
   }
 
