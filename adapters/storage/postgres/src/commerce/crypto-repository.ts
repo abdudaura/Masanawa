@@ -453,6 +453,7 @@ export function createPostgresCryptoRepository(pool: Pool): CryptoRepository {
         };
         const current = await readIntentWithClient(client, key, true);
         if (!current || current.operation !== "withdraw") throw new Error("crypto.withdraw.intent_unavailable");
+        if (current.status === "succeeded" || current.status === "failed") return current;
         if (!input.succeeded) {
           await postLedger(client, {
             tenantId:current.tenantId,userId:current.userId,requestId:current.requestId,
