@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { toInstant } from "@masanawa/contracts";
+import { toInstant, type Instant } from "@masanawa/contracts";
 import {
   workflowScheduleLimits,
   type WorkflowOccurrencePlan,
@@ -24,7 +24,7 @@ function stableKey(value: string, name: string, max: number): string {
   return value;
 }
 
-function validInstant(value: string, name: string): string {
+function validInstant(value: string, name: string): Instant {
   const time = Date.parse(value);
   if (!Number.isFinite(time)) {
     fail(`${name} must be a valid instant`);
@@ -36,7 +36,7 @@ function normalizeSpec(spec: WorkflowScheduleSpec): WorkflowScheduleSpec {
   if (spec.kind === "once") {
     return Object.freeze({
       kind: "once",
-      at: validInstant(spec.at, "schedule.once.at") as WorkflowScheduleSpec & string,
+      at: validInstant(spec.at, "schedule.once.at"),
     }) as WorkflowScheduleSpec;
   }
 
@@ -99,7 +99,7 @@ export function createWorkflowSchedule(
       workflowScheduleLimits.maxNodeKeyLength,
     ),
     spec: normalizeSpec(input.spec),
-    createdAt: validInstant(input.createdAt, "schedule.createdAt") as WorkflowSchedule["createdAt"],
+    createdAt: validInstant(input.createdAt, "schedule.createdAt"),
   });
 }
 
