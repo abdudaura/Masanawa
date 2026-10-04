@@ -12,8 +12,10 @@
   - `packages/skills/src/index.ts` only for the new integration export
   - `tests/contracts/core-teaching-cross-channel.test.ts`
   - `docs/CORE-TEACHING-ACCEPTANCE.md`
+  - `packages/skills/src/teaching-shell.ts`
+  - `packages/skills/src/teaching-shell.test.ts`
 - Dependencies: consumes Core Teaching contracts from stacked PR #94; external owners implement the published ports. No edits to their claimed files.
-- Current step: runtime/persistence/presentation bridge, cryptographically revalidated canonical admission-evidence adapter, opaque server action binding, stable replay fingerprint, exact pedagogical plan identity, cross-channel acceptance, fail-closed admission binding, authorized artifact projection and fail-closed evidence routing implemented; owner composition pending.
+- Current step: existing Teaching integration complete; claim extended to add a server-side ShellDocument v1 projection adapter matching PR #91 before editing those new files.
 - Verification: changed-file audit remains exactly the seven claimed integration/acceptance paths. Contract source covers canonical admission evidence -> Teaching binding, safe bound exercise projection, opaque app/WhatsApp selection resolution, lost-response replay, Telegram resume, Relationship isolation, changed-payload conflict, English-text -> Hausa-voice continuity, reteach continuity, exact pedagogical plan drift rejection, admitted-binding mismatch, authorized artifact projection and verified/insufficient evidence behavior. Foundation CI run 1024 again failed before executing any job steps (steps/logs absent); no code verdict is inferred.
 - Deployment: none. Coordination comments published on PRs #89, #91 and #92; no ownership transfer or foreign-file edits.
 - Collision rule: no Gateway/mobile/channel/chat-renderer/migration/lockfile/shared deployment edits in this workstream.
