@@ -1,5 +1,35 @@
 # Masanawa Production Master Task Ledger
 
+## APK compilation checkpoint — 2026-10-04 08:00 UTC
+
+This section supersedes older pending mobile-test statements below.
+Gateway deployment `1162ccd8-4b6b-4a1c-85e0-f0417cd820eb` is live on
+`5c5632cd7a7c7f6b886184bd54e732cf6525f508`: readiness is 200 and
+missing Alpha authorization returns 401. All 106 Gateway/Agents tests pass.
+
+Cloud Flutter analysis passed its compilation-error gate with 120 existing
+warnings/info, and all 42 mobile tests passed, including real login routing
+and splash disposal. The subsequent Android build has not produced an APK.
+Initial Gradle daemon disappearance exposed the builder's hard 999,997,440-byte
+memory limit; increasing it beyond 1 GB was rejected by the current plan.
+The builder now uses one worker, in-process Kotlin, 512 MB heap, 192 MB
+metaspace and 64 MB code cache. Android SDK platform `android-37.0` is the
+actual published package; the previous `android-37` package was unavailable.
+
+Deployment `9c2aa42f-45db-4d38-806d-8fe854fdd2df` on
+`50beb8337a68fe708e4cb5f5dfe243239cf9d0b5` passed all 42 tests but failed
+`:gradle:compileKotlin` with an InvocationTargetException. No underlying
+cause was logged. Diagnostic source `087dca536f4df1cfc616e7488450be5aea5c8e10`
+enables Gradle stack traces; deployment `3719746d-b48b-4b41-9521-b5dd247ff146`
+is running. Inspect that exact deployment before retrying or changing limits.
+No APK or device verification is claimed. Keep secrets private and verify the
+authenticated APK manifest/hash before delivery.
+
+Task 072 remains current: Foundation CI failed before checkout with zero
+steps and runner_id=0. Preserve prior PostgreSQL acceptance evidence and do
+not merge or mark the gate complete. Resend still awaits the user's API key.
+
+
 Status: canonical progress ledger.
 
 ## Tracking rule
