@@ -276,7 +276,13 @@ export interface BillingCheckoutService {
   read(request: Readonly<{
     authorizationHeader: string | undefined;
     quoteId: string;
+    signal?: AbortSignal;
   }>): Promise<BillingCheckoutView>;
+  /** Verified-webhook/internal status reconciliation by globally unique fulfillment reference. */
+  reconcileFulfillment(request: Readonly<{
+    reference: string;
+    signal?: AbortSignal;
+  }>): Promise<BillingQuote | null>;
   executeShellAction(request: Readonly<{
     authorizationHeader: string | undefined;
     documentId: string;
@@ -332,7 +338,7 @@ export function createBillingCheckoutService(input: Readonly<{
   }
 
   async function refundIfRequired(
-    owner: PlatformSessionIdentity,
+    owner: Pick<PlatformSessionIdentity, "tenantId" | "userId">,
     quote: BillingQuote,
     signal?: AbortSignal,
   ): Promise<BillingQuote> {
@@ -431,6 +437,33 @@ export function createBillingCheckoutService(input: Readonly<{
       refundReference: quote.refundReference ?? receipt.refundReference,
       refundedAt: now(),
     });
+  }
+
+  async function reconcileQuote(
+    owner: Pick<PlatformSessionIdentity, "tenantId" | "userId">,
+    quote: BillingQuote,
+    signal?: AbortSignal,
+  ): Promise<BillingQuote> {
+    let current = quote;
+    if (
+      current.fulfillmentReference &&
+      (current.state === "reserved" || current.state === "succeeded")
+    ) {
+      await input.billing.reconcileOwnedPurchase({
+        tenantId: owner.tenantId,
+        userId: owner.userId,
+        reference: current.fulfillmentReference,
+        ...(signal ? { signal } : {}),
+      });
+      const refreshed = await input.quotes.readQuote({
+        tenantId: owner.tenantId,
+        userId: owner.userId,
+        quoteId: current.quoteId,
+      });
+      if (!refreshed) throw new Error("financial.billing.quote_not_found");
+      current = refreshed;
+    }
+    return refundIfRequired(owner,current,signal);
   }
 
   function view(
@@ -627,8 +660,24 @@ export function createBillingCheckoutService(input: Readonly<{
 
     async read(request) {
       const owned = await ownedQuote(request.authorizationHeader,request.quoteId);
-      const quote = await refundIfRequired(owned.identity,owned.quote);
-      return view(quote);
+      const quote = await reconcileQuote(
+        owned.identity,
+        owned.quote,
+        request.signal,
+      );
+      return view(quote,null,owned.identity);
+    },
+
+    async reconcileFulfillment(request) {
+      const quote = await input.quotes.readByFulfillmentReference({
+        fulfillmentReference: request.reference,
+      });
+      if (!quote) return null;
+      return reconcileQuote(
+        { tenantId: quote.tenantId, userId: quote.userId },
+        quote,
+        request.signal,
+      );
     },
 
     async executeShellAction(request) {
