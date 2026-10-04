@@ -613,7 +613,6 @@ export function createPostgresCryptoRepository(pool: Pool): CryptoRepository {
         }
         return updateIntentWithClient(client, {
           ...current,
-          providerTargetAmount: input.succeeded ? decimal(input.targetAmount!) : null,
           status: input.succeeded ? "succeeded" : "failed",
           updatedAt: input.updatedAt,
         });
@@ -723,6 +722,7 @@ export function createPostgresCryptoRepository(pool: Pool): CryptoRepository {
         }
         return updateIntentWithClient(client, {
           ...current,
+          providerTargetAmount: input.succeeded ? decimal(input.targetAmount!) : null,
           status: input.succeeded ? "succeeded" : "failed",
           updatedAt: input.updatedAt,
         });
