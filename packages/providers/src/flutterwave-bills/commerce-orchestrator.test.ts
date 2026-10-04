@@ -154,7 +154,7 @@ describe("BillingCommerceOrchestrator", () => {
     const orchestrator = new BillingCommerceOrchestrator({ provider: provider(), store });
     await orchestrator.prepare(purchase);
     await expect(
-      orchestrator.prepare({ ...purchase, amount: "25000.00" }),
+      orchestrator.prepare({ ...purchase, amount: "25000.00", catalogAmount: "25000" }),
     ).rejects.toMatchObject({ code: "fulfillment_reference_conflict" });
   });
 
