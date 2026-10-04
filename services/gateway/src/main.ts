@@ -160,7 +160,7 @@ function createDefaultDatabaseDependency(
     agentRuns: createPostgresAgentRunRepository(database.pool),
     characterContextCompiler: createPostgresCharacterContextCompiler(database.pool),
     crypto: createPostgresCryptoRepository(database.pool),
-    billingStore: (identity) =>
+    billingStore: (identity: Readonly<{ tenantId: string; userId: string }>) =>
       createPostgresBillingFulfillmentStore(database.pool, identity),
     providerWebhooks: createPostgresProviderWebhookRepository(database.pool),
     channelAdmission: createPostgresChannelAdmission(database.pool),
