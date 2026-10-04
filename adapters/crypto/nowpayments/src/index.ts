@@ -1,4 +1,10 @@
 export {
+  normalizeCreatePaymentInput,
+  parseCreatedPayment,
+  type CreateNowPaymentsPaymentInput,
+  type NowPaymentsCreatedPayment,
+} from "./payment.js";
+export {
   canonicalizeIpnPayload,
   parseVerifiedPaymentIpn,
   verifyIpnSignature,
