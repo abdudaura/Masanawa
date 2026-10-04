@@ -64,7 +64,9 @@ export function canonicalizeIpnPayload(
     maxArrayLength: limits.maxArrayLength ?? 256,
     maxStringLength: limits.maxStringLength ?? 16_384,
   };
-  return JSON.stringify(asJsonValue(payload, 0, normalizedLimits));
+  const encoded = JSON.stringify(asJsonValue(payload, 0, normalizedLimits));
+  if (encoded === undefined) throw new Error("nowpayments.ipn.payload.invalid");
+  return encoded;
 }
 
 export function verifyIpnSignature(input: {
