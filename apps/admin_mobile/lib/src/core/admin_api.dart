@@ -21,6 +21,7 @@ class AgentPresentation {
     required this.displayName,
     required this.roleLabel,
     required this.about,
+    required this.greeting,
     required this.visibleInUserApp,
     required this.sortOrder,
     required this.revision,
@@ -31,6 +32,7 @@ class AgentPresentation {
   final String displayName;
   final String roleLabel;
   final String about;
+  final String? greeting;
   final bool visibleInUserApp;
   final int sortOrder;
   final int revision;
@@ -42,6 +44,7 @@ class AgentPresentation {
         displayName: json['displayName'] as String,
         roleLabel: json['roleLabel'] as String,
         about: json['about'] as String? ?? '',
+        greeting: json['greeting'] as String?,
         visibleInUserApp: json['visibleInUserApp'] as bool? ?? false,
         sortOrder: json['sortOrder'] as int? ?? 0,
         revision: json['revision'] as int? ?? 1,
@@ -75,6 +78,27 @@ class AdminSkill {
         description: json['description'] as String? ?? '',
         readiness: json['readiness'] as String? ?? 'unknown',
         advertised: json['advertised'] as bool? ?? false,
+      );
+}
+
+class AgentSkillAssignment {
+  const AgentSkillAssignment({
+    required this.characterId,
+    required this.skillVersionIds,
+    required this.revision,
+  });
+
+  final String characterId;
+  final List<String> skillVersionIds;
+  final int revision;
+
+  factory AgentSkillAssignment.fromJson(Map<String, dynamic> json) =>
+      AgentSkillAssignment(
+        characterId: json['characterId'] as String,
+        skillVersionIds: (json['skillVersionIds'] as List<dynamic>? ?? const [])
+            .map((value) => value.toString())
+            .toList(growable: false),
+        revision: json['revision'] as int? ?? 1,
       );
 }
 
@@ -124,12 +148,71 @@ class AdminApi {
         .toList(growable: false);
   }
 
+  Future<AgentPresentation> updateAgentPresentation(
+    AgentPresentation current, {
+    required String displayName,
+    required String roleLabel,
+    required String about,
+    required String? greeting,
+    required bool visibleInUserApp,
+    required int sortOrder,
+  }) async {
+    final response = await _request(
+      () => _dio.put<dynamic>(
+        '/v1/agents/${Uri.encodeComponent(current.characterId)}/presentation',
+        options: _auth,
+        data: {
+          'schemaVersion': 1,
+          'characterVersionId': current.characterVersionId,
+          'displayName': displayName.trim(),
+          'roleLabel': roleLabel.trim(),
+          'about': about.trim(),
+          'greeting': greeting?.trim().isEmpty == true ? null : greeting?.trim(),
+          'visibleInUserApp': visibleInUserApp,
+          'sortOrder': sortOrder,
+          'expectedRevision': current.revision,
+        },
+      ),
+    );
+    return AgentPresentation.fromJson(_map(response.data));
+  }
+
   Future<List<AdminSkill>> skills() async {
     final response =
         await _request(() => _dio.get<dynamic>('/v1/skills', options: _auth));
     return _list(response.data)
         .map((item) => AdminSkill.fromJson(_map(item)))
         .toList(growable: false);
+  }
+
+  Future<AgentSkillAssignment?> agentSkills(String characterId) async {
+    final response = await _request(
+      () => _dio.get<dynamic>(
+        '/v1/agents/${Uri.encodeComponent(characterId)}/skills',
+        options: _auth,
+      ),
+    );
+    if (response.data == null) return null;
+    return AgentSkillAssignment.fromJson(_map(response.data));
+  }
+
+  Future<AgentSkillAssignment> updateAgentSkills(
+    String characterId, {
+    required List<String> skillVersionIds,
+    required int? expectedRevision,
+  }) async {
+    final response = await _request(
+      () => _dio.put<dynamic>(
+        '/v1/agents/${Uri.encodeComponent(characterId)}/skills',
+        options: _auth,
+        data: {
+          'schemaVersion': 1,
+          'skillVersionIds': skillVersionIds,
+          'expectedRevision': expectedRevision,
+        },
+      ),
+    );
+    return AgentSkillAssignment.fromJson(_map(response.data));
   }
 
   Future<Response<dynamic>> _request(
@@ -142,6 +225,7 @@ class AdminApi {
       final message = switch (status) {
         401 || 403 => 'This credential is not authorized for Masanawa Ops.',
         404 => 'The configured server does not expose the Ops admin contract yet.',
+        409 => 'This record changed on the server. Reload it before saving again.',
         _ => error.message ?? 'Admin request failed.',
       };
       throw AdminApiException(message, status);
