@@ -15,6 +15,8 @@ import {
 } from "@masanawa/commerce";
 import {
   NowPaymentsClient,
+  NowPaymentsPayoutClient,
+  assertAboveMinimum,
   parseVerifiedPaymentIpn,
   splitProviderCurrency,
   type NowPaymentsCurrencyEvidence,
@@ -43,7 +45,29 @@ export interface FinancialDepositView {
   readonly outcomeUnknown: boolean;
 }
 
+export interface FinancialWithdrawalView {
+  readonly requestId: RequestId;
+  readonly asset: string;
+  readonly network: string | null;
+  readonly amount: string;
+  readonly destinationAddress: string | null;
+  readonly status: CryptoIntent["status"];
+  readonly providerPayoutId: string | null;
+  readonly verificationRequired: boolean;
+  readonly outcomeUnknown: boolean;
+}
+
+export interface FinancialCapabilities {
+  readonly deposits: true;
+  readonly withdrawals: boolean;
+  readonly conversions: false;
+  readonly payoutReason: string | null;
+}
+
 export interface FinancialService {
+  capabilities(input: {
+    readonly authorizationHeader: string | undefined;
+  }): Promise<FinancialCapabilities>;
   listDepositRoutes(input: {
     readonly authorizationHeader: string | undefined;
   }): Promise<readonly NowPaymentsCurrencyEvidence[]>;
@@ -53,6 +77,22 @@ export interface FinancialService {
     readonly providerCode: string;
     readonly amount: string;
   }): Promise<FinancialDepositView>;
+  createWithdrawal(input: {
+    readonly authorizationHeader: string | undefined;
+    readonly requestId: string;
+    readonly providerCode: string;
+    readonly amount: string;
+    readonly destinationAddress: string;
+  }): Promise<FinancialWithdrawalView>;
+  verifyWithdrawal(input: {
+    readonly authorizationHeader: string | undefined;
+    readonly requestId: string;
+    readonly verificationCode: string;
+  }): Promise<FinancialWithdrawalView>;
+  refreshWithdrawal(input: {
+    readonly authorizationHeader: string | undefined;
+    readonly requestId: string;
+  }): Promise<FinancialWithdrawalView>;
   readBalance(input: {
     readonly authorizationHeader: string | undefined;
     readonly providerCode: string;
@@ -127,10 +167,36 @@ function depositView(intent: CryptoIntent): FinancialDepositView {
   });
 }
 
+function withdrawalView(intent: CryptoIntent): FinancialWithdrawalView {
+  return Object.freeze({
+    requestId: intent.requestId,
+    asset: intent.asset,
+    network: intent.network,
+    amount: intent.amount,
+    destinationAddress: intent.destinationAddress,
+    status: intent.status,
+    providerPayoutId: intent.providerPayoutId,
+    verificationRequired:
+      intent.providerPayoutId !== null &&
+      intent.status === "processing",
+    outcomeUnknown:
+      intent.providerDispatchStartedAt !== null && intent.providerPayoutId === null,
+  });
+}
+
+function payoutSucceeded(status: string | null): boolean {
+  return status !== null && ["finished", "success", "successful", "sent"].includes(status);
+}
+
+function payoutFailed(status: string | null): boolean {
+  return status !== null && ["failed", "rejected", "cancelled", "canceled", "expired"].includes(status);
+}
+
 export function createFinancialService(input: {
   readonly authorizer: FinancialAuthorizer;
   readonly crypto: CryptoRepository;
   readonly nowPayments: NowPaymentsClient;
+  readonly nowPaymentsPayout?: NowPaymentsPayoutClient;
   readonly nowPaymentsIpnSecret: string;
   readonly publicBaseUrl: string;
   readonly now?: () => Instant;
@@ -146,7 +212,25 @@ export function createFinancialService(input: {
     return input.authorizer.authorize({ authorizationHeader: header });
   }
 
+  async function currentDepositRoute(providerCode: string) {
+    const routes = await input.nowPayments.listEligiblePaymentRoutes({ operation: "deposit" });
+    return routes.find((candidate) => candidate.route.providerCode === providerCode)?.route ?? null;
+  }
+
   return Object.freeze<FinancialService>({
+    async capabilities(request) {
+      await authority(request.authorizationHeader);
+      return Object.freeze({
+        deposits: true as const,
+        withdrawals: input.nowPaymentsPayout !== undefined,
+        conversions: false as const,
+        payoutReason:
+          input.nowPaymentsPayout === undefined
+            ? "nowpayments_payout_credentials_or_account_capability_unavailable"
+            : null,
+      });
+    },
+
     async listDepositRoutes(request) {
       await authority(request.authorizationHeader);
       const qualified = await input.nowPayments.listEligiblePaymentRoutes({
@@ -168,10 +252,7 @@ export function createFinancialService(input: {
       });
       if (existing) return depositView(existing);
 
-      const routes = await input.nowPayments.listEligiblePaymentRoutes({
-        operation: "deposit",
-      });
-      const route = routes.find((candidate) => candidate.route.providerCode === providerCode)?.route;
+      const route = await currentDepositRoute(providerCode);
       if (!route) throw new Error("financial.crypto.route_unavailable");
 
       const numericAmount = Number(amount);
@@ -179,11 +260,11 @@ export function createFinancialService(input: {
         throw new Error("financial.crypto.amount_unavailable");
       }
 
-      await input.nowPayments.quotePayment({
-        amount: numericAmount,
+      const minimum = await input.nowPayments.getMinimumAmount({
         currencyFrom: providerCode,
         currencyTo: providerCode,
       });
+      assertAboveMinimum(numericAmount, minimum);
 
       const createdAt = now();
       await input.crypto.createIntent({
@@ -235,6 +316,161 @@ export function createFinancialService(input: {
         updatedAt: now(),
       });
       return depositView(bound);
+    },
+
+    async createWithdrawal(request) {
+      const auth = await authority(request.authorizationHeader);
+      if (!input.nowPaymentsPayout) throw new Error("financial.crypto.withdrawal_unavailable");
+
+      const requestId = parseCanonicalId("request", request.requestId);
+      const providerCode = normalizeCryptoAsset(request.providerCode);
+      const amount = normalizeCryptoAmount(request.amount);
+      const address = request.destinationAddress.trim();
+      if (!address || address.length > 512) throw new Error("financial.crypto.destination_invalid");
+
+      const existing = await input.crypto.readIntent({
+        tenantId: auth.tenantId,
+        userId: auth.userId,
+        requestId,
+      });
+      if (existing) return withdrawalView(existing);
+
+      const route = await currentDepositRoute(providerCode);
+      if (!route) throw new Error("financial.crypto.route_unavailable");
+
+      const createdAt = now();
+      const reserved = await input.crypto.reserveWithdrawal({
+        schemaVersion: 1,
+        tenantId: auth.tenantId,
+        userId: auth.userId,
+        requestId,
+        operation: "withdraw",
+        asset: providerCode,
+        network: splitProviderCurrency(providerCode).network,
+        amount,
+        targetAsset: null,
+        destinationAddress: address,
+        provider: "nowpayments",
+        providerPaymentId: null,
+        providerPayoutId: null,
+        payAddress: null,
+        providerPayAmount: null,
+        providerDispatchStartedAt: null,
+        status: "processing",
+        createdAt,
+        updatedAt: createdAt,
+      });
+
+      const dispatch = await input.crypto.beginProviderDispatch({
+        tenantId: auth.tenantId,
+        userId: auth.userId,
+        requestId,
+        updatedAt: now(),
+      });
+      if (!dispatch.shouldDispatch) return withdrawalView(dispatch.intent);
+
+      const payout = await input.nowPaymentsPayout.createPayout({
+        amount,
+        currency: providerCode,
+        address,
+      });
+      const bound = await input.crypto.bindProviderPayout({
+        tenantId: auth.tenantId,
+        userId: auth.userId,
+        requestId,
+        providerPayoutId: payout.payoutId,
+        updatedAt: now(),
+      });
+
+      if (payoutSucceeded(payout.status)) {
+        return withdrawalView(await input.crypto.settleWithdrawal({
+          tenantId: auth.tenantId,
+          userId: auth.userId,
+          requestId,
+          succeeded: true,
+          providerReference: payout.payoutId,
+          updatedAt: now(),
+        }));
+      }
+      if (payoutFailed(payout.status)) {
+        return withdrawalView(await input.crypto.settleWithdrawal({
+          tenantId: auth.tenantId,
+          userId: auth.userId,
+          requestId,
+          succeeded: false,
+          providerReference: payout.payoutId,
+          updatedAt: now(),
+        }));
+      }
+      return withdrawalView(bound);
+    },
+
+    async verifyWithdrawal(request) {
+      const auth = await authority(request.authorizationHeader);
+      if (!input.nowPaymentsPayout) throw new Error("financial.crypto.withdrawal_unavailable");
+      const requestId = parseCanonicalId("request", request.requestId);
+      const intent = await input.crypto.readIntent({
+        tenantId: auth.tenantId,
+        userId: auth.userId,
+        requestId,
+      });
+      if (!intent || intent.operation !== "withdraw" || intent.providerPayoutId === null) {
+        throw new Error("financial.crypto.withdrawal_unavailable");
+      }
+      const result = await input.nowPaymentsPayout.verifyPayout({
+        payoutId: intent.providerPayoutId,
+        verificationCode: request.verificationCode,
+      });
+      if (payoutSucceeded(result.status)) {
+        return withdrawalView(await input.crypto.settleWithdrawal({
+          tenantId: auth.tenantId,
+          userId: auth.userId,
+          requestId,
+          succeeded: true,
+          providerReference: intent.providerPayoutId,
+          updatedAt: now(),
+        }));
+      }
+      if (payoutFailed(result.status)) {
+        return withdrawalView(await input.crypto.settleWithdrawal({
+          tenantId: auth.tenantId,
+          userId: auth.userId,
+          requestId,
+          succeeded: false,
+          providerReference: intent.providerPayoutId,
+          updatedAt: now(),
+        }));
+      }
+      return withdrawalView(intent);
+    },
+
+    async refreshWithdrawal(request) {
+      const auth = await authority(request.authorizationHeader);
+      if (!input.nowPaymentsPayout) throw new Error("financial.crypto.withdrawal_unavailable");
+      const requestId = parseCanonicalId("request", request.requestId);
+      const intent = await input.crypto.readIntent({
+        tenantId: auth.tenantId,
+        userId: auth.userId,
+        requestId,
+      });
+      if (!intent || intent.operation !== "withdraw" || intent.providerPayoutId === null) {
+        throw new Error("financial.crypto.withdrawal_unavailable");
+      }
+      if (intent.status === "succeeded" || intent.status === "failed") return withdrawalView(intent);
+      const status = await input.nowPaymentsPayout.getPayoutStatus({
+        payoutId: intent.providerPayoutId,
+      });
+      if (payoutSucceeded(status) || payoutFailed(status)) {
+        return withdrawalView(await input.crypto.settleWithdrawal({
+          tenantId: auth.tenantId,
+          userId: auth.userId,
+          requestId,
+          succeeded: payoutSucceeded(status),
+          providerReference: intent.providerPayoutId,
+          updatedAt: now(),
+        }));
+      }
+      return withdrawalView(intent);
     },
 
     async readBalance(request) {
