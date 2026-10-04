@@ -110,17 +110,31 @@ AS $$
 DECLARE
   original_tenant text;
   compensation_tenant text;
+  original_state text;
+  compensation_state text;
 BEGIN
-  SELECT tenant_id INTO original_tenant
+  SELECT tenant_id, state INTO original_tenant, original_state
     FROM events.operations
    WHERE operation_id = NEW.original_operation_id;
-  SELECT tenant_id INTO compensation_tenant
+  SELECT tenant_id, state INTO compensation_tenant, compensation_state
     FROM events.operations
    WHERE operation_id = NEW.compensation_operation_id;
 
   IF original_tenant IS DISTINCT FROM NEW.tenant_id
      OR compensation_tenant IS DISTINCT FROM NEW.tenant_id THEN
     RAISE EXCEPTION 'Workflow compensation Operation tenant mismatch'
+      USING ERRCODE = '23514';
+  END IF;
+
+  IF original_state NOT IN (
+       'accepted', 'partial', 'unknown', 'reconciling', 'succeeded'
+     ) THEN
+    RAISE EXCEPTION 'Original Operation state does not justify compensation'
+      USING ERRCODE = '23514';
+  END IF;
+
+  IF compensation_state NOT IN ('prepared', 'authorized') THEN
+    RAISE EXCEPTION 'Compensation Operation must be pre-dispatch'
       USING ERRCODE = '23514';
   END IF;
 
