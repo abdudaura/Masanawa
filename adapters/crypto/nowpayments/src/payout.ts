@@ -309,18 +309,44 @@ export class NowPaymentsPayoutClient {
       withdrawal.ipn_callback_url = callback.toString();
     }
 
-    const token = await this.authenticate(input.signal);
-    const response = await this.#request("/payout", {
-      method: "POST",
-      body: JSON.stringify({
-        ...(input.ipnCallbackUrl === undefined ? {} : { ipn_callback_url: input.ipnCallbackUrl }),
-        withdrawals: [withdrawal],
-      }),
-      ...(input.signal === undefined ? {} : { signal: input.signal }),
-      token,
-      authenticated: true,
-      badRequestCode: "nowpayments.payout.request_rejected",
-    });
+    let token: string;
+    try {
+      token = await this.authenticate(input.signal);
+    } catch (error) {
+      const code = error instanceof Error ? error.message : "";
+      if (
+        code === "nowpayments.payout.credential.unavailable" ||
+        code === "nowpayments.payout.transport.unavailable" ||
+        code === "nowpayments.payout.provider.unavailable"
+      ) {
+        throw new Error("nowpayments.payout.authentication_unavailable");
+      }
+      throw error;
+    }
+
+    let response: Response;
+    try {
+      response = await this.#request("/payout", {
+        method: "POST",
+        body: JSON.stringify({
+          ...(input.ipnCallbackUrl === undefined ? {} : { ipn_callback_url: input.ipnCallbackUrl }),
+          withdrawals: [withdrawal],
+        }),
+        ...(input.signal === undefined ? {} : { signal: input.signal }),
+        token,
+        authenticated: true,
+        badRequestCode: "nowpayments.payout.request_rejected",
+      });
+    } catch (error) {
+      const code = error instanceof Error ? error.message : "";
+      if (
+        code === "nowpayments.payout.request_rejected" ||
+        code === "nowpayments.payout.credential.unavailable"
+      ) {
+        throw new Error("nowpayments.payout.dispatch_rejected");
+      }
+      throw error;
+    }
     const body = await response.json();
     return Object.freeze({
       payoutId: payoutIdFrom(body),
