@@ -6,6 +6,7 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { createPostgresPool, runMigrations, characterContextMigrationRoots } from "@masanawa/postgres";
 import { decryptNurainGeminiCredentials } from "./import-nurain-gemini.mjs";
+import { selectAlphaGeminiCredentials } from "./alpha-credential-selection.mjs";
 
 if (process.env.MASANAWA_ALPHA_GEMINI_IMPORTED_CREDENTIALS_JSON) {
   try {
@@ -13,7 +14,7 @@ if (process.env.MASANAWA_ALPHA_GEMINI_IMPORTED_CREDENTIALS_JSON) {
     // Legacy names are read only by this explicit migration bridge on the reused worker.
     const previous = (process.env["CREDENTIAL_ENCRYPTION_KEY_PREVIOUS"] ?? "").split(",").map(value => value.trim()).filter(Boolean);
     const keys = decryptNurainGeminiCredentials(process.env.MASANAWA_ALPHA_GEMINI_IMPORTED_CREDENTIALS_JSON, [process.env["CREDENTIAL_ENCRYPTION_KEY"], ...previous]);
-    process.env.MASANAWA_ALPHA_GEMINI_API_KEYS_JSON = JSON.stringify(keys);
+    process.env.MASANAWA_ALPHA_GEMINI_API_KEYS_JSON = JSON.stringify(selectAlphaGeminiCredentials(keys, process.env.MASANAWA_ALPHA_GEMINI_ACTIVE_CREDENTIAL_INDEX));
     delete process.env.MASANAWA_ALPHA_GEMINI_IMPORTED_CREDENTIALS_JSON;
   } catch {
     console.error("Hosted Alpha credential import failed; no key values are logged.");
