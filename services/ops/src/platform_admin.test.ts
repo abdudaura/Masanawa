@@ -25,8 +25,8 @@ describe("platform admin projections", () => {
   it("authorizes and scopes user reads to the operator tenant", async () => {
     const seen: string[] = [];
     const queries: Array<{ text: string; values?: unknown[] }> = [];
-    const database: PlatformAdminQuery = {
-      async query(text, values) {
+    const database = {
+      async query(text: string, values?: unknown[]) {
         queries.push({ text, values });
         return {
           rows: [
@@ -42,7 +42,7 @@ describe("platform admin projections", () => {
           ],
         };
       },
-    };
+    } as unknown as PlatformAdminQuery;
     const service = createPlatformAdminService({
       database,
       authorizer: authorizer(seen),
@@ -66,8 +66,8 @@ describe("platform admin projections", () => {
     const seen: string[] = [];
     const queries: Array<{ text: string; values?: unknown[] }> = [];
     let call = 0;
-    const database: PlatformAdminQuery = {
-      async query(text, values) {
+    const database = {
+      async query(text: string, values?: unknown[]) {
         queries.push({ text, values });
         call += 1;
         if (call === 1) {
@@ -87,7 +87,7 @@ describe("platform admin projections", () => {
           rows: [{ identity_count: "1", relationship_count: "2" }],
         };
       },
-    };
+    } as unknown as PlatformAdminQuery;
     const service = createPlatformAdminService({
       database,
       authorizer: authorizer(seen),
@@ -114,8 +114,8 @@ describe("platform admin projections", () => {
   it("never selects encrypted credential material for the mobile admin", async () => {
     const seen: string[] = [];
     let queryText = "";
-    const database: PlatformAdminQuery = {
-      async query(text) {
+    const database = {
+      async query(text: string) {
         queryText = text;
         return {
           rows: [
@@ -135,7 +135,7 @@ describe("platform admin projections", () => {
           ],
         };
       },
-    };
+    } as unknown as PlatformAdminQuery;
     const service = createPlatformAdminService({
       database,
       authorizer: authorizer(seen),
@@ -154,12 +154,12 @@ describe("platform admin projections", () => {
 
   it("does not touch storage when authorization fails", async () => {
     let calls = 0;
-    const database: PlatformAdminQuery = {
+    const database = {
       async query() {
         calls += 1;
         return { rows: [] };
       },
-    };
+    } as unknown as PlatformAdminQuery;
     const service = createPlatformAdminService({
       database,
       authorizer: {
