@@ -1207,7 +1207,11 @@ class AiChatController extends Notifier<AiChatState> {
   void clearThread(String characterId) {
     _threadGenerations[characterId] =
         (_threadGenerations[characterId] ?? 0) + 1;
-    _bindings.remove(characterId);
+    final binding = _bindings.remove(characterId);
+    if (binding != null) {
+      unawaited(ref.read(agentTransportProvider).closeSession(binding));
+    }
+    unawaited(LivePcmAudio.stop());
     final threads = {...state.threads}..remove(characterId);
     state = state.copyWith(
       threads: threads,
