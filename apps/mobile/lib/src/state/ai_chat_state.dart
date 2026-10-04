@@ -37,6 +37,7 @@ class ChatAttachment {
   String get label => switch (kind) {
     'image' => '📷 Photo',
     'voice' => '🎤 Voice note (${formatDurationMs(durationMs ?? 0)})',
+    'video' => '🎬 ${name ?? 'Video'}',
     _ => '📄 ${name ?? 'Document'}',
   };
 
@@ -503,6 +504,7 @@ class AiChatController extends Notifier<AiChatState> {
             )
           : await _sendMediaViaTransport(
               characterId,
+              userMsg.id,
               attachment!,
               caption: userMsg.text,
             );
@@ -518,7 +520,7 @@ class AiChatController extends Notifier<AiChatState> {
         userMsg.id,
         (message) => message.copyWith(
           deliveryStatus: 'delivered',
-          uploadProgress: message.allAttachments.length > 1 ? 1.0 : null,
+          uploadProgress: message.allAttachments.isNotEmpty ? 1.0 : null,
         ),
       );
       ChatAttachment? replyAudio;
@@ -610,6 +612,7 @@ class AiChatController extends Notifier<AiChatState> {
 
   Future<AgentTurnResult> _sendMediaViaTransport(
     String characterId,
+    String messageId,
     ChatAttachment attachment, {
     required String caption,
   }) async {
@@ -641,6 +644,18 @@ class AiChatController extends Notifier<AiChatState> {
       bytes: bytes,
       mimeType: mimeType,
       caption: caption,
+      onUploadProgress: (sent, total) {
+        if (total <= 0) return;
+        _updateMessage(
+          characterId,
+          messageId,
+          (message) => message.copyWith(
+            deliveryStatus: sent >= total ? 'processing' : 'uploading',
+            uploadProgress: (sent / total).clamp(0.0, 1.0).toDouble(),
+          ),
+          persist: false,
+        );
+      },
     );
   }
 
