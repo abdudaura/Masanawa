@@ -60,7 +60,7 @@ export class NowPaymentsPayoutClient {
     const response = await this.#request("/auth", {
       method: "POST",
       body: JSON.stringify({ email: this.#email, password: this.#password }),
-      signal,
+      ...(signal === undefined ? {} : { signal }),
       authenticated: false,
     });
     const body = (await response.json()) as Record<string, unknown>;
@@ -96,7 +96,7 @@ export class NowPaymentsPayoutClient {
         ...(input.ipnCallbackUrl === undefined ? {} : { ipn_callback_url: input.ipnCallbackUrl }),
         withdrawals: [withdrawal],
       }),
-      signal: input.signal,
+      ...(input.signal === undefined ? {} : { signal: input.signal }),
       token,
       authenticated: true,
     });
@@ -126,7 +126,7 @@ export class NowPaymentsPayoutClient {
     const response = await this.#request(`/payout/${encodeURIComponent(payoutId)}/verify`, {
       method: "POST",
       body: JSON.stringify({ verification_code: verificationCode }),
-      signal: input.signal,
+      ...(input.signal === undefined ? {} : { signal: input.signal }),
       token,
       authenticated: true,
     });
@@ -141,7 +141,7 @@ export class NowPaymentsPayoutClient {
     const payoutId = nonEmpty(input.payoutId, "nowpayments.payout_id.invalid", 128);
     const response = await this.#request(`/payout/${encodeURIComponent(payoutId)}`, {
       method: "GET",
-      signal: input.signal,
+      ...(input.signal === undefined ? {} : { signal: input.signal }),
       token,
       authenticated: true,
     });
