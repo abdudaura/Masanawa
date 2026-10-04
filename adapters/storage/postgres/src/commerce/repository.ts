@@ -39,6 +39,44 @@ function accountPredicate(prefix: "debit" | "credit", account: CommerceAccountRe
   };
 }
 
+const protectedDebitKinds = new Set<CommerceAccountRef["kind"]>([
+  "customer-credit",
+  "agent-float",
+  "fulfillment-reserve",
+  "pending-earnings",
+  "available-earnings",
+]);
+
+async function readBalanceWithClient(
+  client: import("pg").PoolClient,
+  account: CommerceAccountRef,
+): Promise<number> {
+  const result = await client.query<{ balance: string }>(
+    `SELECT
+       COALESCE(SUM(
+         CASE
+           WHEN credit_kind = $2
+            AND credit_user_id IS NOT DISTINCT FROM $3
+            AND credit_character_id IS NOT DISTINCT FROM $4
+           THEN amount_credits
+           WHEN debit_kind = $2
+            AND debit_user_id IS NOT DISTINCT FROM $3
+            AND debit_character_id IS NOT DISTINCT FROM $4
+           THEN -amount_credits
+           ELSE 0
+         END
+       ),0)::text AS balance
+       FROM commerce.ledger_entries
+      WHERE tenant_id = $1`,
+    [account.tenantId, account.kind, account.userId, account.characterId],
+  );
+  const balance = Number(result.rows[0]?.balance ?? "0");
+  if (!Number.isSafeInteger(balance)) {
+    throw new Error("Commerce balance exceeds safe integer range");
+  }
+  return balance;
+}
+
 export function createPostgresCommerceRepository(pool: Pool): CommerceRepository {
   return Object.freeze({
     async registerOfferRevision(input) {
@@ -149,6 +187,38 @@ export function createPostgresCommerceRepository(pool: Pool): CommerceRepository
     async postTransfer(input) {
       const transfer = normalizeCommerceLedgerTransfer(input);
       return withTransaction(pool, async (client) => {
+        await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+          `commerce:ledger:${transfer.tenantId}:${transfer.ledgerEntryId}`,
+        ]);
+
+        const existing = await client.query<{ definition: CommerceLedgerTransfer }>(
+          "SELECT definition FROM commerce.ledger_entries WHERE tenant_id=$1 AND ledger_entry_id=$2",
+          [transfer.tenantId, transfer.ledgerEntryId],
+        );
+        if (existing.rows[0]) {
+          const replay = transferFromDefinition(existing.rows[0].definition);
+          if (canonicalJson(replay) !== canonicalJson(transfer)) {
+            throw conflict(
+              "commerce.ledger_replay_conflict",
+              "Ledger identity replayed with different content",
+            );
+          }
+          return replay;
+        }
+
+        if (protectedDebitKinds.has(transfer.debit.kind)) {
+          await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+            `commerce:account:${transfer.debit.tenantId}:${transfer.debit.kind}:${transfer.debit.userId ?? "-"}:${transfer.debit.characterId ?? "-"}`,
+          ]);
+          const balance = await readBalanceWithClient(client, transfer.debit);
+          if (balance < transfer.amountCredits) {
+            throw conflict(
+              "commerce.insufficient_balance",
+              "Commerce account does not have enough Credits for this transfer",
+            );
+          }
+        }
+
         const inserted = await client.query<{ definition: CommerceLedgerTransfer }>(
           `INSERT INTO commerce.ledger_entries(
              tenant_id, ledger_entry_id,
@@ -156,7 +226,6 @@ export function createPostgresCommerceRepository(pool: Pool): CommerceRepository
              credit_kind, credit_user_id, credit_character_id,
              amount_credits, reason, quote_id, fulfillment_id, created_at, definition
            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14::jsonb)
-           ON CONFLICT DO NOTHING
            RETURNING definition`,
           [
             transfer.tenantId, transfer.ledgerEntryId,
@@ -166,45 +235,17 @@ export function createPostgresCommerceRepository(pool: Pool): CommerceRepository
             transfer.fulfillmentId, transfer.createdAt, canonicalJson(transfer),
           ],
         );
-        if (inserted.rows[0]) return transferFromDefinition(inserted.rows[0].definition);
-        const existing = await client.query<{ definition: CommerceLedgerTransfer }>(
-          "SELECT definition FROM commerce.ledger_entries WHERE tenant_id=$1 AND ledger_entry_id=$2",
-          [transfer.tenantId, transfer.ledgerEntryId],
-        );
-        const replay = transferFromDefinition(existing.rows[0]?.definition);
-        if (canonicalJson(replay) !== canonicalJson(transfer)) {
-          throw conflict("commerce.ledger_replay_conflict", "Ledger identity replayed with different content");
-        }
-        return replay;
+        return transferFromDefinition(inserted.rows[0]!.definition);
       });
     },
 
     async readBalance(input) {
       const account = normalizeCommerceAccountRef(input);
-      return withTransaction(pool, async (client) => {
-        const result = await client.query<{ balance: string }>(
-          `SELECT
-             COALESCE(SUM(
-               CASE
-                 WHEN credit_kind = $2
-                  AND credit_user_id IS NOT DISTINCT FROM $3
-                  AND credit_character_id IS NOT DISTINCT FROM $4
-                 THEN amount_credits
-                 WHEN debit_kind = $2
-                  AND debit_user_id IS NOT DISTINCT FROM $3
-                  AND debit_character_id IS NOT DISTINCT FROM $4
-                 THEN -amount_credits
-                 ELSE 0
-               END
-             ),0)::text AS balance
-             FROM commerce.ledger_entries
-            WHERE tenant_id = $1`,
-          [account.tenantId, account.kind, account.userId, account.characterId],
-        );
-        const balance = Number(result.rows[0]?.balance ?? "0");
-        if (!Number.isSafeInteger(balance)) throw new Error("Commerce balance exceeds safe integer range");
-        return balance;
-      }, { isolation: "repeatable read", readOnly: true });
+      return withTransaction(
+        pool,
+        (client) => readBalanceWithClient(client, account),
+        { isolation: "repeatable read", readOnly: true },
+      );
     },
 
     async readCreatorCommercialSnapshot(input) {
