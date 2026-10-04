@@ -84,6 +84,7 @@ export async function generateAgentInference(
   provider: AgentInferenceProvider,
   request: AgentInferenceRequest,
   configuredLimits: Partial<AgentInferenceLimits> = {},
+  onTextDelta?: (delta: string) => void | Promise<void>,
 ): Promise<AgentInferenceResult> {
   const limits = normalizeAgentInferenceLimits(configuredLimits);
   const snapshot = snapshotAgentInferenceRequest(request);
@@ -100,7 +101,9 @@ export async function generateAgentInference(
   let result: AgentInferenceResult;
   try {
     result = await Promise.race([provider.generate(snapshot, Object.freeze({
-      signal: controller.signal, maxOutputTokens: limits.maxOutputTokens,
+      signal: controller.signal,
+      maxOutputTokens: limits.maxOutputTokens,
+      ...(onTextDelta ? { onTextDelta } : {}),
     })), deadline]);
     if (timedOut || performance.now() - startedAt >= limits.timeoutMs) {
       controller.abort(); throw new AgentInferenceError("inference.deadline_exceeded");
