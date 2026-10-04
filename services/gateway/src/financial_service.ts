@@ -125,7 +125,7 @@ export function createFixedFinancialAuthorizer(input: {
   const token = input.token.trim();
   if (!token) throw new TypeError("financial.auth.token.required");
   return Object.freeze({
-    async authorize(request) {
+    async authorize(request: Parameters<FinancialAuthorizer["authorize"]>[0]) {
       const supplied = bearer(request.authorizationHeader);
       if (supplied !== token) throw new Error("financial.auth.unauthorized");
       return Object.freeze({ tenantId: input.tenantId, userId: input.userId });
