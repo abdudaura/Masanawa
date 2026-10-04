@@ -16,6 +16,7 @@ import type {
   PersonalCloneProvisioningRepository,
   UserRelationshipReader,
 } from "@masanawa/identity";
+import type { CommerceRepository } from "@masanawa/commerce";
 import { readRequiredEnv } from "@masanawa/contracts";
 import {
   createDrainState,
@@ -32,6 +33,7 @@ import {
   createPostgresAgentRunRepository,
   createPostgresCharacterSessionRepository,
   createPostgresCharacterSkillAssignmentRepository,
+  createPostgresCommerceRepository,
   createPostgresPlatformAgentProfileRepository,
   createPostgresSkillGuideRepository,
   createPostgresSkillRepository,
@@ -49,6 +51,7 @@ import {
   createCreatorCloneService,
   type CreatorCloneAuthorizer,
 } from "./creator_clone.js";
+import { createCreatorEconomyService } from "./creator_economy.js";
 import type {
   AgentConversationAuthorizer,
 } from "./agent_conversation_contract.js";
@@ -86,6 +89,7 @@ export interface ServiceDatabaseDependency {
   readonly skillGuides?: SkillGuideRepository;
   readonly personalClones?: PersonalCloneProvisioningRepository;
   readonly relationships?: UserRelationshipReader;
+  readonly commerce?: CommerceRepository;
   close(): Promise<void>;
 }
 
@@ -164,6 +168,7 @@ function createDefaultDatabaseDependency(
     skillGuides: createPostgresSkillGuideRepository(database.pool),
     personalClones: createPostgresPersonalCloneProvisioningRepository(database.pool),
     relationships: createPostgresUserRelationshipReader(database.pool),
+    commerce: createPostgresCommerceRepository(database.pool),
     close: database.close,
   });
 }
@@ -275,6 +280,18 @@ export async function startGatewayService(
         })
       : undefined);
 
+  const composedCreatorEconomy =
+    options.appOptions?.creatorEconomy ??
+    (creatorCloneAuthorizer &&
+    database.personalClones &&
+    database.commerce
+      ? createCreatorEconomyService({
+          authorizer: creatorCloneAuthorizer,
+          personalClones: database.personalClones,
+          commerce: database.commerce,
+        })
+      : undefined);
+
   const composedCreatorClone =
     options.appOptions?.creatorClone ??
     (creatorCloneAuthorizer &&
@@ -313,6 +330,9 @@ export async function startGatewayService(
         ? { agentConversation: composedConversation }
         : {}),
       ...(composedCreatorClone ? { creatorClone: composedCreatorClone } : {}),
+      ...(composedCreatorEconomy
+        ? { creatorEconomy: composedCreatorEconomy }
+        : {}),
       readinessChecks: [
         ...(options.appOptions?.readinessChecks ?? []),
         database.readinessCheck,
