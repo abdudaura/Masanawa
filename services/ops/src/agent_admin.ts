@@ -20,6 +20,7 @@ export type AgentAdminCapability =
   | "identity.users.write"
   | "agents.runs.read"
   | "commerce.read"
+  | "commerce.write"
   | "operations.read"
   | "reconciliation.read"
   | "providers.credentials.read"
