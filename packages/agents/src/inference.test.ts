@@ -148,6 +148,35 @@ describe("bounded inference attempts", () => {
       expect(JSON.stringify(error)).not.toContain("secret");
     } finally {vi.useRealTimers();}
   });
+  it("aborts provider inference when the client transport disconnects", async () => {
+    const external = new AbortController();
+    let providerSignal!: AbortSignal;
+    const pending = generateAgentInference(
+      {
+        generate(_input, controls) {
+          providerSignal = controls!.signal;
+          return new Promise((_resolve, reject) => {
+            controls!.signal.addEventListener(
+              "abort",
+              () => reject(new Error("cancelled upstream")),
+              { once: true },
+            );
+          });
+        },
+      },
+      request(),
+      { timeoutMs: 10_000 },
+      undefined,
+      external.signal,
+    );
+    external.abort();
+    await expect(pending).rejects.toMatchObject({
+      code: "inference.unavailable",
+      retryable: true,
+    });
+    expect(providerSignal.aborted).toBe(true);
+  });
+
   it("cleans up the timer after early failures", async () => {
     vi.useFakeTimers();
     try {
