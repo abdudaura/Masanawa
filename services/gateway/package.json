@@ -22,7 +22,8 @@
     "@masanawa/commerce": "workspace:*",
     "@masanawa/providers": "workspace:*",
     "@masanawa/nowpayments": "workspace:*",
-    "@masanawa/messaging-channels": "workspace:*"
+    "@masanawa/messaging-channels": "workspace:*",
+    "@masanawa/identity": "workspace:*"
   },
   "devDependencies": {
     "vitest": "5.0.3"
