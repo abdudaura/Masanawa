@@ -33,6 +33,18 @@ class AgentSessionBinding {
 
 /// One assistant turn. Text/audio narration and structured work results may
 /// coexist. Structured parts carry durable references, never local authority.
+class AgentMediaInput {
+  const AgentMediaInput({
+    required this.bytes,
+    required this.mimeType,
+    this.name,
+  });
+
+  final Uint8List bytes;
+  final String mimeType;
+  final String? name;
+}
+
 class AgentTurnResult {
   const AgentTurnResult({
     required this.text,
@@ -57,6 +69,8 @@ abstract class AgentTransport {
   Future<AgentTurnResult> sendTurn({
     required AgentSessionBinding binding,
     required String text,
+    void Function(String delta)? onTextDelta,
+    Future<void> Function(Uint8List pcmChunk)? onAudioPcmChunk,
   });
 
   Future<AgentTurnResult> sendMediaTurn({
@@ -64,7 +78,17 @@ abstract class AgentTransport {
     required Uint8List bytes,
     required String mimeType,
     required String caption,
+    void Function(int sent, int total)? onUploadProgress,
   });
+
+  Future<AgentTurnResult> sendMediaSetTurn({
+    required AgentSessionBinding binding,
+    required List<AgentMediaInput> media,
+    required String caption,
+    void Function(int sent, int total)? onUploadProgress,
+  });
+
+  void cancelTurn(String characterId);
 
   Future<void> closeSession(AgentSessionBinding binding);
 }
@@ -87,10 +111,13 @@ class PreviewAgentTransport implements AgentTransport {
   Future<AgentTurnResult> sendTurn({
     required AgentSessionBinding binding,
     required String text,
-  }) async =>
-      AgentTurnResult(
-        text: await sendPreview(text, binding.characterId),
-      );
+    void Function(String delta)? onTextDelta,
+    Future<void> Function(Uint8List pcmChunk)? onAudioPcmChunk,
+  }) async {
+    final reply = await sendPreview(text, binding.characterId);
+    onTextDelta?.call(reply);
+    return AgentTurnResult(text: reply);
+  }
 
   @override
   Future<AgentTurnResult> sendMediaTurn({
@@ -98,11 +125,32 @@ class PreviewAgentTransport implements AgentTransport {
     required Uint8List bytes,
     required String mimeType,
     required String caption,
+    void Function(int sent, int total)? onUploadProgress,
   }) async {
+    onUploadProgress?.call(bytes.length, bytes.length);
     throw UnsupportedError(
       'Preview transport cannot inspect attachment bytes',
     );
   }
+
+  @override
+  Future<AgentTurnResult> sendMediaSetTurn({
+    required AgentSessionBinding binding,
+    required List<AgentMediaInput> media,
+    required String caption,
+    void Function(int sent, int total)? onUploadProgress,
+  }) async {
+    final total = media.fold<int>(0, (sum, item) => sum + item.bytes.length);
+    onUploadProgress?.call(total, total);
+    final reply = await sendPreview(
+      caption.isEmpty ? 'Review these ${media.length} attachments.' : caption,
+      binding.characterId,
+    );
+    return AgentTurnResult(text: reply);
+  }
+
+  @override
+  void cancelTurn(String characterId) {}
 
   @override
   Future<void> closeSession(AgentSessionBinding binding) async {}
