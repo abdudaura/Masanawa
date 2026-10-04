@@ -151,6 +151,15 @@ export interface FinancialService {
     readonly authorizationHeader: string | undefined;
     readonly requestId: string;
   }): Promise<FinancialConversionView>;
+  /**
+   * Legacy compatibility only. Merchant payout verification is server-side and
+   * this method always fails closed; the shared HTTP route should be removed.
+   */
+  verifyWithdrawal(input: {
+    readonly authorizationHeader: string | undefined;
+    readonly requestId: string;
+    readonly verificationCode: string;
+  }): Promise<FinancialWithdrawalView>;
   refreshWithdrawal(input: {
     readonly authorizationHeader: string | undefined;
     readonly requestId: string;
@@ -960,6 +969,13 @@ export function createFinancialService(input: {
         return conversionView(intent);
       }
       return conversionView(await settleReconciledConversion(auth, intent));
+    },
+
+    async verifyWithdrawal(request) {
+      await authority(request.authorizationHeader);
+      parseCanonicalId("request", request.requestId);
+      void request.verificationCode;
+      throw new Error("financial.crypto.withdrawal_verification_server_only");
     },
 
     async refreshWithdrawal(request) {
