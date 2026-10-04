@@ -7,7 +7,7 @@ import type {
   CharacterSessionRepository,
   CharacterSkillAssignmentRepository,
 } from "@masanawa/agents";
-import { readRequiredEnv } from "@masanawa/contracts";
+import { parseCanonicalId, readRequiredEnv } from "@masanawa/contracts";
 import type { CryptoRepository } from "@masanawa/commerce";
 import { NowPaymentsClient, NowPaymentsPayoutClient } from "@masanawa/nowpayments";
 import {
