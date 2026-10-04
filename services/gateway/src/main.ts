@@ -18,7 +18,7 @@ import {
   type ServiceLifecycleLogger,
 } from "@masanawa/node-runtime";
 import {
-  characterSessionMigrationRoots,
+  characterContextMigrationRoots,
   createPostgresAgentPresentationRepository,
   createPostgresAgentRunRepository,
   createPostgresCharacterSessionRepository,
@@ -123,7 +123,7 @@ function createDefaultDatabaseDependency(
   const database = createPostgresServiceDependency({
     connectionString,
     applicationName: "masanawa-gateway",
-    migrationRoots: characterSessionMigrationRoots(),
+    migrationRoots: characterContextMigrationRoots(),
   });
   return Object.freeze({
     readinessCheck: database.readinessCheck,

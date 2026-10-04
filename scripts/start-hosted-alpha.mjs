@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { createPostgresPool } from "@masanawa/postgres";
+import { createPostgresPool, runMigrations, characterContextMigrationRoots } from "@masanawa/postgres";
 import { decryptNurainGeminiCredentials } from "./import-nurain-gemini.mjs";
 
 if (process.env.MASANAWA_ALPHA_GEMINI_IMPORTED_CREDENTIALS_JSON) {
@@ -64,7 +64,12 @@ async function start() {
       CHECK (NOT (identity_references ? 'MASANAWA_ALPHA_DEV_TOKEN'))
     )`);
     const existing = await client.query("SELECT identity_references FROM public.masanawa_hosted_alpha_config WHERE deployment_key = $1", [key]);
-    if (existing.rows[0]) values = existing.rows[0].identity_references;
+    if (existing.rows[0]) {
+      values = existing.rows[0].identity_references;
+      // Upgrade the registered Alpha through checksum-checked, transactional migrations;
+      // never rerun bootstrap or replace its canonical identities.
+      await runMigrations(pool, characterContextMigrationRoots());
+    }
     else {
       // Never adopt an unrelated existing database or silently add a second Alpha.
       const canonical = await client.query("SELECT to_regclass('identity.tenants') AS tenants");

@@ -56,6 +56,15 @@ export function characterSessionMigrationRoots(): readonly MigrationRoot[] {
   ]);
 }
 
+/** Full dependencies of the owner-backed Character context compiler. */
+export function characterContextMigrationRoots(): readonly MigrationRoot[] {
+  return Object.freeze([
+    ...characterSessionMigrationRoots(),
+    Object.freeze({ owner: "memory", directory: packageMigrationDirectory("@masanawa/memory") }),
+    Object.freeze({ owner: "world", directory: packageMigrationDirectory("@masanawa/world") }),
+  ]);
+}
+
 function migrationKey(
   migration: Pick<MigrationFingerprint, "owner" | "name">,
 ): string {
