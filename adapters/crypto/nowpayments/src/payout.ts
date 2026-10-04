@@ -173,8 +173,8 @@ export class NowPaymentsPayoutClient {
     readonly signal?: AbortSignal;
   }): Promise<NowPaymentsPayoutFeeEstimate> {
     const currency = payoutCurrency(input.currency);
-    const exactAmount = decimal(input.amount, "nowpayments.payout.amount.invalid");
-    const wireAmount = numericWireAmount(exactAmount);
+    const exactAmount = decimal(input.amount, "nowpayments.payout.amount.invalid", { maxDecimals: 6 });
+    const wireAmount = numericWireAmount(exactAmount, 6);
     const search = new URLSearchParams({
       currency: currency.toLowerCase(),
       amount: String(wireAmount),
