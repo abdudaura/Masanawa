@@ -9,6 +9,7 @@ import {
 import { canonicalJson, fingerprintCanonicalJson } from "@masanawa/security";
 import {
   evaluateTeachingSelection,
+  normalizeTeachingAnswerEvaluation,
   normalizeTeachingExerciseCard,
   normalizeTeachingLessonPlan,
   normalizeTeachingProgressHandoff,
@@ -181,6 +182,30 @@ export interface TeachingSelectionActionBinding {
   readonly rubric: TeachingSelectableExerciseRubric;
   readonly expiresAt: Instant;
   readonly bindingHash: string;
+}
+
+export interface TeachingFreeResponseBinding {
+  readonly requestId: RequestId;
+  readonly relationshipId: RelationshipId;
+  readonly skillVersionId: SkillVersionId;
+  readonly lessonStepKey: string;
+  readonly exerciseKey: string;
+  readonly expiresAt: Instant;
+  readonly bindingHash: string;
+}
+
+export interface TeachingFreeResponseAttempt {
+  readonly requestId: RequestId;
+  readonly payloadHash: string;
+  readonly planHash: string;
+  readonly relationshipId: RelationshipId;
+  readonly skillVersionId: SkillVersionId;
+  readonly lessonStepKey: string;
+  readonly exerciseKey: string;
+  readonly responseText: string;
+  readonly evaluation: TeachingAnswerEvaluation;
+  readonly progress: TeachingProgressHandoff;
+  readonly recordedAt: Instant;
 }
 
 export interface TeachingOpaqueSelection {
@@ -398,6 +423,9 @@ export interface TeachingProgressPort {
   commitSelectionAttempt(
     attempt: TeachingSelectionAttempt,
   ): Promise<"stored" | "replay">;
+  commitFreeResponseAttempt(
+    attempt: TeachingFreeResponseAttempt,
+  ): Promise<"stored" | "replay">;
 }
 
 export type TeachingRuntimeProjection =
@@ -485,6 +513,79 @@ export function fingerprintTeachingLessonPlan(
   return `sha256:${fingerprintCanonicalJson(
     JSON.parse(canonicalJson(pedagogicalIdentity)),
   )}`;
+}
+
+function teachingFreeResponseBindingPayload(input: {
+  readonly requestId: RequestId;
+  readonly relationshipId: RelationshipId;
+  readonly skillVersionId: SkillVersionId;
+  readonly lessonStepKey: string;
+  readonly exerciseKey: string;
+  readonly expiresAt: Instant;
+}) {
+  return Object.freeze({
+    requestId: input.requestId,
+    relationshipId: input.relationshipId,
+    skillVersionId: input.skillVersionId,
+    lessonStepKey: input.lessonStepKey,
+    exerciseKey: input.exerciseKey,
+    expiresAt: input.expiresAt,
+  });
+}
+
+export function createTeachingFreeResponseBinding(input: {
+  readonly binding: TeachingRuntimeBinding;
+  readonly requestId: RequestId;
+  readonly lessonStepKey: string;
+  readonly exerciseKey: string;
+  readonly expiresAt: Instant;
+}): TeachingFreeResponseBinding {
+  if (!isCanonicalId("request", input.requestId)) {
+    throw new TypeError("Teaching free-response RequestId is invalid");
+  }
+  const lessonStepKey = input.lessonStepKey.trim().toLowerCase();
+  const exerciseKey = input.exerciseKey.trim().toLowerCase();
+  if (!/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u.test(lessonStepKey)) {
+    throw new TypeError("Teaching free-response lessonStepKey is invalid");
+  }
+  if (!/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u.test(exerciseKey)) {
+    throw new TypeError("Teaching free-response exerciseKey is invalid");
+  }
+  const expiresAt = toInstant(input.expiresAt);
+  const payload = teachingFreeResponseBindingPayload({
+    requestId: input.requestId,
+    relationshipId: input.binding.relationshipId,
+    skillVersionId: input.binding.skillVersionId,
+    lessonStepKey,
+    exerciseKey,
+    expiresAt,
+  });
+  return Object.freeze({
+    ...payload,
+    bindingHash:
+      `sha256:${fingerprintCanonicalJson(JSON.parse(canonicalJson(payload)))}`,
+  });
+}
+
+export function fingerprintTeachingFreeResponseAttempt(input: {
+  readonly relationshipId: RelationshipId;
+  readonly skillVersionId: SkillVersionId;
+  readonly lessonStepKey: string;
+  readonly exerciseKey: string;
+  readonly responseText: string;
+}): string {
+  assertScope(input.relationshipId, input.skillVersionId);
+  const responseText = input.responseText.trim();
+  if (responseText.length < 1 || responseText.length > 16_384) {
+    throw new TypeError("Teaching free-response text is invalid");
+  }
+  return `sha256:${fingerprintCanonicalJson({
+    relationshipId: input.relationshipId,
+    skillVersionId: input.skillVersionId,
+    lessonStepKey: input.lessonStepKey.trim().toLowerCase(),
+    exerciseKey: input.exerciseKey.trim().toLowerCase(),
+    responseText,
+  })}`;
 }
 
 function teachingActionBindingPayload(input: {
@@ -975,6 +1076,123 @@ export class TeachingRuntimeCoordinator {
       evidence: Object.freeze(evidence),
       uncertaintyNote,
     });
+  }
+
+  async submitFreeResponse(input: {
+    readonly binding: TeachingRuntimeBinding;
+    readonly exercise: TeachingFreeResponseBinding;
+    readonly plan: TeachingLessonPlan;
+    readonly responseText: string;
+    readonly evaluation: TeachingAnswerEvaluation;
+    readonly now: Instant;
+  }): Promise<TeachingRuntimeProjection> {
+    const expectedPayload = teachingFreeResponseBindingPayload({
+      requestId: input.exercise.requestId,
+      relationshipId: input.exercise.relationshipId,
+      skillVersionId: input.exercise.skillVersionId,
+      lessonStepKey: input.exercise.lessonStepKey,
+      exerciseKey: input.exercise.exerciseKey,
+      expiresAt: input.exercise.expiresAt,
+    });
+    const expectedHash =
+      `sha256:${fingerprintCanonicalJson(
+        JSON.parse(canonicalJson(expectedPayload)),
+      )}`;
+    if (input.exercise.bindingHash !== expectedHash) {
+      throw new TypeError(
+        "Teaching free-response binding hash does not match payload",
+      );
+    }
+    assertBindingScope(
+      input.binding,
+      input.exercise.relationshipId,
+      input.exercise.skillVersionId,
+    );
+    if (Date.parse(toInstant(input.now)) > Date.parse(input.exercise.expiresAt)) {
+      throw new TypeError("Teaching free-response binding has expired");
+    }
+
+    const plan = normalizeTeachingLessonPlan(input.plan);
+    assertBindingScope(
+      input.binding,
+      plan.learner.relationshipId,
+      plan.skillVersionId,
+    );
+    if (
+      !plan.steps.some(
+        (step) => step.stepKey === input.exercise.lessonStepKey,
+      )
+    ) {
+      throw new TypeError(
+        "Teaching free-response exercise references an unknown lesson step",
+      );
+    }
+
+    const responseText = input.responseText.trim();
+    if (responseText.length < 1 || responseText.length > 16_384) {
+      throw new TypeError("Teaching free-response text is invalid");
+    }
+    const evaluation = normalizeTeachingAnswerEvaluation(input.evaluation);
+    const progress = normalizeTeachingProgressHandoff({
+      relationshipId: input.exercise.relationshipId,
+      skillVersionId: input.exercise.skillVersionId,
+      lessonStepKey: input.exercise.lessonStepKey,
+      checkpointState: evaluation.nextCheckpointState,
+      demonstratedUnderstanding:
+        evaluation.correct === true
+          ? Object.freeze([
+              `Completed free-response exercise ${input.exercise.exerciseKey} with positive understanding evidence`,
+            ])
+          : Object.freeze([] as string[]),
+      misconceptionsToRevisit:
+        evaluation.misconception === null
+          ? Object.freeze([] as string[])
+          : Object.freeze([evaluation.misconception]),
+      nextSteps:
+        evaluation.correct === true
+          ? ["Continue according to the lesson sequence"]
+          : evaluation.correct === false
+            ? ["Reteach the current concept using a different explanation"]
+            : ["Continue formative assessment of the current concept"],
+      recordedAt: toInstant(input.now),
+    });
+
+    const planHash = fingerprintTeachingLessonPlan(plan);
+    const payloadHash = fingerprintTeachingFreeResponseAttempt({
+      relationshipId: input.exercise.relationshipId,
+      skillVersionId: input.exercise.skillVersionId,
+      lessonStepKey: input.exercise.lessonStepKey,
+      exerciseKey: input.exercise.exerciseKey,
+      responseText,
+    });
+    const persistence = await this.#progress.commitFreeResponseAttempt(
+      Object.freeze({
+        requestId: input.exercise.requestId,
+        payloadHash,
+        planHash,
+        relationshipId: input.exercise.relationshipId,
+        skillVersionId: input.exercise.skillVersionId,
+        lessonStepKey: input.exercise.lessonStepKey,
+        exerciseKey: input.exercise.exerciseKey,
+        responseText,
+        evaluation,
+        progress,
+        recordedAt: toInstant(input.now),
+      }),
+    );
+
+    const continuation = resolveTeachingContinuation(plan, progress);
+    const projection = Object.freeze({
+      kind: "feedback" as const,
+      relationshipId: input.exercise.relationshipId,
+      skillVersionId: input.exercise.skillVersionId,
+      exerciseKey: input.exercise.exerciseKey,
+      evaluation,
+      continuation,
+      persistence,
+    });
+    await this.#presentation?.publish(projection);
+    return projection;
   }
 
   async submitOpaqueSelection(input: {
