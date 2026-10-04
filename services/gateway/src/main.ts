@@ -371,7 +371,8 @@ export async function startGatewayService(
     if (
       !database.agentPresentations ||
       !database.characterSkillAssignments ||
-      !database.platformIdentity
+      !database.platformIdentity ||
+      !database.platformAgentProfiles
     ) {
       await database.close().catch(() => undefined);
       throw new Error("Platform auth requires canonical identity and agent repositories");
@@ -391,6 +392,7 @@ export async function startGatewayService(
         "mobile-platform-session-v1",
       presentations: database.agentPresentations,
       skillAssignments: database.characterSkillAssignments,
+      platformProfiles: database.platformAgentProfiles,
     });
     directoryAuthorizer = fallbackAuthorizer(production.directory, directoryAuthorizer);
     conversationAuthorizer = fallbackAuthorizer(production.conversation, conversationAuthorizer);
