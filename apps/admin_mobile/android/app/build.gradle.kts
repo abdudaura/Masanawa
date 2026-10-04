@@ -13,7 +13,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "ng.unigeria.unigeria"
+    namespace = "ng.masanawa.admin"
     compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
