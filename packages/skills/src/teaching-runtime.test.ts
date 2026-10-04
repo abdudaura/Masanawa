@@ -12,6 +12,7 @@ import type {
 import {
   createTeachingRuntimeBinding,
   createTeachingSelectionActionBinding,
+  fingerprintTeachingLessonPlan,
   fingerprintTeachingSelectionAttempt,
   resolveTeachingOpaqueSelection,
   TeachingRuntimeCoordinator,
@@ -799,5 +800,79 @@ describe("Teaching bound exercise projection", () => {
         action,
       ),
     ).rejects.toThrow(/must match the server action binding scope/);
+  });
+});
+
+
+describe("Teaching lesson plan identity", () => {
+  it("keeps the same plan hash across language and modality preference changes", () => {
+    const active = lesson();
+    const changed: TeachingLessonPlan = {
+      ...active,
+      learner: {
+        ...active.learner,
+        language: "ha",
+        accessibilityPreferences: ["Prefer shorter sentences"],
+        preferredModalities: ["voice"],
+      },
+    };
+
+    expect(fingerprintTeachingLessonPlan(changed)).toBe(
+      fingerprintTeachingLessonPlan(active),
+    );
+  });
+
+  it("changes the plan hash when pedagogical sequence changes", () => {
+    const active = lesson();
+    const changed: TeachingLessonPlan = {
+      ...active,
+      steps: [
+        ...active.steps,
+        {
+          ...active.steps[1]!,
+          stepKey: "simplify-answer",
+          title: "Simplify the answer",
+        },
+      ],
+    };
+
+    expect(fingerprintTeachingLessonPlan(changed)).not.toBe(
+      fingerprintTeachingLessonPlan(active),
+    );
+  });
+
+  it("refuses to resume durable progress against a different lesson plan", async () => {
+    const active = lesson();
+    const progress = new MemoryProgressPort();
+    const coordinator = new TeachingRuntimeCoordinator({ progress });
+
+    await coordinator.submitSelection(binding(active), {
+      requestId: createCanonicalId("request"),
+      plan: active,
+      rubric: rubric(active),
+      submission: {
+        relationshipId: active.learner.relationshipId,
+        skillVersionId: active.skillVersionId,
+        lessonStepKey: "common-denominator",
+        exerciseKey: "denominator-choice",
+        selectedOptionKeys: ["six"],
+      },
+      recordedAt: toInstant("2026-10-04T18:20:00.000Z"),
+    });
+
+    const drifted: TeachingLessonPlan = {
+      ...active,
+      steps: [
+        active.steps[0]!,
+        {
+          ...active.steps[1]!,
+          objective: "A changed objective that was not part of the persisted plan.",
+        },
+      ],
+    };
+
+    await expect(
+      coordinator.resume(binding(drifted), drifted),
+    ).rejects.toThrow(/different lesson plan/);
   });
 });
