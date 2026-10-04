@@ -17,6 +17,7 @@ class NameScreen extends ConsumerStatefulWidget {
 class _NameScreenState extends ConsumerState<NameScreen> {
   final _name = TextEditingController();
   bool _prefilled = false;
+  bool _saving = false;
 
   @override
   void dispose() {
@@ -45,7 +46,13 @@ class _NameScreenState extends ConsumerState<NameScreen> {
       _snack('Please enter your full name');
       return;
     }
-    await ref.read(sessionProvider.notifier).updateProfile(name: name);
+    if (_saving) return;
+    setState(() => _saving = true);
+    try {
+      await ref.read(sessionProvider.notifier).updateProfile(name: name);
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   @override
@@ -102,8 +109,12 @@ class _NameScreenState extends ConsumerState<NameScreen> {
           const SizedBox(height: 24),
           PrimaryButton(
             label: 'Continue',
-            loading: false,
-            onPressed: alreadyComplete ? () => context.go('/chats') : _submit,
+            loading: _saving,
+            onPressed: _saving
+                ? null
+                : alreadyComplete
+                    ? () => context.go('/chats')
+                    : _submit,
           ),
           const SizedBox(height: 12),
           Text(
