@@ -20,6 +20,15 @@ import {
 } from "@masanawa/skills";
 import type { CommerceUserAuthorizer } from "./commerce_catalog.js";
 
+export interface PlatformAgentProfileRepository {
+  listSupportAgents(input: Readonly<{
+    tenantId: import("@masanawa/contracts").TenantId;
+  }>): Promise<readonly Readonly<{
+    characterId: import("@masanawa/contracts").CharacterId;
+    defaultForNewUsers: boolean;
+  }>[]>;
+}
+
 export interface CommerceFulfillmentService {
   admit(input: {
     readonly authorizationHeader: string | undefined;
