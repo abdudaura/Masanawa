@@ -2,6 +2,7 @@ import type {
   AgentRunId,
   CharacterSessionId,
   CharacterVersionId,
+  SkillVersionId,
 } from "@masanawa/contracts";
 
 /**
@@ -33,6 +34,7 @@ export interface AgentStrategyRequest {
   readonly agentRunId: AgentRunId;
   readonly characterSessionId: CharacterSessionId;
   readonly characterVersionId: CharacterVersionId;
+  readonly skillVersionIds: readonly SkillVersionId[];
   readonly presentation: AgentStrategyPresentation;
   readonly input: AgentStrategyInput;
 }
