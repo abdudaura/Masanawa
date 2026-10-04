@@ -729,6 +729,10 @@ export const requiredCoreTeachingRehearsalCases = [
   "contract.relationship-continuity",
   "recovery.source-uncertainty",
   "contract.relationship-privacy",
+  "contract.app-continuity",
+  "contract.whatsapp-continuity",
+  "contract.telegram-continuity",
+  "contract.voice-text-parity",
 ] as const;
 
 export interface CoreTeachingSkillBundleInput {
@@ -737,6 +741,7 @@ export interface CoreTeachingSkillBundleInput {
   readonly version: string;
   readonly provenance: SkillProvenance;
   readonly certification: SkillCertification;
+  readonly certifiedGuideContentHash: string;
   readonly guideResources?: readonly SkillGuideResource[];
 }
 
@@ -807,9 +812,71 @@ Channel and privacy boundary:
   or certification authority.
 `.trim();
 
+export function createCoreTeachingSkillGuide(
+  skillVersionId: SkillVersionId,
+  guideResources: readonly SkillGuideResource[] = [],
+): SkillGuide {
+  if (!isCanonicalId("skill-version", skillVersionId)) {
+    throw new TypeError("Core Teaching SkillGuide SkillVersionId is invalid");
+  }
+  return normalizeSkillGuide({
+    schemaVersion: 1,
+    skillVersionId,
+    triggerDescription:
+      "Use when the user wants to learn, be taught, understand, practise, revise, or receive tutoring on a topic.",
+    instructions: coreTeachingInstructions,
+    resources: guideResources,
+    discovery: {
+      priority: 90,
+      phrases: [
+        "teach me",
+        "tutor me",
+        "help me understand",
+        "explain step by step",
+        "quiz me",
+      ],
+      allOf: [
+        ["help", "learn"],
+        ["explain", "practice"],
+      ],
+      anyOf: [
+        "learn",
+        "lesson",
+        "practice",
+        "study",
+        "teach",
+        "tutor",
+        "understand",
+      ],
+      noneOf: [],
+      minScore: 15,
+    },
+  });
+}
+
 export function createCoreTeachingSkillBundle(
   input: CoreTeachingSkillBundleInput,
 ): CoreTeachingSkillBundle {
+  const guide = createCoreTeachingSkillGuide(
+    input.skillVersionId,
+    input.guideResources ?? [],
+  );
+  const expectedGuideHash = bounded(
+    input.certifiedGuideContentHash,
+    "coreTeaching.certifiedGuideContentHash",
+    71,
+  ).toLowerCase();
+  if (!sha256Pattern.test(expectedGuideHash)) {
+    throw new TypeError(
+      "Core Teaching certifiedGuideContentHash must be sha256:<64 lowercase hex>",
+    );
+  }
+  if (guide.contentHash !== expectedGuideHash) {
+    throw new TypeError(
+      "Core Teaching certification must bind the exact SkillGuide content hash",
+    );
+  }
+
   const certification = normalizeSkillCertification(
     input.certification,
     input.skillVersionId,
@@ -877,40 +944,6 @@ export function createCoreTeachingSkillBundle(
     timeoutMs: 120_000,
     provenance: input.provenance,
     certification,
-  });
-
-  const guide = normalizeSkillGuide({
-    schemaVersion: 1,
-    skillVersionId: input.skillVersionId,
-    triggerDescription:
-      "Use when the user wants to learn, be taught, understand, practise, revise, or receive tutoring on a topic.",
-    instructions: coreTeachingInstructions,
-    resources: input.guideResources ?? [],
-    discovery: {
-      priority: 90,
-      phrases: [
-        "teach me",
-        "tutor me",
-        "help me understand",
-        "explain step by step",
-        "quiz me",
-      ],
-      allOf: [
-        ["help", "learn"],
-        ["explain", "practice"],
-      ],
-      anyOf: [
-        "learn",
-        "lesson",
-        "practice",
-        "study",
-        "teach",
-        "tutor",
-        "understand",
-      ],
-      noneOf: [],
-      minScore: 15,
-    },
   });
 
   return Object.freeze({ skillVersion, guide });
