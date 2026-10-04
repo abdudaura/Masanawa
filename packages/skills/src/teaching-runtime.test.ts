@@ -429,3 +429,115 @@ describe("Teaching artifact presentation", () => {
     ).rejects.toThrow(/contentHash/);
   });
 });
+
+
+describe("Teaching evidence integration", () => {
+  it("fails closed with explicit uncertainty when no evidence port is configured", async () => {
+    const active = lesson();
+    const coordinator = new TeachingRuntimeCoordinator({
+      progress: new MemoryProgressPort(),
+    });
+
+    const result = await coordinator.resolveEvidence(binding(active), {
+      relationshipId: active.learner.relationshipId,
+      skillVersionId: active.skillVersionId,
+      lessonStepKey: "common-denominator",
+      query: "What is the current official curriculum requirement for this topic?",
+      purpose: "current-claim",
+    });
+
+    expect(result).toEqual({
+      status: "insufficient",
+      evidence: [],
+      uncertaintyNote:
+        "No evidence-capable Teaching integration is available for this claim.",
+    });
+  });
+
+  it("accepts bounded hashed evidence from an external authority-preserving resolver", async () => {
+    const active = lesson();
+    const coordinator = new TeachingRuntimeCoordinator({
+      progress: new MemoryProgressPort(),
+      evidence: {
+        async resolve() {
+          return {
+            status: "verified" as const,
+            evidence: [
+              {
+                resourceKey: "curriculum-reference",
+                title: "Reviewed curriculum reference",
+                reference: "evidence://curriculum/fractions/2026",
+                contentHash: `sha256:${"c".repeat(64)}`,
+                checkedAt: toInstant("2026-10-04T17:30:00.000Z"),
+              },
+            ],
+            uncertaintyNote: null,
+          };
+        },
+      },
+    });
+
+    const result = await coordinator.resolveEvidence(binding(active), {
+      relationshipId: active.learner.relationshipId,
+      skillVersionId: active.skillVersionId,
+      lessonStepKey: "common-denominator",
+      query: "Check the current curriculum requirement.",
+      purpose: "source-check",
+    });
+
+    expect(result).toMatchObject({
+      status: "verified",
+      evidence: [
+        {
+          resourceKey: "curriculum-reference",
+          contentHash: `sha256:${"c".repeat(64)}`,
+        },
+      ],
+      uncertaintyNote: null,
+    });
+    expect(Object.isFrozen(result.evidence)).toBe(true);
+  });
+
+  it("rejects a resolver that labels empty evidence as verified", async () => {
+    const active = lesson();
+    const coordinator = new TeachingRuntimeCoordinator({
+      progress: new MemoryProgressPort(),
+      evidence: {
+        async resolve() {
+          return {
+            status: "verified" as const,
+            evidence: [],
+            uncertaintyNote: null,
+          };
+        },
+      },
+    });
+
+    await expect(
+      coordinator.resolveEvidence(binding(active), {
+        relationshipId: active.learner.relationshipId,
+        skillVersionId: active.skillVersionId,
+        lessonStepKey: "common-denominator",
+        query: "Verify this current claim.",
+        purpose: "current-claim",
+      }),
+    ).rejects.toThrow(/requires evidence/);
+  });
+
+  it("rejects evidence requests outside the admitted Relationship scope", async () => {
+    const active = lesson();
+    const coordinator = new TeachingRuntimeCoordinator({
+      progress: new MemoryProgressPort(),
+    });
+
+    await expect(
+      coordinator.resolveEvidence(binding(active), {
+        relationshipId: createCanonicalId("relationship"),
+        skillVersionId: active.skillVersionId,
+        lessonStepKey: "common-denominator",
+        query: "Verify this claim.",
+        purpose: "specialist-claim",
+      }),
+    ).rejects.toThrow(/must match the admitted Relationship and SkillVersion/);
+  });
+});
