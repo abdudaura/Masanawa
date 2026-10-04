@@ -222,19 +222,47 @@ export class NowPaymentsCustodyClient {
     if (fromCurrency === toCurrency) throw new Error("nowpayments.conversion.same_currency");
     const exactAmount = amount(input.amount);
     const wireAmount = numericWireAmount(exactAmount);
-    const token = await this.authenticate(input.signal);
-    const response = await this.#request("/conversion", {
-      method: "POST",
-      body: JSON.stringify({
-        from_currency: fromCurrency.toLowerCase(),
-        to_currency: toCurrency.toLowerCase(),
-        amount: wireAmount,
-      }),
-      authenticated: true,
-      token,
-      badRequestCode: "nowpayments.conversion.request_rejected",
-      ...(input.signal === undefined ? {} : { signal: input.signal }),
-    });
+
+    let token: string;
+    try {
+      token = await this.authenticate(input.signal);
+    } catch (error) {
+      const code = error instanceof Error ? error.message : "";
+      if (
+        code === "nowpayments.custody.credential.unavailable" ||
+        code === "nowpayments.custody.transport.unavailable" ||
+        code === "nowpayments.custody.provider.unavailable" ||
+        code === "nowpayments.custody.auth.invalid_response"
+      ) {
+        throw new Error("nowpayments.conversion.authentication_unavailable");
+      }
+      throw error;
+    }
+
+    let response: Response;
+    try {
+      response = await this.#request("/conversion", {
+        method: "POST",
+        body: JSON.stringify({
+          from_currency: fromCurrency.toLowerCase(),
+          to_currency: toCurrency.toLowerCase(),
+          amount: wireAmount,
+        }),
+        authenticated: true,
+        token,
+        badRequestCode: "nowpayments.conversion.request_rejected",
+        ...(input.signal === undefined ? {} : { signal: input.signal }),
+      });
+    } catch (error) {
+      const code = error instanceof Error ? error.message : "";
+      if (
+        code === "nowpayments.conversion.request_rejected" ||
+        code === "nowpayments.custody.credential.unavailable"
+      ) {
+        throw new Error("nowpayments.conversion.dispatch_rejected");
+      }
+      throw error;
+    }
     return parseConversion(await response.json(), { fromCurrency, toCurrency, fromAmount: exactAmount });
   }
 
