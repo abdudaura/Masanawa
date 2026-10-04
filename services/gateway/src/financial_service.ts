@@ -106,11 +106,6 @@ export interface FinancialService {
     readonly amount: string;
     readonly destinationAddress: string;
   }): Promise<FinancialWithdrawalView>;
-  verifyWithdrawal(input: {
-    readonly authorizationHeader: string | undefined;
-    readonly requestId: string;
-    readonly verificationCode: string;
-  }): Promise<FinancialWithdrawalView>;
   refreshWithdrawal(input: {
     readonly authorizationHeader: string | undefined;
     readonly requestId: string;
@@ -259,6 +254,16 @@ export function createFinancialService(input: {
     readonly networkFee: string;
     readonly quotedAt: Instant;
   }) => Promise<CryptoIntent>;
+  /**
+   * Server-side merchant 2FA source. Never accept this code from an end-user route.
+   * Return null when the provider account does not require verification.
+   */
+  readonly payoutVerificationCodeProvider?: (input: {
+    readonly batchId: string;
+    readonly tenantId: TenantId;
+    readonly userId: UserId;
+    readonly requestId: RequestId;
+  }) => Promise<string | null>;
   readonly nowPaymentsIpnSecret: string;
   readonly publicBaseUrl: string;
   readonly now?: () => Instant;
@@ -615,34 +620,31 @@ export function createFinancialService(input: {
         updatedAt: now(),
       });
 
-      if (payoutSucceeded(payout.status) || payoutFailed(payout.status)) {
+      let status = payout.status;
+      if (
+        !payoutSucceeded(status) &&
+        !payoutFailed(status) &&
+        input.payoutVerificationCodeProvider
+      ) {
+        const verificationCode = await input.payoutVerificationCodeProvider({
+          batchId: payout.payoutId,
+          tenantId: auth.tenantId,
+          userId: auth.userId,
+          requestId,
+        });
+        if (verificationCode !== null) {
+          const verified = await input.nowPaymentsPayout.verifyPayout({
+            payoutId: payout.payoutId,
+            verificationCode,
+            signal: AbortSignal.timeout(15_000),
+          });
+          status = verified.status;
+        }
+      }
+      if (payoutSucceeded(status) || payoutFailed(status)) {
         return withdrawalView(await settleReconciledPayout(auth, bound));
       }
       return withdrawalView(bound);
-    },
-
-    async verifyWithdrawal(request) {
-      const auth = await authority(request.authorizationHeader);
-      if (!input.nowPaymentsPayout) throw new Error("financial.crypto.withdrawal_unavailable");
-      const requestId = parseCanonicalId("request", request.requestId);
-      const intent = await input.crypto.readIntent({
-        tenantId: auth.tenantId,
-        userId: auth.userId,
-        requestId,
-      });
-      if (!intent || intent.operation !== "withdraw" || intent.providerPayoutId === null) {
-        throw new Error("financial.crypto.withdrawal_unavailable");
-      }
-      if (intent.status === "succeeded" || intent.status === "failed") return withdrawalView(intent);
-      const result = await input.nowPaymentsPayout.verifyPayout({
-        payoutId: intent.providerPayoutId,
-        verificationCode: request.verificationCode,
-        signal: AbortSignal.timeout(15_000),
-      });
-      if (payoutSucceeded(result.status) || payoutFailed(result.status)) {
-        return withdrawalView(await settleReconciledPayout(auth, intent));
-      }
-      return withdrawalView(intent);
     },
 
     async refreshWithdrawal(request) {
