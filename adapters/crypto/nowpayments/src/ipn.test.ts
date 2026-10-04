@@ -66,4 +66,38 @@ describe("NOWPayments IPN verification", () => {
     for (let index = 0; index < 18; index += 1) nested = { nested };
     expect(() => canonicalizeIpnPayload(nested)).toThrow("nowpayments.ipn.payload_too_deep");
   });
+
+  it("extracts parent-payment and amount evidence for reconciliation", () => {
+    const repeated = {
+      ...payload,
+      parent_payment_id: "parent_1",
+      payment_status: "partially_paid",
+      actually_paid: "12.5",
+    };
+    const signature = createHmac("sha512", "secret")
+      .update(canonicalizeIpnPayload(repeated))
+      .digest("hex");
+
+    expect(parseVerifiedPaymentIpn({ payload: repeated, signature, secret: "secret" }))
+      .toMatchObject({
+        paymentId: "5077125051",
+        parentPaymentId: "parent_1",
+        status: "partially_paid",
+        priceAmount: 170,
+        priceCurrency: "USD",
+        payAmount: 155.38559757,
+        payCurrency: "MANA",
+        actuallyPaid: 12.5,
+      });
+  });
+
+  it("rejects signed payloads with malformed financial evidence", () => {
+    const malformed = { ...payload, actually_paid: -1 };
+    const signature = createHmac("sha512", "secret")
+      .update(canonicalizeIpnPayload(malformed))
+      .digest("hex");
+    expect(() =>
+      parseVerifiedPaymentIpn({ payload: malformed, signature, secret: "secret" }),
+    ).toThrow("nowpayments.ipn.actually_paid.invalid");
+  });
 });
