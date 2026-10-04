@@ -14,7 +14,16 @@ Implement the persistence-neutral canonical Workflow/WorkflowVersion graph value
 
 - `docs/workstreams/workflow-version-graph.md`
 - `docs/WORKFLOW-VERSION-GRAPH.md`
-- `packages/workflows/**`
+- `packages/workflows/README.md`
+- `packages/workflows/package.json`
+- `packages/workflows/tsconfig.json`
+- `packages/workflows/tsconfig.build.json`
+- `packages/workflows/src/index.ts`
+- `packages/workflows/src/model.ts`
+- `packages/workflows/src/graph.ts`
+- `packages/workflows/src/graph.test.ts`
+
+New WorkflowRun/Task implementation files are explicitly released for a stacked Task 085 claim. Shared package export/manifest files above remain owned here and must be coordinated rather than edited by the stacked workstream.
 
 ## Explicit non-ownership
 
