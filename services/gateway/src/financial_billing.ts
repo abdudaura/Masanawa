@@ -65,6 +65,8 @@ export function createBillingFinancialService(input: Readonly<{
   flutterwaveSecretKey: string;
   flutterwaveWebhookHash: string;
   flutterwaveWebhookUrl: string;
+  flutterwaveRelayUrl?: string;
+  flutterwaveRelayToken?: string;
   providerClient?: FlutterwaveBillsClient;
 }>): BillingFinancialService {
   const secretKey = input.flutterwaveSecretKey.trim();
@@ -72,11 +74,23 @@ export function createBillingFinancialService(input: Readonly<{
   if (!secretKey) throw new Error("flutterwave.secret_key.required");
   if (!webhookHash) throw new Error("flutterwave.webhook_hash.required");
 
+  const relayUrl = input.flutterwaveRelayUrl?.trim() ?? "";
+  const relayToken = input.flutterwaveRelayToken?.trim() ?? "";
+  if (Boolean(relayUrl) !== Boolean(relayToken)) {
+    throw new Error("flutterwave.relay.configuration_incomplete");
+  }
+
   const provider =
     input.providerClient ??
     new FlutterwaveBillsClient({
       secretKey,
-      transport: new FlutterwaveHttpTransport(),
+      transport:
+        relayUrl && relayToken
+          ? new FlutterwaveHttpTransport({
+              baseUrl: relayUrl,
+              relayToken,
+            })
+          : new FlutterwaveHttpTransport(),
       country: "NG",
     });
   const callbackUrl = (() => {

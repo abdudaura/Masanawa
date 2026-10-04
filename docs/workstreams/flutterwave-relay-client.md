@@ -1,0 +1,29 @@
+# Workstream claim — flutterwave-relay-client
+
+- Owner/window: ChatGPT Flutterwave relay client integration — 2026-10-04
+- Branch: `work/flutterwave-relay-client-20261004`
+- Base ref: `work/integration-flutterwave-webhook-live-20261004`
+- Workstream: financial integration hardening
+- Purpose: make Flutterwave Bills outbound transport optionally use the existing authenticated Render relay, so egress can move by environment configuration without changing provider/Commerce authority.
+- Exact owned paths:
+  - `packages/providers/src/flutterwave-bills/http-transport.ts`
+  - `packages/providers/src/flutterwave-bills/http-transport.test.ts`
+  - `services/gateway/src/financial_billing.ts`
+  - `services/gateway/src/financial_billing.test.ts`
+  - `services/gateway/src/main.ts`
+  - `services/gateway/src/main.test.ts`
+  - `docs/workstreams/flutterwave-relay-client.md`
+- Dependencies:
+  - existing `scripts/flutterwave-render-relay.mjs` owned by the Flutterwave live workstream; do not edit it.
+  - deployment variables `FLUTTERWAVE_RELAY_URL` and `MASANAWA_FLUTTERWAVE_RELAY_TOKEN` remain deployment-owned secrets/config.
+- Collision constraints:
+  - do not edit relay/proxy scripts, Commerce, migrations, mobile, NOWPayments, channels, root config or lockfile;
+  - direct mode remains the default;
+  - relay mode must never forward the Flutterwave provider bearer secret to the relay as its client credential;
+  - partial relay configuration fails closed.
+- Planned verification:
+  - providers typecheck/tests;
+  - Gateway typecheck/tests;
+  - production broad gate after merge;
+  - no live Bills enablement until merchant qualification succeeds.
+- Status: claimed before implementation.

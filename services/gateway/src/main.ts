@@ -347,6 +347,12 @@ export async function startGatewayService(
           flutterwaveSecretKey: env["FLUTTERWAVE_SECRET_KEY"],
           flutterwaveWebhookHash: env["FLUTTERWAVE_WEBHOOK_SECRET_HASH"],
           flutterwaveWebhookUrl: env["FLUTTERWAVE_WEBHOOK_URL"],
+          ...(env["FLUTTERWAVE_RELAY_URL"]?.trim()
+            ? { flutterwaveRelayUrl: env["FLUTTERWAVE_RELAY_URL"] }
+            : {}),
+          ...(env["MASANAWA_FLUTTERWAVE_RELAY_TOKEN"]?.trim()
+            ? { flutterwaveRelayToken: env["MASANAWA_FLUTTERWAVE_RELAY_TOKEN"] }
+            : {}),
         })
       : undefined);
 
