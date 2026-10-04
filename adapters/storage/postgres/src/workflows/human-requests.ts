@@ -10,7 +10,7 @@ import {
   type WorkflowVersionId,
 } from "@masanawa/contracts";
 import { fingerprintCanonicalJson } from "@masanawa/security";
-import type { Pool } from "pg";
+import type { Pool, PoolClient } from "pg";
 import { loadApproval } from "../security/approvals.js";
 import { withTransaction } from "../transaction.js";
 
@@ -118,7 +118,7 @@ function requestFingerprint(
 }
 
 async function loadRequest(
-  client: Parameters<Parameters<typeof withTransaction>[1]>[0],
+  client: PoolClient,
   tenantId: TenantId,
   humanRequestId: RequestId,
   forUpdate = false,
@@ -271,7 +271,7 @@ function responseFingerprint(value: string | boolean): string {
 }
 
 async function settleHumanRequest(
-  pool: Pool,
+  client: PoolClient,
   input: {
     readonly tenantId: TenantId;
     readonly humanRequestId: RequestId;
@@ -281,7 +281,6 @@ async function settleHumanRequest(
     readonly at: Instant;
   },
 ): Promise<PersistedWorkflowHumanRequest> {
-  return withTransaction(pool, async (client) => {
     const current = await loadRequest(
       client,
       input.tenantId,
@@ -372,7 +371,6 @@ async function settleHumanRequest(
       ],
     );
     return requestRecord(updated.rows[0]!);
-  });
 }
 
 export async function answerWorkflowHumanRequest(
@@ -384,51 +382,47 @@ export async function answerWorkflowHumanRequest(
     readonly at: Instant;
   },
 ): Promise<PersistedWorkflowHumanRequest> {
-  const client = await pool.connect();
-  let current: PersistedWorkflowHumanRequest | null;
-  try {
-    current = await loadRequest(
+  return withTransaction(pool, async (client) => {
+    const current = await loadRequest(
       client,
       input.tenantId,
       input.humanRequestId,
-      false,
+      true,
     );
-  } finally {
-    client.release();
-  }
-  if (!current) {
-    throw new PlatformError({
-      code: "workflows.human_request_not_found",
-      category: "not-found",
-      message: "Workflow human request does not exist",
-      retryable: false,
-    });
-  }
-  if (current.kind === "approval") {
-    throw new TypeError(
-      "approval human requests must be resolved from canonical approval state",
-    );
-  }
-  if (current.kind === "information") {
-    if (typeof input.response !== "string") {
-      throw new TypeError("information human request requires string response");
+    if (!current) {
+      throw new PlatformError({
+        code: "workflows.human_request_not_found",
+        category: "not-found",
+        message: "Workflow human request does not exist",
+        retryable: false,
+      });
     }
-    bounded(input.response, "response", 8_000);
-    return settleHumanRequest(pool, {
+    if (current.kind === "approval") {
+      throw new TypeError(
+        "approval human requests must be resolved from canonical approval state",
+      );
+    }
+    if (current.kind === "information") {
+      if (typeof input.response !== "string") {
+        throw new TypeError("information human request requires string response");
+      }
+      bounded(input.response, "response", 8_000);
+      return settleHumanRequest(client, {
+        ...input,
+        response: input.response,
+        targetState: "answered",
+        resumeTask: true,
+      });
+    }
+    if (typeof input.response !== "boolean") {
+      throw new TypeError("confirmation human request requires boolean response");
+    }
+    return settleHumanRequest(client, {
       ...input,
       response: input.response,
-      targetState: "answered",
-      resumeTask: true,
+      targetState: input.response ? "answered" : "rejected",
+      resumeTask: input.response,
     });
-  }
-  if (typeof input.response !== "boolean") {
-    throw new TypeError("confirmation human request requires boolean response");
-  }
-  return settleHumanRequest(pool, {
-    ...input,
-    response: input.response,
-    targetState: input.response ? "answered" : "rejected",
-    resumeTask: input.response,
   });
 }
 
@@ -440,14 +434,12 @@ export async function resolveApprovalWorkflowHumanRequest(
     readonly at: Instant;
   },
 ): Promise<PersistedWorkflowHumanRequest> {
-  const client = await pool.connect();
-  let current: PersistedWorkflowHumanRequest | null;
-  try {
-    current = await loadRequest(
+  return withTransaction(pool, async (client) => {
+    const current = await loadRequest(
       client,
       input.tenantId,
       input.humanRequestId,
-      false,
+      true,
     );
     if (!current) {
       throw new PlatformError({
@@ -477,9 +469,10 @@ export async function resolveApprovalWorkflowHumanRequest(
         retryable: true,
       });
     }
+
     const approved =
       approval.state === "approved" && approval.expiresAt > input.at;
-    return settleHumanRequest(pool, {
+    return settleHumanRequest(client, {
       tenantId: input.tenantId,
       humanRequestId: input.humanRequestId,
       response: approved,
@@ -487,7 +480,5 @@ export async function resolveApprovalWorkflowHumanRequest(
       resumeTask: approved,
       at: input.at,
     });
-  } finally {
-    client.release();
-  }
+  });
 }
