@@ -127,6 +127,27 @@ class _CommerceAdminPageState extends State<CommerceAdminPage> {
         ledger: await widget.api.ledger(),
       );
 
+  Future<void> _toggleOffer(AdminOffer offer, bool enabled) async {
+    try {
+      await widget.api.setOfferEnabled(offer, enabled);
+      if (!mounted) return;
+      setState(() => _future = _load());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            enabled ? 'Offer enabled as a new revision.' : 'Offer disabled as a new revision.',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error.toString())),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) => AdminFuture<CommerceData>(
         future: _future,
@@ -152,8 +173,9 @@ class _CommerceAdminPageState extends State<CommerceAdminPage> {
                         subtitle: Text(
                           '${shortId(offer.offerId)} · rev ${offer.revision}',
                         ),
-                        trailing: Chip(
-                          label: Text(offer.enabled ? 'enabled' : 'disabled'),
+                        trailing: Switch(
+                          value: offer.enabled,
+                          onChanged: (value) => _toggleOffer(offer, value),
                         ),
                       ),
                     )).toList(growable: false),
