@@ -232,6 +232,7 @@ export class NowPaymentsCustodyClient {
       }),
       authenticated: true,
       token,
+      badRequestCode: "nowpayments.conversion.request_rejected",
       ...(input.signal === undefined ? {} : { signal: input.signal }),
     });
     return parseConversion(await response.json(), { fromCurrency, toCurrency, fromAmount: exactAmount });
@@ -268,6 +269,7 @@ export class NowPaymentsCustodyClient {
       readonly signal?: AbortSignal;
       readonly authenticated: boolean;
       readonly token?: string;
+      readonly badRequestCode?: string;
     },
   ): Promise<Response> {
     const headers: Record<string, string> = {
@@ -293,6 +295,12 @@ export class NowPaymentsCustodyClient {
     if (!response.ok) {
       if (response.status === 401 || response.status === 403) {
         throw new Error("nowpayments.custody.credential.unavailable");
+      }
+      if (
+        input.badRequestCode !== undefined &&
+        (response.status === 400 || response.status === 422)
+      ) {
+        throw new Error(input.badRequestCode);
       }
       throw new Error("nowpayments.custody.provider.unavailable");
     }
