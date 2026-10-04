@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -39,8 +40,19 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   bool _showEmoji = false;
   bool _hasText = false;
   bool _recording = false;
+  bool _recordingPaused = false;
+  bool _recordingLocked = false;
   int _recSeconds = 0;
   Timer? _recTimer;
+  Timer? _ampTimer;
+  final List<double> _amplitudes = [];
+  ChatAttachment? _pendingVoice;
+  AiChatMessage? _replyingTo;
+  bool _showSearch = false;
+  final _search = TextEditingController();
+  int _searchIndex = 0;
+  bool _nearBottom = true;
+  int _newBelow = 0;
 
   @override
   void initState() {
@@ -48,17 +60,37 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     _input.addListener(() {
       final hasText = _input.text.isNotEmpty;
       if (hasText != _hasText) setState(() => _hasText = hasText);
+      ref.read(aiChatProvider.notifier).setDraft(widget.characterId, _input.text);
+    });
+    _scroll.addListener(() {
+      if (!_scroll.hasClients) return;
+      final distance = _scroll.position.maxScrollExtent - _scroll.offset;
+      final near = distance < 120;
+      if (near != _nearBottom && mounted) {
+        setState(() {
+          _nearBottom = near;
+          if (near) _newBelow = 0;
+        });
+      }
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(aiChatProvider.notifier).openThread(widget.characterId);
+      final controller = ref.read(aiChatProvider.notifier);
+      controller.openThread(widget.characterId);
+      final draft = controller.threadOf(widget.characterId).draft;
+      if (draft.isNotEmpty && _input.text.isEmpty) {
+        _input.text = draft;
+        _input.selection = TextSelection.collapsed(offset: draft.length);
+      }
     });
   }
 
   @override
   void dispose() {
     _recTimer?.cancel();
+    _ampTimer?.cancel();
     _recorder.dispose();
     _input.dispose();
+    _search.dispose();
     _scroll.dispose();
     try {
       ref.read(aiChatProvider.notifier).closeThread();
@@ -79,9 +111,21 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     if (ref.read(aiChatProvider).sendingIn.contains(widget.characterId)) return;
     final text = _input.text;
     if (text.trim().isEmpty) return;
+    final reply = _replyingTo;
     _input.clear();
-    setState(() => _showEmoji = false);
-    ref.read(aiChatProvider.notifier).sendText(widget.characterId, text);
+    ref.read(aiChatProvider.notifier).setDraft(widget.characterId, '');
+    setState(() {
+      _showEmoji = false;
+      _replyingTo = null;
+    });
+    ref.read(aiChatProvider.notifier).sendText(
+      widget.characterId,
+      text,
+      replyToId: reply?.id,
+      replyPreview: reply == null
+          ? null
+          : (reply.text.isNotEmpty ? reply.text : reply.attachment?.label),
+    );
   }
 
   void _comingSoon(String what) {
@@ -119,7 +163,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   label: 'Gallery',
                   onTap: () {
                     Navigator.of(sheetContext).pop();
-                    _pickImage(ImageSource.gallery);
+                    _pickMultipleImages();
                   },
                 ),
                 _AttachOption(
@@ -141,23 +185,22 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
   Future<void> _pickDocument() async {
     try {
-      final files = await FilePicker.pickFiles();
+      final files = await FilePicker.pickFiles(allowMultiple: true);
       if (files.isEmpty) return;
-      final file = files.first;
-      final path = file.path;
-      if (path == null || path.isEmpty) return;
-      final size = await file.length();
-      await ref
-          .read(aiChatProvider.notifier)
-          .sendAttachment(
-            widget.characterId,
-            ChatAttachment(
-              kind: 'doc',
-              path: path,
-              name: file.name,
-              sizeBytes: size,
-            ),
-          );
+      for (final file in files.take(6)) {
+        final path = file.path;
+        if (path == null || path.isEmpty) continue;
+        final size = await file.length();
+        await ref.read(aiChatProvider.notifier).sendAttachment(
+          widget.characterId,
+          ChatAttachment(
+            kind: 'doc',
+            path: path,
+            name: file.name,
+            sizeBytes: size,
+          ),
+        );
+      }
     } catch (_) {
       if (mounted) _comingSoon('Documents');
     }
@@ -184,6 +227,29 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               sizeBytes: size,
             ),
           );
+    } catch (_) {
+      if (mounted) _comingSoon('Photos');
+    }
+  }
+
+  Future<void> _pickMultipleImages() async {
+    try {
+      final picked = await _imagePicker.pickMultiImage(
+        maxWidth: 1600,
+        imageQuality: 85,
+      );
+      for (final image in picked.take(8)) {
+        final size = await File(image.path).length();
+        await ref.read(aiChatProvider.notifier).sendAttachment(
+          widget.characterId,
+          ChatAttachment(
+            kind: 'image',
+            path: image.path,
+            name: image.name,
+            sizeBytes: size,
+          ),
+        );
+      }
     } catch (_) {
       if (mounted) _comingSoon('Photos');
     }
@@ -216,12 +282,28 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       );
       setState(() {
         _recording = true;
+        _recordingPaused = false;
+        _recordingLocked = false;
+        _pendingVoice = null;
         _recSeconds = 0;
+        _amplitudes.clear();
         _showEmoji = false;
       });
       FocusScope.of(context).unfocus();
       _recTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-        if (mounted) setState(() => _recSeconds++);
+        if (mounted && !_recordingPaused) setState(() => _recSeconds++);
+      });
+      _ampTimer = Timer.periodic(const Duration(milliseconds: 140), (_) async {
+        if (!_recording || _recordingPaused) return;
+        try {
+          final amp = await _recorder.getAmplitude();
+          if (!mounted) return;
+          setState(() {
+            final normalized = ((amp.current + 55) / 55).clamp(0.08, 1.0);
+            _amplitudes.add(normalized);
+            if (_amplitudes.length > 42) _amplitudes.removeAt(0);
+          });
+        } catch (_) {}
       });
     } catch (_) {
       if (mounted) _comingSoon('Voice notes');
@@ -230,6 +312,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
   Future<void> _stopRecording({required bool send}) async {
     _recTimer?.cancel();
+    _ampTimer?.cancel();
     String? path;
     try {
       path = await _recorder.stop();
@@ -250,12 +333,43 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       return;
     }
     if (path == null || path.isEmpty) return;
-    await ref
-        .read(aiChatProvider.notifier)
-        .sendAttachment(
-          widget.characterId,
-          ChatAttachment(kind: 'voice', path: path, durationMs: seconds * 1000),
-        );
+    setState(() {
+      _pendingVoice = ChatAttachment(
+        kind: 'voice',
+        path: path!,
+        durationMs: seconds * 1000,
+      );
+    });
+  }
+
+  Future<void> _togglePauseRecording() async {
+    if (!_recording) return;
+    try {
+      if (_recordingPaused) {
+        await _recorder.resume();
+      } else {
+        await _recorder.pause();
+      }
+      if (mounted) setState(() => _recordingPaused = !_recordingPaused);
+    } catch (_) {}
+  }
+
+  Future<void> _sendPendingVoice() async {
+    final pending = _pendingVoice;
+    if (pending == null) return;
+    setState(() => _pendingVoice = null);
+    await ref.read(aiChatProvider.notifier).sendAttachment(
+      widget.characterId,
+      pending,
+    );
+  }
+
+  Future<void> _deletePendingVoice() async {
+    final pending = _pendingVoice;
+    setState(() => _pendingVoice = null);
+    if (pending != null) {
+      try { await File(pending.path).delete(); } catch (_) {}
+    }
   }
 
   String get _recClock {
@@ -273,7 +387,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     final agent = directory.find(widget.characterId);
     final chat = ref.watch(aiChatProvider);
     final thread = chat.threads[widget.characterId];
-    final messages = thread?.messages ?? const <AiChatMessage>[];
+    final allMessages = thread?.messages ?? const <AiChatMessage>[];
+    final query = _search.text.trim().toLowerCase();
+    final messages = query.isEmpty
+        ? allMessages
+        : allMessages.where((m) => m.text.toLowerCase().contains(query)).toList();
     final sending = chat.sendingIn.contains(widget.characterId);
 
     if (agent == null) {
@@ -316,7 +434,13 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     ref.listen(aiChatProvider, (prev, next) {
       final before = prev?.threads[widget.characterId]?.messages.length ?? 0;
       final after = next.threads[widget.characterId]?.messages.length ?? 0;
-      if (before != after || prev?.sendingIn != next.sendingIn) {
+      if (after > before) {
+        if (_nearBottom) {
+          Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
+        } else {
+          setState(() => _newBelow += after - before);
+        }
+      } else if (prev?.sendingIn != next.sendingIn && _nearBottom) {
         Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
       }
     });
@@ -337,7 +461,17 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             onPressed: () =>
                 context.canPop() ? context.pop() : context.go('/chats'),
           ),
-          title: InkWell(
+          title: _showSearch
+              ? TextField(
+                  controller: _search,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    hintText: 'Search this chat',
+                    border: InputBorder.none,
+                  ),
+                  onChanged: (_) => setState(() => _searchIndex = 0),
+                )
+              : InkWell(
             onTap: () => context.push('/agents'),
             child: Row(
               children: [
@@ -383,6 +517,14 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           ),
           actions: [
             IconButton(
+              tooltip: _showSearch ? 'Close search' : 'Search',
+              icon: Icon(_showSearch ? Icons.close : Icons.search),
+              onPressed: () => setState(() {
+                _showSearch = !_showSearch;
+                if (!_showSearch) _search.clear();
+              }),
+            ),
+            IconButton(
               tooltip: 'Video call',
               icon: const Icon(Icons.videocam_outlined),
               onPressed: () => _comingSoon('Video calls'),
@@ -399,10 +541,20 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             ),
             PopupMenuButton<String>(
               tooltip: 'More',
-              onSelected: (value) {
+              onSelected: (value) async {
+                final ctl = ref.read(aiChatProvider.notifier);
                 if (value == 'clear') _confirmClear(agent);
+                if (value == 'new') await ctl.newContext(widget.characterId);
+                if (value == 'pin') ctl.togglePin(widget.characterId);
+                if (value == 'archive') ctl.toggleArchive(widget.characterId);
+                if (value == 'rename') _renameConversation();
               },
               itemBuilder: (_) => const [
+                PopupMenuItem(value: 'new', child: Text('New context')),
+                PopupMenuItem(value: 'rename', child: Text('Rename chat')),
+                PopupMenuItem(value: 'pin', child: Text('Pin / unpin')),
+                PopupMenuItem(value: 'archive', child: Text('Archive / unarchive')),
+                PopupMenuDivider(),
                 PopupMenuItem(value: 'clear', child: Text('Clear chat')),
               ],
             ),
@@ -435,6 +587,19 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                             : failedParts.first;
                         return _ChatBubble(
                           message: message,
+                          onReply: () => setState(() => _replyingTo = message),
+                          onReact: (emoji) => ref
+                              .read(aiChatProvider.notifier)
+                              .reactToMessage(widget.characterId, message.id, emoji),
+                          onEdit: message.isUser
+                              ? () => _editMessage(message)
+                              : null,
+                          onDelete: () => ref
+                              .read(aiChatProvider.notifier)
+                              .deleteMessage(widget.characterId, message.id),
+                          onCopy: () => Clipboard.setData(
+                            ClipboardData(text: message.text),
+                          ),
                           onRetry: failure == null || sending
                               ? null
                               : () async {
@@ -458,11 +623,43 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                       },
                     ),
             ),
-            if (_recording)
+            if (!_nearBottom && _newBelow > 0)
+              Align(
+                alignment: Alignment.centerRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 12, bottom: 4),
+                  child: FloatingActionButton.small(
+                    heroTag: 'chat-bottom',
+                    onPressed: () {
+                      setState(() => _newBelow = 0);
+                      _scrollToBottom();
+                    },
+                    child: Text(_newBelow > 9 ? '9+' : '$_newBelow'),
+                  ),
+                ),
+              ),
+            if (_replyingTo != null)
+              _ReplyComposerPreview(
+                message: _replyingTo!,
+                onClose: () => setState(() => _replyingTo = null),
+              ),
+            if (_recording || _pendingVoice != null)
               _RecordingBar(
-                clock: _recClock,
-                onDelete: () => _stopRecording(send: false),
-                onSend: () => _toggleRecording(),
+                clock: _pendingVoice == null
+                    ? _recClock
+                    : formatDurationMs(_pendingVoice!.durationMs ?? 0),
+                amplitudes: _amplitudes,
+                recording: _recording,
+                paused: _recordingPaused,
+                locked: _recordingLocked,
+                onDelete: _pendingVoice == null
+                    ? () => _stopRecording(send: false)
+                    : _deletePendingVoice,
+                onPause: _recording ? _togglePauseRecording : null,
+                onStop: _recording ? () => _stopRecording(send: true) : null,
+                onSend: _pendingVoice == null ? null : _sendPendingVoice,
+                onCancelSwipe: () => _stopRecording(send: false),
+                onLockSwipe: () => setState(() => _recordingLocked = true),
               )
             else
               _Composer(
@@ -470,6 +667,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 hasText: _hasText,
                 sending: sending,
                 onSend: _sendText,
+                onStop: () => ref.read(aiChatProvider.notifier).stopGeneration(widget.characterId),
                 onAttach: _openAttachSheet,
                 onCamera: () => _pickImage(ImageSource.camera),
                 onMic: _toggleRecording,
@@ -492,6 +690,66 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _editMessage(AiChatMessage message) async {
+    final editor = TextEditingController(text: message.text);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Edit message'),
+        content: TextField(
+          controller: editor,
+          autofocus: true,
+          minLines: 1,
+          maxLines: 6,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, editor.text),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    editor.dispose();
+    if (result != null) {
+      ref.read(aiChatProvider.notifier).editMessage(
+        widget.characterId,
+        message.id,
+        result,
+      );
+    }
+  }
+
+  Future<void> _renameConversation() async {
+    final thread = ref.read(aiChatProvider.notifier).threadOf(widget.characterId);
+    final editor = TextEditingController(text: thread.title ?? '');
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Rename conversation'),
+        content: TextField(controller: editor, autofocus: true),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, editor.text),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    editor.dispose();
+    if (result != null) {
+      ref.read(aiChatProvider.notifier).renameThread(widget.characterId, result);
+    }
   }
 
   void _confirmClear(AgentDirectoryEntry agent) {
@@ -565,6 +823,7 @@ class _Composer extends StatelessWidget {
     required this.hasText,
     required this.sending,
     required this.onSend,
+    required this.onStop,
     required this.onAttach,
     required this.onCamera,
     required this.onMic,
@@ -575,6 +834,7 @@ class _Composer extends StatelessWidget {
   final bool hasText;
   final bool sending;
   final VoidCallback onSend;
+  final VoidCallback onStop;
   final VoidCallback onAttach;
   final VoidCallback onCamera;
   final VoidCallback onMic;
@@ -645,7 +905,7 @@ class _Composer extends StatelessWidget {
                 shape: const CircleBorder(),
                 clipBehavior: Clip.antiAlias,
                 child: InkWell(
-                  onTap: sending ? null : (hasText ? onSend : onMic),
+                  onTap: sending ? onStop : (hasText ? onSend : onMic),
                   child: SizedBox(
                     width: 52,
                     height: 52,
@@ -663,7 +923,11 @@ class _Composer extends StatelessWidget {
                         : AnimatedSwitcher(
                             duration: const Duration(milliseconds: 160),
                             child: Icon(
-                              hasText ? Icons.send_rounded : Icons.mic_rounded,
+                              sending
+                                  ? Icons.stop_rounded
+                                  : hasText
+                                  ? Icons.send_rounded
+                                  : Icons.mic_rounded,
                               key: ValueKey(hasText),
                               color: Colors.white,
                               size: 23,
