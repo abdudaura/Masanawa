@@ -14,9 +14,12 @@ Persist canonical WorkflowRun/Task records and atomically admit runnable Task wo
 
 - `docs/workstreams/workflow-task-admission.md`
 - `docs/WORKFLOW-TASK-ADMISSION.md`
-- `packages/workflows/migrations/**`
-- `adapters/storage/postgres/src/workflows/**`
+- `packages/workflows/migrations/0001_workflow_runs_tasks.sql`
+- `adapters/storage/postgres/src/workflows/admission.ts`
+- `adapters/storage/postgres/src/workflows/index.ts`
 - `tests/integration/workflow-task-admission.test.ts`
+
+New Task 087 lease/fencing files and later workflow migrations are explicitly released for a stacked claim. The workflows adapter index remains a coordinated append-only export seam.
 
 ## Coordinated shared seam
 
@@ -67,3 +70,27 @@ The new workflow adapter is structurally typed until shared manifest integration
 adds `@masanawa/workflows`.
 
 Task 087+ worker leasing/fencing/recovery semantics remain out of scope.
+
+
+## Implementation handoff
+
+Implemented in draft PR #107.
+
+Delivered:
+
+- canonical WorkflowRun and Task PostgreSQL schema;
+- exact Task → WorkflowRun/WorkflowVersion/graph foreign-key custody;
+- persisted parent/root/depth validation against the actual parent Task;
+- durable per-Tenant admission RequestId/fingerprint binding;
+- atomic Task + canonical `events.outbox` admission;
+- exact replay reconciliation to the same Task/outbox identity;
+- changed-request conflict rejection;
+- concurrent exact-replay convergence;
+- one ready-admission outbox row per Task;
+- rollback proof path for outbox failure after Task insert;
+- idempotent WorkflowRun creation/conflict handling;
+- PostgreSQL 18 focused acceptance coverage.
+
+Foundation CI run `37227788601`, job `111510929610`, again failed before
+checkout with `runner_id=0`, empty runner name and zero steps. No test or build
+result is claimed.
