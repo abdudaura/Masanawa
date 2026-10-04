@@ -1051,6 +1051,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     final attachments = message.allAttachments
         .where((item) => File(item.path).existsSync())
         .toList();
+    if (message.text.isEmpty && attachments.isEmpty) return;
     await SharePlus.instance.share(
       ShareParams(
         text: message.text.isEmpty ? null : message.text,
