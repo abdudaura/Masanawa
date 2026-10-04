@@ -21,6 +21,15 @@ export type AgentStrategyInput =
       readonly caption: string;
       readonly mimeType: string;
       readonly dataBase64: string;
+    }
+  | {
+      readonly kind: "media-set";
+      readonly caption: string;
+      readonly media: readonly {
+        readonly mimeType: string;
+        readonly dataBase64: string;
+        readonly name?: string;
+      }[];
     };
 
 export interface AgentStrategyPresentation {
