@@ -10,11 +10,11 @@ import type { BillingFulfillmentStore } from "@masanawa/providers";
 import type { FinancialAuthorizer } from "./financial_service.js";
 
 export interface BillingFinancialService {
-  listCategories(input: Readonly<{ authorizationHeader?: string; signal?: AbortSignal }>): Promise<unknown>;
-  listBillers(input: Readonly<{ authorizationHeader?: string; categoryCode: string; signal?: AbortSignal }>): Promise<unknown>;
-  listItems(input: Readonly<{ authorizationHeader?: string; billerCode: string; signal?: AbortSignal }>): Promise<unknown>;
+  listCategories(input: Readonly<{ authorizationHeader: string | undefined; signal?: AbortSignal }>): Promise<unknown>;
+  listBillers(input: Readonly<{ authorizationHeader: string | undefined; categoryCode: string; signal?: AbortSignal }>): Promise<unknown>;
+  listItems(input: Readonly<{ authorizationHeader: string | undefined; billerCode: string; signal?: AbortSignal }>): Promise<unknown>;
   purchase(input: Readonly<{
-    authorizationHeader?: string;
+    authorizationHeader: string | undefined;
     requestId: string;
     billerCode: string;
     itemCode: string;
@@ -26,7 +26,7 @@ export interface BillingFinancialService {
     signal?: AbortSignal;
   }>): Promise<BillingFulfillmentRecord>;
   readPurchase(input: Readonly<{
-    authorizationHeader?: string;
+    authorizationHeader: string | undefined;
     reference: string;
     refresh?: boolean;
     signal?: AbortSignal;
@@ -89,7 +89,7 @@ export function createBillingFinancialService(input: Readonly<{
     });
   }
 
-  return Object.freeze({
+  return Object.freeze<BillingFinancialService>({
     async listCategories(request) {
       await input.authorizer.authorize({ authorizationHeader: request.authorizationHeader });
       return provider.listCategories(request.signal);
