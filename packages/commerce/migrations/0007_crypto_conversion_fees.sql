@@ -142,3 +142,8 @@ DROP TRIGGER IF EXISTS crypto_provider_events_immutable
 CREATE TRIGGER crypto_provider_events_immutable
   BEFORE UPDATE OR DELETE ON commerce.crypto_provider_events
   FOR EACH ROW EXECUTE FUNCTION commerce.reject_crypto_financial_mutation();
+
+
+CREATE UNIQUE INDEX IF NOT EXISTS crypto_intents_provider_payout_global_unique
+  ON commerce.crypto_intents(provider_payout_id)
+  WHERE provider_payout_id IS NOT NULL;
