@@ -11,6 +11,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:video_player/video_player.dart';
 
 import '../../agents/agent_directory.dart';
 import '../../chat/chat_format.dart';
@@ -145,8 +147,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+            child: Wrap(
+              spacing: 18,
+              runSpacing: 12,
+              alignment: WrapAlignment.center,
               children: [
                 // Token roles: brand → doc, verified → gallery, warning → camera.
                 _AttachOption(
@@ -174,6 +178,15 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   onTap: () {
                     Navigator.of(sheetContext).pop();
                     _pickImage(ImageSource.camera);
+                  },
+                ),
+                _AttachOption(
+                  icon: Icons.videocam_outlined,
+                  color: const Color(0xFF7C3AED),
+                  label: 'Video',
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _pickVideo();
                   },
                 ),
               ],
@@ -253,6 +266,36 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       }
     } catch (_) {
       if (mounted) _comingSoon('Photos');
+    }
+  }
+
+  Future<void> _pickVideo() async {
+    try {
+      final picked = await _imagePicker.pickVideo(
+        source: ImageSource.gallery,
+        maxDuration: const Duration(minutes: 3),
+      );
+      if (picked == null) return;
+      final size = await File(picked.path).length();
+      if (size > 8 * 1024 * 1024) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Video must be 8 MB or smaller.')),
+          );
+        }
+        return;
+      }
+      await ref.read(aiChatProvider.notifier).sendAttachment(
+        widget.characterId,
+        ChatAttachment(
+          kind: 'video',
+          path: picked.path,
+          name: picked.name,
+          sizeBytes: size,
+        ),
+      );
+    } catch (_) {
+      if (mounted) _comingSoon('Video');
     }
   }
 
@@ -643,6 +686,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                             ClipboardData(text: message.text),
                           ),
                           onForward: () => _forwardMessage(message),
+                          onShare: () => _shareMessage(message),
                           onAgentAction: message.isUser
                               ? null
                               : (action) => _runAgentAction(message, action),
@@ -761,6 +805,14 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       ctl.deleteMessage(widget.characterId, id);
     }
     setState(_selectedMessageIds.clear);
+  }
+
+  Future<void> _shareMessage(AiChatMessage message) async {
+    final text = message.text.isNotEmpty
+        ? message.text
+        : message.attachment?.label ?? '';
+    if (text.isEmpty) return;
+    await SharePlus.instance.share(ShareParams(text: text));
   }
 
   Future<void> _forwardMessage(AiChatMessage message) async {
@@ -1343,6 +1395,7 @@ class _ChatBubble extends StatelessWidget {
     required this.onDelete,
     required this.onCopy,
     required this.onForward,
+    required this.onShare,
     this.onEdit,
     this.onRetry,
     this.onAgentAction,
@@ -1356,6 +1409,7 @@ class _ChatBubble extends StatelessWidget {
   final VoidCallback onDelete;
   final VoidCallback onCopy;
   final VoidCallback onForward;
+  final VoidCallback onShare;
   final VoidCallback? onEdit;
   final VoidCallback? onRetry;
   final ValueChanged<String>? onAgentAction;
@@ -1387,6 +1441,11 @@ class _ChatBubble extends StatelessWidget {
               leading: const Icon(Icons.forward_outlined),
               title: const Text('Forward'),
               onTap: () => Navigator.pop(sheetContext, 'forward'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.share_outlined),
+              title: const Text('Share'),
+              onTap: () => Navigator.pop(sheetContext, 'share'),
             ),
             ListTile(
               leading: const Icon(Icons.checklist_outlined),
@@ -1441,6 +1500,7 @@ class _ChatBubble extends StatelessWidget {
     if (action == 'reply') onReply();
     if (action == 'copy') onCopy();
     if (action == 'forward') onForward();
+    if (action == 'share') onShare();
     if (action == 'select') onSelect();
     if (action == 'edit') onEdit?.call();
     if (action == 'delete') onDelete();
@@ -1790,6 +1850,8 @@ class _AttachmentView extends StatelessWidget {
         return _ImageAttachment(path: attachment.path);
       case 'voice':
         return _VoiceBubble(attachment: attachment);
+      case 'video':
+        return _VideoAttachment(attachment: attachment);
       default:
         return _DocTile(attachment: attachment);
     }
@@ -1854,6 +1916,97 @@ class _ImageAttachment extends StatelessWidget {
             alignment: Alignment.center,
             child: const Icon(Icons.broken_image_outlined),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _VideoAttachment extends StatefulWidget {
+  const _VideoAttachment({required this.attachment});
+  final ChatAttachment attachment;
+
+  @override
+  State<_VideoAttachment> createState() => _VideoAttachmentState();
+}
+
+class _VideoAttachmentState extends State<_VideoAttachment> {
+  VideoPlayerController? _controller;
+  bool _failed = false;
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _toggle() async {
+    try {
+      final controller = _controller ??= VideoPlayerController.file(
+        File(widget.attachment.path),
+      );
+      if (!controller.value.isInitialized) {
+        await controller.initialize();
+      }
+      if (controller.value.isPlaying) {
+        await controller.pause();
+      } else {
+        await controller.play();
+      }
+      if (mounted) setState(() {});
+    } catch (_) {
+      if (mounted) setState(() => _failed = true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    final controller = _controller;
+    final initialized = controller?.value.isInitialized ?? false;
+    return GestureDetector(
+      onTap: _toggle,
+      child: Container(
+        width: 230,
+        height: 140,
+        decoration: BoxDecoration(
+          color: Colors.black87,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (initialized)
+              FittedBox(
+                fit: BoxFit.cover,
+                child: SizedBox(
+                  width: controller!.value.size.width,
+                  height: controller.value.size.height,
+                  child: VideoPlayer(controller),
+                ),
+              )
+            else
+              Center(
+                child: _failed
+                    ? const Icon(Icons.error_outline, color: Colors.white)
+                    : Icon(
+                        Icons.play_circle_fill,
+                        color: u.surfaceCard,
+                        size: 48,
+                      ),
+              ),
+            if (initialized)
+              Center(
+                child: Icon(
+                  controller!.value.isPlaying
+                      ? Icons.pause_circle_filled
+                      : Icons.play_circle_fill,
+                  color: Colors.white70,
+                  size: 46,
+                ),
+              ),
+          ],
         ),
       ),
     );
