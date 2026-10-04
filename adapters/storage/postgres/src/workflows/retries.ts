@@ -1,11 +1,13 @@
 import {
   PlatformError,
+  createCanonicalId,
   toInstant,
   type Instant,
   type TaskId,
   type TenantId,
 } from "@masanawa/contracts";
 import type { Pool } from "pg";
+import { enqueueOutbox } from "../events/outbox.js";
 import { withTransaction } from "../transaction.js";
 
 export type PersistedRetryDisposition =
@@ -71,11 +73,21 @@ function retryState(row: RetryRow): WorkflowTaskRetryState {
   });
 }
 
+const codePattern = /^[a-z][a-z0-9_]*(?:[.-][a-z0-9_]+)*$/u;
+
 function bounded(value: string, name: string, max: number): string {
   if (!value.trim() || value.length > max) {
     throw new TypeError(`${name} must be non-empty and no longer than ${max} characters`);
   }
   return value;
+}
+
+function boundedCode(value: string, name: string, max: number): string {
+  const normalized = bounded(value, name, max);
+  if (!codePattern.test(normalized)) {
+    throw new TypeError(`${name} must use a stable lowercase code format`);
+  }
+  return normalized;
 }
 
 function assertFence(value: number): void {
@@ -127,12 +139,12 @@ export async function recordWorkflowTaskFailure(
   assertFence(input.leaseFence);
   assertFailureCount(input.disposition.failureCount);
 
-  const safeErrorCode = bounded(input.safeErrorCode, "safeErrorCode", 160);
+  const safeErrorCode = boundedCode(input.safeErrorCode, "safeErrorCode", 160);
   const safeErrorMessage =
     input.safeErrorMessage.length > 2_000
       ? input.safeErrorMessage.slice(0, 2_000)
       : input.safeErrorMessage;
-  const reasonCode = bounded(input.disposition.reasonCode, "reasonCode", 160);
+  const reasonCode = boundedCode(input.disposition.reasonCode, "reasonCode", 160);
 
   let nextAttemptAt: Instant | null = null;
   if (input.disposition.kind === "retry-scheduled") {
@@ -296,7 +308,9 @@ export async function releaseDueWorkflowTaskRetries(
     readonly tenantId: TenantId;
     readonly limit: number;
   },
-): Promise<readonly TaskId[]> {
+): Promise<
+  readonly Readonly<{ taskId: TaskId; outboxEventId: string }>[]
+> {
   if (!Number.isSafeInteger(input.limit) || input.limit < 1 || input.limit > 100) {
     throw new RangeError("limit must be an integer between 1 and 100");
   }
@@ -335,16 +349,70 @@ export async function releaseDueWorkflowTaskRetries(
       [input.tenantId, taskIds],
     );
 
-    await client.query(
+    const retryRows = await client.query<{
+      task_id: TaskId;
+      failure_count: number;
+    }>(
       `UPDATE workflows.task_retry_state
           SET disposition = 'ready',
               next_attempt_at = NULL,
               updated_at = clock_timestamp()
         WHERE tenant_id = $1
-          AND task_id = ANY($2::text[])`,
+          AND task_id = ANY($2::text[])
+       RETURNING task_id, failure_count`,
       [input.tenantId, taskIds],
     );
+    const failureCountByTask = new Map(
+      retryRows.rows.map((row) => [row.task_id, row.failure_count]),
+    );
 
-    return Object.freeze(taskIds);
+    const published: Array<Readonly<{ taskId: TaskId; outboxEventId: string }>> = [];
+    for (const taskId of taskIds) {
+      const origin = await client.query<{
+        event_id: string;
+        correlation_id: string;
+        destination: string;
+      }>(
+        `SELECT event_id, correlation_id, destination
+           FROM events.outbox
+          WHERE tenant_id = $1
+            AND aggregate_type = 'workflow-task'
+            AND aggregate_id = $2
+            AND event_type = 'workflow.task.ready.v1'
+          ORDER BY created_at
+          LIMIT 1`,
+        [input.tenantId, taskId],
+      );
+      const source = origin.rows[0];
+      if (!source) {
+        throw new PlatformError({
+          code: "workflows.task_outbox_missing",
+          category: "conflict",
+          message: "Retry release cannot locate the original Task admission outbox",
+          retryable: false,
+        });
+      }
+
+      const eventId = createCanonicalId("event");
+      const outboxEventId = await enqueueOutbox(client, {
+        tenantId: input.tenantId,
+        eventId,
+        eventType: "workflow.task.retry-ready.v1",
+        schemaVersion: 1,
+        aggregateType: "workflow-task",
+        aggregateId: taskId,
+        correlationId: source.correlation_id as never,
+        causationId: source.event_id as never,
+        destination: source.destination,
+        availableAt: toInstant(new Date()),
+        payload: {
+          taskId,
+          failureCount: failureCountByTask.get(taskId) ?? 0,
+        },
+      });
+      published.push(Object.freeze({ taskId, outboxEventId }));
+    }
+
+    return Object.freeze(published);
   });
 }
