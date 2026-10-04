@@ -35,7 +35,7 @@ final agentDirectoryTransportProvider = Provider<AgentDirectoryTransport>((
     dio: ref.watch(dioProvider),
     baseUrl: connection.baseUrl,
     readAccessToken: () =>
-        connection.token ?? ref.read(apiClientProvider).accessToken,
+        ref.read(apiClientProvider).accessToken,
   );
 });
 
@@ -46,7 +46,7 @@ final agentTransportProvider = Provider<AgentTransport>((ref) {
       dio: ref.watch(dioProvider),
       baseUrl: connection.baseUrl,
       readAccessToken: () =>
-          connection.token ?? ref.read(apiClientProvider).accessToken,
+          ref.read(apiClientProvider).accessToken,
     );
   }
   return PreviewAgentTransport(
@@ -63,7 +63,7 @@ final creatorCloneTransportProvider = Provider<CreatorCloneTransport>((ref) {
     dio: ref.watch(dioProvider),
     baseUrl: connection.baseUrl,
     readAccessToken: () =>
-        connection.token ?? ref.read(apiClientProvider).accessToken,
+        ref.read(apiClientProvider).accessToken,
   );
 });
 
@@ -75,7 +75,7 @@ final creatorEconomyTransportProvider = Provider<CreatorEconomyTransport>((ref) 
     dio: ref.watch(dioProvider),
     baseUrl: connection.baseUrl,
     readAccessToken: () =>
-        connection.token ?? ref.read(apiClientProvider).accessToken,
+        ref.read(apiClientProvider).accessToken,
   );
 });
 
@@ -87,6 +87,6 @@ final creatorSkillTransportProvider = Provider<CreatorSkillTransport>((ref) {
     dio: ref.watch(dioProvider),
     baseUrl: connection.baseUrl,
     readAccessToken: () =>
-        connection.token ?? ref.read(apiClientProvider).accessToken,
+        ref.read(apiClientProvider).accessToken,
   );
 });
