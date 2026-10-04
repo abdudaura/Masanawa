@@ -453,7 +453,8 @@ export function createFinancialService(input: {
     if (!route) throw new Error("financial.crypto.withdrawal_unavailable");
 
     const signal = AbortSignal.timeout(15_000);
-    const [validated, fee, minimum, balances] = await Promise.all([
+    const [, validated, fee, minimum, balances] = await Promise.all([
+      input.nowPaymentsPayout.authenticate(signal),
       input.nowPaymentsPayout.validateAddress({ currency: providerCode, address, signal }),
       input.nowPaymentsPayout.getPayoutFeeEstimate({ currency: providerCode, amount, signal }),
       input.nowPaymentsPayout.getMinimumPayoutAmount({ currency: providerCode, signal }),
@@ -511,7 +512,8 @@ export function createFinancialService(input: {
     }
 
     const signal = AbortSignal.timeout(15_000);
-    const [quote, balances] = await Promise.all([
+    const [, quote, balances] = await Promise.all([
+      input.nowPaymentsCustody.authenticate(signal),
       input.nowPayments.quotePayment({
         amount: numericAmount,
         currencyFrom: providerCode,
@@ -831,14 +833,34 @@ export function createFinancialService(input: {
       assertFinancialReplay(dispatch.intent, terms);
       if (!dispatch.shouldDispatch) return withdrawalView(dispatch.intent);
 
-      const payout = await input.nowPaymentsPayout.createPayout({
-        amount,
-        currency: providerCode,
-        address,
-        ipnCallbackUrl: payoutIpnCallbackUrl,
-        uniqueExternalId: providerOrderId(auth.tenantId, requestId),
-        signal: AbortSignal.timeout(15_000),
-      });
+      let payout;
+      try {
+        payout = await input.nowPaymentsPayout.createPayout({
+          amount,
+          currency: providerCode,
+          address,
+          ipnCallbackUrl: payoutIpnCallbackUrl,
+          uniqueExternalId: providerOrderId(auth.tenantId, requestId),
+          signal: AbortSignal.timeout(15_000),
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "";
+        if (
+          message === "nowpayments.payout.request_rejected" ||
+          message === "nowpayments.payout.credential.unavailable" ||
+          message === "nowpayments.payout.auth.invalid_response"
+        ) {
+          return withdrawalView(await input.crypto.settleWithdrawal({
+            tenantId: auth.tenantId,
+            userId: auth.userId,
+            requestId,
+            succeeded: false,
+            providerReference: null,
+            updatedAt: now(),
+          }));
+        }
+        throw error;
+      }
       const bound = await input.crypto.bindProviderPayout({
         tenantId: auth.tenantId,
         userId: auth.userId,
@@ -948,12 +970,33 @@ export function createFinancialService(input: {
       assertFinancialReplay(dispatch.intent, terms);
       if (!dispatch.shouldDispatch) return conversionView(dispatch.intent);
 
-      const conversion = await input.nowPaymentsCustody.createConversion({
-        fromCurrency: providerCode,
-        toCurrency: targetProviderCode,
-        amount,
-        signal: AbortSignal.timeout(15_000),
-      });
+      let conversion;
+      try {
+        conversion = await input.nowPaymentsCustody.createConversion({
+          fromCurrency: providerCode,
+          toCurrency: targetProviderCode,
+          amount,
+          signal: AbortSignal.timeout(15_000),
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "";
+        if (
+          message === "nowpayments.conversion.request_rejected" ||
+          message === "nowpayments.custody.credential.unavailable" ||
+          message === "nowpayments.custody.auth.invalid_response"
+        ) {
+          return conversionView(await input.crypto.settleConversion({
+            tenantId: auth.tenantId,
+            userId: auth.userId,
+            requestId,
+            succeeded: false,
+            targetAmount: null,
+            providerReference: null,
+            updatedAt: now(),
+          }));
+        }
+        throw error;
+      }
       const bound = await input.crypto.bindProviderConversion({
         tenantId: auth.tenantId,
         userId: auth.userId,
