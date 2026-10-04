@@ -102,10 +102,6 @@ describePostgres("workflow Task leasing acceptance", () => {
       failure: null,
       cancellationReason: null,
     };
-    const settleAt = toInstant(
-      new Date(new Date(lease!.leasedAt).getTime() + 500),
-    );
-
     const client = await pool.connect();
     try {
       return await createWorkflowRunRecord(client, run);
@@ -229,6 +225,9 @@ describePostgres("workflow Task leasing acceptance", () => {
       leaseMs: 60_000,
     });
     expect(lease?.taskId).toBe(admitted.task.taskId);
+    const settleAt = toInstant(
+      new Date(new Date(lease!.leasedAt).getTime() + 500),
+    );
 
     const client = await pool.connect();
     try {
@@ -266,7 +265,7 @@ describePostgres("workflow Task leasing acceptance", () => {
         workerId: "worker-a",
         leaseFence: lease!.leaseFence,
         settlement: { state: "completed" },
-        at: toInstant(new Date("2026-10-04T18:01:30.000Z")),
+        at: settleAt,
       });
     } finally {
       client.release();
