@@ -113,6 +113,11 @@ function payoutIdFrom(body: unknown): string {
   return normalized;
 }
 
+const payoutStatuses = new Set([
+  "new", "creating", "waiting", "processing", "sending", "finished",
+  "failed", "rejected", "rejected_not_checked", "cancelled", "canceled",
+]);
+
 function statusFrom(body: unknown): string | null {
   if (typeof body !== "object" || body === null || Array.isArray(body)) return null;
   const record = body as Record<string, unknown>;
@@ -123,7 +128,9 @@ function statusFrom(body: unknown): string | null {
     (nested && typeof nested === "object" && !Array.isArray(nested)
       ? (nested as Record<string, unknown>).payout_status ?? (nested as Record<string, unknown>).status
       : undefined);
-  return typeof value === "string" && value.trim() ? value.trim().toLowerCase() : null;
+  if (typeof value !== "string" || !value.trim()) return null;
+  const normalized = value.trim().toLowerCase();
+  return payoutStatuses.has(normalized) ? normalized : null;
 }
 
 function withdrawalIdFrom(body: unknown): string | null {
@@ -358,7 +365,7 @@ export class NowPaymentsPayoutClient {
     const payoutId = nonEmpty(input.payoutId, "nowpayments.payout_id.invalid", 128);
     if (!/^[A-Za-z0-9_-]+$/u.test(payoutId)) throw new Error("nowpayments.payout_id.invalid");
     const token = await this.authenticate(input.signal);
-    const search = new URLSearchParams({ batch_id: payoutId, limit: "2", page: "1" });
+    const search = new URLSearchParams({ batch_id: payoutId, limit: "2", page: "0" });
     const response = await this.#request(`/payout?${search.toString()}`, {
       method: "GET",
       ...(input.signal === undefined ? {} : { signal: input.signal }),
