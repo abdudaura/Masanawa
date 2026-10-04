@@ -56,6 +56,16 @@ export function characterSessionMigrationRoots(): readonly MigrationRoot[] {
   ]);
 }
 
+export function platformProductMigrationRoots(): readonly MigrationRoot[] {
+  return Object.freeze([
+    ...characterSessionMigrationRoots(),
+    Object.freeze({
+      owner: "commerce",
+      directory: packageMigrationDirectory("@masanawa/commerce"),
+    }),
+  ]);
+}
+
 function migrationKey(
   migration: Pick<MigrationFingerprint, "owner" | "name">,
 ): string {
