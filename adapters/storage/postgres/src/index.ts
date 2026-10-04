@@ -21,4 +21,4 @@ export * from "./agents/selection.js";
 export * from "./commerce/repository.js";
 export * from "./commerce/crypto-repository.js";
 export * from "./commerce/financial-operations.js";
-
+export * from "./commerce/billing-funding.js";
