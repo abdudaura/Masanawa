@@ -69,6 +69,15 @@ export interface FinancialOperationsRepository {
     receivedAt: string;
     payload: Readonly<Record<string, unknown>>;
   }>): Promise<ProviderWebhookAdmission>;
+  applyCryptoWebhook(input: Readonly<{
+    provider: string;
+    fingerprint: string;
+    eventKey: string;
+    receivedAt: string;
+    payload: Readonly<Record<string, unknown>>;
+    expectedRevision: number;
+    next: CryptoPaymentIntent;
+  }>): Promise<Readonly<{ duplicate: boolean; record: CryptoPaymentIntent }>>;
 }
 
 function positive(value: number, label: string): number {
@@ -261,6 +270,53 @@ export function createPostgresFinancialOperationsRepository(
           [provider,fingerprint,eventKey,receivedAt,canonicalJson(input.payload)],
         );
         return Object.freeze({ duplicate: result.rowCount === 0 });
+      });
+    },
+
+    async applyCryptoWebhook(input) {
+      const next = normalizeCryptoPayment(input.next);
+      if (next.revision !== input.expectedRevision + 1) {
+        throw new Error("financial.crypto_revision_invalid");
+      }
+      const provider = bounded(input.provider, "provider", 64);
+      const fingerprint = bounded(input.fingerprint, "fingerprint", 160);
+      const eventKey = bounded(input.eventKey, "eventKey", 256);
+      const receivedAt = instant(input.receivedAt);
+      return withTransaction(pool, async (client) => {
+        await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+          `financial:crypto:${next.tenantId}:${next.userId}:${next.requestId}`,
+        ]);
+        const inserted = await client.query(
+          `INSERT INTO commerce.provider_webhook_events(
+             provider,fingerprint,event_key,received_at,payload
+           ) VALUES ($1,$2,$3,$4,$5::jsonb)
+           ON CONFLICT (provider,fingerprint) DO NOTHING`,
+          [provider,fingerprint,eventKey,receivedAt,canonicalJson(input.payload)],
+        );
+        if (inserted.rowCount === 0) {
+          const current = await client.query<{ definition: unknown }>(
+            `SELECT definition FROM commerce.crypto_payment_intents
+             WHERE tenant_id=$1 AND user_id=$2 AND request_id=$3`,
+            [next.tenantId,next.userId,next.requestId],
+          );
+          if (!current.rows[0]) throw new Error("financial.crypto_payment_missing");
+          return Object.freeze({ duplicate: true, record: cryptoFromRow(current.rows[0].definition) });
+        }
+        const updated = await client.query<{ definition: unknown }>(
+          `UPDATE commerce.crypto_payment_intents
+              SET revision=$4,state=$5,provider_payment_id=$6,purchase_id=$7,parent_payment_id=$8,
+                  pay_address=$9,pay_amount=$10,actually_paid=$11,last_evidence_hash=$12,
+                  updated_at=$13,definition=$14::jsonb
+            WHERE tenant_id=$1 AND user_id=$2 AND request_id=$3 AND revision=$15
+            RETURNING definition`,
+          [
+            next.tenantId,next.userId,next.requestId,next.revision,next.state,next.providerPaymentId,
+            next.purchaseId,next.parentPaymentId,next.payAddress,next.payAmount,next.actuallyPaid,
+            next.lastEvidenceHash,next.updatedAt,canonicalJson(next),input.expectedRevision,
+          ],
+        );
+        if (!updated.rows[0]) throw new Error("financial.crypto_revision_conflict");
+        return Object.freeze({ duplicate: false, record: cryptoFromRow(updated.rows[0].definition) });
       });
     },
   });
