@@ -341,6 +341,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       await _stopRecording(send: true);
       return;
     }
+    await _startRecording();
+  }
+
+  Future<void> _startRecording() async {
+    if (_recording) return;
     try {
       await _activeVoiceBubble?._pauseFromAnotherBubble();
       final session = await AudioSession.instance;
@@ -375,6 +380,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         ),
         path: path,
       );
+      if (!mounted) return;
       setState(() {
         _recording = true;
         _recordingPaused = false;
@@ -394,7 +400,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           final amp = await _recorder.getAmplitude();
           if (!mounted) return;
           setState(() {
-            final normalized = ((amp.current + 55) / 55).clamp(0.08, 1.0).toDouble();
+            final normalized =
+                ((amp.current + 55) / 55).clamp(0.08, 1.0).toDouble();
             _amplitudes.add(normalized);
             if (_amplitudes.length > 42) _amplitudes.removeAt(0);
           });
@@ -403,6 +410,27 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     } catch (_) {
       if (mounted) _comingSoon('Voice notes');
     }
+  }
+
+  Future<void> _onMicHoldStart(LongPressStartDetails _) async {
+    await _startRecording();
+  }
+
+  Future<void> _onMicHoldMove(LongPressMoveUpdateDetails details) async {
+    if (!_recording || _recordingLocked) return;
+    final offset = details.offsetFromOrigin;
+    if (offset.dx < -72) {
+      await _stopRecording(send: false);
+      return;
+    }
+    if (offset.dy < -72 && mounted) {
+      setState(() => _recordingLocked = true);
+    }
+  }
+
+  Future<void> _onMicHoldEnd(LongPressEndDetails _) async {
+    if (!_recording || _recordingLocked) return;
+    await _stopRecording(send: true);
   }
 
   Future<void> _stopRecording({required bool send}) async {
@@ -870,6 +898,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 onAttach: _openAttachSheet,
                 onCamera: () => _pickImage(ImageSource.camera),
                 onMic: _toggleRecording,
+                onMicHoldStart: _onMicHoldStart,
+                onMicHoldMove: _onMicHoldMove,
+                onMicHoldEnd: _onMicHoldEnd,
                 onEmojiToggle: () {
                   if (_showEmoji) {
                     setState(() => _showEmoji = false);
@@ -1201,6 +1232,9 @@ class _Composer extends StatelessWidget {
     required this.onAttach,
     required this.onCamera,
     required this.onMic,
+    required this.onMicHoldStart,
+    required this.onMicHoldMove,
+    required this.onMicHoldEnd,
     required this.onEmojiToggle,
   });
 
@@ -1212,6 +1246,9 @@ class _Composer extends StatelessWidget {
   final VoidCallback onAttach;
   final VoidCallback onCamera;
   final VoidCallback onMic;
+  final ValueChanged<LongPressStartDetails> onMicHoldStart;
+  final ValueChanged<LongPressMoveUpdateDetails> onMicHoldMove;
+  final ValueChanged<LongPressEndDetails> onMicHoldEnd;
   final VoidCallback onEmojiToggle;
 
   @override
@@ -1280,6 +1317,12 @@ class _Composer extends StatelessWidget {
                 clipBehavior: Clip.antiAlias,
                 child: InkWell(
                   onTap: sending ? onStop : (hasText ? onSend : onMic),
+                  onLongPressStart:
+                      sending || hasText ? null : onMicHoldStart,
+                  onLongPressMoveUpdate:
+                      sending || hasText ? null : onMicHoldMove,
+                  onLongPressEnd:
+                      sending || hasText ? null : onMicHoldEnd,
                   child: SizedBox(
                     width: 52,
                     height: 52,
