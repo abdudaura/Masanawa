@@ -157,6 +157,34 @@ second Skill registry or special execution path.
 Core Skill guidance still follows the same discovery, readiness and authority rules as
 commercial Skills.
 
+## Core Teaching Skill — required
+
+Teaching is a required Core capability for every eligible Character, available through
+the app, WhatsApp and Telegram. One canonical Teaching Skill supports broad topics,
+with subject-specific exact-version resources/subskills loaded progressively.
+Broad topic coverage is not a claim of universal expertise or guaranteed correctness.
+
+The Skill must:
+- establish topic, learner level, goals, language and accessibility preferences;
+- propose an adaptive lesson sequence without forcing lengthy intake;
+- teach in detailed manageable steps with examples, worked solutions and explanations;
+- support voice/text, authorized diagrams/artifacts and selectable answer/exercise cards;
+- check understanding, evaluate answers, explain mistakes and offer alternative explanations;
+- distinguish practice/formative assessment from verified certification;
+- preserve private Relationship-scoped learning progress, lesson checkpoints and next steps
+  across sessions and verified linked channels;
+- handle beginner through advanced material, with evidence checks for current/specialist
+  claims and explicit uncertainty when sources or capability are insufficient;
+- preserve curriculum/resource provenance and avoid fabricated quotes or references;
+- rehearse language switching, misconception correction, failed understanding, continuity,
+  source uncertainty and scope/privacy boundaries before production readiness.
+
+Basic teaching belongs to Core. Paid structured courses, exam preparation and assessed
+learning are future Offer proposals, not automatically approved prices/products.
+Learning progress stays inside canonical Memory/Workflow boundaries; do not build
+a second educational identity, memory or execution engine.
+This is an implementation requirement, not a claim that these behaviors are complete.
+
 ## Commercial Skills and Offers
 
 A sellable Offer references an exact eligible SkillVersion. Retail price, Agent Float,
