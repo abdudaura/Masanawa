@@ -5,6 +5,13 @@ import {
   type NowPaymentsCurrencyEvidence,
   type RouteQualification,
 } from "./catalog.js";
+import {
+  assertAboveMinimum,
+  parseEstimate,
+  parseMinimumAmount,
+  type NowPaymentsEstimate,
+  type NowPaymentsMinimumAmount,
+} from "./quotes.js";
 
 export interface NowPaymentsClientOptions {
   readonly apiKey: string;
@@ -13,6 +20,12 @@ export interface NowPaymentsClientOptions {
 }
 
 interface CurrenciesResponse { readonly currencies?: unknown; }
+
+function query(params: Readonly<Record<string, string | number>>): string {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) search.set(key, String(value));
+  return search.toString();
+}
 
 export class NowPaymentsClient {
   readonly #apiKey: string;
@@ -34,6 +47,59 @@ export class NowPaymentsClient {
       throw new Error("nowpayments.currencies.invalid_response");
     }
     return normalizeAvailableCurrencies(body.currencies);
+  }
+
+  async getMinimumAmount(input: {
+    readonly currencyFrom: string;
+    readonly currencyTo: string;
+    readonly signal?: AbortSignal;
+  }): Promise<NowPaymentsMinimumAmount> {
+    const response = await this.#request(
+      `/min-amount?${query({
+        currency_from: input.currencyFrom,
+        currency_to: input.currencyTo,
+      })}`,
+      input.signal,
+    );
+    return parseMinimumAmount(await response.json(), {
+      currencyFrom: input.currencyFrom,
+      currencyTo: input.currencyTo,
+    });
+  }
+
+  async estimate(input: {
+    readonly amount: number;
+    readonly currencyFrom: string;
+    readonly currencyTo: string;
+    readonly signal?: AbortSignal;
+  }): Promise<NowPaymentsEstimate> {
+    if (!Number.isFinite(input.amount) || input.amount <= 0) {
+      throw new Error("nowpayments.amount.invalid");
+    }
+    const response = await this.#request(
+      `/estimate?${query({
+        amount: input.amount,
+        currency_from: input.currencyFrom,
+        currency_to: input.currencyTo,
+      })}`,
+      input.signal,
+    );
+    return parseEstimate(await response.json(), input);
+  }
+
+  async quotePayment(input: {
+    readonly amount: number;
+    readonly currencyFrom: string;
+    readonly currencyTo: string;
+    readonly signal?: AbortSignal;
+  }): Promise<{
+    readonly minimum: NowPaymentsMinimumAmount;
+    readonly estimate: NowPaymentsEstimate;
+  }> {
+    const minimum = await this.getMinimumAmount(input);
+    assertAboveMinimum(input.amount, minimum);
+    const estimate = await this.estimate(input);
+    return Object.freeze({ minimum, estimate });
   }
 
   async listEligiblePaymentRoutes(options: {
