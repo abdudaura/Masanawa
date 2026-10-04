@@ -28,7 +28,7 @@ import type { Pool } from "pg";
 import {
   createFaultInjector,
   InjectedCrash,
-} from "../test/support/fault-injection.js";
+} from "./test/fault-injection.js";
 import {
   admitInboxEvent,
   beginReconciliation,
