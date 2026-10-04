@@ -54,6 +54,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   Timer? _ampTimer;
   final List<double> _amplitudes = [];
   ChatAttachment? _pendingVoice;
+  List<ChatAttachment> _pendingAttachments = const [];
   AiChatMessage? _replyingTo;
   bool _showSearch = false;
   final _search = TextEditingController();
@@ -93,12 +94,24 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final controller = ref.read(aiChatProvider.notifier);
       controller.openThread(widget.characterId);
-      final draft = controller.threadOf(widget.characterId).draft;
+      final thread = controller.threadOf(widget.characterId);
+      final draft = thread.draft;
       if (draft.isNotEmpty && _input.text.isEmpty) {
         _input.text = draft;
         _input.selection = TextSelection.collapsed(offset: draft.length);
       }
-      final offset = controller.threadOf(widget.characterId).scrollOffset;
+      if (mounted) {
+        setState(() {
+          _pendingAttachments = [
+            for (final item in thread.draftAttachments)
+              if (File(item.path).existsSync()) item,
+          ];
+          final voice = thread.draftVoice;
+          _pendingVoice =
+              voice != null && File(voice.path).existsSync() ? voice : null;
+        });
+      }
+      final offset = thread.scrollOffset;
       if (offset > 0) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!_scroll.hasClients) return;
@@ -140,22 +153,66 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   void _sendText() {
     if (ref.read(aiChatProvider).sendingIn.contains(widget.characterId)) return;
     final text = _input.text;
-    if (text.trim().isEmpty) return;
+    final attachments = _pendingAttachments;
+    if (text.trim().isEmpty && attachments.isEmpty) return;
     final reply = _replyingTo;
     _input.clear();
-    ref.read(aiChatProvider.notifier).setDraft(widget.characterId, '');
+    final ctl = ref.read(aiChatProvider.notifier);
+    ctl.setDraft(widget.characterId, '');
+    ctl.setDraftAttachments(widget.characterId, const []);
     setState(() {
       _showEmoji = false;
       _replyingTo = null;
+      _pendingAttachments = const [];
     });
-    ref.read(aiChatProvider.notifier).sendText(
-      widget.characterId,
-      text,
-      replyToId: reply?.id,
-      replyPreview: reply == null
-          ? null
-          : (reply.text.isNotEmpty ? reply.text : reply.attachment?.label),
+    if (attachments.isNotEmpty) {
+      unawaited(
+        ctl.sendAttachments(
+          widget.characterId,
+          attachments,
+          caption: text,
+        ),
+      );
+      return;
+    }
+    unawaited(
+      ctl.sendText(
+        widget.characterId,
+        text,
+        replyToId: reply?.id,
+        replyPreview: reply == null
+            ? null
+            : (reply.text.isNotEmpty
+                ? reply.text
+                : reply.allAttachments.isNotEmpty
+                ? reply.allAttachments.first.label
+                : 'Message'),
+      ),
     );
+  }
+
+  void _stageAttachments(List<ChatAttachment> attachments) {
+    if (attachments.isEmpty) return;
+    final merged = [
+      ..._pendingAttachments,
+      ...attachments,
+    ].take(8).toList(growable: false);
+    setState(() {
+      _pendingAttachments = merged;
+      _showEmoji = false;
+    });
+    ref
+        .read(aiChatProvider.notifier)
+        .setDraftAttachments(widget.characterId, merged);
+  }
+
+  void _removePendingAttachment(int index) {
+    if (index < 0 || index >= _pendingAttachments.length) return;
+    final next = [..._pendingAttachments]..removeAt(index);
+    setState(() => _pendingAttachments = next);
+    ref
+        .read(aiChatProvider.notifier)
+        .setDraftAttachments(widget.characterId, next);
   }
 
   void _comingSoon(String what) {
@@ -242,10 +299,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           ),
         );
       }
-      if (attachments.isNotEmpty) {
-        await ref
-            .read(aiChatProvider.notifier)
-            .sendAttachments(widget.characterId, attachments);
+      if (attachments.isNotEmpty && mounted) {
+        _stageAttachments(attachments);
       }
     } catch (_) {
       if (mounted) _comingSoon('Documents');
@@ -262,17 +317,14 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       if (picked == null) return;
       final size = await File(picked.path).length();
       if (!mounted) return;
-      await ref
-          .read(aiChatProvider.notifier)
-          .sendAttachment(
-            widget.characterId,
-            ChatAttachment(
-              kind: 'image',
-              path: picked.path,
-              name: picked.name,
-              sizeBytes: size,
-            ),
-          );
+      _stageAttachments([
+        ChatAttachment(
+          kind: 'image',
+          path: picked.path,
+          name: picked.name,
+          sizeBytes: size,
+        ),
+      ]);
     } catch (_) {
       if (mounted) _comingSoon('Photos');
     }
@@ -322,15 +374,15 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         }
         return;
       }
-      await ref.read(aiChatProvider.notifier).sendAttachment(
-        widget.characterId,
+      if (!mounted) return;
+      _stageAttachments([
         ChatAttachment(
           kind: 'video',
           path: picked.path,
           name: picked.name,
           sizeBytes: size,
         ),
-      );
+      ]);
     } catch (_) {
       if (mounted) _comingSoon('Video');
     }
@@ -392,6 +444,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         _amplitudes.clear();
         _showEmoji = false;
       });
+      ref.read(aiChatProvider.notifier).setDraftVoice(widget.characterId, null);
       FocusScope.of(context).unfocus();
       _recTimer = Timer.periodic(const Duration(seconds: 1), (_) {
         if (mounted && !_recordingPaused) setState(() => _recSeconds++);
@@ -458,13 +511,17 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       return;
     }
     if (path == null || path.isEmpty) return;
+    final attachment = ChatAttachment(
+      kind: 'voice',
+      path: path!,
+      durationMs: seconds * 1000,
+    );
     setState(() {
-      _pendingVoice = ChatAttachment(
-        kind: 'voice',
-        path: path!,
-        durationMs: seconds * 1000,
-      );
+      _pendingVoice = attachment;
     });
+    ref
+        .read(aiChatProvider.notifier)
+        .setDraftVoice(widget.characterId, attachment);
   }
 
   Future<void> _togglePauseRecording() async {
@@ -483,6 +540,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     final pending = _pendingVoice;
     if (pending == null) return;
     setState(() => _pendingVoice = null);
+    ref.read(aiChatProvider.notifier).setDraftVoice(widget.characterId, null);
     await ref.read(aiChatProvider.notifier).sendAttachment(
       widget.characterId,
       pending,
@@ -492,6 +550,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   Future<void> _deletePendingVoice() async {
     final pending = _pendingVoice;
     setState(() => _pendingVoice = null);
+    ref.read(aiChatProvider.notifier).setDraftVoice(widget.characterId, null);
     if (pending != null) {
       try { await File(pending.path).delete(); } catch (_) {}
     }
@@ -862,6 +921,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   ),
                 ),
               ),
+            if (_pendingAttachments.isNotEmpty)
+              _PendingAttachmentStrip(
+                attachments: _pendingAttachments,
+                onRemove: _removePendingAttachment,
+              ),
             if (_replyingTo != null)
               _ReplyComposerPreview(
                 message: _replyingTo!,
@@ -890,7 +954,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             else
               _Composer(
                 controller: _input,
-                hasText: _hasText,
+                hasText: _hasText || _pendingAttachments.isNotEmpty,
                 sending: sending,
                 onSend: _sendText,
                 onStop: () async {
