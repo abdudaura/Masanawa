@@ -12,6 +12,7 @@ import {
   type NowPaymentsEstimate,
   type NowPaymentsMinimumAmount,
 } from "./quotes.js";
+import { parsePaymentStatus, type NowPaymentsPaymentStatus } from "./status.js";
 
 export interface NowPaymentsClientOptions {
   readonly apiKey: string;
@@ -100,6 +101,19 @@ export class NowPaymentsClient {
     assertAboveMinimum(input.amount, minimum);
     const estimate = await this.estimate(input);
     return Object.freeze({ minimum, estimate });
+  }
+
+  async getPaymentStatus(input: {
+    readonly paymentId: string | number;
+    readonly signal?: AbortSignal;
+  }): Promise<NowPaymentsPaymentStatus> {
+    const paymentId = String(input.paymentId).trim();
+    if (!/^[A-Za-z0-9_-]{1,128}$/.test(paymentId)) {
+      throw new Error("nowpayments.payment_id.invalid");
+    }
+    const response = await this.#request(`/payment/${encodeURIComponent(paymentId)}`, input.signal);
+    const body = (await response.json()) as { readonly payment_status?: unknown };
+    return parsePaymentStatus(body.payment_status);
   }
 
   async listEligiblePaymentRoutes(options: {
