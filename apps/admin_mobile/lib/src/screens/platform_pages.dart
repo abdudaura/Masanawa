@@ -522,6 +522,85 @@ String _humanize(String value) => value
     .replaceAll('_', ' ')
     .trim();
 
+
+class ModulesAdminPage extends StatelessWidget {
+  const ModulesAdminPage({super.key});
+
+  static const _modules = <_ModuleStatus>[
+    _ModuleStatus(
+      'WhatsApp & Telegram',
+      Icons.forum_outlined,
+      'Integration in progress',
+      'Channel ingress, identity linking and receipts are being implemented in the canonical channel workstream.',
+    ),
+    _ModuleStatus(
+      'Devices',
+      Icons.devices_other_outlined,
+      'Integration in progress',
+      'Registration, pairing and capability publication are active platform workstreams. Admin controls will bind to those canonical contracts.',
+    ),
+    _ModuleStatus(
+      'Workflows',
+      Icons.account_tree_outlined,
+      'Integration in progress',
+      'Workflow versions, runs, leasing, retries, approvals and recovery are landing through the workflow workstream chain.',
+    ),
+    _ModuleStatus(
+      'Social & Studio',
+      Icons.campaign_outlined,
+      'Platform contract pending',
+      'Social publishing and studio administration remain later production milestones and must not be implemented as ad-hoc mobile-only state.',
+    ),
+    _ModuleStatus(
+      'Plugins',
+      Icons.extension_outlined,
+      'Platform contract pending',
+      'Plugin marketplace/configuration controls will appear here once canonical plugin ownership and authority contracts exist.',
+    ),
+    _ModuleStatus(
+      'Agent Phone',
+      Icons.phone_android_outlined,
+      'Platform contract pending',
+      'OmniSIP, SMS/USSD and device automation controls depend on the Agent Phone and Device Provider milestones.',
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) => AdminPageList(
+        title: 'Platform modules',
+        subtitle:
+            'Full-platform administration map. Controls appear only when canonical server contracts exist.',
+        children: _modules
+            .map(
+              (module) => Card(
+                child: ListTile(
+                  leading: Icon(module.icon, color: context.masanawa.brand),
+                  title: Text(module.name),
+                  subtitle: Text(module.description),
+                  isThreeLine: true,
+                  trailing: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 120),
+                    child: Text(
+                      module.status,
+                      textAlign: TextAlign.end,
+                      style: TextStyle(color: context.masanawa.textMuted),
+                    ),
+                  ),
+                ),
+              ),
+            )
+            .toList(growable: false),
+      );
+}
+
+class _ModuleStatus {
+  const _ModuleStatus(this.name, this.icon, this.status, this.description);
+  final String name;
+  final IconData icon;
+  final String status;
+  final String description;
+}
+
 class AdminPageList extends StatelessWidget {
   const AdminPageList({
     super.key,
