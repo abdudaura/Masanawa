@@ -1,0 +1,26 @@
+# Workstream claim — integration-nowpayments-live
+
+- Owner/window: ChatGPT NOWPayments live integration window — 2026-10-04
+- Branch: `work/integration-nowpayments-live-20261004`
+- Base SHA: `98b293b2020668b2123e4e7b9d6baae0ebfc1b88`
+- Workstream: integration
+- Purpose: integrate PR #93 provider adapter onto the exact active runtime head and prove live read-only NOWPayments authentication from Railway without editing runtime-owned Gateway source.
+- Exact owned paths:
+  - `docs/workstreams/integration-nowpayments-live.md`
+  - `adapters/crypto/nowpayments/**`
+  - `docs/NOWPAYMENTS-ADAPTER.md`
+  - `scripts/nowpayments-smoke.mjs`
+  - `pnpm-lock.yaml`
+- Shared/deployment operations:
+  - Railway worker source may be repointed to this exact integration commit for production verification.
+  - Railway pre-deploy command may temporarily run `node scripts/nowpayments-smoke.mjs`.
+  - No runtime Gateway/Commerce/mobile/channel source files are owned or edited.
+- Collision constraints:
+  - do not modify PR #89 runtime-owned source paths;
+  - do not modify PR #90 Commerce paths;
+  - do not modify PR #91 mobile/chat-renderer paths;
+  - do not modify PR #92 channel paths;
+  - do not modify PR #94/#96 teaching paths;
+  - only the lockfile is shared and is touched solely to register the new dependency-free workspace importer.
+- Current step: claim published before integration edits.
+- Verification target: frozen-lockfile build, live Railway deploy, authenticated read-only NOWPayments `/v1/status` and `/v1/currencies` checks, with no secret values or raw sensitive provider bodies logged.
