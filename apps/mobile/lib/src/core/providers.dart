@@ -25,13 +25,11 @@ final apiClientProvider = Provider<ApiClient>((ref) {
   return ApiClient(dio: ref.watch(dioProvider));
 });
 
-String? _sessionToken(Ref ref) => ref.read(apiClientProvider).accessToken;
-
 final agentDirectoryTransportProvider = Provider<AgentDirectoryTransport>((ref) {
   return MasanawaAgentDirectoryTransport(
     dio: ref.watch(dioProvider),
     baseUrl: kAgentBaseUrl,
-    readAccessToken: () => _sessionToken(ref),
+    readAccessToken: () => ref.read(apiClientProvider).accessToken,
   );
 });
 
@@ -39,7 +37,7 @@ final agentTransportProvider = Provider<AgentTransport>((ref) {
   return MasanawaAgentTransport(
     dio: ref.watch(dioProvider),
     baseUrl: kAgentBaseUrl,
-    readAccessToken: () => _sessionToken(ref),
+    readAccessToken: () => ref.read(apiClientProvider).accessToken,
   );
 });
 
@@ -47,7 +45,7 @@ final creatorCloneTransportProvider = Provider<CreatorCloneTransport>((ref) {
   return MasanawaCreatorCloneTransport(
     dio: ref.watch(dioProvider),
     baseUrl: kAgentBaseUrl,
-    readAccessToken: () => _sessionToken(ref),
+    readAccessToken: () => ref.read(apiClientProvider).accessToken,
   );
 });
 
@@ -55,7 +53,7 @@ final creatorEconomyTransportProvider = Provider<CreatorEconomyTransport>((ref) 
   return MasanawaCreatorEconomyTransport(
     dio: ref.watch(dioProvider),
     baseUrl: kAgentBaseUrl,
-    readAccessToken: () => _sessionToken(ref),
+    readAccessToken: () => ref.read(apiClientProvider).accessToken,
   );
 });
 
@@ -63,6 +61,6 @@ final creatorSkillTransportProvider = Provider<CreatorSkillTransport>((ref) {
   return MasanawaCreatorSkillTransport(
     dio: ref.watch(dioProvider),
     baseUrl: kAgentBaseUrl,
-    readAccessToken: () => _sessionToken(ref),
+    readAccessToken: () => ref.read(apiClientProvider).accessToken,
   );
 });
