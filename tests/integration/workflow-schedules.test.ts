@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   createCanonicalId,
   toInstant,
+  type Instant,
 } from "@masanawa/contracts";
 import {
   createPostgresPool,
@@ -125,11 +126,11 @@ describePostgres("workflow schedule acceptance", () => {
     scheduleKey: string;
     targetNodeKey: string;
     kind: "once" | "interval";
-    firstAt: string;
+    firstAt: Instant;
     everyMs: number | null;
     maxOccurrences: number | null;
-    endAt: string | null;
-    createdAt: string;
+    endAt: Instant | null;
+    createdAt: Instant;
   }) {
     return createHash("sha256")
       .update(
@@ -163,11 +164,11 @@ describePostgres("workflow schedule acceptance", () => {
       scheduleKey: string;
       targetNodeKey?: string;
       kind: "once" | "interval";
-      firstAt: string;
+      firstAt: Instant;
       everyMs?: number | null;
       maxOccurrences?: number | null;
       endAt?: string | null;
-      createdAt: string;
+      createdAt: Instant;
     },
   ) {
     const structural = {
