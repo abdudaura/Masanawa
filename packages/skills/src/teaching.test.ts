@@ -3,6 +3,7 @@ import { createCanonicalId, toInstant, type SkillVersionId } from "@masanawa/con
 import type { SkillCertification } from "./certification.js";
 import {
   createCoreTeachingSkillBundle,
+  createCoreTeachingSkillGuide,
   evaluateTeachingSelection,
   normalizeTeachingAnswerEvaluation,
   normalizeTeachingExerciseCard,
@@ -155,6 +156,10 @@ function coreCertification(
     ["contract.relationship-continuity", "contract"],
     ["recovery.source-uncertainty", "recovery"],
     ["contract.relationship-privacy", "contract"],
+    ["contract.app-continuity", "contract"],
+    ["contract.whatsapp-continuity", "contract"],
+    ["contract.telegram-continuity", "contract"],
+    ["contract.voice-text-parity", "contract"],
   ] as const;
   const cases = required
     .filter(([caseKey]) => caseKey !== omitCaseKey)
@@ -178,6 +183,17 @@ function coreCertification(
     testCaseCount: cases.length,
     passedTestCaseCount: cases.length,
   };
+}
+
+function certifiedGuideHash(
+  skillVersionId: SkillVersionId,
+  guideResources: readonly {
+    readonly path: string;
+    readonly kind: "reference" | "asset" | "template" | "script";
+    readonly description: string | null;
+  }[] = [],
+): string {
+  return createCoreTeachingSkillGuide(skillVersionId, guideResources).contentHash;
 }
 
 function coreProvenance() {
@@ -212,6 +228,13 @@ describe("Core Teaching Skill authoring", () => {
       version: "1.0.0",
       provenance: coreProvenance(),
       certification: coreCertification(skillVersionId),
+      certifiedGuideContentHash: certifiedGuideHash(skillVersionId, [
+        {
+          path: "references/mathematics.md",
+          kind: "reference",
+          description: "Reviewed mathematics teaching reference.",
+        },
+      ]),
       guideResources: [
         {
           path: "references/mathematics.md",
@@ -249,6 +272,7 @@ describe("Core Teaching Skill authoring", () => {
           skillVersionId,
           "recovery.source-uncertainty",
         ),
+        certifiedGuideContentHash: certifiedGuideHash(skillVersionId),
       }),
     ).toThrow(/recovery\.source-uncertainty/);
   });
@@ -261,6 +285,7 @@ describe("Core Teaching Skill authoring", () => {
       version: "1.0.0",
       provenance: coreProvenance(),
       certification: coreCertification(skillVersionId),
+      certifiedGuideContentHash: certifiedGuideHash(skillVersionId),
     });
 
     expect(bundle.skillVersion.requiredToolCapabilities).toEqual([]);
@@ -574,5 +599,47 @@ describe("Teaching selectable answer custody", () => {
         nextCheckpointState: "completed",
       }),
     ).toThrow(/cannot advance/);
+  });
+});
+
+
+describe("Core Teaching certification binding", () => {
+  it("requires channel and voice/text continuity rehearsal evidence", () => {
+    const skillVersionId = createCanonicalId("skill-version");
+    expect(() =>
+      createCoreTeachingSkillBundle({
+        skillId: createCanonicalId("skill"),
+        skillVersionId,
+        version: "1.0.0",
+        provenance: coreProvenance(),
+        certification: coreCertification(
+          skillVersionId,
+          "contract.telegram-continuity",
+        ),
+        certifiedGuideContentHash: certifiedGuideHash(skillVersionId),
+      }),
+    ).toThrow(/contract\.telegram-continuity/);
+  });
+
+  it("rejects certification against a stale or different SkillGuide", () => {
+    const skillVersionId = createCanonicalId("skill-version");
+    const staleGuideHash = certifiedGuideHash(skillVersionId);
+    expect(() =>
+      createCoreTeachingSkillBundle({
+        skillId: createCanonicalId("skill"),
+        skillVersionId,
+        version: "1.0.0",
+        provenance: coreProvenance(),
+        certification: coreCertification(skillVersionId),
+        certifiedGuideContentHash: staleGuideHash,
+        guideResources: [
+          {
+            path: "references/updated.md",
+            kind: "reference",
+            description: "A newer resource set.",
+          },
+        ],
+      }),
+    ).toThrow(/bind the exact SkillGuide content hash/);
   });
 });
