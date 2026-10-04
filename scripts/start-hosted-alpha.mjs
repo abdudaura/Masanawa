@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { createPostgresPool, runMigrations, characterContextMigrationRoots } from "@masanawa/postgres";
+import { createPostgresPool, runMigrations, financialMigrationRoots } from "@masanawa/postgres";
 import { decryptNurainGeminiCredentials } from "./import-nurain-gemini.mjs";
 import { selectAlphaGeminiCredentials } from "./alpha-credential-selection.mjs";
 
@@ -69,7 +69,7 @@ async function start() {
       values = existing.rows[0].identity_references;
       // Upgrade the registered Alpha through checksum-checked, transactional migrations;
       // never rerun bootstrap or replace its canonical identities.
-      await runMigrations(pool, characterContextMigrationRoots());
+      await runMigrations(pool, financialMigrationRoots());
     }
     else {
       // Never adopt an unrelated existing database or silently add a second Alpha.
