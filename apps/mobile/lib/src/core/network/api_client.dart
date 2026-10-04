@@ -2,12 +2,11 @@ import 'package:dio/dio.dart';
 
 import '../api/models.dart';
 
-/// Base URL for the UNigeria API. Overridable at build/run time:
-///   flutter run --dart-define=API_BASE_URL=https://staging.example.com
-/// Defaults to the production Railway deployment.
+/// Masanawa production Gateway. A build may override this for staging, but
+/// users never configure runtime URLs or credentials inside the app.
 const String kApiBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
-  defaultValue: 'https://unigeria.up.railway.app',
+  defaultValue: 'https://nurainworker-production.up.railway.app',
 );
 
 /// Thrown for contract-level / transport failures with a message safe to show.
@@ -118,6 +117,11 @@ class ApiClient {
 
   Future<Map<String, dynamic>> logout() async {
     return _post('/auth/logout', const {});
+  }
+
+  Future<AuthUser> updateProfile({required String name}) async {
+    final data = await _patch('/auth/profile', {'name': name});
+    return AuthUser.fromJson(data['user'] as Map<String, dynamic>);
   }
 
   /// Sends one message to the AI assistant. Expects `{reply: String}`.
