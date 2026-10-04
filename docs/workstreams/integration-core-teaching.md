@@ -10,8 +10,10 @@
   - `packages/skills/src/teaching-runtime.ts`
   - `packages/skills/src/teaching-runtime.test.ts`
   - `packages/skills/src/index.ts` only for the new integration export
+  - `tests/contracts/core-teaching-cross-channel.test.ts`
+  - `docs/CORE-TEACHING-ACCEPTANCE.md`
 - Dependencies: consumes Core Teaching contracts from stacked PR #94; external owners implement the published ports. No edits to their claimed files.
-- Current step: provider-neutral runtime/persistence/presentation bridge plus stable replay fingerprint implemented; owner composition pending.
+- Current step: provider-neutral runtime/persistence/presentation bridge plus stable replay fingerprint implemented; claim extended to isolated cross-channel contract acceptance before writing that harness.
 - Verification: changed-file audit is exactly the five claimed integration paths. Foundation CI run 933 failed before executing any job steps; its single `check` job exposes no steps/logs. No code pass/failure is inferred from that infrastructure result.
 - Deployment: none. Coordination comments published on PRs #89, #91 and #92; no ownership transfer or foreign-file edits.
 - Collision rule: no Gateway/mobile/channel/chat-renderer/migration/lockfile/shared deployment edits in this workstream.
