@@ -7,6 +7,8 @@ import {
   parseWebhookBody,
   safeWebhookMetadata,
   verifyBillCallbackAgainstProvider,
+  executeOperatorAirtimeTest,
+  createOperatorAirtimeTestHandler,
 } from "./flutterwave-webhook-proxy.mjs";
 
 test("constantTimeSecretMatch accepts only the exact configured value", () => {
@@ -161,4 +163,94 @@ test("provider requery failure returns non-200 so Flutterwave can retry", async 
     });
     assert.equal(response.status, 503);
   });
+});
+
+
+test("operator airtime test reconciles existing reference before any dispatch", async () => {
+  const calls = [];
+  const result = await executeOperatorAirtimeTest({
+    secretKey: "secret",
+    phone: "07010102053",
+    amount: "100",
+    reference: "ref-existing",
+    fetchImpl: async (url, init) => {
+      calls.push({ url: String(url), method: init?.method ?? "GET" });
+      return new Response(JSON.stringify({
+        status: "success",
+        data: { status: "successful", customer_reference: "ref-existing", flw_ref: "FLW-1" },
+      }), { status: 200, headers: { "content-type": "application/json" } });
+    },
+  });
+  assert.equal(result.outcome, "existing_reference");
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].method, "GET");
+});
+
+test("operator airtime test discovers Airtel and dispatches once", async () => {
+  const calls = [];
+  const responses = [
+    new Response(JSON.stringify({ status: "error", message: "not found" }), { status: 404, headers: { "content-type": "application/json" } }),
+    new Response(JSON.stringify({ status: "success", data: [{ code: "AIRTIME", name: "Airtime" }] }), { status: 200, headers: { "content-type": "application/json" } }),
+    new Response(JSON.stringify({ status: "success", data: [{ biller_code: "BIL-AIRTEL", name: "Airtel Nigeria" }] }), { status: 200, headers: { "content-type": "application/json" } }),
+    new Response(JSON.stringify({ status: "success", data: [{ item_code: "ITM-AIRTEL", name: "Airtel Airtime", amount: "0" }] }), { status: 200, headers: { "content-type": "application/json" } }),
+    new Response(JSON.stringify({ status: "success", data: { status: "successful", customer_reference: "ref-new", flw_ref: "FLW-2", amount: 100 } }), { status: 200, headers: { "content-type": "application/json" } }),
+  ];
+  const result = await executeOperatorAirtimeTest({
+    secretKey: "secret",
+    phone: "07010102053",
+    amount: "100",
+    reference: "ref-new",
+    callbackUrl: "https://example.test/webhooks/flutterwave",
+    fetchImpl: async (url, init) => {
+      calls.push({ url: String(url), method: init?.method ?? "GET", body: init?.body ?? null });
+      return responses.shift();
+    },
+  });
+  assert.equal(result.outcome, "submitted");
+  assert.equal(calls.filter((call) => call.method === "POST").length, 1);
+  const posted = JSON.parse(calls.at(-1).body);
+  assert.deepEqual(posted, {
+    country: "NG",
+    customer_id: "07010102053",
+    amount: "100",
+    reference: "ref-new",
+    callback_url: "https://example.test/webhooks/flutterwave",
+  });
+});
+
+test("operator handler refuses purchase when runtime egress IP changed", async () => {
+  let providerCalls = 0;
+  await withWebhookServer({
+    webhookSecret: "unused",
+    flutterwaveSecretKey: "unused",
+    fetchImpl: async () => { throw new Error("unused"); },
+    logger: { info() {}, warn() {} },
+  }, async () => {});
+  const handler = createOperatorAirtimeTestHandler({
+    operatorToken: "token-1",
+    secretKey: "secret",
+    phone: "07010102053",
+    amount: "100",
+    reference: "ref-egress",
+    expectedEgressIp: "152.55.185.183",
+    fetchImpl: async (url) => {
+      if (String(url).startsWith("https://api.ipify.org")) {
+        return new Response(JSON.stringify({ ip: "203.0.113.10" }), { status: 200, headers: { "content-type": "application/json" } });
+      }
+      providerCalls += 1;
+      throw new Error("provider should not be called");
+    },
+    logger: { info() {}, warn() {} },
+  });
+  const server = createServer((request, response) => void handler(request, response));
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  try {
+    const response = await fetch(`http://127.0.0.1:${address.port}/ops/flutterwave/test-airtime?token=token-1`, { method: "POST" });
+    assert.equal(response.status, 409);
+    assert.equal((await response.json()).code, "egress_ip_changed");
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+  assert.equal(providerCalls, 0);
 });
