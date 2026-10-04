@@ -383,8 +383,7 @@ void main() {
     await controller.sendText('character-1', 'hello');
     expect(c.read(aiChatProvider).threads, isNotEmpty);
 
-    controller.clearAll();
-    await Future<void>.delayed(Duration.zero);
+    await controller.clearAll();
 
     expect(transport.closedSessions, 1);
     expect(c.read(aiChatProvider).threads, isEmpty);
