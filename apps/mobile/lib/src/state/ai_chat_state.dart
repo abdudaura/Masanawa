@@ -726,6 +726,7 @@ class AiChatController extends Notifier<AiChatState> {
   }
 
   void stopGeneration(String characterId) {
+    ref.read(agentTransportProvider).cancelTurn(characterId);
     _threadGenerations[characterId] = (_threadGenerations[characterId] ?? 0) + 1;
     final thread = threadOf(characterId);
     final messages = [
