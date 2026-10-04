@@ -7,6 +7,7 @@ import type { CreatorCloneService } from "./creator_clone.js";
 import type { CreatorEconomyService } from "./creator_economy.js";
 import type { CreatorSkillService } from "./creator_skills.js";
 import type { CommerceCatalogService } from "./commerce_catalog.js";
+import type { CommerceFulfillmentService } from "./commerce_fulfillment.js";
 import {
   admitTelemetryCorrelation,
   injectCorrelationHeaders,
@@ -29,6 +30,7 @@ export interface GatewayAppOptions {
   readonly creatorEconomy?: CreatorEconomyService;
   readonly creatorSkills?: CreatorSkillService;
   readonly commerceCatalog?: CommerceCatalogService;
+  readonly commerceFulfillment?: CommerceFulfillmentService;
 }
 
 const HealthResponseSchema = Type.Object(
@@ -208,6 +210,53 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
 
 
 
+
+
+  if (options.commerceFulfillment) {
+    const commerceFulfillment = options.commerceFulfillment;
+    app.post(
+      "/fulfillments",
+      {
+        schema: {
+          body: Type.Object(
+            { quoteId: Type.String() },
+            { additionalProperties: false },
+          ),
+          response: {
+            200: Type.Object(
+              {
+                schemaVersion: Type.Literal(1),
+                tenantId: Type.String(),
+                fulfillmentId: Type.String(),
+                quoteId: Type.String(),
+                offerId: Type.String(),
+                offerRevision: Type.Integer({ minimum: 1 }),
+                skillVersionId: Type.String(),
+                originatingCharacterId: Type.String(),
+                executorCharacterId: Type.String(),
+                creatorUserId: Type.Union([Type.String(), Type.Null()]),
+                fundingSource: Type.Union([
+                  Type.Literal("agent-float"),
+                  Type.Literal("platform"),
+                ]),
+                reserveCredits: Type.Integer({ minimum: 0 }),
+                creatorCommissionCredits: Type.Integer({ minimum: 0 }),
+                platformRevenueCredits: Type.Integer({ minimum: 0 }),
+                state: Type.Literal("admitted"),
+                createdAt: Type.String(),
+              },
+              { additionalProperties: false },
+            ),
+          },
+        },
+      },
+      async (request) =>
+        commerceFulfillment.admit({
+          authorizationHeader: request.headers.authorization,
+          quoteId: request.body.quoteId,
+        }),
+    );
+  }
 
   if (options.commerceCatalog) {
     const commerceCatalog = options.commerceCatalog;
