@@ -18,6 +18,10 @@ const Profile = Type.Object({
 /** Registrar for the existing Gateway composition owner; no second auth/runtime. */
 export async function registerCloneOnboardingRoutes(app: FastifyInstance, service: CloneOnboardingService): Promise<void> {
   await app.register(async routes => {
+    routes.addHook("onSend", async (_request, reply, payload) => {
+      reply.header("Cache-Control", "private, no-store");
+      return payload;
+    });
     // Fastify's default AJV removes additional fields. Reject them BEFORE
     // validation so forged scope/technical settings are not silently accepted.
     routes.addHook("preValidation", async request => {

@@ -47,3 +47,9 @@ Additional exact owned paths:
 - docs/CREATOR-ECONOMY-VIEW.md
 
 No Commerce model/repository, existing creator_economy.ts, mobile or shared app/main edits. #90 owns durable financial commands; #104 owns mobile/session dispatch. No write action is offered until those dependencies are explicitly composed. Read errors must not render fabricated zero balances.
+
+## Current verified handoff
+
+Implemented: profile/support/recovery ShellDocuments and verified-binding action bridge; read-only economic ShellDocument and fresh private/no-store read route. Onboarding response caching is disabled on success and failure. Eight SQL engine cases pass, including direct NULL-preview and malformed RequestId rejection. No native PostgreSQL concurrency or physical app pass.
+Validation: 55 focused Identity/Gateway/HTTP/shell/economic tests; 21 package/adapter boundary tests; nine existing Gateway/directory/Identity compatibility tests: total 85 in 11 files, all pass. Identity, Gateway and Postgres strict typechecks and diff whitespace checks pass. PGlite 0.5.8 reports PostgreSQL 18.3; all eight SQL cases pass via a temporary serializing pool harness, not separate pg sessions.
+Remaining: shared Gateway/mobile registration and current session/action custody (#89/#104/#125); actual qualified Core/support configuration; the later feature dependencies recorded in docs/CREATOR-ECONOMY-VIEW.md. Retain exact claims until explicit coordinated transfer/merge. No deployment, merge or full seven-feature completion claimed.

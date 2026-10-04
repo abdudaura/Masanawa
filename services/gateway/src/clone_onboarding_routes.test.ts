@@ -17,6 +17,7 @@ it("passes current authorization and form data to the onboarding service", async
   try {
     const response = await f.app.inject({ method: "PUT", url: "/creator/onboarding/profile", headers: { authorization: "Bearer private" }, payload: { expectedRevision: null, profile: { displayName: "Nasir", languages: ["Hausa"] } } });
     expect(response.statusCode).toBe(200);
+    expect(response.headers["cache-control"]).toBe("private, no-store");
     expect(f.service.save).toHaveBeenCalledWith({ authorizationHeader: "Bearer private", expectedRevision: null, profile: { displayName: "Nasir", languages: ["Hausa"] } });
   } finally { await f.app.close(); }
 });
@@ -54,6 +55,7 @@ it("redacts arbitrary provider/DB failures and preserves denied authentication s
     f.service.read.mockRejectedValueOnce(new Error("postgres://password gemini-api-key raw-profile"));
     const unavailable = await f.app.inject({ method: "GET", url: "/creator/onboarding" });
     expect(unavailable.statusCode).toBe(503);
+    expect(unavailable.headers["cache-control"]).toBe("private, no-store");
     expect(unavailable.body).not.toMatch(/password|gemini|raw-profile/);
     for (const category of ["authentication", "authorization"] as const) {
       f.service.read.mockRejectedValueOnce(new PlatformError({ code: "private.policy", category, message: "private details", retryable: false }));
