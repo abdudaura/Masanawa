@@ -10,6 +10,7 @@ import type {
   TeachingSelectableExerciseRubric,
 } from "./teaching.js";
 import {
+  createTeachingRuntimeBinding,
   fingerprintTeachingSelectionAttempt,
   TeachingRuntimeCoordinator,
   type TeachingProgressKey,
@@ -56,6 +57,15 @@ function lesson(): TeachingLessonPlan {
     resources: [],
     uncertaintyNotes: [],
   };
+}
+
+function binding(active: TeachingLessonPlan) {
+  return createTeachingRuntimeBinding({
+    relationshipId: active.learner.relationshipId,
+    skillVersionId: active.skillVersionId,
+    skillKey: "core.teaching",
+    guideContentHash: `sha256:${"a".repeat(64)}`,
+  });
 }
 
 function rubric(plan: TeachingLessonPlan): TeachingSelectableExerciseRubric {
@@ -108,7 +118,7 @@ describe("TeachingRuntimeCoordinator", () => {
   it("resumes at the first step when no durable progress exists", async () => {
     const progress = new MemoryProgressPort();
     const coordinator = new TeachingRuntimeCoordinator({ progress });
-    const projection = await coordinator.resume(lesson());
+    const projection = await coordinator.resume(binding(lesson()), lesson());
 
     expect(projection).toMatchObject({
       kind: "lesson-step",
@@ -131,7 +141,7 @@ describe("TeachingRuntimeCoordinator", () => {
       },
     });
 
-    const projection = await coordinator.presentExercise({
+    const projection = await coordinator.presentExercise(binding(plan), {
       relationshipId: plan.learner.relationshipId,
       skillVersionId: plan.skillVersionId,
       lessonStepKey: "common-denominator",
@@ -157,7 +167,7 @@ describe("TeachingRuntimeCoordinator", () => {
     const coordinator = new TeachingRuntimeCoordinator({ progress });
     const requestId = createCanonicalId("request");
 
-    const result = await coordinator.submitSelection({
+    const result = await coordinator.submitSelection(binding(plan), {
       requestId,
       plan,
       rubric: rubric(plan),
@@ -204,8 +214,8 @@ describe("TeachingRuntimeCoordinator", () => {
       recordedAt: toInstant("2026-10-04T16:00:00.000Z"),
     } as const;
 
-    await coordinator.submitSelection(input);
-    const replay = await coordinator.submitSelection(input);
+    await coordinator.submitSelection(binding(plan), input);
+    const replay = await coordinator.submitSelection(binding(plan), input);
 
     expect(replay).toMatchObject({ kind: "feedback", persistence: "replay" });
     expect(progress.attempts.size).toBe(1);
@@ -217,7 +227,7 @@ describe("TeachingRuntimeCoordinator", () => {
     const coordinator = new TeachingRuntimeCoordinator({ progress });
 
     await expect(
-      coordinator.submitSelection({
+      coordinator.submitSelection(binding(plan), {
         requestId: createCanonicalId("request"),
         plan,
         rubric: rubric(plan),
@@ -265,7 +275,7 @@ describe("Teaching selection replay identity", () => {
     const coordinator = new TeachingRuntimeCoordinator({ progress });
     const requestId = createCanonicalId("request");
 
-    await coordinator.submitSelection({
+    await coordinator.submitSelection(binding(plan), {
       requestId,
       plan,
       rubric: rubric(plan),
@@ -280,7 +290,7 @@ describe("Teaching selection replay identity", () => {
     });
 
     await expect(
-      coordinator.submitSelection({
+      coordinator.submitSelection(binding(plan), {
         requestId,
         plan,
         rubric: rubric(plan),
