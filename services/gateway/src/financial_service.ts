@@ -1,3 +1,4 @@
+import { assertFinancialReplay, type FinancialReplayTerms } from "./financial_replay.js";
 import {
   nowInstant,
   parseCanonicalId,
@@ -250,7 +251,15 @@ export function createFinancialService(input: {
         userId: auth.userId,
         requestId,
       });
-      if (existing) return depositView(existing);
+      const terms: FinancialReplayTerms = {
+        operation: "deposit", asset: providerCode,
+        network: splitProviderCurrency(providerCode).network,
+        amount, destinationAddress: null,
+      };
+      if (existing) {
+        assertFinancialReplay(existing, terms);
+        return depositView(existing);
+      }
 
       const route = await currentDepositRoute(providerCode);
       if (!route) throw new Error("financial.crypto.route_unavailable");
@@ -267,7 +276,7 @@ export function createFinancialService(input: {
       assertAboveMinimum(numericAmount, minimum);
 
       const createdAt = now();
-      await input.crypto.createIntent({
+      const admitted = await input.crypto.createIntent({
         schemaVersion: 1,
         tenantId: auth.tenantId,
         userId: auth.userId,
@@ -289,12 +298,14 @@ export function createFinancialService(input: {
         updatedAt: createdAt,
       });
 
+      assertFinancialReplay(admitted, terms);
       const dispatch = await input.crypto.beginProviderDispatch({
         tenantId: auth.tenantId,
         userId: auth.userId,
         requestId,
         updatedAt: now(),
       });
+      assertFinancialReplay(dispatch.intent, terms);
       if (!dispatch.shouldDispatch) return depositView(dispatch.intent);
 
       const payment = await input.nowPayments.submitPayment({
@@ -333,13 +344,21 @@ export function createFinancialService(input: {
         userId: auth.userId,
         requestId,
       });
-      if (existing) return withdrawalView(existing);
+      const terms: FinancialReplayTerms = {
+        operation: "withdraw", asset: providerCode,
+        network: splitProviderCurrency(providerCode).network,
+        amount, destinationAddress: address,
+      };
+      if (existing) {
+        assertFinancialReplay(existing, terms);
+        return withdrawalView(existing);
+      }
 
       const route = await currentDepositRoute(providerCode);
       if (!route) throw new Error("financial.crypto.route_unavailable");
 
       const createdAt = now();
-      const reserved = await input.crypto.reserveWithdrawal({
+      const admitted = await input.crypto.reserveWithdrawal({
         schemaVersion: 1,
         tenantId: auth.tenantId,
         userId: auth.userId,
@@ -361,12 +380,14 @@ export function createFinancialService(input: {
         updatedAt: createdAt,
       });
 
+      assertFinancialReplay(admitted, terms);
       const dispatch = await input.crypto.beginProviderDispatch({
         tenantId: auth.tenantId,
         userId: auth.userId,
         requestId,
         updatedAt: now(),
       });
+      assertFinancialReplay(dispatch.intent, terms);
       if (!dispatch.shouldDispatch) return withdrawalView(dispatch.intent);
 
       const payout = await input.nowPaymentsPayout.createPayout({
