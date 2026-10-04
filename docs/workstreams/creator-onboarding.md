@@ -33,6 +33,6 @@ Additional exact owned paths for this continuation:
 - services/gateway/src/clone_onboarding_shell.ts
 - services/gateway/src/clone_onboarding_shell.test.ts
 
-Implemented server slice: 0d65c552b9707e2fdf97e2b2f38511006aa130ba. Forty focused tests pass; architecture/compatibility checks and strict typechecks pass. Seven PostgreSQL cases await a test database. No deployment.
-Current step: server-generated ShellDocument profile/review/recovery projections and authenticated action binding bridge, without editing #104/#125 mobile or shared composition. Existing dispatcher owns opaque-token custody; this bridge must require its verified binding. Database qualification is also being pursued. Later features remain open; independent useful work may proceed while integration dependencies are blocked.
+Implemented server slice: 0d65c552b9707e2fdf97e2b2f38511006aa130ba. Forty focused tests pass; architecture/compatibility checks and strict typechecks pass. Eight SQL cases pass on PGlite PostgreSQL 18.3; separate-session native PostgreSQL acceptance remains open. No deployment.
+Implemented: nine shell bridge regressions pass; 49 focused and 70 including architecture tests pass; Gateway strict typecheck passes. Server-generated ShellDocument profile/review/recovery projections and authenticated action binding bridge, without editing #104/#125 mobile or shared composition. Existing dispatcher owns opaque-token custody; this bridge must require its verified binding. Database qualification is also being pursued. Later features remain open; independent useful work may proceed while integration dependencies are blocked.
 Last update: 2026-10-04 22:41 Lagos.

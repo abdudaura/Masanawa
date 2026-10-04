@@ -123,4 +123,15 @@ describe.skipIf(!connectionString)("clone setup PostgreSQL 18 acceptance", () =>
     await expect(f.repository.mutate(f.scope, current => ({ ...current!, userId: createCanonicalId("user"), revision: 2 }))).rejects.toThrow();
     expect((await f.repository.read(f.scope))?.revision).toBe(1);
   });
+  it("rejects SQL NULL preview revisions and noncanonical confirmation identities", async () => {
+    const f = await fixture();
+    await f.repository.mutate(f.scope, current => previewCloneSetup(f.scope, current, 1));
+    await expect(pool.query(`UPDATE identity.clone_setups SET state='confirmed',revision=revision+1,
+      confirmation_request_id=$3,confirmation_preview_revision=NULL WHERE tenant_id=$1 AND user_id=$2`,
+      [f.scope.tenantId, f.scope.userId, f.requestId])).rejects.toThrow();
+    await expect(pool.query(`UPDATE identity.clone_setups SET state='confirmed',revision=revision+1,
+      confirmation_request_id='not-a-request',confirmation_preview_revision=revision WHERE tenant_id=$1 AND user_id=$2`,
+      [f.scope.tenantId, f.scope.userId])).rejects.toThrow();
+    expect((await f.repository.read(f.scope))?.state).toBe("preview");
+  });
 });

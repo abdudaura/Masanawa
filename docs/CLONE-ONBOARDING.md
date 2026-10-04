@@ -117,10 +117,44 @@ creation rights; no production database is used by this suite.
 pnpm exec vitest run packages/identity/src/clone-setup.test.ts services/gateway/src/clone_onboarding.test.ts services/gateway/src/clone_onboarding_routes.test.ts tests/integration/clone-setup.test.ts
 ```
 
-Local evidence: 40 focused unit/route tests pass; adding package/adapter boundary
-checks yields 61 passes. Seven PostgreSQL cases are skipped because no test database
-is configured. Identity/Gateway/Postgres strict typechecks pass. No SQL execution,
+Local evidence: 49 focused unit/route/shell tests pass; adding package/adapter boundary
+checks yields 70 passes. Eight PostgreSQL cases remain skipped in the normal pg suite because no test database
+is configured. All eight passed using PGlite 0.5.8 (PostgreSQL 18.3) and a temporary
+pool compatibility harness. The harness executes the real migrations, queries and
+triggers but serializes transactions and emulates test-database/pool creation; it
+does not qualify separate-session races or real process restart. Identity/Gateway/Postgres strict typechecks pass. No native PostgreSQL server,
 Windows/Flutter/APK, production deployment or live onboarding pass is claimed.
 
-Finish these item-1 integration/qualification dependencies before declaring it
-complete or advancing the ordered customer journey to item 2 (live Teaching).
+Finish these item-1 integration/qualification dependencies before declaring onboarding
+complete. Continue independent work on later items while shared integration is blocked;
+do not interpret this handoff as permission to overwrite active owners.
+
+## Server-generated profile and support screens
+
+`createCloneOnboardingShell` renders existing ShellDocument v1 primitives for the
+simple profile form, saved profile review, explicit confirmation, editing, cancel,
+interrupted setup recovery, completed profile and support-agent selection. It requires
+the existing dispatcher’s durable opaque-token binding store through `issue/resolve`;
+there is no new token, session or authority database. Register it only behind current
+authenticated conversation/session admission. Never expose `resolve` or the server-only
+binding structure as a client endpoint. Persist bindings before sending documents.
+
+Each binding includes Tenant/User, document ID/revision, setup revision/state, command,
+node, expiry, and exact confirmation identity or support Character. The executor checks
+current creator authority, exact scope, expiry and substitutions before using the
+existing onboarding service. Profile changes invalidate old preview actions. Only an
+exact already-confirmed request can replay after the setup revision changes. Recovery
+projections reuse its saved RequestId rather than starting another creation.
+
+The owner assigns a fresh increasing document revision for each replacement. After
+`execute`, render again using its returned mode and replace the document through the
+existing event/result path. The v1 input renderer cannot prefill fields, so a saved
+profile card shows current values and blank inputs preserve them. Forms carry one Save
+action. Preview/edit/cancel/confirm are separate read-only action documents so unsaved
+form values cannot accidentally confirm a different profile. A ready view returns the
+canonical result; the owner opens that Character through the existing navigation.
+
+Nine bridge regressions pass, including exact recovery, stale preview, forged/cross-user
+actions, expiry, hidden-field injection, support selection and current parser bounds.
+The SQL qualification also caught and closed SQL CHECK’s NULL-preview-revision escape;
+noncanonical confirmation RequestIds are rejected directly by the database.

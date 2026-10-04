@@ -4,7 +4,7 @@ CREATE TABLE identity.clone_setups (
   revision bigint NOT NULL CHECK (revision BETWEEN 1 AND 9007199254740991),
   state text NOT NULL CHECK (state IN ('editing','preview','confirmed','ready','cancelled')),
   profile jsonb NOT NULL CHECK (jsonb_typeof(profile) = 'object'),
-  confirmation_request_id text,
+  confirmation_request_id text CHECK (confirmation_request_id ~ '^request_[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$'),
   confirmation_preview_revision bigint,
   result jsonb,
   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
@@ -12,6 +12,7 @@ CREATE TABLE identity.clone_setups (
   PRIMARY KEY (tenant_id, user_id),
   FOREIGN KEY (tenant_id, user_id) REFERENCES identity.users(tenant_id, user_id),
   CHECK ((state IN ('confirmed','ready') AND confirmation_request_id IS NOT NULL
+          AND confirmation_preview_revision IS NOT NULL
           AND confirmation_preview_revision > 0 AND confirmation_preview_revision < revision)
       OR (state NOT IN ('confirmed','ready') AND confirmation_request_id IS NULL AND confirmation_preview_revision IS NULL)),
   CHECK ((state = 'ready' AND result IS NOT NULL AND jsonb_typeof(result) = 'object')
