@@ -62,7 +62,7 @@ sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
 cd "$ROOT_DIR/apps/mobile"
 flutter pub get
 flutter analyze --no-fatal-infos --no-fatal-warnings
-flutter test
+timeout --signal=TERM --kill-after=30s 10m flutter test --concurrency=1 --reporter=expanded --timeout=2m
 DEFINES_FILE="$(mktemp)"
 trap 'rm -f "$DEFINES_FILE"' EXIT
 python3 - "$DEFINES_FILE" <<'PY'
