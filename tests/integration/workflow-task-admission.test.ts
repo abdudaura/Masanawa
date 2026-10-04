@@ -291,7 +291,7 @@ describePostgres("workflow task admission acceptance", () => {
   it("rolls back the Task when outbox insertion fails after Task insert", async () => {
     const run = await createRun();
     const task = rootTask(run);
-    const invalidCausationId = "event_invalid" as EventId;
+    const invalidCausationId = "invalid" as EventId;
 
     await expect(
       admitWorkflowTask(pool, {
