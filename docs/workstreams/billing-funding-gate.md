@@ -1,0 +1,31 @@
+# Workstream claim — billing-funding-gate
+
+- Owner/window: ChatGPT billing funding gate — 2026-10-04
+- Branch: `work/billing-funding-gate-20261004`
+- Base ref: `work/integration-flutterwave-webhook-live-20261004`
+- Purpose: make customer-credit reservation a mandatory server-owned prerequisite to Flutterwave bill dispatch, and settle/refund that reservation idempotently from provider evidence.
+- Exact owned paths:
+  - `adapters/storage/postgres/src/commerce/financial-operations.ts`
+  - `adapters/storage/postgres/src/commerce/financial-operations.test.ts`
+  - `services/gateway/src/financial_billing.ts`
+  - `services/gateway/src/financial_billing.test.ts`
+  - `services/gateway/src/main.ts`
+  - `services/gateway/src/main.test.ts`
+  - `services/gateway/src/app.ts`
+  - `docs/workstreams/billing-funding-gate.md`
+- Dependencies:
+  - existing immutable `commerce.ledger_entries` and customer-credit account;
+  - existing restart-safe billing fulfillment store;
+  - existing provider-authoritative catalog and relay-capable Flutterwave transport.
+- Collision constraints:
+  - no edits to `packages/commerce/**`, migrations, relay/proxy scripts, mobile, NOWPayments, channels, root config, or lockfile;
+  - billing request identity must be canonical `request_*`;
+  - no assumed NGN↔Credit exchange: server pricing configuration is mandatory when Bills is enabled;
+  - no provider dispatch before customer-credit reserve exists;
+  - provider failure/reversal refunds; success releases provider reserve + platform margin; manual/unknown outcome keeps reserve frozen.
+- Planned verification:
+  - PostgreSQL adapter typecheck and deterministic funding tests;
+  - Gateway typecheck and billing tests;
+  - production broad release gate after merge;
+  - Bills remains disabled until Flutterwave account qualification and pricing configuration are present.
+- Status: claimed before implementation.
