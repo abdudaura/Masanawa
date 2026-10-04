@@ -154,6 +154,20 @@ const CharacterParamsSchema = Type.Object(
   { additionalProperties: false },
 );
 
+
+const OfferParamsSchema = Type.Object(
+  { offerId: Type.String() },
+  { additionalProperties: false },
+);
+
+const PutOfferEnabledBodySchema = Type.Object(
+  {
+    enabled: Type.Boolean(),
+    expectedRevision: Type.Integer({ minimum: 1 }),
+  },
+  { additionalProperties: false },
+);
+
 const UserParamsSchema = Type.Object(
   { userId: Type.String() },
   { additionalProperties: false },
@@ -405,6 +419,23 @@ export function createOpsApp(options: OpsAppOptions = {}) {
         authorizationHeader: request.headers.authorization,
       }),
     ]);
+
+    app.put(
+      "/v1/admin/offers/:offerId/enabled",
+      {
+        schema: {
+          params: OfferParamsSchema,
+          body: PutOfferEnabledBodySchema,
+        },
+      },
+      async (request) =>
+        platformAdmin.setOfferEnabled({
+          authorizationHeader: request.headers.authorization,
+          offerId: request.params.offerId,
+          expectedRevision: request.body.expectedRevision,
+          enabled: request.body.enabled,
+        }),
+    );
 
     app.get("/v1/admin/fulfillments", async (request) => [
       ...await platformAdmin.listFulfillments({
