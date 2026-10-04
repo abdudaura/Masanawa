@@ -1,3 +1,4 @@
+import { assertPayoutEvidence, parseVerifiedPayoutIpn } from "./financial_payout_evidence.js";
 import { admitPaymentEvidence } from "./financial_payment_evidence.js";
 import { assertFinancialReplay, type FinancialReplayTerms } from "./financial_replay.js";
 import {
@@ -130,6 +131,10 @@ export interface FinancialService {
     readonly signature: string;
     readonly payload: unknown;
   }): Promise<{ readonly accepted: true; readonly requestId: RequestId }>;
+  handleNowPaymentsPayoutIpn(input: {
+    readonly signature: string;
+    readonly payload: unknown;
+  }): Promise<{ readonly accepted: true; readonly requestId: RequestId }>;
 }
 
 function bearer(header: string | undefined): string | null {
@@ -254,6 +259,8 @@ export function createFinancialService(input: {
   const base = new URL(input.publicBaseUrl);
   if (base.protocol !== "https:") throw new TypeError("financial.public_base_url.insecure");
   const ipnCallbackUrl = new URL("/v1/financial/nowpayments/ipn", base).toString();
+  const payoutIpnCallbackUrl =
+    new URL("/v1/financial/nowpayments/payout-ipn", base).toString();
 
   async function authority(header: string | undefined) {
     return input.authorizer.authorize({ authorizationHeader: header });
@@ -329,6 +336,65 @@ export function createFinancialService(input: {
       networkFee: fee.fee,
       addressValidated: true as const,
       quotedAt: now(),
+    });
+  }
+
+  function assertStoredPayoutBinding(
+    intent: CryptoIntent,
+    evidence: {
+      readonly batchId: string;
+      readonly currency: string;
+      readonly amount: string;
+      readonly address: string;
+      readonly uniqueExternalId: string | null;
+    },
+  ): void {
+    if (
+      intent.operation !== "withdraw" ||
+      intent.providerPayoutId === null ||
+      intent.destinationAddress === null ||
+      evidence.uniqueExternalId === null
+    ) {
+      throw new Error("financial.crypto.payout_evidence_mismatch");
+    }
+    assertPayoutEvidence({
+      batchId: evidence.batchId,
+      withdrawalId: "reconciled",
+      status: "processing",
+      currency: evidence.currency,
+      amount: evidence.amount,
+      address: evidence.address,
+      uniqueExternalId: evidence.uniqueExternalId,
+      payloadHash: "reconciled",
+    }, {
+      batchId: intent.providerPayoutId,
+      currency: intent.asset,
+      amount: intent.amount,
+      address: intent.destinationAddress,
+      uniqueExternalId: providerOrderId(intent.tenantId, intent.requestId),
+    });
+  }
+
+  async function settleReconciledPayout(
+    auth: FinancialAuthority,
+    intent: CryptoIntent,
+  ): Promise<CryptoIntent> {
+    if (!input.nowPaymentsPayout || intent.providerPayoutId === null) {
+      throw new Error("financial.crypto.withdrawal_unavailable");
+    }
+    const evidence = await input.nowPaymentsPayout.getPayoutEvidence({
+      payoutId: intent.providerPayoutId,
+      signal: AbortSignal.timeout(15_000),
+    });
+    assertStoredPayoutBinding(intent, evidence);
+    if (!payoutSucceeded(evidence.status) && !payoutFailed(evidence.status)) return intent;
+    return input.crypto.settleWithdrawal({
+      tenantId: auth.tenantId,
+      userId: auth.userId,
+      requestId: intent.requestId,
+      succeeded: payoutSucceeded(evidence.status),
+      providerReference: evidence.withdrawalId,
+      updatedAt: now(),
     });
   }
 
@@ -518,6 +584,8 @@ export function createFinancialService(input: {
         amount,
         currency: providerCode,
         address,
+        ipnCallbackUrl: payoutIpnCallbackUrl,
+        uniqueExternalId: providerOrderId(auth.tenantId, requestId),
         signal: AbortSignal.timeout(15_000),
       });
       const bound = await input.crypto.bindProviderPayout({
@@ -528,25 +596,8 @@ export function createFinancialService(input: {
         updatedAt: now(),
       });
 
-      if (payoutSucceeded(payout.status)) {
-        return withdrawalView(await input.crypto.settleWithdrawal({
-          tenantId: auth.tenantId,
-          userId: auth.userId,
-          requestId,
-          succeeded: true,
-          providerReference: payout.payoutId,
-          updatedAt: now(),
-        }));
-      }
-      if (payoutFailed(payout.status)) {
-        return withdrawalView(await input.crypto.settleWithdrawal({
-          tenantId: auth.tenantId,
-          userId: auth.userId,
-          requestId,
-          succeeded: false,
-          providerReference: payout.payoutId,
-          updatedAt: now(),
-        }));
+      if (payoutSucceeded(payout.status) || payoutFailed(payout.status)) {
+        return withdrawalView(await settleReconciledPayout(auth, bound));
       }
       return withdrawalView(bound);
     },
@@ -569,25 +620,8 @@ export function createFinancialService(input: {
         verificationCode: request.verificationCode,
         signal: AbortSignal.timeout(15_000),
       });
-      if (payoutSucceeded(result.status)) {
-        return withdrawalView(await input.crypto.settleWithdrawal({
-          tenantId: auth.tenantId,
-          userId: auth.userId,
-          requestId,
-          succeeded: true,
-          providerReference: intent.providerPayoutId,
-          updatedAt: now(),
-        }));
-      }
-      if (payoutFailed(result.status)) {
-        return withdrawalView(await input.crypto.settleWithdrawal({
-          tenantId: auth.tenantId,
-          userId: auth.userId,
-          requestId,
-          succeeded: false,
-          providerReference: intent.providerPayoutId,
-          updatedAt: now(),
-        }));
+      if (payoutSucceeded(result.status) || payoutFailed(result.status)) {
+        return withdrawalView(await settleReconciledPayout(auth, intent));
       }
       return withdrawalView(intent);
     },
@@ -605,21 +639,7 @@ export function createFinancialService(input: {
         throw new Error("financial.crypto.withdrawal_unavailable");
       }
       if (intent.status === "succeeded" || intent.status === "failed") return withdrawalView(intent);
-      const status = await input.nowPaymentsPayout.getPayoutStatus({
-        payoutId: intent.providerPayoutId,
-        signal: AbortSignal.timeout(15_000),
-      });
-      if (payoutSucceeded(status) || payoutFailed(status)) {
-        return withdrawalView(await input.crypto.settleWithdrawal({
-          tenantId: auth.tenantId,
-          userId: auth.userId,
-          requestId,
-          succeeded: payoutSucceeded(status),
-          providerReference: intent.providerPayoutId,
-          updatedAt: now(),
-        }));
-      }
-      return withdrawalView(intent);
+      return withdrawalView(await settleReconciledPayout(auth, intent));
     },
 
     async readBalance(request) {
@@ -667,6 +687,54 @@ export function createFinancialService(input: {
         tenantId: auth.tenantId, userId: auth.userId,
         event: { ...evidence, orderId: intent.requestId, observedAt: now() },
       });
+    },
+
+    async handleNowPaymentsPayoutIpn(request) {
+      const evidence = parseVerifiedPayoutIpn({
+        payload: request.payload,
+        signature: request.signature,
+        secret: ipnSecret,
+      });
+      const identity = parseProviderOrderId(evidence.uniqueExternalId);
+      const intent = await input.crypto.readIntentByRequestId(identity);
+      if (
+        !intent ||
+        intent.operation !== "withdraw" ||
+        intent.providerPayoutId === null ||
+        intent.destinationAddress === null
+      ) {
+        throw new Error("financial.crypto.withdrawal_unavailable");
+      }
+      assertPayoutEvidence(evidence, {
+        batchId: intent.providerPayoutId,
+        currency: intent.asset,
+        amount: intent.amount,
+        address: intent.destinationAddress,
+        uniqueExternalId: providerOrderId(intent.tenantId, intent.requestId),
+      });
+
+      const success = payoutSucceeded(evidence.status);
+      const failure = payoutFailed(evidence.status);
+      if (intent.status === "succeeded" || intent.status === "failed") {
+        if (
+          (intent.status === "succeeded" && !success) ||
+          (intent.status === "failed" && !failure)
+        ) {
+          throw new Error("financial.crypto.payout_terminal_conflict");
+        }
+        return Object.freeze({ accepted: true as const, requestId: intent.requestId });
+      }
+      if (success || failure) {
+        await input.crypto.settleWithdrawal({
+          tenantId: intent.tenantId,
+          userId: intent.userId,
+          requestId: intent.requestId,
+          succeeded: success,
+          providerReference: evidence.withdrawalId,
+          updatedAt: now(),
+        });
+      }
+      return Object.freeze({ accepted: true as const, requestId: intent.requestId });
     },
 
     async handleNowPaymentsIpn(request) {
