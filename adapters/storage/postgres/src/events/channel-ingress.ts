@@ -20,7 +20,7 @@ export interface PostgresChannelAdmission {
 
 export function createPostgresChannelAdmission(pool: Pool): PostgresChannelAdmission {
   return Object.freeze({
-    async admitBatch(records) {
+    async admitBatch(records: readonly ChannelIngressRecordLike[]) {
       if (records.length === 0) return Object.freeze({ outcome: "duplicate" as const });
       return withTransaction(pool, async (client) => {
         let inserted = 0;
