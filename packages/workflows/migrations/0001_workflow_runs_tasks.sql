@@ -22,7 +22,18 @@ CREATE TABLE workflows.workflow_runs (
   failure_message text,
   cancellation_reason text,
   PRIMARY KEY (tenant_id, workflow_run_id),
-  CHECK (updated_at >= created_at)
+  CHECK (updated_at >= created_at),
+  CHECK (
+    (state = 'pending' AND started_at IS NULL)
+    OR
+    (state IN ('running', 'waiting', 'completed', 'failed') AND started_at IS NOT NULL)
+    OR
+    (state = 'cancelled')
+  ),
+  CHECK ((state = 'waiting') = (wait_reason IS NOT NULL)),
+  CHECK ((state = 'failed') = (failure_code IS NOT NULL)),
+  CHECK ((state = 'cancelled') = (cancellation_reason IS NOT NULL)),
+  CHECK ((state IN ('completed', 'failed', 'cancelled')) = (terminal_at IS NOT NULL))
 );
 
 CREATE TABLE workflows.tasks (
@@ -68,7 +79,20 @@ CREATE TABLE workflows.tasks (
     OR
     (lineage_depth > 0 AND parent_task_id IS NOT NULL AND root_task_id <> task_id)
   ),
-  CHECK (updated_at >= created_at)
+  CHECK (updated_at >= created_at),
+  CHECK (
+    (state = 'pending' AND started_at IS NULL)
+    OR
+    (state = 'ready')
+    OR
+    (state IN ('running', 'waiting', 'completed', 'failed') AND started_at IS NOT NULL)
+    OR
+    (state = 'cancelled')
+  ),
+  CHECK ((state = 'waiting') = (wait_reason IS NOT NULL)),
+  CHECK ((state = 'failed') = (failure_code IS NOT NULL)),
+  CHECK ((state = 'cancelled') = (cancellation_reason IS NOT NULL)),
+  CHECK ((state IN ('completed', 'failed', 'cancelled')) = (terminal_at IS NOT NULL))
 );
 
 CREATE INDEX workflow_tasks_run_state_idx
