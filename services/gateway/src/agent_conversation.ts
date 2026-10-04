@@ -130,6 +130,7 @@ export function createAgentConversationService(input: {
           characterSessionId,
           characterVersionId: session.characterVersionId,
           presentation: admission.presentation,
+          ...(request.signal ? { signal: request.signal } : {}),
           ...(request.onTextDelta ? { onTextDelta: request.onTextDelta } : {}),
           input: Object.freeze({ kind: "text" as const, text }),
         });
@@ -144,8 +145,10 @@ export function createAgentConversationService(input: {
           outcome: { state: "completed" },
         });
 
-        const audio = input.nativeAudio
-          ? await input.nativeAudio.render(reply).catch(() => undefined)
+        const audio = input.nativeAudio && !request.signal?.aborted
+          ? await input.nativeAudio
+              .render(reply, request.signal)
+              .catch(() => undefined)
           : undefined;
         return Object.freeze({
           reply,
@@ -237,6 +240,7 @@ export function createAgentConversationService(input: {
           characterSessionId,
           characterVersionId: session.characterVersionId,
           presentation: admission.presentation,
+          ...(request.signal ? { signal: request.signal } : {}),
           input: Object.freeze({
             kind: "media" as const,
             caption,
@@ -255,8 +259,10 @@ export function createAgentConversationService(input: {
           outcome: { state: "completed" },
         });
 
-        const audio = input.nativeAudio
-          ? await input.nativeAudio.render(reply).catch(() => undefined)
+        const audio = input.nativeAudio && !request.signal?.aborted
+          ? await input.nativeAudio
+              .render(reply, request.signal)
+              .catch(() => undefined)
           : undefined;
         return Object.freeze({
           reply,
@@ -374,6 +380,7 @@ export function createAgentConversationService(input: {
           characterSessionId,
           characterVersionId: session.characterVersionId,
           presentation: admission.presentation,
+          ...(request.signal ? { signal: request.signal } : {}),
           input: Object.freeze({
             kind: "media-set" as const,
             caption,
@@ -391,8 +398,10 @@ export function createAgentConversationService(input: {
           outcome: { state: "completed" },
         });
 
-        const audio = input.nativeAudio
-          ? await input.nativeAudio.render(reply).catch(() => undefined)
+        const audio = input.nativeAudio && !request.signal?.aborted
+          ? await input.nativeAudio
+              .render(reply, request.signal)
+              .catch(() => undefined)
           : undefined;
         return Object.freeze({
           reply,
