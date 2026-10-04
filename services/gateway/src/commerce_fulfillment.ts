@@ -9,8 +9,8 @@ import {
   type CommerceRepository,
 } from "@masanawa/commerce";
 import type {
+  AgentPresentationRepository,
   CharacterSkillAssignmentRepository,
-  PlatformAgentProfileRepository,
 } from "@masanawa/agents";
 import type { CharacterOwnershipReader } from "@masanawa/identity";
 import {
@@ -32,7 +32,7 @@ export function createCommerceFulfillmentService(input: {
   readonly commerce: CommerceRepository;
   readonly ownerships: CharacterOwnershipReader;
   readonly assignments: CharacterSkillAssignmentRepository;
-  readonly platformProfiles: PlatformAgentProfileRepository;
+  readonly platformProfiles: AgentPresentationRepository;
   readonly skills: SkillRepository;
 }): CommerceFulfillmentService {
   return Object.freeze<CommerceFulfillmentService>({
@@ -129,23 +129,32 @@ export function createCommerceFulfillmentService(input: {
       let creatorCommissionCredits = quote.creatorCommissionCredits;
 
       if (!originCanExecute) {
-        const profiles = await input.platformProfiles.listSupportAgents({
+        const profiles = await input.platformProfiles.listVisible({
           tenantId: authority.tenantId,
         });
         const candidates = [...profiles].sort((left, right) => {
-          if (left.defaultForNewUsers !== right.defaultForNewUsers) {
-            return left.defaultForNewUsers ? -1 : 1;
+          if (left.sortOrder !== right.sortOrder) {
+            return left.sortOrder - right.sortOrder;
           }
           return left.characterId.localeCompare(right.characterId);
         });
 
         let fallback: (typeof candidates)[number] | null = null;
         for (const candidate of candidates) {
-          const assignment = await input.assignments.readForCharacter({
-            tenantId: authority.tenantId,
-            characterId: candidate.characterId,
-          });
-          if (assignment?.skillVersionIds.includes(offer.skillVersionId)) {
+          const [assignment, ownership] = await Promise.all([
+            input.assignments.readForCharacter({
+              tenantId: authority.tenantId,
+              characterId: candidate.characterId,
+            }),
+            input.ownerships.readForCharacter({
+              tenantId: authority.tenantId,
+              characterId: candidate.characterId,
+            }),
+          ]);
+          if (
+            ownership?.kind === "platform" &&
+            assignment?.skillVersionIds.includes(offer.skillVersionId)
+          ) {
             fallback = candidate;
             break;
           }
