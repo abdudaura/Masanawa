@@ -22,6 +22,9 @@ export interface CommerceRepository {
     readonly tenantId: TenantId;
     readonly key: string;
   }): Promise<OfferRevision | null>;
+  listActiveOffers(input: {
+    readonly tenantId: TenantId;
+  }): Promise<readonly OfferRevision[]>;
   createQuote(input: CommerceQuote): Promise<CommerceQuote>;
   postTransfer(input: CommerceLedgerTransfer): Promise<CommerceLedgerTransfer>;
   readBalance(input: CommerceAccountRef): Promise<number>;
