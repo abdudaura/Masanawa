@@ -52,7 +52,12 @@ export function normalizeCreatePaymentInput(
     throw new Error("nowpayments.amount.invalid");
   }
 
-  const callback = new URL(input.ipnCallbackUrl);
+  let callback: URL;
+  try {
+    callback = new URL(input.ipnCallbackUrl);
+  } catch {
+    throw new Error("nowpayments.ipn_callback.invalid");
+  }
   if (callback.protocol !== "https:") throw new Error("nowpayments.ipn_callback.insecure");
   if (callback.username !== "" || callback.password !== "") {
     throw new Error("nowpayments.ipn_callback.credentials_forbidden");
