@@ -11,6 +11,8 @@ import {
 import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import Type from "typebox";
 import type { BillingFinancialService } from "./financial_billing.js";
+import { CustomerAuthError, type CustomerAuthService } from "./customer_auth.js";
+import type { BillingCheckoutService } from "./billing_checkout.js";
 
 export interface WhatsAppWebhookIngress {
   verifySubscription(query: Readonly<Record<string, unknown>>): string;
@@ -44,6 +46,8 @@ export interface GatewayAppOptions {
   readonly whatsAppIngress?: WhatsAppWebhookIngress;
   readonly telegramIngress?: TelegramWebhookIngress;
   readonly billingFinancial?: BillingFinancialService;
+  readonly customerAuth?: CustomerAuthService;
+  readonly billingCheckout?: BillingCheckoutService;
 }
 
 const HealthResponseSchema = Type.Object(
@@ -193,6 +197,98 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     request.headers["x-correlation-id"] = headers["x-correlation-id"];
     reply.headers(headers);
   });
+
+  if (options.customerAuth) {
+    const auth = options.customerAuth;
+    const authError = (error: unknown, reply: { code(statusCode: number): unknown }) => {
+      if (error instanceof CustomerAuthError) {
+        reply.code(error.statusCode);
+        return { code: error.code, message: error.code };
+      }
+      reply.code(503);
+      return { code: "AUTH_UNAVAILABLE", message: "AUTH_UNAVAILABLE" };
+    };
+
+    app.post(
+      "/auth/otp",
+      {
+        schema: {
+          body: Type.Object(
+            {
+              phone: Type.Optional(Type.String({ minLength: 7, maxLength: 40 })),
+              email: Type.Optional(Type.String({ minLength: 3, maxLength: 320 })),
+            },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request, reply) => {
+        try {
+          return await auth.sendOtp({
+            ...(request.body.phone === undefined ? {} : { phone: request.body.phone }),
+            ...(request.body.email === undefined ? {} : { email: request.body.email }),
+          });
+        } catch (error) {
+          return authError(error, reply);
+        }
+      },
+    );
+
+    app.post(
+      "/auth/verify",
+      {
+        schema: {
+          body: Type.Object(
+            {
+              phone: Type.Optional(Type.String({ minLength: 7, maxLength: 40 })),
+              email: Type.Optional(Type.String({ minLength: 3, maxLength: 320 })),
+              code: Type.String({ minLength: 6, maxLength: 6 }),
+              name: Type.Optional(Type.String({ minLength: 1, maxLength: 160 })),
+            },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request, reply) => {
+        try {
+          return await auth.verifyOtp({
+            ...(request.body.phone === undefined ? {} : { phone: request.body.phone }),
+            ...(request.body.email === undefined ? {} : { email: request.body.email }),
+            code: request.body.code,
+            ...(request.body.name === undefined ? {} : { name: request.body.name }),
+          });
+        } catch (error) {
+          return authError(error, reply);
+        }
+      },
+    );
+
+    app.post(
+      "/auth/refresh",
+      {
+        schema: {
+          body: Type.Object(
+            { refreshToken: Type.String({ minLength: 20, maxLength: 256 }) },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request, reply) => {
+        try {
+          return await auth.refresh({ refreshToken: request.body.refreshToken });
+        } catch (error) {
+          return authError(error, reply);
+        }
+      },
+    );
+
+    app.post("/auth/logout", async (request) => {
+      await auth.logout({
+        authorizationHeader: request.headers.authorization as string | undefined,
+      });
+      return { success: true as const };
+    });
+  }
 
 
   if (options.agentDirectory) {
@@ -700,6 +796,156 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
         return { accepted: true as const };
       },
     );
+  }
+
+
+  if (options.billingCheckout) {
+    const checkout = options.billingCheckout;
+    const billingError = (error: unknown, reply: { code(statusCode: number): unknown }) => {
+      const message = error instanceof Error ? error.message : "";
+      if (message === "financial.auth.unauthorized") {
+        reply.code(401);
+        return { error: "billing_unauthorized" };
+      }
+      if (message === "financial.billing.quote_not_found") {
+        reply.code(404);
+        return { error: "billing_quote_not_found" };
+      }
+      if (
+        message.includes("payment_not_successful") ||
+        message.includes("quote_revision_conflict") ||
+        message.includes("quote_expired") ||
+        message.includes("checkout_not_created")
+      ) {
+        reply.code(409);
+        return { error: message };
+      }
+      if (
+        message.includes("catalog_") ||
+        message.includes("recipient_") ||
+        message.includes("amount_") ||
+        message.includes("phone_invalid")
+      ) {
+        reply.code(400);
+        return { error: message };
+      }
+      reply.code(503);
+      return { error: "billing_checkout_unavailable" };
+    };
+
+    app.post(
+      "/v1/commerce/bills/quotes",
+      {
+        schema: {
+          body: Type.Object(
+            {
+              categoryCode: Type.String({ minLength: 1, maxLength: 128 }),
+              billerCode: Type.String({ minLength: 1, maxLength: 128 }),
+              itemCode: Type.String({ minLength: 1, maxLength: 128 }),
+              customerId: Type.String({ minLength: 1, maxLength: 200 }),
+              amount: Type.String({ minLength: 1, maxLength: 80 }),
+            },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request, reply) => {
+        try {
+          return await checkout.createQuote({
+            authorizationHeader: request.headers.authorization as string | undefined,
+            categoryCode: request.body.categoryCode,
+            billerCode: request.body.billerCode,
+            itemCode: request.body.itemCode,
+            customerId: request.body.customerId,
+            amount: request.body.amount,
+          });
+        } catch (error) {
+          return billingError(error, reply);
+        }
+      },
+    );
+
+    app.get(
+      "/v1/commerce/bills/quotes/:quoteId",
+      {
+        schema: {
+          params: Type.Object(
+            { quoteId: Type.String({ minLength: 1, maxLength: 180 }) },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request, reply) => {
+        try {
+          return await checkout.read({
+            authorizationHeader: request.headers.authorization as string | undefined,
+            quoteId: request.params.quoteId,
+          });
+        } catch (error) {
+          return billingError(error, reply);
+        }
+      },
+    );
+
+    app.post(
+      "/v1/commerce/bills/quotes/:quoteId/checkout",
+      {
+        schema: {
+          params: Type.Object(
+            { quoteId: Type.String({ minLength: 1, maxLength: 180 }) },
+            { additionalProperties: false },
+          ),
+          body: Type.Object(
+            { quoteRevision: Type.Integer({ minimum: 1 }) },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request, reply) => {
+        try {
+          return await checkout.startCheckout({
+            authorizationHeader: request.headers.authorization as string | undefined,
+            quoteId: request.params.quoteId,
+            quoteRevision: request.body.quoteRevision,
+          });
+        } catch (error) {
+          return billingError(error, reply);
+        }
+      },
+    );
+
+    app.post(
+      "/v1/commerce/bills/quotes/:quoteId/verify",
+      {
+        schema: {
+          params: Type.Object(
+            { quoteId: Type.String({ minLength: 1, maxLength: 180 }) },
+            { additionalProperties: false },
+          ),
+          body: Type.Object(
+            { quoteRevision: Type.Integer({ minimum: 1 }) },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request, reply) => {
+        try {
+          return await checkout.verifyAndPurchase({
+            authorizationHeader: request.headers.authorization as string | undefined,
+            quoteId: request.params.quoteId,
+            quoteRevision: request.body.quoteRevision,
+          });
+        } catch (error) {
+          return billingError(error, reply);
+        }
+      },
+    );
+
+    app.get("/billing/return", async (_request, reply) => {
+      return reply
+        .type("text/html; charset=utf-8")
+        .send("<!doctype html><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Masanawa payment</title><main style=\"font-family:system-ui;max-width:560px;margin:64px auto;padding:20px\"><h1>Payment received</h1><p>Return to Masanawa and choose <strong>Verify payment</strong>. Masanawa will independently verify Flutterwave before sending the bill.</p></main>");
+    });
   }
 
 
