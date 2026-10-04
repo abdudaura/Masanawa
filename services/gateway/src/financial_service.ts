@@ -482,7 +482,8 @@ export function createFinancialService(input: {
     }
 
     const qualified = await qualifiedWithdrawalRoutes(auth);
-    const route = qualified?.routes.find((candidate) => candidate.providerCode === providerCode);
+    if (!qualified) throw new Error("financial.crypto.withdrawal_unavailable");
+    const route = qualified.routes.find((candidate) => candidate.providerCode === providerCode);
     if (!route) throw new Error("financial.crypto.withdrawal_unavailable");
 
     const signal = AbortSignal.timeout(15_000);
