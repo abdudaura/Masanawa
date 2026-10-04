@@ -747,9 +747,11 @@ class AiChatController extends Notifier<AiChatState> {
     if (transport == null) throw StateError('Shell actions unavailable');
     final binding = await _bindingFor(characterId, ref.read(agentTransportProvider));
     final session = ref.read(sessionProvider);
-    final userId = session is SessionSignedIn ? session.user.id : 'anonymous';
+    if (session is! SessionSignedIn || session.user.id.isEmpty) {
+      throw StateError('Authentication required for shell actions');
+    }
     final namespace = EncryptedShellActionJournal.namespaceForOwnerSession(
-      ownerId: userId,
+      ownerId: session.user.id,
       sessionId: binding.characterSessionId,
     );
     var coordinator = _actionCoordinators[namespace];
