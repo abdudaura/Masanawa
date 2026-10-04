@@ -151,6 +151,60 @@ class GatewayContractAdapter implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
+
+class RefreshingDirectoryAdapter implements HttpClientAdapter {
+  int calls = 0;
+  final authorization = <String?>[];
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? stream,
+    Future<void>? cancelFuture,
+  ) async {
+    calls += 1;
+    authorization.add(options.headers['Authorization'] as String?);
+    if (calls == 1) {
+      return ResponseBody.fromString(
+        jsonEncode({
+          'error': {'code': 'UNAUTHORIZED', 'message': 'expired'}
+        }),
+        401,
+        headers: {
+          Headers.contentTypeHeader: [Headers.jsonContentType],
+        },
+      );
+    }
+    return ResponseBody.fromString(
+      jsonEncode({
+        'agents': [
+          {
+            'characterId': 'character-1',
+            'characterVersionId': 'version-1',
+            'displayName': 'Amina',
+            'roleLabel': 'Assistant',
+            'about': '',
+            'greeting': null,
+            'presence': 'available',
+            'activeWorkCount': 0,
+            'supportAgent': true,
+            'defaultPlatformAgent': true,
+            'voiceProvider': 'gemini',
+            'voiceName': 'Bodi',
+          }
+        ]
+      }),
+      200,
+      headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
 class RecordingAdapter implements HttpClientAdapter {
   RequestOptions? request;
   @override
@@ -264,6 +318,39 @@ void main() {
     expect(connection.configured, isTrue);
     expect(connection.baseUrl, 'https://nurainworker-production.up.railway.app');
     expect(connection.toString(), isNot(contains('token')));
+  });
+
+  test('Gateway retries once with a rotated platform access token', () async {
+    final adapter = RefreshingDirectoryAdapter();
+    final dio = Dio(
+      BaseOptions(
+        validateStatus: (status) =>
+            status != null && status >= 200 && status < 300,
+      ),
+    );
+    dio.httpClientAdapter = adapter;
+    var token = 'expired-token';
+    var refreshes = 0;
+    final transport = MasanawaAgentDirectoryTransport(
+      dio: dio,
+      baseUrl: 'https://gateway.test',
+      readAccessToken: () => token,
+      refreshAccessToken: () async {
+        refreshes += 1;
+        token = 'fresh-token';
+        return token;
+      },
+    );
+
+    final agents = await transport.loadDirectory();
+
+    expect(agents, hasLength(1));
+    expect(refreshes, 1);
+    expect(adapter.calls, 2);
+    expect(adapter.authorization, [
+      'Bearer expired-token',
+      'Bearer fresh-token',
+    ]);
   });
 
   test(
