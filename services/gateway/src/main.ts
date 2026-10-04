@@ -61,6 +61,7 @@ import {
   createCommerceCatalogService,
   type CommerceUserAuthorizer,
 } from "./commerce_catalog.js";
+import { createCommerceFulfillmentService } from "./commerce_fulfillment.js";
 import type {
   AgentConversationAuthorizer,
 } from "./agent_conversation_contract.js";
@@ -301,6 +302,24 @@ export async function startGatewayService(
         })
       : undefined);
 
+  const composedCommerceFulfillment =
+    options.appOptions?.commerceFulfillment ??
+    (commerceAuthorizer &&
+    database.commerce &&
+    database.ownerships &&
+    database.characterSkillAssignments &&
+    database.platformAgentProfiles &&
+    database.skills
+      ? createCommerceFulfillmentService({
+          authorizer: commerceAuthorizer,
+          commerce: database.commerce,
+          ownerships: database.ownerships,
+          assignments: database.characterSkillAssignments,
+          platformProfiles: database.platformAgentProfiles,
+          skills: database.skills,
+        })
+      : undefined);
+
   const composedCommerceCatalog =
     options.appOptions?.commerceCatalog ??
     (commerceAuthorizer &&
@@ -391,6 +410,9 @@ export async function startGatewayService(
       ...(composedCreatorSkills ? { creatorSkills: composedCreatorSkills } : {}),
       ...(composedCommerceCatalog
         ? { commerceCatalog: composedCommerceCatalog }
+        : {}),
+      ...(composedCommerceFulfillment
+        ? { commerceFulfillment: composedCommerceFulfillment }
         : {}),
       readinessChecks: [
         ...(options.appOptions?.readinessChecks ?? []),
