@@ -138,6 +138,7 @@ export type TeachingRuntimeProjection =
       relationshipId: RelationshipId;
       skillVersionId: SkillVersionId;
       card: TeachingExerciseCard;
+      actionKey: string | null;
     }>
   | Readonly<{
       kind: "artifact";
@@ -489,6 +490,64 @@ export class TeachingRuntimeCoordinator {
       relationshipId: card.relationshipId,
       skillVersionId: card.skillVersionId,
       card,
+      actionKey: null,
+    });
+    await this.#presentation?.publish(projection);
+    return projection;
+  }
+
+  async presentBoundExercise(
+    binding: TeachingRuntimeBinding,
+    cardInput: TeachingExerciseCard,
+    action: TeachingSelectionActionBinding,
+  ): Promise<TeachingRuntimeProjection> {
+    const card = normalizeTeachingExerciseCard(cardInput);
+    assertBindingScope(binding, card.relationshipId, card.skillVersionId);
+
+    if (
+      action.relationshipId !== card.relationshipId ||
+      action.skillVersionId !== card.skillVersionId ||
+      action.lessonStepKey !== card.lessonStepKey ||
+      action.exerciseKey !== card.exerciseKey
+    ) {
+      throw new TypeError(
+        "Teaching exercise card must match the server action binding scope",
+      );
+    }
+
+    const expectedAction = createTeachingSelectionActionBinding({
+      binding,
+      actionKey: action.actionKey,
+      requestId: action.requestId,
+      rubric: action.rubric,
+      expiresAt: action.expiresAt,
+    });
+    if (expectedAction.bindingHash !== action.bindingHash) {
+      throw new TypeError("Teaching action binding hash does not match payload");
+    }
+
+    if (card.kind !== action.rubric.kind) {
+      throw new TypeError(
+        "Teaching exercise card kind must match the server rubric",
+      );
+    }
+    const visible = [...card.options.map((option) => option.optionKey)].sort();
+    const allowed = [...action.rubric.allowedOptionKeys].sort();
+    if (
+      visible.length !== allowed.length ||
+      visible.some((key, index) => key !== allowed[index])
+    ) {
+      throw new TypeError(
+        "Teaching exercise card options must match the server rubric",
+      );
+    }
+
+    const projection = Object.freeze({
+      kind: "exercise" as const,
+      relationshipId: card.relationshipId,
+      skillVersionId: card.skillVersionId,
+      card,
+      actionKey: action.actionKey,
     });
     await this.#presentation?.publish(projection);
     return projection;
