@@ -17,6 +17,7 @@ import {
 } from "@masanawa/commerce";
 import {
   NowPaymentsClient,
+  NowPaymentsCustodyClient,
   NowPaymentsPayoutClient,
   assertAboveMinimum,
   parseVerifiedPaymentIpn,
@@ -212,10 +213,15 @@ function payoutFailed(status: string | null): boolean {
   return status !== null && ["failed", "rejected", "cancelled", "canceled", "expired"].includes(status);
 }
 
-function decimalUnits(value: string): bigint {
-  const normalized = normalizeCryptoAmount(value);
+function decimalUnits(value: string, allowZero = false): bigint {
+  const normalized = value.trim();
+  if (!/^(?:0|[1-9]\d*)(?:\.\d{1,18})?$/u.test(normalized)) {
+    throw new Error("financial.crypto.amount_unavailable");
+  }
   const [whole = "0", fraction = ""] = normalized.split(".");
-  return BigInt(whole + fraction.padEnd(18, "0"));
+  const units = BigInt(whole + fraction.padEnd(18, "0"));
+  if (!allowZero && units <= 0n) throw new Error("financial.crypto.amount_unavailable");
+  return units;
 }
 
 function amountAtLeast(left: string, right: string): boolean {
@@ -226,6 +232,7 @@ export function createFinancialService(input: {
   readonly authorizer: FinancialAuthorizer;
   readonly crypto: CryptoRepository;
   readonly nowPayments: NowPaymentsClient;
+  readonly nowPaymentsCustody?: NowPaymentsCustodyClient;
   readonly nowPaymentsPayout?: NowPaymentsPayoutClient;
   readonly withdrawalEvidence?: () => Promise<{
     readonly account: NowPaymentsAccountEvidence;
@@ -252,7 +259,7 @@ export function createFinancialService(input: {
   }
 
   async function qualifiedWithdrawalRoutes() {
-    if (!input.nowPaymentsPayout || !input.withdrawalEvidence) return null;
+    if (!input.nowPaymentsPayout || !input.nowPaymentsCustody || !input.withdrawalEvidence) return null;
     const evidence = await input.withdrawalEvidence();
     assertFreshAccountEvidence(evidence.account, { now: new Date(now()) });
     for (const capability of ["custody", "customer_management", "payout"] as const) {
@@ -284,14 +291,24 @@ export function createFinancialService(input: {
     if (!route) throw new Error("financial.crypto.withdrawal_unavailable");
 
     const signal = AbortSignal.timeout(15_000);
-    const [validated, fee, minimum] = await Promise.all([
+    const [validated, fee, minimum, balances] = await Promise.all([
       input.nowPaymentsPayout.validateAddress({ currency: providerCode, address, signal }),
       input.nowPaymentsPayout.getPayoutFeeEstimate({ currency: providerCode, amount, signal }),
       input.nowPaymentsPayout.getMinimumPayoutAmount({ currency: providerCode, signal }),
+      input.nowPaymentsCustody.readBalances(signal),
     ]);
     const minimumAmount = normalizeCryptoAmount(minimum.minimumAmount);
     if (!amountAtLeast(amount, minimumAmount)) {
       throw new Error("financial.crypto.withdrawal_below_minimum");
+    }
+    const providerBalance = balances.find((entry) => entry.currency === providerCode);
+    const requiredProviderUnits =
+      decimalUnits(amount) + decimalUnits(fee.fee, true);
+    if (
+      providerBalance === undefined ||
+      decimalUnits(providerBalance.available, true) < requiredProviderUnits
+    ) {
+      throw new Error("financial.crypto.provider_balance_unavailable");
     }
     return Object.freeze({
       providerCode,
