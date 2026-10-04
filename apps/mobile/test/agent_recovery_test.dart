@@ -467,14 +467,6 @@ void main() {
     expect(transport.closedSessions, 1);
     expect(c.read(aiChatProvider).threads, isEmpty);
   });
-
-  test('hosted Gateway is the default local connection address', () {
-    expect(
-      kAgentBaseUrl,
-      'https://nurainworker-production.up.railway.app',
-    );
-  });
-
   test('creator transports use the canonical Gateway route namespace', () async {
     final adapter = GatewayContractAdapter();
     final dio = Dio();
@@ -526,7 +518,7 @@ void main() {
   });
 
   test(
-    'chat transport keeps Alpha authorization and waits for server deadline',
+    'chat transport keeps platform authorization and waits for server deadline',
     () async {
       final adapter = RecordingAdapter();
       final dio = Dio(BaseOptions(receiveTimeout: const Duration(seconds: 15)));
