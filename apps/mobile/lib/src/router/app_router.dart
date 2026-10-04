@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../finance/crypto_wallet_screen.dart';
 import '../screens/chat/ai_chat_screen.dart';
 import '../screens/chat/chat_list_screen.dart';
 import '../screens/chat/masana_list_screen.dart';
@@ -60,6 +61,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path.startsWith('/chat/') ||
           (path == '/agents' || path == '/masana') ||
           path == '/settings' ||
+          path == '/wallet' ||
           path == '/clone' ||
           path == '/profile' ||
           path == '/developer';
@@ -85,6 +87,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/agents', builder: (_, _) => const AgentListScreen()),
       GoRoute(path: '/masana', redirect: (_, __) => '/agents'),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
+      GoRoute(path: '/wallet', builder: (_, _) => const CryptoWalletScreen()),
       GoRoute(path: '/clone', builder: (_, _) => const CloneSetupScreen()),
       GoRoute(path: '/profile', builder: (_, _) => const SettingsScreen()),
       GoRoute(path: '/developer', builder: (_, _) => const DeveloperScreen()),
