@@ -394,7 +394,7 @@ class AiChatController extends Notifier<AiChatState> {
           sizeBytes: audio.length,
         );
       }
-      _appendAi(
+      await _appendAi(
         characterId,
         result.text,
         parts: result.parts,
@@ -414,7 +414,7 @@ class AiChatController extends Notifier<AiChatState> {
       }
       _setDelivery(characterId, userMsg.id, 'failed');
       final feedback = AgentFeedback.fromError(error, conversation: true);
-      _appendAi(
+      await _appendAi(
         characterId,
         feedback.message,
         parts: [
@@ -535,7 +535,7 @@ class AiChatController extends Notifier<AiChatState> {
     return binding;
   }
 
-  void _appendAi(
+  Future<void> _appendAi(
     String characterId,
     String text, {
     List<AgentMessagePart> parts = const [],
@@ -568,8 +568,8 @@ class AiChatController extends Notifier<AiChatState> {
       },
       sendingIn: sending,
     );
-    _save();
-    unawaited(_streamReply(characterId, id, text));
+    await _save();
+    await _streamReply(characterId, id, text);
   }
 
   Future<void> _streamReply(
@@ -659,7 +659,7 @@ class AiChatController extends Notifier<AiChatState> {
     if (!kDebugMode) {
       throw StateError('Scenario injection is debug-only');
     }
-    _appendAi(characterId, text, parts: [part]);
+    unawaited(_appendAi(characterId, text, parts: [part]));
   }
 
   void setDraft(String characterId, String value) {
