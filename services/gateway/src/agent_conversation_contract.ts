@@ -47,6 +47,9 @@ export interface AgentConversationService {
     readonly reply: string;
     readonly agentRunId: string;
     readonly parts: readonly unknown[];
+    readonly audioBase64?: string;
+    readonly audioMimeType?: string;
+    readonly audioDurationMs?: number;
   }>;
 
   mediaTurn(input: {
@@ -62,6 +65,9 @@ export interface AgentConversationService {
     readonly reply: string;
     readonly agentRunId: string;
     readonly parts: readonly unknown[];
+    readonly audioBase64?: string;
+    readonly audioMimeType?: string;
+    readonly audioDurationMs?: number;
   }>;
 
   close(input: {
