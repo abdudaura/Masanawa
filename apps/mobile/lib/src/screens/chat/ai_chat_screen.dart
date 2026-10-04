@@ -909,30 +909,19 @@ class _Composer extends StatelessWidget {
                   child: SizedBox(
                     width: 52,
                     height: 52,
-                    child: sending
-                        ? const Center(
-                            child: SizedBox(
-                              width: 19,
-                              height: 19,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            ),
-                          )
-                        : AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 160),
-                            child: Icon(
-                              sending
-                                  ? Icons.stop_rounded
-                                  : hasText
-                                  ? Icons.send_rounded
-                                  : Icons.mic_rounded,
-                              key: ValueKey(hasText),
-                              color: Colors.white,
-                              size: 23,
-                            ),
-                          ),
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 160),
+                      child: Icon(
+                        sending
+                            ? Icons.stop_rounded
+                            : hasText
+                            ? Icons.send_rounded
+                            : Icons.mic_rounded,
+                        key: ValueKey('$sending-$hasText'),
+                        color: Colors.white,
+                        size: 23,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -975,76 +964,273 @@ class _ComposerIcon extends StatelessWidget {
 class _RecordingBar extends StatelessWidget {
   const _RecordingBar({
     required this.clock,
+    required this.amplitudes,
+    required this.recording,
+    required this.paused,
+    required this.locked,
     required this.onDelete,
+    required this.onPause,
+    required this.onStop,
     required this.onSend,
+    required this.onCancelSwipe,
+    required this.onLockSwipe,
   });
 
   final String clock;
+  final List<double> amplitudes;
+  final bool recording;
+  final bool paused;
+  final bool locked;
   final VoidCallback onDelete;
-  final VoidCallback onSend;
+  final VoidCallback? onPause;
+  final VoidCallback? onStop;
+  final VoidCallback? onSend;
+  final VoidCallback onCancelSwipe;
+  final VoidCallback onLockSwipe;
 
   @override
   Widget build(BuildContext context) {
     final u = context.masanawa;
     return SafeArea(
       top: false,
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(8, 6, 8, 8),
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-        decoration: BoxDecoration(
-          color: u.surfaceCard,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: u.structuralBorder),
-        ),
-        child: Row(
-          children: [
-            IconButton(
-              tooltip: 'Delete recording',
-              icon: const Icon(Icons.delete_outline),
-              onPressed: onDelete,
-            ),
-            Container(
-              width: 10,
-              height: 10,
-              decoration: const BoxDecoration(
-                color: Colors.red,
-                shape: BoxShape.circle,
+      child: GestureDetector(
+        onHorizontalDragEnd: locked
+            ? null
+            : (details) {
+                if ((details.primaryVelocity ?? 0) < -250) onCancelSwipe();
+              },
+        onVerticalDragEnd: locked
+            ? null
+            : (details) {
+                if ((details.primaryVelocity ?? 0) < -250) onLockSwipe();
+              },
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+          decoration: BoxDecoration(
+            color: u.surfaceCard,
+            borderRadius: BorderRadius.circular(26),
+            border: Border.all(color: u.structuralBorder),
+          ),
+          child: Row(
+            children: [
+              IconButton(
+                tooltip: 'Delete recording',
+                icon: const Icon(Icons.delete_outline),
+                onPressed: onDelete,
               ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              clock,
-              style: TextStyle(
-                color: u.textPrimary,
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const Spacer(),
-            GestureDetector(
-              onTap: onSend,
-              child: Container(
-                width: 44,
-                height: 44,
+              if (recording)
+                Icon(
+                  locked ? Icons.lock : Icons.lock_open,
+                  size: 17,
+                  color: u.textMuted,
+                ),
+              if (recording) const SizedBox(width: 6),
+              Container(
+                width: 9,
+                height: 9,
                 decoration: BoxDecoration(
-                  color: u.brand,
+                  color: recording && !paused ? Colors.red : u.textMuted,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.send, color: Colors.white, size: 20),
               ),
-            ),
-          ],
+              const SizedBox(width: 7),
+              Text(
+                clock,
+                style: TextStyle(
+                  color: u.textPrimary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: SizedBox(
+                  height: 32,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      for (final value in amplitudes.take(28))
+                        Container(
+                          width: 2,
+                          height: 4 + (value * 22),
+                          decoration: BoxDecoration(
+                            color: u.brand.withValues(alpha: .75),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      if (amplitudes.isEmpty)
+                        Text(
+                          recording
+                              ? (locked ? 'Locked recording' : '← cancel   ↑ lock')
+                              : 'Voice note ready',
+                          style: TextStyle(color: u.textMuted, fontSize: 11),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              if (onPause != null)
+                IconButton(
+                  tooltip: paused ? 'Resume' : 'Pause',
+                  icon: Icon(paused ? Icons.mic : Icons.pause),
+                  onPressed: onPause,
+                ),
+              if (onStop != null)
+                IconButton(
+                  tooltip: 'Preview',
+                  icon: const Icon(Icons.stop_circle_outlined),
+                  onPressed: onStop,
+                ),
+              if (onSend != null)
+                Material(
+                  color: u.brand,
+                  shape: const CircleBorder(),
+                  child: IconButton(
+                    tooltip: 'Send voice note',
+                    icon: const Icon(Icons.send_rounded, color: Colors.white),
+                    onPressed: onSend,
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _ChatBubble extends StatelessWidget {
-  const _ChatBubble({required this.message, this.onRetry});
+class _ReplyComposerPreview extends StatelessWidget {
+  const _ReplyComposerPreview({
+    required this.message,
+    required this.onClose,
+  });
 
   final AiChatMessage message;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    final preview = message.text.isNotEmpty
+        ? message.text
+        : message.attachment?.label ?? 'Message';
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+      padding: const EdgeInsets.fromLTRB(10, 7, 4, 7),
+      decoration: BoxDecoration(
+        color: u.surfaceCard,
+        borderRadius: BorderRadius.circular(10),
+        border: Border(
+          left: BorderSide(color: u.brand, width: 3),
+          top: BorderSide(color: u.structuralBorder),
+          right: BorderSide(color: u.structuralBorder),
+          bottom: BorderSide(color: u.structuralBorder),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              preview,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: u.textMuted, fontSize: 12.5),
+            ),
+          ),
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(Icons.close, size: 18),
+            onPressed: onClose,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ChatBubble extends StatelessWidget {
+  const _ChatBubble({
+    required this.message,
+    required this.onReply,
+    required this.onReact,
+    required this.onDelete,
+    required this.onCopy,
+    this.onEdit,
+    this.onRetry,
+  });
+
+  final AiChatMessage message;
+  final VoidCallback onReply;
+  final ValueChanged<String> onReact;
+  final VoidCallback onDelete;
+  final VoidCallback onCopy;
+  final VoidCallback? onEdit;
   final VoidCallback? onRetry;
+
+  Future<void> _showActions(BuildContext context) async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.reply),
+              title: const Text('Reply'),
+              onTap: () => Navigator.pop(sheetContext, 'reply'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.copy_outlined),
+              title: const Text('Copy'),
+              onTap: () => Navigator.pop(sheetContext, 'copy'),
+            ),
+            if (onEdit != null)
+              ListTile(
+                leading: const Icon(Icons.edit_outlined),
+                title: const Text('Edit'),
+                onTap: () => Navigator.pop(sheetContext, 'edit'),
+              ),
+            ListTile(
+              leading: const Icon(Icons.forward_outlined),
+              title: const Text('Forward / share text'),
+              onTap: () => Navigator.pop(sheetContext, 'share'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_outline),
+              title: const Text('Delete'),
+              onTap: () => Navigator.pop(sheetContext, 'delete'),
+            ),
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  for (final emoji in const ['👍', '❤️', '😂', '😮', '😢', '🙏'])
+                    InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () => Navigator.pop(sheetContext, 'react:$emoji'),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Text(emoji, style: const TextStyle(fontSize: 24)),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (action == null) return;
+    if (action == 'reply') onReply();
+    if (action == 'copy' || action == 'share') onCopy();
+    if (action == 'edit') onEdit?.call();
+    if (action == 'delete') onDelete();
+    if (action.startsWith('react:')) onReact(action.substring(6));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1057,67 +1243,148 @@ class _ChatBubble extends StatelessWidget {
     final attachment = message.attachment;
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 3),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.78,
-        ),
-        decoration: BoxDecoration(
-          // Token-driven user bubble: success tint over card, no raw hex.
-          color: isUser
-              ? Color.lerp(u.surfaceCard, u.success, 0.18)!
-              : u.surfaceCard,
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(14),
-            topRight: const Radius.circular(14),
-            bottomLeft: Radius.circular(isUser ? 14 : 4),
-            bottomRight: Radius.circular(isUser ? 4 : 14),
-          ),
-          border: isUser ? null : Border.all(color: u.structuralBorder),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
+      child: GestureDetector(
+        onLongPress: () => _showActions(context),
+        onHorizontalDragEnd: (details) {
+          if ((details.primaryVelocity ?? 0) > 250) onReply();
+        },
+        child: Stack(
+          clipBehavior: Clip.none,
           children: [
-            if (attachment != null) ...[
-              _AttachmentView(attachment: attachment),
-              if (message.text.isNotEmpty) const SizedBox(height: 6),
-            ],
-            if (message.text.isNotEmpty)
-              Text(
-                message.text,
-                style: TextStyle(
-                  color: u.textPrimary,
-                  fontSize: 15,
-                  height: 1.4,
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 3),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.82,
+              ),
+              decoration: BoxDecoration(
+                color: isUser
+                    ? Color.lerp(u.surfaceCard, u.success, 0.18)!
+                    : u.surfaceCard,
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(14),
+                  topRight: const Radius.circular(14),
+                  bottomLeft: Radius.circular(isUser ? 14 : 4),
+                  bottomRight: Radius.circular(isUser ? 4 : 14),
                 ),
+                border: isUser ? null : Border.all(color: u.structuralBorder),
               ),
-            if (message.parts.any((p) => p != failure))
-              MessagePartsView(
-                parts: message.parts.where((p) => p != failure).toList(),
-              ),
-            if (failure != null)
-              TextButton.icon(
-                onPressed: onRetry,
-                icon: const Icon(Icons.refresh, size: 18),
-                label: Text(failure.actionLabel ?? 'Try again'),
-              ),
-            const SizedBox(height: 3),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Text(
-                  formatClock(message.createdAt),
-                  style: TextStyle(color: u.textMuted, fontSize: 10.5),
-                ),
-                if (isUser) ...[
-                  const SizedBox(width: 3),
-                  Icon(Icons.done_all, size: 14, color: u.textMuted),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (message.replyPreview case final preview?
+                      when preview.trim().isNotEmpty)
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 7),
+                      padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+                      decoration: BoxDecoration(
+                        color: u.surfaceBg.withValues(alpha: .65),
+                        borderRadius: BorderRadius.circular(7),
+                        border: Border(left: BorderSide(color: u.brand, width: 3)),
+                      ),
+                      child: Text(
+                        preview,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: u.textMuted, fontSize: 12),
+                      ),
+                    ),
+                  if (message.deleted)
+                    Text(
+                      'This message was deleted',
+                      style: TextStyle(
+                        color: u.textMuted,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    )
+                  else ...[
+                    if (attachment != null) ...[
+                      _AttachmentView(attachment: attachment),
+                      if (message.text.isNotEmpty) const SizedBox(height: 6),
+                    ],
+                    if (message.text.isNotEmpty)
+                      SelectableText(
+                        message.text,
+                        style: TextStyle(
+                          color: u.textPrimary,
+                          fontSize: 15,
+                          height: 1.4,
+                        ),
+                      ),
+                    if (message.parts.any((p) => p != failure))
+                      MessagePartsView(
+                        parts: message.parts.where((p) => p != failure).toList(),
+                      ),
+                  ],
+                  if (failure != null)
+                    TextButton.icon(
+                      onPressed: onRetry,
+                      icon: const Icon(Icons.refresh, size: 18),
+                      label: Text(failure.actionLabel ?? 'Try again'),
+                    ),
+                  const SizedBox(height: 3),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (message.editedAt != null)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 4),
+                          child: Text(
+                            'edited',
+                            style: TextStyle(color: u.textMuted, fontSize: 10),
+                          ),
+                        ),
+                      Text(
+                        formatClock(message.createdAt),
+                        style: TextStyle(color: u.textMuted, fontSize: 10.5),
+                      ),
+                      if (message.deliveryStatus == 'streaming') ...[
+                        const SizedBox(width: 4),
+                        SizedBox(
+                          width: 9,
+                          height: 9,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 1.5,
+                            color: u.brand,
+                          ),
+                        ),
+                      ],
+                      if (isUser) ...[
+                        const SizedBox(width: 3),
+                        Icon(
+                          message.deliveryStatus == 'sending'
+                              ? Icons.schedule
+                              : message.deliveryStatus == 'failed'
+                              ? Icons.error_outline
+                              : Icons.done_all,
+                          size: 14,
+                          color: message.deliveryStatus == 'failed'
+                              ? Colors.red
+                              : u.textMuted,
+                        ),
+                      ],
+                    ],
+                  ),
                 ],
-              ],
+              ),
             ),
+            if ((message.reaction ?? '').isNotEmpty)
+              Positioned(
+                right: isUser ? 8 : null,
+                left: isUser ? null : 8,
+                bottom: -6,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: u.surfaceCard,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: u.structuralBorder),
+                  ),
+                  child: Text(message.reaction!, style: const TextStyle(fontSize: 14)),
+                ),
+              ),
           ],
         ),
       ),
