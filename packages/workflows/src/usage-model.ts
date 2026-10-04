@@ -49,3 +49,31 @@ export interface WorkflowUsageTotals {
   readonly costMicros: number;
   readonly latencyMs: number;
 }
+
+
+export interface WorkflowOperatorSummary {
+  readonly tenantId: TenantId;
+  readonly workflowRunId: WorkflowRunId;
+  readonly workflowVersionId: string;
+  readonly graphSignature: string;
+  readonly runState: string;
+  readonly runRevision: number;
+  readonly taskStates: Readonly<{
+    readonly pending: number;
+    readonly ready: number;
+    readonly running: number;
+    readonly waiting: number;
+    readonly completed: number;
+    readonly failed: number;
+    readonly cancelled: number;
+  }>;
+  readonly retryDispositions: Readonly<{
+    readonly retryScheduled: number;
+    readonly retryReady: number;
+    readonly deadLetter: number;
+    readonly needsAttention: number;
+  }>;
+  readonly pendingHumanRequests: number;
+  readonly operationStates: Readonly<Record<string, number>>;
+  readonly usage: WorkflowUsageTotals;
+}
