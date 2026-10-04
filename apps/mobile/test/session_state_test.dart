@@ -200,8 +200,9 @@ void main() {
 
     final updated = container.read(sessionProvider);
     expect(updated, isA<SessionSignedIn>());
-    expect((updated as SessionSignedIn).user.name, 'Ada Obi');
-    expect(updated.user.isNewUser, isFalse);
+    final signedIn = updated as SessionSignedIn;
+    expect(signedIn.user.name, 'Ada Obi');
+    expect(signedIn.user.isNewUser, isFalse);
     expect(api.accessToken, 'a3');
   });
 
