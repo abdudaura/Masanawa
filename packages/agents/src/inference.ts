@@ -119,13 +119,21 @@ export async function generateAgentInference(
   request: AgentInferenceRequest,
   configuredLimits: Partial<AgentInferenceLimits> = {},
   onTextDelta?: (delta: string) => void | Promise<void>,
+  externalSignal?: AbortSignal,
 ): Promise<AgentInferenceResult> {
   const limits = normalizeAgentInferenceLimits(configuredLimits);
   const snapshot = snapshotAgentInferenceRequest(request);
   const controller = new AbortController();
   const startedAt = performance.now();
   let timedOut = false;
+  let externallyAborted = false;
   let timer!: ReturnType<typeof setTimeout>;
+  const abortFromClient = () => {
+    externallyAborted = true;
+    controller.abort();
+  };
+  if (externalSignal?.aborted) abortFromClient();
+  else externalSignal?.addEventListener("abort", abortFromClient, { once: true });
   const deadline = new Promise<never>((_resolve, reject) => {
     timer = setTimeout(() => {
       timedOut = true; controller.abort();
@@ -134,16 +142,31 @@ export async function generateAgentInference(
   });
   let result: AgentInferenceResult;
   try {
-    result = await Promise.race([provider.generate(snapshot, Object.freeze({
-      signal: controller.signal,
-      maxOutputTokens: limits.maxOutputTokens,
-      ...(onTextDelta ? { onTextDelta } : {}),
-    })), deadline]);
+    if (externallyAborted) {
+      throw new AgentInferenceError("inference.unavailable");
+    }
+    const cancelled = new Promise<never>((_resolve, reject) => {
+      if (!externalSignal) return;
+      const onAbort = () =>
+        reject(new AgentInferenceError("inference.unavailable"));
+      if (externalSignal.aborted) onAbort();
+      else externalSignal.addEventListener("abort", onAbort, { once: true });
+    });
+    result = await Promise.race([
+      provider.generate(snapshot, Object.freeze({
+        signal: controller.signal,
+        maxOutputTokens: limits.maxOutputTokens,
+        ...(onTextDelta ? { onTextDelta } : {}),
+      })),
+      deadline,
+      cancelled,
+    ]);
     if (timedOut || performance.now() - startedAt >= limits.timeoutMs) {
       controller.abort(); throw new AgentInferenceError("inference.deadline_exceeded");
     }
   } catch (error) {
     if (timedOut) throw new AgentInferenceError("inference.deadline_exceeded");
+    if (externallyAborted) throw new AgentInferenceError("inference.unavailable");
     if (error instanceof AgentInferenceError) {
       // Reconstruct from an allowlist rather than trusting mutable error metadata.
       if ((agentInferenceFailureCodes as readonly string[]).includes(error.code)) {
@@ -153,6 +176,7 @@ export async function generateAgentInference(
     throw new AgentInferenceError("inference.unavailable");
   } finally {
     clearTimeout(timer);
+    externalSignal?.removeEventListener("abort", abortFromClient);
   }
   try {
     const text = result?.text;
