@@ -263,6 +263,7 @@ describe("Core Teaching cross-channel acceptance", () => {
     const whatsappSelection = resolveTeachingChannelSelection({
       selectionId: "tch_cb_fractions_six_1",
       binding: selectedBinding!,
+      action,
       now: toInstant("2026-10-04T17:00:10.000Z"),
     });
     const retry = await whatsapp.submitOpaqueSelection({
