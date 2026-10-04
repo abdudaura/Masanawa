@@ -6,6 +6,7 @@ import {
 } from "@masanawa/contracts";
 import {
   createTeachingRuntimeBinding,
+  createTeachingSelectionActionBinding,
   TeachingRuntimeCoordinator,
   type TeachingProgressKey,
   type TeachingProgressPort,
@@ -154,20 +155,24 @@ describe("Core Teaching cross-channel acceptance", () => {
     });
 
     const requestId = createCanonicalId("request");
+    const action = createTeachingSelectionActionBinding({
+      binding: binding(active),
+      actionKey: "teach.action.common-denominator.1",
+      requestId,
+      rubric: rubric(active),
+      expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
+    });
     surfaces.failNext = true;
     await expect(
-      app.submitSelection(binding(active), {
-        requestId,
-        plan: active,
-        rubric: rubric(active),
-        submission: {
-          relationshipId: active.learner.relationshipId,
-          skillVersionId: active.skillVersionId,
-          lessonStepKey: "common-denominator",
-          exerciseKey: "common-denominator-choice",
+      app.submitOpaqueSelection({
+        binding: binding(active),
+        action,
+        selection: {
+          actionKey: action.actionKey,
           selectedOptionKeys: ["six"],
         },
-        recordedAt: toInstant("2026-10-04T17:00:00.000Z"),
+        plan: active,
+        now: toInstant("2026-10-04T17:00:00.000Z"),
       }),
     ).rejects.toThrow(/lost delivery response/);
 
@@ -183,18 +188,15 @@ describe("Core Teaching cross-channel acceptance", () => {
       progress: durable,
       presentation: surfaces.adapter("whatsapp"),
     });
-    const retry = await whatsapp.submitSelection(binding(active), {
-      requestId,
-      plan: active,
-      rubric: rubric(active),
-      submission: {
-        relationshipId: active.learner.relationshipId,
-        skillVersionId: active.skillVersionId,
-        lessonStepKey: "common-denominator",
-        exerciseKey: "common-denominator-choice",
+    const retry = await whatsapp.submitOpaqueSelection({
+      binding: binding(active),
+      action,
+      selection: {
+        actionKey: action.actionKey,
         selectedOptionKeys: ["six"],
       },
-      recordedAt: toInstant("2026-10-04T17:00:10.000Z"),
+      plan: active,
+      now: toInstant("2026-10-04T17:00:10.000Z"),
     });
     expect(retry).toMatchObject({
       kind: "feedback",
@@ -265,34 +267,35 @@ describe("Core Teaching cross-channel acceptance", () => {
     const app = new TeachingRuntimeCoordinator({ progress: durable });
     const requestId = createCanonicalId("request");
 
-    await app.submitSelection(binding(active), {
+    const action = createTeachingSelectionActionBinding({
+      binding: binding(active),
+      actionKey: "teach.action.common-denominator.2",
       requestId,
-      plan: active,
       rubric: rubric(active),
-      submission: {
-        relationshipId: active.learner.relationshipId,
-        skillVersionId: active.skillVersionId,
-        lessonStepKey: "common-denominator",
-        exerciseKey: "common-denominator-choice",
+      expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
+    });
+    await app.submitOpaqueSelection({
+      binding: binding(active),
+      action,
+      selection: {
+        actionKey: action.actionKey,
         selectedOptionKeys: ["six"],
       },
-      recordedAt: toInstant("2026-10-04T17:00:00.000Z"),
+      plan: active,
+      now: toInstant("2026-10-04T17:00:00.000Z"),
     });
 
     const whatsapp = new TeachingRuntimeCoordinator({ progress: durable });
     await expect(
-      whatsapp.submitSelection(binding(active), {
-        requestId,
-        plan: active,
-        rubric: rubric(active),
-        submission: {
-          relationshipId: active.learner.relationshipId,
-          skillVersionId: active.skillVersionId,
-          lessonStepKey: "common-denominator",
-          exerciseKey: "common-denominator-choice",
+      whatsapp.submitOpaqueSelection({
+        binding: binding(active),
+        action,
+        selection: {
+          actionKey: action.actionKey,
           selectedOptionKeys: ["five"],
         },
-        recordedAt: toInstant("2026-10-04T17:01:00.000Z"),
+        plan: active,
+        now: toInstant("2026-10-04T17:01:00.000Z"),
       }),
     ).rejects.toThrow(/payload conflict/);
 
