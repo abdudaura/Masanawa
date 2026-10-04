@@ -269,12 +269,15 @@ export async function startGatewayService(
   const nowPaymentsIpnSecret = env.NOWPAYMENTS_IPN_SECRET?.trim();
   const payoutEmail = env.NOWPAYMENTS_PAYOUT_EMAIL?.trim();
   const payoutPassword = env.NOWPAYMENTS_PAYOUT_PASSWORD?.trim();
-  const publicBaseUrl =
+  const rawPublicBaseUrl =
     env.MASANAWA_PUBLIC_BASE_URL?.trim() ||
     env.RAILWAY_STATIC_URL?.trim() ||
-    (env.RAILWAY_PUBLIC_DOMAIN?.trim()
-      ? `https://${env.RAILWAY_PUBLIC_DOMAIN.trim()}`
-      : undefined);
+    env.RAILWAY_PUBLIC_DOMAIN?.trim();
+  const publicBaseUrl = rawPublicBaseUrl
+    ? (/^https?:\/\//iu.test(rawPublicBaseUrl)
+        ? rawPublicBaseUrl
+        : `https://${rawPublicBaseUrl}`)
+    : undefined;
 
   const composedFinancial =
     options.appOptions?.financial ??
