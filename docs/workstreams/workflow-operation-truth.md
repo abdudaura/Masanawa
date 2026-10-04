@@ -1,6 +1,6 @@
 # Workstream claim — workflow-operation-truth
 
-Status: active
+Status: implementation complete; PostgreSQL verification evidence pending
 Owner: this isolated stacked workstream
 Started: 2026-10-04 20:28 Africa/Lagos
 Base: work/workflow-human-requests-20261004 @ 18016eebbd1631ea699212f9e2d2fcb197ff5e2f
@@ -42,3 +42,24 @@ Do not modify canonical events Operation/receipt/reconciliation implementations 
 - cross-Tenant/Task binding is rejected.
 
 Task 093 remains open until PostgreSQL acceptance executes and canonical task evidence advances.
+
+
+## Implementation handoff
+
+Implemented in draft PR #117.
+
+Delivered:
+
+- immutable Task↔Operation binding contracts;
+- semantic replay fingerprint excluding audit timestamp;
+- exact Task/Run/WorkflowVersion/graph persistence binding;
+- database cross-Tenant Operation guard;
+- one Operation per Task role and one workflow binding per Operation;
+- live canonical Operation state projection;
+- ExternalReceiptId-only projection;
+- active reconciliation projection;
+- deterministic pending/succeeded/failed/reconciliation-required/needs-attention mapping;
+- focused unit and PostgreSQL acceptance coverage.
+
+Canonical Events/Provider operation, receipt and reconciliation implementations
+remain untouched and authoritative.
