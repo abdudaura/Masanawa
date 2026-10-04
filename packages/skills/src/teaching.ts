@@ -21,6 +21,7 @@ import {
   type SkillProvenance,
   type SkillVersion,
 } from "./model.js";
+import { normalizeSkillResourcePath } from "./manifest.js";
 
 export const teachingLevels = [
   "beginner",
@@ -108,6 +109,42 @@ export interface TeachingProgressHandoff {
   readonly nextSteps: readonly string[];
   readonly recordedAt: Instant;
 }
+
+export const teachingExerciseKinds = [
+  "free-response",
+  "single-select",
+  "multi-select",
+] as const;
+export type TeachingExerciseKind = (typeof teachingExerciseKinds)[number];
+
+export interface TeachingExerciseOption {
+  readonly optionKey: string;
+  readonly label: string;
+}
+
+export interface TeachingExerciseCard {
+  readonly relationshipId: RelationshipId;
+  readonly skillVersionId: SkillVersionId;
+  readonly lessonStepKey: string;
+  readonly exerciseKey: string;
+  readonly prompt: string;
+  readonly kind: TeachingExerciseKind;
+  readonly options: readonly TeachingExerciseOption[];
+}
+
+export type TeachingSubjectReference =
+  | Readonly<{
+      referenceKey: string;
+      kind: "resource";
+      resourcePath: string;
+      skillVersionId: null;
+    }>
+  | Readonly<{
+      referenceKey: string;
+      kind: "subskill";
+      resourcePath: null;
+      skillVersionId: SkillVersionId;
+    }>;
 
 const keyPattern = /^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u;
 const sha256Pattern = /^sha256:[0-9a-f]{64}$/u;
@@ -346,6 +383,81 @@ export function normalizeTeachingProgressHandoff(
     nextSteps: boundedList(input.nextSteps, "teaching.progress.nextSteps", 32, 1000),
     recordedAt: toInstant(input.recordedAt),
   });
+}
+
+
+export function normalizeTeachingExerciseCard(
+  input: TeachingExerciseCard,
+): TeachingExerciseCard {
+  if (!isCanonicalId("relationship", input.relationshipId)) {
+    throw new TypeError("teaching exercise relationshipId is invalid");
+  }
+  if (!isCanonicalId("skill-version", input.skillVersionId)) {
+    throw new TypeError("teaching exercise skillVersionId is invalid");
+  }
+  const kind = oneOf(input.kind, teachingExerciseKinds, "teaching.exercise.kind");
+  if (!Array.isArray(input.options) || input.options.length > 20) {
+    throw new RangeError("teaching.exercise.options is invalid");
+  }
+  if (kind === "free-response" && input.options.length !== 0) {
+    throw new TypeError("free-response teaching exercises cannot expose options");
+  }
+  if (kind !== "free-response" && input.options.length < 2) {
+    throw new TypeError("selectable teaching exercises require at least two options");
+  }
+  const options = input.options.map((option) =>
+    Object.freeze({
+      optionKey: normalizeKey(option.optionKey, "teaching.exercise.optionKey"),
+      label: bounded(option.label, "teaching.exercise.optionLabel", 1000),
+    }),
+  );
+  if (new Set(options.map((option) => option.optionKey)).size !== options.length) {
+    throw new TypeError("teaching exercise option keys must be unique");
+  }
+  return Object.freeze({
+    relationshipId: input.relationshipId,
+    skillVersionId: input.skillVersionId,
+    lessonStepKey: normalizeKey(input.lessonStepKey, "teaching.exercise.lessonStepKey"),
+    exerciseKey: normalizeKey(input.exerciseKey, "teaching.exercise.exerciseKey"),
+    prompt: bounded(input.prompt, "teaching.exercise.prompt", 4000),
+    kind,
+    options: Object.freeze(options),
+  });
+}
+
+export function normalizeTeachingSubjectReference(
+  input: TeachingSubjectReference,
+): TeachingSubjectReference {
+  const referenceKey = normalizeKey(
+    input.referenceKey,
+    "teaching.subjectReference.referenceKey",
+  );
+  if (input.kind === "resource") {
+    if (input.skillVersionId !== null) {
+      throw new TypeError("teaching resource reference cannot carry a SkillVersionId");
+    }
+    return Object.freeze({
+      referenceKey,
+      kind: "resource" as const,
+      resourcePath: normalizeSkillResourcePath(input.resourcePath),
+      skillVersionId: null,
+    });
+  }
+  if (input.kind === "subskill") {
+    if (input.resourcePath !== null) {
+      throw new TypeError("teaching subskill reference cannot carry a resource path");
+    }
+    if (!isCanonicalId("skill-version", input.skillVersionId)) {
+      throw new TypeError("teaching subskill SkillVersionId is invalid");
+    }
+    return Object.freeze({
+      referenceKey,
+      kind: "subskill" as const,
+      resourcePath: null,
+      skillVersionId: input.skillVersionId,
+    });
+  }
+  throw new TypeError("teaching subject reference kind is invalid");
 }
 
 
