@@ -698,60 +698,81 @@ export function createPostgresCryptoRepository(pool: Pool): CryptoRepository {
         if (!current || current.operation !== "convert" || current.targetAsset === null) {
           throw new Error("crypto.convert.intent_unavailable");
         }
-        if (
-          current.providerConversionId !== null &&
-          current.providerConversionId !== undefined
-        ) {
-          if (input.providerReference !== current.providerConversionId) {
-            throw new Error("crypto.provider_conversion.intent_mismatch");
-          }
-        } else if (input.providerReference !== null) {
+
+        const boundProviderReference = current.providerConversionId ?? null;
+        if (boundProviderReference !== input.providerReference) {
           throw new Error("crypto.provider_conversion.intent_mismatch");
         }
-        const targetAmount = input.succeeded
-          ? input.targetAmount === null
-            ? (() => { throw new Error("crypto.convert.target_amount_required"); })()
-            : decimal(input.targetAmount)
-          : input.targetAmount === null
-            ? null
-            : (() => { throw new Error("crypto.convert.target_amount_unexpected"); })();
-        if (input.succeeded && (current.providerConversionId ?? null) === null) {
-          throw new Error("crypto.provider_conversion.unbound");
+
+        if (input.succeeded) {
+          if (input.targetAmount === null) {
+            throw new Error("crypto.convert.target_amount_required");
+          }
+          if (boundProviderReference === null) {
+            throw new Error("crypto.provider_conversion.unbound");
+          }
+          const targetAmount = decimal(input.targetAmount);
+
+          if (current.status === "succeeded" || current.status === "failed") {
+            if (
+              current.status !== "succeeded" ||
+              (current.providerTargetAmount ?? null) !== targetAmount
+            ) {
+              throw new Error("crypto.convert.terminal_conflict");
+            }
+            return current;
+          }
+
+          await postLedger(client, {
+            tenantId: current.tenantId,
+            userId: current.userId,
+            requestId: current.requestId,
+            asset: current.targetAsset,
+            network: current.targetNetwork ?? null,
+            amount: targetAmount,
+            direction: "credit",
+            reason: "conversion-credit",
+            providerReference: input.providerReference,
+            createdAt: input.updatedAt,
+          });
+          return updateIntentWithClient(client, {
+            ...current,
+            providerTargetAmount: targetAmount,
+            status: "succeeded",
+            updatedAt: input.updatedAt,
+          });
+        }
+
+        if (input.targetAmount !== null) {
+          throw new Error("crypto.convert.target_amount_unexpected");
         }
         if (current.status === "succeeded" || current.status === "failed") {
-          if (
-            (current.status === "succeeded" && !input.succeeded) ||
-            (current.status === "failed" && input.succeeded) ||
-            (current.status === "succeeded" &&
-              (current.providerTargetAmount ?? null) !== targetAmount)
-          ) {
+          if (current.status !== "failed") {
             throw new Error("crypto.convert.terminal_conflict");
           }
           return current;
         }
-        if (input.succeeded) {
-          await postLedger(client, {
-            tenantId: current.tenantId, userId: current.userId, requestId: current.requestId,
-            asset: current.targetAsset, network: current.targetNetwork ?? null,
-            amount: targetAmount, direction: "credit", reason: "conversion-credit",
-            providerReference: input.providerReference, createdAt: input.updatedAt,
-          });
-        } else {
-          await postLedger(client, {
-            tenantId: current.tenantId, userId: current.userId, requestId: current.requestId,
-            asset: current.asset, network: current.network, amount: current.amount,
-            direction: "credit", reason: "conversion-release",
-            providerReference: input.providerReference, createdAt: input.updatedAt,
-          });
-        }
+
+        await postLedger(client, {
+          tenantId: current.tenantId,
+          userId: current.userId,
+          requestId: current.requestId,
+          asset: current.asset,
+          network: current.network,
+          amount: current.amount,
+          direction: "credit",
+          reason: "conversion-release",
+          providerReference: input.providerReference,
+          createdAt: input.updatedAt,
+        });
         return updateIntentWithClient(client, {
           ...current,
-          providerTargetAmount: targetAmount,
-          status: input.succeeded ? "succeeded" : "failed",
+          providerTargetAmount: null,
+          status: "failed",
           updatedAt: input.updatedAt,
         });
       });
-    },
+    }
 
     async readAggregateLiability(input) {
       const normalized = {
