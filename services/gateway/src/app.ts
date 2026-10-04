@@ -305,6 +305,16 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
             onTextDelta: async (delta) => {
               if (delta) emit({ type: "delta", text: delta });
             },
+            onAudioPcmChunk: async (dataBase64) => {
+              if (dataBase64) {
+                emit({
+                  type: "audio",
+                  mimeType: "audio/pcm;rate=24000",
+                  sampleRate: 24000,
+                  dataBase64,
+                });
+              }
+            },
             signal: controller.signal,
           });
           emit({
