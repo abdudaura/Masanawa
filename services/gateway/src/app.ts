@@ -270,6 +270,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
           });
           emit({
             type: "done",
+            reply: result.reply,
             agentRunId: result.agentRunId,
             parts: [...result.parts],
             ...(result.audioBase64 ? { audioBase64: result.audioBase64 } : {}),
