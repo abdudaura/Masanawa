@@ -91,6 +91,9 @@ class RecoveringTransport implements AgentTransport {
     required String caption,
   }) async => const AgentTurnResult(text: 'Media reply');
   @override
+  void cancelTurn(String characterId) {}
+
+  @override
   Future<void> closeSession(AgentSessionBinding binding) async {}
 }
 
