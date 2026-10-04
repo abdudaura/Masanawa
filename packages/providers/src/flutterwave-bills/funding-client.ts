@@ -6,7 +6,11 @@ export interface FlutterwaveVerifiedPayment {
   readonly status: string; readonly amount: string; readonly currency: string;
 }
 export interface FlutterwaveRefundReceipt {
-  readonly transactionId: string; readonly refundReference: string; readonly status: string; readonly amount: string | null;
+  readonly transactionId: string;
+  readonly refundId: string;
+  readonly refundReference: string;
+  readonly status: string;
+  readonly amount: string | null;
 }
 function record(value: unknown, label: string): Json {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error(`flutterwave.funding.invalid_${label}`);
@@ -78,6 +82,53 @@ export class FlutterwaveFundingClient {
       amount: decimal(data.amount, "verified_amount"), currency: textValue(data.currency, "currency", 8).toUpperCase(),
     });
   }
+  async findRefund(input: Readonly<{
+    transactionId: string;
+    refundReference?: string;
+    signal?: AbortSignal;
+  }>): Promise<FlutterwaveRefundReceipt | null> {
+    const transactionId = textValue(input.transactionId, "transaction_id", 80);
+    if (!/^\d+$/u.test(transactionId)) throw new Error("flutterwave.funding.transaction_id_invalid");
+    const response = await this.#transport.request({
+      method: "GET",
+      path: "/v3/refunds",
+      query: input.refundReference
+        ? { flw_ref: textValue(input.refundReference, "refund_reference", 200), currency: "NGN" }
+        : { id: transactionId, currency: "NGN" },
+      headers: providerHeaders(this.#secretKey),
+      ...(input.signal ? { signal: input.signal } : {}),
+    });
+    if (response.status !== 200) throw new Error("flutterwave.funding.refund_status_unavailable");
+    const envelope = record(response.body, "refund_list_envelope");
+    if (envelope.status !== "success") throw new Error("flutterwave.funding.refund_status_unavailable");
+    const rows = Array.isArray(envelope.data)
+      ? envelope.data
+      : Array.isArray(record(envelope.data, "refund_list_data").refunds)
+        ? record(envelope.data, "refund_list_data").refunds as unknown[]
+        : [];
+    for (const raw of rows) {
+      const data = record(raw, "refund_row");
+      const originalTransaction = data.TransactionId ?? data.transaction_id ?? data.tx_id;
+      if (originalTransaction != null && textValue(originalTransaction, "refund_transaction_id", 80) !== transactionId) continue;
+      const refundReference = textValue(
+        data.flw_ref ?? data.FlwRef ?? data.reference,
+        "refund_reference",
+        200,
+      );
+      if (input.refundReference && refundReference !== input.refundReference) continue;
+      return Object.freeze({
+        transactionId,
+        refundId: textValue(data.id, "refund_id", 80),
+        refundReference,
+        status: textValue(data.status, "refund_status", 64).toLowerCase(),
+        amount: data.amount_refunded == null && data.AmountRefunded == null
+          ? null
+          : decimal(data.amount_refunded ?? data.AmountRefunded, "refund_amount"),
+      });
+    }
+    return null;
+  }
+
   async refund(input: Readonly<{ transactionId: string; amount: string; callbackUrl?: string; signal?: AbortSignal }>): Promise<FlutterwaveRefundReceipt> {
     const transactionId = textValue(input.transactionId, "transaction_id", 80);
     if (!/^\d+$/u.test(transactionId)) throw new Error("flutterwave.funding.transaction_id_invalid");
@@ -93,7 +144,9 @@ export class FlutterwaveFundingClient {
     if (envelope.status !== "success") throw new Error("flutterwave.funding.refund_rejected");
     const data = record(envelope.data, "refund_data");
     return Object.freeze({
-      transactionId, refundReference: textValue(data.flw_ref ?? data.id, "refund_reference", 200),
+      transactionId,
+      refundId: textValue(data.id, "refund_id", 80),
+      refundReference: textValue(data.flw_ref ?? data.id, "refund_reference", 200),
       status: textValue(data.status, "refund_status", 64).toLowerCase(),
       amount: data.amount_refunded == null ? null : decimal(data.amount_refunded, "refund_amount"),
     });
