@@ -60,8 +60,8 @@ result parts so files and useful work stay in the same conversation. Local threa
 cache only (`masanawa_threads_v2.json`); server session/run/file references are truth.
 
 When the live runtime is not configured, the roster is deliberately empty rather than
-inventing Characters. The old civic preview transport remains only as a compatibility
-fallback for an already selected Character.
+inventing Characters. The explicit civic preview transport is for an unconfigured runtime. A live Gateway
+failure stays on the real transport and offers an explicit user-safe retry.
 
 ## Boundary rules (from `docs/AGENT-PHONE-EMBODIMENT.md`)
 
@@ -80,6 +80,10 @@ Alpha 1 deliberately uses the canonical CharacterSession and AgentRun stores wit
 temporary replaceable conversation executor. It is for development testing only and
 does not claim later AgentStrategy, Workflow, Presence or Device tasks are complete.
 
+Plain-text attachments are decoded as UTF-8 user content at the inference edge,
+with a 128,000-character limit. PDF, image and audio attachments retain their
+media MIME/data path. Skills are not executed by this temporary Alpha strategy.
+
 ### What works in Alpha 1
 
 - admin-configured agent directory;
@@ -93,14 +97,14 @@ does not claim later AgentStrategy, Workflow, Presence or Device tasks are compl
 
 ### Local PostgreSQL 18
 
-A simple local database is enough for phone testing:
+The Character context compiler reads canonical relationship memory. Use PostgreSQL 18 with pgvector for this branch:
 
 ```bash
 docker run --name masanawa-alpha-db \
   -e POSTGRES_PASSWORD=masanawa \
   -e POSTGRES_DB=masanawa \
   -p 5432:5432 \
-  -d postgres:18
+  -d pgvector/pgvector:0.8.6-pg18-bookworm
 ```
 
 Set:
