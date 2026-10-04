@@ -13,6 +13,7 @@ import '../agents/agent_feedback.dart';
 import '../chat/chat_format.dart';
 import '../chat/message_parts.dart';
 import '../core/providers.dart';
+import '../core/live_pcm_audio.dart';
 import '../core/network/api_client.dart';
 
 const String _kThreadsFile = 'masanawa_threads_v2.json';
@@ -496,6 +497,7 @@ class AiChatController extends Notifier<AiChatState> {
       final promptText = userMsg.replyPreview?.trim().isNotEmpty == true
           ? 'Replying to this earlier message:\n"${userMsg.replyPreview}"\n\n${userMsg.text}'
           : userMsg.text;
+      var livePcmStarted = false;
       final result = !hasMedia
           ? await _sendViaTransport(
               characterId,
@@ -503,6 +505,14 @@ class AiChatController extends Notifier<AiChatState> {
               onTextDelta: (delta) {
                 if (streamMessageId != null) {
                   _appendAiDelta(characterId, streamMessageId, delta);
+                }
+              },
+              onAudioPcmChunk: (chunk) async {
+                if (!livePcmStarted) {
+                  livePcmStarted = await LivePcmAudio.start(sampleRate: 24000);
+                }
+                if (livePcmStarted) {
+                  await LivePcmAudio.write(chunk);
                 }
               },
             )
@@ -519,6 +529,14 @@ class AiChatController extends Notifier<AiChatState> {
               attachment!,
               caption: userMsg.text,
             );
+      if (livePcmStarted) {
+        unawaited(
+          Future<void>.delayed(
+            const Duration(milliseconds: 300),
+            LivePcmAudio.stop,
+          ),
+        );
+      }
       if (_disposed ||
           threadGeneration != (_threadGenerations[characterId] ?? 0)) {
         return;
@@ -566,6 +584,7 @@ class AiChatController extends Notifier<AiChatState> {
         );
       }
     } catch (error) {
+      unawaited(LivePcmAudio.stop());
       if (_disposed ||
           threadGeneration != (_threadGenerations[characterId] ?? 0)) {
         return;
@@ -738,6 +757,7 @@ class AiChatController extends Notifier<AiChatState> {
     String characterId,
     String prompt, {
     void Function(String delta)? onTextDelta,
+    Future<void> Function(Uint8List pcmChunk)? onAudioPcmChunk,
   }) async {
     final transport = ref.read(agentTransportProvider);
     final binding = await _bindingFor(characterId, transport);
@@ -745,6 +765,7 @@ class AiChatController extends Notifier<AiChatState> {
       binding: binding,
       text: prompt,
       onTextDelta: onTextDelta,
+      onAudioPcmChunk: onAudioPcmChunk,
     );
   }
 
@@ -1015,6 +1036,7 @@ class AiChatController extends Notifier<AiChatState> {
   }
 
   void stopGeneration(String characterId) {
+    unawaited(LivePcmAudio.stop());
     ref.read(agentTransportProvider).cancelTurn(characterId);
     _threadGenerations[characterId] = (_threadGenerations[characterId] ?? 0) + 1;
     final thread = threadOf(characterId);
