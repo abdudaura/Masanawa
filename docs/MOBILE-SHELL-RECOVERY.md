@@ -41,16 +41,17 @@ Then verify on Android: muted-before-connect; uninterrupted audio over several c
 
 A second shell audit found and corrected additional release gaps beyond the original #125 patch:
 
-- Encrypted shell-action journals were only cleared if they had been opened in the current process. Logout now enumerates secure storage and removes every journal scoped to the signed-in owner, including records from a previous app process; already-open instances are invalidated.
+- Encrypted shell-action journals were only cleared if they had been opened in the current process. Logout now enumerates secure storage and removes every journal scoped to the signed-in owner, including records from a previous app process; already-open instances are invalidated. Owner IDs are base64url-segmented before being used in journal namespaces so owner-wide cleanup cannot prefix-match another account.
 - Clear-all/logout now closes live canonical CharacterSessions, cancels shell event subscriptions, stops live PCM, resets shell configuration and awaits local persistence before authentication is removed.
 - Local conversation cache files are account-scoped. The old global cache is never loaded and is deleted. Authentication restoration/account switching is generation-guarded so one user's cached conversations cannot populate another user's shell.
 - Forced sign-out and direct account changes clear in-memory conversation state, encrypted action state and the outgoing owner's local cache; the next owner is loaded only after the new authenticated identity is stable.
 - Switching Agent transports/Gateways now closes bindings through the previous transport instead of silently orphaning the old sessions.
 - The Settings notification switch now reflects the stored preference plus current system/Firebase authorization instead of starting visually enabled for every user.
 - Clear-all/logout removes only Masanawa-created temporary voice-note and reply-audio files. User-selected photos/documents are not deleted.
+- Consequential shell actions now fail closed unless a signed-in owner exists; the previous `anonymous` durable-action fallback is removed.
 - A stale recovery-test expectation for the retired `/v1/agent/**` namespace was corrected to the canonical `/agent/**` route.
 
-Regression coverage was extended with cross-process owner journal cleanup, invalidation of an already-open journal after owner cleanup, and canonical session closure during clear-all. Together with the earlier deep-link/live-audio/live-session cases, the recovery branch now carries 14 focused regression additions/extensions.
+Regression coverage was extended with cross-process owner journal cleanup, invalidation of an already-open journal after owner cleanup, and canonical session closure during clear-all. Together with the earlier deep-link/live-audio/live-session cases, the recovery branch now carries 15 focused regression additions/extensions.
 
 Latest branch structural sweep found no conflict markers, TODO/FIXME markers or stale `/v1/agent/**` routes in the changed Dart/Kotlin recovery sources/tests. The current environment still has no Dart or Flutter executable. GitHub Actions runs for the latest head again ended before executing any workflow step: both Foundation CI and Mobile Build report failed jobs with `steps: null` and no logs. That is runner-allocation failure, not evidence that analysis/tests/build passed or failed.
 
