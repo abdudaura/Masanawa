@@ -53,6 +53,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   int _searchIndex = 0;
   bool _nearBottom = true;
   int _newBelow = 0;
+  final Set<String> _selectedMessageIds = {};
 
   @override
   void initState() {
@@ -393,14 +394,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         ? allMessages
         : allMessages.where((m) => m.text.toLowerCase().contains(query)).toList();
     final sending = chat.sendingIn.contains(widget.characterId);
-    final lastUser = allMessages.where((m) => m.isUser).lastOrNull;
-    final workingLabel = !sending
-        ? agent.presenceLabel
-        : lastUser?.attachment?.kind == 'voice'
-        ? 'Understanding voice…'
-        : lastUser?.attachment != null
-        ? 'Reviewing attachment…'
-        : 'Typing…';
+    final userMessages = allMessages.where((m) => m.isUser).toList();
+    final lastUser = userMessages.isEmpty ? null : userMessages.last;
 
     if (agent == null) {
       return Scaffold(
@@ -432,6 +427,14 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         ),
       );
     }
+
+    final workingLabel = !sending
+        ? agent.presenceLabel
+        : lastUser?.attachment?.kind == 'voice'
+        ? 'Understanding voice…'
+        : lastUser?.attachment != null
+        ? 'Reviewing attachment…'
+        : 'Typing…';
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
@@ -469,7 +472,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             onPressed: () =>
                 context.canPop() ? context.pop() : context.go('/chats'),
           ),
-          title: _showSearch
+          title: _selectedMessageIds.isNotEmpty
+              ? Text('${_selectedMessageIds.length} selected')
+              : _showSearch
               ? TextField(
                   controller: _search,
                   autofocus: true,
@@ -524,6 +529,23 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             ),
           ),
           actions: [
+            if (_selectedMessageIds.isNotEmpty) ...[
+              IconButton(
+                tooltip: 'Copy selected',
+                icon: const Icon(Icons.copy_outlined),
+                onPressed: () => _copySelected(allMessages),
+              ),
+              IconButton(
+                tooltip: 'Delete selected',
+                icon: const Icon(Icons.delete_outline),
+                onPressed: () => _deleteSelected(),
+              ),
+              IconButton(
+                tooltip: 'Clear selection',
+                icon: const Icon(Icons.close),
+                onPressed: () => setState(_selectedMessageIds.clear),
+              ),
+            ] else
             IconButton(
               tooltip: _showSearch ? 'Close search' : 'Search',
               icon: Icon(_showSearch ? Icons.close : Icons.search),
@@ -601,6 +623,12 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                             if (showDate) _DateSeparator(date: message.createdAt),
                             _ChatBubble(
                           message: message,
+                          selected: _selectedMessageIds.contains(message.id),
+                          onSelect: () => setState(() {
+                            if (!_selectedMessageIds.add(message.id)) {
+                              _selectedMessageIds.remove(message.id);
+                            }
+                          }),
                           onReply: () => setState(() => _replyingTo = message),
                           onReact: (emoji) => ref
                               .read(aiChatProvider.notifier)
@@ -614,6 +642,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                           onCopy: () => Clipboard.setData(
                             ClipboardData(text: message.text),
                           ),
+                          onForward: () => _forwardMessage(message),
                           onAgentAction: message.isUser
                               ? null
                               : (action) => _runAgentAction(message, action),
@@ -662,23 +691,25 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 message: _replyingTo!,
                 onClose: () => setState(() => _replyingTo = null),
               ),
-            if (_recording || _pendingVoice != null)
+            if (_recording)
               _RecordingBar(
-                clock: _pendingVoice == null
-                    ? _recClock
-                    : formatDurationMs(_pendingVoice!.durationMs ?? 0),
+                clock: _recClock,
                 amplitudes: _amplitudes,
-                recording: _recording,
+                recording: true,
                 paused: _recordingPaused,
                 locked: _recordingLocked,
-                onDelete: _pendingVoice == null
-                    ? () => _stopRecording(send: false)
-                    : _deletePendingVoice,
-                onPause: _recording ? _togglePauseRecording : null,
-                onStop: _recording ? () => _stopRecording(send: true) : null,
-                onSend: _pendingVoice == null ? null : _sendPendingVoice,
+                onDelete: () => _stopRecording(send: false),
+                onPause: _togglePauseRecording,
+                onStop: () => _stopRecording(send: true),
+                onSend: null,
                 onCancelSwipe: () => _stopRecording(send: false),
                 onLockSwipe: () => setState(() => _recordingLocked = true),
+              )
+            else if (_pendingVoice != null)
+              _VoicePreviewBar(
+                attachment: _pendingVoice!,
+                onDelete: _deletePendingVoice,
+                onSend: _sendPendingVoice,
               )
             else
               _Composer(
@@ -713,6 +744,66 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
   bool _sameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
+
+  void _copySelected(List<AiChatMessage> messages) {
+    final text = messages
+        .where((m) => _selectedMessageIds.contains(m.id) && !m.deleted)
+        .map((m) => m.text.isNotEmpty ? m.text : m.attachment?.label ?? '')
+        .where((value) => value.isNotEmpty)
+        .join('\n\n');
+    if (text.isNotEmpty) Clipboard.setData(ClipboardData(text: text));
+    setState(_selectedMessageIds.clear);
+  }
+
+  void _deleteSelected() {
+    final ctl = ref.read(aiChatProvider.notifier);
+    for (final id in _selectedMessageIds) {
+      ctl.deleteMessage(widget.characterId, id);
+    }
+    setState(_selectedMessageIds.clear);
+  }
+
+  Future<void> _forwardMessage(AiChatMessage message) async {
+    final agents = ref.read(agentDirectoryProvider).entries;
+    final target = await showModalBottomSheet<AgentDirectoryEntry>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            const ListTile(
+              title: Text('Forward to agent'),
+              subtitle: Text('Choose a conversation'),
+            ),
+            for (final entry in agents)
+              ListTile(
+                leading: CircleAvatar(child: Text(entry.initial)),
+                title: Text(entry.displayName),
+                subtitle: Text(entry.roleLabel),
+                onTap: () => Navigator.pop(sheetContext, entry),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (target == null) return;
+    final ctl = ref.read(aiChatProvider.notifier);
+    if (message.attachment != null) {
+      await ctl.sendAttachment(
+        target.characterId,
+        message.attachment!,
+        caption: message.text,
+      );
+    } else if (message.text.isNotEmpty) {
+      await ctl.sendText(target.characterId, message.text);
+    }
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Forwarded to ${target.displayName}')),
+      );
+    }
+  }
 
   Future<void> _runAgentAction(AiChatMessage message, String action) async {
     final ctl = ref.read(aiChatProvider.notifier);
@@ -1145,6 +1236,54 @@ class _RecordingBar extends StatelessWidget {
   }
 }
 
+class _VoicePreviewBar extends StatelessWidget {
+  const _VoicePreviewBar({
+    required this.attachment,
+    required this.onDelete,
+    required this.onSend,
+  });
+
+  final ChatAttachment attachment;
+  final VoidCallback onDelete;
+  final VoidCallback onSend;
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    return SafeArea(
+      top: false,
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+        decoration: BoxDecoration(
+          color: u.surfaceCard,
+          borderRadius: BorderRadius.circular(26),
+          border: Border.all(color: u.structuralBorder),
+        ),
+        child: Row(
+          children: [
+            IconButton(
+              tooltip: 'Discard',
+              icon: const Icon(Icons.delete_outline),
+              onPressed: onDelete,
+            ),
+            Expanded(child: _VoiceBubble(attachment: attachment)),
+            Material(
+              color: u.brand,
+              shape: const CircleBorder(),
+              child: IconButton(
+                tooltip: 'Send voice note',
+                icon: const Icon(Icons.send_rounded, color: Colors.white),
+                onPressed: onSend,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _ReplyComposerPreview extends StatelessWidget {
   const _ReplyComposerPreview({
     required this.message,
@@ -1197,20 +1336,26 @@ class _ReplyComposerPreview extends StatelessWidget {
 class _ChatBubble extends StatelessWidget {
   const _ChatBubble({
     required this.message,
+    required this.selected,
+    required this.onSelect,
     required this.onReply,
     required this.onReact,
     required this.onDelete,
     required this.onCopy,
+    required this.onForward,
     this.onEdit,
     this.onRetry,
     this.onAgentAction,
   });
 
   final AiChatMessage message;
+  final bool selected;
+  final VoidCallback onSelect;
   final VoidCallback onReply;
   final ValueChanged<String> onReact;
   final VoidCallback onDelete;
   final VoidCallback onCopy;
+  final VoidCallback onForward;
   final VoidCallback? onEdit;
   final VoidCallback? onRetry;
   final ValueChanged<String>? onAgentAction;
@@ -1240,8 +1385,13 @@ class _ChatBubble extends StatelessWidget {
               ),
             ListTile(
               leading: const Icon(Icons.forward_outlined),
-              title: const Text('Forward / share text'),
-              onTap: () => Navigator.pop(sheetContext, 'share'),
+              title: const Text('Forward'),
+              onTap: () => Navigator.pop(sheetContext, 'forward'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.checklist_outlined),
+              title: const Text('Select'),
+              onTap: () => Navigator.pop(sheetContext, 'select'),
             ),
             ListTile(
               leading: const Icon(Icons.delete_outline),
@@ -1289,7 +1439,9 @@ class _ChatBubble extends StatelessWidget {
     );
     if (action == null) return;
     if (action == 'reply') onReply();
-    if (action == 'copy' || action == 'share') onCopy();
+    if (action == 'copy') onCopy();
+    if (action == 'forward') onForward();
+    if (action == 'select') onSelect();
     if (action == 'edit') onEdit?.call();
     if (action == 'delete') onDelete();
     if (action.startsWith('react:')) onReact(action.substring(6));
@@ -1333,7 +1485,11 @@ class _ChatBubble extends StatelessWidget {
                   bottomLeft: Radius.circular(isUser ? 14 : 4),
                   bottomRight: Radius.circular(isUser ? 4 : 14),
                 ),
-                border: isUser ? null : Border.all(color: u.structuralBorder),
+                border: selected
+                    ? Border.all(color: u.brand, width: 2)
+                    : isUser
+                    ? null
+                    : Border.all(color: u.structuralBorder),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
