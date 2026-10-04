@@ -16,3 +16,4 @@ export * from "./failure.js";
 
 export * from "./guide.js";
 export * from "./guide-repository.js";
+export * from "./distribution.js";
