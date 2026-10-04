@@ -110,6 +110,23 @@ export interface TeachingProgressHandoff {
   readonly recordedAt: Instant;
 }
 
+export interface TeachingContinuation {
+  readonly currentStep: TeachingLessonStep;
+  readonly nextStep: TeachingLessonStep | null;
+  readonly sequenceCompleted: boolean;
+  readonly reason:
+    | "continue-current"
+    | "reteach-current"
+    | "advance"
+    | "sequence-complete";
+}
+
+export interface TeachingLearnerPreferenceUpdate {
+  readonly language?: string;
+  readonly accessibilityPreferences?: readonly string[];
+  readonly preferredModalities?: readonly TeachingModality[];
+}
+
 export const teachingExerciseKinds = [
   "free-response",
   "single-select",
@@ -347,6 +364,84 @@ export function normalizeTeachingAnswerEvaluation(
       teachingCheckpointStates,
       "teaching.nextCheckpointState",
     ),
+  });
+}
+
+export function updateTeachingLearnerPreferences(
+  current: TeachingLearnerContext,
+  update: TeachingLearnerPreferenceUpdate,
+): TeachingLearnerContext {
+  const normalizedCurrent = normalizeTeachingLearnerContext(current);
+  return normalizeTeachingLearnerContext({
+    ...normalizedCurrent,
+    language: update.language ?? normalizedCurrent.language,
+    accessibilityPreferences:
+      update.accessibilityPreferences ?? normalizedCurrent.accessibilityPreferences,
+    preferredModalities:
+      update.preferredModalities ?? normalizedCurrent.preferredModalities,
+  });
+}
+
+export function resolveTeachingContinuation(
+  plan: TeachingLessonPlan,
+  progress: TeachingProgressHandoff,
+): TeachingContinuation {
+  const normalizedPlan = normalizeTeachingLessonPlan(plan);
+  const normalizedProgress = normalizeTeachingProgressHandoff(progress);
+  if (
+    normalizedPlan.skillVersionId !== normalizedProgress.skillVersionId ||
+    normalizedPlan.learner.relationshipId !== normalizedProgress.relationshipId
+  ) {
+    throw new TypeError(
+      "teaching progress must match the lesson SkillVersion and Relationship",
+    );
+  }
+
+  const index = normalizedPlan.steps.findIndex(
+    (step) => step.stepKey === normalizedProgress.lessonStepKey,
+  );
+  if (index < 0) {
+    throw new TypeError("teaching progress references an unknown lesson step");
+  }
+
+  const currentStep = normalizedPlan.steps[index]!;
+  const candidate = normalizedPlan.steps[index + 1] ?? null;
+
+  if (normalizedProgress.checkpointState === "needs-reteaching") {
+    return Object.freeze({
+      currentStep,
+      nextStep: currentStep,
+      sequenceCompleted: false,
+      reason: "reteach-current" as const,
+    });
+  }
+
+  if (
+    normalizedProgress.checkpointState === "planned" ||
+    normalizedProgress.checkpointState === "in-progress"
+  ) {
+    return Object.freeze({
+      currentStep,
+      nextStep: currentStep,
+      sequenceCompleted: false,
+      reason: "continue-current" as const,
+    });
+  }
+
+  if (candidate !== null) {
+    return Object.freeze({
+      currentStep,
+      nextStep: candidate,
+      sequenceCompleted: false,
+      reason: "advance" as const,
+    });
+  }
+
+  return Object.freeze({
+    currentStep,
+    nextStep: null,
+    sequenceCompleted: true,
+    reason: "sequence-complete" as const,
   });
 }
 
