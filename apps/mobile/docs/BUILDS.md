@@ -2,55 +2,49 @@
 
 All commands run from `apps/mobile`.
 
-## Build flags
+## Runtime defaults
+
+A normal app build is production-shaped:
 
 | Flag | Default | Meaning |
 | --- | --- | --- |
-| `API_BASE_URL` | `https://unigeria.up.railway.app` | Civic backend (auth OTP, preview chat). |
-| `AGENT_BASE_URL` | _(empty)_ | Masanawa gateway, when Task 099 ships it. |
-| `AGENT_RUNTIME_ENABLED` | `false` | Set `true` plus `AGENT_BASE_URL` for live sessions. |
+| `API_BASE_URL` | `https://unigeria.up.railway.app` | Existing platform API that owns OTP login and session refresh. |
+| `AGENT_BASE_URL` | `https://nurainworker-production.up.railway.app` | Masanawa Gateway. |
+| `AGENT_RUNTIME_ENABLED` | `true` | Live Masanawa agent runtime. Set `false` only for an explicit offline/compatibility build. |
 
-Example:
+The mobile app never accepts, stores or asks for an Alpha/developer access token. After OTP verification, the same platform access token authorizes the agent directory, conversations, live voice, push, clone, Skills and creator-economy calls.
+
+Example override for a staging environment:
 
 ```sh
 flutter run \
-  --dart-define=API_BASE_URL=https://staging.example.com \
-  --dart-define=AGENT_RUNTIME_ENABLED=true \
-  --dart-define=AGENT_BASE_URL=https://gateway-staging.example.com
+  --dart-define=API_BASE_URL=https://staging-api.example.com \
+  --dart-define=AGENT_BASE_URL=https://staging-gateway.example.com
 ```
 
 ## Phone (Android)
 
-Debug run (debug-signed, local only):
+For local testing:
 
 ```sh
-flutter run
-flutter run --release   # still debug-signed — never distribute this
+flutter pub get
+flutter analyze
+flutter test
+flutter build apk --debug
 ```
 
-Release for the Play Store:
+The resulting APK uses the hosted defaults above unless you supply overrides. Sign in normally with phone/email OTP.
 
-1. Create the upload key once (keep it offline, back it up):
-   ```sh
-   keytool -genkey -v -keystore ~/masanawa-upload.keystore \
-     -alias masanawa -keyalg RSA -keysize 2048 -validity 10000
-   ```
-2. Create `android/key.properties` (gitignored — never commit):
-   ```properties
-   storePassword=<your-store-password>
-   keyPassword=<your-key-password>
-   keyAlias=masanawa
-   storeFile=<absolute-path-to>/masanawa-upload.keystore
-   ```
+For a local Gateway over USB, use `tool/build_alpha.ps1 -Install` (Windows) or `tool/build_alpha.sh --install` (Linux/macOS/WSL). Despite the historical filename, the helper no longer uses an Alpha token; it only selects the API/Gateway endpoints and builds the same OTP-authenticated shell.
+
+## Play Store release
+
+1. Create the upload key once and keep it offline/backed up.
+2. Create `android/key.properties` (gitignored) with the upload-key values.
 3. Bump `version:` in `pubspec.yaml`.
-4. Build the bundle:
-   ```sh
-   flutter build appbundle --release
-   ```
-   Output: `build/app/outputs/bundle/release/app-release.aab`.
+4. Run `flutter build appbundle --release`.
 
-Play checklist: real key (not debug), version bumped, staging SMS-code
-login tried on the uploaded track, one preview chat send tried.
+Before release, verify OTP sign-in, Gwani/Gwana directory loading, one text turn, voice, attachments, push/deep links and logout/account-switch cleanup on a physical Android device.
 
 ## Web
 
@@ -58,11 +52,8 @@ login tried on the uploaded track, one preview chat send tried.
 flutter build web --release
 ```
 
-Output: `build/web`. Serve the folder statically (Cloudflare Pages or
-Vercel). For sub-path hosting pass `--base-href=/your-path/`.
+Output: `build/web`.
 
 ## CI
 
-`.github/workflows/mobile-build.yml` runs analyze, tests, a debug APK, and a
-release web build on every push/PR touching `apps/mobile/**`. Release
-signing stays manual (key lives with you, never in the repo).
+`.github/workflows/mobile-build.yml` runs analyze, tests, a debug APK and a release web build for mobile changes. Release signing remains manual; no signing key or session credential belongs in Git.
