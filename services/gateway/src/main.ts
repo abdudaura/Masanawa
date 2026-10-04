@@ -29,6 +29,7 @@ import {
   createPostgresCryptoRepository,
   createPostgresServiceDependency,
   createPostgresBillingFulfillmentStore,
+  createPostgresBillingFundingRepository,
   createPostgresProviderWebhookRepository,
   createPostgresChannelAdmission,
 } from "@masanawa/postgres";
@@ -63,7 +64,10 @@ import {
   type GatewayAppOptions,
   type ReadinessCheck,
 } from "./app.js";
-import { createBillingFinancialService } from "./financial_billing.js";
+import {
+  createBillingCreditPricingPolicy,
+  createBillingFinancialService,
+} from "./financial_billing.js";
 
 export type ServiceSignal = "SIGINT" | "SIGTERM";
 
@@ -83,6 +87,9 @@ export interface ServiceDatabaseDependency {
   readonly billingStore?: (
     identity: Readonly<{ tenantId: string; userId: string }>,
   ) => ReturnType<typeof createPostgresBillingFulfillmentStore>;
+  readonly billingFunding?: (
+    identity: Readonly<{ tenantId: string; userId: string }>,
+  ) => ReturnType<typeof createPostgresBillingFundingRepository>;
   readonly providerWebhooks?: ReturnType<typeof createPostgresProviderWebhookRepository>;
   readonly channelAdmission?: ReturnType<typeof createPostgresChannelAdmission>;
   close(): Promise<void>;
@@ -162,6 +169,8 @@ function createDefaultDatabaseDependency(
     crypto: createPostgresCryptoRepository(database.pool),
     billingStore: (identity: Readonly<{ tenantId: string; userId: string }>) =>
       createPostgresBillingFulfillmentStore(database.pool, identity),
+    billingFunding: (identity: Readonly<{ tenantId: string; userId: string }>) =>
+      createPostgresBillingFundingRepository(database.pool, identity),
     providerWebhooks: createPostgresProviderWebhookRepository(database.pool),
     channelAdmission: createPostgresChannelAdmission(database.pool),
     close: database.close,
@@ -180,6 +189,38 @@ function requiredAlphaEnv(
 ): string {
   const value = env[key]?.trim();
   if (!value) throw new TypeError(`${key} is required when Alpha mode is enabled`);
+  return value;
+}
+
+
+function requiredBillingInteger(
+  env: Readonly<Record<string, string | undefined>>,
+  key: string,
+  options: Readonly<{ minimum: number; maximum: number }>,
+): number {
+  const raw = env[key]?.trim();
+  if (!raw || !/^\d+$/u.test(raw)) {
+    throw new TypeError(`${key} is required when Flutterwave Bills are enabled`);
+  }
+  const value = Number(raw);
+  if (
+    !Number.isSafeInteger(value) ||
+    value < options.minimum ||
+    value > options.maximum
+  ) {
+    throw new TypeError(`${key} is invalid`);
+  }
+  return value;
+}
+
+function requiredBillingText(
+  env: Readonly<Record<string, string | undefined>>,
+  key: string,
+): string {
+  const value = env[key]?.trim();
+  if (!value) {
+    throw new TypeError(`${key} is required when Flutterwave Bills are enabled`);
+  }
   return value;
 }
 
@@ -331,17 +372,38 @@ export async function startGatewayService(
       : undefined);
 
 
+  const billingEnabled = env["FLUTTERWAVE_BILLS_ENABLED"] === "true";
+  const billingPricing = billingEnabled
+    ? createBillingCreditPricingPolicy({
+        creditsPerNgn: requiredBillingInteger(
+          env,
+          "MASANAWA_BILLING_CREDITS_PER_NGN",
+          { minimum: 1, maximum: 1_000_000 },
+        ),
+        platformMarginBps: requiredBillingInteger(
+          env,
+          "MASANAWA_BILLING_PLATFORM_MARGIN_BPS",
+          { minimum: 0, maximum: 10_000 },
+        ),
+        version: requiredBillingText(env, "MASANAWA_BILLING_PRICING_VERSION"),
+      })
+    : undefined;
+
   const composedBilling =
     options.appOptions?.billingFinancial ??
-    (env["FLUTTERWAVE_BILLS_ENABLED"] === "true" &&
+    (billingEnabled &&
+    billingPricing &&
     financialAuthorizer &&
     database.billingStore &&
+    database.billingFunding &&
     database.providerWebhooks &&
     env["FLUTTERWAVE_SECRET_KEY"]?.trim() &&
     env["FLUTTERWAVE_WEBHOOK_SECRET_HASH"]?.trim() &&
     env["FLUTTERWAVE_WEBHOOK_URL"]?.trim()
       ? createBillingFinancialService({
           billingStore: database.billingStore,
+          billingFunding: database.billingFunding,
+          pricingPolicy: billingPricing,
           webhookRepository: database.providerWebhooks,
           authorizer: financialAuthorizer,
           flutterwaveSecretKey: env["FLUTTERWAVE_SECRET_KEY"],
