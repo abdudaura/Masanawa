@@ -12,6 +12,23 @@ import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import Type from "typebox";
 import type { BillingFinancialService } from "./financial_billing.js";
 
+export interface WhatsAppWebhookIngress {
+  verifySubscription(query: Readonly<Record<string, unknown>>): string;
+  receive(body: Uint8Array, signature: unknown, receivedAt: Instant): Promise<{
+    readonly statusCode: 200;
+    readonly admittedRecords: number;
+    readonly ignoredEvents: number;
+  }>;
+}
+
+export interface TelegramWebhookIngress {
+  receive(body: Uint8Array, secretHeader: unknown, receivedAt: Instant): Promise<{
+    readonly statusCode: 200;
+    readonly admittedRecords: number;
+    readonly ignoredEvents: number;
+  }>;
+}
+
 export interface ReadinessCheck {
   readonly name: string;
   check(): Promise<{ readonly ready: boolean; readonly reason?: string }>;
@@ -24,6 +41,8 @@ export interface GatewayAppOptions {
   readonly agentDirectory?: AgentDirectoryService;
   readonly agentConversation?: AgentConversationService;
   readonly financial?: FinancialService;
+  readonly whatsAppIngress?: WhatsAppWebhookIngress;
+  readonly telegramIngress?: TelegramWebhookIngress;
   readonly billingFinancial?: BillingFinancialService;
 }
 
@@ -805,6 +824,83 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
         }
       },
     );
+  }
+
+  if (options.whatsAppIngress || options.telegramIngress) {
+    app.register(async (scope) => {
+      scope.addContentTypeParser(
+        "application/json",
+        { parseAs: "buffer", bodyLimit: 1_048_576 },
+        (_request, body, done) => done(null, body),
+      );
+
+      if (options.whatsAppIngress) {
+        const ingress = options.whatsAppIngress;
+        scope.get("/v1/channels/whatsapp/webhook", async (request, reply) => {
+          try {
+            const challenge = ingress.verifySubscription(
+              request.query as Readonly<Record<string, unknown>>,
+            );
+            return reply.type("text/plain; charset=utf-8").send(challenge);
+          } catch {
+            return reply.code(401).send({ error: "verification_failed" });
+          }
+        });
+
+        scope.post("/v1/channels/whatsapp/webhook", async (request, reply) => {
+          if (!Buffer.isBuffer(request.body)) {
+            return reply.code(400).send({ error: "invalid_payload" });
+          }
+          try {
+            const result = await ingress.receive(
+              request.body,
+              request.headers["x-hub-signature-256"],
+              now(),
+            );
+            return reply.code(result.statusCode).send({
+              admitted: result.admittedRecords,
+              ignored: result.ignoredEvents,
+            });
+          } catch (error) {
+            const category =
+              typeof error === "object" && error !== null && "category" in error
+                ? String((error as { category?: unknown }).category ?? "")
+                : "";
+            return reply
+              .code(category === "authentication" ? 401 : category === "unavailable" ? 503 : 400)
+              .send({ error: "channel_ingress_rejected" });
+          }
+        });
+      }
+
+      if (options.telegramIngress) {
+        const ingress = options.telegramIngress;
+        scope.post("/v1/channels/telegram/webhook", async (request, reply) => {
+          if (!Buffer.isBuffer(request.body)) {
+            return reply.code(400).send({ error: "invalid_payload" });
+          }
+          try {
+            const result = await ingress.receive(
+              request.body,
+              request.headers["x-telegram-bot-api-secret-token"],
+              now(),
+            );
+            return reply.code(result.statusCode).send({
+              admitted: result.admittedRecords,
+              ignored: result.ignoredEvents,
+            });
+          } catch (error) {
+            const category =
+              typeof error === "object" && error !== null && "category" in error
+                ? String((error as { category?: unknown }).category ?? "")
+                : "";
+            return reply
+              .code(category === "authentication" ? 401 : category === "unavailable" ? 503 : 400)
+              .send({ error: "channel_ingress_rejected" });
+          }
+        });
+      }
+    });
   }
 
   app.get(
