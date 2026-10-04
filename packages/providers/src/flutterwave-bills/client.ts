@@ -86,6 +86,10 @@ export interface FlutterwaveBillsClientOptions {
 
 type JsonRecord = Record<string, unknown>;
 
+function withSignal<T extends object>(base: T, signal?: AbortSignal): T & { readonly signal?: AbortSignal } {
+  return signal === undefined ? base : { ...base, signal };
+}
+
 function record(value: unknown, label: string): JsonRecord {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new FlutterwaveBillProviderError("invalid_response", `Flutterwave ${label} response is invalid`);
@@ -205,7 +209,7 @@ export class FlutterwaveBillsClient {
       path: "/v3/top-bill-categories",
       query: { country: this.#country },
       headers: this.#headers(),
-      signal,
+      ...(signal === undefined ? {} : { signal }),
     });
     if (response.status !== 200) throw new FlutterwaveBillProviderError("catalog_unavailable", "Flutterwave bill categories are unavailable", { retryable: response.status >= 500 });
     return Object.freeze(dataArray(response.body).map((entry) => {
@@ -227,7 +231,7 @@ export class FlutterwaveBillsClient {
       path: `/v3/bills/${encodeSegment(categoryCode, "category code")}/billers`,
       query: { country: this.#country },
       headers: this.#headers(),
-      signal,
+      ...(signal === undefined ? {} : { signal }),
     });
     if (response.status !== 200) throw new FlutterwaveBillProviderError("billers_unavailable", "Flutterwave billers are unavailable", { retryable: response.status >= 500 });
     return Object.freeze(dataArray(response.body).map((entry) => {
@@ -245,7 +249,7 @@ export class FlutterwaveBillsClient {
       method: "GET",
       path: `/v3/billers/${encodeSegment(normalizedBiller, "biller code")}/items`,
       headers: this.#headers(),
-      signal,
+      ...(signal === undefined ? {} : { signal }),
     });
     if (response.status !== 200) throw new FlutterwaveBillProviderError("items_unavailable", "Flutterwave bill items are unavailable", { retryable: response.status >= 500 });
     return Object.freeze(dataArray(response.body).map((entry) => {
@@ -270,7 +274,7 @@ export class FlutterwaveBillsClient {
       path: `/v3/bill-items/${encodeSegment(itemCode, "item code")}/validate`,
       query: { customer: normalizedCustomer },
       headers: this.#headers(),
-      signal,
+      ...(signal === undefined ? {} : { signal }),
     });
     if (response.status !== 200) throw new FlutterwaveBillProviderError("customer_validation_unavailable", "Flutterwave customer validation is unavailable", { retryable: response.status >= 500 });
     const row = successfulData(response.body);
@@ -311,7 +315,7 @@ export class FlutterwaveBillsClient {
         ...(input.callbackUrl ? { callback_url: textValue(input.callbackUrl, "callback URL", 1000) } : {}),
       },
       headers: this.#headers(),
-      signal: input.signal,
+      ...(input.signal === undefined ? {} : { signal: input.signal }),
     });
     if (response.status >= 500) {
       throw new FlutterwaveBillProviderError("dispatch_outcome_unknown", "Flutterwave bill dispatch outcome is unknown; reconcile by reference before any retry", { outcomeUnknown: true });
@@ -329,7 +333,7 @@ export class FlutterwaveBillsClient {
       path: `/v3/bills/${encodeSegment(normalizedReference, "reference")}`,
       query: { verbose: "1" },
       headers: this.#headers(),
-      signal,
+      ...(signal === undefined ? {} : { signal }),
     });
     if (response.status === 404) return null;
     if (response.status !== 200) throw new FlutterwaveBillProviderError("status_unavailable", "Flutterwave bill status is unavailable", { retryable: response.status >= 500 });
