@@ -378,7 +378,7 @@ describePostgres("workflow Task leasing acceptance", () => {
             message: "Executor reported failure.",
           },
         },
-        at: toInstant(new Date("2026-10-04T18:01:30.000Z")),
+        at: settleAt,
       });
 
       await settleWorkflowTaskLease(client, {
@@ -390,7 +390,7 @@ describePostgres("workflow Task leasing acceptance", () => {
           state: "waiting",
           waitReason: "awaiting_dependency",
         },
-        at: toInstant(new Date("2026-10-04T18:01:30.000Z")),
+        at: settleAt,
       });
     } finally {
       client.release();
