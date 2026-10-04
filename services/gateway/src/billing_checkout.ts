@@ -362,7 +362,8 @@ export function createBillingCheckoutService(input: Readonly<{
     if (!["refund-pending","refund-dispatching","refund-submitted"].includes(quote.state)) {
       return quote;
     }
-    if (!quote.providerTransactionId) {
+    const providerTransactionId = quote.providerTransactionId;
+    if (!providerTransactionId) {
       throw new Error("financial.billing.refund_evidence_missing");
     }
 
@@ -376,7 +377,7 @@ export function createBillingCheckoutService(input: Readonly<{
         tenantId: owner.tenantId,
         userId: owner.userId,
         quoteId: quote.quoteId,
-        providerTransactionId: quote.providerTransactionId,
+        providerTransactionId,
         claimedAt: now(),
       });
     }
@@ -387,7 +388,7 @@ export function createBillingCheckoutService(input: Readonly<{
       // empty/lagging refund list is not proof that another POST is safe.
       if (!newlyClaimed) {
         const existing = await input.funding.findRefund({
-          transactionId: quote.providerTransactionId,
+          transactionId: providerTransactionId,
           ...(signal ? { signal } : {}),
         });
         if (!existing) return quote;
@@ -395,7 +396,7 @@ export function createBillingCheckoutService(input: Readonly<{
           tenantId: owner.tenantId,
           userId: owner.userId,
           quoteId: quote.quoteId,
-          providerTransactionId: quote.providerTransactionId,
+          providerTransactionId,
           refundReference: existing.refundReference,
           initiatedAt: now(),
         });
@@ -404,7 +405,7 @@ export function createBillingCheckoutService(input: Readonly<{
             tenantId: owner.tenantId,
             userId: owner.userId,
             quoteId: quote.quoteId,
-            providerTransactionId: quote.providerTransactionId,
+            providerTransactionId,
             refundReference: existing.refundReference,
             refundedAt: now(),
           });
@@ -415,7 +416,7 @@ export function createBillingCheckoutService(input: Readonly<{
       // Only the caller that atomically claimed refund-pending may issue the
       // external refund request.
       const receipt = await input.funding.refund({
-        transactionId: quote.providerTransactionId,
+        transactionId: providerTransactionId,
         amount: formatNgnKobo(quote.totalAmountKobo),
         ...(signal ? { signal } : {}),
       });
@@ -423,7 +424,7 @@ export function createBillingCheckoutService(input: Readonly<{
         tenantId: owner.tenantId,
         userId: owner.userId,
         quoteId: quote.quoteId,
-        providerTransactionId: quote.providerTransactionId,
+        providerTransactionId,
         refundReference: receipt.refundReference,
         initiatedAt: now(),
       });
@@ -432,7 +433,7 @@ export function createBillingCheckoutService(input: Readonly<{
           tenantId: owner.tenantId,
           userId: owner.userId,
           quoteId: quote.quoteId,
-          providerTransactionId: quote.providerTransactionId,
+          providerTransactionId,
           refundReference: receipt.refundReference,
           refundedAt: now(),
         });
@@ -441,17 +442,21 @@ export function createBillingCheckoutService(input: Readonly<{
     }
 
     const receipt = await input.funding.findRefund({
-      transactionId: quote.providerTransactionId,
+      transactionId: providerTransactionId,
       ...(quote.refundReference ? { refundReference: quote.refundReference } : {}),
       ...(signal ? { signal } : {}),
     });
     if (!receipt || !terminalRefund(receipt.status)) return quote;
+    const refundReference = quote.refundReference ?? receipt.refundReference;
+    if (!refundReference) {
+      throw new Error("financial.billing.refund_evidence_missing");
+    }
     return input.quotes.markRefunded({
       tenantId: owner.tenantId,
       userId: owner.userId,
       quoteId: quote.quoteId,
-      providerTransactionId: quote.providerTransactionId,
-      refundReference: quote.refundReference ?? receipt.refundReference,
+      providerTransactionId,
+      refundReference,
       refundedAt: now(),
     });
   }
@@ -599,11 +604,12 @@ export function createBillingCheckoutService(input: Readonly<{
     async verifyAndPurchase(request) {
       const owned = await ownedQuote(request.authorizationHeader,request.quoteId);
       if (owned.quote.revision !== request.quoteRevision) throw new Error("financial.billing.quote_revision_conflict");
-      if (!owned.quote.checkoutTxRef) throw new Error("financial.billing.checkout_not_created");
+      const checkoutTxRef = owned.quote.checkoutTxRef;
+      if (!checkoutTxRef) throw new Error("financial.billing.checkout_not_created");
 
       let quote = owned.quote;
       if (!quote.paymentVerifiedAt) {
-        const payment = await input.funding.verifyByReference(quote.checkoutTxRef,request.signal);
+        const payment = await input.funding.verifyByReference(checkoutTxRef,request.signal);
         if (!["successful","success","completed"].includes(payment.status)) {
           throw new Error("financial.billing.payment_not_successful");
         }
@@ -615,7 +621,7 @@ export function createBillingCheckoutService(input: Readonly<{
           userId: owned.identity.userId,
           quoteId: quote.quoteId,
           quoteRevision: quote.revision,
-          txRef: quote.checkoutTxRef,
+          txRef: checkoutTxRef,
           providerTransactionId: payment.transactionId,
           providerReference: payment.providerReference,
           amountKobo: quote.totalAmountKobo,
