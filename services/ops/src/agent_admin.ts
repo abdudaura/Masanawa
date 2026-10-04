@@ -14,6 +14,7 @@ export type AgentAdminCapability =
   | "agents.skills.read"
   | "agents.skills.write"
   | "skills.catalog.read"
+  | "skills.catalog.write"
   | "platform.summary.read"
   | "identity.users.read"
   | "identity.users.write"
@@ -47,6 +48,9 @@ export interface AgentAdminSkillOption {
   readonly description: string;
   readonly readiness: "ready" | "degraded" | "blocked" | "disabled" | "unknown";
   readonly advertised: boolean;
+  readonly reasonCode: string | null;
+  readonly checkedAt: string | null;
+  readonly revision: number | null;
 }
 
 export interface AgentAdminService {
@@ -62,6 +66,15 @@ export interface AgentAdminService {
     readonly authorizationHeader: string | undefined;
     readonly characterId: CharacterId;
   }): Promise<CharacterSkillAssignment | null>;
+
+  putSkillReadiness(input: {
+    readonly authorizationHeader: string | undefined;
+    readonly skillVersionId: string;
+    readonly state: "ready" | "degraded" | "blocked" | "disabled";
+    readonly advertised: boolean;
+    readonly reasonCode: string | null;
+    readonly expectedRevision: number | null;
+  }): Promise<AgentAdminSkillOption>;
 
   putPresentation(input: {
     readonly authorizationHeader: string | undefined;
@@ -112,6 +125,10 @@ export function createAgentAdminService(input: {
       return Object.freeze(
         snapshot.versions.map((version) => {
           const status = readiness.get(version.skillVersionId);
+          const record = snapshot.readiness.find(
+            (candidate) =>
+              candidate.readiness.skillVersionId === version.skillVersionId,
+          );
           return Object.freeze({
             skillVersionId: version.skillVersionId,
             key: version.key,
@@ -120,9 +137,48 @@ export function createAgentAdminService(input: {
             description: version.description,
             readiness: status?.state ?? "unknown",
             advertised: status?.advertised ?? false,
+            reasonCode: status?.reasonCode ?? null,
+            checkedAt: status?.checkedAt ?? null,
+            revision: record?.revision ?? null,
           });
         }),
       );
+    },
+
+    async putSkillReadiness(request) {
+      await input.authorizer.authorize({
+        authorizationHeader: request.authorizationHeader,
+        capability: "skills.catalog.write",
+      });
+      const snapshot = await input.skills.readSnapshot();
+      const version = snapshot.versions.find(
+        (candidate) => candidate.skillVersionId === request.skillVersionId,
+      );
+      if (!version) {
+        throw new TypeError("SkillVersion is unavailable");
+      }
+      const record = await input.skills.putReadiness({
+        expectedRevision: request.expectedRevision,
+        readiness: {
+          skillVersionId: version.skillVersionId,
+          state: request.state,
+          advertised: request.advertised,
+          reasonCode: request.reasonCode,
+          checkedAt: new Date().toISOString() as never,
+        },
+      });
+      return Object.freeze({
+        skillVersionId: version.skillVersionId,
+        key: version.key,
+        version: version.version,
+        displayName: version.displayName,
+        description: version.description,
+        readiness: record.readiness.state,
+        advertised: record.readiness.advertised,
+        reasonCode: record.readiness.reasonCode,
+        checkedAt: record.readiness.checkedAt,
+        revision: record.revision,
+      });
     },
 
     async readSkillAssignment(request) {
