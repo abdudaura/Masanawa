@@ -43,6 +43,23 @@ describe("signed payout evidence", () => {
     })).not.toThrow();
   });
 
+  it("accepts exact signed payout identity without unique_external_id", () => {
+    const { unique_external_id: _, ...withoutExternalId } = payload;
+    const evidence = parseVerifiedPayoutIpn({
+      payload: withoutExternalId,
+      signature: signature(withoutExternalId),
+      secret,
+    });
+    expect(evidence.uniqueExternalId).toBeNull();
+    expect(() => assertPayoutEvidence(evidence, {
+      batchId: "batch-1",
+      currency: "USDTTRC20",
+      amount: "10",
+      address: "wallet-address",
+      uniqueExternalId: "tenant.request",
+    })).not.toThrow();
+  });
+
   it.each([
     { batch_withdrawal_id: "other" },
     { currency: "btc" },
@@ -65,6 +82,16 @@ describe("signed payout evidence", () => {
     })).toThrow("financial.crypto.payout_evidence_mismatch");
   });
 
+  it("treats an empty unique_external_id as absent optional evidence", () => {
+    const changed = { ...payload, unique_external_id: "" };
+    const evidence = parseVerifiedPayoutIpn({
+      payload: changed,
+      signature: signature(changed),
+      secret,
+    });
+    expect(evidence.uniqueExternalId).toBeNull();
+  });
+
   it("rejects a forged callback before parsing status", () => {
     expect(() => parseVerifiedPayoutIpn({
       payload,
@@ -78,7 +105,6 @@ describe("signed payout evidence", () => {
     { amount: "1.0000001" },
     { amount: 0 },
     { id: Number.MAX_SAFE_INTEGER + 1 },
-    { unique_external_id: "" },
     { address: "" },
   ])("rejects invalid signed provider evidence %j", (change) => {
     const changed = { ...payload, ...change };
