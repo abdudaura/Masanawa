@@ -92,10 +92,25 @@ function bounded(value: string, label: string, max: number): string {
 
 function amount(value: string): string {
   const normalized = bounded(value, "amount", 80);
-  if (!DECIMAL.test(normalized) || Number(normalized) <= 0) {
+  if (!DECIMAL.test(normalized) || /^0(?:\.0+)?$/u.test(normalized)) {
     throw new BillingCommerceError("invalid_amount", "Bill amount is invalid");
   }
   return normalized;
+}
+
+function decimalParts(value: string): readonly [bigint, number] {
+  const [whole = "0", fraction = ""] = value.split(".");
+  return [BigInt(whole + fraction), fraction.length] as const;
+}
+
+function decimalEqual(left: string, right: string): boolean {
+  const [leftValue, leftScale] = decimalParts(left);
+  const [rightValue, rightScale] = decimalParts(right);
+  if (leftScale === rightScale) return leftValue === rightValue;
+  if (leftScale > rightScale) {
+    return leftValue === rightValue * 10n ** BigInt(leftScale - rightScale);
+  }
+  return leftValue * 10n ** BigInt(rightScale - leftScale) === rightValue;
 }
 
 function nowIso(now: () => Date): string {
@@ -147,7 +162,10 @@ function evaluateReceipt(
     });
   }
 
-  const amountMatches = receipt.amount !== null && receipt.amount === current.amount;
+  const amountMatches =
+    receipt.amount !== null &&
+    DECIMAL.test(receipt.amount) &&
+    decimalEqual(receipt.amount, current.amount);
   const customerMatches =
     receipt.customerId !== null && receipt.customerId === current.customerId;
   const currencyMatches = receipt.currency === "NGN";
@@ -212,6 +230,7 @@ export class BillingCommerceOrchestrator {
     itemName: string;
     customerId: string;
     amount: string;
+    catalogAmount: string;
     recipientValidation?: "required" | "not-required";
     signal?: AbortSignal;
   }>): Promise<BillingFulfillmentRecord> {
@@ -228,6 +247,13 @@ export class BillingCommerceOrchestrator {
       amount: amount(input.amount),
       currency: "NGN" as const,
     };
+    const catalogAmount = amount(input.catalogAmount);
+    if (!decimalEqual(preparedBase.amount, catalogAmount)) {
+      throw new BillingCommerceError(
+        "catalog_amount_mismatch",
+        "Bill amount does not match the selected provider catalog item",
+      );
+    }
 
     let customerName: string | null = null;
     if ((input.recipientValidation ?? "required") === "required") {
