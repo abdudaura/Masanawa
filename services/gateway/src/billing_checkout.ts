@@ -7,6 +7,7 @@ import {
   parseNgnKobo,
 } from "@masanawa/commerce";
 import {
+  BillingCommerceError,
   FlutterwaveBillProviderError,
   FlutterwaveFundingClient,
   type FlutterwaveBillsClient,
@@ -248,6 +249,22 @@ function verifyBillingActionToken(input: Readonly<{
 
 function txRef(quote: BillingQuote): string {
   return `bill-${quote.quoteId}-r${quote.revision}`.slice(0,128);
+}
+
+function definitivePreDispatchFailure(error: unknown): boolean {
+  if (error instanceof BillingCommerceError) return !error.retryable;
+  if (error instanceof FlutterwaveBillProviderError) {
+    return !error.retryable && !error.outcomeUnknown;
+  }
+  const message = error instanceof Error ? error.message : "";
+  return (
+    message.startsWith("financial.billing.catalog_") ||
+    message === "financial.billing.phone_invalid" ||
+    message === "financial.billing.recipient_invalid" ||
+    message === "financial.billing.amount_below_minimum" ||
+    message === "financial.billing.amount_above_maximum" ||
+    message === "financial.billing.quote_terms_mismatch"
+  );
 }
 
 export interface BillingCheckoutService {
@@ -644,7 +661,28 @@ export function createBillingCheckoutService(input: Readonly<{
             tenantId: owned.identity.tenantId,userId: owned.identity.userId,quoteId: quote.quoteId,
           }))!;
           quote = await refundIfRequired(owned.identity,quote,request.signal);
-          return view(quote);
+          return view(quote,null,owned.identity);
+        }
+
+        // Once customer payment is verified, a known non-retryable failure
+        // before reserve/dispatch must release those exact funds into refund
+        // custody. Transient catalog/provider failures remain funded so a safe
+        // retry can continue without charging the customer again.
+        const latest = await input.quotes.readQuote({
+          tenantId: owned.identity.tenantId,
+          userId: owned.identity.userId,
+          quoteId: quote.quoteId,
+        });
+        if (latest?.state === "funded" && definitivePreDispatchFailure(error)) {
+          quote = await input.quotes.requestFundedRefund({
+            tenantId: owned.identity.tenantId,
+            userId: owned.identity.userId,
+            quoteId: latest.quoteId,
+            quoteRevision: latest.revision,
+            requestedAt: now(),
+          });
+          quote = await refundIfRequired(owned.identity,quote,request.signal);
+          return view(quote,null,owned.identity);
         }
         throw error;
       }
