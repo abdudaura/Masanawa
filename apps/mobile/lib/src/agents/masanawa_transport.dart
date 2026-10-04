@@ -232,6 +232,7 @@ class MasanawaAgentTransport implements AgentTransport {
         '/v1/agent/sessions/${binding.characterSessionId}/turn',
         {'characterId': binding.characterId, 'text': text},
         cancelToken: token,
+        onSendProgress: onUploadProgress,
       );
       final reply = data['reply'];
       if (reply is! String || reply.isEmpty) {
