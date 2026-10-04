@@ -131,6 +131,26 @@ describe("NOWPayments custody client", () => {
     })).rejects.toThrow("nowpayments.conversion.evidence_mismatch");
   });
 
+  it("classifies provider validation rejection separately from an unknown transport outcome", async () => {
+    const rejectedFetch = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ token: "fixture-jwt" })))
+      .mockResolvedValueOnce(new Response("invalid conversion", { status: 422 }));
+    await expect(client(rejectedFetch).createConversion({
+      fromCurrency: "USDTTRC20",
+      toCurrency: "BTC",
+      amount: "10",
+    })).rejects.toThrow("nowpayments.conversion.request_rejected");
+
+    const transportFetch = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ token: "fixture-jwt" })))
+      .mockRejectedValueOnce(new Error("socket reset"));
+    await expect(client(transportFetch).createConversion({
+      fromCurrency: "USDTTRC20",
+      toCurrency: "BTC",
+      amount: "10",
+    })).rejects.toThrow("nowpayments.custody.transport.unavailable");
+  });
+
   it("does not admit a completed conversion without an exact target amount", async () => {
     const fetch = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ token: "fixture-jwt" })))
