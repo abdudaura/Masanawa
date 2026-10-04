@@ -27,6 +27,10 @@ import {
   type AgentAdminAuthorizer,
 } from "./agent_admin.js";
 import {
+  createBootstrapAdminAuthorizer,
+  readBootstrapAdminAuthConfig,
+} from "./admin_auth.js";
+import {
   createPlatformAdminService,
   type PlatformAdminQuery,
 } from "./platform_admin.js";
@@ -134,10 +138,16 @@ export async function startOpsService(
     options.databaseFactory ?? createDefaultDatabaseDependency;
   const database = databaseFactory(env);
   const appFactory = options.appFactory ?? createOpsApp;
+  const bootstrapAdminConfig = readBootstrapAdminAuthConfig(env);
+  const adminAuthorizer =
+    options.agentAdminAuthorizer ??
+    (bootstrapAdminConfig
+      ? createBootstrapAdminAuthorizer(bootstrapAdminConfig)
+      : undefined);
 
   const composedAgentAdmin =
     options.appOptions?.agentAdmin ??
-    (options.agentAdminAuthorizer &&
+    (adminAuthorizer &&
     database.agentPresentations &&
     database.characterSkillAssignments &&
     database.characterVersions &&
@@ -147,25 +157,25 @@ export async function startOpsService(
           skillAssignments: database.characterSkillAssignments,
           characterVersions: database.characterVersions,
           skills: database.skills,
-          authorizer: options.agentAdminAuthorizer,
+          authorizer: adminAuthorizer,
         })
       : undefined);
 
   const composedSystemAdmin =
     options.appOptions?.systemAdmin ??
-    (options.agentAdminAuthorizer && database.platformAdminDatabase
+    (adminAuthorizer && database.platformAdminDatabase
       ? createSystemAdminService({
           database: database.platformAdminDatabase,
-          authorizer: options.agentAdminAuthorizer,
+          authorizer: adminAuthorizer,
         })
       : undefined);
 
   const composedPlatformAdmin =
     options.appOptions?.platformAdmin ??
-    (options.agentAdminAuthorizer && database.platformAdminDatabase
+    (adminAuthorizer && database.platformAdminDatabase
       ? createPlatformAdminService({
           database: database.platformAdminDatabase,
-          authorizer: options.agentAdminAuthorizer,
+          authorizer: adminAuthorizer,
         })
       : undefined);
 
