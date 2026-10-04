@@ -1,7 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+
 import 'shell_document.dart';
 
-/// Host-owned styling; server content cannot change native privileges.
 class ShellDocumentView extends StatefulWidget {
   const ShellDocumentView({super.key, required this.document, this.onAction});
   final ShellDocument document;
@@ -11,95 +13,294 @@ class ShellDocumentView extends StatefulWidget {
 }
 
 class _ShellDocumentViewState extends State<ShellDocumentView> {
-  final _form = GlobalKey<FormState>();
+  GlobalKey<FormState> _form = GlobalKey<FormState>();
   final _values = <String, String>{};
   bool _busy = false;
   bool _consumed = false;
   String? _error;
+  int _generation = 0;
+  Timer? _expiryTimer;
+  bool get _disabled =>
+      _busy || _consumed || widget.document.expired || widget.onAction == null;
+
+  @override
+  void initState() {
+    super.initState();
+    _scheduleExpiry();
+  }
+
+  void _scheduleExpiry() {
+    _expiryTimer?.cancel();
+    final expiry = widget.document.expiresAt;
+    if (expiry == null) return;
+    final delay = expiry.difference(DateTime.now());
+    if (delay.isNegative) return;
+    _expiryTimer = Timer(delay, () {
+      if (mounted) setState(() {});
+    });
+  }
+
   @override
   void didUpdateWidget(covariant ShellDocumentView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.document.id != widget.document.id ||
         oldWidget.document.revision != widget.document.revision) {
+      _generation++;
+      _form = GlobalKey<FormState>();
       _values.clear();
+      _busy = false;
       _consumed = false;
       _error = null;
     }
+    _scheduleExpiry();
+  }
+
+  @override
+  void dispose() {
+    _expiryTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _submit(ShellNode node) async {
-    if (_busy || _consumed || widget.document.expired ||
-        widget.onAction == null || !(_form.currentState?.validate() ?? false)) return;
+    if (_disabled ||
+        !widget.document.fullySupported ||
+        !(_form.currentState?.validate() ?? false))
+      return;
     final document = widget.document;
-    setState(() { _busy = true; _error = null; });
+    final generation = _generation;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
     try {
-      await widget.onAction!(ShellAction(documentId: document.id,
-        revision: document.revision, actionId: node.action!, token: node.token!,
-        values: Map.unmodifiable(_values)));
-      if (mounted && widget.document.id == document.id &&
-          widget.document.revision == document.revision) {
+      await widget.onAction!(
+        ShellAction(
+          documentId: document.id,
+          revision: document.revision,
+          nodeId: node.id!,
+          actionId: node.action!,
+          token: node.token!,
+          values: Map.unmodifiable(_values),
+        ),
+      );
+      if (mounted && _generation == generation) {
         setState(() => _consumed = true);
       }
     } catch (_) {
-      if (mounted && widget.document.id == document.id &&
-          widget.document.revision == document.revision) {
+      if (mounted && _generation == generation) {
         setState(() {
           _consumed = true;
           _error = 'Could not confirm this action. Ask for its status before continuing.';
         });
       }
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted && _generation == generation) {
+        setState(() => _busy = false);
+      }
     }
   }
 
+  Color _tone(String tone) {
+    final colors = Theme.of(context).colorScheme;
+    return switch (tone) {
+      'error' => colors.error,
+      'warning' => Colors.amber.shade800,
+      'success' => Colors.green.shade700,
+      _ => colors.primary,
+    };
+  }
+
   Widget _node(ShellNode node) {
-    final children = node.children.map(_node).toList();
     switch (node.type) {
       case 'text':
         return SelectableText(node.text ?? '');
       case 'heading':
-        return Text(node.text ?? '', style: Theme.of(context).textTheme.titleMedium);
+        return Semantics(
+          header: true,
+          child: Text(
+            node.text ?? '',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+        );
       case 'column':
-        return Column(crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [for (final child in children) Padding(
-            padding: const EdgeInsets.only(bottom: 8), child: child)]);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final child in node.children)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _node(child),
+              ),
+          ],
+        );
       case 'options':
-        return Wrap(spacing: 8, runSpacing: 8, children: children);
+        return LayoutBuilder(
+          builder: (context, constraints) => Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final child in node.children)
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: constraints.maxWidth),
+                  child: _node(child),
+                ),
+            ],
+          ),
+        );
       case 'card':
-        return Card(child: Padding(padding: const EdgeInsets.all(12),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: children)));
+        return Card(
+          margin: EdgeInsets.zero,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final child in node.children)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _node(child),
+                  ),
+              ],
+            ),
+          ),
+        );
+      case 'metric':
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              node.text ?? '',
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+            SelectableText(
+              node.value ?? '',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            if (node.subtitle != null) Text(node.subtitle!),
+          ],
+        );
+      case 'detail':
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final label = Text(
+              node.text ?? '',
+              style: Theme.of(context).textTheme.bodySmall,
+            );
+            final value = SelectableText(node.value ?? '');
+            if (constraints.maxWidth < 280 ||
+                MediaQuery.textScalerOf(context).scale(1) > 1.3) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [label, value],
+              );
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: label),
+                const SizedBox(width: 12),
+                Expanded(child: value),
+              ],
+            );
+          },
+        );
+      case 'progress':
+        return Semantics(
+          liveRegion: true,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(node.text ?? 'Working'),
+              const SizedBox(height: 6),
+              LinearProgressIndicator(value: node.progress),
+              if (node.subtitle != null) Text(node.subtitle!),
+            ],
+          ),
+        );
+      case 'notice':
+        return Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            border: Border.all(color: _tone(node.tone)),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Semantics(
+            liveRegion: true,
+            child: Text(
+              node.text ?? '',
+              style: TextStyle(color: _tone(node.tone)),
+            ),
+          ),
+        );
       case 'input':
         return TextFormField(
-          key: ValueKey('${widget.document.id}:${widget.document.revision}:${node.id}'),
+          key: ValueKey(
+            '${widget.document.id}:${widget.document.revision}:${node.id}',
+          ),
           initialValue: _values[node.id] ?? '',
+          enabled: !_disabled,
           maxLength: 512,
-          decoration: InputDecoration(labelText: node.text ?? node.id),
+          keyboardType: switch (node.inputKind) {
+            'phone' => TextInputType.phone,
+            'email' => TextInputType.emailAddress,
+            'number' => const TextInputType.numberWithOptions(decimal: true),
+            _ => TextInputType.text,
+          },
+          textInputAction: node.inputKind == 'search'
+              ? TextInputAction.search
+              : TextInputAction.next,
+          decoration: InputDecoration(
+            labelText: node.text ?? node.id,
+            helperText: node.subtitle,
+          ),
           onChanged: (value) => _values[node.id!] = value,
-          validator: (value) => node.requiredValue && (value?.trim().isEmpty ?? true)
-            ? 'Please complete this field' : null);
+          validator: (value) =>
+              node.requiredValue && (value?.trim().isEmpty ?? true)
+              ? 'Please complete this field'
+              : null,
+        );
       case 'button':
         return FilledButton(
-          onPressed: _busy || _consumed || widget.document.expired ||
-            widget.onAction == null ? null : () => _submit(node),
-          child: Text(node.text ?? 'Choose'));
+          onPressed: _disabled ? null : () => _submit(node),
+          child: Text(node.text ?? 'Choose', textAlign: TextAlign.center),
+        );
       case 'divider':
         return const Divider();
       default:
-        return Text(node.text ?? 'This content is available in the conversation text.');
+        return Text(widget.document.fallback);
     }
   }
 
   @override
-  Widget build(BuildContext context) => Form(key: _form,
-    child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      for (final node in widget.document.nodes) Padding(
-        padding: const EdgeInsets.only(bottom: 8), child: _node(node)),
-      if (_busy) const LinearProgressIndicator(),
-      if (widget.document.expired) const Text('This option has expired. Ask for updated options.'),
-      if (_consumed && _error == null) const Text('Selection submitted.'),
-      if (_error != null) Text(_error!, style: TextStyle(
-        color: Theme.of(context).colorScheme.error)),
-    ]));
+  Widget build(BuildContext context) {
+    if (!widget.document.fullySupported) {
+      return SelectableText(widget.document.fallback);
+    }
+    return Form(
+      key: _form,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final node in widget.document.nodes)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _node(node),
+            ),
+          if (widget.onAction == null) Text(widget.document.fallback),
+          if (_busy) const LinearProgressIndicator(),
+          if (widget.document.expired)
+            const Text('This option has expired. Ask for updated options.'),
+          if (_consumed && _error == null) const Text('Selection submitted.'),
+          if (_error != null)
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                _error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 }
