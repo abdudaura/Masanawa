@@ -333,4 +333,100 @@ describePostgres("workflow task admission acceptance", () => {
       }),
     ).rejects.toThrow(/fresh ready Task at revision 1/u);
   });
+
+  it("reconciles exact WorkflowRun replay and rejects changed durable state", async () => {
+    const run = await createRun();
+    const client = await pool.connect();
+    try {
+      await expect(createWorkflowRunRecord(client, run)).resolves.toEqual(run);
+
+      await expect(
+        createWorkflowRunRecord(client, {
+          ...run,
+          graphSignature: `sha256:${"b".repeat(64)}`,
+        }),
+      ).rejects.toMatchObject({
+        code: "workflows.run_conflict",
+        category: "conflict",
+        retryable: false,
+      });
+    } finally {
+      client.release();
+    }
+  });
+
+  it("rejects a Task pinned to a different WorkflowVersion graph than its Run", async () => {
+    const run = await createRun();
+    const task = {
+      ...rootTask(run),
+      graphSignature: `sha256:${"b".repeat(64)}`,
+    };
+
+    await expect(
+      admitWorkflowTask(pool, admissionInput(task)),
+    ).rejects.toBeDefined();
+
+    const count = await pool.query<{ count: string }>(
+      "SELECT count(*)::text AS count FROM workflows.tasks WHERE tenant_id = $1 AND task_id = $2",
+      [run.tenantId, task.taskId],
+    );
+    expect(count.rows[0]!.count).toBe("0");
+  });
+
+  it("enforces persisted parent/root/depth lineage for child Task admission", async () => {
+    const run = await createRun();
+    const root = rootTask(run);
+    await admitWorkflowTask(pool, admissionInput(root));
+
+    const childId = createCanonicalId("task");
+    const at = toInstant(new Date("2026-10-04T18:02:00.000Z"));
+    const child = {
+      ...rootTask(run),
+      taskId: childId,
+      nodeKey: "child",
+      lineage: {
+        parentTaskId: root.taskId,
+        rootTaskId: root.taskId,
+        depth: 1,
+      },
+      createdAt: at,
+      updatedAt: at,
+    };
+    const admitted = await admitWorkflowTask(
+      pool,
+      admissionInput(child, createCanonicalId("correlation")),
+    );
+    expect(admitted.task.lineage).toEqual({
+      parentTaskId: root.taskId,
+      rootTaskId: root.taskId,
+      depth: 1,
+    });
+
+    const badChildId = createCanonicalId("task");
+    const bad = {
+      ...rootTask(run),
+      taskId: badChildId,
+      nodeKey: "bad_child",
+      lineage: {
+        parentTaskId: root.taskId,
+        rootTaskId: root.taskId,
+        depth: 2,
+      },
+      createdAt: at,
+      updatedAt: at,
+    };
+    await expect(
+      admitWorkflowTask(
+        pool,
+        admissionInput(bad, createCanonicalId("correlation")),
+      ),
+    ).rejects.toBeDefined();
+
+    const count = await pool.query<{ count: string }>(
+      "SELECT count(*)::text AS count FROM workflows.tasks WHERE tenant_id = $1 AND task_id = $2",
+      [run.tenantId, bad.taskId],
+    );
+    expect(count.rows[0]!.count).toBe("0");
+  });
+
 });
