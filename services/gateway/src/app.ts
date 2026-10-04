@@ -207,7 +207,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       async (request) => ({
         agents: [
           ...(await directory.list({
-            ...(request.headers.authorization === undefined ? {} : { authorizationHeader: request.headers.authorization }),
+            authorizationHeader: request.headers.authorization as string | undefined,
           })),
         ],
       }),
@@ -228,7 +228,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       },
       async (request) =>
         conversation.open({
-          ...(request.headers.authorization === undefined ? {} : { authorizationHeader: request.headers.authorization }),
+          authorizationHeader: request.headers.authorization as string | undefined,
           characterId: request.body.characterId,
         }),
     );
@@ -251,7 +251,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
         reply.raw.once("close", abort);
         try {
           const result = await conversation.turn({
-            ...(request.headers.authorization === undefined ? {} : { authorizationHeader: request.headers.authorization }),
+            authorizationHeader: request.headers.authorization as string | undefined,
             characterSessionId: request.params.characterSessionId,
             characterId: request.body.characterId,
             text: request.body.text,
@@ -313,7 +313,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
 
         try {
           const result = await conversation.turn({
-            ...(request.headers.authorization === undefined ? {} : { authorizationHeader: request.headers.authorization }),
+            authorizationHeader: request.headers.authorization as string | undefined,
             characterSessionId: request.params.characterSessionId,
             characterId: request.body.characterId,
             text: request.body.text,
@@ -381,7 +381,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
         reply.raw.once("close", abort);
         try {
           const result = await conversation.mediaTurn({
-            ...(request.headers.authorization === undefined ? {} : { authorizationHeader: request.headers.authorization }),
+            authorizationHeader: request.headers.authorization as string | undefined,
             characterSessionId: request.params.characterSessionId,
             characterId: request.body.characterId,
             caption: request.body.caption,
@@ -433,7 +433,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
         reply.raw.once("close", abort);
         try {
           const result = await conversation.mediaSetTurn({
-            ...(request.headers.authorization === undefined ? {} : { authorizationHeader: request.headers.authorization }),
+            authorizationHeader: request.headers.authorization as string | undefined,
             characterSessionId: request.params.characterSessionId,
             characterId: request.body.characterId,
             caption: request.body.caption,
@@ -485,7 +485,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       },
       async (request) => {
         await conversation.close({
-          ...(request.headers.authorization === undefined ? {} : { authorizationHeader: request.headers.authorization }),
+          authorizationHeader: request.headers.authorization as string | undefined,
           characterSessionId: request.params.characterSessionId,
           characterId: request.body.characterId,
         });
@@ -502,7 +502,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       "/v1/financial/capabilities",
       async (request) =>
         financial.capabilities({
-          ...(request.headers.authorization === undefined ? {} : { authorizationHeader: request.headers.authorization }),
+          authorizationHeader: request.headers.authorization as string | undefined,
         }),
     );
 
@@ -531,7 +531,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       },
       async (request) => ({
         routes: (await financial.listDepositRoutes({
-          ...(request.headers.authorization === undefined ? {} : { authorizationHeader: request.headers.authorization }),
+          authorizationHeader: request.headers.authorization as string | undefined,
         })).map((route) => ({
           providerCode: route.providerCode,
           asset: route.asset,
@@ -556,7 +556,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       },
       async (request) =>
         financial.createDeposit({
-          ...(request.headers.authorization === undefined ? {} : { authorizationHeader: request.headers.authorization }),
+          authorizationHeader: request.headers.authorization as string | undefined,
           requestId: request.body.requestId,
           providerCode: request.body.providerCode,
           amount: request.body.amount,
@@ -580,7 +580,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       },
       async (request) =>
         financial.createWithdrawal({
-          ...(request.headers.authorization === undefined ? {} : { authorizationHeader: request.headers.authorization }),
+          authorizationHeader: request.headers.authorization as string | undefined,
           requestId: request.body.requestId,
           providerCode: request.body.providerCode,
           amount: request.body.amount,
@@ -601,7 +601,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       },
       async (request) =>
         financial.verifyWithdrawal({
-          ...(request.headers.authorization === undefined ? {} : { authorizationHeader: request.headers.authorization }),
+          authorizationHeader: request.headers.authorization as string | undefined,
           requestId: request.params.requestId,
           verificationCode: request.body.verificationCode,
         }),
@@ -616,7 +616,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       },
       async (request) =>
         financial.refreshWithdrawal({
-          ...(request.headers.authorization === undefined ? {} : { authorizationHeader: request.headers.authorization }),
+          authorizationHeader: request.headers.authorization as string | undefined,
           requestId: request.params.requestId,
         }),
     );
@@ -633,7 +633,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       },
       async (request) =>
         financial.readBalance({
-          ...(request.headers.authorization === undefined ? {} : { authorizationHeader: request.headers.authorization }),
+          authorizationHeader: request.headers.authorization as string | undefined,
           providerCode: request.params.providerCode,
         }),
     );
@@ -650,7 +650,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       },
       async (request) => ({
         intents: await financial.listHistory({
-          ...(request.headers.authorization === undefined ? {} : { authorizationHeader: request.headers.authorization }),
+          authorizationHeader: request.headers.authorization as string | undefined,
           ...(request.query.limit === undefined ? {} : { limit: request.query.limit }),
         }),
       }),
@@ -668,7 +668,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       },
       async (request, reply) => {
         const intent = await financial.readIntent({
-          ...(request.headers.authorization === undefined ? {} : { authorizationHeader: request.headers.authorization }),
+          authorizationHeader: request.headers.authorization as string | undefined,
           requestId: request.params.requestId,
         });
         if (!intent) {
@@ -721,7 +721,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       async (request, reply) => {
         try {
           return await billing.listBillers({
-            ...(request.headers.authorization === undefined ? {} : { authorizationHeader: request.headers.authorization }),
+            authorizationHeader: request.headers.authorization as string | undefined,
             categoryCode: request.params.categoryCode,
           });
         } catch (error) {
@@ -737,7 +737,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       async (request, reply) => {
         try {
           return await billing.listItems({
-            ...(request.headers.authorization === undefined ? {} : { authorizationHeader: request.headers.authorization }),
+            authorizationHeader: request.headers.authorization as string | undefined,
             billerCode: request.params.billerCode,
           });
         } catch (error) {
@@ -766,7 +766,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       async (request, reply) => {
         try {
           return await billing.purchase({
-            ...(request.headers.authorization === undefined ? {} : { authorizationHeader: request.headers.authorization }),
+            authorizationHeader: request.headers.authorization as string | undefined,
             requestId: request.body.requestId,
             billerCode: request.body.billerCode,
             itemCode: request.body.itemCode,
@@ -794,7 +794,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       async (request, reply) => {
         try {
           return await billing.readPurchase({
-            ...(request.headers.authorization === undefined ? {} : { authorizationHeader: request.headers.authorization }),
+            authorizationHeader: request.headers.authorization as string | undefined,
             reference: request.params.reference,
             refresh: request.query.refresh === true,
           });
