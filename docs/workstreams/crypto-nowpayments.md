@@ -10,11 +10,11 @@
   - `adapters/crypto/nowpayments/**`
   - `docs/NOWPAYMENTS-ADAPTER.md`
 - Shared-contract dependencies: canonical Commerce settlement/balances remain owned by commerce-core; Gateway/mobile/channel composition remains owned by their active windows; root lockfile/workspace/config/env registries are integration-owned.
-- Current step: provider-edge catalog, quote preflight and account-capability qualification implemented; next is authenticated live account probing once credentials and shared Security/integration ownership are coordinated.
-- Implementation status: exact NOWPayments currency-code preservation, known-network projection, default Ethereum/ERC-20 exclusion, minimum-before-estimate preflight, fail-closed convert/withdraw and low-fee evidence, freshness-bounded Custody/Customer Management/conversion/payout qualification, whitelist prerequisite checks, full payment-status normalization/polling with intermediate/partial states kept non-successful, redacted transport/provider failures and injected-fetch tests implemented.
+- Current step: provider-edge catalog, quote/payment creation, signed IPN verification, lifecycle normalization and account-capability qualification implemented; next is authenticated live account probing and Gateway/Commerce integration once credentials and shared Security/integration ownership are coordinated.
+- Implementation status: exact NOWPayments currency-code preservation, known-network projection, default Ethereum/ERC-20 exclusion, minimum-before-estimate preflight, HTTPS/order-bound payment creation, bounded recursive IPN canonicalization, HMAC-SHA-512 constant-time signature verification, reconciliable webhook evidence/fingerprint extraction, fail-closed convert/withdraw and low-fee evidence, freshness-bounded Custody/Customer Management/conversion/payout qualification, whitelist prerequisite checks, full payment-status normalization/polling with intermediate/partial states kept non-successful, redacted transport/provider failures and injected-fetch tests implemented.
 - Verification status: PR #93 changed-file audit remains confined to claimed adapter/docs paths. Foundation CI run 877 on the earlier head terminated with zero job steps (runner allocation), so it is not application evidence. Latest synchronize commits have not produced a runnable CI job yet; no compile/test pass is claimed.
 - Deployment status: not deployed; no live credential/account qualification claimed.
-- Handoff evidence: PR #93; `docs/NOWPAYMENTS-ADAPTER.md`; latest implementation head `d8850716052b7c57704c6cd94553817ecb578e0c`.
+- Handoff evidence: PR #93; `docs/NOWPAYMENTS-ADAPTER.md`; latest implementation head before this handoff update `29b8bd43f20bd41ffce357608839e52cd6ebb2cc`.
 
 ## Collision constraints
 
@@ -24,7 +24,7 @@ This window did not edit `packages/commerce/**`, Gateway/mobile/channel paths, m
 
 1. Shared integration owner: add the new workspace importer to the lockfile and register any required production environment keys without overwriting concurrent adapter/channel work.
 2. Security/integration owner: bind NOWPayments credentials through canonical credential custody rather than raw environment access inside the adapter.
-3. Crypto workstream: authenticate live Custody/Customer Management/conversion/payout probes and attach their fresh evidence plus actual route-fee evidence before exposing convert/withdraw routes.
+3. Crypto workstream: authenticate live Custody/Customer Management/conversion/payout probes and attach fresh capability/fee evidence before exposing convert/withdraw routes; Gateway/Commerce integration must own persist-before-ack callback dedupe and financial reconciliation.
 4. Commerce owner: own customer crypto balances, conversions, withdrawals, ledger custody and reconciliation; this adapter must not become a second wallet.
 5. Gateway/chat/channel owners: consume authenticated server-owned transaction state; never trust a provider currency list or opaque chat selection as financial authority.
 
