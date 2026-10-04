@@ -8,6 +8,8 @@ import type {
 import type {
   AgentFloatAllocation,
   AgentFloatAllocationCommand,
+  AgentFloatAllocationHistoryPage,
+  AgentFloatAllocationHistoryQuery,
   CommerceAccountRef,
   CommerceFulfillmentAdmission,
   CommerceFulfillmentCompletion,
@@ -19,6 +21,8 @@ import type {
 export interface CommerceRepository {
   /** Atomic command/ledger custody. Does not grant Character ownership or authority. */
   allocateAgentFloat(input: AgentFloatAllocationCommand): Promise<AgentFloatAllocation>;
+  /** Scoped committed receipts, newest first. A cursor must belong to the same scope/filter. */
+  listAgentFloatAllocations(input: AgentFloatAllocationHistoryQuery): Promise<AgentFloatAllocationHistoryPage>;
   readAgentFloatAllocation(input: {
     readonly tenantId: TenantId;
     readonly userId: UserId;

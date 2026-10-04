@@ -2,6 +2,7 @@ import {
   assertFulfillmentAdmissionTransfers,
   normalizeAgentFloatAllocation,
   normalizeAgentFloatAllocationCommand,
+  normalizeAgentFloatAllocationHistoryQuery,
   planFulfillmentSettlement,
   normalizeCommerceAccountRef,
   normalizeCommerceFulfillmentAdmission,
@@ -193,6 +194,38 @@ export function createPostgresCommerceRepository(pool: Pool): CommerceRepository
         );
         return allocation;
       });
+    },
+
+    async listAgentFloatAllocations(input) {
+      const query = normalizeAgentFloatAllocationHistoryQuery(input);
+      return withTransaction(pool, async client => {
+        if (query.beforeRequestId !== null) {
+          const cursor = await client.query(
+            `SELECT 1 FROM commerce.agent_float_allocations
+             WHERE tenant_id=$1 AND user_id=$2 AND request_id=$3
+               AND ($4::text IS NULL OR character_id=$4)`,
+            [query.tenantId, query.userId, query.beforeRequestId, query.characterId],
+          );
+          if (!cursor.rows[0]) throw conflict("commerce.float_history_cursor_unavailable",
+            "Float history cursor is unavailable in this scope");
+        }
+        const result = await client.query<{ definition: AgentFloatAllocation }>(
+          `SELECT definition FROM commerce.agent_float_allocations
+           WHERE tenant_id=$1 AND user_id=$2
+             AND ($3::text IS NULL OR character_id=$3)
+             AND ($4::text IS NULL OR (created_at,request_id) < (
+               SELECT created_at,request_id FROM commerce.agent_float_allocations
+               WHERE tenant_id=$1 AND user_id=$2 AND request_id=$4
+             ))
+           ORDER BY created_at DESC,request_id DESC LIMIT $5`,
+          [query.tenantId, query.userId, query.characterId, query.beforeRequestId, query.limit + 1],
+        );
+        const allocations = Object.freeze(result.rows.slice(0, query.limit)
+          .map(row => normalizeAgentFloatAllocation(row.definition)));
+        return Object.freeze({ allocations,
+          nextBeforeRequestId: result.rows.length > query.limit
+            ? allocations[allocations.length - 1]!.requestId : null });
+      }, { isolation: "repeatable read", readOnly: true });
     },
 
     async readAgentFloatAllocation(input) {

@@ -105,6 +105,43 @@ export interface AgentFloatAllocation extends AgentFloatAllocationCommand {
   readonly createdAt: Instant;
 }
 
+export interface AgentFloatAllocationHistoryQuery {
+  readonly tenantId: TenantId;
+  readonly userId: UserId;
+  readonly characterId?: CharacterId | null;
+  readonly beforeRequestId?: RequestId | null;
+  readonly limit?: number;
+}
+
+export interface NormalizedAgentFloatAllocationHistoryQuery {
+  readonly tenantId: TenantId;
+  readonly userId: UserId;
+  readonly characterId: CharacterId | null;
+  readonly beforeRequestId: RequestId | null;
+  readonly limit: number;
+}
+
+export interface AgentFloatAllocationHistoryPage {
+  readonly allocations: readonly AgentFloatAllocation[];
+  readonly nextBeforeRequestId: RequestId | null;
+}
+
+export function normalizeAgentFloatAllocationHistoryQuery(
+  input: AgentFloatAllocationHistoryQuery,
+): NormalizedAgentFloatAllocationHistoryQuery {
+  const limit = input.limit === undefined ? 20 : input.limit;
+  if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100) {
+    throw new RangeError("Float allocation history limit must be between 1 and 100");
+  }
+  return Object.freeze({
+    tenantId: parseCanonicalId("tenant", input.tenantId),
+    userId: parseCanonicalId("user", input.userId),
+    characterId: input.characterId == null ? null : parseCanonicalId("character", input.characterId),
+    beforeRequestId: input.beforeRequestId == null ? null : parseCanonicalId("request", input.beforeRequestId),
+    limit,
+  });
+}
+
 export function normalizeAgentFloatAllocationCommand(
   input: AgentFloatAllocationCommand,
 ): AgentFloatAllocationCommand {

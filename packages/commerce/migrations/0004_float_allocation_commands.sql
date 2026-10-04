@@ -21,6 +21,12 @@ CREATE TABLE commerce.agent_float_allocations (
   CHECK ((definition ->> 'createdAt')::timestamptz IS NOT DISTINCT FROM created_at)
 );
 
+-- Bounded history queries preserve tenant/user scope and use stable keyset order.
+CREATE INDEX agent_float_allocation_history_idx ON commerce.agent_float_allocations
+  (tenant_id,user_id,created_at DESC,request_id DESC);
+CREATE INDEX agent_float_allocation_character_history_idx ON commerce.agent_float_allocations
+  (tenant_id,user_id,character_id,created_at DESC,request_id DESC);
+
 -- A receipt must prove this exact custody movement, not merely reference any
 -- existing ledger row. Ledger rows are immutable, so this binding stays valid.
 CREATE FUNCTION commerce.validate_agent_float_allocation()

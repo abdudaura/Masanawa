@@ -1,7 +1,7 @@
 import { fileURLToPath } from "node:url";
 import { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createCanonicalId, nowInstant } from "@masanawa/contracts";
+import { createCanonicalId, nowInstant, toInstant, type CharacterId } from "@masanawa/contracts";
 import type { AgentFloatAllocationCommand } from "@masanawa/commerce";
 import { runMigrations } from "../migrations.js";
 import { createPostgresCommerceRepository } from "./repository.js";
@@ -37,6 +37,24 @@ describeDatabase("persistent Agent Float allocation PostgreSQL acceptance", () =
     }
     await fund(balance);
     return { repository, command, customer, agentFloat, fund };
+  }
+
+  async function historyReceipt(f: Awaited<ReturnType<typeof fixture>>,
+    createdAt = "2000-01-01T00:00:00.000Z", characterId: CharacterId = f.command.characterId) {
+    const receipt = { ...f.command, characterId, amountCredits: 1,
+      requestId: createCanonicalId("request"), ledgerEntryId: createCanonicalId("ledger-entry"),
+      createdAt: toInstant(createdAt) };
+    await f.repository.postTransfer({
+      schemaVersion: 1, tenantId: receipt.tenantId, ledgerEntryId: receipt.ledgerEntryId,
+      debit: f.customer, credit: { ...f.agentFloat, characterId }, amountCredits: 1,
+      reason: "agent-float-topup", quoteId: null, fulfillmentId: null, createdAt: receipt.createdAt,
+    });
+    await pool.query(`INSERT INTO commerce.agent_float_allocations(
+      tenant_id,user_id,request_id,character_id,amount_credits,ledger_entry_id,definition,created_at
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8)`, [receipt.tenantId, receipt.userId,
+      receipt.requestId, characterId, receipt.amountCredits, receipt.ledgerEntryId,
+      JSON.stringify(receipt), receipt.createdAt]);
+    return receipt;
   }
 
   it("returns one persisted receipt and transfer for duplicate requests", async () => {
@@ -200,5 +218,75 @@ describeDatabase("persistent Agent Float allocation PostgreSQL acceptance", () =
     expect(await f.repository.readAgentFloatAllocation(alias)).toBeNull();
     expect(await f.repository.readBalance(f.customer)).toBe(40);
     expect(await f.repository.readBalance(f.agentFloat)).toBe(60);
+  });
+
+  it("returns empty history without revealing another tenant or user's receipts", async () => {
+    const f = await fixture();
+    await f.repository.allocateAgentFloat(f.command);
+    for (const scope of [
+      { tenantId: f.command.tenantId, userId: createCanonicalId("user") },
+      { tenantId: createCanonicalId("tenant"), userId: f.command.userId },
+    ]) expect(await f.repository.listAgentFloatAllocations(scope)).toEqual({ allocations: [], nextBeforeRequestId: null });
+  });
+
+  it("paginates equal timestamps deterministically with no duplicate or missing receipts", async () => {
+    const f = await fixture();
+    const receipts = [];
+    for (let index = 0; index < 5; index++) receipts.push(await historyReceipt(f));
+    const expected = receipts.map(r => r.requestId).sort().reverse();
+    const first = await f.repository.listAgentFloatAllocations({ ...f.command, limit: 2 });
+    expect(first.allocations.map(r => r.requestId)).toEqual(expected.slice(0, 2));
+    expect(first.nextBeforeRequestId).toBe(expected[1]);
+    expect(Object.isFrozen(first)).toBe(true);
+    expect(Object.isFrozen(first.allocations)).toBe(true);
+    expect(Object.isFrozen(first.allocations[0])).toBe(true);
+    const second = await createPostgresCommerceRepository(pool).listAgentFloatAllocations({
+      ...f.command, limit: 2, beforeRequestId: first.nextBeforeRequestId,
+    });
+    expect(second.allocations.map(r => r.requestId)).toEqual(expected.slice(2, 4));
+    const last = await f.repository.listAgentFloatAllocations({
+      ...f.command, limit: 2, beforeRequestId: second.nextBeforeRequestId,
+    });
+    expect(last.allocations.map(r => r.requestId)).toEqual(expected.slice(4));
+    expect(last.nextBeforeRequestId).toBeNull();
+    const end = await f.repository.listAgentFloatAllocations({ ...f.command,
+      beforeRequestId: last.allocations[0]!.requestId });
+    expect(end).toEqual({ allocations: [], nextBeforeRequestId: null });
+  });
+
+  it("keeps the next page stable when a newer allocation arrives between reads", async () => {
+    const f = await fixture();
+    const older = await historyReceipt(f, "2000-01-01T00:00:00.000Z");
+    const newer = await historyReceipt(f, "2001-01-01T00:00:00.000Z");
+    const first = await f.repository.listAgentFloatAllocations({ ...f.command, limit: 1 });
+    expect(first.allocations).toEqual([newer]);
+    const latest = await historyReceipt(f, "2002-01-01T00:00:00.000Z");
+    const next = await f.repository.listAgentFloatAllocations({ ...f.command, limit: 1,
+      beforeRequestId: first.nextBeforeRequestId });
+    expect(next.allocations).toEqual([older]);
+    expect(next.nextBeforeRequestId).toBeNull();
+    const refresh = await f.repository.listAgentFloatAllocations({ ...f.command, limit: 1 });
+    expect(refresh.allocations).toEqual([latest]);
+    expect(await f.repository.readBalance(f.customer)).toBe(97);
+  });
+
+  it("filters by Character and rejects missing or out-of-scope cursor identities", async () => {
+    const f = await fixture();
+    const own = await historyReceipt(f);
+    const otherCharacterId = createCanonicalId("character");
+    const otherCharacter = await historyReceipt(f, "2001-01-01T00:00:00.000Z", otherCharacterId);
+    expect((await f.repository.listAgentFloatAllocations(f.command)).allocations).toEqual([own]);
+    expect((await f.repository.listAgentFloatAllocations({ ...f.command, characterId: null })).allocations)
+      .toEqual([otherCharacter, own]);
+    const other = await fixture();
+    const foreign = await other.repository.allocateAgentFloat(other.command);
+    for (const cursor of [createCanonicalId("request"), foreign.requestId, otherCharacter.requestId]) {
+      await expect(f.repository.listAgentFloatAllocations({ ...f.command, beforeRequestId: cursor }))
+        .rejects.toMatchObject({ code: "commerce.float_history_cursor_unavailable" });
+    }
+    await expect(f.repository.listAgentFloatAllocations({ ...f.command, userId: createCanonicalId("user"),
+      beforeRequestId: own.requestId })).rejects.toMatchObject({ code: "commerce.float_history_cursor_unavailable" });
+    await expect(f.repository.listAgentFloatAllocations({ ...f.command, tenantId: createCanonicalId("tenant"),
+      beforeRequestId: own.requestId })).rejects.toMatchObject({ code: "commerce.float_history_cursor_unavailable" });
   });
 });

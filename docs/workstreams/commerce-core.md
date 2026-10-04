@@ -9,7 +9,7 @@
   and replay/conflict protection inside the canonical Commerce repository, plus bounded
   user-scoped receipt history with keyset pagination and optional Character filtering.
 - Last update: 2026-10-04
-- Current step: bounded, scoped Float allocation receipt history and restart recovery.
+- Current step: receipt history implemented and verified; coordinated integration pending.
 
 ## Exact owned paths
 
@@ -47,8 +47,8 @@ were present in main/open PRs at selection time. Recheck before writes and commi
   to Agent Float transfer, exact replay, changed-payload conflict rejection and scoped reads.
   Database receipt insertion now validates exact ledger custody (accounts, amount, reason,
   timestamp and absence of quote/fulfillment links); ledger aliases are also rejected.
-- Verified: claim published and read back before edits; 39 Commerce/architecture tests;
-  18 SQL persistence acceptance cases on PGlite PostgreSQL 18.3; Commerce, Postgres and
+- Verified: claim published and read back before edits; 49 Commerce/architecture tests;
+  22 SQL persistence acceptance cases on PGlite PostgreSQL 18.3; Commerce, Postgres and
   Gateway strict typechecks; Gateway dependency build; whitespace checks.
 - PGlite serializes its connections. Separate-session PostgreSQL concurrency qualification
   remains required using the checked-in integration suite and MASANAWA_TEST_DATABASE_URL.
@@ -57,9 +57,12 @@ were present in main/open PRs at selection time. Recheck before writes and commi
   PR 92 owns channel ingress; no channel paths are edited here.
 - Initial implementation commit: fea199c3f11f73e4faca9f09513739ce43e662ff.
 - Custody hardening implementation: e3d08e0a01b2c7b6b1c737e2683baa6132cad505.
-- Latest checks: all 18 SQL cases passed on a fresh PGlite database, including nine
-  mismatched-custody variants and duplicate-ledger alias rejection; strict Postgres
-  typecheck and whitespace checks passed. Earlier 39 test/build evidence remains valid.
+- Latest checks: 31 Commerce tests plus 18 architecture tests; 22 SQL cases on fresh
+  PGlite PostgreSQL 18.3, including scoped history, equal-timestamp pagination,
+  interleaved new receipts, restart continuity, custody mismatches and ledger alias
+  rejection; strict Commerce/Postgres/Gateway typechecks and whitespace checks passed.
+  Earlier Gateway dependency build evidence is retained.
+- Receipt history: implemented; exact publication SHA recorded in PR evidence.
 
 ### Next integration step
 
@@ -68,6 +71,13 @@ allocateAgentFloat with one stable canonical RequestId for each confirmed intent
 Persist that ID across network retries, restarts and channel retries. Replay identical
 terms with the same ID; changed terms require new confirmation and a new ID.
 Failed atomic commands leave no receipt and can be retried after funding.
+For receipt recovery, listAgentFloatAllocations accepts authenticated tenant/user scope,
+optional Character filter, limit 1–100 (default 20), and beforeRequestId. Follow the
+returned nextBeforeRequestId until null. Cursor lookup is scoped to the same tenant,
+User and Character filter; missing or foreign cursors fail without revealing custody.
+Start a fresh first page to see new receipts. History is a read projection and grants
+no authority. Do not treat it as provider transaction or earnings history.
+
 The existing Gateway allocation flow still uses the old transfer port and must be
 adopted by its owning window before any UI idempotency claim. Do not bypass authorization.
 

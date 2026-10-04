@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createCanonicalId, nowInstant } from "@masanawa/contracts";
-import { normalizeAgentFloatAllocation, normalizeAgentFloatAllocationCommand } from "./model.js";
+import { normalizeAgentFloatAllocation, normalizeAgentFloatAllocationCommand,
+  normalizeAgentFloatAllocationHistoryQuery } from "./model.js";
 
 function command() {
   return {
@@ -46,5 +47,31 @@ describe("Agent Float allocation command contract", () => {
     const allocation = { ...command(), ledgerEntryId: createCanonicalId("ledger-entry"), createdAt: nowInstant() };
     expect(() => normalizeAgentFloatAllocation({ ...allocation, ledgerEntryId: createCanonicalId("request") as never })).toThrow();
     expect(() => normalizeAgentFloatAllocation({ ...allocation, createdAt: "not-a-time" as never })).toThrow();
+  });
+
+  it("normalizes bounded history defaults and existing canonical cursor IDs", () => {
+    const input = command();
+    const defaults = normalizeAgentFloatAllocationHistoryQuery({ tenantId: input.tenantId, userId: input.userId });
+    expect(defaults).toEqual({ tenantId: input.tenantId, userId: input.userId,
+      characterId: null, beforeRequestId: null, limit: 20 });
+    expect(Object.isFrozen(defaults)).toBe(true);
+    expect(normalizeAgentFloatAllocationHistoryQuery({ ...input,
+      beforeRequestId: input.requestId, limit: 100 })).toMatchObject({
+      characterId: input.characterId, beforeRequestId: input.requestId, limit: 100,
+    });
+  });
+
+  it.each([0, -1, 1.5, 101, NaN, Infinity, "20", null])(
+    "rejects invalid history limit %s without coercion", limit => {
+      expect(() => normalizeAgentFloatAllocationHistoryQuery({ ...command(), limit: limit as never })).toThrow();
+    },
+  );
+
+  it("rejects wrong history scope/filter/cursor ID types", () => {
+    for (const change of [{ tenantId: createCanonicalId("user") },
+      { userId: createCanonicalId("character") }, { characterId: createCanonicalId("request") },
+      { beforeRequestId: createCanonicalId("ledger-entry") }]) {
+      expect(() => normalizeAgentFloatAllocationHistoryQuery({ ...command(), ...change } as never)).toThrow();
+    }
   });
 });
