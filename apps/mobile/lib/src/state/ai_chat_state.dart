@@ -429,8 +429,18 @@ class AiChatController extends Notifier<AiChatState> {
       return;
     try {
       final attachment = userMsg.attachment;
+      final streamMessageId =
+          attachment == null ? _beginAiStream(characterId) : null;
       final result = attachment == null
-          ? await _sendViaTransport(characterId, userMsg.text)
+          ? await _sendViaTransport(
+              characterId,
+              userMsg.text,
+              onTextDelta: (delta) {
+                if (streamMessageId != null) {
+                  _appendAiDelta(characterId, streamMessageId, delta);
+                }
+              },
+            )
           : await _sendMediaViaTransport(
               characterId,
               attachment,
@@ -457,13 +467,24 @@ class AiChatController extends Notifier<AiChatState> {
           sizeBytes: audio.length,
         );
       }
-      await _appendAi(
-        characterId,
-        result.text,
-        parts: result.parts,
-        attachment: replyAudio,
-        agentRunId: result.agentRunId,
-      );
+      if (streamMessageId != null) {
+        await _finalizeAiStream(
+          characterId,
+          streamMessageId,
+          result.text,
+          parts: result.parts,
+          attachment: replyAudio,
+          agentRunId: result.agentRunId,
+        );
+      } else {
+        await _appendAi(
+          characterId,
+          result.text,
+          parts: result.parts,
+          attachment: replyAudio,
+          agentRunId: result.agentRunId,
+        );
+      }
     } catch (error) {
       if (_disposed ||
           threadGeneration != (_threadGenerations[characterId] ?? 0)) {
@@ -475,6 +496,7 @@ class AiChatController extends Notifier<AiChatState> {
               error.statusCode == 404)) {
         _bindings.remove(characterId);
       }
+      _removeStreamingPlaceholders(characterId);
       _setDelivery(characterId, userMsg.id, 'failed');
       final feedback = AgentFeedback.fromError(error, conversation: true);
       await _appendAi(
@@ -557,11 +579,16 @@ class AiChatController extends Notifier<AiChatState> {
 
   Future<AgentTurnResult> _sendViaTransport(
     String characterId,
-    String prompt,
-  ) async {
+    String prompt, {
+    void Function(String delta)? onTextDelta,
+  }) async {
     final transport = ref.read(agentTransportProvider);
     final binding = await _bindingFor(characterId, transport);
-    return transport.sendTurn(binding: binding, text: prompt);
+    return transport.sendTurn(
+      binding: binding,
+      text: prompt,
+      onTextDelta: onTextDelta,
+    );
   }
 
   Future<AgentSessionBinding> _bindingFor(
@@ -598,27 +625,112 @@ class AiChatController extends Notifier<AiChatState> {
     return binding;
   }
 
+  String _beginAiStream(String characterId) {
+    final thread = threadOf(characterId);
+    final id = _newId();
+    final isOpen = state.openThreadId == characterId;
+    final message = AiChatMessage(
+      id: id,
+      isUser: false,
+      text: '',
+      createdAt: DateTime.now(),
+      deliveryStatus: 'streaming',
+    );
+    state = state.copyWith(
+      threads: {
+        ...state.threads,
+        characterId: thread.copyWith(
+          messages: [...thread.messages, message],
+          unread: isOpen ? 0 : thread.unread + 1,
+          updatedAt: DateTime.now(),
+        ),
+      },
+    );
+    _save();
+    return id;
+  }
+
+  void _appendAiDelta(String characterId, String messageId, String delta) {
+    if (_disposed || delta.isEmpty) return;
+    _updateMessage(
+      characterId,
+      messageId,
+      (message) => message.copyWith(
+        text: message.text + delta,
+        deliveryStatus: 'streaming',
+      ),
+      persist: false,
+    );
+  }
+
+  Future<void> _finalizeAiStream(
+    String characterId,
+    String messageId,
+    String finalText, {
+    List<AgentMessagePart> parts = const [],
+    ChatAttachment? attachment,
+    String? agentRunId,
+  }) async {
+    if (_disposed) return;
+    _updateMessage(
+      characterId,
+      messageId,
+      (message) => message.copyWith(
+        text: finalText,
+        parts: parts,
+        attachment: attachment,
+        deliveryStatus: 'delivered',
+      ),
+      persist: false,
+    );
+    final thread = threadOf(characterId);
+    state = state.copyWith(
+      threads: {
+        ...state.threads,
+        characterId: thread.copyWith(
+          updatedAt: DateTime.now(),
+          agentRunId: agentRunId,
+        ),
+      },
+      sendingIn: {...state.sendingIn}..remove(characterId),
+    );
+    await _save();
+  }
+
+  void _removeStreamingPlaceholders(String characterId) {
+    final thread = threadOf(characterId);
+    final messages = thread.messages
+        .where((message) =>
+            message.isUser || message.deliveryStatus != 'streaming')
+        .toList();
+    if (messages.length == thread.messages.length) return;
+    state = state.copyWith(
+      threads: {
+        ...state.threads,
+        characterId: thread.copyWith(messages: messages),
+      },
+    );
+  }
+
   Future<void> _appendAi(
     String characterId,
     String text, {
     List<AgentMessagePart> parts = const [],
     ChatAttachment? attachment,
     String? agentRunId,
-  }) {
+  }) async {
     if (_disposed) return;
     final thread = threadOf(characterId);
     final isOpen = state.openThreadId == characterId;
-    final id = _newId();
     final msg = AiChatMessage(
-      id: id,
+      id: _newId(),
       isUser: false,
-      text: '',
+      text: text,
       parts: parts,
       attachment: attachment,
       createdAt: DateTime.now(),
-      deliveryStatus: 'streaming',
+      deliveryStatus: 'delivered',
     );
-    final sending = {...state.sendingIn};
     state = state.copyWith(
       threads: {
         ...state.threads,
@@ -629,65 +741,9 @@ class AiChatController extends Notifier<AiChatState> {
           agentRunId: agentRunId,
         ),
       },
-      sendingIn: sending,
+      sendingIn: {...state.sendingIn}..remove(characterId),
     );
     await _save();
-    await _streamReply(characterId, id, text);
-  }
-
-  Future<void> _streamReply(
-    String characterId,
-    String messageId,
-    String text,
-  ) async {
-    final generation = _threadGenerations[characterId] ?? 0;
-    if (text.isEmpty) {
-      _updateMessage(
-        characterId,
-        messageId,
-        (m) => m.copyWith(deliveryStatus: 'delivered'),
-      );
-      state = state.copyWith(
-        sendingIn: {...state.sendingIn}..remove(characterId),
-      );
-      return;
-    }
-
-    final runes = text.runes.toList(growable: false);
-    final buffer = StringBuffer();
-    for (var i = 0; i < runes.length; i++) {
-      if (_disposed ||
-          generation != (_threadGenerations[characterId] ?? 0)) {
-        return;
-      }
-      buffer.writeCharCode(runes[i]);
-      final isBoundary =
-          i == runes.length - 1 ||
-          (i > 0 && i % 18 == 0) ||
-          runes[i] == 10;
-      if (!isBoundary) continue;
-
-      final complete = i == runes.length - 1;
-      _updateMessage(
-        characterId,
-        messageId,
-        (m) => m.copyWith(
-          text: buffer.toString(),
-          deliveryStatus: complete ? 'delivered' : 'streaming',
-        ),
-        persist: complete,
-      );
-      if (!complete) {
-        await Future<void>.delayed(const Duration(milliseconds: 24));
-      }
-    }
-
-    if (!_disposed &&
-        generation == (_threadGenerations[characterId] ?? 0)) {
-      state = state.copyWith(
-        sendingIn: {...state.sendingIn}..remove(characterId),
-      );
-    }
   }
 
   void seedGreeting(String characterId, String? greeting) {
