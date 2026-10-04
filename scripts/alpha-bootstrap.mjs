@@ -5,7 +5,7 @@ import {
   nowInstant,
 } from "@masanawa/contracts";
 import {
-  characterSessionMigrationRoots,
+  platformProductMigrationRoots,
   createPostgresAgentPresentationRepository,
   createPostgresCharacterSkillAssignmentRepository,
   createPostgresIdentityRepository,
@@ -283,7 +283,7 @@ const characters = [
 try {
   const applied = await runMigrations(
     pool,
-    characterSessionMigrationRoots(),
+    platformProductMigrationRoots(),
   );
 
   await withTransaction(pool, async (client) => {
