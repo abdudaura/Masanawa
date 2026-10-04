@@ -2,6 +2,8 @@ import {
   PlatformError,
   createCanonicalId,
   toInstant,
+  type CorrelationId,
+  type EventId,
   type Instant,
   type TaskId,
   type TenantId,
@@ -369,8 +371,8 @@ export async function releaseDueWorkflowTaskRetries(
     const published: Array<Readonly<{ taskId: TaskId; outboxEventId: string }>> = [];
     for (const taskId of taskIds) {
       const origin = await client.query<{
-        event_id: string;
-        correlation_id: string;
+        event_id: EventId;
+        correlation_id: CorrelationId;
         destination: string;
       }>(
         `SELECT event_id, correlation_id, destination
@@ -393,6 +395,9 @@ export async function releaseDueWorkflowTaskRetries(
         });
       }
 
+      const now = await client.query<{ at: Date }>(
+        "SELECT clock_timestamp() AS at",
+      );
       const eventId = createCanonicalId("event");
       const outboxEventId = await enqueueOutbox(client, {
         tenantId: input.tenantId,
@@ -401,10 +406,10 @@ export async function releaseDueWorkflowTaskRetries(
         schemaVersion: 1,
         aggregateType: "workflow-task",
         aggregateId: taskId,
-        correlationId: source.correlation_id as never,
-        causationId: source.event_id as never,
+        correlationId: source.correlation_id,
+        causationId: source.event_id,
         destination: source.destination,
-        availableAt: toInstant(new Date()),
+        availableAt: toInstant(now.rows[0]!.at),
         payload: {
           taskId,
           failureCount: failureCountByTask.get(taskId) ?? 0,
