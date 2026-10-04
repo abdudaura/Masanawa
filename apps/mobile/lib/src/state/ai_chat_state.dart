@@ -1669,7 +1669,32 @@ class AiChatController extends Notifier<AiChatState> {
       for (final subscription in subscriptions)
         subscription.cancel().catchError((_) {}),
       LivePcmAudio.stop().catchError((_) {}),
+      _clearOwnedTempMedia(),
     ]);
+  }
+
+  Future<void> _clearOwnedTempMedia() async {
+    try {
+      final dir = await getTemporaryDirectory();
+      if (!await dir.exists()) return;
+      await for (final entity in dir.list(followLinks: false)) {
+        if (entity is! File) continue;
+        final name = entity.uri.pathSegments.isEmpty
+            ? ''
+            : entity.uri.pathSegments.last;
+        if (!name.startsWith('masanawa_voice_') &&
+            !name.startsWith('masanawa_reply_')) {
+          continue;
+        }
+        try {
+          await entity.delete();
+        } catch (_) {
+          // One locked temp file must not block account cleanup.
+        }
+      }
+    } catch (_) {
+      // OS temp storage remains non-canonical; cleanup is best effort.
+    }
   }
 
   List<double> _pcmWaveform(Uint8List wavBytes, {int bars = 36}) {
@@ -1765,6 +1790,7 @@ class AiChatController extends Notifier<AiChatState> {
       for (final subscription in subscriptions)
         subscription.cancel().catchError((_) {}),
       LivePcmAudio.stop().catchError((_) {}),
+      _clearOwnedTempMedia(),
     ]);
 
     if (_disposed ||
