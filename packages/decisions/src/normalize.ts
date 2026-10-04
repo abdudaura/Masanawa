@@ -77,6 +77,10 @@ function normalizeValue(value: DecisionValue, depth: number, path: string): Deci
     );
   }
   if (typeof value === "object") {
+    const prototype = Object.getPrototypeOf(value);
+    if (prototype !== Object.prototype && prototype !== null) {
+      fail(`${path} must contain only plain JSON-like objects`);
+    }
     const entries = Object.entries(value as Readonly<Record<string, DecisionValue>>);
     if (entries.length > decisionLimits.maxObjectKeys) {
       fail(`${path} exceeds maximum object key count`);
@@ -190,6 +194,13 @@ export function createDecisionDefinition(
     questions[key] = normalizeQuestion(question, `questions.${key}`);
   }
 
+  if (!["low", "medium", "high"].includes(input.risk)) {
+    fail("risk must be low, medium or high");
+  }
+  if (!["shadow", "active"].includes(input.rollout)) {
+    fail("rollout must be shadow or active");
+  }
+
   return Object.freeze({
     decisionClass,
     schemaVersion,
@@ -268,14 +279,15 @@ export function createDecisionResult(
   definition: DecisionDefinition,
   input: DecisionResult,
 ): DecisionResult {
+  const normalizedDefinition = createDecisionDefinition(definition);
   if (
-    input.decisionClass !== definition.decisionClass ||
-    input.schemaVersion !== definition.schemaVersion
+    input.decisionClass !== normalizedDefinition.decisionClass ||
+    input.schemaVersion !== normalizedDefinition.schemaVersion
   ) {
     fail("decision result does not match the declared decision schema");
   }
 
-  const expected = Object.keys(definition.questions).sort();
+  const expected = Object.keys(normalizedDefinition.questions).sort();
   const actual = Object.keys(input.answers).sort();
   if (
     expected.length !== actual.length ||
@@ -287,7 +299,7 @@ export function createDecisionResult(
   const answers: Record<string, DecisionAnswer> = {};
   for (const key of expected) {
     answers[key] = validateAnswer(
-      definition.questions[key]!,
+      normalizedDefinition.questions[key]!,
       input.answers[key]!,
       `answers.${key}`,
     );
