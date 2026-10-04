@@ -107,15 +107,20 @@ export function createBillingFinancialService(input: Readonly<{
 
     async purchase(request) {
       const identity = await input.authorizer.authorize({ authorizationHeader: request.authorizationHeader });
+      const items = await provider.listItems(request.billerCode, request.signal);
+      const selected = items.find((item) => item.itemCode === request.itemCode);
+      if (!selected || selected.billerCode !== request.billerCode) {
+        throw new Error("financial.billing.catalog_item_unavailable");
+      }
       const service = orchestrator(identity);
       const prepared = await service.prepare({
         fulfillmentReference: request.requestId,
-        billerCode: request.billerCode,
-        itemCode: request.itemCode,
-        itemName: request.itemName,
+        billerCode: selected.billerCode,
+        itemCode: selected.itemCode,
+        itemName: selected.name,
         customerId: request.customerId,
         amount: request.amount,
-        catalogAmount: request.catalogAmount,
+        catalogAmount: selected.amount,
         ...(request.recipientValidation === undefined
           ? {}
           : { recipientValidation: request.recipientValidation }),
