@@ -293,10 +293,24 @@ class AiChatController extends Notifier<AiChatState> {
       if (connectionGeneration != _connectionGeneration) {
         throw const ApiException('Connection changed');
       }
+      ChatAttachment? replyAudio;
+      if (result.audioBytes case final audio? when audio.isNotEmpty) {
+        final dir = await getTemporaryDirectory();
+        final path =
+            '${dir.path}/masanawa_reply_${DateTime.now().microsecondsSinceEpoch}.wav';
+        await File(path).writeAsBytes(audio, flush: true);
+        replyAudio = ChatAttachment(
+          kind: 'voice',
+          path: path,
+          durationMs: result.audioDurationMs,
+          sizeBytes: audio.length,
+        );
+      }
       _appendAi(
         characterId,
         result.text,
         parts: result.parts,
+        attachment: replyAudio,
         agentRunId: result.agentRunId,
       );
     } catch (error) {
@@ -366,10 +380,8 @@ class AiChatController extends Notifier<AiChatState> {
         code: 'ATTACHMENT_TOO_LARGE',
       );
     }
-    // Android records voice notes as AAC-LC in an M4A container. Gemini's
-    // documented media MIME for that container is audio/m4a; generic MIME
-    // inference commonly reports audio/mp4, which caused hosted voice turns
-    // to be rejected even though the bytes were valid.
+    // Voice notes are AAC-LC in an M4A container. Gemini accepts audio/m4a;
+    // generic inference may label the same container audio/mp4 and reject it.
     final mimeType = attachment.kind == 'voice'
         ? 'audio/m4a'
         : lookupMimeType(
@@ -438,6 +450,7 @@ class AiChatController extends Notifier<AiChatState> {
     String characterId,
     String text, {
     List<AgentMessagePart> parts = const [],
+    ChatAttachment? attachment,
     String? agentRunId,
   }) {
     if (_disposed) return;
@@ -448,6 +461,7 @@ class AiChatController extends Notifier<AiChatState> {
       isUser: false,
       text: text,
       parts: parts,
+      attachment: attachment,
       createdAt: DateTime.now(),
     );
     final sending = {...state.sendingIn}..remove(characterId);
