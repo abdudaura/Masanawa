@@ -1,6 +1,6 @@
 # Workstream claim — workflow-retries
 
-Status: active
+Status: implementation complete; PostgreSQL verification evidence pending
 Owner: this isolated stacked workstream
 Started: 2026-10-04 20:28 Africa/Lagos
 Base: work/workflow-checkpoints-20261004 @ f997b6720f31a31a9ac437761bf8c8174043ad3a
@@ -45,3 +45,25 @@ Task 091 approvals, Task 092 timers/schedules, Task 093 Tool receipt integration
 - restart-safe persisted next-attempt timing and safe error metadata.
 
 Task 090 remains open until focused PostgreSQL acceptance executes and canonical task evidence advances.
+
+
+## Implementation handoff
+
+Implemented in draft PR #113.
+
+Delivered:
+
+- bounded deterministic fixed/linear/exponential retry policy;
+- explicit retryable/terminal/ambiguous/unsafe-retry classification outcomes;
+- durable per-Task retry state and revision;
+- policy pinning across retry attempts;
+- contiguous attempt enforcement;
+- fenced retry scheduling from the current lease;
+- non-terminal needs-attention waiting state;
+- terminal dead-letter state;
+- exact next-attempt timestamps;
+- atomic due promotion back to Task ready;
+- concurrent promotion protection with `FOR UPDATE ... SKIP LOCKED`;
+- focused unit and PostgreSQL acceptance coverage.
+
+Task 091+ remains explicitly excluded.
