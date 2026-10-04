@@ -188,6 +188,80 @@ export interface TeachingOpaqueSelection {
   readonly selectedOptionKeys: readonly string[];
 }
 
+export interface TeachingChannelSelectionBinding {
+  readonly callbackToken: string;
+  readonly actionKey: string;
+  readonly optionKey: string;
+  readonly expiresAt: Instant;
+  readonly bindingHash: string;
+}
+
+export function createTeachingChannelSelectionBinding(input: {
+  readonly action: TeachingSelectionActionBinding;
+  readonly callbackToken: string;
+  readonly optionKey: string;
+}): TeachingChannelSelectionBinding {
+  const callbackToken = input.callbackToken.trim();
+  if (
+    callbackToken.length < 8 ||
+    Buffer.byteLength(callbackToken, "utf8") > 64 ||
+    !/^[A-Za-z0-9_-]+$/u.test(callbackToken)
+  ) {
+    throw new TypeError("Teaching channel callback token is invalid");
+  }
+  const optionKey = input.optionKey.trim().toLowerCase();
+  if (!input.action.rubric.allowedOptionKeys.includes(optionKey)) {
+    throw new TypeError(
+      "Teaching channel option must be allowed by the server rubric",
+    );
+  }
+  const payload = Object.freeze({
+    callbackToken,
+    actionKey: input.action.actionKey,
+    optionKey,
+    expiresAt: input.action.expiresAt,
+  });
+  return Object.freeze({
+    ...payload,
+    bindingHash:
+      `sha256:${fingerprintCanonicalJson(JSON.parse(canonicalJson(payload)))}`,
+  });
+}
+
+export function resolveTeachingChannelSelection(input: {
+  readonly selectionId: string;
+  readonly binding: TeachingChannelSelectionBinding;
+  readonly now: Instant;
+}): TeachingOpaqueSelection {
+  const expectedPayload = Object.freeze({
+    callbackToken: input.binding.callbackToken,
+    actionKey: input.binding.actionKey,
+    optionKey: input.binding.optionKey,
+    expiresAt: input.binding.expiresAt,
+  });
+  const expectedHash =
+    `sha256:${fingerprintCanonicalJson(
+      JSON.parse(canonicalJson(expectedPayload)),
+    )}`;
+  if (input.binding.bindingHash !== expectedHash) {
+    throw new TypeError(
+      "Teaching channel selection binding hash does not match payload",
+    );
+  }
+  if (input.selectionId !== input.binding.callbackToken) {
+    throw new TypeError(
+      "Teaching channel selection id does not match binding",
+    );
+  }
+  if (Date.parse(toInstant(input.now)) > Date.parse(input.binding.expiresAt)) {
+    throw new TypeError("Teaching channel selection binding has expired");
+  }
+  return Object.freeze({
+    actionKey: input.binding.actionKey,
+    selectedOptionKeys: Object.freeze([input.binding.optionKey]),
+  });
+}
+
 export interface TeachingSelectionAttempt {
   readonly requestId: RequestId;
   readonly payloadHash: string;
