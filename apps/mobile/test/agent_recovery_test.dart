@@ -409,7 +409,7 @@ void main() {
       );
       expect(
         adapter.request!.path,
-        'https://gateway.test/v1/agent/sessions/session-1/turn',
+        'https://gateway.test/agent/sessions/session-1/turn',
       );
       expect(adapter.request!.headers['Authorization'], 'Bearer private-token');
       expect(adapter.request!.receiveTimeout, const Duration(seconds: 75));
