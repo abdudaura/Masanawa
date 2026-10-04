@@ -78,3 +78,20 @@ Subject references remain optional Guide resources or future exact-version subsk
 Core Teaching itself intentionally declares no Tool dependency: current/specialist
 claims must enter through an independently admitted evidence-capable Tool/Skill path
 when needed rather than receiving implicit authority from teaching.
+
+
+## Selectable exercises and subject disclosure
+
+Teaching now has a transport-neutral selectable exercise card contract for free-response,
+single-select and multi-select practice. Selectable cards require stable option keys but
+intentionally contain no correct-answer field; correctness remains server/runtime
+evaluation truth rather than something exposed to the client surface.
+
+Subject material references are also explicit and mutually exclusive:
+- a reviewed Guide resource uses a validated relative resource path; or
+- a subject subskill uses one exact `SkillVersionId`.
+
+These references do not grant execution permission. A later runtime owner must resolve
+the exact subskill through canonical assignment/readiness/dependency admission before
+execution. The same exercise projection can then be rendered by app, WhatsApp or Telegram
+without channel-specific teaching logic.
