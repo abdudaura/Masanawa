@@ -1,0 +1,60 @@
+name: Rebuild Railway Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_name:
+        description: Railway project name
+        required: false
+        default: empowering-education
+
+permissions:
+  contents: read
+
+concurrency:
+  group: railway-production-rebuild
+  cancel-in-progress: false
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      CREDENTIAL_ENCRYPTION_KEY: ${{ secrets.CREDENTIAL_ENCRYPTION_KEY }}
+      FLUTTERWAVE_ENCRYPTION_KEY: ${{ secrets.FLUTTERWAVE_ENCRYPTION_KEY }}
+      FLUTTERWAVE_PUBLIC_KEY: ${{ secrets.FLUTTERWAVE_PUBLIC_KEY }}
+      FLUTTERWAVE_SECRET_KEY: ${{ secrets.FLUTTERWAVE_SECRET_KEY }}
+      FLUTTERWAVE_WEBHOOK_SECRET_HASH: ${{ secrets.FLUTTERWAVE_WEBHOOK_SECRET_HASH }}
+      MASANAWA_AUTH_OTP_PEPPER: ${{ secrets.MASANAWA_AUTH_OTP_PEPPER }}
+      MASANAWA_BILLING_ACTION_SECRET: ${{ secrets.MASANAWA_BILLING_ACTION_SECRET }}
+      MASANAWA_FLUTTERWAVE_RELAY_TOKEN: ${{ secrets.MASANAWA_FLUTTERWAVE_RELAY_TOKEN }}
+      NOWPAYMENTS_API_KEY: ${{ secrets.NOWPAYMENTS_API_KEY }}
+      NOWPAYMENTS_IPN_SECRET: ${{ secrets.NOWPAYMENTS_IPN_SECRET }}
+      NOWPAYMENTS_PAYOUT_EMAIL: ${{ secrets.NOWPAYMENTS_PAYOUT_EMAIL }}
+      NOWPAYMENTS_PAYOUT_PASSWORD: ${{ secrets.NOWPAYMENTS_PAYOUT_PASSWORD }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      WPP_SESSION: ${{ secrets.WPP_SESSION }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install Railway CLI
+        run: npm install --global @railway/cli
+
+      - name: Validate portable secret contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/railway/validate-portable-secrets.mjs
+
+      - name: Rebuild Railway runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/railway/rebuild-production.sh "${{ inputs.project_name }}"
