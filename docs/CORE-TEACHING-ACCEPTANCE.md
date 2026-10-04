@@ -57,3 +57,17 @@ The harness also proves:
 These are contract-level continuity proofs. Natural-language quality, Hausa pronunciation,
 audio transport and physical channel behavior still require the real integrated
 environments.
+
+
+## Opaque action and plan-drift acceptance
+
+The acceptance harness now exercises the production-style selectable path:
+- server creates the hidden Teaching action binding;
+- client-visible exercise contains only safe option labels/keys plus opaque actionKey;
+- app/WhatsApp return only actionKey + selected option keys;
+- server reconstructs Relationship/SkillVersion/lesson/exercise/rubric/RequestId;
+- a lost response retries with the same action/RequestId and does not advance twice.
+
+It also proves that a later channel cannot resume durable learner progress against a
+different regenerated pedagogical sequence. Language/modality changes remain permitted
+without changing the pedagogical plan identity.
