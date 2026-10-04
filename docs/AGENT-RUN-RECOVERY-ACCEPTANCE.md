@@ -15,7 +15,10 @@ lost response or process restart:
 4. finish the child;
 5. recreate the pool/repository again and replay the same terminal outcome;
 6. reject a changed terminal outcome rather than rewriting durable history;
-7. read the original root and child records after the second recreation.
+7. read the original root and child records after the second recreation;
+8. prove a persisted RequestId cannot be rebound to another AgentRun after restart;
+9. replay an identical failed terminal outcome but reject a changed failure code;
+10. reject changed admission payloads and forged child lineage after restart.
 
 The test uses the canonical CharacterSession/AgentRun migrations, Identity admission,
 Security policy revision and current database clock. It does not introduce a second
