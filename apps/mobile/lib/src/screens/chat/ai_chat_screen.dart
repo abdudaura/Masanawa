@@ -988,8 +988,8 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
   }
 
   Future<void> _toggle() async {
-    if (_broken) return;
     try {
+      if (_broken && mounted) setState(() => _broken = false);
       _player ??= AudioPlayer();
       // Subscribe once per player; re-toggling must not stack listeners.
       _stateSub ??= _player!.playerStateStream.listen((s) {
@@ -1007,7 +1007,16 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
       setState(() => _playing = true);
       unawaited(_player!.play());
     } catch (_) {
-      if (mounted) setState(() => _broken = true);
+      await _player?.dispose();
+      _player = null;
+      await _stateSub?.cancel();
+      _stateSub = null;
+      if (mounted) {
+        setState(() {
+          _playing = false;
+          _broken = true;
+        });
+      }
     }
   }
 
