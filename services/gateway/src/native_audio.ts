@@ -5,7 +5,7 @@ export interface NativeAudioResult {
 }
 
 export interface NativeAudioRenderer {
-  render(text: string): Promise<NativeAudioResult>;
+  render(text: string, signal?: AbortSignal): Promise<NativeAudioResult>;
 }
 
 interface LiveMessage {
@@ -54,7 +54,7 @@ export function createGeminiLiveAudioRenderer(input: {
   if (!apiKey) throw new TypeError("Gemini Live API key is required");
 
   return Object.freeze({
-    async render(text: string) {
+    async render(text: string, signal?: AbortSignal) {
       const value = text.trim();
       if (!value) throw new TypeError("Native audio text is required");
       if (value.length > 16_000) throw new RangeError("Native audio text is too long");
@@ -67,19 +67,29 @@ export function createGeminiLiveAudioRenderer(input: {
         "google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent" +
         "?key=" + encodeURIComponent(apiKey);
 
+      if (signal?.aborted) throw new Error("Gemini Live audio cancelled");
       return await new Promise<NativeAudioResult>((resolve, reject) => {
         const socket = new WebSocketCtor(url);
         const chunks: Buffer[] = [];
         let settled = false;
         let sentTurn = false;
 
+        const cleanup = () => {
+          clearTimeout(timer);
+          signal?.removeEventListener("abort", onAbort);
+        };
+
         const finishError = (error: Error) => {
           if (settled) return;
           settled = true;
-          clearTimeout(timer);
+          cleanup();
           try { socket.close(); } catch {}
           reject(error);
         };
+
+        const onAbort = () =>
+          finishError(new Error("Gemini Live audio cancelled"));
+        signal?.addEventListener("abort", onAbort, { once: true });
 
         const timer = setTimeout(
           () => finishError(new Error("Gemini Live audio timed out")),
@@ -162,7 +172,7 @@ export function createGeminiLiveAudioRenderer(input: {
                 return;
               }
               settled = true;
-              clearTimeout(timer);
+              cleanup();
               try { socket.close(); } catch {}
               const wav = wavFromPcm16Mono(pcm);
               resolve(Object.freeze({
