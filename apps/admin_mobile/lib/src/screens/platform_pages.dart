@@ -404,6 +404,29 @@ class _SystemAdminPageState extends State<SystemAdminPage> {
         approvals: await widget.api.approvals(),
       );
 
+  Future<void> _setWorldRunning(AdminWorld world, bool running) async {
+    try {
+      if (running) {
+        await widget.api.resumeWorld(world);
+      } else {
+        await widget.api.pauseWorld(world);
+      }
+      if (!mounted) return;
+      setState(() => _future = _load());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(running ? 'World recovery started.' : 'World paused.'),
+        ),
+      );
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error.toString())),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) => AdminFuture<SystemAdminData>(
         future: _future,
@@ -505,7 +528,13 @@ class _SystemAdminPageState extends State<SystemAdminPage> {
                           'generation ${world.currentGenerationNumber} · '
                           'policy rev ${world.policyRevision} · world rev ${world.revision}',
                         ),
-                        trailing: Chip(label: Text(world.status)),
+                        trailing: world.status == 'stopped'
+                            ? const Chip(label: Text('stopped'))
+                            : Switch(
+                                value: world.status == 'active',
+                                onChanged: (value) =>
+                                    _setWorldRunning(world, value),
+                              ),
                       ),
                     )).toList(growable: false),
                   ),
