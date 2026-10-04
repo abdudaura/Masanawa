@@ -27,6 +27,12 @@ export interface OtpDelivery {
   send(input: Readonly<{ identifier: string; code: string }>): Promise<void>;
 }
 
+export interface PlatformCustomerSessionAuthorizer {
+  authorize(input: Readonly<{
+    authorizationHeader: string | undefined;
+  }>): Promise<PlatformSessionIdentity>;
+}
+
 export interface CustomerAuthService {
   sendOtp(input: Readonly<{ phone?: string; email?: string }>): Promise<Readonly<{
     phone?: string;
@@ -301,6 +307,28 @@ export function createCustomerAuthService(input: Readonly<{
       } catch {
         return;
       }
+    },
+  });
+}
+
+export function createPlatformCustomerSessionAuthorizer(input: Readonly<{
+  repository: PlatformSessionRepository;
+  now?: () => string;
+}>): PlatformCustomerSessionAuthorizer {
+  const now = input.now ?? (() => new Date().toISOString());
+  return Object.freeze({
+    async authorize(request) {
+      const token = bearer(request.authorizationHeader);
+      if (!token) throw new Error("financial.auth.unauthorized");
+      let accessHash: string;
+      try {
+        accessHash = hashPlatformSessionToken(token);
+      } catch {
+        throw new Error("financial.auth.unauthorized");
+      }
+      const identity = await input.repository.resolveAccess({ accessHash, at: now() });
+      if (!identity) throw new Error("financial.auth.unauthorized");
+      return identity;
     },
   });
 }
