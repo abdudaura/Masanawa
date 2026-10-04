@@ -43,7 +43,7 @@ class CreatorSkillsController
     );
     if (result.hasError) {
       state = previous;
-      rethrow;
+      throw result.error!;
     }
     state = result;
   }
