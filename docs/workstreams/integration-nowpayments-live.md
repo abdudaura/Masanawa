@@ -22,5 +22,19 @@
   - do not modify PR #92 channel paths;
   - do not modify PR #94/#96 teaching paths;
   - only the lockfile is shared and is touched solely to register the new dependency-free workspace importer.
-- Current step: claim published before integration edits.
-- Verification target: frozen-lockfile build, live Railway deploy, authenticated read-only NOWPayments `/v1/status` and `/v1/currencies` checks, with no secret values or raw sensitive provider bodies logged.
+- Current step: live integration verified on Railway production worker. Adapter imported onto exact runtime base without editing runtime-owned Gateway/Commerce/mobile/channel source.
+- Verification evidence:
+  - first deployment `a80ffc22-014b-414f-9e59-304c1eac14d1` was correctly blocked by the pre-deploy gate because `src/probe.ts` was missing;
+  - missing `probe.ts` and `probe.test.ts` were imported from the crypto workstream;
+  - corrected deployment `e9de4d58-0ad3-4c37-a8bb-098a099cc582` succeeded;
+  - frozen lockfile install passed supply-chain verification;
+  - Gateway dependency graph build passed;
+  - NOWPayments adapter strict TypeScript passed;
+  - 7 test files / 38 tests passed;
+  - live `/v1/status` returned HTTP 200 with provider status OK;
+  - live `/v1/currencies` returned HTTP 200 with 220 currencies;
+  - `USDTTRC20` was present;
+  - provider catalog included ERC-20 routes, confirming the adapter's explicit default ERC-20 exclusion remains necessary;
+  - no secret values or raw sensitive provider bodies were logged.
+- Railway production source: `work/integration-nowpayments-live-20261004`; pre-deploy gate runs adapter typecheck, adapter tests and safe live smoke checks.
+- Merge handoff: PR #98 targets `task073-inference-hardening`. Runtime-owned files remain untouched; merge should be coordinated by that workstream owner.
