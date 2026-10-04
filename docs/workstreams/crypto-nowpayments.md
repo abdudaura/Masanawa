@@ -12,9 +12,9 @@
 - Shared-contract dependencies: canonical Commerce settlement/balances remain owned by commerce-core; Gateway/mobile/channel composition remains owned by their active windows; root lockfile/workspace/config/env registries are integration-owned.
 - Current step: provider-edge catalog, quote/payment creation, signed IPN verification, lifecycle normalization and account-capability qualification implemented; next is authenticated live account probing and Gateway/Commerce integration once credentials and shared Security/integration ownership are coordinated.
 - Implementation status: exact NOWPayments currency-code preservation, known-network projection, default Ethereum/ERC-20 exclusion, minimum-before-estimate preflight, HTTPS/order-bound payment creation, bounded recursive IPN canonicalization, HMAC-SHA-512 constant-time signature verification, reconciliable webhook evidence/fingerprint extraction, fail-closed convert/withdraw and low-fee evidence, freshness-bounded Custody/Customer Management/conversion/payout qualification, whitelist prerequisite checks, full payment-status normalization/polling with intermediate/partial states kept non-successful, redacted transport/provider failures and injected-fetch tests implemented.
-- Verification status: PR #93 changed-file audit remains confined to claimed adapter/docs paths. Foundation CI run 877 on the earlier head terminated with zero job steps (runner allocation), so it is not application evidence. Latest synchronize commits have not produced a runnable CI job yet; no compile/test pass is claimed.
+- Verification status: PR #93 remains confined to claimed adapter/docs paths. Foundation CI run 904 and its explicit rerun both terminated with zero job steps, so they are runner-allocation failures rather than application evidence. Latest code has added fixed HMAC vectors plus repeated-deposit/malformed-evidence coverage; no compile/test pass is claimed.
 - Deployment status: not deployed; no live credential/account qualification claimed.
-- Handoff evidence: PR #93; `docs/NOWPAYMENTS-ADAPTER.md`; latest implementation head before this handoff update `29b8bd43f20bd41ffce357608839e52cd6ebb2cc`.
+- Handoff evidence: PR #93; `docs/NOWPAYMENTS-ADAPTER.md`; latest implementation head before this handoff update `03884904395fc56309e7af9347e74d54469e3c3c`.
 
 ## Collision constraints
 
