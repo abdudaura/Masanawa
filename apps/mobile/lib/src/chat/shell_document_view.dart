@@ -43,7 +43,10 @@ class _ShellDocumentViewState extends State<ShellDocumentView> {
     } catch (_) {
       if (mounted && widget.document.id == document.id &&
           widget.document.revision == document.revision) {
-        setState(() => _error = 'Could not confirm this action. Check its status before retrying.');
+        setState(() {
+          _consumed = true;
+          _error = 'Could not confirm this action. Ask for its status before continuing.';
+        });
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -95,7 +98,7 @@ class _ShellDocumentViewState extends State<ShellDocumentView> {
         padding: const EdgeInsets.only(bottom: 8), child: _node(node)),
       if (_busy) const LinearProgressIndicator(),
       if (widget.document.expired) const Text('This option has expired. Ask for updated options.'),
-      if (_consumed) const Text('Selection submitted.'),
+      if (_consumed && _error == null) const Text('Selection submitted.'),
       if (_error != null) Text(_error!, style: TextStyle(
         color: Theme.of(context).colorScheme.error)),
     ]));
