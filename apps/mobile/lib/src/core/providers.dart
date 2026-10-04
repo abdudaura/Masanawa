@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../agents/agent_directory.dart';
+import '../agents/creator_clone.dart';
 import '../agents/agent_session.dart';
 import '../agents/masanawa_transport.dart';
 import '../core/network/api_client.dart';
@@ -49,5 +50,17 @@ final agentTransportProvider = Provider<AgentTransport>((ref) {
   return PreviewAgentTransport(
     sendPreview: (message, characterId) =>
         ref.read(apiClientProvider).aiChat(message, masana: characterId),
+  );
+});
+
+
+final creatorCloneTransportProvider = Provider<CreatorCloneTransport>((ref) {
+  final connection = ref.watch(agentConnectionProvider);
+  if (!connection.configured) return const UnavailableCreatorCloneTransport();
+  return MasanawaCreatorCloneTransport(
+    dio: ref.watch(dioProvider),
+    baseUrl: connection.baseUrl,
+    readAccessToken: () =>
+        connection.token ?? ref.read(apiClientProvider).accessToken,
   );
 });
