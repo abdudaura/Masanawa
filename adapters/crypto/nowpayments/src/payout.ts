@@ -9,7 +9,18 @@ export interface NowPaymentsPayoutClientOptions {
 export interface NowPaymentsCreatedPayout {
   /** NOWPayments batch withdrawal id. Verification is performed against this id. */
   readonly payoutId: string;
+  readonly withdrawalId: string | null;
   readonly status: string | null;
+}
+
+export interface NowPaymentsPayoutEvidence {
+  readonly batchId: string;
+  readonly withdrawalId: string;
+  readonly status: string;
+  readonly currency: string;
+  readonly amount: string;
+  readonly address: string;
+  readonly uniqueExternalId: string | null;
 }
 
 export interface NowPaymentsPayoutAddressValidation {
@@ -105,8 +116,45 @@ function payoutIdFrom(body: unknown): string {
 function statusFrom(body: unknown): string | null {
   if (typeof body !== "object" || body === null || Array.isArray(body)) return null;
   const record = body as Record<string, unknown>;
-  const value = record.payout_status ?? record.status;
+  const nested = Array.isArray(record.withdrawals) && record.withdrawals.length === 1
+    ? record.withdrawals[0]
+    : null;
+  const value = record.payout_status ?? record.status ??
+    (nested && typeof nested === "object" && !Array.isArray(nested)
+      ? (nested as Record<string, unknown>).payout_status ?? (nested as Record<string, unknown>).status
+      : undefined);
   return typeof value === "string" && value.trim() ? value.trim().toLowerCase() : null;
+}
+
+function withdrawalIdFrom(body: unknown): string | null {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return null;
+  const withdrawals = (body as Record<string, unknown>).withdrawals;
+  if (!Array.isArray(withdrawals) || withdrawals.length !== 1) return null;
+  const row = withdrawals[0];
+  if (!row || typeof row !== "object" || Array.isArray(row)) return null;
+  const candidate = (row as Record<string, unknown>).id ?? (row as Record<string, unknown>).payout_id;
+  const normalized = String(candidate ?? "").trim();
+  return /^[A-Za-z0-9_-]{1,128}$/u.test(normalized) ? normalized : null;
+}
+
+function exactPayoutEvidence(row: Record<string, unknown>, expectedBatchId: string): NowPaymentsPayoutEvidence {
+  const batchId = String(row.batch_withdrawal_id ?? row.batch_id ?? "").trim();
+  if (batchId !== expectedBatchId) throw new Error("nowpayments.payout.evidence_mismatch");
+  const withdrawalId = String(row.id ?? row.payout_id ?? "").trim();
+  if (!/^[A-Za-z0-9_-]{1,128}$/u.test(withdrawalId)) {
+    throw new Error("nowpayments.payout.evidence_unavailable");
+  }
+  const status = statusFrom(row);
+  if (status === null) throw new Error("nowpayments.payout.evidence_unavailable");
+  const currency = payoutCurrency(String(row.currency ?? ""));
+  const amount = decimal(row.amount, "nowpayments.payout.evidence_unavailable");
+  const address = nonEmpty(String(row.address ?? ""), "nowpayments.payout.evidence_unavailable", 512);
+  const externalRaw = row.unique_external_id;
+  const uniqueExternalId =
+    externalRaw === undefined || externalRaw === null || externalRaw === ""
+      ? null
+      : nonEmpty(String(externalRaw), "nowpayments.payout.evidence_unavailable", 256);
+  return Object.freeze({ batchId, withdrawalId, status, currency, amount, address, uniqueExternalId });
 }
 
 function payoutRows(body: unknown): readonly Record<string, unknown>[] {
@@ -232,6 +280,7 @@ export class NowPaymentsPayoutClient {
     readonly currency: string;
     readonly address: string;
     readonly ipnCallbackUrl?: string;
+    readonly uniqueExternalId?: string;
     readonly signal?: AbortSignal;
   }): Promise<NowPaymentsCreatedPayout> {
     const exactAmount = decimal(input.amount, "nowpayments.payout.amount.invalid", { maxDecimals: 6 });
@@ -240,6 +289,13 @@ export class NowPaymentsPayoutClient {
     const address = nonEmpty(input.address, "nowpayments.payout.address.invalid", 512);
 
     const withdrawal: Record<string, unknown> = { address, currency, amount };
+    if (input.uniqueExternalId !== undefined) {
+      withdrawal.unique_external_id = nonEmpty(
+        input.uniqueExternalId,
+        "nowpayments.payout.external_id.invalid",
+        256,
+      );
+    }
     if (input.ipnCallbackUrl !== undefined) {
       const callback = new URL(input.ipnCallbackUrl);
       if (callback.protocol !== "https:") throw new Error("nowpayments.payout.ipn_callback.insecure");
@@ -260,6 +316,7 @@ export class NowPaymentsPayoutClient {
     const body = await response.json();
     return Object.freeze({
       payoutId: payoutIdFrom(body),
+      withdrawalId: withdrawalIdFrom(body),
       status: statusFrom(body),
     });
   }
@@ -294,10 +351,10 @@ export class NowPaymentsPayoutClient {
    * providerPayoutId is the single-withdrawal batch id stored by Commerce. Query by batch_id
    * so refresh does not confuse that id with the individual withdrawal id.
    */
-  async getPayoutStatus(input: {
+  async getPayoutEvidence(input: {
     readonly payoutId: string;
     readonly signal?: AbortSignal;
-  }): Promise<string | null> {
+  }): Promise<NowPaymentsPayoutEvidence> {
     const payoutId = nonEmpty(input.payoutId, "nowpayments.payout_id.invalid", 128);
     if (!/^[A-Za-z0-9_-]+$/u.test(payoutId)) throw new Error("nowpayments.payout_id.invalid");
     const token = await this.authenticate(input.signal);
@@ -308,12 +365,17 @@ export class NowPaymentsPayoutClient {
       token,
       authenticated: true,
     });
-    const rows = payoutRows(await response.json()).filter((row) => {
-      const batchId = row.batch_withdrawal_id ?? row.batch_id;
-      return batchId === undefined || String(batchId) === payoutId;
-    });
+    const rows = payoutRows(await response.json()).filter((row) =>
+      String(row.batch_withdrawal_id ?? row.batch_id ?? "") === payoutId);
     if (rows.length !== 1) throw new Error("nowpayments.payout.evidence_unavailable");
-    return statusFrom(rows[0]);
+    return exactPayoutEvidence(rows[0]!, payoutId);
+  }
+
+  async getPayoutStatus(input: {
+    readonly payoutId: string;
+    readonly signal?: AbortSignal;
+  }): Promise<string | null> {
+    return (await this.getPayoutEvidence(input)).status;
   }
 
   async #request(
