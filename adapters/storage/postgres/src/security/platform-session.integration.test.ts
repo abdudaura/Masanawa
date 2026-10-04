@@ -219,4 +219,58 @@ describeDatabase("customer platform sessions PostgreSQL acceptance", () => {
       at:new Date(Date.parse(rotatedAt)+3000).toISOString(),
     })).resolves.toBeNull();
   });
+
+  it("denies access and refresh when the canonical platform tenant is disabled", async () => {
+    const repository = createPostgresPlatformSessionRepository(pool);
+    const tenantId = createCanonicalId("tenant");
+    const createdAt = new Date().toISOString();
+    const profile = await repository.createProfile({
+      tenantId,
+      channel:"email",
+      identifier:`disabled-${tenantId.slice(-8)}@example.com`,
+      name:"Disabled Tenant Customer",
+      locale:"en-NG",
+      createdAt,
+    });
+    const access = mintPlatformSessionToken("access");
+    const refresh = mintPlatformSessionToken("refresh");
+    const accessHash = hashPlatformSessionToken(access);
+    const refreshHash = hashPlatformSessionToken(refresh);
+    await repository.issueSession({
+      identity:Object.freeze({ tenantId, userId:profile.userId, profile }),
+      accessHash,
+      refreshHash,
+      accessExpiresAt:new Date(Date.parse(createdAt)+900_000).toISOString(),
+      refreshExpiresAt:new Date(Date.parse(createdAt)+30*24*60*60_000).toISOString(),
+      issuedAt:createdAt,
+    });
+    await pool.query(
+      `UPDATE identity.tenants SET state='disabled',revision=revision+1,updated_at=clock_timestamp()
+        WHERE tenant_id=$1`,
+      [tenantId],
+    );
+
+    await expect(repository.resolveAccess({
+      accessHash,
+      at:new Date(Date.parse(createdAt)+1000).toISOString(),
+    })).resolves.toBeNull();
+
+    await expect(repository.rotateRefresh({
+      refreshHash,
+      nextAccessHash:hashPlatformSessionToken(mintPlatformSessionToken("access")),
+      nextRefreshHash:hashPlatformSessionToken(mintPlatformSessionToken("refresh")),
+      accessExpiresAt:new Date(Date.parse(createdAt)+901_000).toISOString(),
+      refreshExpiresAt:new Date(Date.parse(createdAt)+30*24*60*60_000+1000).toISOString(),
+      rotatedAt:new Date(Date.parse(createdAt)+1000).toISOString(),
+    })).resolves.toBeNull();
+
+    await expect(repository.createProfile({
+      tenantId,
+      channel:"email",
+      identifier:`other-${tenantId.slice(-8)}@example.com`,
+      name:"Blocked Customer",
+      locale:"en-NG",
+      createdAt:new Date(Date.parse(createdAt)+2000).toISOString(),
+    })).rejects.toThrow("auth.tenant_inactive");
+  });
 });
