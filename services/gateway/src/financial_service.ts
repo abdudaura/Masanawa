@@ -610,8 +610,7 @@ export function createFinancialService(input: {
     if (
       intent.operation !== "withdraw" ||
       intent.providerPayoutId === null ||
-      intent.destinationAddress === null ||
-      evidence.uniqueExternalId === null
+      intent.destinationAddress === null
     ) {
       throw new Error("financial.crypto.payout_evidence_mismatch");
     }
@@ -1134,8 +1133,9 @@ export function createFinancialService(input: {
         signature: request.signature,
         secret: ipnSecret,
       });
-      const identity = parseProviderOrderId(evidence.uniqueExternalId);
-      const intent = await input.crypto.readIntentByRequestId(identity);
+      const intent = await input.crypto.readIntentByProviderPayoutId({
+        providerPayoutId: evidence.batchId,
+      });
       if (
         !intent ||
         intent.operation !== "withdraw" ||
