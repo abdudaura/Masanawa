@@ -247,9 +247,14 @@ describe("Core Teaching cross-channel acceptance", () => {
 
     expect(surfaces.deliveries.map((item) => item.surface)).toEqual([
       "app",
+      "app",
       "whatsapp",
       "telegram",
     ]);
+    expect(surfaces.deliveries[1]?.projection).toMatchObject({
+      kind: "exercise",
+      actionKey: "teach.action.common-denominator.1",
+    });
   });
 
   it("does not leak progress to another Relationship even for the same exact SkillVersion", async () => {
