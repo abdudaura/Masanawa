@@ -11,6 +11,7 @@ Finish the production-authentication cleanup that the prior Android-shell window
 ## Owned paths
 - apps/mobile/lib/src/state/session_state.dart
 - apps/mobile/lib/src/state/agent_connection_state.dart
+- apps/mobile/lib/src/agents/masanawa_transport.dart (runtime-default productionization only)
 - apps/mobile/lib/src/core/providers.dart
 - apps/mobile/lib/src/router/app_router.dart
 - apps/mobile/lib/src/screens/onboarding/phone_login_screen.dart
@@ -18,6 +19,7 @@ Finish the production-authentication cleanup that the prior Android-shell window
 - apps/mobile/lib/src/screens/settings/developer_screen.dart (retirement/removal only)
 - apps/mobile/test/session_state_test.dart
 - apps/mobile/test/agent_recovery_test.dart (production-auth regression coverage only)
+- apps/mobile/README.md, apps/mobile/docs/BUILDS.md and apps/mobile/tool/build_alpha.* (remove obsolete client-token instructions only)
 - services/gateway/src/production_auth.ts (new)
 - adapters/storage/postgres/src/identity/platform-session.ts (new narrow external-session identity bridge)
 - adapters/storage/postgres/src/identity/index.ts and adapters/storage/postgres/src/index.ts (export only)
