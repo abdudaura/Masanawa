@@ -156,6 +156,20 @@ const CharacterParamsSchema = Type.Object(
 
 
 
+
+const CredentialParamsSchema = Type.Object(
+  { credentialRefId: Type.String() },
+  { additionalProperties: false },
+);
+
+const RevokeCredentialBodySchema = Type.Object(
+  {
+    providerId: Type.String(),
+    slotKey: Type.String({ minLength: 1, maxLength: 128 }),
+  },
+  { additionalProperties: false },
+);
+
 const WorldParamsSchema = Type.Object(
   { worldId: Type.String() },
   { additionalProperties: false },
@@ -477,6 +491,23 @@ export function createOpsApp(options: OpsAppOptions = {}) {
         authorizationHeader: request.headers.authorization,
       }),
     ]);
+
+    app.post(
+      "/v1/admin/provider-credentials/:credentialRefId/revoke",
+      {
+        schema: {
+          params: CredentialParamsSchema,
+          body: RevokeCredentialBodySchema,
+        },
+      },
+      async (request) =>
+        platformAdmin.revokeCredentialRef({
+          authorizationHeader: request.headers.authorization,
+          credentialRefId: request.params.credentialRefId,
+          providerId: request.body.providerId,
+          slotKey: request.body.slotKey,
+        }),
+    );
 
     app.get("/v1/admin/audit", async (request) => [
       ...await platformAdmin.listAuditEvents({
