@@ -50,8 +50,9 @@ class _GatewayClient {
 
   Future<Map<String, dynamic>> post(
     String path,
-    Map<String, dynamic> body,
-  ) async {
+    Map<String, dynamic> body, {
+    CancelToken? cancelToken,
+  }) async {
     try {
       final res = await dio.post<Map<String, dynamic>>(
         '$baseUrl$path',
@@ -59,6 +60,7 @@ class _GatewayClient {
         options: options(
           turn: path.endsWith('/turn') || path.endsWith('/media-turn'),
         ),
+        cancelToken: cancelToken,
       );
       final data = res.data;
       if (data == null) throw const ApiException('Empty response from server');
@@ -123,6 +125,7 @@ class MasanawaAgentTransport implements AgentTransport {
        );
 
   final _GatewayClient _client;
+  final Map<String, CancelToken> _turnTokens = {};
 
   @override
   Future<AgentSessionBinding> openSession(String characterId) async {
@@ -146,10 +149,21 @@ class MasanawaAgentTransport implements AgentTransport {
     required AgentSessionBinding binding,
     required String text,
   }) async {
-    final data = await _client.post(
-      '/v1/agent/sessions/${binding.characterSessionId}/turn',
-      {'characterId': binding.characterId, 'text': text},
-    );
+    final token = CancelToken();
+    _turnTokens[binding.characterId]?.cancel('Superseded by a new turn');
+    _turnTokens[binding.characterId] = token;
+    late final Map<String, dynamic> data;
+    try {
+      data = await _client.post(
+        '/v1/agent/sessions/${binding.characterSessionId}/turn',
+        {'characterId': binding.characterId, 'text': text},
+        cancelToken: token,
+      );
+    } finally {
+      if (identical(_turnTokens[binding.characterId], token)) {
+        _turnTokens.remove(binding.characterId);
+      }
+    }
     final reply = data['reply'];
     if (reply is! String) {
       throw const ApiException('Agent service unavailable');
@@ -193,15 +207,26 @@ class MasanawaAgentTransport implements AgentTransport {
     required String mimeType,
     required String caption,
   }) async {
-    final data = await _client.post(
-      '/v1/agent/sessions/${binding.characterSessionId}/media-turn',
-      {
-        'characterId': binding.characterId,
-        'caption': caption,
-        'mimeType': mimeType,
-        'dataBase64': base64Encode(bytes),
-      },
-    );
+    final token = CancelToken();
+    _turnTokens[binding.characterId]?.cancel('Superseded by a new turn');
+    _turnTokens[binding.characterId] = token;
+    late final Map<String, dynamic> data;
+    try {
+      data = await _client.post(
+        '/v1/agent/sessions/${binding.characterSessionId}/media-turn',
+        {
+          'characterId': binding.characterId,
+          'caption': caption,
+          'mimeType': mimeType,
+          'dataBase64': base64Encode(bytes),
+        },
+        cancelToken: token,
+      );
+    } finally {
+      if (identical(_turnTokens[binding.characterId], token)) {
+        _turnTokens.remove(binding.characterId);
+      }
+    }
     final reply = data['reply'];
     if (reply is! String || reply.isEmpty) {
       throw const ApiException('Agent media service unavailable');
@@ -231,6 +256,11 @@ class MasanawaAgentTransport implements AgentTransport {
       audioMimeType: audioMimeType is String ? audioMimeType : null,
       audioDurationMs: audioDurationMs is num ? audioDurationMs.round() : null,
     );
+  }
+
+  @override
+  void cancelTurn(String characterId) {
+    _turnTokens.remove(characterId)?.cancel('Stopped by user');
   }
 
   @override
