@@ -53,6 +53,11 @@ export interface TeachingProgressKey {
   readonly skillVersionId: SkillVersionId;
 }
 
+export interface TeachingStoredProgress {
+  readonly planHash: string;
+  readonly progress: TeachingProgressHandoff;
+}
+
 export interface TeachingRuntimeBinding {
   readonly relationshipId: RelationshipId;
   readonly skillVersionId: SkillVersionId;
@@ -102,6 +107,7 @@ export interface TeachingOpaqueSelection {
 export interface TeachingSelectionAttempt {
   readonly requestId: RequestId;
   readonly payloadHash: string;
+  readonly planHash: string;
   readonly relationshipId: RelationshipId;
   readonly skillVersionId: SkillVersionId;
   readonly lessonStepKey: string;
@@ -113,7 +119,7 @@ export interface TeachingSelectionAttempt {
 }
 
 export interface TeachingProgressPort {
-  load(key: TeachingProgressKey): Promise<TeachingProgressHandoff | null>;
+  load(key: TeachingProgressKey): Promise<TeachingStoredProgress | null>;
   /**
    * Persist one exact selection attempt and its resulting progress atomically.
    * The implementation must treat requestId as the replay identity: identical
@@ -188,6 +194,15 @@ export interface TeachingRuntimeCoordinatorOptions {
   readonly progress: TeachingProgressPort;
   readonly presentation?: TeachingPresentationPort;
   readonly evidence?: TeachingEvidencePort;
+}
+
+export function fingerprintTeachingLessonPlan(
+  planInput: TeachingLessonPlan,
+): string {
+  const plan = normalizeTeachingLessonPlan(planInput);
+  return `sha256:${fingerprintCanonicalJson(
+    JSON.parse(canonicalJson(plan)),
+  )}`;
 }
 
 function teachingActionBindingPayload(input: {
@@ -465,14 +480,21 @@ export class TeachingRuntimeCoordinator {
       relationshipId: plan.learner.relationshipId,
       skillVersionId: plan.skillVersionId,
     });
-    const progress = await this.#progress.load(key);
+    const stored = await this.#progress.load(key);
+    const planHash = fingerprintTeachingLessonPlan(plan);
+
+    if (stored !== null && stored.planHash !== planHash) {
+      throw new TypeError(
+        "Teaching durable progress belongs to a different lesson plan",
+      );
+    }
 
     const projection =
-      progress === null
+      stored === null
         ? firstLessonProjection(plan)
         : continuationProjection(
             plan,
-            resolveTeachingContinuation(plan, progress),
+            resolveTeachingContinuation(plan, stored.progress),
           );
 
     await this.#presentation?.publish(projection);
@@ -751,6 +773,7 @@ export class TeachingRuntimeCoordinator {
       recordedAt: toInstant(input.recordedAt),
     });
 
+    const planHash = fingerprintTeachingLessonPlan(plan);
     const payloadHash = fingerprintTeachingSelectionAttempt({
       relationshipId: rubric.relationshipId,
       skillVersionId: rubric.skillVersionId,
@@ -763,6 +786,7 @@ export class TeachingRuntimeCoordinator {
       Object.freeze({
         requestId: input.requestId,
         payloadHash,
+        planHash,
         relationshipId: rubric.relationshipId,
         skillVersionId: rubric.skillVersionId,
         lessonStepKey: rubric.lessonStepKey,
