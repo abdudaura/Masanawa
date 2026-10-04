@@ -12,6 +12,7 @@ export {
   type NowPaymentsPayoutClientOptions,
   type NowPaymentsPayoutFeeEstimate,
   type NowPaymentsPayoutMinimum,
+  type NowPaymentsPayoutEvidence,
 } from "./payout.js";
 export {
   runReadOnlyNowPaymentsProbe,
