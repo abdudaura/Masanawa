@@ -73,12 +73,16 @@ class RecoveringTransport implements AgentTransport {
   Future<AgentTurnResult> sendTurn({
     required AgentSessionBinding binding,
     required String text,
+    void Function(String delta)? onTextDelta,
+    Future<void> Function(Uint8List pcmChunk)? onAudioPcmChunk,
   }) async {
     turns++;
     if (pending != null) return pending!.future;
     if (turns == 1) throw const ApiException('private vendor failure');
+    const reply = 'Real Gateway reply';
+    onTextDelta?.call(reply);
     return const AgentTurnResult(
-      text: 'Real Gateway reply',
+      text: reply,
       agentRunId: 'run-2',
     );
   }
@@ -89,7 +93,26 @@ class RecoveringTransport implements AgentTransport {
     required Uint8List bytes,
     required String mimeType,
     required String caption,
-  }) async => const AgentTurnResult(text: 'Media reply');
+    void Function(int sent, int total)? onUploadProgress,
+  }) async {
+    onUploadProgress?.call(bytes.length, bytes.length);
+    return const AgentTurnResult(text: 'Media reply');
+  }
+  @override
+  Future<AgentTurnResult> sendMediaSetTurn({
+    required AgentSessionBinding binding,
+    required List<AgentMediaInput> media,
+    required String caption,
+    void Function(int sent, int total)? onUploadProgress,
+  }) async {
+    final total = media.fold<int>(0, (sum, item) => sum + item.bytes.length);
+    onUploadProgress?.call(total, total);
+    return const AgentTurnResult(text: 'Media set reply');
+  }
+
+  @override
+  void cancelTurn(String characterId) {}
+
   @override
   Future<void> closeSession(AgentSessionBinding binding) async {}
 }
