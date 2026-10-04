@@ -393,6 +393,57 @@ describeDatabase("crypto conversion and payout fee PostgreSQL acceptance", () =>
     )).rejects.toThrow("crypto financial evidence is immutable");
   });
 
+  it("does not let one user's negative balance offset another user's custody liability", async () => {
+    const f = await fundedFixture("30");
+    const negativeUserId = createCanonicalId("user");
+    const negativeRequestId = createCanonicalId("request");
+    const createdAt = instant(60);
+    await f.repository.createIntent({
+      schemaVersion: 1,
+      tenantId: f.tenantId,
+      userId: negativeUserId,
+      requestId: negativeRequestId,
+      operation: "deposit",
+      asset: "USDTTRC20",
+      network: "tron",
+      amount: "100",
+      targetAsset: null,
+      destinationAddress: null,
+      provider: "nowpayments",
+      providerPaymentId: null,
+      providerPayoutId: null,
+      payAddress: null,
+      providerPayAmount: null,
+      providerDispatchStartedAt: null,
+      status: "processing",
+      createdAt,
+      updatedAt: createdAt,
+    });
+    await pool.query(
+      `INSERT INTO commerce.crypto_ledger_entries(
+         tenant_id,ledger_entry_id,user_id,asset,network,amount,direction,reason,
+         request_id,provider_reference,definition,created_at
+       ) VALUES ($1,$2,$3,$4,$5,$6::numeric,'debit','adjustment',$7,NULL,$8::jsonb,$9)`,
+      [
+        f.tenantId,
+        createCanonicalId("ledger-entry"),
+        negativeUserId,
+        "USDTTRC20",
+        "tron",
+        "100",
+        negativeRequestId,
+        JSON.stringify({ fixture: "negative-balance" }),
+        createdAt,
+      ],
+    );
+    expect(await f.repository.readBalance({
+      tenantId: f.tenantId, userId: negativeUserId, asset: "USDTTRC20", network: "tron",
+    })).toBe("-100");
+    expect(await f.repository.readAggregateLiability({
+      tenantId: f.tenantId, asset: "USDTTRC20", network: "tron",
+    })).toBe("30");
+  });
+
   it("reports aggregate liability for pooled-custody reconciliation", async () => {
     const f = await fundedFixture("75");
     expect(await f.repository.readAggregateLiability({
