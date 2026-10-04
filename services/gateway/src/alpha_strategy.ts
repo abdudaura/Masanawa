@@ -45,11 +45,13 @@ export function createAlphaInferenceStrategy(input: {
               registry,
               guide.skillVersionId,
             );
+            const skill = registry.getVersion(guide.skillVersionId);
             const discovery = evaluateSkillDiscovery(guide, userText);
-            return { guide, eligibility, discovery };
+            return { guide, skill, eligibility, discovery };
           })
           .filter(
-            ({ eligibility, discovery }) =>
+            ({ skill, eligibility, discovery }) =>
+              skill?.billingMode === "none" &&
               eligibility.eligible &&
               eligibility.advertisable &&
               discovery.eligible,
