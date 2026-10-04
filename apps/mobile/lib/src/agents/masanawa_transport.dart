@@ -59,7 +59,9 @@ class _GatewayClient {
         '$baseUrl$path',
         data: body,
         options: options(
-          turn: path.endsWith('/turn') || path.endsWith('/media-turn'),
+          turn: path.endsWith('/turn') ||
+              path.endsWith('/media-turn') ||
+              path.endsWith('/media-set-turn'),
         ),
         cancelToken: cancelToken,
         onSendProgress: onSendProgress,
@@ -232,7 +234,6 @@ class MasanawaAgentTransport implements AgentTransport {
         '/v1/agent/sessions/${binding.characterSessionId}/turn',
         {'characterId': binding.characterId, 'text': text},
         cancelToken: token,
-        onSendProgress: onUploadProgress,
       );
       final reply = data['reply'];
       if (reply is! String || reply.isEmpty) {
