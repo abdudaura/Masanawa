@@ -316,6 +316,10 @@ describe("Alpha conversation service", () => {
         if (input.input.kind === "text") {
           return { reply: `Text: ${input.input.text}`, parts: [] };
         }
+        expect(input.input.kind).toBe("media");
+        if (input.input.kind !== "media") {
+          throw new Error("Expected a single media input");
+        }
         expect(input.input.mimeType).toBe("audio/mp4");
         expect(input.input.dataBase64).toBe("YWJj");
         return { reply: "I heard the voice note.", parts: [] };
