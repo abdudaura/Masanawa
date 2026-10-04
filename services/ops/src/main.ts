@@ -28,6 +28,8 @@ import {
   createPostgresServiceDependency,
   createPostgresWorldRepository,
   createPostgresSkillRepository,
+  revokeProviderCredentialRef,
+  withTransaction,
 } from "@masanawa/postgres";
 import {
   createAgentAdminService,
@@ -39,6 +41,7 @@ import {
 } from "./admin_auth.js";
 import {
   createPlatformAdminService,
+  type PlatformAdminCredentialCommands,
   type PlatformAdminOfferCommands,
   type PlatformAdminQuery,
 } from "./platform_admin.js";
@@ -66,6 +69,7 @@ export interface ServiceDatabaseDependency {
   readonly characterVersions?: CharacterVersionReferenceReader;
   readonly skills?: SkillRepository;
   readonly offerCommands?: PlatformAdminOfferCommands;
+  readonly credentialCommands?: PlatformAdminCredentialCommands;
   readonly worldCommands?: SystemAdminWorldCommands;
   readonly platformAdminDatabase?: PlatformAdminQuery;
   close(): Promise<void>;
@@ -161,6 +165,23 @@ function createDefaultDatabaseDependency(
     },
   });
 
+
+  const credentialCommands: PlatformAdminCredentialCommands = Object.freeze({
+    async revoke(input) {
+      return withTransaction(database.pool, (client) =>
+        revokeProviderCredentialRef(client, {
+          tenantId: input.tenantId,
+          credentialRefId: parseCanonicalId(
+            "credential-ref",
+            input.credentialRefId,
+          ),
+          providerId: parseCanonicalId("provider", input.providerId),
+          slotKey: input.slotKey,
+        }),
+      );
+    },
+  });
+
   const worldCommands: SystemAdminWorldCommands = Object.freeze({
     async pause(input) {
       const world = await worlds.pauseWorld({
@@ -210,6 +231,7 @@ function createDefaultDatabaseDependency(
       createPostgresCharacterVersionReferenceReader(database.pool),
     skills: createPostgresSkillRepository(database.pool),
     offerCommands,
+    credentialCommands,
     worldCommands,
     platformAdminDatabase: database.pool as unknown as PlatformAdminQuery,
     close: database.close,
@@ -267,6 +289,9 @@ export async function startOpsService(
           database: database.platformAdminDatabase,
           authorizer: adminAuthorizer,
           ...(database.offerCommands ? { offerCommands: database.offerCommands } : {}),
+          ...(database.credentialCommands
+            ? { credentialCommands: database.credentialCommands }
+            : {}),
         })
       : undefined);
 
