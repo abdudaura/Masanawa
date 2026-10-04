@@ -74,6 +74,24 @@ class _GatewayClient {
     }
   }
 
+  Future<Map<String, dynamic>> put(
+    String path,
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      final res = await dio.put<Map<String, dynamic>>(
+        '$baseUrl$path',
+        data: body,
+        options: options(),
+      );
+      final data = res.data;
+      if (data == null) throw const ApiException('Empty response from server');
+      return data;
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    }
+  }
+
   Stream<Map<String, dynamic>> postStream(
     String path,
     Map<String, dynamic> body, {
@@ -149,6 +167,13 @@ class MasanawaAgentDirectoryTransport implements AgentDirectoryTransport {
         if (item is Map)
           AgentDirectoryEntry.fromJson(item.cast<String, dynamic>()),
     ];
+  }
+
+  @override
+  Future<void> setDefaultPlatformAgent(String characterId) async {
+    await _client.put('/v1/agent/preferences/default', {
+      'characterId': characterId,
+    });
   }
 }
 
