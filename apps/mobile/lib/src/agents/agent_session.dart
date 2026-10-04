@@ -77,6 +77,7 @@ abstract class AgentTransport {
     required Uint8List bytes,
     required String mimeType,
     required String caption,
+    void Function(int sent, int total)? onUploadProgress,
   });
 
   Future<AgentTurnResult> sendMediaSetTurn({
@@ -122,7 +123,9 @@ class PreviewAgentTransport implements AgentTransport {
     required Uint8List bytes,
     required String mimeType,
     required String caption,
+    void Function(int sent, int total)? onUploadProgress,
   }) async {
+    onUploadProgress?.call(bytes.length, bytes.length);
     throw UnsupportedError(
       'Preview transport cannot inspect attachment bytes',
     );
