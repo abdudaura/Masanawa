@@ -4,6 +4,7 @@ import {
   type CharacterVersionId,
   type SkillVersionId,
   type TenantId,
+  type UserId,
 } from "@masanawa/contracts";
 
 /**
@@ -158,4 +159,83 @@ export interface CharacterSkillAssignmentRepository {
     /** null creates; otherwise compare-and-swap the observed revision. */
     readonly expectedRevision: number | null;
   }): Promise<CharacterSkillAssignment>;
+}
+
+
+export interface PlatformAgentProfile {
+  readonly schemaVersion: 1;
+  readonly tenantId: TenantId;
+  readonly characterId: CharacterId;
+  readonly supportAgent: boolean;
+  readonly voiceProvider: string;
+  readonly voiceName: string;
+  readonly revision: number;
+}
+
+export interface UserAgentPreference {
+  readonly schemaVersion: 1;
+  readonly tenantId: TenantId;
+  readonly userId: UserId;
+  readonly defaultPlatformCharacterId: CharacterId;
+  readonly revision: number;
+}
+
+export function normalizePlatformAgentProfile(
+  input: PlatformAgentProfile,
+): PlatformAgentProfile {
+  if (input.schemaVersion !== 1) {
+    throw new TypeError("Unsupported platform agent profile schema");
+  }
+  return Object.freeze({
+    schemaVersion: 1,
+    tenantId: parseCanonicalId("tenant", input.tenantId),
+    characterId: parseCanonicalId("character", input.characterId),
+    supportAgent: input.supportAgent === true,
+    voiceProvider: bounded(input.voiceProvider, "voiceProvider", 80).toLowerCase(),
+    voiceName: bounded(input.voiceName, "voiceName", 120),
+    revision: revision(input.revision),
+  });
+}
+
+export function normalizeUserAgentPreference(
+  input: UserAgentPreference,
+): UserAgentPreference {
+  if (input.schemaVersion !== 1) {
+    throw new TypeError("Unsupported user agent preference schema");
+  }
+  return Object.freeze({
+    schemaVersion: 1,
+    tenantId: parseCanonicalId("tenant", input.tenantId),
+    userId: parseCanonicalId("user", input.userId),
+    defaultPlatformCharacterId: parseCanonicalId(
+      "character",
+      input.defaultPlatformCharacterId,
+    ),
+    revision: revision(input.revision),
+  });
+}
+
+export interface PlatformAgentProfileRepository {
+  readForCharacter(input: {
+    readonly tenantId: TenantId;
+    readonly characterId: CharacterId;
+  }): Promise<PlatformAgentProfile | null>;
+  listSupportAgents(input: {
+    readonly tenantId: TenantId;
+  }): Promise<readonly PlatformAgentProfile[]>;
+  put(input: {
+    readonly profile: PlatformAgentProfile;
+    readonly expectedRevision: number | null;
+  }): Promise<PlatformAgentProfile>;
+}
+
+export interface UserAgentPreferenceRepository {
+  readForUser(input: {
+    readonly tenantId: TenantId;
+    readonly userId: UserId;
+  }): Promise<UserAgentPreference | null>;
+  put(input: {
+    readonly preference: UserAgentPreference;
+    readonly expectedRevision: number | null;
+  }): Promise<UserAgentPreference>;
 }
