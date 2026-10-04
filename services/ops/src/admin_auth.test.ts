@@ -4,7 +4,7 @@ import {
   readBootstrapAdminAuthConfig,
 } from "./admin_auth.js";
 
-const tenantId = "tenant_00000000-0000-4000-8000-000000000001";
+const tenantId = "tenant_0199cabc-1234-7abc-8def-1234567890ab";
 const token = "0123456789abcdef0123456789abcdef";
 
 describe("Ops bootstrap admin authorization", () => {
