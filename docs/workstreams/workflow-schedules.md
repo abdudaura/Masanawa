@@ -1,6 +1,6 @@
 # Workstream claim — workflow-schedules
 
-Status: active
+Status: implementation complete; unit/PostgreSQL verification evidence pending
 Owner: this isolated workstream
 Started: 2026-10-04 19:42 Africa/Lagos
 Base: work/workflow-checkpoints-20261004 @ 4703606a86993bee852d9d0de49f99d1e1874ed5
@@ -44,3 +44,26 @@ This workstream does not modify Task 090 retry files, Task 091 human-request/app
 - exact replay returns existing occurrence rather than duplicating work.
 
 Task 093+ remains separate.
+
+
+## Implementation handoff
+
+Implemented on branch `work/workflow-schedules-20261004` in draft PR #116.
+
+The slice now provides:
+
+- bounded immutable one-shot and interval schedule contracts;
+- deterministic occurrence timing and fingerprints;
+- exact WorkflowRun/WorkflowVersion/graph pinning;
+- durable schedule and occurrence tables;
+- immutable schedule definition and occurrence history;
+- exact replay / changed-definition conflict behavior;
+- atomic due occurrence + canonical outbox publication;
+- one-shot completion;
+- bounded interval max/end stopping;
+- one-occurrence-per-schedule-per-pass backlog fairness;
+- concurrent `FOR UPDATE SKIP LOCKED` timer materialization;
+- focused unit + PostgreSQL acceptance coverage.
+
+Task 090/091 remain owned by foreign PRs #113/#115 and were not modified.
+Task 093 remains out of scope.
