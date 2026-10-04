@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import '../chat/message_parts.dart';
 import '../core/network/api_client.dart';
 import 'agent_directory.dart';
+import 'creator_clone.dart';
 import 'agent_session.dart';
 
 const String kAgentBaseUrl = String.fromEnvironment(
@@ -174,6 +175,39 @@ class MasanawaAgentDirectoryTransport implements AgentDirectoryTransport {
     await _client.put('/v1/agent/preferences/default', {
       'characterId': characterId,
     });
+  }
+}
+
+
+class MasanawaCreatorCloneTransport implements CreatorCloneTransport {
+  MasanawaCreatorCloneTransport({
+    required Dio dio,
+    required String baseUrl,
+    String? Function()? readAccessToken,
+  }) : _client = _GatewayClient(
+         dio: dio,
+         baseUrl: baseUrl,
+         readAccessToken: readAccessToken,
+       );
+
+  final _GatewayClient _client;
+
+  @override
+  Future<CreatorCloneResult> create({
+    required String displayName,
+    required String biography,
+    required List<String> languages,
+    required List<String> personality,
+    required List<String> expertise,
+  }) async {
+    final data = await _client.post('/v1/creator/clone', {
+      'displayName': displayName,
+      'biography': biography,
+      'languages': languages,
+      'personality': personality,
+      'expertise': expertise,
+    });
+    return CreatorCloneResult.fromJson(data);
   }
 }
 
