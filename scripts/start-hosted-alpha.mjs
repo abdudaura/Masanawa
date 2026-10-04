@@ -8,6 +8,17 @@ import { createPostgresPool, runMigrations, financialMigrationRoots } from "@mas
 import { decryptNurainGeminiCredentials } from "./import-nurain-gemini.mjs";
 import { selectAlphaGeminiCredentials } from "./alpha-credential-selection.mjs";
 
+function safeInitializationFailure(error) {
+  const message = error instanceof Error ? error.message : "";
+  const migration = /^Applied migration changed: ([a-z0-9_-]+\/\d{4,}_[a-z0-9_-]+\.sql)$/u.exec(message);
+  if (migration) return `schema_drift:${migration[1]}`;
+  if (message === "PostgreSQL 18 required") return "unsupported_postgres_version";
+  if (message === "Existing unregistered canonical database requires operator adoption") return "database_adoption_required";
+  if (message === "Canonical bootstrap failed") return "canonical_bootstrap_failed";
+  if (message === "Invalid deployment references") return "invalid_deployment_references";
+  return "database_or_bootstrap_failure";
+}
+
 if (process.env.MASANAWA_ALPHA_GEMINI_IMPORTED_CREDENTIALS_JSON) {
   try {
     if (process.env.MASANAWA_ALPHA_GEMINI_API_KEY || process.env.MASANAWA_ALPHA_GEMINI_API_KEYS_JSON) throw new Error();
@@ -33,9 +44,9 @@ if (missing.length) {
     response.end(JSON.stringify({ service: "masanawa-hosted-alpha-setup", status: "configuration_required", ready: false, missing }));
   }).listen(Number(process.env.PORT ?? 3000), "0.0.0.0");
 } else {
-  try { await start(); } catch {
-    // Keep connection strings, bootstrap output and provider keys out of hosted logs.
-    console.error("Hosted Alpha initialization failed. Check database access/configuration in the hosting dashboard.");
+  try { await start(); } catch (error) {
+    // Keep connection strings, bootstrap output, SQL and provider keys out of hosted logs.
+    console.error(`Hosted Alpha initialization failed: ${safeInitializationFailure(error)}`);
     process.exitCode = 1;
   }
 }
