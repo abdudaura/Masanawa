@@ -22,3 +22,5 @@ export * from "./identity/personal_clone.js";
 export * from "./identity/relationships.js";
 export * from "./skills/distribution.js";
 export * from "./identity/ownerships.js";
+
+export * from "./devices/index.js";
