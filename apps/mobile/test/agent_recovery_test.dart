@@ -94,6 +94,18 @@ class RecoveringTransport implements AgentTransport {
     required String caption,
   }) async => const AgentTurnResult(text: 'Media reply');
   @override
+  Future<AgentTurnResult> sendMediaSetTurn({
+    required AgentSessionBinding binding,
+    required List<AgentMediaInput> media,
+    required String caption,
+    void Function(int sent, int total)? onUploadProgress,
+  }) async {
+    final total = media.fold<int>(0, (sum, item) => sum + item.bytes.length);
+    onUploadProgress?.call(total, total);
+    return const AgentTurnResult(text: 'Media set reply');
+  }
+
+  @override
   void cancelTurn(String characterId) {}
 
   @override
