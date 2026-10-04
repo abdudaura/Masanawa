@@ -749,11 +749,19 @@ class AiChatController extends Notifier<AiChatState> {
   }
 
   Future<void> clearSecureShellState() async {
+    final session = ref.read(sessionProvider);
+    final userId = session is SessionSignedIn ? session.user.id : null;
     final journals = [..._actionJournals.values];
     _actionJournals.clear();
     _actionCoordinators.clear();
     for (final journal in journals) {
       await journal.clearAndClose().catchError((_) {});
+    }
+    if (userId != null && userId.isNotEmpty) {
+      await EncryptedShellActionJournal.clearOwner(
+        store: const FlutterShellEncryptedStore(),
+        ownerId: userId,
+      ).catchError((_) {});
     }
   }
 
@@ -1620,11 +1628,23 @@ class AiChatController extends Notifier<AiChatState> {
   }
 
   void clearAll() {
-    for (final id in state.threads.keys) {
+    final ids = <String>{...state.threads.keys, ..._bindings.keys};
+    for (final id in ids) {
       _threadGenerations[id] = (_threadGenerations[id] ?? 0) + 1;
     }
+    final transport = ref.read(agentTransportProvider);
+    final bindings = [..._bindings.values];
     _bindings.clear();
-    state = state.copyWith(threads: {}, sendingIn: {});
+    for (final binding in bindings) {
+      unawaited(transport.closeSession(binding).catchError((_) {}));
+    }
+    for (final subscription in _eventSubscriptions.values) {
+      unawaited(subscription.cancel());
+    }
+    _eventSubscriptions.clear();
+    _eventCursors.clear();
+    unawaited(LivePcmAudio.stop());
+    state = state.copyWith(threads: {}, sendingIn: {}, shellConfigs: {});
     _save();
   }
 
