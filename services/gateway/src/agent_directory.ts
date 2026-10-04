@@ -1,17 +1,21 @@
 import type {
   AgentPresentationRepository,
+  PlatformAgentProfileRepository,
+  UserAgentPreferenceRepository,
 } from "@masanawa/agents";
-import type { CharacterId, TenantId } from "@masanawa/contracts";
+import type { CharacterId, TenantId, UserId } from "@masanawa/contracts";
+import { parseCanonicalId } from "@masanawa/contracts";
 
 export interface AgentDirectoryAuthority {
   readonly tenantId: TenantId;
+  readonly userId: UserId;
   readonly characterIds?: readonly CharacterId[];
 }
 
 export interface AgentDirectoryAuthorizer {
   authorize(input: {
     readonly authorizationHeader: string | undefined;
-    readonly capability: "agents.directory.read";
+    readonly capability: "agents.directory.read" | "agents.preferences.write";
   }): Promise<AgentDirectoryAuthority>;
 }
 
@@ -24,12 +28,23 @@ export interface MobileAgentDirectoryEntry {
   readonly greeting: string | null;
   readonly presence: "available";
   readonly activeWorkCount: 0;
+  readonly supportAgent: boolean;
+  readonly defaultPlatformAgent: boolean;
+  readonly voiceProvider: string | null;
+  readonly voiceName: string | null;
 }
 
 export interface AgentDirectoryService {
   list(input: {
     readonly authorizationHeader: string | undefined;
   }): Promise<readonly MobileAgentDirectoryEntry[]>;
+
+  setDefaultPlatformAgent(input: {
+    readonly authorizationHeader: string | undefined;
+    readonly characterId: string;
+  }): Promise<{
+    readonly characterId: CharacterId;
+  }>;
 }
 
 /**
@@ -42,6 +57,8 @@ export interface AgentDirectoryService {
 export function createAgentDirectoryService(input: {
   readonly presentations: AgentPresentationRepository;
   readonly authorizer: AgentDirectoryAuthorizer;
+  readonly platformProfiles?: PlatformAgentProfileRepository;
+  readonly userPreferences?: UserAgentPreferenceRepository;
 }): AgentDirectoryService {
   return Object.freeze({
     async list(
@@ -57,13 +74,43 @@ export function createAgentDirectoryService(input: {
       const allowed = authority.characterIds
         ? new Set(authority.characterIds)
         : null;
+      const visible = presentations.filter(
+        (presentation) =>
+          allowed === null || allowed.has(presentation.characterId),
+      );
+
+      const [preference, profiles] = await Promise.all([
+        input.userPreferences?.readForUser({
+          tenantId: authority.tenantId,
+          userId: authority.userId,
+        }) ?? Promise.resolve(null),
+        Promise.all(
+          visible.map(async (presentation) => ({
+            characterId: presentation.characterId,
+            profile:
+              (await input.platformProfiles?.readForCharacter({
+                tenantId: authority.tenantId,
+                characterId: presentation.characterId,
+              })) ?? null,
+          })),
+        ),
+      ]);
+      const profileByCharacter = new Map(
+        profiles.map(({ characterId, profile }) => [characterId, profile]),
+      );
+
       return Object.freeze(
-        presentations
-          .filter((presentation) =>
-            allowed === null || allowed.has(presentation.characterId),
-          )
-          .map((presentation) =>
-          Object.freeze({
+        visible.map((presentation) => {
+          const profile =
+            profileByCharacter.get(presentation.characterId) ?? null;
+          const defaultPlatformAgent =
+            profile?.supportAgent === true &&
+            (preference
+              ? preference.defaultPlatformCharacterId ===
+                presentation.characterId
+              : profile.defaultForNewUsers);
+
+          return Object.freeze({
             characterId: presentation.characterId,
             characterVersionId: presentation.characterVersionId,
             displayName: presentation.displayName,
@@ -72,9 +119,56 @@ export function createAgentDirectoryService(input: {
             greeting: presentation.greeting,
             presence: "available" as const,
             activeWorkCount: 0 as const,
-          }),
-        ),
+            supportAgent: profile?.supportAgent ?? false,
+            defaultPlatformAgent,
+            voiceProvider: profile?.voiceProvider ?? null,
+            voiceName: profile?.voiceName ?? null,
+          });
+        }),
       );
+    },
+
+    async setDefaultPlatformAgent(request) {
+      if (!input.platformProfiles || !input.userPreferences) {
+        throw new Error("Platform agent preferences are unavailable");
+      }
+      const authority = await input.authorizer.authorize({
+        authorizationHeader: request.authorizationHeader,
+        capability: "agents.preferences.write",
+      });
+      const characterId = parseCanonicalId(
+        "character",
+        request.characterId,
+      );
+      if (
+        authority.characterIds &&
+        !authority.characterIds.includes(characterId)
+      ) {
+        throw new Error("Character is not available to this user");
+      }
+      const profile = await input.platformProfiles.readForCharacter({
+        tenantId: authority.tenantId,
+        characterId,
+      });
+      if (!profile?.supportAgent) {
+        throw new Error("Selected Character is not a platform support agent");
+      }
+
+      const existing = await input.userPreferences.readForUser({
+        tenantId: authority.tenantId,
+        userId: authority.userId,
+      });
+      await input.userPreferences.put({
+        expectedRevision: existing?.revision ?? null,
+        preference: {
+          schemaVersion: 1,
+          tenantId: authority.tenantId,
+          userId: authority.userId,
+          defaultPlatformCharacterId: characterId,
+          revision: existing?.revision ?? 1,
+        },
+      });
+      return Object.freeze({ characterId });
     },
   });
 }
