@@ -43,3 +43,17 @@ This is not physical/live channel verification. Production acceptance still requ
 
 The harness deliberately avoids those active owners' files and therefore cannot be used
 as evidence that their deployment work is complete.
+
+
+## Additional continuity cases
+
+The harness also proves:
+- switching the same learner from English text to Hausa voice keeps the same
+  Relationship + exact SkillVersion progress and resumes the next lesson step;
+- an incorrect selectable answer persists `needs-reteaching`;
+- returning through another surface resumes the same lesson step instead of silently
+  advancing or restarting the course.
+
+These are contract-level continuity proofs. Natural-language quality, Hausa pronunciation,
+audio transport and physical channel behavior still require the real integrated
+environments.
