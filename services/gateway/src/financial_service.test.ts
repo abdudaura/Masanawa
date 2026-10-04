@@ -177,16 +177,25 @@ function setup(
     settleConversion: vi.fn(async (value: {
       readonly succeeded: boolean;
       readonly targetAmount: string | null;
-    }) => ({
-      ...conversionIntent,
-      providerTargetAmount: value.succeeded ? value.targetAmount : null,
-      status: value.succeeded ? "succeeded" as const : "failed" as const,
-    })),
-    settleWithdrawal: vi.fn(async (value: { readonly succeeded: boolean }) => ({
-      ...withdrawalIntent,
-      status: value.succeeded ? "succeeded" as const : "failed" as const,
-    })),
-    bindProviderPayout: vi.fn(async () => withdrawalIntent),
+    }) => {
+      currentIntent = {
+        ...currentIntent,
+        providerTargetAmount: value.succeeded ? value.targetAmount : null,
+        status: value.succeeded ? "succeeded" as const : "failed" as const,
+      };
+      return currentIntent;
+    }),
+    settleWithdrawal: vi.fn(async (value: { readonly succeeded: boolean }) => {
+      currentIntent = {
+        ...currentIntent,
+        status: value.succeeded ? "succeeded" as const : "failed" as const,
+      };
+      return currentIntent;
+    }),
+    bindProviderPayout: vi.fn(async () => {
+      currentIntent = { ...currentIntent, providerPayoutId: "batch-1" };
+      return currentIntent;
+    }),
     createIntent: vi.fn(async (value: CryptoIntent) => {
       currentIntent = value;
       return value;
@@ -337,7 +346,7 @@ describe("financial service recovery and admission", () => {
     await expect(service.createWithdrawal({
       authorizationHeader, requestId, providerCode: "USDTTRC20",
       amount: "10", destinationAddress: "address",
-    })).resolves.toMatchObject({ status: "failed", providerPayoutId: "batch-1" });
+    })).resolves.toMatchObject({ status: "failed", providerPayoutId: null });
     expect(crypto.settleWithdrawal).toHaveBeenCalledWith(expect.objectContaining({
       succeeded: false, providerReference: null,
     }));
