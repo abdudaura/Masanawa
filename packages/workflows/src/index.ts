@@ -8,3 +8,5 @@ export * from "./retry-model.js";
 export * from "./retry.js";
 export * from "./human-request-model.js";
 export * from "./human-request.js";
+export * from "./operation-binding-model.js";
+export * from "./operation-binding.js";
