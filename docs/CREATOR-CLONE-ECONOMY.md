@@ -156,6 +156,34 @@ has an eligible fallback. The creator may receive a smaller acquisition/referral
 commission when Masanawa or another executor finances/fulfills the job. Exact commission
 policy is deterministic Offer/settlement data, never model discretion.
 
+## Funded creator execution and customer crypto custody
+
+Confirmed product direction, 2026-10-04:
+- WhatsApp and Telegram are mandatory customer channels alongside the app.
+- Customers can hold provider-backed crypto balances and request deposit/buy,
+  conversion or withdrawal through the same chat flow.
+- NOWPayments owns the selected custody/customer-operations integration; actual
+  account/asset/network/region capability must be qualified before availability.
+- Customer asset principal, creator Agent Float and creator earnings are separate.
+  Never use customer assets to fund another order or pay creator commissions.
+- Creators fund their agent's execution wallet/Float and earn from evidenced
+  transactions their agents execute. Float is execution capital, not an idle fee.
+- Maintain acquiring/originating creator and funded execution creator as distinct
+  attribution. A proposed commission split between acquisition and execution remains
+  policy to ratify; do not hard-code percentages or promise investment returns.
+- Reserve only the admitted amount, spend evidenced cost, return unused reserve,
+  and settle commission from explicit platform commercial terms.
+- Proposed funding uses: bill-provider prefunding, crypto settlement liquidity where
+  supported, and AI/tool execution costs. Exact allocation, denomination, custody and
+  whether uncommitted funded principal can be withdrawn require explicit policy.
+  Current non-withdrawable Agent Float policy remains until superseded; it must not
+  silently become confiscated spend or withdrawable earnings.
+- Customer custody requires scoped balances and available/pending/reserved states,
+  exact asset precision, deposit confirmation, withdrawal holds and provider reconciliation.
+  Account segregation and provider balance reconciliation precede advertised holding.
+- Fiat off-ramp to a customer bank account remains an operation-specific qualification;
+  merchant settlement alone does not prove customer NGN payout.
+
 ## Creator incentives
 
 Creators compete primarily on customer relationship quality, marketing, repeat business,
