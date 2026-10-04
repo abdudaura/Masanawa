@@ -3,7 +3,7 @@ import type { BillingFundingAuthority } from "./billing-funding.js";
 
 export type BillingQuoteState =
   | "quoted" | "confirmed" | "checkout-created" | "funded" | "reserved"
-  | "succeeded" | "refund-pending" | "refunded" | "expired";
+  | "succeeded" | "refund-pending" | "refund-submitted" | "refunded" | "expired";
 
 export interface BillingQuote {
   readonly schemaVersion: 1;
@@ -52,6 +52,10 @@ export interface BillingQuoteRepository extends BillingFundingAuthority {
     tenantId: TenantId; userId: UserId; quoteId: QuoteId; quoteRevision: number;
     txRef: string; providerTransactionId: string; providerReference: string | null;
     amountKobo: number; currency: "NGN"; verifiedAt: string;
+  }>): Promise<BillingQuote>;
+  recordRefundInitiated(input: Readonly<{
+    tenantId: TenantId; userId: UserId; quoteId: QuoteId; providerTransactionId: string;
+    refundReference: string; initiatedAt: string;
   }>): Promise<BillingQuote>;
   markRefunded(input: Readonly<{
     tenantId: TenantId; userId: UserId; quoteId: QuoteId; providerTransactionId: string;
