@@ -212,6 +212,7 @@ export async function startGatewayService(
     directoryAuthorizer ??= createAlphaDirectoryAuthorizer({
       token,
       tenantId: ids.tenantId,
+      userId: ids.userId,
       relationshipIds,
     });
     conversationAuthorizer ??= createAlphaDevAuthorizer({
@@ -241,6 +242,12 @@ export async function startGatewayService(
       ? createAgentDirectoryService({
           presentations: database.agentPresentations,
           authorizer: directoryAuthorizer,
+          ...(database.platformAgentProfiles
+            ? { platformProfiles: database.platformAgentProfiles }
+            : {}),
+          ...(database.userAgentPreferences
+            ? { userPreferences: database.userAgentPreferences }
+            : {}),
         })
       : undefined);
 
