@@ -28,6 +28,10 @@ export interface NowPaymentsClientOptions {
 
 interface CurrenciesResponse { readonly currencies?: unknown; }
 
+function withSignal<T extends object>(base: T, signal?: AbortSignal): T & { readonly signal?: AbortSignal } {
+  return signal === undefined ? base : { ...base, signal };
+}
+
 function query(params: Readonly<Record<string, string | number>>): string {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) search.set(key, String(value));
@@ -48,7 +52,7 @@ export class NowPaymentsClient {
   }
 
   async listPaymentCurrencies(signal?: AbortSignal): Promise<readonly NowPaymentsCurrencyEvidence[]> {
-    const response = await this.#request("/currencies", { method: "GET", signal });
+    const response = await this.#request("/currencies", withSignal({ method: "GET" as const }, signal));
     const body = (await response.json()) as CurrenciesResponse;
     if (!Array.isArray(body.currencies) || !body.currencies.every((value) => typeof value === "string")) {
       throw new Error("nowpayments.currencies.invalid_response");
@@ -66,7 +70,7 @@ export class NowPaymentsClient {
         currency_from: input.currencyFrom,
         currency_to: input.currencyTo,
       })}`,
-      { method: "GET", signal: input.signal },
+      withSignal({ method: "GET" as const }, input.signal),
     );
     return parseMinimumAmount(await response.json(), {
       currencyFrom: input.currencyFrom,
@@ -120,13 +124,13 @@ export class NowPaymentsClient {
       amount: input.priceAmount,
       currencyFrom: input.priceCurrency,
       currencyTo: input.payCurrency,
-      signal: input.signal,
+      ...(input.signal === undefined ? {} : { signal: input.signal }),
     });
     const requestBody = normalizeCreatePaymentInput(input);
     const response = await this.#request("/payment", {
       method: "POST",
       body: JSON.stringify(requestBody),
-      signal: input.signal,
+      ...(input.signal === undefined ? {} : { signal: input.signal }),
     });
     const payment = parseCreatedPayment(await response.json());
     if (payment.orderId !== null && payment.orderId !== input.orderId) {
@@ -145,7 +149,7 @@ export class NowPaymentsClient {
     }
     const response = await this.#request(`/payment/${encodeURIComponent(paymentId)}`, {
       method: "GET",
-      signal: input.signal,
+      ...(input.signal === undefined ? {} : { signal: input.signal }),
     });
     const body = (await response.json()) as { readonly payment_status?: unknown };
     return parsePaymentStatus(body.payment_status);
