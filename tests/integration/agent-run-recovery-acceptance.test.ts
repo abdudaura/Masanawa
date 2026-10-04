@@ -609,16 +609,15 @@ describePostgres("AgentRun restart and replay acceptance", () => {
         createPostgresAgentRunRepository(poolA).create(makeInput(firstId)),
         createPostgresAgentRunRepository(poolB).create(makeInput(secondId)),
       ]);
-      const fulfilled = results.filter(
-        (result): result is PromiseFulfilledResult<Awaited<ReturnType<ReturnType<typeof createPostgresAgentRunRepository>["create"]>>> =>
-          result.status === "fulfilled",
-      );
-      const rejected = results.filter(
-        (result): result is PromiseRejectedResult => result.status === "rejected",
-      );
+      const fulfilled = results.filter((result) => result.status === "fulfilled");
+      const rejected = results.filter((result) => result.status === "rejected");
       expect(fulfilled).toHaveLength(1);
       expect(rejected).toHaveLength(1);
-      expect(rejected[0]!.reason).toMatchObject({
+      const rejection = rejected[0];
+      if (!rejection || rejection.status !== "rejected") {
+        throw new Error("Expected one rejected RequestId race");
+      }
+      expect(rejection.reason).toMatchObject({
         code: "agents.run_conflict",
         category: "conflict",
         retryable: false,
