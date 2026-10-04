@@ -4,11 +4,14 @@ import 'package:url_launcher/url_launcher.dart';
 import '../theme/masanawa_theme.dart';
 import 'chat_format.dart';
 import 'message_parts.dart';
+import 'shell_document.dart';
+import 'shell_document_view.dart';
 
 class MessagePartsView extends StatelessWidget {
-  const MessagePartsView({super.key, required this.parts});
+  const MessagePartsView({super.key, required this.parts, this.onAction});
 
   final List<AgentMessagePart> parts;
+  final ShellActionHandler? onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +20,10 @@ class MessagePartsView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (final part in parts) ...[
-          _PartCard(part: part),
+          if (part.document != null)
+            ShellDocumentView(document: part.document!, onAction: onAction)
+          else
+            _PartCard(part: part),
           if (part != parts.last) const SizedBox(height: 7),
         ],
       ],
