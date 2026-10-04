@@ -7,6 +7,8 @@ import {
 import {
   createTeachingRuntimeBinding,
   createTeachingSelectionActionBinding,
+  createTeachingChannelSelectionBinding,
+  resolveTeachingChannelSelection,
   TeachingRuntimeCoordinator,
   resolveTeachingShellAction,
   type TeachingProgressKey,
@@ -234,13 +236,20 @@ describe("Core Teaching cross-channel acceptance", () => {
       progress: durable,
       presentation: surfaces.adapter("whatsapp"),
     });
+    const channelBinding = createTeachingChannelSelectionBinding({
+      action,
+      callbackToken: "tch_cb_fractions_six_1",
+      optionKey: "six",
+    });
+    const whatsappSelection = resolveTeachingChannelSelection({
+      selectionId: "tch_cb_fractions_six_1",
+      binding: channelBinding,
+      now: toInstant("2026-10-04T17:00:10.000Z"),
+    });
     const retry = await whatsapp.submitOpaqueSelection({
       binding: binding(active),
       action,
-      selection: {
-        actionKey: action.actionKey,
-        selectedOptionKeys: ["six"],
-      },
+      selection: whatsappSelection,
       plan: active,
       now: toInstant("2026-10-04T17:00:10.000Z"),
     });
