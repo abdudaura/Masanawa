@@ -343,6 +343,17 @@ export function createFinancialService(input: {
   }>;
   readonly withdrawalFeePayer?: CryptoWithdrawalFeePayer;
   /**
+   * Standard NOWPayments wallet payouts are whitelist-controlled. This callback
+   * must prove that the exact destination, not merely its syntax, is approved
+   * for the current user/asset before any user balance is reserved.
+   */
+  readonly withdrawalDestinationApproved?: (input: {
+    readonly tenantId: TenantId;
+    readonly userId: UserId;
+    readonly providerCode: string;
+    readonly destinationAddress: string;
+  }) => Promise<boolean>;
+  /**
    * Server-side merchant 2FA source. Never accept this code from an end-user route.
    * Return null when the provider account does not require verification.
    */
@@ -403,7 +414,12 @@ export function createFinancialService(input: {
   }
 
   async function qualifiedWithdrawalRoutes(auth: FinancialAuthority) {
-    if (!input.nowPaymentsPayout || !input.nowPaymentsCustody || !input.withdrawalEvidence) return null;
+    if (
+      !input.nowPaymentsPayout ||
+      !input.nowPaymentsCustody ||
+      !input.withdrawalEvidence ||
+      !input.withdrawalDestinationApproved
+    ) return null;
     const evidence = await input.withdrawalEvidence();
     assertFreshAccountEvidence(evidence.account, { now: new Date(now()) });
     for (const capability of ["custody", "payout"] as const) {
@@ -451,6 +467,17 @@ export function createFinancialService(input: {
     const routes = await qualifiedWithdrawalRoutes(auth);
     const route = routes?.find((candidate) => candidate.providerCode === providerCode);
     if (!route) throw new Error("financial.crypto.withdrawal_unavailable");
+    if (
+      !input.withdrawalDestinationApproved ||
+      !(await input.withdrawalDestinationApproved({
+        tenantId: auth.tenantId,
+        userId: auth.userId,
+        providerCode,
+        destinationAddress: address,
+      }))
+    ) {
+      throw new Error("financial.crypto.withdrawal_destination_unapproved");
+    }
 
     const signal = AbortSignal.timeout(15_000);
     const [, validated, fee, minimum, balances] = await Promise.all([
@@ -846,9 +873,8 @@ export function createFinancialService(input: {
       } catch (error) {
         const message = error instanceof Error ? error.message : "";
         if (
-          message === "nowpayments.payout.request_rejected" ||
-          message === "nowpayments.payout.credential.unavailable" ||
-          message === "nowpayments.payout.auth.invalid_response"
+          message === "nowpayments.payout.authentication_unavailable" ||
+          message === "nowpayments.payout.dispatch_rejected"
         ) {
           return withdrawalView(await input.crypto.settleWithdrawal({
             tenantId: auth.tenantId,
@@ -981,9 +1007,8 @@ export function createFinancialService(input: {
       } catch (error) {
         const message = error instanceof Error ? error.message : "";
         if (
-          message === "nowpayments.conversion.request_rejected" ||
-          message === "nowpayments.custody.credential.unavailable" ||
-          message === "nowpayments.custody.auth.invalid_response"
+          message === "nowpayments.conversion.authentication_unavailable" ||
+          message === "nowpayments.conversion.dispatch_rejected"
         ) {
           return conversionView(await input.crypto.settleConversion({
             tenantId: auth.tenantId,
