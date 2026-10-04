@@ -61,7 +61,7 @@ class ChatAttachment {
     durationMs: json['durationMs'] as int?,
     waveform: [
       for (final value in (json['waveform'] as List? ?? const []))
-        if (value is num) value.toDouble().clamp(0.0, 1.0),
+        if (value is num) value.toDouble().clamp(0.0, 1.0).toDouble(),
     ],
   );
 }
@@ -1213,12 +1213,14 @@ class AiChatController extends Notifier<AiChatState> {
     final pcm = wavBytes.sublist(44);
     final sampleCount = pcm.length ~/ 2;
     if (sampleCount < bars) return const [];
-    final samplesPerBar = (sampleCount / bars).floor().clamp(1, sampleCount);
+    final samplesPerBar =
+        (sampleCount / bars).floor().clamp(1, sampleCount).toInt();
     final values = <double>[];
     for (var bar = 0; bar < bars; bar++) {
       final startSample = bar * samplesPerBar;
       if (startSample >= sampleCount) break;
-      final endSample = ((bar + 1) * samplesPerBar).clamp(0, sampleCount);
+      final endSample =
+          ((bar + 1) * samplesPerBar).clamp(0, sampleCount).toInt();
       var peak = 0;
       for (var sample = startSample; sample < endSample; sample++) {
         final offset = sample * 2;
