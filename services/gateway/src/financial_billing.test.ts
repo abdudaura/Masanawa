@@ -6,8 +6,15 @@ import {
   type BillingFulfillmentStore,
   type FlutterwaveBillsTransport,
 } from "@masanawa/providers";
-import type { ProviderWebhookRepository } from "@masanawa/postgres";
-import { createBillingFinancialService } from "./financial_billing.js";
+import type {
+  BillingFundingRepository,
+  BillingFundingReceipt,
+  ProviderWebhookRepository,
+} from "@masanawa/postgres";
+import {
+  createBillingCreditPricingPolicy,
+  createBillingFinancialService,
+} from "./financial_billing.js";
 import type { FinancialAuthorizer } from "./financial_service.js";
 
 class MemoryStore implements BillingFulfillmentStore {
@@ -32,9 +39,39 @@ class MemoryStore implements BillingFulfillmentStore {
   }
 }
 
+
+function fundingRepository(events: string[]): BillingFundingRepository {
+  let snapshot: BillingFundingReceipt | null = null;
+  return {
+    async reserve(input) {
+      events.push("funding:reserve");
+      snapshot = {
+        reference: input.reference,
+        tenantId: createCanonicalId("tenant"),
+        userId: createCanonicalId("user"),
+        quoteId: createCanonicalId("quote"),
+        providerAmountNgn: input.providerAmountNgn,
+        customerPriceCredits: input.customerPriceCredits,
+        providerReserveCredits: input.providerReserveCredits,
+        platformMarginCredits: input.platformMarginCredits,
+        pricingPolicyVersion: input.pricingPolicyVersion,
+        state: "reserved",
+      };
+      return snapshot;
+    },
+    async settle(input) {
+      events.push(`funding:${input.outcome}`);
+      if (!snapshot) throw new Error("not reserved");
+      snapshot = { ...snapshot, state: input.outcome === "succeeded" ? "settled" : "refunded" };
+      return snapshot;
+    },
+  };
+}
+
 describe("BillingFinancialService catalog authority", () => {
   it("fails closed when relay configuration is incomplete", () => {
     const store = new MemoryStore();
+    const fundingEvents: string[] = [];
     const authorizer: FinancialAuthorizer = {
       async authorize() {
         return {
@@ -51,6 +88,12 @@ describe("BillingFinancialService catalog authority", () => {
 
     const base = {
       billingStore: () => store,
+      billingFunding: () => fundingRepository(fundingEvents),
+      pricingPolicy: createBillingCreditPricingPolicy({
+        creditsPerNgn: 1,
+        platformMarginBps: 1_000,
+        version: "test-v1",
+      }),
       webhookRepository,
       authorizer,
       flutterwaveSecretKey: "test-secret",
@@ -79,6 +122,28 @@ describe("BillingFinancialService catalog authority", () => {
         flutterwaveRelayToken: "relay-secret",
       }),
     ).not.toThrow();
+  });
+
+  it("prices NGN amounts deterministically without assuming a hidden exchange rate", () => {
+    const policy = createBillingCreditPricingPolicy({
+      creditsPerNgn: 2,
+      platformMarginBps: 500,
+      version: "pricing-v2",
+    });
+    expect(policy.quote({
+      providerAmountNgn: "100.25",
+      billerCode: "BIL119",
+      itemCode: "AIRTIME",
+    })).toEqual({
+      providerReserveCredits: 201,
+      platformMarginCredits: 11,
+      customerPriceCredits: 212,
+    });
+    expect(() => createBillingCreditPricingPolicy({
+      creditsPerNgn: 0,
+      platformMarginBps: 500,
+      version: "pricing-v2",
+    })).toThrow();
   });
 
   it("re-derives provider catalog fields before dispatch and ignores tampered client metadata", async () => {
@@ -175,7 +240,7 @@ describe("BillingFinancialService catalog authority", () => {
 
     const result = await service.purchase({
       authorizationHeader: "Bearer test",
-      requestId: "billing-request-123",
+      requestId: "request_0194c2d2-6c00-7abc-8abc-1234567890ab",
       billerCode: "BIL119",
       itemCode: "AIRTIME",
       itemName: "Tampered Cheap Product",
@@ -191,10 +256,11 @@ describe("BillingFinancialService catalog authority", () => {
       providerReference: "BP-TEST-1",
     });
     expect(paymentBodies).toHaveLength(1);
+    expect(fundingEvents).toEqual(["funding:reserve", "funding:succeeded"]);
     expect(paymentBodies[0]).toMatchObject({
       amount: "100",
       customer_id: "07010102053",
-      reference: "billing-request-123",
+      reference: "request_0194c2d2-6c00-7abc-8abc-1234567890ab",
     });
   });
 });
