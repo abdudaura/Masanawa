@@ -38,6 +38,10 @@ class AgentDirectoryEntry {
     this.avatarUrl,
     this.greeting,
     this.activeWorkCount = 0,
+    this.supportAgent = false,
+    this.defaultPlatformAgent = false,
+    this.voiceProvider,
+    this.voiceName,
   });
 
   final String characterId;
@@ -51,6 +55,10 @@ class AgentDirectoryEntry {
   final String? avatarUrl;
   final String? greeting;
   final int activeWorkCount;
+  final bool supportAgent;
+  final bool defaultPlatformAgent;
+  final String? voiceProvider;
+  final String? voiceName;
 
   String get initial =>
       displayName.trim().isEmpty ? 'M' : displayName.trim()[0].toUpperCase();
@@ -82,12 +90,17 @@ class AgentDirectoryEntry {
       avatarUrl: (json['avatarUrl'] as String?)?.trim(),
       greeting: (json['greeting'] as String?)?.trim(),
       activeWorkCount: work is int && work >= 0 ? work : 0,
+      supportAgent: json['supportAgent'] == true,
+      defaultPlatformAgent: json['defaultPlatformAgent'] == true,
+      voiceProvider: (json['voiceProvider'] as String?)?.trim(),
+      voiceName: (json['voiceName'] as String?)?.trim(),
     );
   }
 }
 
 abstract class AgentDirectoryTransport {
   Future<List<AgentDirectoryEntry>> loadDirectory();
+  Future<void> setDefaultPlatformAgent(String characterId);
 }
 
 /// Used when no live Masanawa runtime is configured. Deliberately empty:
@@ -97,4 +110,13 @@ class EmptyAgentDirectoryTransport implements AgentDirectoryTransport {
 
   @override
   Future<List<AgentDirectoryEntry>> loadDirectory() async => const [];
+
+  @override
+  Future<void> setDefaultPlatformAgent(String characterId) async {
+    throw StateError('Agent runtime is not configured');
+  }
+}
+
+class UnavailableAgentDirectoryTransport extends EmptyAgentDirectoryTransport {
+  const UnavailableAgentDirectoryTransport();
 }
