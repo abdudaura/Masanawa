@@ -36,6 +36,8 @@ final agentDirectoryTransportProvider = Provider<AgentDirectoryTransport>((
     baseUrl: connection.baseUrl,
     readAccessToken: () =>
         ref.read(apiClientProvider).accessToken,
+    refreshAccessToken: () =>
+        ref.read(apiClientProvider).refreshAccessToken(),
   );
 });
 
@@ -64,6 +66,8 @@ final creatorCloneTransportProvider = Provider<CreatorCloneTransport>((ref) {
     baseUrl: connection.baseUrl,
     readAccessToken: () =>
         ref.read(apiClientProvider).accessToken,
+    refreshAccessToken: () =>
+        ref.read(apiClientProvider).refreshAccessToken(),
   );
 });
 
@@ -76,6 +80,8 @@ final creatorEconomyTransportProvider = Provider<CreatorEconomyTransport>((ref) 
     baseUrl: connection.baseUrl,
     readAccessToken: () =>
         ref.read(apiClientProvider).accessToken,
+    refreshAccessToken: () =>
+        ref.read(apiClientProvider).refreshAccessToken(),
   );
 });
 
@@ -88,5 +94,7 @@ final creatorSkillTransportProvider = Provider<CreatorSkillTransport>((ref) {
     baseUrl: connection.baseUrl,
     readAccessToken: () =>
         ref.read(apiClientProvider).accessToken,
+    refreshAccessToken: () =>
+        ref.read(apiClientProvider).refreshAccessToken(),
   );
 });
