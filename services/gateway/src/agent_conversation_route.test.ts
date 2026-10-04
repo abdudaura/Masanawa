@@ -35,6 +35,12 @@ describe("Alpha agent conversation routes", () => {
         seen.push(`media:${input.characterId}:${input.mimeType}`);
         return { reply: "I heard you", agentRunId: runId, parts: [] };
       },
+      async mediaSetTurn(input) {
+        expect(isCanonicalId("request", input.requestId)).toBe(true);
+        expect(isCanonicalId("correlation", input.correlationId)).toBe(true);
+        seen.push(`media-set:${input.characterId}:${input.media.length}`);
+        return { reply: "I reviewed both", agentRunId: runId, parts: [] };
+      },
       async close(input) {
         seen.push(`close:${input.characterId}`);
       },
@@ -75,6 +81,22 @@ describe("Alpha agent conversation routes", () => {
     expect(media.statusCode).toBe(200);
     expect(media.json().reply).toBe("I heard you");
 
+    const mediaSet = await app.inject({
+      method: "POST",
+      url: `/agent/sessions/${sessionId}/media-set-turn`,
+      headers,
+      payload: {
+        characterId,
+        caption: "Compare",
+        media: [
+          { mimeType: "image/jpeg", dataBase64: "YWJj", name: "one.jpg" },
+          { mimeType: "image/jpeg", dataBase64: "ZGVm", name: "two.jpg" },
+        ],
+      },
+    });
+    expect(mediaSet.statusCode).toBe(200);
+    expect(mediaSet.json().reply).toBe("I reviewed both");
+
     const closed = await app.inject({
       method: "POST",
       url: `/agent/sessions/${sessionId}/close`,
@@ -88,6 +110,7 @@ describe("Alpha agent conversation routes", () => {
       `open:${characterId}:Bearer alpha-test-token`,
       `turn:${characterId}:Hi`,
       `media:${characterId}:audio/mp4`,
+      `media-set:${characterId}:2`,
       `close:${characterId}`,
     ]);
   });
