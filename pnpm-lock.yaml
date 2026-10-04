@@ -470,6 +470,9 @@ importers:
       '@masanawa/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@masanawa/commerce':
+        specifier: workspace:*
+        version: link:../../packages/commerce
       '@masanawa/identity':
         specifier: workspace:*
         version: link:../../packages/identity
