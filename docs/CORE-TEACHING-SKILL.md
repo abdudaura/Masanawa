@@ -95,3 +95,27 @@ These references do not grant execution permission. A later runtime owner must r
 the exact subskill through canonical assignment/readiness/dependency admission before
 execution. The same exercise projection can then be rendered by app, WhatsApp or Telegram
 without channel-specific teaching logic.
+
+
+## Deterministic continuity and answer custody
+
+The Teaching domain now defines progression decisions independently from transport or
+model prose:
+
+- learner language/accessibility/text/voice preferences may change while preserving the
+  same Relationship, topic, level and goals;
+- `planned` and `in-progress` continue the current lesson step;
+- `needs-reteaching` explicitly repeats the current step with an alternative approach;
+- only `ready-to-advance` or `completed` may move to the next step;
+- final-step advancement produces an explicit sequence-complete result;
+- progress from another Relationship, SkillVersion or unknown lesson step fails closed.
+
+Selectable exercise answer keys are never part of the client-facing exercise card.
+A separate server-side rubric binds the exact Relationship, SkillVersion, lesson step,
+exercise and allowed option keys. Selection evaluation rejects forged options and
+cross-scope submissions. Multi-select correctness compares the exact selected set, not
+client ordering. An incorrect or unknown evaluation cannot be labelled advance-ready.
+
+This remains domain logic only. Persisting attempts, rate limits, durable checkpoints and
+mapping opaque chat actions to submissions belong to the canonical runtime/Workflow/chat
+owners.
