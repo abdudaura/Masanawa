@@ -9,6 +9,7 @@
   - `packages/providers/src/flutterwave-bills/http-transport.ts`
   - `packages/providers/src/flutterwave-bills/http-transport.test.ts`
   - `services/gateway/src/financial_billing.ts`
+  - `services/gateway/src/financial_billing.test.ts`
   - `services/gateway/src/main.ts`
   - `services/gateway/src/main.test.ts`
   - `docs/workstreams/flutterwave-relay-client.md`
