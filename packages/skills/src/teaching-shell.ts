@@ -272,10 +272,22 @@ export function projectTeachingToShellDocument(
   const hasAction =
     projection.kind === "exercise" &&
     projection.card.kind !== "free-response";
-  if (hasAction && options.expiresAt === undefined) {
-    throw new TypeError(
-      "Actionable Teaching shell documents require timezone-bound expiry",
-    );
+  let expiresAt = options.expiresAt;
+  if (hasAction) {
+    if (projection.kind !== "exercise" || projection.actionExpiresAt === null) {
+      throw new TypeError(
+        "Actionable Teaching shell documents require action expiry",
+      );
+    }
+    if (
+      options.expiresAt !== undefined &&
+      options.expiresAt !== projection.actionExpiresAt
+    ) {
+      throw new TypeError(
+        "Teaching shell expiry must match the bound action expiry",
+      );
+    }
+    expiresAt = projection.actionExpiresAt;
   }
 
   return Object.freeze({
@@ -283,9 +295,7 @@ export function projectTeachingToShellDocument(
     id: options.documentId,
     revision: options.revision,
     fallback: fallbackFor(projection),
-    ...(options.expiresAt === undefined
-      ? {}
-      : { expiresAt: options.expiresAt }),
+    ...(expiresAt === undefined ? {} : { expiresAt }),
     nodes,
   });
 }
