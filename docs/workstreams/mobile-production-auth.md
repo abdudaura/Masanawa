@@ -56,4 +56,12 @@ Verification:
 - GitHub Actions Foundation CI and Mobile Build currently fail before executing any step (runner allocation failure; jobs contain zero steps), so no passing CI is claimed.
 - Source audit found no remaining mobile Developer route, devLogin, AgentConnectionStore, connection.token, or Alpha mobile token references in the changed runtime paths.
 
-Deployment: not claimed. Hosted Gateway must not be switched until this PR is merged and executable verification is available.
+Infrastructure findings:
+- `nurainworker-production.up.railway.app` currently belongs to the active billing worker and starts `scripts/flutterwave-webhook-proxy.mjs`; it is NOT the agent Gateway and must not be reused by the APK.
+- Railway Free-plan resource provisioning is currently exhausted, so creating a fifth dedicated service is blocked.
+- `@nurain/call-gateway` is an active remote APK-builder service with recent activity and is intentionally left untouched.
+- Existing DigitalOcean Droplet `masanawa-relay-bridge` (209.38.107.173, $4/mo) could host a second Gateway process, but the available DigitalOcean connector cannot execute SSH commands.
+- Render can host a separate free Gateway, but its connector requires explicit user workspace selection before create/update actions.
+- Mobile now targets the stable product origin `https://gateway.masanawa.com`; DNS/hosting can move later without another APK build.
+
+Deployment: not claimed. The stable Gateway origin is code-ready but not yet backed by a deployed service.
