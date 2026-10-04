@@ -393,6 +393,14 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         ? allMessages
         : allMessages.where((m) => m.text.toLowerCase().contains(query)).toList();
     final sending = chat.sendingIn.contains(widget.characterId);
+    final lastUser = allMessages.where((m) => m.isUser).lastOrNull;
+    final workingLabel = !sending
+        ? agent.presenceLabel
+        : lastUser?.attachment?.kind == 'voice'
+        ? 'Understanding voice…'
+        : lastUser?.attachment != null
+        ? 'Reviewing attachment…'
+        : 'Typing…';
 
     if (agent == null) {
       return Scaffold(
@@ -502,7 +510,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                         ),
                       ),
                       Text(
-                        sending ? 'Working…' : agent.presenceLabel,
+                        workingLabel,
                         style: TextStyle(
                           color: sending ? u.brand : u.textMuted,
                           fontSize: 12,
@@ -585,7 +593,13 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                         final failure = failedParts.isEmpty
                             ? null
                             : failedParts.first;
-                        return _ChatBubble(
+                        final previous = index > 0 ? messages[index - 1] : null;
+                        final showDate = previous == null ||
+                            !_sameDay(previous.createdAt, message.createdAt);
+                        return Column(
+                          children: [
+                            if (showDate) _DateSeparator(date: message.createdAt),
+                            _ChatBubble(
                           message: message,
                           onReply: () => setState(() => _replyingTo = message),
                           onReact: (emoji) => ref
@@ -600,6 +614,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                           onCopy: () => Clipboard.setData(
                             ClipboardData(text: message.text),
                           ),
+                          onAgentAction: message.isUser
+                              ? null
+                              : (action) => _runAgentAction(message, action),
                           onRetry: failure == null || sending
                               ? null
                               : () async {
@@ -619,6 +636,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                                         );
                                   }
                                 },
+                            ),
+                          ],
                         );
                       },
                     ),
@@ -689,6 +708,31 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  bool _sameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  Future<void> _runAgentAction(AiChatMessage message, String action) async {
+    final ctl = ref.read(aiChatProvider.notifier);
+    final quoted = message.text;
+    final prompt = switch (action) {
+      'regenerate' => 'Answer my previous request again. Improve the answer and avoid unnecessary repetition.',
+      'shorter' => 'Make this answer much shorter while preserving the important points:\n\n$quoted',
+      'detail' => 'Expand this answer with more useful detail and practical steps:\n\n$quoted',
+      'simple' => 'Explain this much more simply:\n\n$quoted',
+      'translate' => 'Translate this answer into the language I am currently using, preserving meaning:\n\n$quoted',
+      'continue' => 'Continue this answer exactly from where it stopped:\n\n$quoted',
+      'audio' => 'Repeat this answer faithfully so I can listen to the native audio version:\n\n$quoted',
+      _ => '',
+    };
+    if (prompt.isEmpty) return;
+    await ctl.sendText(
+      widget.characterId,
+      prompt,
+      replyToId: message.id,
+      replyPreview: quoted.isEmpty ? 'Agent response' : quoted,
     );
   }
 
@@ -1159,6 +1203,7 @@ class _ChatBubble extends StatelessWidget {
     required this.onCopy,
     this.onEdit,
     this.onRetry,
+    this.onAgentAction,
   });
 
   final AiChatMessage message;
@@ -1168,6 +1213,7 @@ class _ChatBubble extends StatelessWidget {
   final VoidCallback onCopy;
   final VoidCallback? onEdit;
   final VoidCallback? onRetry;
+  final ValueChanged<String>? onAgentAction;
 
   Future<void> _showActions(BuildContext context) async {
     final action = await showModalBottomSheet<String>(
@@ -1202,6 +1248,23 @@ class _ChatBubble extends StatelessWidget {
               title: const Text('Delete'),
               onTap: () => Navigator.pop(sheetContext, 'delete'),
             ),
+            if (!message.isUser) ...[
+              const Divider(height: 1),
+              for (final item in const [
+                ('regenerate', Icons.refresh, 'Regenerate'),
+                ('shorter', Icons.compress, 'Shorter'),
+                ('detail', Icons.subject, 'More detailed'),
+                ('simple', Icons.lightbulb_outline, 'Explain simply'),
+                ('translate', Icons.translate, 'Translate'),
+                ('audio', Icons.volume_up_outlined, 'Read aloud'),
+                ('continue', Icons.playlist_add, 'Continue'),
+              ])
+                ListTile(
+                  leading: Icon(item.$2),
+                  title: Text(item.$3),
+                  onTap: () => Navigator.pop(sheetContext, 'agent:${item.$1}'),
+                ),
+            ],
             const Divider(height: 1),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -1230,6 +1293,9 @@ class _ChatBubble extends StatelessWidget {
     if (action == 'edit') onEdit?.call();
     if (action == 'delete') onDelete();
     if (action.startsWith('react:')) onReact(action.substring(6));
+    if (action.startsWith('agent:')) {
+      onAgentAction?.call(action.substring(6));
+    }
   }
 
   @override
@@ -1305,14 +1371,7 @@ class _ChatBubble extends StatelessWidget {
                       if (message.text.isNotEmpty) const SizedBox(height: 6),
                     ],
                     if (message.text.isNotEmpty)
-                      SelectableText(
-                        message.text,
-                        style: TextStyle(
-                          color: u.textPrimary,
-                          fontSize: 15,
-                          height: 1.4,
-                        ),
-                      ),
+                      _RichMessageText(text: message.text),
                     if (message.parts.any((p) => p != failure))
                       MessagePartsView(
                         parts: message.parts.where((p) => p != failure).toList(),
@@ -1392,6 +1451,940 @@ class _ChatBubble extends StatelessWidget {
   }
 }
 
+class _DateSeparator extends StatelessWidget {
+  const _DateSeparator({required this.date});
+  final DateTime date;
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    final now = DateTime.now();
+    final label = _label(now, date);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: u.surfaceCard,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: u.structuralBorder),
+          ),
+          child: Text(label, style: TextStyle(color: u.textMuted, fontSize: 11)),
+        ),
+      ),
+    );
+  }
+
+  String _label(DateTime now, DateTime date) {
+    final today = DateTime(now.year, now.month, now.day);
+    final day = DateTime(date.year, date.month, date.day);
+    final diff = today.difference(day).inDays;
+    if (diff == 0) return 'Today';
+    if (diff == 1) return 'Yesterday';
+    return '${date.day}/${date.month}/${date.year}';
+  }
+}
+
+class _RichMessageText extends StatelessWidget {
+  const _RichMessageText({required this.text});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    final lines = text.replaceAll('\r\n', '\n').split('\n');
+    final blocks = <Widget>[];
+    var inCode = false;
+    final code = StringBuffer();
+
+    void flushCode() {
+      if (code.isEmpty) return;
+      final value = code.toString().trimRight();
+      blocks.add(
+        Container(
+          width: double.infinity,
+          margin: const EdgeInsets.symmetric(vertical: 5),
+          padding: const EdgeInsets.all(9),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: .07),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Stack(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(right: 28),
+                child: SelectableText(
+                  value,
+                  style: TextStyle(
+                    color: u.textPrimary,
+                    fontFamily: 'monospace',
+                    fontSize: 12.5,
+                    height: 1.35,
+                  ),
+                ),
+              ),
+              Positioned(
+                top: -8,
+                right: -8,
+                child: IconButton(
+                  tooltip: 'Copy code',
+                  icon: const Icon(Icons.copy, size: 16),
+                  onPressed: () => Clipboard.setData(ClipboardData(text: value)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      code.clear();
+    }
+
+    for (final line in lines) {
+      if (line.trimLeft().startsWith('~~~') ||
+          line.trimLeft().startsWith('```')) {
+        if (inCode) flushCode();
+        inCode = !inCode;
+        continue;
+      }
+      if (inCode) {
+        code.writeln(line);
+        continue;
+      }
+
+      final trimmed = line.trim();
+      if (trimmed.isEmpty) {
+        blocks.add(const SizedBox(height: 6));
+        continue;
+      }
+
+      final isHeading = trimmed.startsWith('#');
+      final headingText = isHeading
+          ? trimmed.replaceFirst(RegExp(r'^#{1,6}\\s*'), '')
+          : trimmed;
+      final bullet = RegExp(r'^[-*]\\s+(.+)
+  const _AttachmentView({required this.attachment});
+
+  final ChatAttachment attachment;
+
+  @override
+  Widget build(BuildContext context) {
+    switch (attachment.kind) {
+      case 'image':
+        return _ImageAttachment(path: attachment.path);
+      case 'voice':
+        return _VoiceBubble(attachment: attachment);
+      default:
+        return _DocTile(attachment: attachment);
+    }
+  }
+}
+
+class _ImageAttachment extends StatelessWidget {
+  const _ImageAttachment({required this.path});
+  final String path;
+
+  @override
+  Widget build(BuildContext context) {
+    final file = File(path);
+    return GestureDetector(
+      onTap: () => showDialog<void>(
+        context: context,
+        builder: (_) => Dialog.fullscreen(
+          backgroundColor: Colors.black,
+          child: SafeArea(
+            child: Stack(
+              children: [
+                Center(
+                  child: InteractiveViewer(
+                    minScale: 0.7,
+                    maxScale: 5,
+                    child: Image.file(
+                      file,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Text(
+                          'Photo no longer available on this device.',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Image.file(
+          file,
+          width: 220,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Container(
+            width: 220,
+            height: 120,
+            color: Colors.black12,
+            alignment: Alignment.center,
+            child: const Icon(Icons.broken_image_outlined),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DocTile extends StatelessWidget {
+  const _DocTile({required this.attachment});
+  final ChatAttachment attachment;
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    return Container(
+      width: 220,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.insert_drive_file, size: 34, color: u.brand),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  attachment.name ?? 'Document',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: u.textPrimary,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (attachment.sizeBytes != null)
+                  Text(
+                    formatBytes(attachment.sizeBytes!),
+                    style: TextStyle(color: u.textMuted, fontSize: 11.5),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+_VoiceBubbleState? _activeVoiceBubble;
+
+class _VoiceBubble extends StatefulWidget {
+  const _VoiceBubble({required this.attachment});
+  final ChatAttachment attachment;
+
+  @override
+  State<_VoiceBubble> createState() => _VoiceBubbleState();
+}
+
+class _VoiceBubbleState extends State<_VoiceBubble> {
+  AudioPlayer? _player;
+  StreamSubscription<PlayerState>? _stateSub;
+  StreamSubscription<Duration>? _positionSub;
+  bool _playing = false;
+  bool _broken = false;
+  Duration _position = Duration.zero;
+  Duration _duration = Duration.zero;
+  double _speed = 1;
+
+  @override
+  void dispose() {
+    if (identical(_activeVoiceBubble, this)) _activeVoiceBubble = null;
+    _stateSub?.cancel();
+    _positionSub?.cancel();
+    _player?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pauseFromAnotherBubble() async {
+    if (!_playing) return;
+    await _player?.pause();
+    if (mounted) setState(() => _playing = false);
+  }
+
+  Future<void> _ensurePlayer() async {
+    if (_player != null) return;
+    final player = AudioPlayer();
+    _player = player;
+    _stateSub = player.playerStateStream.listen((state) {
+      if (!mounted) return;
+      if (state.processingState == ProcessingState.completed) {
+        setState(() {
+          _playing = false;
+          _position = Duration.zero;
+        });
+        player.seek(Duration.zero);
+      }
+    });
+    _positionSub = player.positionStream.listen((value) {
+      if (mounted) setState(() => _position = value);
+    });
+    final duration = await player.setFilePath(widget.attachment.path);
+    _duration = duration ??
+        Duration(milliseconds: widget.attachment.durationMs ?? 0);
+    await player.setSpeed(_speed);
+  }
+
+  Future<void> _toggle() async {
+    try {
+      if (_broken && mounted) setState(() => _broken = false);
+      await _ensurePlayer();
+      if (_playing) {
+        await _player!.pause();
+        if (mounted) setState(() => _playing = false);
+        return;
+      }
+      final other = _activeVoiceBubble;
+      if (other != null && !identical(other, this)) {
+        await other._pauseFromAnotherBubble();
+      }
+      _activeVoiceBubble = this;
+      if (_position >= _duration && _duration > Duration.zero) {
+        await _player!.seek(Duration.zero);
+      }
+      await _player!.play();
+      if (mounted) setState(() => _playing = true);
+    } catch (_) {
+      await _player?.dispose();
+      _player = null;
+      await _stateSub?.cancel();
+      _stateSub = null;
+      await _positionSub?.cancel();
+      _positionSub = null;
+      if (mounted) {
+        setState(() {
+          _playing = false;
+          _broken = true;
+        });
+      }
+    }
+  }
+
+  Future<void> _seek(double fraction) async {
+    try {
+      await _ensurePlayer();
+      final totalMs = _duration.inMilliseconds;
+      if (totalMs <= 0) return;
+      await _player!.seek(
+        Duration(milliseconds: (totalMs * fraction).round()),
+      );
+    } catch (_) {}
+  }
+
+  Future<void> _cycleSpeed() async {
+    final next = _speed == 1
+        ? 1.5
+        : _speed == 1.5
+        ? 2.0
+        : 1.0;
+    setState(() => _speed = next);
+    try {
+      await _ensurePlayer();
+      await _player!.setSpeed(next);
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    final fallbackMs = widget.attachment.durationMs ?? 0;
+    final totalMs = _duration.inMilliseconds > 0
+        ? _duration.inMilliseconds
+        : fallbackMs;
+    final progress = totalMs <= 0
+        ? 0.0
+        : (_position.inMilliseconds / totalMs).clamp(0.0, 1.0);
+    final remaining = totalMs <= 0
+        ? formatDurationMs(fallbackMs)
+        : formatDurationMs(
+            (totalMs - _position.inMilliseconds).clamp(0, totalMs),
+          );
+
+    return SizedBox(
+      width: 235,
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: _toggle,
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: u.brand.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                _broken
+                    ? Icons.refresh
+                    : _playing
+                    ? Icons.pause
+                    : Icons.play_arrow,
+                color: u.brand,
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    trackHeight: 2,
+                    thumbShape: const RoundSliderThumbShape(
+                      enabledThumbRadius: 5,
+                    ),
+                    overlayShape: SliderComponentShape.noOverlay,
+                  ),
+                  child: Slider(
+                    value: progress,
+                    onChanged: _broken ? null : _seek,
+                  ),
+                ),
+                Row(
+                  children: [
+                    Text(
+                      _broken ? 'Tap to retry' : remaining,
+                      style: TextStyle(color: u.textMuted, fontSize: 11),
+                    ),
+                    const Spacer(),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: _cycleSpeed,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 2,
+                        ),
+                        child: Text(
+                          '${_speed.toStringAsFixed(_speed == 1 ? 0 : 1)}×',
+                          style: TextStyle(
+                            color: u.textMuted,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 4),
+          Icon(Icons.graphic_eq, size: 18, color: u.textMuted),
+        ],
+      ),
+    );
+  }
+}
+
+class _TypingBubble extends StatelessWidget {
+  const _TypingBubble();
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 3),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: u.surfaceCard,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(14),
+            topRight: Radius.circular(14),
+            bottomRight: Radius.circular(14),
+            bottomLeft: Radius.circular(4),
+          ),
+          border: Border.all(color: u.structuralBorder),
+        ),
+        child: SizedBox(
+          width: 44,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              for (var i = 0; i < 3; i++)
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: u.textMuted,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+).firstMatch(trimmed);
+      final numbered = RegExp(r'^(\\d+)\\.\\s+(.+)
+  const _AttachmentView({required this.attachment});
+
+  final ChatAttachment attachment;
+
+  @override
+  Widget build(BuildContext context) {
+    switch (attachment.kind) {
+      case 'image':
+        return _ImageAttachment(path: attachment.path);
+      case 'voice':
+        return _VoiceBubble(attachment: attachment);
+      default:
+        return _DocTile(attachment: attachment);
+    }
+  }
+}
+
+class _ImageAttachment extends StatelessWidget {
+  const _ImageAttachment({required this.path});
+  final String path;
+
+  @override
+  Widget build(BuildContext context) {
+    final file = File(path);
+    return GestureDetector(
+      onTap: () => showDialog<void>(
+        context: context,
+        builder: (_) => Dialog.fullscreen(
+          backgroundColor: Colors.black,
+          child: SafeArea(
+            child: Stack(
+              children: [
+                Center(
+                  child: InteractiveViewer(
+                    minScale: 0.7,
+                    maxScale: 5,
+                    child: Image.file(
+                      file,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Text(
+                          'Photo no longer available on this device.',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Image.file(
+          file,
+          width: 220,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Container(
+            width: 220,
+            height: 120,
+            color: Colors.black12,
+            alignment: Alignment.center,
+            child: const Icon(Icons.broken_image_outlined),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DocTile extends StatelessWidget {
+  const _DocTile({required this.attachment});
+  final ChatAttachment attachment;
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    return Container(
+      width: 220,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.insert_drive_file, size: 34, color: u.brand),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  attachment.name ?? 'Document',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: u.textPrimary,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (attachment.sizeBytes != null)
+                  Text(
+                    formatBytes(attachment.sizeBytes!),
+                    style: TextStyle(color: u.textMuted, fontSize: 11.5),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+_VoiceBubbleState? _activeVoiceBubble;
+
+class _VoiceBubble extends StatefulWidget {
+  const _VoiceBubble({required this.attachment});
+  final ChatAttachment attachment;
+
+  @override
+  State<_VoiceBubble> createState() => _VoiceBubbleState();
+}
+
+class _VoiceBubbleState extends State<_VoiceBubble> {
+  AudioPlayer? _player;
+  StreamSubscription<PlayerState>? _stateSub;
+  StreamSubscription<Duration>? _positionSub;
+  bool _playing = false;
+  bool _broken = false;
+  Duration _position = Duration.zero;
+  Duration _duration = Duration.zero;
+  double _speed = 1;
+
+  @override
+  void dispose() {
+    if (identical(_activeVoiceBubble, this)) _activeVoiceBubble = null;
+    _stateSub?.cancel();
+    _positionSub?.cancel();
+    _player?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pauseFromAnotherBubble() async {
+    if (!_playing) return;
+    await _player?.pause();
+    if (mounted) setState(() => _playing = false);
+  }
+
+  Future<void> _ensurePlayer() async {
+    if (_player != null) return;
+    final player = AudioPlayer();
+    _player = player;
+    _stateSub = player.playerStateStream.listen((state) {
+      if (!mounted) return;
+      if (state.processingState == ProcessingState.completed) {
+        setState(() {
+          _playing = false;
+          _position = Duration.zero;
+        });
+        player.seek(Duration.zero);
+      }
+    });
+    _positionSub = player.positionStream.listen((value) {
+      if (mounted) setState(() => _position = value);
+    });
+    final duration = await player.setFilePath(widget.attachment.path);
+    _duration = duration ??
+        Duration(milliseconds: widget.attachment.durationMs ?? 0);
+    await player.setSpeed(_speed);
+  }
+
+  Future<void> _toggle() async {
+    try {
+      if (_broken && mounted) setState(() => _broken = false);
+      await _ensurePlayer();
+      if (_playing) {
+        await _player!.pause();
+        if (mounted) setState(() => _playing = false);
+        return;
+      }
+      final other = _activeVoiceBubble;
+      if (other != null && !identical(other, this)) {
+        await other._pauseFromAnotherBubble();
+      }
+      _activeVoiceBubble = this;
+      if (_position >= _duration && _duration > Duration.zero) {
+        await _player!.seek(Duration.zero);
+      }
+      await _player!.play();
+      if (mounted) setState(() => _playing = true);
+    } catch (_) {
+      await _player?.dispose();
+      _player = null;
+      await _stateSub?.cancel();
+      _stateSub = null;
+      await _positionSub?.cancel();
+      _positionSub = null;
+      if (mounted) {
+        setState(() {
+          _playing = false;
+          _broken = true;
+        });
+      }
+    }
+  }
+
+  Future<void> _seek(double fraction) async {
+    try {
+      await _ensurePlayer();
+      final totalMs = _duration.inMilliseconds;
+      if (totalMs <= 0) return;
+      await _player!.seek(
+        Duration(milliseconds: (totalMs * fraction).round()),
+      );
+    } catch (_) {}
+  }
+
+  Future<void> _cycleSpeed() async {
+    final next = _speed == 1
+        ? 1.5
+        : _speed == 1.5
+        ? 2.0
+        : 1.0;
+    setState(() => _speed = next);
+    try {
+      await _ensurePlayer();
+      await _player!.setSpeed(next);
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    final fallbackMs = widget.attachment.durationMs ?? 0;
+    final totalMs = _duration.inMilliseconds > 0
+        ? _duration.inMilliseconds
+        : fallbackMs;
+    final progress = totalMs <= 0
+        ? 0.0
+        : (_position.inMilliseconds / totalMs).clamp(0.0, 1.0);
+    final remaining = totalMs <= 0
+        ? formatDurationMs(fallbackMs)
+        : formatDurationMs(
+            (totalMs - _position.inMilliseconds).clamp(0, totalMs),
+          );
+
+    return SizedBox(
+      width: 235,
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: _toggle,
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: u.brand.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                _broken
+                    ? Icons.refresh
+                    : _playing
+                    ? Icons.pause
+                    : Icons.play_arrow,
+                color: u.brand,
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    trackHeight: 2,
+                    thumbShape: const RoundSliderThumbShape(
+                      enabledThumbRadius: 5,
+                    ),
+                    overlayShape: SliderComponentShape.noOverlay,
+                  ),
+                  child: Slider(
+                    value: progress,
+                    onChanged: _broken ? null : _seek,
+                  ),
+                ),
+                Row(
+                  children: [
+                    Text(
+                      _broken ? 'Tap to retry' : remaining,
+                      style: TextStyle(color: u.textMuted, fontSize: 11),
+                    ),
+                    const Spacer(),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: _cycleSpeed,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 2,
+                        ),
+                        child: Text(
+                          '${_speed.toStringAsFixed(_speed == 1 ? 0 : 1)}×',
+                          style: TextStyle(
+                            color: u.textMuted,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 4),
+          Icon(Icons.graphic_eq, size: 18, color: u.textMuted),
+        ],
+      ),
+    );
+  }
+}
+
+class _TypingBubble extends StatelessWidget {
+  const _TypingBubble();
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 3),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: u.surfaceCard,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(14),
+            topRight: Radius.circular(14),
+            bottomRight: Radius.circular(14),
+            bottomLeft: Radius.circular(4),
+          ),
+          border: Border.all(color: u.structuralBorder),
+        ),
+        child: SizedBox(
+          width: 44,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              for (var i = 0; i < 3; i++)
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: u.textMuted,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+).firstMatch(trimmed);
+
+      if (bullet != null || numbered != null) {
+        final content = bullet?.group(1) ?? numbered?.group(2) ?? '';
+        final marker = bullet != null ? '•' : '${numbered!.group(1)}.';
+        blocks.add(
+          Padding(
+            padding: const EdgeInsets.only(bottom: 3),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 24,
+                  child: Text(
+                    marker,
+                    style: TextStyle(color: u.textPrimary, fontSize: 14),
+                  ),
+                ),
+                Expanded(
+                  child: SelectableText(
+                    content,
+                    style: TextStyle(
+                      color: u.textPrimary,
+                      fontSize: 15,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      } else {
+        blocks.add(
+          Padding(
+            padding: const EdgeInsets.only(bottom: 2),
+            child: SelectableText(
+              headingText,
+              style: TextStyle(
+                color: u.textPrimary,
+                fontSize: isHeading ? 16 : 15,
+                height: 1.4,
+                fontWeight: isHeading ? FontWeight.w700 : FontWeight.w400,
+              ),
+            ),
+          ),
+        );
+      }
+    }
+    if (inCode) flushCode();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: blocks,
+    );
+  }
+}
+
 class _AttachmentView extends StatelessWidget {
   const _AttachmentView({required this.attachment});
 
@@ -1420,14 +2413,37 @@ class _ImageAttachment extends StatelessWidget {
     return GestureDetector(
       onTap: () => showDialog<void>(
         context: context,
-        builder: (_) => Dialog(
-          insetPadding: const EdgeInsets.all(16),
-          child: Image.file(
-            file,
-            fit: BoxFit.contain,
-            errorBuilder: (_, __, ___) => const Padding(
-              padding: EdgeInsets.all(24),
-              child: Text('Photo no longer available on this device.'),
+        builder: (_) => Dialog.fullscreen(
+          backgroundColor: Colors.black,
+          child: SafeArea(
+            child: Stack(
+              children: [
+                Center(
+                  child: InteractiveViewer(
+                    minScale: 0.7,
+                    maxScale: 5,
+                    child: Image.file(
+                      file,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Text(
+                          'Photo no longer available on this device.',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
