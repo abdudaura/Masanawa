@@ -90,3 +90,14 @@ PR #124 is therefore the successor writer for crypto-specific NOWPayments adapte
 - associated crypto-only adapter tests needed by those files.
 
 PR #98 has been notified not to add further adapter commits without re-coordination. Runtime/deployment composition is still excluded from this ownership.
+
+
+## Fixed-egress relay continuation — 2026-10-05
+
+NOWPayments payout/custody operations require IP-whitelisted egress. Railway does not provide the fixed source IP required for that guarantee. This workstream therefore additionally owns:
+- new `scripts/nowpayments-fixed-egress-relay.mjs` and focused relay tests;
+- relay-base/token support inside the already-owned NOWPayments clients.
+
+The relay must use a fixed NOWPayments upstream, a strict method/path allowlist, HTTPS at the public edge, a dedicated `x-masanawa-relay-token` credential, bounded bodies/timeouts, no request-body logging, and must preserve NOWPayments `x-api-key` plus provider JWT `Authorization` headers upstream. It is intended to run on the existing `masanawa-relay-bridge` DigitalOcean droplet (public IP 209.38.107.173), not on a second server.
+
+Deployment/Caddy/systemd changes remain runtime-owned because the connected DigitalOcean capability does not expose SSH command execution. Production must remain fail-closed until the relay is deployed and 209.38.107.173 is whitelisted in NOWPayments.
