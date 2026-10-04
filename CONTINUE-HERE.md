@@ -1,5 +1,63 @@
 # Continue Here
 
+## Chat UX + Gemini Live checkpoint — 2026-10-04
+
+The WhatsApp-style chat overhaul is implemented on current `main`; do not
+reintroduce browser/device TTS or the old squeezed composer.
+
+Implemented mobile chat behavior:
+- responsive modern composer with separate emoji/attachment/camera controls and
+  mic/send/stop action;
+- true streamed Gemini Flash text deltas into one assistant bubble;
+- Gemini Live native PCM streamed to Android `AudioTrack`, plus durable WAV
+  replay in the same text+audio response bubble;
+- speaker/earpiece routing, one-at-a-time voice playback, pause/replay, seek,
+  1x/1.5x/2x speed, real/persisted waveform data and retryable playback;
+- WhatsApp-style recording with timer, live amplitude waveform, slide-to-cancel,
+  slide-up lock, pause/resume, preview/delete/re-record and persistent unsent
+  voice drafts;
+- reply/quote across text, media, grouped media and voice;
+- long-press actions for reply/copy/react/forward/share/save/edit/delete/select;
+- multi-select delete/copy; reactions; edited/deleted states; send/upload/
+  processing/queued/failed/stopped states;
+- offline queue with reconnect flush, retry without duplicate user bubbles and
+  transport cancellation from Stop;
+- unread/new-message button, no forced scroll while reading history and durable
+  per-chat scroll position;
+- staged persistent attachment drafts with caption support, grouped 2–8
+  attachment turns, upload progress, image pinch+swipe gallery, video playback
+  and document/media sharing/saving;
+- in-chat search with next/previous navigation and highlighted result;
+- date separators/timestamps; rename/pin/archive/unarchive/new-context/clear;
+- rich GitHub-flavored Markdown, links, tables, selectable text and copyable code;
+- response actions for regenerate/shorter/more detail/explain/translate/read
+  aloud/continue;
+- contextual typing/voice/attachment presence labels;
+- old Android/device TTS bridge removed.
+
+Voice transcription is intentionally NOT implemented per user direction.
+
+Hosted runtime verification:
+- Railway worker source remains `task073-inference-hardening`;
+- grouped-media and streaming Gateway builds passed on Railway;
+- provider stream smoke passed with a real Gemini response;
+- Gemini Live native audio had already passed a real provider smoke;
+- cancellation now propagates from client disconnect through AgentStrategy/
+  inference and Gemini Live audio cleanup;
+- deployment `1fed481b-c331-4fbf-9cd3-cd9d7ded1351` built and reached SUCCESS
+  on runtime commit `c6229891d28408e0c93e15e8d4f3225430b129fc`.
+  Later runtime commits preserve this implementation and add tests/cleanup.
+
+Mobile verification status:
+- modified chat/mobile source has been structurally scanned after the final edits;
+- current package APIs for file_picker 13.1, flutter_markdown_plus 1.0.12,
+  share_plus 13.3.1 and audio_session 0.2.4 were checked against current docs;
+- the final physical Flutter compile/APK install and device interaction pass is
+  still required. GitHub-hosted mobile CI has repeatedly failed before checkout
+  with the known zero-step runner-allocation issue, so do not claim APK compile
+  success until a real local/external Flutter build runs.
+
+
 ## Hosted phone testing verified — 2026-10-04
 
 Mobile implementation is on main at `927c7572f28f1f90b8420bb56a35efe2d61ffb4f`.
