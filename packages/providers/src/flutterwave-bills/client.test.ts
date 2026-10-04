@@ -34,7 +34,7 @@ describe("FlutterwaveBillsClient", () => {
       secretKey: "secret",
       transport: transport(async (request) => {
         requests.push(request.path);
-        if (request.path.includes("/billers")) {
+        if (request.path.endsWith("/billers")) {
           return { status: 200, body: { status: "success", data: [{ biller_code: "BIL-MTN", name: "MTN" }] } };
         }
         return { status: 200, body: { status: "success", data: [{ item_code: "DATA-1", name: "1 GB", amount: "750.50", currency: "NGN", label_name: "Phone Number" }] } };
