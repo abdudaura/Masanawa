@@ -5,6 +5,7 @@ import type { AgentDirectoryService } from "./agent_directory.js";
 import type { AgentConversationService } from "./agent_conversation_contract.js";
 import type { CreatorCloneService } from "./creator_clone.js";
 import type { CreatorEconomyService } from "./creator_economy.js";
+import type { CreatorSkillService } from "./creator_skills.js";
 import {
   admitTelemetryCorrelation,
   injectCorrelationHeaders,
@@ -25,6 +26,7 @@ export interface GatewayAppOptions {
   readonly agentConversation?: AgentConversationService;
   readonly creatorClone?: CreatorCloneService;
   readonly creatorEconomy?: CreatorEconomyService;
+  readonly creatorSkills?: CreatorSkillService;
 }
 
 const HealthResponseSchema = Type.Object(
@@ -202,6 +204,64 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
 
 
 
+
+
+  if (options.creatorSkills) {
+    const creatorSkills = options.creatorSkills;
+    const CreatorSkillSchema = Type.Object(
+      {
+        skillVersionId: Type.String(),
+        key: Type.String(),
+        displayName: Type.String(),
+        description: Type.String(),
+        triggerDescription: Type.String(),
+        category: Type.String(),
+        enabled: Type.Boolean(),
+      },
+      { additionalProperties: false },
+    );
+    const CreatorSkillResponse = Type.Object(
+      { skills: Type.Array(CreatorSkillSchema) },
+      { additionalProperties: false },
+    );
+
+    app.get(
+      "/creator/skills",
+      { schema: { response: { 200: CreatorSkillResponse } } },
+      async (request) => ({
+        skills: [
+          ...(await creatorSkills.list({
+            authorizationHeader: request.headers.authorization,
+          })),
+        ],
+      }),
+    );
+
+    app.put(
+      "/creator/skills",
+      {
+        schema: {
+          body: Type.Object(
+            {
+              skillVersionId: Type.String(),
+              enabled: Type.Boolean(),
+            },
+            { additionalProperties: false },
+          ),
+          response: { 200: CreatorSkillResponse },
+        },
+      },
+      async (request) => ({
+        skills: [
+          ...(await creatorSkills.setEnabled({
+            authorizationHeader: request.headers.authorization,
+            skillVersionId: request.body.skillVersionId,
+            enabled: request.body.enabled,
+          })),
+        ],
+      }),
+    );
+  }
 
   if (options.creatorEconomy) {
     const creatorEconomy = options.creatorEconomy;
