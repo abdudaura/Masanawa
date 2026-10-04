@@ -212,3 +212,21 @@ Every persisted selection attempt carries the exact `planHash`. A
 `TeachingProgressPort.load()` result must return both that hash and the durable
 progress handoff. Resume fails closed when the supplied plan does not match the
 persisted pedagogical plan.
+
+
+## Direct bridge from canonical Skill admission
+
+`createTeachingRuntimeBindingFromAdmission()` accepts the minimal immutable shape of
+#89's prepared Skill admission evidence: a revision pin with exact root SkillVersion,
+pinned version entries and content hash.
+
+The bridge:
+- requires a canonical root SkillVersionId;
+- requires valid revision/definition evidence hashes;
+- requires the admitted root entry itself to have key `core.teaching`;
+- uses that exact root SkillVersionId when constructing the Teaching runtime binding.
+
+It does not perform readiness/authority checks itself and does not import #89's
+`selection.ts`. The runtime owner remains responsible for calling its canonical
+selection/admission machinery first. This keeps Teaching dependent on admission evidence,
+not on a second selection implementation.
