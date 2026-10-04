@@ -171,7 +171,6 @@ export async function startOpsService(
       ? createSystemAdminService({
           database: database.platformAdminDatabase,
           authorizer: adminAuthorizer,
-          ...(database.commerce ? { commerce: database.commerce } : {}),
         })
       : undefined);
 
@@ -181,6 +180,7 @@ export async function startOpsService(
       ? createPlatformAdminService({
           database: database.platformAdminDatabase,
           authorizer: adminAuthorizer,
+          ...(database.commerce ? { commerce: database.commerce } : {}),
         })
       : undefined);
 
