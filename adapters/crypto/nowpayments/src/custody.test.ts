@@ -139,7 +139,7 @@ describe("NOWPayments custody client", () => {
       fromCurrency: "USDTTRC20",
       toCurrency: "BTC",
       amount: "10",
-    })).rejects.toThrow("nowpayments.conversion.request_rejected");
+    })).rejects.toThrow("nowpayments.conversion.dispatch_rejected");
 
     const transportFetch = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ token: "fixture-jwt" })))
@@ -149,6 +149,17 @@ describe("NOWPayments custody client", () => {
       toCurrency: "BTC",
       amount: "10",
     })).rejects.toThrow("nowpayments.custody.transport.unavailable");
+  });
+
+  it("classifies custody authentication failure as definitely pre-dispatch", async () => {
+    const fetch = vi.fn(async () => new Response("denied", { status: 401 }));
+    await expect(client(fetch).createConversion({
+      fromCurrency: "USDTTRC20",
+      toCurrency: "BTC",
+      amount: "10",
+    })).rejects.toThrow("nowpayments.conversion.authentication_unavailable");
+    expect(fetch).toHaveBeenCalledOnce();
+    expect(String(fetch.mock.calls[0]?.[0])).toContain("/v1/auth");
   });
 
   it("does not admit a completed conversion without an exact target amount", async () => {
