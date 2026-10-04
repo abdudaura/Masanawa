@@ -282,4 +282,119 @@ describe("Decision/JEV contracts", () => {
     ).toThrow(/does not match the declared decision schema/u);
   });
 
+
+  it("enforces cardinality ceilings for questions, Operations and evidence refs", () => {
+    const tooManyQuestions: Record<string, ReturnType<typeof definitionInput>["questions"][string]> = {};
+    for (let index = 0; index <= decisionLimits.maxQuestions; index += 1) {
+      tooManyQuestions[`q_${index}`] = {
+        type: "noul",
+        instructions: "bounded boolean decision",
+      };
+    }
+    expect(() =>
+      createDecisionDefinition({
+        ...definitionInput(),
+        questions: tooManyQuestions,
+      }),
+    ).toThrow(/questions must contain between 1/u);
+
+    expect(() =>
+      createDecisionRequest({
+        decisionClass: "star_skill_route",
+        schemaVersion: "star_skill_route.v1",
+        packet: {},
+        trace: {
+          tenantId: createCanonicalId("tenant"),
+          requestId: createCanonicalId("request"),
+          correlationId: createCanonicalId("correlation"),
+          taskId: null,
+          workflowRunId: null,
+          operationIds: Array.from(
+            { length: decisionLimits.maxOperationIds + 1 },
+            () => createCanonicalId("operation"),
+          ),
+        },
+      }),
+    ).toThrow(/maximum operation reference count/u);
+
+    const definition = createDecisionDefinition(definitionInput());
+    expect(() =>
+      createDecisionResult(definition, {
+        decisionClass: definition.decisionClass,
+        schemaVersion: definition.schemaVersion,
+        answers: {
+          route: "current_star_skill",
+          needs_review: false,
+          confidence_band: 3,
+        },
+        confidence: 0.5,
+        evidenceRefs: Array.from(
+          { length: decisionLimits.maxEvidenceRefs + 1 },
+          (_, index) => `evidence_${index}`,
+        ),
+      }),
+    ).toThrow(/maximum evidence reference count/u);
+  });
+
+  it("rejects non-finite numeric data and snapshots nested packet values", () => {
+    expect(() =>
+      createDecisionRequest({
+        decisionClass: "star_skill_route",
+        schemaVersion: "star_skill_route.v1",
+        packet: { score: Number.POSITIVE_INFINITY },
+        trace: {
+          tenantId: createCanonicalId("tenant"),
+          requestId: createCanonicalId("request"),
+          correlationId: createCanonicalId("correlation"),
+          taskId: null,
+          workflowRunId: null,
+          operationIds: [],
+        },
+      }),
+    ).toThrow(/must be finite/u);
+
+    const mutable = {
+      candidate: {
+        labels: ["one", "two"],
+      },
+    };
+    const request = createDecisionRequest({
+      decisionClass: "star_skill_route",
+      schemaVersion: "star_skill_route.v1",
+      packet: mutable,
+      trace: {
+        tenantId: createCanonicalId("tenant"),
+        requestId: createCanonicalId("request"),
+        correlationId: createCanonicalId("correlation"),
+        taskId: null,
+        workflowRunId: null,
+        operationIds: [],
+      },
+    });
+    mutable.candidate.labels[0] = "mutated";
+
+    expect(request.packet).toEqual({
+      candidate: {
+        labels: ["one", "two"],
+      },
+    });
+  });
+
+  it("rejects non-finite confidence even when answers are otherwise valid", () => {
+    const definition = createDecisionDefinition(definitionInput());
+    expect(() =>
+      createDecisionResult(definition, {
+        decisionClass: definition.decisionClass,
+        schemaVersion: definition.schemaVersion,
+        answers: {
+          route: "current_star_skill",
+          needs_review: false,
+          confidence_band: 3,
+        },
+        confidence: Number.NaN,
+        evidenceRefs: [],
+      }),
+    ).toThrow(/confidence must be finite/u);
+  });
+
 });
