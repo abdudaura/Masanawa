@@ -103,3 +103,16 @@ into memory authority.
 
 Those owners received coordination comments from PR #96. This branch does not overwrite
 their active work.
+
+
+## Stable replay fingerprint
+
+`fingerprintTeachingSelectionAttempt()` produces a canonical SHA-256 fingerprint over:
+RelationshipId, exact SkillVersionId, lesson step, exercise and the normalized selected
+option set. Multi-select order is normalized before hashing.
+
+The durable progress adapter must persist `requestId + payloadHash` together. A retry
+with the same RequestId and hash is an exact replay; a different hash under that RequestId
+is a conflict. Receipt time is deliberately not part of the fingerprint, so a lost
+response may be retried later without turning the same learner action into a second
+attempt.
