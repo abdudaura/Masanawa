@@ -26,7 +26,10 @@ CREATE TABLE security.platform_user_profiles (
   PRIMARY KEY (tenant_id,user_id),
   UNIQUE NULLS NOT DISTINCT (tenant_id,email),
   UNIQUE NULLS NOT DISTINCT (tenant_id,phone),
-  FOREIGN KEY (tenant_id,user_id) REFERENCES identity.users(tenant_id,user_id),
+  -- Identity is a later migration owner in the composed financial graph.
+  -- Runtime onboarding creates the canonical identity.users row first in the
+  -- same transaction; this migration must not make Security depend on a schema
+  -- that does not exist yet.
   CHECK (email IS NOT NULL OR phone IS NOT NULL)
 );
 
