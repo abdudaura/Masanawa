@@ -5,7 +5,13 @@ import type {
   AgentStrategy,
   CharacterSessionRepository,
   CharacterSkillAssignmentRepository,
+  PlatformAgentProfileRepository,
+  UserAgentPreferenceRepository,
 } from "@masanawa/agents";
+import type {
+  SkillGuideRepository,
+  SkillRepository,
+} from "@masanawa/skills";
 import { readRequiredEnv } from "@masanawa/contracts";
 import {
   createDrainState,
@@ -22,6 +28,10 @@ import {
   createPostgresAgentRunRepository,
   createPostgresCharacterSessionRepository,
   createPostgresCharacterSkillAssignmentRepository,
+  createPostgresPlatformAgentProfileRepository,
+  createPostgresSkillGuideRepository,
+  createPostgresSkillRepository,
+  createPostgresUserAgentPreferenceRepository,
   createPostgresServiceDependency,
 } from "@masanawa/postgres";
 import {
@@ -59,6 +69,10 @@ export interface ServiceDatabaseDependency {
   readonly characterSkillAssignments?: CharacterSkillAssignmentRepository;
   readonly characterSessions?: CharacterSessionRepository;
   readonly agentRuns?: AgentRunRepository;
+  readonly platformAgentProfiles?: PlatformAgentProfileRepository;
+  readonly userAgentPreferences?: UserAgentPreferenceRepository;
+  readonly skills?: SkillRepository;
+  readonly skillGuides?: SkillGuideRepository;
   close(): Promise<void>;
 }
 
@@ -130,6 +144,10 @@ function createDefaultDatabaseDependency(
       maxDurationMs: 7 * 24 * 60 * 60 * 1000,
     }),
     agentRuns: createPostgresAgentRunRepository(database.pool),
+    platformAgentProfiles: createPostgresPlatformAgentProfileRepository(database.pool),
+    userAgentPreferences: createPostgresUserAgentPreferenceRepository(database.pool),
+    skills: createPostgresSkillRepository(database.pool),
+    skillGuides: createPostgresSkillGuideRepository(database.pool),
     close: database.close,
   });
 }
@@ -170,7 +188,9 @@ export async function startGatewayService(
       !database.agentPresentations ||
       !database.characterSkillAssignments ||
       !database.characterSessions ||
-      !database.agentRuns
+      !database.agentRuns ||
+      !database.skills ||
+      !database.skillGuides
     ) {
       await database.close().catch(() => undefined);
       throw new Error("Alpha mode requires canonical agent PostgreSQL repositories");
@@ -210,6 +230,8 @@ export async function startGatewayService(
         apiKey: requiredAlphaEnv(env, "MASANAWA_ALPHA_GEMINI_API_KEY"),
         model: requiredAlphaEnv(env, "MASANAWA_ALPHA_GEMINI_MODEL"),
       }),
+      skills: database.skills,
+      guides: database.skillGuides,
     });
   }
 
