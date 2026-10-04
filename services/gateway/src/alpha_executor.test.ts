@@ -62,6 +62,15 @@ describe("Gemini Alpha inference provider", () => {
     await expect(provider.generate({ systemInstructions: ["Be helpful."], input: { kind: "media", caption: "", mimeType: "text/plain", dataBase64: bytes.toString("base64") } })).rejects.toMatchObject({ code: "inference.rejected" });
     expect(fetchImpl).not.toHaveBeenCalled();
   });
+  it.each([["PERMISSION_DENIED", "PERMISSION_DENIED"], ["private-key", "unknown"]])("logs only allowlisted rejection metadata (%#)", async (status, expected) => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const provider = createGeminiAlphaInferenceProvider({ apiKey: "private-key", model: "test",
+      fetchImpl: vi.fn(async () => new Response(JSON.stringify({ error: { status, message: "private vendor message" } }), { status: 403 })) as typeof fetch });
+    await expect(provider.generate({ systemInstructions: ["Hello."], input: { kind: "text", text: "private user text" } })).rejects.toMatchObject({ code: "inference.rejected" });
+    expect(warn).toHaveBeenCalledWith(`Alpha inference failure metadata: ${JSON.stringify({ httpStatus: 403, providerStatus: expected })}`);
+    expect(JSON.stringify(warn.mock.calls)).not.toMatch(/private-key|private vendor|private user/);
+  });
+
   it("keeps credentials out of request URLs", async () => {
     const fetchImpl = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
       expect(String(url)).not.toContain("private-key");
