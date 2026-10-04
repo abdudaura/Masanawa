@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../agents/agent_directory.dart';
 import '../agents/creator_clone.dart';
 import '../agents/creator_economy.dart';
+import '../agents/creator_skills.dart';
 import '../agents/agent_session.dart';
 import '../agents/masanawa_transport.dart';
 import '../core/network/api_client.dart';
@@ -71,6 +72,18 @@ final creatorEconomyTransportProvider = Provider<CreatorEconomyTransport>((ref) 
   final connection = ref.watch(agentConnectionProvider);
   if (!connection.configured) return const UnavailableCreatorEconomyTransport();
   return MasanawaCreatorEconomyTransport(
+    dio: ref.watch(dioProvider),
+    baseUrl: connection.baseUrl,
+    readAccessToken: () =>
+        connection.token ?? ref.read(apiClientProvider).accessToken,
+  );
+});
+
+
+final creatorSkillTransportProvider = Provider<CreatorSkillTransport>((ref) {
+  final connection = ref.watch(agentConnectionProvider);
+  if (!connection.configured) return const UnavailableCreatorSkillTransport();
+  return MasanawaCreatorSkillTransport(
     dio: ref.watch(dioProvider),
     baseUrl: connection.baseUrl,
     readAccessToken: () =>
