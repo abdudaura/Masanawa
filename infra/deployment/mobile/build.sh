@@ -57,7 +57,7 @@ cat > "$GRADLE_USER_HOME/gradle.properties" <<'PROPERTIES'
 org.gradle.daemon=false
 org.gradle.workers.max=1
 org.gradle.parallel=false
-org.gradle.jvmargs=-Xmx768m -XX:MaxMetaspaceSize=384m -XX:ReservedCodeCacheSize=128m -Dfile.encoding=UTF-8
+org.gradle.jvmargs=-Xmx512m -XX:MaxMetaspaceSize=192m -XX:ReservedCodeCacheSize=64m -Dfile.encoding=UTF-8
 kotlin.compiler.execution.strategy=in-process
 PROPERTIES
 export GRADLE_OPTS="-Dorg.gradle.daemon=false -Dorg.gradle.workers.max=1 -Dorg.gradle.parallel=false"
@@ -77,7 +77,7 @@ yes | sdkmanager --licenses >/dev/null
 license_status=${PIPESTATUS[1]}
 set -o pipefail
 [[ "$license_status" -eq 0 ]]
-sdkmanager "platform-tools" "platforms;android-37" "build-tools;36.0.0"
+sdkmanager "platform-tools" "platforms;android-37.0" "build-tools;36.0.0"
 cd "$ROOT_DIR/apps/mobile"
 flutter pub get
 flutter analyze --no-fatal-infos --no-fatal-warnings
