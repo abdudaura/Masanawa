@@ -19,6 +19,7 @@ CREATE TABLE commerce.billing_quotes (
   checkout_url text,
   provider_transaction_id text UNIQUE,
   provider_reference text,
+  bill_provider_reference text,
   payment_verified_at timestamptz,
   fulfillment_reference text UNIQUE,
   settlement_state text CHECK (settlement_state IN ('succeeded','failed','reversed')),
