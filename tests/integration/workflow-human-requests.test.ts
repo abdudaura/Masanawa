@@ -4,6 +4,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   createCanonicalId,
   toInstant,
+  type ApprovalId,
+  type Instant,
 } from "@masanawa/contracts";
 import {
   createApprovalBinding,
@@ -177,8 +179,8 @@ describePostgres("workflow human request acceptance", () => {
     run: Awaited<ReturnType<typeof createRunAndLease>>["run"],
     lease: Awaited<ReturnType<typeof createRunAndLease>>["lease"],
     kind: "information" | "confirmation" | "approval",
-    requestedAt: string,
-    approvalId: ReturnType<typeof createCanonicalId<"approval">> | null = null,
+    requestedAt: Instant,
+    approvalId: ApprovalId | null = null,
   ) {
     return {
       tenantId: run.tenantId,
@@ -195,7 +197,7 @@ describePostgres("workflow human request acceptance", () => {
             ? "Continue with this action?"
             : "Approve this consequential action?",
       approvalId,
-      requestedAt: requestedAt as ReturnType<typeof toInstant>,
+      requestedAt,
     };
   }
 
