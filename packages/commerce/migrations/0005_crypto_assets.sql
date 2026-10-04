@@ -22,7 +22,9 @@ CREATE TABLE IF NOT EXISTS commerce.crypto_intents (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS crypto_intents_request_unique
-  ON commerce.crypto_intents(tenant_id, request_id);\n\nCREATE UNIQUE INDEX IF NOT EXISTS crypto_intents_provider_payment_unique
+  ON commerce.crypto_intents(tenant_id, request_id);
+
+CREATE UNIQUE INDEX IF NOT EXISTS crypto_intents_provider_payment_unique
   ON commerce.crypto_intents(tenant_id, provider_payment_id)
   WHERE provider_payment_id IS NOT NULL;
 
