@@ -159,6 +159,15 @@ class MobilePushService {
     _initialized = true;
   }
 
+  Future<bool> notificationEnabled() async {
+    if (!firebasePushConfigured) return false;
+    await initialize();
+    if (await _storage.read(key: _enabledKey) == 'false') return false;
+    final settings = await FirebaseMessaging.instance.getNotificationSettings();
+    return settings.authorizationStatus == AuthorizationStatus.authorized ||
+        settings.authorizationStatus == AuthorizationStatus.provisional;
+  }
+
   Future<bool> requestPermission() async {
     if (!firebasePushConfigured) return false;
     await initialize();
