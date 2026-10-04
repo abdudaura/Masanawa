@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "family": "channels",
+  "implementation": "messaging",
+  "package": "@masanawa/messaging-channels",
+  "registration": "explicit"
+}

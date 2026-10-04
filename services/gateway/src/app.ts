@@ -3,12 +3,31 @@ import type { Instant } from "@masanawa/contracts";
 import { nowInstant, parseCanonicalId } from "@masanawa/contracts";
 import type { AgentDirectoryService } from "./agent_directory.js";
 import type { AgentConversationService } from "./agent_conversation_contract.js";
+import type { FinancialService } from "./financial_service.js";
 import {
   admitTelemetryCorrelation,
   injectCorrelationHeaders,
 } from "@masanawa/telemetry";
 import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import Type from "typebox";
+import type { BillingFinancialService } from "./financial_billing.js";
+
+export interface WhatsAppWebhookIngress {
+  verifySubscription(query: Readonly<Record<string, unknown>>): string;
+  receive(body: Uint8Array, signature: unknown, receivedAt: Instant): Promise<{
+    readonly statusCode: 200;
+    readonly admittedRecords: number;
+    readonly ignoredEvents: number;
+  }>;
+}
+
+export interface TelegramWebhookIngress {
+  receive(body: Uint8Array, secretHeader: unknown, receivedAt: Instant): Promise<{
+    readonly statusCode: 200;
+    readonly admittedRecords: number;
+    readonly ignoredEvents: number;
+  }>;
+}
 
 export interface ReadinessCheck {
   readonly name: string;
@@ -21,6 +40,10 @@ export interface GatewayAppOptions {
   readonly isDraining?: () => boolean;
   readonly agentDirectory?: AgentDirectoryService;
   readonly agentConversation?: AgentConversationService;
+  readonly financial?: FinancialService;
+  readonly whatsAppIngress?: WhatsAppWebhookIngress;
+  readonly telegramIngress?: TelegramWebhookIngress;
+  readonly billingFinancial?: BillingFinancialService;
 }
 
 const HealthResponseSchema = Type.Object(
@@ -184,7 +207,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       async (request) => ({
         agents: [
           ...(await directory.list({
-            authorizationHeader: request.headers.authorization,
+            authorizationHeader: request.headers.authorization as string | undefined,
           })),
         ],
       }),
@@ -205,7 +228,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       },
       async (request) =>
         conversation.open({
-          authorizationHeader: request.headers.authorization,
+          authorizationHeader: request.headers.authorization as string | undefined,
           characterId: request.body.characterId,
         }),
     );
@@ -228,7 +251,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
         reply.raw.once("close", abort);
         try {
           const result = await conversation.turn({
-            authorizationHeader: request.headers.authorization,
+            authorizationHeader: request.headers.authorization as string | undefined,
             characterSessionId: request.params.characterSessionId,
             characterId: request.body.characterId,
             text: request.body.text,
@@ -290,7 +313,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
 
         try {
           const result = await conversation.turn({
-            authorizationHeader: request.headers.authorization,
+            authorizationHeader: request.headers.authorization as string | undefined,
             characterSessionId: request.params.characterSessionId,
             characterId: request.body.characterId,
             text: request.body.text,
@@ -358,7 +381,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
         reply.raw.once("close", abort);
         try {
           const result = await conversation.mediaTurn({
-            authorizationHeader: request.headers.authorization,
+            authorizationHeader: request.headers.authorization as string | undefined,
             characterSessionId: request.params.characterSessionId,
             characterId: request.body.characterId,
             caption: request.body.caption,
@@ -410,7 +433,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
         reply.raw.once("close", abort);
         try {
           const result = await conversation.mediaSetTurn({
-            authorizationHeader: request.headers.authorization,
+            authorizationHeader: request.headers.authorization as string | undefined,
             characterSessionId: request.params.characterSessionId,
             characterId: request.body.characterId,
             caption: request.body.caption,
@@ -462,13 +485,422 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       },
       async (request) => {
         await conversation.close({
-          authorizationHeader: request.headers.authorization,
+          authorizationHeader: request.headers.authorization as string | undefined,
           characterSessionId: request.params.characterSessionId,
           characterId: request.body.characterId,
         });
         return { closed: true as const };
       },
     );
+  }
+
+
+  if (options.financial) {
+    const financial = options.financial;
+
+    app.get(
+      "/v1/financial/capabilities",
+      async (request) =>
+        financial.capabilities({
+          authorizationHeader: request.headers.authorization as string | undefined,
+        }),
+    );
+
+    app.get(
+      "/v1/financial/crypto/routes",
+      {
+        schema: {
+          response: {
+            200: Type.Object(
+              {
+                routes: Type.Array(
+                  Type.Object(
+                    {
+                      providerCode: Type.String(),
+                      asset: Type.String(),
+                      network: Type.Union([Type.String(), Type.Null()]),
+                    },
+                    { additionalProperties: true },
+                  ),
+                ),
+              },
+              { additionalProperties: false },
+            ),
+          },
+        },
+      },
+      async (request) => ({
+        routes: (await financial.listDepositRoutes({
+          authorizationHeader: request.headers.authorization as string | undefined,
+        })).map((route) => ({
+          providerCode: route.providerCode,
+          asset: route.asset,
+          network: route.network,
+        })),
+      }),
+    );
+
+    app.post(
+      "/v1/financial/crypto/deposits",
+      {
+        schema: {
+          body: Type.Object(
+            {
+              requestId: Type.String(),
+              providerCode: Type.String({ minLength: 2, maxLength: 32 }),
+              amount: Type.String({ minLength: 1, maxLength: 80 }),
+            },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request) =>
+        financial.createDeposit({
+          authorizationHeader: request.headers.authorization as string | undefined,
+          requestId: request.body.requestId,
+          providerCode: request.body.providerCode,
+          amount: request.body.amount,
+        }),
+    );
+
+    app.post(
+      "/v1/financial/crypto/withdrawals",
+      {
+        schema: {
+          body: Type.Object(
+            {
+              requestId: Type.String(),
+              providerCode: Type.String({ minLength: 2, maxLength: 32 }),
+              amount: Type.String({ minLength: 1, maxLength: 80 }),
+              destinationAddress: Type.String({ minLength: 1, maxLength: 512 }),
+            },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request) =>
+        financial.createWithdrawal({
+          authorizationHeader: request.headers.authorization as string | undefined,
+          requestId: request.body.requestId,
+          providerCode: request.body.providerCode,
+          amount: request.body.amount,
+          destinationAddress: request.body.destinationAddress,
+        }),
+    );
+
+    app.post(
+      "/v1/financial/crypto/withdrawals/:requestId/verify",
+      {
+        schema: {
+          params: Type.Object({ requestId: Type.String() }, { additionalProperties: false }),
+          body: Type.Object(
+            { verificationCode: Type.String({ minLength: 4, maxLength: 10 }) },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request) =>
+        financial.verifyWithdrawal({
+          authorizationHeader: request.headers.authorization as string | undefined,
+          requestId: request.params.requestId,
+          verificationCode: request.body.verificationCode,
+        }),
+    );
+
+    app.post(
+      "/v1/financial/crypto/withdrawals/:requestId/refresh",
+      {
+        schema: {
+          params: Type.Object({ requestId: Type.String() }, { additionalProperties: false }),
+        },
+      },
+      async (request) =>
+        financial.refreshWithdrawal({
+          authorizationHeader: request.headers.authorization as string | undefined,
+          requestId: request.params.requestId,
+        }),
+    );
+
+    app.get(
+      "/v1/financial/crypto/balances/:providerCode",
+      {
+        schema: {
+          params: Type.Object(
+            { providerCode: Type.String({ minLength: 2, maxLength: 32 }) },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request) =>
+        financial.readBalance({
+          authorizationHeader: request.headers.authorization as string | undefined,
+          providerCode: request.params.providerCode,
+        }),
+    );
+
+    app.get(
+      "/v1/financial/crypto/history",
+      {
+        schema: {
+          querystring: Type.Object(
+            { limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })) },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request) => ({
+        intents: await financial.listHistory({
+          authorizationHeader: request.headers.authorization as string | undefined,
+          ...(request.query.limit === undefined ? {} : { limit: request.query.limit }),
+        }),
+      }),
+    );
+
+    app.get(
+      "/v1/financial/crypto/intents/:requestId",
+      {
+        schema: {
+          params: Type.Object(
+            { requestId: Type.String() },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request, reply) => {
+        const intent = await financial.readIntent({
+          authorizationHeader: request.headers.authorization as string | undefined,
+          requestId: request.params.requestId,
+        });
+        if (!intent) {
+          reply.code(404);
+          return { error: "intent_not_found" };
+        }
+        return intent;
+      },
+    );
+
+    app.post(
+      "/v1/financial/nowpayments/ipn",
+      {
+        bodyLimit: 256_000,
+        schema: {
+          headers: Type.Object(
+            { "x-nowpayments-sig": Type.String({ minLength: 128, maxLength: 128 }) },
+            { additionalProperties: true },
+          ),
+          body: Type.Unknown(),
+        },
+      },
+      async (request, reply) => {
+        await financial.handleNowPaymentsIpn({
+          signature: request.headers["x-nowpayments-sig"],
+          payload: request.body,
+        });
+        reply.code(202);
+        return { accepted: true as const };
+      },
+    );
+  }
+
+
+  if (options.billingFinancial) {
+    const billing = options.billingFinancial;
+
+    app.get("/v1/commerce/bills/categories", async (request, reply) => {
+      try {
+        return await billing.listCategories({ authorizationHeader: request.headers.authorization });
+      } catch (error) {
+        reply.code(error instanceof Error && error.message === "financial.auth.unauthorized" ? 401 : 503);
+        return { error: "billing_catalog_unavailable" };
+      }
+    });
+
+    app.get(
+      "/v1/commerce/bills/categories/:categoryCode/billers",
+      { schema: { params: Type.Object({ categoryCode: Type.String({ minLength: 1, maxLength: 128 }) }) } },
+      async (request, reply) => {
+        try {
+          return await billing.listBillers({
+            authorizationHeader: request.headers.authorization as string | undefined,
+            categoryCode: request.params.categoryCode,
+          });
+        } catch (error) {
+          reply.code(error instanceof Error && error.message === "financial.auth.unauthorized" ? 401 : 503);
+          return { error: "billing_catalog_unavailable" };
+        }
+      },
+    );
+
+    app.get(
+      "/v1/commerce/bills/billers/:billerCode/items",
+      { schema: { params: Type.Object({ billerCode: Type.String({ minLength: 1, maxLength: 128 }) }) } },
+      async (request, reply) => {
+        try {
+          return await billing.listItems({
+            authorizationHeader: request.headers.authorization as string | undefined,
+            billerCode: request.params.billerCode,
+          });
+        } catch (error) {
+          reply.code(error instanceof Error && error.message === "financial.auth.unauthorized" ? 401 : 503);
+          return { error: "billing_catalog_unavailable" };
+        }
+      },
+    );
+
+    app.post(
+      "/v1/commerce/bills/purchases",
+      {
+        schema: {
+          body: Type.Object({
+            requestId: Type.String({ minLength: 9, maxLength: 160 }),
+            billerCode: Type.String({ minLength: 1, maxLength: 128 }),
+            itemCode: Type.String({ minLength: 1, maxLength: 128 }),
+            itemName: Type.String({ minLength: 1, maxLength: 300 }),
+            customerId: Type.String({ minLength: 1, maxLength: 200 }),
+            amount: Type.String({ minLength: 1, maxLength: 80 }),
+            catalogAmount: Type.String({ minLength: 1, maxLength: 80 }),
+            recipientValidation: Type.Optional(Type.Union([Type.Literal("required"), Type.Literal("not-required")])),
+          }, { additionalProperties: false }),
+        },
+      },
+      async (request, reply) => {
+        try {
+          return await billing.purchase({
+            authorizationHeader: request.headers.authorization as string | undefined,
+            requestId: request.body.requestId,
+            billerCode: request.body.billerCode,
+            itemCode: request.body.itemCode,
+            itemName: request.body.itemName,
+            customerId: request.body.customerId,
+            amount: request.body.amount,
+            catalogAmount: request.body.catalogAmount,
+            ...(request.body.recipientValidation === undefined ? {} : { recipientValidation: request.body.recipientValidation }),
+          });
+        } catch (error) {
+          reply.code(error instanceof Error && error.message === "financial.auth.unauthorized" ? 401 : 400);
+          return { error: "billing_purchase_unavailable" };
+        }
+      },
+    );
+
+    app.get(
+      "/v1/commerce/bills/purchases/:reference",
+      {
+        schema: {
+          params: Type.Object({ reference: Type.String({ minLength: 1, maxLength: 128 }) }),
+          querystring: Type.Object({ refresh: Type.Optional(Type.Boolean()) }, { additionalProperties: false }),
+        },
+      },
+      async (request, reply) => {
+        try {
+          return await billing.readPurchase({
+            authorizationHeader: request.headers.authorization as string | undefined,
+            reference: request.params.reference,
+            refresh: request.query.refresh === true,
+          });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "";
+          reply.code(message === "financial.auth.unauthorized" ? 401 : message === "financial.billing_not_found" ? 404 : 503);
+          return { error: "billing_purchase_unavailable" };
+        }
+      },
+    );
+
+    app.post(
+      "/v1/webhooks/flutterwave",
+      { schema: { body: Type.Unknown() } },
+      async (request, reply) => {
+        const verifHash = request.headers["verif-hash"];
+        const encoded = Buffer.from(JSON.stringify(request.body ?? {}), "utf8");
+        try {
+          const result = await billing.receiveWebhook({
+            rawBody: encoded,
+            verifHash: typeof verifHash === "string" ? verifHash : null,
+          });
+          return { accepted: true, duplicate: result.duplicate };
+        } catch {
+          reply.code(401);
+          return { error: "invalid_webhook" };
+        }
+      },
+    );
+  }
+
+  if (options.whatsAppIngress || options.telegramIngress) {
+    app.register(async (scope) => {
+      scope.addContentTypeParser(
+        "application/json",
+        { parseAs: "buffer", bodyLimit: 1_048_576 },
+        (_request, body, done) => done(null, body),
+      );
+
+      if (options.whatsAppIngress) {
+        const ingress = options.whatsAppIngress;
+        scope.get("/v1/channels/whatsapp/webhook", async (request, reply) => {
+          try {
+            const challenge = ingress.verifySubscription(
+              request.query as Readonly<Record<string, unknown>>,
+            );
+            return reply.type("text/plain; charset=utf-8").send(challenge);
+          } catch {
+            return reply.code(401).send({ error: "verification_failed" });
+          }
+        });
+
+        scope.post("/v1/channels/whatsapp/webhook", async (request, reply) => {
+          if (!Buffer.isBuffer(request.body)) {
+            return reply.code(400).send({ error: "invalid_payload" });
+          }
+          try {
+            const result = await ingress.receive(
+              request.body,
+              request.headers["x-hub-signature-256"],
+              now(),
+            );
+            return reply.code(result.statusCode).send({
+              admitted: result.admittedRecords,
+              ignored: result.ignoredEvents,
+            });
+          } catch (error) {
+            const category =
+              typeof error === "object" && error !== null && "category" in error
+                ? String((error as { category?: unknown }).category ?? "")
+                : "";
+            return reply
+              .code(category === "authentication" ? 401 : category === "unavailable" ? 503 : 400)
+              .send({ error: "channel_ingress_rejected" });
+          }
+        });
+      }
+
+      if (options.telegramIngress) {
+        const ingress = options.telegramIngress;
+        scope.post("/v1/channels/telegram/webhook", async (request, reply) => {
+          if (!Buffer.isBuffer(request.body)) {
+            return reply.code(400).send({ error: "invalid_payload" });
+          }
+          try {
+            const result = await ingress.receive(
+              request.body,
+              request.headers["x-telegram-bot-api-secret-token"],
+              now(),
+            );
+            return reply.code(result.statusCode).send({
+              admitted: result.admittedRecords,
+              ignored: result.ignoredEvents,
+            });
+          } catch (error) {
+            const category =
+              typeof error === "object" && error !== null && "category" in error
+                ? String((error as { category?: unknown }).category ?? "")
+                : "";
+            return reply
+              .code(category === "authentication" ? 401 : category === "unavailable" ? 503 : 400)
+              .send({ error: "channel_ingress_rejected" });
+          }
+        });
+      }
+    });
   }
 
   app.get(

@@ -7,7 +7,9 @@ import type {
   CharacterSessionRepository,
   CharacterSkillAssignmentRepository,
 } from "@masanawa/agents";
-import { readRequiredEnv } from "@masanawa/contracts";
+import { parseCanonicalId, readRequiredEnv } from "@masanawa/contracts";
+import type { CryptoRepository } from "@masanawa/commerce";
+import { NowPaymentsClient, NowPaymentsPayoutClient } from "@masanawa/nowpayments";
 import {
   createDrainState,
   readNodeServiceRuntimeConfig,
@@ -18,14 +20,22 @@ import {
   type ServiceLifecycleLogger,
 } from "@masanawa/node-runtime";
 import {
-  characterContextMigrationRoots,
+  financialMigrationRoots,
   createPostgresAgentPresentationRepository,
   createPostgresAgentRunRepository,
   createPostgresCharacterSessionRepository,
   createPostgresCharacterContextCompiler,
   createPostgresCharacterSkillAssignmentRepository,
+  createPostgresCryptoRepository,
   createPostgresServiceDependency,
+  createPostgresBillingFulfillmentStore,
+  createPostgresProviderWebhookRepository,
+  createPostgresChannelAdmission,
 } from "@masanawa/postgres";
+import {
+  createWhatsAppIngress,
+  createTelegramIngress,
+} from "@masanawa/messaging-channels";
 import {
   createAgentDirectoryService,
   type AgentDirectoryAuthorizer,
@@ -44,10 +54,16 @@ import { createGeminiAlphaInferencePool, parseAlphaGeminiKeys } from "./alpha_ex
 import { createAlphaInferenceStrategy } from "./alpha_strategy.js";
 import { createGeminiLiveAudioRenderer } from "./native_audio.js";
 import {
+  createFinancialService,
+  createFixedFinancialAuthorizer,
+  type FinancialAuthorizer,
+} from "./financial_service.js";
+import {
   createGatewayApp,
   type GatewayAppOptions,
   type ReadinessCheck,
 } from "./app.js";
+import { createBillingFinancialService } from "./financial_billing.js";
 
 export type ServiceSignal = "SIGINT" | "SIGTERM";
 
@@ -63,6 +79,12 @@ export interface ServiceDatabaseDependency {
   readonly characterSessions?: CharacterSessionRepository;
   readonly agentRuns?: AgentRunRepository;
   readonly characterContextCompiler?: CharacterContextCompiler;
+  readonly crypto?: CryptoRepository;
+  readonly billingStore?: (
+    identity: Readonly<{ tenantId: string; userId: string }>,
+  ) => ReturnType<typeof createPostgresBillingFulfillmentStore>;
+  readonly providerWebhooks?: ReturnType<typeof createPostgresProviderWebhookRepository>;
+  readonly channelAdmission?: ReturnType<typeof createPostgresChannelAdmission>;
   close(): Promise<void>;
 }
 
@@ -81,6 +103,7 @@ export interface StartGatewayServiceOptions {
   readonly appOptions?: Omit<GatewayAppOptions, "isDraining">;
   readonly agentDirectoryAuthorizer?: AgentDirectoryAuthorizer;
   readonly agentConversationAuthorizer?: AgentConversationAuthorizer;
+  readonly financialAuthorizer?: FinancialAuthorizer;
   readonly agentStrategy?: AgentStrategy;
   readonly characterContextCompiler?: CharacterContextCompiler;
 }
@@ -124,7 +147,7 @@ function createDefaultDatabaseDependency(
   const database = createPostgresServiceDependency({
     connectionString,
     applicationName: "masanawa-gateway",
-    migrationRoots: characterContextMigrationRoots(),
+    migrationRoots: financialMigrationRoots(),
   });
   return Object.freeze({
     readinessCheck: database.readinessCheck,
@@ -136,6 +159,11 @@ function createDefaultDatabaseDependency(
     }),
     agentRuns: createPostgresAgentRunRepository(database.pool),
     characterContextCompiler: createPostgresCharacterContextCompiler(database.pool),
+    crypto: createPostgresCryptoRepository(database.pool),
+    billingStore: (identity: Readonly<{ tenantId: string; userId: string }>) =>
+      createPostgresBillingFulfillmentStore(database.pool, identity),
+    providerWebhooks: createPostgresProviderWebhookRepository(database.pool),
+    channelAdmission: createPostgresChannelAdmission(database.pool),
     close: database.close,
   });
 }
@@ -169,6 +197,7 @@ export async function startGatewayService(
 
   let directoryAuthorizer = options.agentDirectoryAuthorizer;
   let conversationAuthorizer = options.agentConversationAuthorizer;
+  let financialAuthorizer = options.financialAuthorizer;
   let strategy = options.agentStrategy;
   let nativeAudio;
 
@@ -202,6 +231,11 @@ export async function startGatewayService(
       tenantId: ids.tenantId,
       relationshipIds,
     });
+    financialAuthorizer ??= createFixedFinancialAuthorizer({
+      token,
+      tenantId: ids.tenantId,
+      userId: ids.userId,
+    });
     conversationAuthorizer ??= createAlphaDevAuthorizer({
       config: {
         token,
@@ -231,6 +265,45 @@ export async function startGatewayService(
 
   }
 
+  const nowPaymentsApiKey = env.NOWPAYMENTS_API_KEY?.trim();
+  const nowPaymentsIpnSecret = env.NOWPAYMENTS_IPN_SECRET?.trim();
+  const payoutEmail = env.NOWPAYMENTS_PAYOUT_EMAIL?.trim();
+  const payoutPassword = env.NOWPAYMENTS_PAYOUT_PASSWORD?.trim();
+  const rawPublicBaseUrl =
+    env.MASANAWA_PUBLIC_BASE_URL?.trim() ||
+    env.RAILWAY_STATIC_URL?.trim() ||
+    env.RAILWAY_PUBLIC_DOMAIN?.trim();
+  const publicBaseUrl = rawPublicBaseUrl
+    ? (/^https?:\/\//iu.test(rawPublicBaseUrl)
+        ? rawPublicBaseUrl
+        : `https://${rawPublicBaseUrl}`)
+    : undefined;
+
+  const composedFinancial =
+    options.appOptions?.financial ??
+    (financialAuthorizer &&
+    database.crypto &&
+    nowPaymentsApiKey &&
+    nowPaymentsIpnSecret &&
+    publicBaseUrl
+      ? createFinancialService({
+          authorizer: financialAuthorizer,
+          crypto: database.crypto,
+          nowPayments: new NowPaymentsClient({ apiKey: nowPaymentsApiKey }),
+          ...(payoutEmail && payoutPassword
+            ? {
+                nowPaymentsPayout: new NowPaymentsPayoutClient({
+                  apiKey: nowPaymentsApiKey,
+                  email: payoutEmail,
+                  password: payoutPassword,
+                }),
+              }
+            : {}),
+          nowPaymentsIpnSecret,
+          publicBaseUrl,
+        })
+      : undefined);
+
   const composedDirectory =
     options.appOptions?.agentDirectory ??
     (directoryAuthorizer && database.agentPresentations
@@ -257,6 +330,58 @@ export async function startGatewayService(
         })
       : undefined);
 
+
+  const composedBilling =
+    options.appOptions?.billingFinancial ??
+    (env["FLUTTERWAVE_BILLS_ENABLED"] === "true" &&
+    financialAuthorizer &&
+    database.billingStore &&
+    database.providerWebhooks &&
+    env["FLUTTERWAVE_SECRET_KEY"]?.trim() &&
+    env["FLUTTERWAVE_WEBHOOK_SECRET_HASH"]?.trim() &&
+    env["FLUTTERWAVE_WEBHOOK_URL"]?.trim()
+      ? createBillingFinancialService({
+          billingStore: database.billingStore,
+          webhookRepository: database.providerWebhooks,
+          authorizer: financialAuthorizer,
+          flutterwaveSecretKey: env["FLUTTERWAVE_SECRET_KEY"],
+          flutterwaveWebhookHash: env["FLUTTERWAVE_WEBHOOK_SECRET_HASH"],
+          flutterwaveWebhookUrl: env["FLUTTERWAVE_WEBHOOK_URL"],
+        })
+      : undefined);
+
+  const composedWhatsAppIngress =
+    options.appOptions?.whatsAppIngress ??
+    (database.channelAdmission &&
+    env["WHATSAPP_CHANNEL_ACCOUNT_ID"]?.trim() &&
+    env["WHATSAPP_BUSINESS_ACCOUNT_ID"]?.trim() &&
+    env["WHATSAPP_PHONE_NUMBER_ID"]?.trim() &&
+    env["WHATSAPP_APP_SECRET"]?.trim() &&
+    env["WHATSAPP_VERIFY_TOKEN"]?.trim()
+      ? createWhatsAppIngress({
+          accountId: env["WHATSAPP_CHANNEL_ACCOUNT_ID"] as never,
+          businessAccountId: env["WHATSAPP_BUSINESS_ACCOUNT_ID"],
+          phoneNumberId: env["WHATSAPP_PHONE_NUMBER_ID"],
+          appSecret: env["WHATSAPP_APP_SECRET"],
+          verifyToken: env["WHATSAPP_VERIFY_TOKEN"],
+          admission: database.channelAdmission,
+        })
+      : undefined);
+
+  const composedTelegramIngress =
+    options.appOptions?.telegramIngress ??
+    (database.channelAdmission &&
+    env["TELEGRAM_CHANNEL_ACCOUNT_ID"]?.trim() &&
+    env["TELEGRAM_BOT_ID"]?.trim() &&
+    env["TELEGRAM_WEBHOOK_SECRET"]?.trim()
+      ? createTelegramIngress({
+          accountId: env["TELEGRAM_CHANNEL_ACCOUNT_ID"] as never,
+          botId: env["TELEGRAM_BOT_ID"],
+          webhookSecret: env["TELEGRAM_WEBHOOK_SECRET"],
+          admission: database.channelAdmission,
+        })
+      : undefined);
+
   let app: ManagedNodeServer;
   try {
     app = appFactory({
@@ -265,6 +390,10 @@ export async function startGatewayService(
       ...(composedConversation
         ? { agentConversation: composedConversation }
         : {}),
+      ...(composedFinancial ? { financial: composedFinancial } : {}),
+      ...(composedBilling ? { billingFinancial: composedBilling } : {}),
+      ...(composedWhatsAppIngress ? { whatsAppIngress: composedWhatsAppIngress } : {}),
+      ...(composedTelegramIngress ? { telegramIngress: composedTelegramIngress } : {}),
       readinessChecks: [
         ...(options.appOptions?.readinessChecks ?? []),
         database.readinessCheck,

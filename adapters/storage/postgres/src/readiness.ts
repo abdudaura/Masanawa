@@ -65,6 +65,14 @@ export function characterContextMigrationRoots(): readonly MigrationRoot[] {
   ]);
 }
 
+/** Runtime migration graph for customer commerce and financial operations. */
+export function financialMigrationRoots(): readonly MigrationRoot[] {
+  return Object.freeze([
+    ...characterContextMigrationRoots(),
+    Object.freeze({ owner: "commerce", directory: packageMigrationDirectory("@masanawa/commerce") }),
+  ]);
+}
+
 function migrationKey(
   migration: Pick<MigrationFingerprint, "owner" | "name">,
 ): string {

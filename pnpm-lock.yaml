@@ -199,6 +199,12 @@ importers:
 
   adapters/crypto/nowpayments: {}
 
+  adapters/channels/messaging:
+    dependencies:
+      '@masanawa/contracts':
+        specifier: workspace:*
+        version: link:../../../packages/contracts
+
   adapters/storage/postgres:
     dependencies:
       '@masanawa/agents':
@@ -207,6 +213,9 @@ importers:
       '@masanawa/contracts':
         specifier: workspace:*
         version: link:../../../packages/contracts
+      '@masanawa/commerce':
+        specifier: workspace:*
+        version: link:../../../packages/commerce
       '@masanawa/events':
         specifier: workspace:*
         version: link:../../../packages/events
@@ -216,6 +225,9 @@ importers:
       '@masanawa/memory':
         specifier: workspace:*
         version: link:../../../packages/memory
+      '@masanawa/messaging-channels':
+        specifier: workspace:*
+        version: link:../../channels/messaging
       '@masanawa/providers':
         specifier: workspace:*
         version: link:../../../packages/providers
@@ -344,6 +356,16 @@ importers:
       '@masanawa/world':
         specifier: workspace:*
         version: link:../world
+    devDependencies:
+      vitest:
+        specifier: 5.0.3
+        version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
+
+  packages/commerce:
+    dependencies:
+      '@masanawa/contracts':
+        specifier: workspace:*
+        version: link:../contracts
     devDependencies:
       vitest:
         specifier: 5.0.3
@@ -493,18 +515,36 @@ importers:
       '@masanawa/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@masanawa/identity':
+        specifier: workspace:*
+        version: link:../../packages/identity
+      '@masanawa/commerce':
+        specifier: workspace:*
+        version: link:../../packages/commerce
       '@masanawa/memory':
         specifier: workspace:*
         version: link:../../packages/memory
+      '@masanawa/messaging-channels':
+        specifier: workspace:*
+        version: link:../../adapters/channels/messaging
       '@masanawa/node-runtime':
         specifier: workspace:*
         version: link:../../infra/runtime/node
+      '@masanawa/nowpayments':
+        specifier: workspace:*
+        version: link:../../adapters/crypto/nowpayments
       '@masanawa/postgres':
         specifier: workspace:*
         version: link:../../adapters/storage/postgres
+      '@masanawa/providers':
+        specifier: workspace:*
+        version: link:../../packages/providers
       '@masanawa/security':
         specifier: workspace:*
         version: link:../../packages/security
+      '@masanawa/skills':
+        specifier: workspace:*
+        version: link:../../packages/skills
       '@masanawa/telemetry':
         specifier: workspace:*
         version: link:../../packages/telemetry

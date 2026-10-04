@@ -17,3 +17,8 @@ export * from "./agents/configuration.js";
 export * from "./agents/runs.js";
 export * from "./agents/context.js";
 export * from "./agents/selection.js";
+
+export * from "./commerce/repository.js";
+export * from "./commerce/crypto-repository.js";
+export * from "./commerce/financial-operations.js";
+

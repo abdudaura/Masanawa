@@ -119,6 +119,22 @@ export class NowPaymentsClient {
     return Object.freeze({ minimum, estimate });
   }
 
+  async submitPayment(
+    input: CreateNowPaymentsPaymentInput & { readonly signal?: AbortSignal },
+  ): Promise<NowPaymentsCreatedPayment> {
+    const requestBody = normalizeCreatePaymentInput(input);
+    const response = await this.#request("/payment", {
+      method: "POST",
+      body: JSON.stringify(requestBody),
+      ...(input.signal === undefined ? {} : { signal: input.signal }),
+    });
+    const payment = parseCreatedPayment(await response.json());
+    if (payment.orderId !== null && payment.orderId !== input.orderId) {
+      throw new Error("nowpayments.payment.order_mismatch");
+    }
+    return payment;
+  }
+
   async createPayment(
     input: CreateNowPaymentsPaymentInput & { readonly signal?: AbortSignal },
   ): Promise<{
@@ -132,16 +148,7 @@ export class NowPaymentsClient {
       currencyTo: input.payCurrency,
       ...(input.signal === undefined ? {} : { signal: input.signal }),
     });
-    const requestBody = normalizeCreatePaymentInput(input);
-    const response = await this.#request("/payment", {
-      method: "POST",
-      body: JSON.stringify(requestBody),
-      ...(input.signal === undefined ? {} : { signal: input.signal }),
-    });
-    const payment = parseCreatedPayment(await response.json());
-    if (payment.orderId !== null && payment.orderId !== input.orderId) {
-      throw new Error("nowpayments.payment.order_mismatch");
-    }
+    const payment = await this.submitPayment(input);
     return Object.freeze({ ...preflight, payment });
   }
 

@@ -18,7 +18,13 @@
     "@masanawa/postgres": "workspace:*",
     "@masanawa/agents": "workspace:*",
     "@masanawa/security": "workspace:*",
-    "@masanawa/memory": "workspace:*"
+    "@masanawa/memory": "workspace:*",
+    "@masanawa/commerce": "workspace:*",
+    "@masanawa/providers": "workspace:*",
+    "@masanawa/nowpayments": "workspace:*",
+    "@masanawa/messaging-channels": "workspace:*",
+    "@masanawa/identity": "workspace:*",
+    "@masanawa/skills": "workspace:*"
   },
   "devDependencies": {
     "vitest": "5.0.3"
