@@ -45,6 +45,8 @@ describe("provider-neutral inference admission", () => {
     { systemInstructions: ["ok"], input: { kind: "unknown" } },
     { systemInstructions: ["ok"], input: { kind: "media", caption: "", mimeType: "audio/mp4", dataBase64: "broken!" } },
     { systemInstructions: ["ok"], input: { kind: "media", caption: "", mimeType: "audio/mp4\nsecret", dataBase64: "YWJj" } },
+    { systemInstructions: ["ok"], input: { kind: "media-set", caption: "", media: [] } },
+    { systemInstructions: ["ok"], input: { kind: "media-set", caption: "", media: [{ mimeType: "image/jpeg", dataBase64: "broken!" }, { mimeType: "image/png", dataBase64: "YWJj" }] } },
   ])("rejects malformed input before invoking a provider (%#)", async (input) => {
     const generate = vi.fn();
     await expect(generateAgentInference({ generate }, input as AgentInferenceRequest)).rejects.toThrow(TypeError);
@@ -57,6 +59,29 @@ describe("provider-neutral inference admission", () => {
       input: { kind: "media", caption: "", mimeType: "audio/mp4", dataBase64: "YQ==" },
     });
     expect(snapshot.input).toEqual({ kind: "media", caption: "", mimeType: "audio/mp4", dataBase64: "YQ==" });
+  });
+
+  it("preserves a bounded grouped media envelope without runtime custody", () => {
+    const snapshot = snapshotAgentInferenceRequest({
+      systemInstructions: ["Compare."],
+      input: {
+        kind: "media-set",
+        caption: "Compare these.",
+        media: [
+          { mimeType: "image/jpeg", dataBase64: "YWJj", name: "one.jpg" },
+          { mimeType: "image/png", dataBase64: "ZGVm", name: "two.png" },
+        ],
+      },
+    });
+    expect(snapshot.input).toEqual({
+      kind: "media-set",
+      caption: "Compare these.",
+      media: [
+        { mimeType: "image/jpeg", dataBase64: "YWJj", name: "one.jpg" },
+        { mimeType: "image/png", dataBase64: "ZGVm", name: "two.png" },
+      ],
+    });
+    expect(Object.isFrozen((snapshot.input as { media: readonly unknown[] }).media)).toBe(true);
   });
 
   it.each([null, {}, { text: 7 }, { text: " " }, { text: "x".repeat(128_001) }])(
