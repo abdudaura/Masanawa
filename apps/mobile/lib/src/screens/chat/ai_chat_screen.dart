@@ -2606,6 +2606,16 @@ class _DocTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final u = context.masanawa;
+    final name = attachment.name ?? 'Document';
+    final dot = name.lastIndexOf('.');
+    final typeLabel = dot > 0 && dot < name.length - 1
+        ? name.substring(dot + 1).toUpperCase()
+        : (lookupMimeType(attachment.path)?.split('/').last.toUpperCase() ??
+              'FILE');
+    final meta = [
+      typeLabel,
+      if (attachment.sizeBytes != null) formatBytes(attachment.sizeBytes!),
+    ].join(' · ');
     return Container(
       width: 220,
       padding: const EdgeInsets.all(10),
@@ -2631,11 +2641,12 @@ class _DocTile extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                if (attachment.sizeBytes != null)
-                  Text(
-                    formatBytes(attachment.sizeBytes!),
-                    style: TextStyle(color: u.textMuted, fontSize: 11.5),
-                  ),
+                Text(
+                  meta,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: u.textMuted, fontSize: 11.5),
+                ),
               ],
             ),
           ),
