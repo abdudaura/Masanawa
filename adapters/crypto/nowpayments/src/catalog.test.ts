@@ -154,4 +154,95 @@ describe("NOWPayments catalog", () => {
     );
     expect(called).toBe(false);
   });
+
+  it("preflights and creates a payment with a bound order id", async () => {
+    const requested: Array<{ url: string; method: string; body?: string }> = [];
+    const client = new NowPaymentsClient({
+      apiKey: "secret",
+      fetch: async (input, init) => {
+        const url = String(input);
+        requested.push({
+          url,
+          method: String(init?.method ?? "GET"),
+          ...(typeof init?.body === "string" ? { body: init.body } : {}),
+        });
+        if (url.includes("/min-amount?")) {
+          return new Response(JSON.stringify({ min_amount: 5 }), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          });
+        }
+        if (url.includes("/estimate?")) {
+          return new Response(JSON.stringify({ estimated_amount: 9.8 }), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          });
+        }
+        return new Response(
+          JSON.stringify({
+            payment_id: 5745459419,
+            purchase_id: "purchase_1",
+            payment_status: "waiting",
+            pay_address: "TExampleAddress",
+            price_amount: 10,
+            price_currency: "usd",
+            pay_amount: 9.8,
+            pay_currency: "usdttrc20",
+            order_id: "order-1",
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      },
+    });
+
+    const result = await client.createPayment({
+      priceAmount: 10,
+      priceCurrency: "USD",
+      payCurrency: "USDTTRC20",
+      ipnCallbackUrl: "https://merchant.example/webhooks/nowpayments",
+      orderId: "order-1",
+    });
+
+    expect(result.payment.paymentId).toBe("5745459419");
+    expect(requested.map((entry) => entry.method)).toEqual(["GET", "GET", "POST"]);
+    expect(requested[2]?.body).toContain('"order_id":"order-1"');
+  });
+
+  it("fails closed when NOWPayments returns a different order id", async () => {
+    const client = new NowPaymentsClient({
+      apiKey: "secret",
+      fetch: async (input) => {
+        const url = String(input);
+        if (url.includes("/min-amount?")) {
+          return new Response(JSON.stringify({ min_amount: 5 }), { status: 200 });
+        }
+        if (url.includes("/estimate?")) {
+          return new Response(JSON.stringify({ estimated_amount: 9.8 }), { status: 200 });
+        }
+        return new Response(
+          JSON.stringify({
+            payment_id: "payment-1",
+            payment_status: "waiting",
+            pay_address: "TExampleAddress",
+            price_amount: 10,
+            price_currency: "usd",
+            pay_amount: 9.8,
+            pay_currency: "usdttrc20",
+            order_id: "other-order",
+          }),
+          { status: 200 },
+        );
+      },
+    });
+
+    await expect(
+      client.createPayment({
+        priceAmount: 10,
+        priceCurrency: "USD",
+        payCurrency: "USDTTRC20",
+        ipnCallbackUrl: "https://merchant.example/webhooks/nowpayments",
+        orderId: "order-1",
+      }),
+    ).rejects.toThrow("nowpayments.payment.order_mismatch");
+  });
 });
