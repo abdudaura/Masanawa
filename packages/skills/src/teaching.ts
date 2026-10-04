@@ -149,6 +149,27 @@ export interface TeachingExerciseCard {
   readonly options: readonly TeachingExerciseOption[];
 }
 
+export interface TeachingSelectableExerciseRubric {
+  readonly relationshipId: RelationshipId;
+  readonly skillVersionId: SkillVersionId;
+  readonly lessonStepKey: string;
+  readonly exerciseKey: string;
+  readonly kind: "single-select" | "multi-select";
+  readonly allowedOptionKeys: readonly string[];
+  readonly correctOptionKeys: readonly string[];
+  readonly correctFeedback: string;
+  readonly retryFeedback: string;
+  readonly alternativeExplanation: string | null;
+}
+
+export interface TeachingSelectionSubmission {
+  readonly relationshipId: RelationshipId;
+  readonly skillVersionId: SkillVersionId;
+  readonly lessonStepKey: string;
+  readonly exerciseKey: string;
+  readonly selectedOptionKeys: readonly string[];
+}
+
 export type TeachingSubjectReference =
   | Readonly<{
       referenceKey: string;
@@ -347,6 +368,24 @@ export function normalizeTeachingAnswerEvaluation(
   if (input.correct !== null && typeof input.correct !== "boolean") {
     throw new TypeError("teaching.correct is invalid");
   }
+  if (
+    input.correct !== true &&
+    (input.nextCheckpointState === "ready-to-advance" ||
+      input.nextCheckpointState === "completed")
+  ) {
+    throw new TypeError(
+      "teaching evaluation cannot advance without positive understanding evidence",
+    );
+  }
+  if (
+    input.correct === false &&
+    input.nextCheckpointState !== "needs-reteaching" &&
+    input.nextCheckpointState !== "in-progress"
+  ) {
+    throw new TypeError(
+      "incorrect teaching evaluation must remain in progress or require reteaching",
+    );
+  }
   return Object.freeze({
     assessmentKind,
     correct: input.correct,
@@ -517,6 +556,129 @@ export function normalizeTeachingExerciseCard(
     prompt: bounded(input.prompt, "teaching.exercise.prompt", 4000),
     kind,
     options: Object.freeze(options),
+  });
+}
+
+export function normalizeTeachingSelectableExerciseRubric(
+  input: TeachingSelectableExerciseRubric,
+): TeachingSelectableExerciseRubric {
+  if (!isCanonicalId("relationship", input.relationshipId)) {
+    throw new TypeError("teaching rubric relationshipId is invalid");
+  }
+  if (!isCanonicalId("skill-version", input.skillVersionId)) {
+    throw new TypeError("teaching rubric skillVersionId is invalid");
+  }
+  const kind = oneOf(
+    input.kind,
+    ["single-select", "multi-select"] as const,
+    "teaching.rubric.kind",
+  );
+  const allowedOptionKeys = boundedList(
+    input.allowedOptionKeys,
+    "teaching.rubric.allowedOptionKeys",
+    20,
+    128,
+    false,
+  ).map((value) => normalizeKey(value, "teaching.rubric.allowedOptionKey"));
+  const correctOptionKeys = boundedList(
+    input.correctOptionKeys,
+    "teaching.rubric.correctOptionKeys",
+    20,
+    128,
+    false,
+  ).map((value) => normalizeKey(value, "teaching.rubric.correctOptionKey"));
+
+  if (new Set(allowedOptionKeys).size !== allowedOptionKeys.length) {
+    throw new TypeError("teaching rubric allowed option keys must be unique");
+  }
+  if (new Set(correctOptionKeys).size !== correctOptionKeys.length) {
+    throw new TypeError("teaching rubric correct option keys must be unique");
+  }
+  const allowed = new Set(allowedOptionKeys);
+  if (correctOptionKeys.some((key) => !allowed.has(key))) {
+    throw new TypeError("teaching rubric correct options must be allowed options");
+  }
+  if (kind === "single-select" && correctOptionKeys.length !== 1) {
+    throw new TypeError("single-select teaching rubric requires one correct option");
+  }
+  if (kind === "multi-select" && correctOptionKeys.length < 1) {
+    throw new TypeError("multi-select teaching rubric requires correct options");
+  }
+
+  return Object.freeze({
+    relationshipId: input.relationshipId,
+    skillVersionId: input.skillVersionId,
+    lessonStepKey: normalizeKey(input.lessonStepKey, "teaching.rubric.lessonStepKey"),
+    exerciseKey: normalizeKey(input.exerciseKey, "teaching.rubric.exerciseKey"),
+    kind,
+    allowedOptionKeys: Object.freeze([...allowedOptionKeys].sort()),
+    correctOptionKeys: Object.freeze([...correctOptionKeys].sort()),
+    correctFeedback: bounded(input.correctFeedback, "teaching.rubric.correctFeedback", 4000),
+    retryFeedback: bounded(input.retryFeedback, "teaching.rubric.retryFeedback", 4000),
+    alternativeExplanation:
+      input.alternativeExplanation === null
+        ? null
+        : bounded(
+            input.alternativeExplanation,
+            "teaching.rubric.alternativeExplanation",
+            6000,
+          ),
+  });
+}
+
+export function evaluateTeachingSelection(
+  rubricInput: TeachingSelectableExerciseRubric,
+  submission: TeachingSelectionSubmission,
+): TeachingAnswerEvaluation {
+  const rubric = normalizeTeachingSelectableExerciseRubric(rubricInput);
+  if (
+    rubric.relationshipId !== submission.relationshipId ||
+    rubric.skillVersionId !== submission.skillVersionId ||
+    rubric.lessonStepKey !==
+      normalizeKey(submission.lessonStepKey, "teaching.submission.lessonStepKey") ||
+    rubric.exerciseKey !==
+      normalizeKey(submission.exerciseKey, "teaching.submission.exerciseKey")
+  ) {
+    throw new TypeError(
+      "teaching selection submission must match rubric scope and exercise",
+    );
+  }
+  if (!Array.isArray(submission.selectedOptionKeys)) {
+    throw new TypeError("teaching submission selectedOptionKeys is invalid");
+  }
+  const selected = submission.selectedOptionKeys.map((key) =>
+    normalizeKey(key, "teaching.submission.selectedOptionKey"),
+  );
+  if (new Set(selected).size !== selected.length) {
+    throw new TypeError("teaching submission option keys must be unique");
+  }
+  if (rubric.kind === "single-select" && selected.length !== 1) {
+    throw new TypeError("single-select teaching submission requires one option");
+  }
+  if (rubric.kind === "multi-select" && selected.length < 1) {
+    throw new TypeError("multi-select teaching submission requires selected options");
+  }
+  const allowed = new Set(rubric.allowedOptionKeys);
+  if (selected.some((key) => !allowed.has(key))) {
+    throw new TypeError("teaching submission contains an unknown option");
+  }
+
+  const normalizedSelected = [...selected].sort();
+  const correct =
+    normalizedSelected.length === rubric.correctOptionKeys.length &&
+    normalizedSelected.every(
+      (key, index) => key === rubric.correctOptionKeys[index],
+    );
+
+  return normalizeTeachingAnswerEvaluation({
+    assessmentKind: "formative",
+    correct,
+    feedback: correct ? rubric.correctFeedback : rubric.retryFeedback,
+    misconception: correct
+      ? null
+      : "The selected option set does not yet match the target concept.",
+    alternativeExplanation: correct ? null : rubric.alternativeExplanation,
+    nextCheckpointState: correct ? "ready-to-advance" : "needs-reteaching",
   });
 }
 
