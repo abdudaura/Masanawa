@@ -26,8 +26,19 @@ describe("agent directory route", () => {
             greeting: "What should we work on?",
             presence: "available",
             activeWorkCount: 0,
+            supportAgent: true,
+            defaultPlatformAgent: true,
+            voiceProvider: "gemini",
+            voiceName: "Bodi",
           },
         ];
+      },
+      async setDefaultPlatformAgent(input) {
+        seen = input.authorizationHeader;
+        return {
+          characterId:
+            "character_00000000-0000-4000-8000-000000000002" as never,
+        };
       },
     };
     const app = createGatewayApp({ agentDirectory: directory });
@@ -44,5 +55,23 @@ describe("agent directory route", () => {
     const body = response.json();
     expect(body.agents[0].displayName).toBe("Amina");
     expect(body.agents[0]).not.toHaveProperty("skillVersionIds");
+    expect(body.agents[0]).toMatchObject({
+      supportAgent: true,
+      defaultPlatformAgent: true,
+      voiceProvider: "gemini",
+      voiceName: "Bodi",
+    });
+
+    const update = await app.inject({
+      method: "PUT",
+      url: "/agent/preferences/default",
+      headers: { authorization: "Bearer user" },
+      payload: {
+        characterId:
+          "character_00000000-0000-4000-8000-000000000002",
+      },
+    });
+    expect(update.statusCode).toBe(200);
+    expect(seen).toBe("Bearer user");
   });
 });
