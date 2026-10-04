@@ -22,6 +22,8 @@ import {
   parseVerifiedPaymentIpn,
   splitProviderCurrency,
   type NowPaymentsCurrencyEvidence,
+  type NowPaymentsAccountEvidence,
+  assertFreshAccountEvidence, qualifyAccountCapability, qualifyRoute,
 } from "@masanawa/nowpayments";
 
 export interface FinancialAuthority {
@@ -199,6 +201,10 @@ export function createFinancialService(input: {
   readonly crypto: CryptoRepository;
   readonly nowPayments: NowPaymentsClient;
   readonly nowPaymentsPayout?: NowPaymentsPayoutClient;
+  readonly withdrawalEvidence?: () => Promise<{
+    readonly account: NowPaymentsAccountEvidence;
+    readonly routes: readonly NowPaymentsCurrencyEvidence[];
+  }>;
   readonly nowPaymentsIpnSecret: string;
   readonly publicBaseUrl: string;
   readonly now?: () => Instant;
@@ -219,15 +225,27 @@ export function createFinancialService(input: {
     return routes.find((candidate) => candidate.route.providerCode === providerCode)?.route ?? null;
   }
 
+  async function qualifiedWithdrawalRoutes() {
+    if (!input.nowPaymentsPayout || !input.withdrawalEvidence) return null;
+    const evidence = await input.withdrawalEvidence();
+    assertFreshAccountEvidence(evidence.account, { now: new Date(now()) });
+    for (const capability of ["custody", "customer_management", "payout"] as const) {
+      if (!qualifyAccountCapability(evidence.account, capability).eligible) return null;
+    }
+    return evidence.routes.filter(route => qualifyRoute(route, "withdraw").eligible);
+  }
+
   return Object.freeze<FinancialService>({
     async capabilities(request) {
       await authority(request.authorizationHeader);
+      let withdrawals = false;
+      try { const routes = await qualifiedWithdrawalRoutes(); withdrawals = routes !== null && routes.length > 0; } catch { /* Unknown/stale evidence denies admission. */ }
       return Object.freeze({
         deposits: true as const,
-        withdrawals: input.nowPaymentsPayout !== undefined,
+        withdrawals,
         conversions: false as const,
         payoutReason:
-          input.nowPaymentsPayout === undefined
+          !withdrawals
             ? "nowpayments_payout_credentials_or_account_capability_unavailable"
             : null,
       });
@@ -266,7 +284,7 @@ export function createFinancialService(input: {
       if (!route) throw new Error("financial.crypto.route_unavailable");
 
       const numericAmount = Number(amount);
-      if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+      if (!Number.isFinite(numericAmount) || numericAmount <= 0 || normalizeCryptoAmount(String(numericAmount)) !== amount) {
         throw new Error("financial.crypto.amount_unavailable");
       }
 
@@ -316,6 +334,7 @@ export function createFinancialService(input: {
         ipnCallbackUrl,
         orderId: providerOrderId(auth.tenantId, requestId),
         orderDescription: "Masanawa crypto deposit",
+        signal: AbortSignal.timeout(15_000),
       });
 
       const bound = await input.crypto.bindProviderPayment({
@@ -355,9 +374,14 @@ export function createFinancialService(input: {
         return withdrawalView(existing);
       }
 
-      const route = await currentDepositRoute(providerCode);
-      if (!route) throw new Error("financial.crypto.route_unavailable");
+      const routes = await qualifiedWithdrawalRoutes();
+      const route = routes?.find(candidate => candidate.providerCode === providerCode);
+      if (!route) throw new Error("financial.crypto.withdrawal_unavailable");
 
+      const numericAmount = Number(amount);
+      if (!Number.isFinite(numericAmount) || numericAmount <= 0 || normalizeCryptoAmount(String(numericAmount)) !== amount) {
+        throw new Error("financial.crypto.amount_unavailable");
+      }
       const createdAt = now();
       const admitted = await input.crypto.reserveWithdrawal({
         schemaVersion: 1,
@@ -395,6 +419,7 @@ export function createFinancialService(input: {
         amount,
         currency: providerCode,
         address,
+        signal: AbortSignal.timeout(15_000),
       });
       const bound = await input.crypto.bindProviderPayout({
         tenantId: auth.tenantId,
@@ -439,9 +464,11 @@ export function createFinancialService(input: {
       if (!intent || intent.operation !== "withdraw" || intent.providerPayoutId === null) {
         throw new Error("financial.crypto.withdrawal_unavailable");
       }
+      if (intent.status === "succeeded" || intent.status === "failed") return withdrawalView(intent);
       const result = await input.nowPaymentsPayout.verifyPayout({
         payoutId: intent.providerPayoutId,
         verificationCode: request.verificationCode,
+        signal: AbortSignal.timeout(15_000),
       });
       if (payoutSucceeded(result.status)) {
         return withdrawalView(await input.crypto.settleWithdrawal({
@@ -481,6 +508,7 @@ export function createFinancialService(input: {
       if (intent.status === "succeeded" || intent.status === "failed") return withdrawalView(intent);
       const status = await input.nowPaymentsPayout.getPayoutStatus({
         payoutId: intent.providerPayoutId,
+        signal: AbortSignal.timeout(15_000),
       });
       if (payoutSucceeded(status) || payoutFailed(status)) {
         return withdrawalView(await input.crypto.settleWithdrawal({
@@ -574,3 +602,4 @@ export function createFinancialService(input: {
     },
   });
 }
+
