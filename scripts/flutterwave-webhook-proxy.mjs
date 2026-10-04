@@ -3,6 +3,7 @@ import { createServer, request as httpRequest } from "node:http";
 import { connect } from "node:net";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 
 export const FLUTTERWAVE_WEBHOOK_PATH = "/webhooks/flutterwave";
 export const MAX_WEBHOOK_BYTES = 1024 * 1024;
@@ -179,7 +180,7 @@ function proxyHttpRequest(request, response, upstreamPort) {
       port: upstreamPort,
       method: request.method,
       path: request.url,
-      headers: { ...request.headers, host: `127.0.0.1:${upstreamPort}` },
+      headers: request.headers,
     },
     (upstreamResponse) => {
       response.writeHead(upstreamResponse.statusCode ?? 502, upstreamResponse.headers);
@@ -279,6 +280,6 @@ export function startHostedAlphaWithFlutterwaveWebhook() {
   return { server, child, publicPort, upstreamPort };
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === fileURLToPath(new URL(`file://${process.argv[1]}`))) {
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
   startHostedAlphaWithFlutterwaveWebhook();
 }
