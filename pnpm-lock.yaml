@@ -225,6 +225,9 @@ importers:
       '@masanawa/memory':
         specifier: workspace:*
         version: link:../../../packages/memory
+      '@masanawa/messaging-channels':
+        specifier: workspace:*
+        version: link:../../channels/messaging
       '@masanawa/providers':
         specifier: workspace:*
         version: link:../../../packages/providers
