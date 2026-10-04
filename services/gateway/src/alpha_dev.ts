@@ -159,6 +159,7 @@ export function parseAlphaDevIds(input: {
 export function createAlphaDirectoryAuthorizer(input: {
   readonly token: string;
   readonly tenantId: TenantId;
+  readonly userId: UserId;
   readonly relationshipIds: Readonly<Record<string, RelationshipId>>;
 }): AgentDirectoryAuthorizer {
   const expectedToken = input.token.trim();
@@ -174,6 +175,7 @@ export function createAlphaDirectoryAuthorizer(input: {
       }
       return Object.freeze({
         tenantId: input.tenantId,
+        userId: input.userId,
         characterIds: Object.freeze(
           Object.keys(input.relationshipIds).map((id) =>
             parseCanonicalId("character", id),
