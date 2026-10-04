@@ -1,5 +1,4 @@
-import { nowInstant, parseCanonicalId, type TenantId } from "@masanawa/contracts";
-import type { CommerceRepository } from "@masanawa/commerce";
+import type { TenantId } from "@masanawa/contracts";
 import type { AgentAdminAuthorizer } from "./agent_admin.js";
 
 export interface PlatformAdminQuery {
@@ -133,6 +132,15 @@ export interface PlatformAdminAuditEvent {
   readonly sensitivity: string;
 }
 
+export interface PlatformAdminOfferCommands {
+  setEnabled(input: {
+    readonly tenantId: TenantId;
+    readonly offerId: string;
+    readonly expectedRevision: number;
+    readonly enabled: boolean;
+  }): Promise<PlatformAdminOffer>;
+}
+
 export interface PlatformAdminService {
   summary(input: { readonly authorizationHeader: string | undefined }): Promise<PlatformAdminSummary>;
   listCharacters(input: {
@@ -226,7 +234,7 @@ function tenant(authority: { readonly tenantId: TenantId }): TenantId {
 export function createPlatformAdminService(input: {
   readonly database: PlatformAdminQuery;
   readonly authorizer: AgentAdminAuthorizer;
-  readonly commerce?: CommerceRepository;
+  readonly offerCommands?: PlatformAdminOfferCommands;
 }): PlatformAdminService {
   const authorize = async (
     authorizationHeader: string | undefined,
@@ -503,31 +511,15 @@ export function createPlatformAdminService(input: {
         request.authorizationHeader,
         "commerce.write",
       );
-      if (!input.commerce) {
+      if (!input.offerCommands) {
         throw new Error("Commerce administration is unavailable");
       }
-      const offerId = parseCanonicalId("offer", request.offerId);
-      const current = await input.commerce.readOfferRevision({
+      return input.offerCommands.setEnabled({
         tenantId: tenant(authority),
-        offerId,
-        revision: request.expectedRevision,
+        offerId: request.offerId,
+        expectedRevision: request.expectedRevision,
+        enabled: request.enabled,
       });
-      if (!current) {
-        throw new AdminConflictError("Offer revision changed or was not found");
-      }
-      const next = await input.commerce.registerOfferRevision({
-        ...current,
-        revision: current.revision + 1,
-        active: request.enabled,
-        createdAt: nowInstant(),
-      });
-      return {
-        offerId: next.offerId,
-        key: next.key,
-        revision: next.revision,
-        enabled: next.active,
-        updatedAt: next.createdAt,
-      };
     },
 
     async listFulfillments(request) {
