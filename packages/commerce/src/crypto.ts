@@ -9,6 +9,7 @@ import {
 } from "@masanawa/contracts";
 
 export type CryptoOperation = "deposit" | "withdraw" | "convert";
+export type CryptoWithdrawalFeePayer = "user" | "platform";
 export type CryptoIntentStatus =
   | "quoted"
   | "awaiting_payment"
@@ -30,12 +31,21 @@ export interface CryptoIntent {
   readonly network: string | null;
   readonly amount: string;
   readonly targetAsset: string | null;
+  /** Optional for backward-compatible callers; normalized intents always materialize null or a value. */
+  readonly targetNetwork?: string | null;
   readonly destinationAddress: string | null;
   readonly provider: "nowpayments";
   readonly providerPaymentId: string | null;
   readonly providerPayoutId: string | null;
+  /** Durable NOWPayments custody conversion identity. */
+  readonly providerConversionId?: string | null;
+  /** Exact target amount evidenced by the provider after conversion settlement. */
+  readonly providerTargetAmount?: string | null;
   readonly payAddress: string | null;
   readonly providerPayAmount: string | null;
+  /** Live payout network fee admitted at reserve time; zero is represented as null. */
+  readonly providerNetworkFee?: string | null;
+  readonly withdrawalFeePayer?: CryptoWithdrawalFeePayer | null;
   readonly providerDispatchStartedAt: Instant | null;
   readonly status: CryptoIntentStatus;
   readonly createdAt: Instant;
@@ -56,8 +66,11 @@ export interface CryptoLedgerEntry {
     | "provider-refund"
     | "withdrawal-reserve"
     | "withdrawal-release"
+    | "withdrawal-fee-reserve"
+    | "withdrawal-fee-release"
     | "conversion-debit"
     | "conversion-credit"
+    | "conversion-release"
     | "adjustment";
   readonly requestId: RequestId;
   readonly providerReference: string | null;
@@ -95,6 +108,17 @@ export function normalizeCryptoAmount(value: string): string {
   return normalized.replace(/\.0+$/u, "").replace(/(\.\d*?[1-9])0+$/u, "$1");
 }
 
+export function normalizeCryptoNonNegativeAmount(value: string): string {
+  if (typeof value !== "string") throw new TypeError("crypto.amount.invalid");
+  const normalized = value.trim();
+  if (!decimalPattern.test(normalized) || normalized.length > 80) {
+    throw new TypeError("crypto.amount.invalid");
+  }
+  const numeric = Number(normalized);
+  if (!Number.isFinite(numeric) || numeric < 0) throw new RangeError("crypto.amount.invalid");
+  return normalized.replace(/\.0+$/u, "").replace(/(\.\d*?[1-9])0+$/u, "$1");
+}
+
 function optional(value: string | null, code: string, max = 512): string | null {
   return value === null ? null : bounded(value, code, max);
 }
@@ -117,8 +141,51 @@ export function normalizeCryptoIntent(input: CryptoIntent): CryptoIntent {
   }
   const targetAsset =
     input.targetAsset === null ? null : normalizeCryptoAsset(input.targetAsset);
+  const targetNetwork =
+    input.targetNetwork === undefined || input.targetNetwork === null
+      ? null
+      : normalizeCryptoNetwork(input.targetNetwork);
   if (operation === "convert" && targetAsset === null) {
     throw new TypeError("crypto.convert.target.required");
+  }
+  if (operation !== "convert" && (targetAsset !== null || targetNetwork !== null)) {
+    throw new TypeError("crypto.target.unexpected");
+  }
+  const providerConversionId =
+    optional(input.providerConversionId ?? null, "crypto.provider_conversion.invalid", 128);
+  const providerTargetAmount =
+    input.providerTargetAmount === undefined || input.providerTargetAmount === null
+      ? null
+      : normalizeCryptoAmount(input.providerTargetAmount);
+  if (
+    operation !== "convert" &&
+    (providerConversionId !== null || providerTargetAmount !== null)
+  ) {
+    throw new TypeError("crypto.provider_conversion.unexpected");
+  }
+  if (operation === "convert" && providerTargetAmount !== null && status !== "succeeded") {
+    throw new TypeError("crypto.provider_target_amount.unexpected");
+  }
+  const providerNetworkFee =
+    input.providerNetworkFee === undefined || input.providerNetworkFee === null
+      ? null
+      : normalizeCryptoNonNegativeAmount(input.providerNetworkFee);
+  const withdrawalFeePayer = input.withdrawalFeePayer ?? null;
+  if (
+    withdrawalFeePayer !== null &&
+    withdrawalFeePayer !== "user" &&
+    withdrawalFeePayer !== "platform"
+  ) {
+    throw new TypeError("crypto.withdrawal_fee_payer.invalid");
+  }
+  if (
+    operation !== "withdraw" &&
+    (providerNetworkFee !== null || withdrawalFeePayer !== null)
+  ) {
+    throw new TypeError("crypto.withdrawal_fee.unexpected");
+  }
+  if ((providerNetworkFee === null) !== (withdrawalFeePayer === null)) {
+    throw new TypeError("crypto.withdrawal_fee.incomplete");
   }
   const createdAt = toInstant(input.createdAt);
   const updatedAt = toInstant(input.updatedAt);
@@ -135,13 +202,18 @@ export function normalizeCryptoIntent(input: CryptoIntent): CryptoIntent {
     network: normalizeCryptoNetwork(input.network),
     amount,
     targetAsset,
+    targetNetwork,
     destinationAddress,
     provider: "nowpayments",
     providerPaymentId: optional(input.providerPaymentId, "crypto.provider_payment.invalid", 128),
     providerPayoutId: optional(input.providerPayoutId, "crypto.provider_payout.invalid", 128),
+    providerConversionId,
+    providerTargetAmount,
     payAddress: optional(input.payAddress, "crypto.pay_address.invalid", 512),
     providerPayAmount:
       input.providerPayAmount === null ? null : normalizeCryptoAmount(input.providerPayAmount),
+    providerNetworkFee,
+    withdrawalFeePayer,
     providerDispatchStartedAt:
       input.providerDispatchStartedAt === null ? null : toInstant(input.providerDispatchStartedAt),
     status,
@@ -237,6 +309,11 @@ export interface CryptoRepository {
     readonly network: string | null;
   }): Promise<string>;
   reserveWithdrawal(input: CryptoIntent): Promise<CryptoIntent>;
+  reserveWithdrawalWithFee(input: {
+    readonly intent: CryptoIntent;
+    readonly networkFee: string;
+    readonly feePayer: CryptoWithdrawalFeePayer;
+  }): Promise<CryptoIntent>;
   bindProviderPayout(input: {
     readonly tenantId: TenantId;
     readonly userId: UserId;
@@ -252,4 +329,26 @@ export interface CryptoRepository {
     readonly providerReference: string | null;
     readonly updatedAt: Instant;
   }): Promise<CryptoIntent>;
+  reserveConversion(input: CryptoIntent): Promise<CryptoIntent>;
+  bindProviderConversion(input: {
+    readonly tenantId: TenantId;
+    readonly userId: UserId;
+    readonly requestId: RequestId;
+    readonly providerConversionId: string;
+    readonly updatedAt: Instant;
+  }): Promise<CryptoIntent>;
+  settleConversion(input: {
+    readonly tenantId: TenantId;
+    readonly userId: UserId;
+    readonly requestId: RequestId;
+    readonly succeeded: boolean;
+    readonly targetAmount: string | null;
+    readonly providerReference: string | null;
+    readonly updatedAt: Instant;
+  }): Promise<CryptoIntent>;
+  readAggregateLiability(input: {
+    readonly tenantId: TenantId;
+    readonly asset: string;
+    readonly network: string | null;
+  }): Promise<string>;
 }

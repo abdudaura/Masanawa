@@ -12,6 +12,7 @@ import {
   normalizeCryptoIntent,
   normalizeCryptoLedgerEntry,
   normalizeCryptoNetwork,
+  normalizeCryptoNonNegativeAmount,
   type CryptoIntent,
   type CryptoIntentStatus,
   type CryptoProviderPaymentEvent,
@@ -50,6 +51,35 @@ function decimal(value: string): string {
   return normalizeCryptoAmount(value);
 }
 
+function nonNegativeDecimal(value: string): string {
+  return normalizeCryptoNonNegativeAmount(value);
+}
+
+function sameWithdrawalTerms(left: CryptoIntent, right: CryptoIntent): boolean {
+  return (
+    left.operation === "withdraw" &&
+    right.operation === "withdraw" &&
+    left.asset === right.asset &&
+    left.network === right.network &&
+    left.amount === right.amount &&
+    left.destinationAddress === right.destinationAddress &&
+    (left.providerNetworkFee ?? null) === (right.providerNetworkFee ?? null) &&
+    (left.withdrawalFeePayer ?? null) === (right.withdrawalFeePayer ?? null)
+  );
+}
+
+function sameConversionTerms(left: CryptoIntent, right: CryptoIntent): boolean {
+  return (
+    left.operation === "convert" &&
+    right.operation === "convert" &&
+    left.asset === right.asset &&
+    left.network === right.network &&
+    left.amount === right.amount &&
+    left.targetAsset === right.targetAsset &&
+    (left.targetNetwork ?? null) === (right.targetNetwork ?? null)
+  );
+}
+
 async function readIntentWithClient(
   client: PoolClient,
   input: { tenantId: TenantId; userId: UserId; requestId: RequestId },
@@ -73,10 +103,13 @@ async function updateIntentWithClient(
   await client.query(
     `UPDATE commerce.crypto_intents
         SET operation=$4, asset=$5, network=$6, amount=$7::numeric,
-            target_asset=$8, destination_address=$9, provider=$10,
-            provider_payment_id=$11, provider_payout_id=$12, pay_address=$13,
-            provider_pay_amount=$14::numeric, provider_dispatch_started_at=$15,
-            status=$16, definition=$17::jsonb, updated_at=$18
+            target_asset=$8, target_network=$9, destination_address=$10, provider=$11,
+            provider_payment_id=$12, provider_payout_id=$13, provider_conversion_id=$14,
+            provider_target_amount=$15::numeric,
+            pay_address=$16, provider_pay_amount=$17::numeric,
+            provider_network_fee=$18::numeric, withdrawal_fee_payer=$19,
+            provider_dispatch_started_at=$20, status=$21,
+            definition=$22::jsonb, updated_at=$23
       WHERE tenant_id=$1 AND user_id=$2 AND request_id=$3`,
     [
       normalized.tenantId,
@@ -87,16 +120,50 @@ async function updateIntentWithClient(
       normalized.network,
       normalized.amount,
       normalized.targetAsset,
+      normalized.targetNetwork ?? null,
       normalized.destinationAddress,
       normalized.provider,
       normalized.providerPaymentId,
       normalized.providerPayoutId,
+      normalized.providerConversionId ?? null,
+      normalized.providerTargetAmount ?? null,
       normalized.payAddress,
       normalized.providerPayAmount,
+      normalized.providerNetworkFee ?? null,
+      normalized.withdrawalFeePayer ?? null,
       normalized.providerDispatchStartedAt,
       normalized.status,
       canonicalJson(normalized),
       normalized.updatedAt,
+    ],
+  );
+  return normalized;
+}
+
+async function insertIntentWithClient(
+  client: PoolClient,
+  intent: CryptoIntent,
+): Promise<CryptoIntent> {
+  const normalized = normalizeCryptoIntent(intent);
+  await client.query(
+    `INSERT INTO commerce.crypto_intents(
+       tenant_id,user_id,request_id,operation,asset,network,amount,target_asset,target_network,
+       destination_address,provider,provider_payment_id,provider_payout_id,provider_conversion_id,
+       provider_target_amount,pay_address,provider_pay_amount,provider_network_fee,withdrawal_fee_payer,
+       provider_dispatch_started_at,status,definition,created_at,updated_at
+     ) VALUES (
+       $1,$2,$3,$4,$5,$6,$7::numeric,$8,$9,$10,$11,$12,$13,$14,$15::numeric,$16,$17::numeric,
+       $18::numeric,$19,$20,$21,$22::jsonb,$23,$24
+     )`,
+    [
+      normalized.tenantId, normalized.userId, normalized.requestId, normalized.operation,
+      normalized.asset, normalized.network, normalized.amount, normalized.targetAsset,
+      normalized.targetNetwork ?? null, normalized.destinationAddress, normalized.provider,
+      normalized.providerPaymentId, normalized.providerPayoutId,
+      normalized.providerConversionId ?? null, normalized.providerTargetAmount ?? null,
+      normalized.payAddress, normalized.providerPayAmount, normalized.providerNetworkFee ?? null,
+      normalized.withdrawalFeePayer ?? null, normalized.providerDispatchStartedAt,
+      normalized.status, canonicalJson(normalized), normalized.createdAt, normalized.updatedAt,
     ],
   );
   return normalized;
@@ -118,6 +185,49 @@ async function accountBalance(
   return result.rows[0]?.balance ?? "0";
 }
 
+async function aggregateLiability(
+  client: PoolClient,
+  input: { tenantId: TenantId; asset: string; network: string | null },
+): Promise<string> {
+  const result = await client.query<{ liability: string }>(
+    `SELECT COALESCE(SUM(GREATEST(user_balance, 0)), 0)::text AS liability
+       FROM (
+         SELECT user_id,
+                COALESCE(SUM(
+                  CASE direction WHEN 'credit' THEN amount ELSE -amount END
+                ), 0) AS user_balance
+           FROM commerce.crypto_ledger_entries
+          WHERE tenant_id=$1 AND asset=$2
+            AND network IS NOT DISTINCT FROM $3
+          GROUP BY user_id
+       ) AS user_balances`,
+    [input.tenantId, input.asset, input.network],
+  );
+  return result.rows[0]?.liability ?? "0";
+}
+
+async function lockBalance(
+  client: PoolClient,
+  input: { tenantId: TenantId; userId: UserId; asset: string; network: string | null },
+): Promise<void> {
+  await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+    `crypto:balance:${input.tenantId}:${input.userId}:${input.asset}:${input.network ?? "-"}`,
+  ]);
+}
+
+async function assertSufficientBalance(
+  client: PoolClient,
+  balance: string,
+  principal: string,
+  extra = "0",
+): Promise<void> {
+  const sufficient = await client.query<{ ok: boolean }>(
+    "SELECT $1::numeric >= ($2::numeric + $3::numeric) AS ok",
+    [balance, principal, extra],
+  );
+  if (!sufficient.rows[0]?.ok) throw new Error("crypto.insufficient_balance");
+}
+
 async function postLedger(
   client: PoolClient,
   input: {
@@ -133,8 +243,11 @@ async function postLedger(
       | "provider-refund"
       | "withdrawal-reserve"
       | "withdrawal-release"
+      | "withdrawal-fee-reserve"
+      | "withdrawal-fee-release"
       | "conversion-debit"
       | "conversion-credit"
+      | "conversion-release"
       | "adjustment";
     providerReference: string | null;
     createdAt: Instant;
@@ -189,20 +302,7 @@ export function createPostgresCryptoRepository(pool: Pool): CryptoRepository {
           }
           return existing;
         }
-        await client.query(
-          `INSERT INTO commerce.crypto_intents(
-             tenant_id,user_id,request_id,operation,asset,network,amount,target_asset,
-             destination_address,provider,provider_payment_id,provider_payout_id,
-             pay_address,provider_pay_amount,provider_dispatch_started_at,status,definition,created_at,updated_at
-           ) VALUES ($1,$2,$3,$4,$5,$6,$7::numeric,$8,$9,$10,$11,$12,$13,$14::numeric,$15,$16,$17::jsonb,$18,$19)`,
-          [
-            intent.tenantId,intent.userId,intent.requestId,intent.operation,intent.asset,
-            intent.network,intent.amount,intent.targetAsset,intent.destinationAddress,
-            intent.provider,intent.providerPaymentId,intent.providerPayoutId,intent.payAddress,
-            intent.providerPayAmount,intent.providerDispatchStartedAt,intent.status,canonicalJson(intent),intent.createdAt,intent.updatedAt,
-          ],
-        );
-        return intent;
+        return insertIntentWithClient(client, intent);
       });
     },
 
@@ -313,10 +413,9 @@ export function createPostgresCryptoRepository(pool: Pool): CryptoRepository {
         const current = await readIntentWithClient(client, { tenantId, userId, requestId }, true);
         if (!current || current.operation !== "deposit") throw new Error("crypto.intent.unavailable");
 
-        const belongs =
-          current.providerPaymentId === event.paymentId ||
-          (event.parentPaymentId !== null && current.providerPaymentId === event.parentPaymentId);
-        if (!belongs) throw new Error("crypto.provider_payment.intent_mismatch");
+        if (current.providerPaymentId !== event.paymentId) {
+          throw new Error("crypto.provider_payment.intent_mismatch");
+        }
 
         const existingEvent = await client.query(
           `SELECT 1 FROM commerce.crypto_provider_events
@@ -350,25 +449,31 @@ export function createPostgresCryptoRepository(pool: Pool): CryptoRepository {
         }
 
         if (event.status === "refunded") {
+          const creditedReference = event.paymentId;
           const credited = await client.query<{ amount: string }>(
             `SELECT amount::text AS amount FROM commerce.crypto_ledger_entries
               WHERE tenant_id=$1 AND user_id=$2 AND provider_reference=$3
                 AND reason='provider-deposit' LIMIT 1`,
-            [tenantId,userId,event.paymentId],
+            [tenantId,userId,creditedReference],
           );
           if (credited.rows[0]) {
             await postLedger(client, {
               tenantId,userId,requestId,asset:current.asset,network:current.network,
               amount:credited.rows[0].amount,direction:"debit",reason:"provider-refund",
-              providerReference:`refund:${event.paymentId}`,createdAt:event.observedAt,
+              providerReference:`refund:${creditedReference}`,createdAt:event.observedAt,
             });
           }
         }
 
-        const terminal = ["succeeded","refunded"].includes(current.status);
+        const nextIntentStatus =
+          current.status === "refunded"
+            ? "refunded"
+            : current.status === "succeeded" && nextStatus !== "refunded"
+              ? "succeeded"
+              : nextStatus;
         return updateIntentWithClient(client, {
           ...current,
-          status: terminal && nextStatus !== current.status ? current.status : nextStatus,
+          status: nextIntentStatus,
           updatedAt: event.observedAt,
         });
       });
@@ -391,36 +496,77 @@ export function createPostgresCryptoRepository(pool: Pool): CryptoRepository {
     async reserveWithdrawal(input) {
       const intent = normalizeCryptoIntent(input);
       if (intent.operation !== "withdraw") throw new Error("crypto.withdraw.intent_required");
+      const expected = normalizeCryptoIntent({
+        ...intent,
+        providerNetworkFee: null,
+        withdrawalFeePayer: null,
+        status: "processing",
+      });
       return withTransaction(pool, async (client) => {
-        await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
-          `crypto:balance:${intent.tenantId}:${intent.userId}:${intent.asset}:${intent.network ?? "-"}`,
-        ]);
-        const existing = await readIntentWithClient(client, intent, true);
-        if (existing) return existing;
-        const balance = await accountBalance(client, intent);
-        const sufficient = await client.query<{ ok: boolean }>(
-          "SELECT $1::numeric >= $2::numeric AS ok",
-          [balance, intent.amount],
-        );
-        if (!sufficient.rows[0]?.ok) throw new Error("crypto.insufficient_balance");
-
-        await client.query(
-          `INSERT INTO commerce.crypto_intents(
-             tenant_id,user_id,request_id,operation,asset,network,amount,target_asset,
-             destination_address,provider,provider_dispatch_started_at,status,definition,created_at,updated_at
-           ) VALUES ($1,$2,$3,$4,$5,$6,$7::numeric,$8,$9,$10,$11,$12,$13::jsonb,$14,$15)`,
-          [
-            intent.tenantId,intent.userId,intent.requestId,intent.operation,intent.asset,
-            intent.network,intent.amount,intent.targetAsset,intent.destinationAddress,
-            intent.provider,intent.providerDispatchStartedAt,"processing",canonicalJson({...intent,status:"processing"}),intent.createdAt,intent.updatedAt,
-          ],
-        );
+        await lockBalance(client, expected);
+        const existing = await readIntentWithClient(client, expected, true);
+        if (existing) {
+          if (!sameWithdrawalTerms(existing, expected)) {
+            throw new Error("crypto.withdraw.replay_conflict");
+          }
+          return existing;
+        }
+        const balance = await accountBalance(client, expected);
+        await assertSufficientBalance(client, balance, expected.amount);
+        const admitted = await insertIntentWithClient(client, expected);
         await postLedger(client, {
-          tenantId:intent.tenantId,userId:intent.userId,requestId:intent.requestId,
-          asset:intent.asset,network:intent.network,amount:intent.amount,direction:"debit",
-          reason:"withdrawal-reserve",providerReference:null,createdAt:intent.createdAt,
+          tenantId: admitted.tenantId, userId: admitted.userId, requestId: admitted.requestId,
+          asset: admitted.asset, network: admitted.network, amount: admitted.amount, direction: "debit",
+          reason: "withdrawal-reserve", providerReference: null, createdAt: admitted.createdAt,
         });
-        return normalizeCryptoIntent({...intent,status:"processing"});
+        return admitted;
+      });
+    },
+
+    async reserveWithdrawalWithFee(input) {
+      const fee = nonNegativeDecimal(input.networkFee);
+      if (fee === "0") return this.reserveWithdrawal(input.intent);
+      if (input.feePayer !== "user" && input.feePayer !== "platform") {
+        throw new Error("crypto.withdraw.fee_payer_invalid");
+      }
+      const intent = normalizeCryptoIntent({
+        ...input.intent,
+        providerNetworkFee: fee,
+        withdrawalFeePayer: input.feePayer,
+        status: "processing",
+      });
+      if (intent.operation !== "withdraw") throw new Error("crypto.withdraw.intent_required");
+
+      return withTransaction(pool, async (client) => {
+        await lockBalance(client, intent);
+        const existing = await readIntentWithClient(client, intent, true);
+        if (existing) {
+          if (!sameWithdrawalTerms(existing, intent)) {
+            throw new Error("crypto.withdraw.replay_conflict");
+          }
+          return existing;
+        }
+        const balance = await accountBalance(client, intent);
+        await assertSufficientBalance(
+          client,
+          balance,
+          intent.amount,
+          input.feePayer === "user" ? fee : "0",
+        );
+        const admitted = await insertIntentWithClient(client, intent);
+        await postLedger(client, {
+          tenantId: admitted.tenantId, userId: admitted.userId, requestId: admitted.requestId,
+          asset: admitted.asset, network: admitted.network, amount: admitted.amount, direction: "debit",
+          reason: "withdrawal-reserve", providerReference: null, createdAt: admitted.createdAt,
+        });
+        if (input.feePayer === "user") {
+          await postLedger(client, {
+            tenantId: admitted.tenantId, userId: admitted.userId, requestId: admitted.requestId,
+            asset: admitted.asset, network: admitted.network, amount: fee, direction: "debit",
+            reason: "withdrawal-fee-reserve", providerReference: null, createdAt: admitted.createdAt,
+          });
+        }
+        return admitted;
       });
     },
 
@@ -453,13 +599,34 @@ export function createPostgresCryptoRepository(pool: Pool): CryptoRepository {
         };
         const current = await readIntentWithClient(client, key, true);
         if (!current || current.operation !== "withdraw") throw new Error("crypto.withdraw.intent_unavailable");
-        if (current.status === "succeeded" || current.status === "failed") return current;
+        if (current.status === "succeeded" || current.status === "failed") {
+          if (
+            (current.status === "succeeded" && !input.succeeded) ||
+            (current.status === "failed" && input.succeeded)
+          ) {
+            throw new Error("crypto.withdraw.terminal_conflict");
+          }
+          return current;
+        }
         if (!input.succeeded) {
           await postLedger(client, {
-            tenantId:current.tenantId,userId:current.userId,requestId:current.requestId,
-            asset:current.asset,network:current.network,amount:current.amount,direction:"credit",
-            reason:"withdrawal-release",providerReference:input.providerReference,createdAt:input.updatedAt,
+            tenantId: current.tenantId, userId: current.userId, requestId: current.requestId,
+            asset: current.asset, network: current.network, amount: current.amount, direction: "credit",
+            reason: "withdrawal-release", providerReference: input.providerReference, createdAt: input.updatedAt,
           });
+          if (
+            current.withdrawalFeePayer === "user" &&
+            current.providerNetworkFee !== undefined &&
+            current.providerNetworkFee !== null &&
+            current.providerNetworkFee !== "0"
+          ) {
+            await postLedger(client, {
+              tenantId: current.tenantId, userId: current.userId, requestId: current.requestId,
+              asset: current.asset, network: current.network, amount: current.providerNetworkFee,
+              direction: "credit", reason: "withdrawal-fee-release",
+              providerReference: input.providerReference, createdAt: input.updatedAt,
+            });
+          }
         }
         return updateIntentWithClient(client, {
           ...current,
@@ -467,6 +634,162 @@ export function createPostgresCryptoRepository(pool: Pool): CryptoRepository {
           updatedAt: input.updatedAt,
         });
       });
+    },
+
+    async reserveConversion(input) {
+      const intent = normalizeCryptoIntent({ ...input, status: "processing" });
+      if (intent.operation !== "convert" || intent.targetAsset === null) {
+        throw new Error("crypto.convert.intent_required");
+      }
+      return withTransaction(pool, async (client) => {
+        await lockBalance(client, intent);
+        const existing = await readIntentWithClient(client, intent, true);
+        if (existing) {
+          if (!sameConversionTerms(existing, intent)) {
+            throw new Error("crypto.convert.replay_conflict");
+          }
+          return existing;
+        }
+        const balance = await accountBalance(client, intent);
+        await assertSufficientBalance(client, balance, intent.amount);
+        const admitted = await insertIntentWithClient(client, intent);
+        await postLedger(client, {
+          tenantId: admitted.tenantId, userId: admitted.userId, requestId: admitted.requestId,
+          asset: admitted.asset, network: admitted.network, amount: admitted.amount,
+          direction: "debit", reason: "conversion-debit", providerReference: null,
+          createdAt: admitted.createdAt,
+        });
+        return admitted;
+      });
+    },
+
+    async bindProviderConversion(input) {
+      return withTransaction(pool, async (client) => {
+        const key = {
+          tenantId: parseCanonicalId("tenant", input.tenantId),
+          userId: parseCanonicalId("user", input.userId),
+          requestId: parseCanonicalId("request", input.requestId),
+        };
+        const current = await readIntentWithClient(client, key, true);
+        if (!current || current.operation !== "convert") {
+          throw new Error("crypto.convert.intent_unavailable");
+        }
+        const providerConversionId = String(input.providerConversionId).trim();
+        if (!/^[A-Za-z0-9_-]{1,128}$/u.test(providerConversionId)) {
+          throw new Error("crypto.provider_conversion.invalid");
+        }
+        if (
+          current.providerConversionId &&
+          current.providerConversionId !== providerConversionId
+        ) {
+          throw new Error("crypto.provider_conversion.replay_conflict");
+        }
+        return updateIntentWithClient(client, {
+          ...current,
+          providerConversionId,
+          updatedAt: input.updatedAt,
+        });
+      });
+    },
+
+    async settleConversion(input) {
+      return withTransaction(pool, async (client) => {
+        const key = {
+          tenantId: parseCanonicalId("tenant", input.tenantId),
+          userId: parseCanonicalId("user", input.userId),
+          requestId: parseCanonicalId("request", input.requestId),
+        };
+        const current = await readIntentWithClient(client, key, true);
+        if (!current || current.operation !== "convert" || current.targetAsset === null) {
+          throw new Error("crypto.convert.intent_unavailable");
+        }
+
+        const boundProviderReference = current.providerConversionId ?? null;
+        if (boundProviderReference !== input.providerReference) {
+          throw new Error("crypto.provider_conversion.intent_mismatch");
+        }
+
+        if (input.succeeded) {
+          if (input.targetAmount === null) {
+            throw new Error("crypto.convert.target_amount_required");
+          }
+          if (boundProviderReference === null) {
+            throw new Error("crypto.provider_conversion.unbound");
+          }
+          const targetAmount = decimal(input.targetAmount);
+
+          if (current.status === "succeeded" || current.status === "failed") {
+            if (
+              current.status !== "succeeded" ||
+              (current.providerTargetAmount ?? null) !== targetAmount
+            ) {
+              throw new Error("crypto.convert.terminal_conflict");
+            }
+            return current;
+          }
+
+          await postLedger(client, {
+            tenantId: current.tenantId,
+            userId: current.userId,
+            requestId: current.requestId,
+            asset: current.targetAsset,
+            network: current.targetNetwork ?? null,
+            amount: targetAmount,
+            direction: "credit",
+            reason: "conversion-credit",
+            providerReference: input.providerReference,
+            createdAt: input.updatedAt,
+          });
+          return updateIntentWithClient(client, {
+            ...current,
+            providerTargetAmount: targetAmount,
+            status: "succeeded",
+            updatedAt: input.updatedAt,
+          });
+        }
+
+        if (input.targetAmount !== null) {
+          throw new Error("crypto.convert.target_amount_unexpected");
+        }
+        if (current.status === "succeeded" || current.status === "failed") {
+          if (current.status !== "failed") {
+            throw new Error("crypto.convert.terminal_conflict");
+          }
+          return current;
+        }
+
+        await postLedger(client, {
+          tenantId: current.tenantId,
+          userId: current.userId,
+          requestId: current.requestId,
+          asset: current.asset,
+          network: current.network,
+          amount: current.amount,
+          direction: "credit",
+          reason: "conversion-release",
+          providerReference: input.providerReference,
+          createdAt: input.updatedAt,
+        });
+        return updateIntentWithClient(client, {
+          ...current,
+          providerTargetAmount: null,
+          status: "failed",
+          updatedAt: input.updatedAt,
+        });
+      });
+    }
+
+    async readAggregateLiability(input) {
+      const normalized = {
+        tenantId: parseCanonicalId("tenant", input.tenantId),
+        asset: normalizeCryptoAsset(input.asset),
+        network: normalizeCryptoNetwork(input.network),
+      };
+      return withTransaction(
+        pool,
+        (client) => aggregateLiability(client, normalized),
+        { isolation: "repeatable read", readOnly: true },
+      );
     },
   });
 }

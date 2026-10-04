@@ -1,7 +1,18 @@
 export {
+  NowPaymentsCustodyClient,
+  type NowPaymentsCustodyBalance,
+  type NowPaymentsCustodyClientOptions,
+  type NowPaymentsConversionEvidence,
+  type NowPaymentsConversionStatus,
+} from "./custody.js";
+export {
   NowPaymentsPayoutClient,
   type NowPaymentsCreatedPayout,
+  type NowPaymentsPayoutAddressValidation,
   type NowPaymentsPayoutClientOptions,
+  type NowPaymentsPayoutFeeEstimate,
+  type NowPaymentsPayoutMinimum,
+  type NowPaymentsPayoutEvidence,
 } from "./payout.js";
 export {
   runReadOnlyNowPaymentsProbe,

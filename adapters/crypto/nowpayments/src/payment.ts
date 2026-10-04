@@ -15,8 +15,10 @@ export interface NowPaymentsCreatedPayment {
   readonly status: NowPaymentsPaymentStatus;
   readonly payAddress: string;
   readonly priceAmount: number;
+  readonly priceAmountExact: string;
   readonly priceCurrency: string;
   readonly payAmount: number;
+  readonly payAmountExact: string;
   readonly payCurrency: string;
   readonly orderId: string | null;
 }
@@ -34,15 +36,38 @@ function currency(value: unknown): string {
   return normalized;
 }
 
+function numberToPlainDecimal(value: number, code: string): string {
+  if (!Number.isFinite(value) || value <= 0) throw new Error(code);
+  const text = String(value);
+  if (!/[eE]/u.test(text)) return text;
+  const match = /^(\d+)(?:\.(\d+))?[eE]([+-]?\d+)$/u.exec(text);
+  if (!match) throw new Error(code);
+  const integer = match[1] ?? "";
+  const fraction = match[2] ?? "";
+  const exponent = Number(match[3]);
+  if (!Number.isSafeInteger(exponent)) throw new Error(code);
+  const digits = integer + fraction;
+  const decimalAt = integer.length + exponent;
+  if (decimalAt <= 0) return "0." + "0".repeat(-decimalAt) + digits;
+  if (decimalAt >= digits.length) return digits + "0".repeat(decimalAt - digits.length);
+  return digits.slice(0, decimalAt) + "." + digits.slice(decimalAt);
+}
+
+function positiveAmountExact(value: unknown, code: string): string {
+  const text =
+    typeof value === "string" ? value.trim() :
+    typeof value === "number" ? numberToPlainDecimal(value, code) : "";
+  if (!/^(?:0|[1-9]\d*)(?:\.\d{1,18})?$/u.test(text)) throw new Error(code);
+  const normalized = text.replace(/\.0+$/u, "").replace(/(\.\d*?[1-9])0+$/u, "$1");
+  if (normalized === "0") throw new Error(code);
+  return normalized;
+}
+
 function positiveAmount(value: unknown, code: string): number {
-  const amount =
-    typeof value === "number"
-      ? value
-      : typeof value === "string" && value.trim() !== ""
-        ? Number(value)
-        : Number.NaN;
-  if (!Number.isFinite(amount) || amount <= 0) throw new Error(code);
-  return amount;
+  const exact = positiveAmountExact(value, code);
+  const numeric = Number(exact);
+  if (!Number.isFinite(numeric) || numeric <= 0) throw new Error(code);
+  return numeric;
 }
 
 export function normalizeCreatePaymentInput(
@@ -110,14 +135,24 @@ export function parseCreatedPayment(body: unknown): NowPaymentsCreatedPayment {
       ? null
       : boundedString(orderValue, "nowpayments.payment.invalid_response", 128);
 
+  const priceAmountExact = positiveAmountExact(
+    record.price_amount,
+    "nowpayments.payment.invalid_response",
+  );
+  const payAmountExact = positiveAmountExact(
+    record.pay_amount,
+    "nowpayments.payment.invalid_response",
+  );
   return Object.freeze({
     paymentId,
     purchaseId,
     status: parsePaymentStatus(record.payment_status),
     payAddress: boundedString(record.pay_address, "nowpayments.payment.invalid_response", 512),
-    priceAmount: positiveAmount(record.price_amount, "nowpayments.payment.invalid_response"),
+    priceAmount: positiveAmount(priceAmountExact, "nowpayments.payment.invalid_response"),
+    priceAmountExact,
     priceCurrency: currency(record.price_currency),
-    payAmount: positiveAmount(record.pay_amount, "nowpayments.payment.invalid_response"),
+    payAmount: positiveAmount(payAmountExact, "nowpayments.payment.invalid_response"),
+    payAmountExact,
     payCurrency: currency(record.pay_currency),
     orderId,
   });
