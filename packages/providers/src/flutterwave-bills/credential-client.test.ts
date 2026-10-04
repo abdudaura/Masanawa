@@ -1,14 +1,17 @@
 import { describe, expect, it } from "vitest";
+import { createCanonicalId } from "@masanawa/contracts";
 import { CredentialSecret, type CredentialMaterialSource } from "@masanawa/security";
 import { CredentialResolvedFlutterwaveBillsClient } from "./credential-client.js";
 import type { FlutterwaveBillsTransport } from "./client.js";
 
-const scope = {
-  tenantId: "tenant_00000000000000000000000000" as never,
-  credentialRefId: "credential-ref_00000000000000000000000000" as never,
-  providerId: "provider_00000000000000000000000000" as never,
-  operationId: "operation_00000000000000000000000000" as never,
-};
+function scope() {
+  return {
+    tenantId: createCanonicalId("tenant"),
+    credentialRefId: createCanonicalId("credential-ref"),
+    providerId: createCanonicalId("provider"),
+    operationId: createCanonicalId("operation"),
+  };
+}
 
 describe("CredentialResolvedFlutterwaveBillsClient", () => {
   it("resolves the scoped secret at the adapter edge for every operation", async () => {
@@ -34,7 +37,7 @@ describe("CredentialResolvedFlutterwaveBillsClient", () => {
     };
     const client = new CredentialResolvedFlutterwaveBillsClient({
       source,
-      scope,
+      scope: scope(),
       transport,
     });
     await client.listCategories();
@@ -55,7 +58,7 @@ describe("CredentialResolvedFlutterwaveBillsClient", () => {
     let called = false;
     const client = new CredentialResolvedFlutterwaveBillsClient({
       source: { async resolve() { return null; } },
-      scope,
+      scope: scope(),
       transport: {
         async request() {
           called = true;
