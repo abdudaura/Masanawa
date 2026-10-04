@@ -26,8 +26,6 @@ not a second identity system. Masanawa owns the platform, product/service catalo
 pricing, execution standards, routing and settlement. See
 `docs/CREATOR-CLONE-ECONOMY.md`.
 
-The fundamental product unit is the **Character**.
-
 A Character is the durable identity of an AI being. It is not:
 - a prompt;
 - a model;
