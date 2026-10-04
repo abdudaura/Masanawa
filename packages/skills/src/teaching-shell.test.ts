@@ -324,3 +324,34 @@ describe("Teaching ShellAction resolution", () => {
     ).toThrow(/does not support actionable multi-select/);
   });
 });
+
+
+describe("Teaching ShellDocument parser-compatible bounds", () => {
+  it("rejects a generated lesson that would exceed the Flutter aggregate text budget", () => {
+    const ids = scope();
+    const huge = "x".repeat(4000);
+    const projection: TeachingRuntimeProjection = {
+      kind: "lesson-step",
+      ...ids,
+      continuationReason: "start",
+      sequenceCompleted: false,
+      step: {
+        stepKey: "oversized",
+        title: "Oversized lesson",
+        objective: "Test bounds.",
+        explanation: huge,
+        examples: Array.from({ length: 8 }, () => huge),
+        workedSolutions: Array.from({ length: 8 }, () => huge),
+        exercisePrompts: [],
+        resourceKeys: [],
+      },
+    };
+
+    expect(() =>
+      projectTeachingToShellDocument(projection, {
+        documentId: "teaching.oversized.lesson",
+        revision: 0,
+      }),
+    ).toThrow(/exceeds text budget/);
+  });
+});
