@@ -97,4 +97,48 @@ active draft, NOT public billing/APK ready until the extended implementation and
 environment/device acceptance are complete. Customer billing remains disabled during
 implementation and must not be enabled merely because mocks pass.
 
-Last update: 2026-10-04.
+
+## Recovery continuation — 2026-10-05
+
+Recovered the stopped billing window and verified PR #126 is still open/draft and mergeable
+at head `0b94dccc36882a299298536386fc1feae2761aef`. The implementation has advanced
+beyond the older PR body: dedicated NGN quote/funding custody, per-customer OTP/session auth,
+server-created Flutterwave Standard checkout and verification, refund custody, ShellDocument
+checkout projections and category-policy coverage are present on this branch.
+
+The mobile-shell dependencies referenced above are no longer open workstreams: PR #104 and
+PR #125 both merged into `main` on 2026-10-04. Do not edit `apps/mobile/**` from this branch;
+instead reconcile the billing branch with the newer integrated main before final acceptance.
+
+Railway production configuration was inspected without redeploying the worker. Existing
+Flutterwave relay/secret/webhook variables remain present. Safe missing runtime scaffolding was
+added with deployments skipped:
+- `FLUTTERWAVE_BILLS_ENABLED=false`
+- `FLUTTERWAVE_RELAY_PROTOCOL=dual-header`
+- generated private `MASANAWA_AUTH_OTP_PEPPER`
+- generated private `MASANAWA_BILLING_ACTION_SECRET`
+- `MASANAWA_PUBLIC_BASE_URL=https://nurainworker-production.up.railway.app`
+- `MASANAWA_AUTH_EMAIL_FROM=Masanawa <auth@masanawa.com>`
+
+Secrets were written directly to Railway and are not committed or documented in plaintext.
+Still absent / unresolved in production composition: `MASANAWA_PLATFORM_TENANT_ID`,
+`RESEND_API_KEY`, and an approved billing fee policy
+(`MASANAWA_BILLING_FEE_BPS` / `MASANAWA_BILLING_FEE_FIXED_KOBO`).
+
+CI evidence remains blocked by GitHub runner allocation: Foundation CI run 37242304098 on
+the current PR head produced a single `check` job with `steps=null` and no logs. This is
+not treated as a passing or code-failing run.
+
+Immediate continuation order:
+1. reconcile PR #126 with the newer merged `main` / mobile-shell integration without
+   overwriting mobile-owned files;
+2. resolve the canonical platform tenant id from the deployed database/bootstrap authority;
+3. provision Resend sending credentials into Railway without exposing them in source;
+4. run read-only Flutterwave NG/NGN catalog qualification through the fixed-IP relay and record
+   the categories/billers/items actually enabled for this merchant;
+5. run recipient-validation acceptance for non-airtime categories using non-secret real test
+   identifiers, then deploy with billing still disabled;
+6. enable billing only after checkout/refund/device acceptance is evidenced.
+
+
+Last update: 2026-10-05.
