@@ -191,6 +191,7 @@ export interface TeachingOpaqueSelection {
 export interface TeachingChannelSelectionBinding {
   readonly callbackToken: string;
   readonly actionKey: string;
+  readonly actionBindingHash: string;
   readonly optionKey: string;
   readonly expiresAt: Instant;
   readonly bindingHash: string;
@@ -231,6 +232,7 @@ export function createTeachingChannelSelectionBinding(input: {
   const payload = Object.freeze({
     callbackToken,
     actionKey: input.action.actionKey,
+    actionBindingHash: input.action.bindingHash,
     optionKey,
     expiresAt: input.action.expiresAt,
   });
@@ -330,11 +332,13 @@ export function createTeachingChannelSingleSelectProjection(input: {
 export function resolveTeachingChannelSelection(input: {
   readonly selectionId: string;
   readonly binding: TeachingChannelSelectionBinding;
+  readonly action: TeachingSelectionActionBinding;
   readonly now: Instant;
 }): TeachingOpaqueSelection {
   const expectedPayload = Object.freeze({
     callbackToken: input.binding.callbackToken,
     actionKey: input.binding.actionKey,
+    actionBindingHash: input.binding.actionBindingHash,
     optionKey: input.binding.optionKey,
     expiresAt: input.binding.expiresAt,
   });
@@ -350,6 +354,15 @@ export function resolveTeachingChannelSelection(input: {
   if (input.selectionId !== input.binding.callbackToken) {
     throw new TypeError(
       "Teaching channel selection id does not match binding",
+    );
+  }
+  if (
+    input.action.actionKey !== input.binding.actionKey ||
+    input.action.bindingHash !== input.binding.actionBindingHash ||
+    input.action.expiresAt !== input.binding.expiresAt
+  ) {
+    throw new TypeError(
+      "Teaching channel selection does not match the exact action binding",
     );
   }
   if (Date.parse(toInstant(input.now)) > Date.parse(input.binding.expiresAt)) {
