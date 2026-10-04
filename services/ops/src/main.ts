@@ -30,6 +30,7 @@ import {
   createPlatformAdminService,
   type PlatformAdminQuery,
 } from "./platform_admin.js";
+import { createSystemAdminService } from "./system_admin.js";
 import {
   createOpsApp,
   type OpsAppOptions,
@@ -150,6 +151,15 @@ export async function startOpsService(
         })
       : undefined);
 
+  const composedSystemAdmin =
+    options.appOptions?.systemAdmin ??
+    (options.agentAdminAuthorizer && database.platformAdminDatabase
+      ? createSystemAdminService({
+          database: database.platformAdminDatabase,
+          authorizer: options.agentAdminAuthorizer,
+        })
+      : undefined);
+
   const composedPlatformAdmin =
     options.appOptions?.platformAdmin ??
     (options.agentAdminAuthorizer && database.platformAdminDatabase
@@ -165,6 +175,7 @@ export async function startOpsService(
       ...(options.appOptions ?? {}),
       ...(composedAgentAdmin ? { agentAdmin: composedAgentAdmin } : {}),
       ...(composedPlatformAdmin ? { platformAdmin: composedPlatformAdmin } : {}),
+      ...(composedSystemAdmin ? { systemAdmin: composedSystemAdmin } : {}),
       readinessChecks: [
         ...(options.appOptions?.readinessChecks ?? []),
         database.readinessCheck,
