@@ -83,7 +83,14 @@ export function verifyFlutterwaveV3Webhook(input: Readonly<{
   }
 
   const payload = parsed as Record<string, unknown>;
-  const event = bounded(String(payload.event ?? "bill.updated"), "webhook event", 200);
+  const eventValue = payload.event ?? "bill.updated";
+  if (typeof eventValue !== "string") {
+    throw new FlutterwaveWebhookError(
+      "invalid_webhook",
+      "Flutterwave webhook event is invalid",
+    );
+  }
+  const event = bounded(eventValue, "webhook event", 200);
   const fingerprint = `sha256:${createHash("sha256").update(input.rawBody).digest("hex")}`;
 
   return Object.freeze({
