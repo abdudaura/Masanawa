@@ -11,6 +11,7 @@ import type {
   CharacterSkillAssignmentRepository,
 } from "@masanawa/agents";
 import { createAuthorityContext } from "@masanawa/security";
+import type { UserRelationshipReader } from "@masanawa/identity";
 import type {
   AgentConversationAdmission,
   AgentConversationAuthorizer,
@@ -35,6 +36,7 @@ export function createAlphaDevAuthorizer(input: {
   readonly config: AlphaDevAuthorizerConfig;
   readonly presentations: AgentPresentationRepository;
   readonly skillAssignments: CharacterSkillAssignmentRepository;
+  readonly relationships?: UserRelationshipReader;
 }): AgentConversationAuthorizer {
   const expectedToken = input.config.token.trim();
   if (expectedToken.length < 24) {
@@ -54,7 +56,14 @@ export function createAlphaDevAuthorizer(input: {
       }
 
       const characterId = parseCanonicalId("character", request.characterId);
-      const relationshipId = input.config.relationshipIds[characterId];
+      const dynamicRelationship = await input.relationships?.readForUserCharacter({
+        tenantId: input.config.tenantId,
+        userId: input.config.userId,
+        characterId,
+      });
+      const relationshipId =
+        dynamicRelationship?.relationshipId ??
+        input.config.relationshipIds[characterId];
       if (!relationshipId) {
         throw new Error("Character is not admitted to this Alpha user");
       }
@@ -161,6 +170,7 @@ export function createAlphaDirectoryAuthorizer(input: {
   readonly tenantId: TenantId;
   readonly userId: UserId;
   readonly relationshipIds: Readonly<Record<string, RelationshipId>>;
+  readonly relationships?: UserRelationshipReader;
 }): AgentDirectoryAuthorizer {
   const expectedToken = input.token.trim();
   if (expectedToken.length < 24) {
@@ -173,14 +183,23 @@ export function createAlphaDirectoryAuthorizer(input: {
       if (bearerToken(request.authorizationHeader) !== expectedToken) {
         throw new Error("Alpha development authorization denied");
       }
+      const dynamic =
+        (await input.relationships?.listForUser({
+          tenantId: input.tenantId,
+          userId: input.userId,
+        })) ?? [];
+      const characterIds = new Set<CharacterId>(
+        Object.keys(input.relationshipIds).map((id) =>
+          parseCanonicalId("character", id),
+        ),
+      );
+      for (const relationship of dynamic) {
+        characterIds.add(relationship.characterId);
+      }
       return Object.freeze({
         tenantId: input.tenantId,
         userId: input.userId,
-        characterIds: Object.freeze(
-          Object.keys(input.relationshipIds).map((id) =>
-            parseCanonicalId("character", id),
-          ),
-        ),
+        characterIds: Object.freeze([...characterIds]),
       });
     },
   });
