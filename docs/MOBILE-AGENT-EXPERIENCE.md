@@ -118,6 +118,16 @@ Text remains available, but the UI should not visually suggest that typing is th
 
 Agent voice output is a first-class message part and may be accompanied by a transcript rather than duplicating long text.
 
+## Channel parity and crypto balances
+
+App, WhatsApp and Telegram are required customer surfaces over the same relationship,
+authorized transaction state and receipts. Link accounts through verified proof; a phone
+number, username or display name alone never establishes cross-channel wallet authority.
+Render native buttons/lists where supported and numbered voice/text options otherwise.
+Customers may view provider-backed crypto balances, deposit/buy, convert and withdraw
+in chat. Show asset/network and available/pending/reserved amounts. Creator funding
+and earnings remain separate; no channel-specific wallet or execution brain.
+
 ## Selectable commerce interaction
 
 Follow `docs/DIGITAL-COMMERCE-LAUNCH.md`. Render authorized quick replies, product
