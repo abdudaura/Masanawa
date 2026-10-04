@@ -148,6 +148,20 @@ function setup(
     readIntent: vi.fn(async () => existing),
     readIntentByRequestId: vi.fn(async () => existing),
     applyProviderPaymentEvent: vi.fn(async () => ({ ...intent, status: "succeeded" as const })),
+    bindProviderPayment: vi.fn(async (value: {
+      readonly providerPaymentId: string;
+      readonly payAddress: string;
+      readonly providerPayAmount: string;
+    }) => {
+      currentIntent = {
+        ...currentIntent,
+        providerPaymentId: value.providerPaymentId,
+        payAddress: value.payAddress,
+        providerPayAmount: value.providerPayAmount,
+        status: "awaiting_payment",
+      };
+      return currentIntent;
+    }),
     reserveWithdrawal: vi.fn(async (value: CryptoIntent) => {
       currentIntent = value;
       return value;
@@ -236,6 +250,54 @@ function setup(
 }
 const authorizationHeader = "Bearer fixture-token";
 describe("financial service recovery and admission", () => {
+  it("binds a small created deposit using a plain exact provider amount", async () => {
+    const { service, crypto, fetch } = setup(
+      null, undefined, undefined, undefined, undefined, true,
+    );
+    fetch.mockImplementation(async (
+      request: Parameters<typeof globalThis.fetch>[0],
+      init?: Parameters<typeof globalThis.fetch>[1],
+    ) => {
+      const url = String(request);
+      if (url.endsWith("/currencies")) {
+        return new Response(JSON.stringify({ currencies: ["btc"] }));
+      }
+      if (url.includes("/min-amount?")) {
+        return new Response(JSON.stringify({
+          currency_from: "btc", currency_to: "btc", min_amount: "0.00000001",
+        }));
+      }
+      if (url.endsWith("/payment") && init?.method === "POST") {
+        return new Response(JSON.stringify({
+          payment_id: "small-payment",
+          payment_status: "waiting",
+          pay_address: "bc1fixture",
+          price_amount: 0.00000001,
+          price_currency: "btc",
+          pay_amount: 0.00000001,
+          pay_currency: "btc",
+          order_id: tenantId+"."+requestId,
+        }));
+      }
+      return new Response("{}");
+    });
+
+    await expect(service.createDeposit({
+      authorizationHeader,
+      requestId,
+      providerCode: "BTC",
+      amount: "0.00000001",
+    })).resolves.toMatchObject({
+      providerPaymentId: "small-payment",
+      providerPayAmount: "0.00000001",
+      amount: "0.00000001",
+    });
+    expect(crypto.bindProviderPayment).toHaveBeenCalledWith(expect.objectContaining({
+      providerPaymentId: "small-payment",
+      providerPayAmount: "0.00000001",
+    }));
+  });
+
   it("rejects signed callbacks with changed principal before posting a credit", async () => {
     const { service, crypto, payload } = setup();
     const changed = { ...payload, price_amount: "11" };
