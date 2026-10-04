@@ -16,6 +16,7 @@ import type {
   AgentConversationAuthorizer,
   AgentConversationService,
 } from "./agent_conversation_contract.js";
+import type { NativeAudioRenderer } from "./native_audio.js";
 
 function skillSelectionGate(selection: AgentSkillSelectionAdmission | undefined,
   custody: Pick<Parameters<AgentSkillSelectionAdmission["prepare"]>[0], "authority" | "session" | "run">) {
@@ -40,6 +41,7 @@ export function createAgentConversationService(input: {
   readonly strategy: AgentStrategy;
   readonly contextCompiler?: CharacterContextCompiler;
   readonly skillSelection?: AgentSkillSelectionAdmission;
+  readonly nativeAudio?: NativeAudioRenderer;
   readonly sessionDurationMs: number;
 }): AgentConversationService {
   if (
@@ -141,10 +143,20 @@ export function createAgentConversationService(input: {
           outcome: { state: "completed" },
         });
 
+        const audio = input.nativeAudio
+          ? await input.nativeAudio.render(reply).catch(() => undefined)
+          : undefined;
         return Object.freeze({
           reply,
           agentRunId,
           parts: result.parts,
+          ...(audio
+            ? {
+                audioBase64: audio.dataBase64,
+                audioMimeType: audio.mimeType,
+                audioDurationMs: audio.durationMs,
+              }
+            : {}),
         });
       } catch (error) {
         selectionGate.close();
@@ -242,10 +254,20 @@ export function createAgentConversationService(input: {
           outcome: { state: "completed" },
         });
 
+        const audio = input.nativeAudio
+          ? await input.nativeAudio.render(reply).catch(() => undefined)
+          : undefined;
         return Object.freeze({
           reply,
           agentRunId,
           parts: result.parts,
+          ...(audio
+            ? {
+                audioBase64: audio.dataBase64,
+                audioMimeType: audio.mimeType,
+                audioDurationMs: audio.durationMs,
+              }
+            : {}),
         });
       } catch (error) {
         selectionGate.close();
