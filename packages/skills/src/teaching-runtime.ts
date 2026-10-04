@@ -204,7 +204,7 @@ export function createTeachingChannelSelectionBinding(input: {
   const callbackToken = input.callbackToken.trim();
   if (
     callbackToken.length < 8 ||
-    Buffer.byteLength(callbackToken, "utf8") > 64 ||
+    callbackToken.length > 64 ||
     !/^[A-Za-z0-9_-]+$/u.test(callbackToken)
   ) {
     throw new TypeError("Teaching channel callback token is invalid");
