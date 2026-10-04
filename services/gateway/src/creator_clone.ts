@@ -20,7 +20,8 @@ export interface CreatorCloneAuthority {
 export type CreatorCapability =
   | "creator.clone.write"
   | "creator.economy.read"
-  | "creator.float.write";
+  | "creator.float.write"
+  | "creator.skills.write";
 
 export interface CreatorAuthorizer {
   authorize(input: {
