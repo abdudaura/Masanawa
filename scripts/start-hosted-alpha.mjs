@@ -108,6 +108,22 @@ async function start() {
     console.info(`Hosted Alpha credential metadata checks: ${JSON.stringify(results)}`);
   }
   await startGatewayService();
+  if (process.argv.includes("--verify-live-audio")) {
+    try {
+      const { createGeminiLiveAudioRenderer } = await import("../services/gateway/dist/native_audio.js");
+      const keys = JSON.parse(process.env.MASANAWA_ALPHA_GEMINI_API_KEYS_JSON ?? JSON.stringify([process.env.MASANAWA_ALPHA_GEMINI_API_KEY]));
+      const renderer = createGeminiLiveAudioRenderer({
+        apiKey: keys[0],
+        model: process.env.MASANAWA_ALPHA_GEMINI_LIVE_MODEL ?? "gemini-3.8-live",
+        voiceName: process.env.MASANAWA_ALPHA_GEMINI_LIVE_VOICE ?? "Kore",
+        timeoutMs: 20000,
+      });
+      const result = await renderer.render("Hello. This is a Masanawa native audio verification.");
+      console.info(`Hosted Alpha Live audio verification: ${JSON.stringify({ passed: true, mimeType: result.mimeType, durationMs: result.durationMs, byteLength: Buffer.from(result.dataBase64, "base64").length })}`);
+    } catch (error) {
+      console.error(`Hosted Alpha Live audio verification failed: ${error instanceof Error ? error.message : "unknown"}`);
+    }
+  }
   if (process.argv.includes('--verify')) {
     try {
       const { verifyHostedAlpha } = await import('./verify-hosted-alpha.mjs');
