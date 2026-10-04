@@ -241,6 +241,19 @@ describe("financial service recovery and admission", () => {
     await expect(service.handleNowPaymentsIpn({ payload: changed, signature })).rejects.toThrow("financial.crypto.evidence_mismatch");
     expect(crypto.applyProviderPaymentEvent).not.toHaveBeenCalled();
   });
+  it("rejects a signed child payment even when it names the stored payment as parent", async () => {
+    const { service, crypto, payload } = setup();
+    const child = {
+      ...payload,
+      payment_id: "child-payment",
+      parent_payment_id: "123",
+    };
+    const signature = createHmac("sha512", "fixture-ipn")
+      .update(canonicalizeIpnPayload(child)).digest("hex");
+    await expect(service.handleNowPaymentsIpn({ payload: child, signature }))
+      .rejects.toThrow("financial.crypto.evidence_mismatch");
+    expect(crypto.applyProviderPaymentEvent).not.toHaveBeenCalled();
+  });
   it("preserves exact paid amounts from signed callback strings", async () => {
     const { service, crypto, payload } = setup();
     const changed = { ...payload, actually_paid: "10.000000000000000001" };
