@@ -3,7 +3,10 @@ import {
   createCanonicalId,
 } from "@masanawa/contracts";
 import type { TeachingRuntimeProjection } from "./teaching-runtime.js";
-import { projectTeachingToShellDocument } from "./teaching-shell.js";
+import {
+  projectTeachingToShellDocument,
+  resolveTeachingShellAction,
+} from "./teaching-shell.js";
 
 function scope() {
   return {
@@ -248,5 +251,76 @@ describe("Teaching ShellDocument action expiry binding", () => {
         expiresAt: "2100-01-01T00:00:00.000Z",
       }),
     ).toThrow(/must match the bound action expiry/);
+  });
+});
+
+
+describe("Teaching ShellAction resolution", () => {
+  it("maps one authenticated shell button selection to an opaque Teaching selection", () => {
+    const selection = resolveTeachingShellAction({
+      documentId: "teaching.fractions.exercise.1",
+      revision: 1,
+      nodeId: "six",
+      actionId: "teaching.select",
+      token: "teach.action.fractions.1",
+      values: {},
+    });
+
+    expect(selection).toEqual({
+      actionKey: "teach.action.fractions.1",
+      selectedOptionKeys: ["six"],
+    });
+  });
+
+  it("rejects non-Teaching actions and injected form values", () => {
+    expect(() =>
+      resolveTeachingShellAction({
+        documentId: "teaching.fractions.exercise.1",
+        revision: 1,
+        nodeId: "six",
+        actionId: "commerce.confirm",
+        token: "teach.action.fractions.1",
+        values: {},
+      }),
+    ).toThrow(/action id is invalid/);
+
+    expect(() =>
+      resolveTeachingShellAction({
+        documentId: "teaching.fractions.exercise.1",
+        revision: 1,
+        nodeId: "six",
+        actionId: "teaching.select",
+        token: "teach.action.fractions.1",
+        values: { relationshipId: "forged" },
+      }),
+    ).toThrow(/must not carry form values/);
+  });
+
+  it("fails closed for actionable multi-select because ShellDocument v1 has no multi-select control", () => {
+    const ids = scope();
+    const projection: TeachingRuntimeProjection = {
+      kind: "exercise",
+      ...ids,
+      actionKey: "teach.action.fractions.multi",
+      actionExpiresAt: "2099-01-01T00:00:00.000Z",
+      card: {
+        ...ids,
+        lessonStepKey: "fractions",
+        exerciseKey: "choose-equivalent",
+        prompt: "Choose all equivalent fractions.",
+        kind: "multi-select",
+        options: [
+          { optionKey: "two-fourths", label: "2/4" },
+          { optionKey: "three-sixths", label: "3/6" },
+        ],
+      },
+    };
+
+    expect(() =>
+      projectTeachingToShellDocument(projection, {
+        documentId: "teaching.fractions.multi",
+        revision: 0,
+      }),
+    ).toThrow(/does not support actionable multi-select/);
   });
 });
