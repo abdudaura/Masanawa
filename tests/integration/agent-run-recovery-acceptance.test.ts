@@ -321,4 +321,130 @@ describePostgres("AgentRun restart and replay acceptance", () => {
       }),
     ).resolves.toEqual(completed);
   });
+
+  it("keeps a persisted RequestId bound to one AgentRun after restart", async () => {
+    const f = await fixture();
+    const requestId = createCanonicalId("request");
+    const correlationId = createCanonicalId("correlation");
+    const firstAgentRunId = createCanonicalId("agent-run");
+    const firstInput = {
+      authority: f.authority,
+      scope: f.scope,
+      agentRunId: firstAgentRunId,
+      characterSessionId: f.characterSessionId,
+      characterVersionId: f.characterVersionId,
+      lineage: {
+        parentAgentRunId: null,
+        rootAgentRunId: firstAgentRunId,
+        depth: 0,
+      },
+      trace: {
+        requestId,
+        correlationId,
+        taskId: null,
+        workflowRunId: null,
+        operationIds: [],
+      },
+    } as const;
+
+    const repository = createPostgresAgentRunRepository(pool);
+    const first = await repository.create(firstInput);
+
+    await reconnect("request-id-rebind");
+    const restartedRepository = createPostgresAgentRunRepository(pool);
+    const secondAgentRunId = createCanonicalId("agent-run");
+
+    await expect(
+      restartedRepository.create({
+        ...firstInput,
+        agentRunId: secondAgentRunId,
+        lineage: {
+          parentAgentRunId: null,
+          rootAgentRunId: secondAgentRunId,
+          depth: 0,
+        },
+      }),
+    ).rejects.toMatchObject({
+      code: "agents.run_conflict",
+      category: "conflict",
+      retryable: false,
+    });
+
+    await expect(
+      restartedRepository.read({
+        authority: f.authority,
+        scope: f.scope,
+        agentRunId: firstAgentRunId,
+      }),
+    ).resolves.toEqual(first);
+  });
+
+  it("replays the exact failed terminal outcome but rejects a changed failure after restart", async () => {
+    const f = await fixture();
+    const agentRunId = createCanonicalId("agent-run");
+    const repository = createPostgresAgentRunRepository(pool);
+    await repository.create({
+      authority: f.authority,
+      scope: f.scope,
+      agentRunId,
+      characterSessionId: f.characterSessionId,
+      characterVersionId: f.characterVersionId,
+      lineage: {
+        parentAgentRunId: null,
+        rootAgentRunId: agentRunId,
+        depth: 0,
+      },
+      trace: {
+        requestId: createCanonicalId("request"),
+        correlationId: createCanonicalId("correlation"),
+        taskId: null,
+        workflowRunId: null,
+        operationIds: [],
+      },
+    });
+
+    const failed = await repository.finish({
+      authority: f.authority,
+      scope: f.scope,
+      agentRunId,
+      outcome: {
+        state: "failed",
+        failureCode: "provider.timeout",
+      },
+    });
+    expect(failed.state).toBe("failed");
+    expect(failed.failureCode).toBe("provider.timeout");
+
+    await reconnect("failed-terminal-replay");
+    const restartedRepository = createPostgresAgentRunRepository(pool);
+
+    await expect(
+      restartedRepository.finish({
+        authority: f.authority,
+        scope: f.scope,
+        agentRunId,
+        outcome: {
+          state: "failed",
+          failureCode: "provider.timeout",
+        },
+      }),
+    ).resolves.toEqual(failed);
+
+    await expect(
+      restartedRepository.finish({
+        authority: f.authority,
+        scope: f.scope,
+        agentRunId,
+        outcome: {
+          state: "failed",
+          failureCode: "provider.rate_limit",
+        },
+      }),
+    ).rejects.toMatchObject({
+      code: "agents.run_conflict",
+      category: "conflict",
+      retryable: false,
+    });
+  });
+
 });
