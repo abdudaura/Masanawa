@@ -217,7 +217,7 @@ export function createAlphaCreatorAuthorizer(input: {
   if (expectedToken.length < 24) {
     throw new TypeError("Alpha development token must be at least 24 characters");
   }
-  return Object.freeze({
+  return Object.freeze<CreatorCloneAuthorizer>({
     async authorize(request) {
       if (bearerToken(request.authorizationHeader) !== expectedToken) {
         throw new Error("Alpha development authorization denied");
@@ -240,7 +240,7 @@ export function createAlphaCommerceAuthorizer(input: {
   if (expectedToken.length < 24) {
     throw new TypeError("Alpha development token must be at least 24 characters");
   }
-  return Object.freeze({
+  return Object.freeze<CommerceUserAuthorizer>({
     async authorize(request) {
       if (bearerToken(request.authorizationHeader) !== expectedToken) {
         throw new Error("Alpha development authorization denied");

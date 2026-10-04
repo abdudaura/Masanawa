@@ -25,7 +25,7 @@ function fromDefinition(value: unknown): SkillDistributionProfile {
 export function createPostgresSkillDistributionRepository(
   pool: Pool,
 ): SkillDistributionRepository {
-  return Object.freeze({
+  return Object.freeze<SkillDistributionRepository>({
     async put(input) {
       const profile = normalizeSkillDistributionProfile(input);
       return withTransaction(pool, async (client) => {

@@ -321,7 +321,7 @@ export function createPostgresCharacterSkillAssignmentRepository(
 export function createPostgresPlatformAgentProfileRepository(
   pool: Pool,
 ): PlatformAgentProfileRepository {
-  return Object.freeze({
+  return Object.freeze<PlatformAgentProfileRepository>({
     async readForCharacter(input) {
       return withTransaction(pool, async (client) => {
         const result = await client.query<PlatformProfileRow>(
@@ -391,7 +391,7 @@ export function createPostgresPlatformAgentProfileRepository(
 export function createPostgresUserAgentPreferenceRepository(
   pool: Pool,
 ): UserAgentPreferenceRepository {
-  return Object.freeze({
+  return Object.freeze<UserAgentPreferenceRepository>({
     async readForUser(input) {
       return withTransaction(pool, async (client) => {
         const result = await client.query<UserPreferenceRow>(

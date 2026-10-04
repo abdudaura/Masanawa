@@ -10,7 +10,7 @@ import {
 export function createPostgresPersonalCloneProvisioningRepository(
   pool: Pool,
 ): PersonalCloneProvisioningRepository {
-  return Object.freeze({
+  return Object.freeze<PersonalCloneProvisioningRepository>({
     async readPersonalClone(input) {
       return withTransaction(
         pool,

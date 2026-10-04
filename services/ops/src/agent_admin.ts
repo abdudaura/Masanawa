@@ -75,7 +75,7 @@ export function createAgentAdminService(input: {
   readonly skills: SkillRepository;
   readonly authorizer: AgentAdminAuthorizer;
 }): AgentAdminService {
-  return Object.freeze({
+  return Object.freeze<AgentAdminService>({
     async listPresentations(request) {
       const authority = await input.authorizer.authorize({
         authorizationHeader: request.authorizationHeader,
@@ -89,13 +89,6 @@ export function createAgentAdminService(input: {
         authorizationHeader: request.authorizationHeader,
         capability: "skills.catalog.read",
       });
-      const presentation = await input.presentations.readForCharacter({
-        tenantId: authority.tenantId,
-        characterId: request.assignment.characterId,
-      });
-      if (presentation === null) {
-        throw new TypeError("Character must be configured before Skills can be assigned");
-      }
       const snapshot = await input.skills.readSnapshot();
       const readiness = new Map(
         snapshot.readiness.map((record) => [
@@ -154,6 +147,13 @@ export function createAgentAdminService(input: {
         authorizationHeader: request.authorizationHeader,
         capability: "agents.skills.write",
       });
+      const presentation = await input.presentations.readForCharacter({
+        tenantId: authority.tenantId,
+        characterId: request.assignment.characterId,
+      });
+      if (presentation === null) {
+        throw new TypeError("Character must be configured before Skills can be assigned");
+      }
       const snapshot = await input.skills.readSnapshot();
       const available = new Set(
         snapshot.versions.map((version) => version.skillVersionId),

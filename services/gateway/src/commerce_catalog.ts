@@ -79,7 +79,7 @@ export function createCommerceCatalogService(input: {
     });
   }
 
-  return Object.freeze({
+  return Object.freeze<CommerceCatalogService>({
     async list(request) {
       const authority = await input.authorizer.authorize({
         authorizationHeader: request.authorizationHeader,

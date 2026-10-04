@@ -47,7 +47,7 @@ function fromRow(row: RelationshipRow): UserCharacterRelationship {
 export function createPostgresUserRelationshipReader(
   pool: Pool,
 ): UserRelationshipReader {
-  return Object.freeze({
+  return Object.freeze<UserRelationshipReader>({
     async readForUserCharacter(input) {
       return withTransaction(
         pool,

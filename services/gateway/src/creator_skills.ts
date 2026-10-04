@@ -110,7 +110,7 @@ export function createCreatorSkillService(input: {
     );
   }
 
-  return Object.freeze({
+  return Object.freeze<CreatorSkillService>({
     async list(request) {
       const { authority, clone } = await context(
         request.authorizationHeader,

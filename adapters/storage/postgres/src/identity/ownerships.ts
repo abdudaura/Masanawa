@@ -27,7 +27,7 @@ function fromRow(row: OwnershipRow): CharacterOwnership {
 export function createPostgresCharacterOwnershipReader(
   pool: Pool,
 ): CharacterOwnershipReader {
-  return Object.freeze({
+  return Object.freeze<CharacterOwnershipReader>({
     async readForCharacter(input) {
       return withTransaction(
         pool,

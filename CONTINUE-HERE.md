@@ -1,5 +1,51 @@
 # Continue Here
 
+## Monetisation and Skills continuation — 2026-10-04
+
+Recovered from main after the fulfillment-completion persistence checkpoint.
+Preserve the digital-commerce launch direction below; Business Plan remains alpha
+scaffolding rather than an approved launch paid product.
+
+Implemented:
+- canonical settlement is derived inside Commerce from the persisted quote and
+  admission; completeFulfillment accepts receipt evidence only, never caller-defined
+  settlement transfers;
+- admission requires exactly the customer payment and applicable creator Float
+  reservation, with validated amounts, accounts, creator/origin, quote and fulfillment
+  linkage; omitted, duplicated or redirected payment batches fail before writing;
+- completion restores creator-funded reserved Float to its original Float account,
+  posts the agreed commission to pending earnings, and posts the agreed platform margin;
+  fallback preserves originating creator attribution and does not reimburse unreserved Float;
+- zero-value reserve/commission movements are omitted;
+- receipts and settlement remain atomic and duplicate success replays cannot pay twice;
+- creator/support/SkillGuide service factories preserve strict port contextual typing;
+- Ops catalog listing no longer references an undefined authority/assignment. The
+  configured-Character check belongs to Skill assignment. Ops HTTP projections copy
+  readonly domain arrays into transport arrays without changing domain immutability.
+
+Verification:
+- all TypeScript workspace typechecks pass;
+- Gateway and Ops dependency builds pass;
+- package/service/adapter regressions and package/adapter architecture checks:
+  266 passed, 57 skipped (the default PostgreSQL-backed cases require a test DB);
+- seven new persistence acceptance cases passed in a local PostgreSQL 18.3 PGlite
+  SQL-engine harness, including duplicate replay, insufficient-Float rollback,
+  injected mid-settlement rollback, fallback economics and immutable history.
+  PGlite serializes connections: this is not separate-session PostgreSQL concurrency
+  qualification. The checked-in tests use pg + MASANAWA_TEST_DATABASE_URL for that gate.
+
+Still required:
+- explicit per-job reserve custody and actual-cost/unused-reserve accounting;
+- durable paid-work dispatch, verified delivery-to-receipt binding, failure/cancel/
+  refund/uncertain-outcome recovery and current executor capacity/authority;
+- persistent financial-command request identities, including Float allocation;
+- production SkillGuide/resource rehearsals; development bootstrap fixtures are not
+  production certification;
+- launch data/crypto provider qualification, selectable chat purchase state, and
+  physical APK/chat/Gemini Live verification.
+This slice does not close Tasks 072, 133 or 134 or claim live purchases/provider deployment.
+
+
 ## Digital commerce direction — 2026-10-04
 
 Read `docs/DIGITAL-COMMERCE-LAUNCH.md` before selecting further product work.

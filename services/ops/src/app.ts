@@ -176,10 +176,11 @@ export function createOpsApp(options: OpsAppOptions = {}) {
           response: { 200: Type.Array(AgentPresentationSchema) },
         },
       },
-      async (request) =>
-        agentAdmin.listPresentations({
+      async (request) => [
+        ...await agentAdmin.listPresentations({
           authorizationHeader: request.headers.authorization,
         }),
+      ],
     );
 
     app.put(
@@ -226,10 +227,11 @@ export function createOpsApp(options: OpsAppOptions = {}) {
           response: { 200: Type.Array(AgentAdminSkillOptionSchema) },
         },
       },
-      async (request) =>
-        agentAdmin.listSkills({
+      async (request) => [
+        ...await agentAdmin.listSkills({
           authorizationHeader: request.headers.authorization,
         }),
+      ],
     );
 
     app.get(
@@ -242,14 +244,16 @@ export function createOpsApp(options: OpsAppOptions = {}) {
           },
         },
       },
-      async (request) =>
-        agentAdmin.readSkillAssignment({
+      async (request) => {
+        const assignment = await agentAdmin.readSkillAssignment({
           authorizationHeader: request.headers.authorization,
           characterId: parseCanonicalId(
             "character",
             request.params.characterId,
           ),
-        }),
+        });
+        return assignment ? { ...assignment, skillVersionIds: [...assignment.skillVersionIds] } : null;
+      },
     );
 
     app.put(
@@ -263,7 +267,7 @@ export function createOpsApp(options: OpsAppOptions = {}) {
       },
       async (request) => {
         const body = request.body;
-        return agentAdmin.putSkillAssignment({
+        const assignment = await agentAdmin.putSkillAssignment({
           authorizationHeader: request.headers.authorization,
           expectedRevision: body.expectedRevision,
           assignment: {
@@ -278,6 +282,7 @@ export function createOpsApp(options: OpsAppOptions = {}) {
             revision: body.expectedRevision ?? 1,
           },
         });
+        return { ...assignment, skillVersionIds: [...assignment.skillVersionIds] };
       },
     );
   }

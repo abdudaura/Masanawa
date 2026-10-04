@@ -24,7 +24,7 @@ function fromDefinition(value: unknown): SkillGuide {
 export function createPostgresSkillGuideRepository(
   pool: Pool,
 ): SkillGuideRepository {
-  return Object.freeze({
+  return Object.freeze<SkillGuideRepository>({
     async putGuide(input) {
       const guide = normalizeSkillGuide(input);
       return withTransaction(pool, async (client) => {

@@ -92,7 +92,7 @@ export function createCreatorEconomyService(input: {
     });
   }
 
-  return Object.freeze({
+  return Object.freeze<CreatorEconomyService>({
     async read(request) {
       return (await snapshot(
         request.authorizationHeader,

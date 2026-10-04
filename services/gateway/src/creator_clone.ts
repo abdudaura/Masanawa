@@ -75,7 +75,7 @@ export function createCreatorCloneService(input: {
   readonly presentations: AgentPresentationRepository;
   readonly skillAssignments: CharacterSkillAssignmentRepository;
 }): CreatorCloneService {
-  return Object.freeze({
+  return Object.freeze<CreatorCloneService>({
     async create(request) {
       const authority = await input.authorizer.authorize({
         authorizationHeader: request.authorizationHeader,

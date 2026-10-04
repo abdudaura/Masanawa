@@ -35,7 +35,7 @@ export function createCommerceFulfillmentService(input: {
   readonly platformProfiles: PlatformAgentProfileRepository;
   readonly skills: SkillRepository;
 }): CommerceFulfillmentService {
-  return Object.freeze({
+  return Object.freeze<CommerceFulfillmentService>({
     async admit(request) {
       const authority = await input.authorizer.authorize({
         authorizationHeader: request.authorizationHeader,
@@ -195,7 +195,8 @@ export function createCommerceFulfillmentService(input: {
           fulfillmentId,
           createdAt,
         },
-        ...(fundingSource === "agent-float" && quote.creatorUserId !== null
+        ...(fundingSource === "agent-float" && quote.creatorUserId !== null &&
+          quote.fulfillmentReserveCredits > 0
           ? [
               {
                 schemaVersion: 1 as const,

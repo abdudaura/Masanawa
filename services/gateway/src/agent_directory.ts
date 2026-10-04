@@ -60,7 +60,7 @@ export function createAgentDirectoryService(input: {
   readonly platformProfiles?: PlatformAgentProfileRepository;
   readonly userPreferences?: UserAgentPreferenceRepository;
 }): AgentDirectoryService {
-  return Object.freeze({
+  return Object.freeze<AgentDirectoryService>({
     async list(
       request: Parameters<AgentDirectoryService["list"]>[0],
     ) {

@@ -46,7 +46,6 @@ export interface CommerceRepository {
   }): Promise<CommerceFulfillmentAdmission | null>;
   completeFulfillment(input: {
     readonly completion: CommerceFulfillmentCompletion;
-    readonly transfers: readonly CommerceLedgerTransfer[];
   }): Promise<CommerceFulfillmentCompletion>;
   readFulfillmentCompletion(input: {
     readonly tenantId: TenantId;

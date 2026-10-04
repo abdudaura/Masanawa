@@ -1,4 +1,6 @@
 import {
+  assertFulfillmentAdmissionTransfers,
+  planFulfillmentSettlement,
   normalizeCommerceAccountRef,
   normalizeCommerceFulfillmentAdmission,
   normalizeCommerceFulfillmentCompletion,
@@ -141,7 +143,7 @@ async function postTransferWithClient(
 }
 
 export function createPostgresCommerceRepository(pool: Pool): CommerceRepository {
-  return Object.freeze({
+  return Object.freeze<CommerceRepository>({
     async registerOfferRevision(input) {
       const offer = normalizeOfferRevision(input);
       return withTransaction(pool, async (client) => {
@@ -316,6 +318,19 @@ export function createPostgresCommerceRepository(pool: Pool): CommerceRepository
           return fulfillmentFromDefinition(existing.rows[0].definition);
         }
 
+        const quoted = await client.query<{ definition: CommerceQuote }>(
+          "SELECT definition FROM commerce.quotes WHERE tenant_id=$1 AND quote_id=$2 FOR SHARE",
+          [admission.tenantId, admission.quoteId],
+        );
+        if (!quoted.rows[0]) {
+          throw conflict("commerce.quote_unavailable", "Fulfillment quote is unavailable");
+        }
+        const quote = quoteFromDefinition(quoted.rows[0].definition);
+        if (Date.parse(quote.expiresAt) <= Date.now()) {
+          throw conflict("commerce.quote_expired", "Fulfillment quote has expired");
+        }
+        assertFulfillmentAdmissionTransfers({ quote, admission, transfers });
+
         const inserted = await client.query<{ definition: CommerceFulfillmentAdmission }>(
           `INSERT INTO commerce.fulfillments(
              tenant_id, fulfillment_id, quote_id, definition, created_at
@@ -384,7 +399,6 @@ export function createPostgresCommerceRepository(pool: Pool): CommerceRepository
       const completion = normalizeCommerceFulfillmentCompletion(
         input.completion,
       );
-      const transfers = input.transfers.map(normalizeCommerceLedgerTransfer);
       return withTransaction(pool, async (client) => {
         await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
           `commerce:fulfillment-completion:${completion.tenantId}:${completion.fulfillmentId}`,
@@ -415,6 +429,18 @@ export function createPostgresCommerceRepository(pool: Pool): CommerceRepository
             "Fulfillment must be admitted before completion",
           );
         }
+
+        const admission = fulfillmentFromDefinition(admitted.rows[0].definition);
+        const quoted = await client.query<{ definition: CommerceQuote }>(
+          "SELECT definition FROM commerce.quotes WHERE tenant_id=$1 AND quote_id=$2 FOR SHARE",
+          [admission.tenantId, admission.quoteId],
+        );
+        if (!quoted.rows[0]) {
+          throw conflict("commerce.quote_unavailable", "Fulfillment quote is unavailable");
+        }
+        const transfers = planFulfillmentSettlement({
+          quote: quoteFromDefinition(quoted.rows[0].definition), admission, completion,
+        });
 
         const inserted = await client.query<{ definition: CommerceFulfillmentCompletion }>(
           `INSERT INTO commerce.fulfillment_completions(
