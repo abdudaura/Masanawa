@@ -57,17 +57,9 @@ class EncryptedShellActionJournal implements ShellActionJournal {
     }
     final prefix =
         'masanawa.shell.actions.v1:${_ownerSegment(cleanOwner)}:';
-    final legacyPrefix = cleanOwner.contains(':')
-        ? null
-        : 'masanawa.shell.actions.v1:$cleanOwner:';
     final all = await store.readAll();
-    final keys = all.keys
-        .where(
-          (key) =>
-              key.startsWith(prefix) ||
-              (legacyPrefix != null && key.startsWith(legacyPrefix)),
-        )
-        .toList(growable: false);
+    final keys =
+        all.keys.where((key) => key.startsWith(prefix)).toList(growable: false);
     for (final key in keys) {
       final previous = _locks[key] ?? Future<void>.value();
       final gate = Completer<void>();
