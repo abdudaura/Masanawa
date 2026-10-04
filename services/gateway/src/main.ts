@@ -28,11 +28,9 @@ import {
   createPostgresCharacterSkillAssignmentRepository,
   createPostgresCryptoRepository,
   createPostgresServiceDependency,
-  createPostgresFinancialOperationsRepository,
   createPostgresBillingFulfillmentStore,
-  type FinancialOperationsRepository,
+  createPostgresProviderWebhookRepository,
 } from "@masanawa/postgres";
-import { NowPaymentsClient } from "@masanawa/nowpayments";
 import {
   createAgentDirectoryService,
   type AgentDirectoryAuthorizer,
@@ -60,11 +58,6 @@ import {
   type GatewayAppOptions,
   type ReadinessCheck,
 } from "./app.js";
-import {
-  createCryptoFinancialService,
-  createStaticFinancialAuthorizer,
-  type FinancialAuthorizer,
-} from "./financial_crypto.js";
 import { createBillingFinancialService } from "./financial_billing.js";
 
 export type ServiceSignal = "SIGINT" | "SIGTERM";
