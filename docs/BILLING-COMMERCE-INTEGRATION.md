@@ -22,7 +22,8 @@ windows own authenticated transport and UI binding.
 3. Commerce admits one fulfillment and persists one immutable fulfillment reference.
 4. Billing validates the recipient against the exact provider item and biller for bill types that require validation. Flutterwave documents airtime and mobile-data bills as not requiring this validation step; those flows still bind the exact catalog item, phone recipient and provider amount.
 5. The integration persists the validated provider terms under that same fulfillment
-   reference.
+   reference. The NGN dispatch amount is compared exactly, as a decimal value, with the
+   selected live catalog item's provider amount before the record can become ready.
 6. Dispatch first moves the record to `dispatching`; only then may the provider POST run.
 7. A successful provider result is accepted only when reference, NGN amount and recipient
    match the confirmed record.
