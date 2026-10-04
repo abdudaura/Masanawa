@@ -262,6 +262,39 @@ function fallbackFor(projection: TeachingRuntimeProjection): string {
   }
 }
 
+function assertShellDocumentBounds(document: TeachingShellDocumentV1): void {
+  let remainingNodes = 100;
+  let textBudget = 24_000 - document.fallback.length;
+
+  function consume(value: string | undefined): void {
+    if (value === undefined) return;
+    textBudget -= value.length;
+    if (textBudget < 0) {
+      throw new RangeError("Teaching shell document exceeds text budget");
+    }
+  }
+
+  function visit(node: TeachingShellNode, depth: number): void {
+    remainingNodes -= 1;
+    if (remainingNodes < 0 || depth > 6) {
+      throw new RangeError("Teaching shell document exceeds node/depth limits");
+    }
+    consume(node.id);
+    consume(node.text);
+    consume(node.value);
+    consume(node.subtitle);
+    consume(node.action);
+    consume(node.token);
+    for (const child of node.children ?? []) {
+      visit(child, depth + 1);
+    }
+  }
+
+  for (const node of document.nodes) {
+    visit(node, 0);
+  }
+}
+
 export function projectTeachingToShellDocument(
   projection: TeachingRuntimeProjection,
   optionsInput: TeachingShellProjectionOptions,
@@ -304,7 +337,7 @@ export function projectTeachingToShellDocument(
     expiresAt = projection.actionExpiresAt;
   }
 
-  return Object.freeze({
+  const document = Object.freeze({
     version: 1 as const,
     id: options.documentId,
     revision: options.revision,
@@ -312,6 +345,8 @@ export function projectTeachingToShellDocument(
     ...(expiresAt === undefined ? {} : { expiresAt }),
     nodes,
   });
+  assertShellDocumentBounds(document);
+  return document;
 }
 
 
