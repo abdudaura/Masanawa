@@ -5,7 +5,11 @@ export interface NativeAudioResult {
 }
 
 export interface NativeAudioRenderer {
-  render(text: string, signal?: AbortSignal): Promise<NativeAudioResult>;
+  render(
+    text: string,
+    signal?: AbortSignal,
+    onPcmChunk?: (chunk: Buffer) => void | Promise<void>,
+  ): Promise<NativeAudioResult>;
 }
 
 interface LiveMessage {
@@ -54,7 +58,11 @@ export function createGeminiLiveAudioRenderer(input: {
   if (!apiKey) throw new TypeError("Gemini Live API key is required");
 
   return Object.freeze({
-    async render(text: string, signal?: AbortSignal) {
+    async render(
+      text: string,
+      signal?: AbortSignal,
+      onPcmChunk?: (chunk: Buffer) => void | Promise<void>,
+    ) {
       const value = text.trim();
       if (!value) throw new TypeError("Native audio text is required");
       if (value.length > 16_000) throw new RangeError("Native audio text is too long");
@@ -160,7 +168,10 @@ export function createGeminiLiveAudioRenderer(input: {
                 inline.mimeType.startsWith("audio/pcm")
               ) {
                 const chunk = Buffer.from(inline.data, "base64");
-                if (chunk.length) chunks.push(chunk);
+                if (chunk.length) {
+                  chunks.push(chunk);
+                  await onPcmChunk?.(chunk);
+                }
               }
             }
 
