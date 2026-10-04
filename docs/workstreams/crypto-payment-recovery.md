@@ -41,3 +41,18 @@ Fresh verification in isolated recovered runtime snapshot: 186 passed, 29 databa
 Confirmed Railway variable inventory contains NOWPAYMENTS_API_KEY and NOWPAYMENTS_IPN_SECRET, but neither NOWPAYMENTS_PAYOUT_EMAIL nor NOWPAYMENTS_PAYOUT_PASSWORD. Values were redacted. No fresh provider custody/customer-management/conversion/withdrawal-route evidence is available. API key/catalog evidence does not qualify those operations. Runtime composition must supply withdrawalEvidence from a provider-qualified owner port; default remains unavailable. Provider-authenticated account setup and custody evidence block production conversion/withdrawal/reconciliation qualification.
 
 Shared dependency requests: #100 owns deployment/runtime integration; #104 owns mobile and shared shell surfaces; Commerce storage remains actively owned. These paths are unchanged. Integrators must preserve billing relay code, wire fresh evidence, run real PostgreSQL financial acceptance and app/channel journey tests before commercial availability. Conversion ledger settlement, provider segregated customer custody reconciliation and confirmed fee quotes remain required, not completed. No merged-main/production completion claim.
+
+## Custody/conversion continuation — 2026-10-04
+
+The user has now confirmed that NOWPayments Custody and Conversions are enabled on the merchant account, and the production Railway worker contains payout email/password variable names alongside the existing API key/IPN secret. Treat this as operator confirmation only: do not hard-code permanent eligibility. Consequential admission still requires fresh runtime/provider evidence for custody, conversion, payout, IP whitelist and exact asset/network operation support.
+
+Expanded non-overlapping provider/service ownership for this continuation:
+- new `adapters/crypto/nowpayments/src/custody.ts` and `custody.test.ts`;
+- `adapters/crypto/nowpayments/src/index.ts`;
+- existing owned `adapters/crypto/nowpayments/src/payout.ts` and `payout.test.ts`;
+- existing transferred `services/gateway/src/financial_service.ts` and `financial_service.test.ts`;
+- this claim file.
+
+The continuation may add authenticated custody balance/conversion API operations, conversion reconciliation evidence, payout address/minimum/network-fee preflight and service-level qualification. It must not edit `packages/commerce/**`, `adapters/storage/postgres/src/commerce/**`, mobile, shared runtime composition or deployment because those remain separately owned.
+
+Canonical atomic conversion settlement is a shared dependency: Commerce/PostgreSQL must reserve/debit the exact source balance and post the evidenced target credit exactly once before user-facing conversion execution can be advertised. This branch may define/provider-test the required evidence, but it must not create a second ledger owner or execute a conversion before that atomic boundary exists.
