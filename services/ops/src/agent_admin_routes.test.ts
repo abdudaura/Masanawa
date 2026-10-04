@@ -29,6 +29,7 @@ describe("Ops agent admin routes", () => {
         return null;
       },
       async putSkillReadiness(input) {
+        calls.push(`readiness-write:${input.authorizationHeader ?? ""}`);
         return {
           skillVersionId: input.skillVersionId,
           key: "test.skill",
@@ -80,6 +81,26 @@ describe("Ops agent admin routes", () => {
     });
     expect(skills.statusCode).toBe(200);
 
+
+    const readiness = await app.inject({
+      method: "PUT",
+      url: `/v1/skills/${skillVersionId}/readiness`,
+      headers,
+      payload: {
+        state: "ready",
+        advertised: true,
+        reasonCode: null,
+        expectedRevision: null,
+      },
+    });
+    expect(readiness.statusCode).toBe(200);
+    expect(readiness.json()).toMatchObject({
+      skillVersionId,
+      readiness: "ready",
+      advertised: true,
+      revision: 1,
+    });
+
     const presentation = await app.inject({
       method: "PUT",
       url: `/v1/agents/${characterId}/presentation`,
@@ -119,6 +140,7 @@ describe("Ops agent admin routes", () => {
     expect(calls).toEqual([
       "presentations:Bearer operator",
       "skills:Bearer operator",
+      "readiness-write:Bearer operator",
       "presentation-write:Bearer operator",
       "skills-write:Bearer operator",
     ]);
