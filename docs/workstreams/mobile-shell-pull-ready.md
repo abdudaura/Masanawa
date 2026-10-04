@@ -23,4 +23,15 @@ Findings before edit:
 - kAgentBaseUrl defaults empty even though the existing hosted debug Gateway is https://nurainworker-production.up.railway.app.
 - The Alpha token remains private and must never be committed.
 
-Status: claim published before implementation.
+Implemented:
+- `kAgentBaseUrl` now defaults to the existing hosted test Gateway origin; the private Alpha token remains unset and securely user/build supplied.
+- mobile creator Skills, economy, Agent Float and clone creation now use the Gateway's canonical `/creator/**` namespace instead of retired `/v1/creator/**`.
+- focused regression coverage records all five creator requests and asserts the hosted default.
+
+Audit:
+- static mobile/Gateway route comparison now matches every creator route and all previously integrated `/agent/**` families.
+- live chat composition confirms structured parts call `submitShellAction`, live voice mints through `/agent/live/token`, and update/offline gates remain active.
+- clone setup, creator economy/Float, clone Skills, structured cards and live-document code contain no unfinished implementation placeholders.
+- no secret/token was committed.
+
+Status: final source integration is complete for this claim. APK compilation/device testing is intentionally left to the user per explicit instruction.
