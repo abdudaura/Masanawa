@@ -390,7 +390,7 @@ export async function requestWorkflowRunControl(
       if (
         !target ||
         target.workflow_id !== current.workflow_id ||
-        ["failed", "cancelled"].includes(target.state)
+        !["pending", "running", "waiting"].includes(target.state)
       ) {
         throw new PlatformError({
           code: "workflows.supersession_target_invalid",
@@ -593,6 +593,32 @@ export async function transitionWorkflowCompensationStep(
   }
 
   return withTransaction(pool, async (client) => {
+    if (input.to === "succeeded") {
+      const operation = await client.query<{ state: string }>(
+        `SELECT o.state
+           FROM workflows.workflow_compensation_steps AS s
+           JOIN events.operations AS o
+             ON o.operation_id = s.compensation_operation_id
+            AND o.tenant_id = s.tenant_id
+          WHERE s.tenant_id = $1
+            AND s.workflow_run_id = $2
+            AND s.original_operation_id = $3`,
+        [
+          input.tenantId,
+          input.workflowRunId,
+          input.originalOperationId,
+        ],
+      );
+      if (operation.rows[0]?.state !== "succeeded") {
+        throw new PlatformError({
+          code: "workflows.compensation_operation_not_succeeded",
+          category: "conflict",
+          message: "Compensation step cannot succeed before its canonical Operation succeeds",
+          retryable: false,
+        });
+      }
+    }
+
     const result = await client.query<CompensationRow>(
       `UPDATE workflows.workflow_compensation_steps
           SET state = $5,
