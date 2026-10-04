@@ -15,6 +15,13 @@ class ChatListScreen extends ConsumerWidget {
 
   String _snippet(ChatThread thread) {
     if (thread.draft.trim().isNotEmpty) return 'Draft: ${thread.draft.trim()}';
+    if (thread.draftVoice != null) return 'Draft: voice note';
+    if (thread.draftAttachments.isNotEmpty) {
+      final count = thread.draftAttachments.length;
+      return count == 1
+          ? 'Draft: ${thread.draftAttachments.first.label}'
+          : 'Draft: $count attachments';
+    }
     final last = thread.lastMessage;
     if (last == null) return '';
     if (last.parts.isNotEmpty) {
