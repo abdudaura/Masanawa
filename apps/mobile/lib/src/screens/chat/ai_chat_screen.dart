@@ -58,6 +58,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   int _searchIndex = 0;
   bool _nearBottom = true;
   int _newBelow = 0;
+  Timer? _scrollPersistTimer;
   final Set<String> _selectedMessageIds = {};
   final Map<String, GlobalKey> _messageKeys = {};
 
@@ -79,6 +80,13 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           if (near) _newBelow = 0;
         });
       }
+      _scrollPersistTimer?.cancel();
+      _scrollPersistTimer = Timer(const Duration(milliseconds: 280), () {
+        if (!mounted || !_scroll.hasClients) return;
+        ref
+            .read(aiChatProvider.notifier)
+            .setScrollOffset(widget.characterId, _scroll.offset);
+      });
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final controller = ref.read(aiChatProvider.notifier);
@@ -88,6 +96,18 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         _input.text = draft;
         _input.selection = TextSelection.collapsed(offset: draft.length);
       }
+      final offset = controller.threadOf(widget.characterId).scrollOffset;
+      if (offset > 0) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!_scroll.hasClients) return;
+          _scroll.jumpTo(
+            offset.clamp(
+              _scroll.position.minScrollExtent,
+              _scroll.position.maxScrollExtent,
+            ).toDouble(),
+          );
+        });
+      }
     });
   }
 
@@ -95,6 +115,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   void dispose() {
     _recTimer?.cancel();
     _ampTimer?.cancel();
+    _scrollPersistTimer?.cancel();
     _recorder.dispose();
     _input.dispose();
     _search.dispose();
