@@ -125,4 +125,33 @@ describe("NOWPayments catalog", () => {
     expect(quote.estimate.estimatedAmount).toBe(9.8);
     expect(requested).toHaveLength(3);
   });
+
+  it("polls payment status without treating confirmed as final success", async () => {
+    const client = new NowPaymentsClient({
+      apiKey: "secret",
+      fetch: async () =>
+        new Response(JSON.stringify({ payment_status: "confirmed" }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+    });
+    await expect(client.getPaymentStatus({ paymentId: "pay_123" })).resolves.toBe(
+      "confirmed",
+    );
+  });
+
+  it("rejects malformed payment ids before network access", async () => {
+    let called = false;
+    const client = new NowPaymentsClient({
+      apiKey: "secret",
+      fetch: async () => {
+        called = true;
+        return new Response("{}", { status: 200 });
+      },
+    });
+    await expect(client.getPaymentStatus({ paymentId: "../bad" })).rejects.toThrow(
+      "nowpayments.payment_id.invalid",
+    );
+    expect(called).toBe(false);
+  });
 });
