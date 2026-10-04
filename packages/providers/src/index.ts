@@ -12,3 +12,4 @@ export * from "./flutterwave-bills/catalog-projection.js";
 export * from "./flutterwave-bills/commerce-orchestrator.js";
 export * from "./flutterwave-bills/receipt-projection.js";
 export * from "./flutterwave-bills/webhook.js";
+export * from "./flutterwave-bills/funding-client.js";
