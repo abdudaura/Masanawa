@@ -1,10 +1,4 @@
-import {
-  createCanonicalId,
-  nowInstant,
-  parseCanonicalId,
-  type TenantId,
-} from "@masanawa/contracts";
-import type { World, WorldRepository } from "@masanawa/world";
+import type { TenantId } from "@masanawa/contracts";
 import type { AgentAdminAuthorizer } from "./agent_admin.js";
 import type { PlatformAdminQuery } from "./platform_admin.js";
 
@@ -77,6 +71,19 @@ export interface SystemAdminQueueIssue {
   readonly updatedAt: string;
 }
 
+export interface SystemAdminWorldCommands {
+  pause(input: {
+    readonly tenantId: TenantId;
+    readonly worldId: string;
+    readonly expectedRevision: number;
+  }): Promise<SystemAdminWorld>;
+  resume(input: {
+    readonly tenantId: TenantId;
+    readonly worldId: string;
+    readonly expectedRevision: number;
+  }): Promise<SystemAdminWorld>;
+}
+
 export interface SystemAdminService {
   snapshot(input: {
     readonly authorizationHeader: string | undefined;
@@ -120,22 +127,10 @@ function tenant(authority: { readonly tenantId: TenantId }): TenantId {
 }
 
 
-function projectWorld(world: World): SystemAdminWorld {
-  return {
-    worldId: world.worldId,
-    status: world.status,
-    policyRevision: world.policyRevision,
-    currentGenerationNumber: world.currentGenerationNumber,
-    simulationTime: world.simulationTime,
-    revision: world.revision,
-    updatedAt: world.updatedAt,
-  };
-}
-
 export function createSystemAdminService(input: {
   readonly database: PlatformAdminQuery;
   readonly authorizer: AgentAdminAuthorizer;
-  readonly worlds?: WorldRepository;
+  readonly worldCommands?: SystemAdminWorldCommands;
 }): SystemAdminService {
   return Object.freeze<SystemAdminService>({
     async snapshot(request) {
@@ -334,16 +329,14 @@ export function createSystemAdminService(input: {
         authorizationHeader: request.authorizationHeader,
         capability: "world.admin.write",
       });
-      if (!input.worlds) {
+      if (!input.worldCommands) {
         throw new Error("World administration is unavailable");
       }
-      const world = await input.worlds.pauseWorld({
+      return input.worldCommands.pause({
         tenantId: tenant(authority),
-        worldId: parseCanonicalId("world", request.worldId),
+        worldId: request.worldId,
         expectedRevision: request.expectedRevision,
-        pausedAt: nowInstant(),
       });
-      return projectWorld(world);
     },
 
     async resumeWorld(request) {
@@ -351,19 +344,14 @@ export function createSystemAdminService(input: {
         authorizationHeader: request.authorizationHeader,
         capability: "world.admin.write",
       });
-      if (!input.worlds) {
+      if (!input.worldCommands) {
         throw new Error("World administration is unavailable");
       }
-      const worldId = parseCanonicalId("world", request.worldId);
-      const result = await input.worlds.recoverPausedWorld({
+      return input.worldCommands.resume({
         tenantId: tenant(authority),
-        worldId,
+        worldId: request.worldId,
         expectedRevision: request.expectedRevision,
-        nextGenerationId: createCanonicalId("world-generation"),
-        resumeTo: nowInstant(),
-        requestedAt: nowInstant(),
       });
-      return projectWorld(result.world);
     },
 
     async listApprovals(request) {
