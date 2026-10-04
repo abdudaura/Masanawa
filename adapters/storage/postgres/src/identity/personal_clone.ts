@@ -11,6 +11,15 @@ export function createPostgresPersonalCloneProvisioningRepository(
   pool: Pool,
 ): PersonalCloneProvisioningRepository {
   return Object.freeze({
+    async readPersonalClone(input) {
+      return withTransaction(
+        pool,
+        async (client) =>
+          createPostgresIdentityRepository(client).readPersonalCloneForUser(input),
+        { isolation: "repeatable read", readOnly: true },
+      );
+    },
+
     async getOrCreatePersonalClone(input) {
       return withTransaction(
         pool,
