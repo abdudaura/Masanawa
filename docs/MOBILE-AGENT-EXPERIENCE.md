@@ -20,6 +20,10 @@ The ordinary navigation stays intentionally small:
 - Agents
 - Settings/profile
 
+Gwani and Gwana are peer Masanawa platform/support Characters with the same product role.
+Gwani is the default for new users. A user may choose Gwana instead (or switch back) in
+Settings without changing account authority, Skills or platform behavior.
+
 Workflows, AgentRuns, Skills, Tools, Providers, Devices and Operations remain platform concepts. They appear in chat only when the user needs a useful status, result, approval or receipt.
 
 ## Dynamic agent roster
@@ -95,6 +99,14 @@ A device loss or app reinstall must not erase Character identity, durable work o
 
 Voice is the primary affordance.
 
+Default platform-agent voice presentation is:
+- Gwani -> Gemini voice preference **Bodi**;
+- Gwana -> Gemini voice preference **Sulafat**.
+
+These are presentation/provider preferences. They must be server-configurable and must
+not be compiled into Character identity. Gwani remains the default platform/support
+Character unless the user changes that preference in Settings.
+
 The composer should prioritize:
 
 1. microphone / voice note;
@@ -167,11 +179,20 @@ Long work should be represented as a chat-native Work card backed by canonical A
 
 The card is a projection. Workflow and Operation owners remain authoritative.
 
-## Delegation
+## Delegation and commercial fallback
 
 The Character the user addressed remains responsible for the conversation.
 
-If the runtime delegates to another Character/strategy/specialist, orchestration stays hidden by default. The lead Character may report that collaborators contributed. A user only changes conversation when they deliberately choose another configured Character.
+If the runtime delegates to another Character/strategy/specialist, orchestration stays
+hidden by default. The lead Character may report that collaborators contributed. A user
+only changes conversation when they deliberately choose another configured Character.
+
+The same rule applies to commercial reseller fulfillment. A creator's clone may acquire
+the customer and remain the visible relationship Character while Masanawa routes actual
+fulfillment to another eligible executor because of Skill readiness, provider health,
+budget or insufficient Agent Float. Executor identity and reseller attribution are
+separate canonical facts. The customer is not bounced into another chat merely because
+fulfillment changed.
 
 ## Device embodiment
 
@@ -226,6 +247,9 @@ Those events render into the same message/work-card model rather than creating a
 ## Non-negotiable rules
 
 - No hard-coded production agent roster in the app.
+- Gwani is the server-configured default platform/support Character; Settings may select
+  Gwana without creating client-side identity special cases.
+- Voice defaults (Gwani/Bodi, Gwana/Sulafat) are configuration, not identity.
 - Character identity is not a Skill bundle.
 - Role labels do not grant capability.
 - Skill assignment does not rename/recreate a Character.
