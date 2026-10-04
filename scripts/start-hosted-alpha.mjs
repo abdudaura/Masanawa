@@ -94,6 +94,18 @@ async function start() {
   Object.assign(process.env, values, { MASANAWA_DATABASE_URL: connectionString, DATABASE_URL: connectionString });
   // This infrastructure table holds bootstrap references only. Identity remains canonical.
   const { startGatewayService } = await import("../services/gateway/dist/main.js");
+  if (process.argv.includes("--verify-credentials")) {
+    const keys = JSON.parse(process.env.MASANAWA_ALPHA_GEMINI_API_KEYS_JSON ?? JSON.stringify([process.env.MASANAWA_ALPHA_GEMINI_API_KEY]));
+    const results = await Promise.all(keys.map(async (apiKey, index) => {
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(process.env.MASANAWA_ALPHA_GEMINI_MODEL)}`, {
+          headers: { "x-goog-api-key": apiKey }, redirect: "error", signal: AbortSignal.timeout(15000),
+        });
+        return { index, status: response.status };
+      } catch { return { index, status: "unreachable" }; }
+    }));
+    console.info(`Hosted Alpha credential metadata checks: ${JSON.stringify(results)}`);
+  }
   await startGatewayService();
   if (process.argv.includes('--verify')) {
     try {
