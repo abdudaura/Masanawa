@@ -2510,9 +2510,7 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
           androidWillPauseWhenDucked: true,
         ),
       );
-      try {
-        await AndroidAudioManager().setSpeakerphoneOn(_speakerOn);
-      } catch (_) {}
+      await LivePcmAudio.setSpeaker(_speakerOn);
       await _ensurePlayer();
       if (_playing) {
         await _player!.pause();
@@ -2558,12 +2556,8 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
 
   Future<void> _toggleAudioRoute() async {
     final next = !_speakerOn;
-    try {
-      await AndroidAudioManager().setSpeakerphoneOn(next);
-      if (mounted) setState(() => _speakerOn = next);
-    } catch (_) {
-      if (mounted) setState(() => _speakerOn = next);
-    }
+    await LivePcmAudio.setSpeaker(next);
+    if (mounted) setState(() => _speakerOn = next);
   }
 
   Future<void> _cycleSpeed() async {
