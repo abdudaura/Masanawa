@@ -103,6 +103,14 @@ async function start() {
       console.info(`Hosted Alpha verification: ${JSON.stringify(result)}`);
     } catch (error) {
       console.error(`Hosted Alpha verification failed: ${error.message}`);
+      const diagnostic = createPostgresPool({ connectionString, applicationName: "masanawa-alpha-smoke-diagnostic", max: 1 });
+      try {
+        const result = await diagnostic.query("SELECT failure_code FROM agents.agent_runs WHERE state = 'failed' ORDER BY started_at DESC LIMIT 1");
+        const code = result.rows[0]?.failure_code;
+        const safeCodes = new Set(["inference.rate_limited", "inference.unavailable", "inference.rejected", "inference.invalid_response", "inference.deadline_exceeded", "alpha.strategy_failed", "alpha.media_strategy_failed"]);
+        console.error(`Hosted Alpha failure category: ${safeCodes.has(code) ? code : "unknown"}`);
+      } catch { console.error("Hosted Alpha failure category: unavailable"); }
+      finally { await diagnostic.end(); }
     }
   }
 }

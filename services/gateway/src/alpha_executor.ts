@@ -75,6 +75,13 @@ export function createGeminiAlphaInferenceProvider(input: {
       const request = snapshotAgentInferenceRequest(incoming);
       const maxOutputTokens = controls?.maxOutputTokens ?? 2048;
       if (!Number.isSafeInteger(maxOutputTokens) || maxOutputTokens < 128 || maxOutputTokens > 8192) throw new RangeError("Invalid inference token limit");
+      let documentText: string | undefined;
+      if (request.input.kind === "media" && request.input.mimeType === "text/plain") {
+        try {
+          documentText = new TextDecoder("utf-8", { fatal: true }).decode(Buffer.from(request.input.dataBase64, "base64"));
+          if (!documentText.trim() || documentText.length > 128_000) throw new Error();
+        } catch { throw new AgentInferenceError("inference.rejected"); }
+      }
       const userParts =
         request.input.kind === "text"
           ? [{ text: request.input.text }]
@@ -87,12 +94,12 @@ export function createGeminiAlphaInferenceProvider(input: {
                         ? "Listen to this voice note and respond to what the user said."
                         : "Review this attachment and respond helpfully.",
                   }]),
-              {
+              ...(documentText !== undefined ? [{ text: documentText }] : [{
                 inline_data: {
                   mime_type: request.input.mimeType,
                   data: request.input.dataBase64,
                 },
-              },
+              }]),
             ];
 
       let response: Response;

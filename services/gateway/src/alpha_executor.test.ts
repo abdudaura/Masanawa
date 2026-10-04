@@ -45,6 +45,23 @@ describe("Gemini Alpha credential pool", () => {
 });
 
 describe("Gemini Alpha inference provider", () => {
+
+  it("decodes a real UTF-8 text document as user content instead of unsupported binary inline data", async () => {
+    const document = "Meeting: Monday at 10 AM. مرحبا";
+    const fetchImpl = vi.fn(async (_url: unknown, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body));
+      expect(body.contents[0].parts).toEqual([{ text: "Summarize this document." }, { text: document }]);
+      return response("Monday at 10 AM.");
+    });
+    const provider = createGeminiAlphaInferenceProvider({ apiKey: "dev-key", model: "test", fetchImpl: fetchImpl as typeof fetch });
+    await expect(provider.generate({ systemInstructions: ["Be helpful."], input: { kind: "media", caption: "Summarize this document.", mimeType: "text/plain", dataBase64: Buffer.from(document).toString("base64") } })).resolves.toEqual({ text: "Monday at 10 AM." });
+  });
+  it.each([Buffer.from([0xff]), Buffer.from("x".repeat(128_001)), Buffer.from(" ")])("rejects unreadable or oversized plain text without sending it to the provider (%#)", async bytes => {
+    const fetchImpl = vi.fn();
+    const provider = createGeminiAlphaInferenceProvider({ apiKey: "dev-key", model: "test", fetchImpl: fetchImpl as typeof fetch });
+    await expect(provider.generate({ systemInstructions: ["Be helpful."], input: { kind: "media", caption: "", mimeType: "text/plain", dataBase64: bytes.toString("base64") } })).rejects.toMatchObject({ code: "inference.rejected" });
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
   it("keeps credentials out of request URLs", async () => {
     const fetchImpl = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
       expect(String(url)).not.toContain("private-key");
