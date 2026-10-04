@@ -8,6 +8,8 @@ import type {
   CharacterSkillAssignmentRepository,
 } from "@masanawa/agents";
 import { readRequiredEnv } from "@masanawa/contracts";
+import type { CryptoRepository } from "@masanawa/commerce";
+import { NowPaymentsClient } from "@masanawa/nowpayments";
 import {
   createDrainState,
   readNodeServiceRuntimeConfig,
@@ -24,6 +26,7 @@ import {
   createPostgresCharacterSessionRepository,
   createPostgresCharacterContextCompiler,
   createPostgresCharacterSkillAssignmentRepository,
+  createPostgresCryptoRepository,
   createPostgresServiceDependency,
 } from "@masanawa/postgres";
 import {
@@ -44,6 +47,11 @@ import { createGeminiAlphaInferencePool, parseAlphaGeminiKeys } from "./alpha_ex
 import { createAlphaInferenceStrategy } from "./alpha_strategy.js";
 import { createGeminiLiveAudioRenderer } from "./native_audio.js";
 import {
+  createFinancialService,
+  createFixedFinancialAuthorizer,
+  type FinancialAuthorizer,
+} from "./financial_service.js";
+import {
   createGatewayApp,
   type GatewayAppOptions,
   type ReadinessCheck,
@@ -63,6 +71,7 @@ export interface ServiceDatabaseDependency {
   readonly characterSessions?: CharacterSessionRepository;
   readonly agentRuns?: AgentRunRepository;
   readonly characterContextCompiler?: CharacterContextCompiler;
+  readonly crypto?: CryptoRepository;
   close(): Promise<void>;
 }
 
@@ -81,6 +90,7 @@ export interface StartGatewayServiceOptions {
   readonly appOptions?: Omit<GatewayAppOptions, "isDraining">;
   readonly agentDirectoryAuthorizer?: AgentDirectoryAuthorizer;
   readonly agentConversationAuthorizer?: AgentConversationAuthorizer;
+  readonly financialAuthorizer?: FinancialAuthorizer;
   readonly agentStrategy?: AgentStrategy;
   readonly characterContextCompiler?: CharacterContextCompiler;
 }
@@ -136,6 +146,7 @@ function createDefaultDatabaseDependency(
     }),
     agentRuns: createPostgresAgentRunRepository(database.pool),
     characterContextCompiler: createPostgresCharacterContextCompiler(database.pool),
+    crypto: createPostgresCryptoRepository(database.pool),
     close: database.close,
   });
 }
@@ -169,6 +180,7 @@ export async function startGatewayService(
 
   let directoryAuthorizer = options.agentDirectoryAuthorizer;
   let conversationAuthorizer = options.agentConversationAuthorizer;
+  let financialAuthorizer = options.financialAuthorizer;
   let strategy = options.agentStrategy;
   let nativeAudio;
 
@@ -202,6 +214,11 @@ export async function startGatewayService(
       tenantId: ids.tenantId,
       relationshipIds,
     });
+    financialAuthorizer ??= createFixedFinancialAuthorizer({
+      token,
+      tenantId: ids.tenantId,
+      userId: ids.userId,
+    });
     conversationAuthorizer ??= createAlphaDevAuthorizer({
       config: {
         token,
@@ -230,6 +247,31 @@ export async function startGatewayService(
     });
 
   }
+
+  const nowPaymentsApiKey = env.NOWPAYMENTS_API_KEY?.trim();
+  const nowPaymentsIpnSecret = env.NOWPAYMENTS_IPN_SECRET?.trim();
+  const publicBaseUrl =
+    env.MASANAWA_PUBLIC_BASE_URL?.trim() ||
+    env.RAILWAY_STATIC_URL?.trim() ||
+    (env.RAILWAY_PUBLIC_DOMAIN?.trim()
+      ? `https://${env.RAILWAY_PUBLIC_DOMAIN.trim()}`
+      : undefined);
+
+  const composedFinancial =
+    options.appOptions?.financial ??
+    (financialAuthorizer &&
+    database.crypto &&
+    nowPaymentsApiKey &&
+    nowPaymentsIpnSecret &&
+    publicBaseUrl
+      ? createFinancialService({
+          authorizer: financialAuthorizer,
+          crypto: database.crypto,
+          nowPayments: new NowPaymentsClient({ apiKey: nowPaymentsApiKey }),
+          nowPaymentsIpnSecret,
+          publicBaseUrl,
+        })
+      : undefined);
 
   const composedDirectory =
     options.appOptions?.agentDirectory ??
@@ -265,6 +307,7 @@ export async function startGatewayService(
       ...(composedConversation
         ? { agentConversation: composedConversation }
         : {}),
+      ...(composedFinancial ? { financial: composedFinancial } : {}),
       readinessChecks: [
         ...(options.appOptions?.readinessChecks ?? []),
         database.readinessCheck,
