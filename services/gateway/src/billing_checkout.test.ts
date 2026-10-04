@@ -18,6 +18,9 @@ class MemoryQuotes implements BillingQuoteRepository {
     return this.quote;
   }
   async readQuote() { return this.quote; }
+  async readByFulfillmentReference(input: Parameters<BillingQuoteRepository["readByFulfillmentReference"]>[0]) {
+    return this.quote?.fulfillmentReference === input.fulfillmentReference ? this.quote : null;
+  }
   async listQuotes() { return this.quote ? [this.quote] : []; }
 
   async confirmQuote(input: Parameters<BillingQuoteRepository["confirmQuote"]>[0]) {
@@ -208,6 +211,27 @@ function billing(quotes: MemoryQuotes): BillingFinancialService {
       };
     },
     async readPurchase() { throw new Error("unused"); },
+    async reconcileOwnedPurchase(request) {
+      const current = quotes.quote;
+      if (!current || current.fulfillmentReference !== request.reference) {
+        throw new Error("financial.billing_not_found");
+      }
+      return {
+        fulfillmentReference: request.reference,
+        billerCode: current.billerCode,
+        itemCode: current.itemCode,
+        itemName: current.itemName,
+        customerId: current.customerId,
+        customerName: null,
+        amount: formatNgnKobo(current.serviceAmountKobo),
+        currency: "NGN",
+        revision: 2,
+        state: current.state === "succeeded" ? "succeeded" : "checking",
+        providerReference: current.billProviderReference,
+        providerStatus: current.state === "succeeded" ? "successful" : "pending",
+        lastEvidenceAt: "2026-10-04T20:02:00.000Z",
+      };
+    },
     async receiveWebhook() { return { duplicate: false, reference: null }; },
   };
 }
