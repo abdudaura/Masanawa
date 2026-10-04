@@ -1,5 +1,20 @@
 # Continue Here
 
+## Mandatory multi-window and economy checkpoint — 2026-10-04
+
+Read `docs/MULTI-WINDOW-WORK.md` before choosing implementation ownership.
+Use isolated branches/worktrees and visible non-overlapping workstream claims;
+coordinate shared contracts, migrations and deployment. Preserve newer checkpoints.
+WhatsApp AND Telegram are required customer channels alongside the app.
+Customers should hold, convert and withdraw scoped crypto balances through NOWPayments
+in chat, subject to verified provider operation/account/network eligibility.
+Creators fund agent execution Float and earn from verified transactions; keep customer
+assets, creator capital and commissions separate. Read the funded-execution section in
+`docs/CREATOR-CLONE-ECONOMY.md` for unresolved policy decisions.
+Broader admin/device/world/studio/plugin features are later implementation, not deletion.
+Existing implementation is preserved; exact acceptance/deployment evidence remains required.
+
+
 ## Monetisation and Skills continuation — 2026-10-04
 
 Recovered from main after the fulfillment-completion persistence checkpoint.
