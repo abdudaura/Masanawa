@@ -18,7 +18,14 @@ function safeInitializationFailure(error) {
   if (message === "Existing unregistered canonical database requires operator adoption") return "database_adoption_required";
   if (message === "Canonical bootstrap failed") return "canonical_bootstrap_failed";
   if (message === "Invalid deployment references") return "invalid_deployment_references";
-  return "database_or_bootstrap_failure";
+  if (message.includes("schema") || message.includes("migration")) return "gateway_schema_failure";
+  if (message.includes("tenant") || message.includes("canonical")) return "gateway_identity_config_failure";
+  if (message.includes("Flutterwave") || message.includes("billing")) return "gateway_billing_config_failure";
+  if (message.includes("NOWPayments") || message.includes("payout")) return "gateway_crypto_config_failure";
+  if (message.includes("Resend") || message.includes("OTP") || message.includes("auth")) return "gateway_auth_config_failure";
+  if (message.includes("URL") || message.includes("url")) return "gateway_url_config_failure";
+  if (message.includes("database") || message.includes("PostgreSQL")) return "gateway_database_failure";
+  return "gateway_composition_failure";
 }
 
 if (process.env.MASANAWA_ALPHA_GEMINI_IMPORTED_CREDENTIALS_JSON) {
