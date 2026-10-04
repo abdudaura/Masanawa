@@ -4,17 +4,25 @@ import 'dart:io';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:mime/mime.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:video_player/video_player.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:audio_session/audio_session.dart';
 
 import '../../agents/agent_directory.dart';
 import '../../chat/chat_format.dart';
 import '../../chat/message_parts.dart';
 import '../../chat/message_parts_view.dart';
+import '../../core/live_pcm_audio.dart';
 import '../../state/agent_directory_state.dart';
 import '../../state/ai_chat_state.dart';
 import '../../state/session_state.dart';
@@ -39,8 +47,22 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   bool _showEmoji = false;
   bool _hasText = false;
   bool _recording = false;
+  bool _recordingPaused = false;
+  bool _recordingLocked = false;
   int _recSeconds = 0;
   Timer? _recTimer;
+  Timer? _ampTimer;
+  final List<double> _amplitudes = [];
+  ChatAttachment? _pendingVoice;
+  AiChatMessage? _replyingTo;
+  bool _showSearch = false;
+  final _search = TextEditingController();
+  int _searchIndex = 0;
+  bool _nearBottom = true;
+  int _newBelow = 0;
+  Timer? _scrollPersistTimer;
+  final Set<String> _selectedMessageIds = {};
+  final Map<String, GlobalKey> _messageKeys = {};
 
   @override
   void initState() {
@@ -48,17 +70,57 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     _input.addListener(() {
       final hasText = _input.text.isNotEmpty;
       if (hasText != _hasText) setState(() => _hasText = hasText);
+      ref.read(aiChatProvider.notifier).setDraft(widget.characterId, _input.text);
+    });
+    _scroll.addListener(() {
+      if (!_scroll.hasClients) return;
+      final distance = _scroll.position.maxScrollExtent - _scroll.offset;
+      final near = distance < 120;
+      if (near != _nearBottom && mounted) {
+        setState(() {
+          _nearBottom = near;
+          if (near) _newBelow = 0;
+        });
+      }
+      _scrollPersistTimer?.cancel();
+      _scrollPersistTimer = Timer(const Duration(milliseconds: 280), () {
+        if (!mounted || !_scroll.hasClients) return;
+        ref
+            .read(aiChatProvider.notifier)
+            .setScrollOffset(widget.characterId, _scroll.offset);
+      });
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(aiChatProvider.notifier).openThread(widget.characterId);
+      final controller = ref.read(aiChatProvider.notifier);
+      controller.openThread(widget.characterId);
+      final draft = controller.threadOf(widget.characterId).draft;
+      if (draft.isNotEmpty && _input.text.isEmpty) {
+        _input.text = draft;
+        _input.selection = TextSelection.collapsed(offset: draft.length);
+      }
+      final offset = controller.threadOf(widget.characterId).scrollOffset;
+      if (offset > 0) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!_scroll.hasClients) return;
+          _scroll.jumpTo(
+            offset.clamp(
+              _scroll.position.minScrollExtent,
+              _scroll.position.maxScrollExtent,
+            ).toDouble(),
+          );
+        });
+      }
     });
   }
 
   @override
   void dispose() {
     _recTimer?.cancel();
+    _ampTimer?.cancel();
+    _scrollPersistTimer?.cancel();
     _recorder.dispose();
     _input.dispose();
+    _search.dispose();
     _scroll.dispose();
     try {
       ref.read(aiChatProvider.notifier).closeThread();
@@ -79,9 +141,21 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     if (ref.read(aiChatProvider).sendingIn.contains(widget.characterId)) return;
     final text = _input.text;
     if (text.trim().isEmpty) return;
+    final reply = _replyingTo;
     _input.clear();
-    setState(() => _showEmoji = false);
-    ref.read(aiChatProvider.notifier).sendText(widget.characterId, text);
+    ref.read(aiChatProvider.notifier).setDraft(widget.characterId, '');
+    setState(() {
+      _showEmoji = false;
+      _replyingTo = null;
+    });
+    ref.read(aiChatProvider.notifier).sendText(
+      widget.characterId,
+      text,
+      replyToId: reply?.id,
+      replyPreview: reply == null
+          ? null
+          : (reply.text.isNotEmpty ? reply.text : reply.attachment?.label),
+    );
   }
 
   void _comingSoon(String what) {
@@ -100,8 +174,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+            child: Wrap(
+              spacing: 18,
+              runSpacing: 12,
+              alignment: WrapAlignment.center,
               children: [
                 // Token roles: brand → doc, verified → gallery, warning → camera.
                 _AttachOption(
@@ -119,7 +195,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   label: 'Gallery',
                   onTap: () {
                     Navigator.of(sheetContext).pop();
-                    _pickImage(ImageSource.gallery);
+                    _pickMultipleImages();
                   },
                 ),
                 _AttachOption(
@@ -129,6 +205,15 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   onTap: () {
                     Navigator.of(sheetContext).pop();
                     _pickImage(ImageSource.camera);
+                  },
+                ),
+                _AttachOption(
+                  icon: Icons.videocam_outlined,
+                  color: const Color(0xFF7C3AED),
+                  label: 'Video',
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _pickVideo();
                   },
                 ),
               ],
@@ -143,21 +228,25 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     try {
       final files = await FilePicker.pickFiles();
       if (files.isEmpty) return;
-      final file = files.first;
-      final path = file.path;
-      if (path == null || path.isEmpty) return;
-      final size = await file.length();
-      await ref
-          .read(aiChatProvider.notifier)
-          .sendAttachment(
-            widget.characterId,
-            ChatAttachment(
-              kind: 'doc',
-              path: path,
-              name: file.name,
-              sizeBytes: size,
-            ),
-          );
+      final attachments = <ChatAttachment>[];
+      for (final file in files.take(6)) {
+        final path = file.path;
+        if (path == null || path.isEmpty) continue;
+        final size = await file.length() ?? 0;
+        attachments.add(
+          ChatAttachment(
+            kind: 'doc',
+            path: path,
+            name: file.name,
+            sizeBytes: size,
+          ),
+        );
+      }
+      if (attachments.isNotEmpty) {
+        await ref
+            .read(aiChatProvider.notifier)
+            .sendAttachments(widget.characterId, attachments);
+      }
     } catch (_) {
       if (mounted) _comingSoon('Documents');
     }
@@ -189,6 +278,64 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     }
   }
 
+  Future<void> _pickMultipleImages() async {
+    try {
+      final picked = await _imagePicker.pickMultiImage(
+        maxWidth: 1600,
+        imageQuality: 85,
+      );
+      final attachments = <ChatAttachment>[];
+      for (final image in picked.take(8)) {
+        final size = await File(image.path).length();
+        attachments.add(
+          ChatAttachment(
+            kind: 'image',
+            path: image.path,
+            name: image.name,
+            sizeBytes: size,
+          ),
+        );
+      }
+      if (attachments.isNotEmpty) {
+        await ref
+            .read(aiChatProvider.notifier)
+            .sendAttachments(widget.characterId, attachments);
+      }
+    } catch (_) {
+      if (mounted) _comingSoon('Photos');
+    }
+  }
+
+  Future<void> _pickVideo() async {
+    try {
+      final picked = await _imagePicker.pickVideo(
+        source: ImageSource.gallery,
+        maxDuration: const Duration(minutes: 3),
+      );
+      if (picked == null) return;
+      final size = await File(picked.path).length();
+      if (size > 8 * 1024 * 1024) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Video must be 8 MB or smaller.')),
+          );
+        }
+        return;
+      }
+      await ref.read(aiChatProvider.notifier).sendAttachment(
+        widget.characterId,
+        ChatAttachment(
+          kind: 'video',
+          path: picked.path,
+          name: picked.name,
+          sizeBytes: size,
+        ),
+      );
+    } catch (_) {
+      if (mounted) _comingSoon('Video');
+    }
+  }
+
   // ---- Voice notes ---------------------------------------------------------
 
   Future<void> _toggleRecording() async {
@@ -196,7 +343,28 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       await _stopRecording(send: true);
       return;
     }
+    await _startRecording();
+  }
+
+  Future<void> _startRecording() async {
+    if (_recording) return;
     try {
+      await _activeVoiceBubble?._pauseFromAnotherBubble();
+      final session = await AudioSession.instance;
+      await session.configure(
+        AudioSessionConfiguration(
+          avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
+          avAudioSessionCategoryOptions:
+              AVAudioSessionCategoryOptions.allowBluetooth,
+          avAudioSessionMode: AVAudioSessionMode.spokenAudio,
+          androidAudioAttributes: const AndroidAudioAttributes(
+            contentType: AndroidAudioContentType.speech,
+            usage: AndroidAudioUsage.voiceCommunication,
+          ),
+          androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
+          androidWillPauseWhenDucked: true,
+        ),
+      );
       final allowed = await _recorder.hasPermission();
       if (!allowed) {
         if (mounted) _comingSoon('Microphone access');
@@ -214,22 +382,62 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         ),
         path: path,
       );
+      if (!mounted) return;
       setState(() {
         _recording = true;
+        _recordingPaused = false;
+        _recordingLocked = false;
+        _pendingVoice = null;
         _recSeconds = 0;
+        _amplitudes.clear();
         _showEmoji = false;
       });
       FocusScope.of(context).unfocus();
       _recTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-        if (mounted) setState(() => _recSeconds++);
+        if (mounted && !_recordingPaused) setState(() => _recSeconds++);
+      });
+      _ampTimer = Timer.periodic(const Duration(milliseconds: 140), (_) async {
+        if (!_recording || _recordingPaused) return;
+        try {
+          final amp = await _recorder.getAmplitude();
+          if (!mounted) return;
+          setState(() {
+            final normalized =
+                ((amp.current + 55) / 55).clamp(0.08, 1.0).toDouble();
+            _amplitudes.add(normalized);
+            if (_amplitudes.length > 42) _amplitudes.removeAt(0);
+          });
+        } catch (_) {}
       });
     } catch (_) {
       if (mounted) _comingSoon('Voice notes');
     }
   }
 
+  Future<void> _onMicHoldStart(LongPressStartDetails _) async {
+    await _startRecording();
+  }
+
+  Future<void> _onMicHoldMove(LongPressMoveUpdateDetails details) async {
+    if (!_recording || _recordingLocked) return;
+    final offset = details.offsetFromOrigin;
+    if (offset.dx < -72) {
+      await _stopRecording(send: false);
+      return;
+    }
+    if (offset.dy < -72 && mounted) {
+      setState(() => _recordingLocked = true);
+    }
+  }
+
+  Future<void> _onMicHoldEnd(LongPressEndDetails _) async {
+    if (!_recording || _recordingLocked) return;
+    await _stopRecording(send: true);
+  }
+
   Future<void> _stopRecording({required bool send}) async {
     _recTimer?.cancel();
+    _ampTimer?.cancel();
     String? path;
     try {
       path = await _recorder.stop();
@@ -250,12 +458,43 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       return;
     }
     if (path == null || path.isEmpty) return;
-    await ref
-        .read(aiChatProvider.notifier)
-        .sendAttachment(
-          widget.characterId,
-          ChatAttachment(kind: 'voice', path: path, durationMs: seconds * 1000),
-        );
+    setState(() {
+      _pendingVoice = ChatAttachment(
+        kind: 'voice',
+        path: path!,
+        durationMs: seconds * 1000,
+      );
+    });
+  }
+
+  Future<void> _togglePauseRecording() async {
+    if (!_recording) return;
+    try {
+      if (_recordingPaused) {
+        await _recorder.resume();
+      } else {
+        await _recorder.pause();
+      }
+      if (mounted) setState(() => _recordingPaused = !_recordingPaused);
+    } catch (_) {}
+  }
+
+  Future<void> _sendPendingVoice() async {
+    final pending = _pendingVoice;
+    if (pending == null) return;
+    setState(() => _pendingVoice = null);
+    await ref.read(aiChatProvider.notifier).sendAttachment(
+      widget.characterId,
+      pending,
+    );
+  }
+
+  Future<void> _deletePendingVoice() async {
+    final pending = _pendingVoice;
+    setState(() => _pendingVoice = null);
+    if (pending != null) {
+      try { await File(pending.path).delete(); } catch (_) {}
+    }
   }
 
   String get _recClock {
@@ -273,8 +512,23 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     final agent = directory.find(widget.characterId);
     final chat = ref.watch(aiChatProvider);
     final thread = chat.threads[widget.characterId];
-    final messages = thread?.messages ?? const <AiChatMessage>[];
+    final allMessages = thread?.messages ?? const <AiChatMessage>[];
+    final query = _search.text.trim().toLowerCase();
+    final messages = allMessages;
+    final searchMatches = query.isEmpty
+        ? const <AiChatMessage>[]
+        : allMessages
+            .where((m) => !m.deleted && m.text.toLowerCase().contains(query))
+            .toList();
+    if (_searchIndex >= searchMatches.length && searchMatches.isNotEmpty) {
+      _searchIndex = searchMatches.length - 1;
+    }
+    final highlightedSearchId = searchMatches.isEmpty
+        ? null
+        : searchMatches[_searchIndex].id;
     final sending = chat.sendingIn.contains(widget.characterId);
+    final userMessages = allMessages.where((m) => m.isUser).toList();
+    final lastUser = userMessages.isEmpty ? null : userMessages.last;
 
     if (agent == null) {
       return Scaffold(
@@ -307,6 +561,14 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       );
     }
 
+    final workingLabel = !sending
+        ? agent.presenceLabel
+        : lastUser?.attachment?.kind == 'voice'
+        ? 'Understanding voice…'
+        : lastUser?.attachment != null
+        ? 'Reviewing attachment…'
+        : 'Typing…';
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
           .read(aiChatProvider.notifier)
@@ -316,7 +578,13 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     ref.listen(aiChatProvider, (prev, next) {
       final before = prev?.threads[widget.characterId]?.messages.length ?? 0;
       final after = next.threads[widget.characterId]?.messages.length ?? 0;
-      if (before != after || prev?.sendingIn != next.sendingIn) {
+      if (after > before) {
+        if (_nearBottom) {
+          Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
+        } else {
+          setState(() => _newBelow += after - before);
+        }
+      } else if (prev?.sendingIn != next.sendingIn && _nearBottom) {
         Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
       }
     });
@@ -337,7 +605,24 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             onPressed: () =>
                 context.canPop() ? context.pop() : context.go('/chats'),
           ),
-          title: InkWell(
+          title: _selectedMessageIds.isNotEmpty
+              ? Text('${_selectedMessageIds.length} selected')
+              : _showSearch
+              ? TextField(
+                  controller: _search,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    hintText: 'Search this chat',
+                    border: InputBorder.none,
+                  ),
+                  onChanged: (_) {
+                    setState(() => _searchIndex = 0);
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      _scrollToSearchMatch();
+                    });
+                  },
+                )
+              : InkWell(
             onTap: () => context.push('/agents'),
             child: Row(
               children: [
@@ -368,7 +653,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                         ),
                       ),
                       Text(
-                        sending ? 'Working…' : agent.presenceLabel,
+                        workingLabel,
                         style: TextStyle(
                           color: sending ? u.brand : u.textMuted,
                           fontSize: 12,
@@ -382,6 +667,52 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             ),
           ),
           actions: [
+            if (_selectedMessageIds.isNotEmpty) ...[
+              IconButton(
+                tooltip: 'Copy selected',
+                icon: const Icon(Icons.copy_outlined),
+                onPressed: () => _copySelected(allMessages),
+              ),
+              IconButton(
+                tooltip: 'Delete selected',
+                icon: const Icon(Icons.delete_outline),
+                onPressed: () => _deleteSelected(),
+              ),
+              IconButton(
+                tooltip: 'Clear selection',
+                icon: const Icon(Icons.close),
+                onPressed: () => setState(_selectedMessageIds.clear),
+              ),
+            ] else
+            IconButton(
+              tooltip: _showSearch ? 'Close search' : 'Search',
+              icon: Icon(_showSearch ? Icons.close : Icons.search),
+              onPressed: () => setState(() {
+                _showSearch = !_showSearch;
+                if (!_showSearch) _search.clear();
+              }),
+            ),
+            if (_showSearch && searchMatches.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Center(
+                  child: Text(
+                    '${_searchIndex + 1}/${searchMatches.length}',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ),
+              ),
+              IconButton(
+                tooltip: 'Previous result',
+                icon: const Icon(Icons.keyboard_arrow_up),
+                onPressed: () => _moveSearch(-1, searchMatches),
+              ),
+              IconButton(
+                tooltip: 'Next result',
+                icon: const Icon(Icons.keyboard_arrow_down),
+                onPressed: () => _moveSearch(1, searchMatches),
+              ),
+            ],
             IconButton(
               tooltip: 'Video call',
               icon: const Icon(Icons.videocam_outlined),
@@ -399,10 +730,20 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             ),
             PopupMenuButton<String>(
               tooltip: 'More',
-              onSelected: (value) {
+              onSelected: (value) async {
+                final ctl = ref.read(aiChatProvider.notifier);
                 if (value == 'clear') _confirmClear(agent);
+                if (value == 'new') await ctl.newContext(widget.characterId);
+                if (value == 'pin') ctl.togglePin(widget.characterId);
+                if (value == 'archive') ctl.toggleArchive(widget.characterId);
+                if (value == 'rename') _renameConversation();
               },
               itemBuilder: (_) => const [
+                PopupMenuItem(value: 'new', child: Text('New context')),
+                PopupMenuItem(value: 'rename', child: Text('Rename chat')),
+                PopupMenuItem(value: 'pin', child: Text('Pin / unpin')),
+                PopupMenuItem(value: 'archive', child: Text('Archive / unarchive')),
+                PopupMenuDivider(),
                 PopupMenuItem(value: 'clear', child: Text('Clear chat')),
               ],
             ),
@@ -419,7 +760,13 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                         horizontal: 12,
                         vertical: 12,
                       ),
-                      itemCount: messages.length + (sending ? 1 : 0),
+                      itemCount: messages.length +
+                          (sending &&
+                                  !messages.any((m) =>
+                                      !m.isUser &&
+                                      m.deliveryStatus == 'streaming')
+                              ? 1
+                              : 0),
                       itemBuilder: (context, index) {
                         if (index >= messages.length) {
                           return const _TypingBubble();
@@ -433,8 +780,47 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                         final failure = failedParts.isEmpty
                             ? null
                             : failedParts.first;
-                        return _ChatBubble(
+                        final previous = index > 0 ? messages[index - 1] : null;
+                        final showDate = previous == null ||
+                            !_sameDay(previous.createdAt, message.createdAt);
+                        return Column(
+                          children: [
+                            if (showDate) _DateSeparator(date: message.createdAt),
+                            KeyedSubtree(
+                              key: _messageKeys.putIfAbsent(
+                                message.id,
+                                () => GlobalKey(),
+                              ),
+                              child: _ChatBubble(
                           message: message,
+                          selected: _selectedMessageIds.contains(message.id),
+                          highlighted: highlightedSearchId == message.id,
+                          onSelect: () => setState(() {
+                            if (!_selectedMessageIds.add(message.id)) {
+                              _selectedMessageIds.remove(message.id);
+                            }
+                          }),
+                          onReply: () => setState(() => _replyingTo = message),
+                          onReact: (emoji) => ref
+                              .read(aiChatProvider.notifier)
+                              .reactToMessage(widget.characterId, message.id, emoji),
+                          onEdit: message.isUser
+                              ? () => _editMessage(message)
+                              : null,
+                          onDelete: () => ref
+                              .read(aiChatProvider.notifier)
+                              .deleteMessage(widget.characterId, message.id),
+                          onCopy: () => Clipboard.setData(
+                            ClipboardData(text: message.text),
+                          ),
+                          onForward: () => _forwardMessage(message),
+                          onShare: () => _shareMessage(message),
+                          onSaveMedia: message.allAttachments.isEmpty
+                              ? null
+                              : () => _saveMessageMedia(message),
+                          onAgentAction: message.isUser
+                              ? null
+                              : (action) => _runAgentAction(message, action),
                           onRetry: failure == null || sending
                               ? null
                               : () async {
@@ -454,15 +840,52 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                                         );
                                   }
                                 },
+                              ),
+                            ),
+                          ],
                         );
                       },
                     ),
             ),
+            if (!_nearBottom && _newBelow > 0)
+              Align(
+                alignment: Alignment.centerRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 12, bottom: 4),
+                  child: FloatingActionButton.small(
+                    heroTag: 'chat-bottom',
+                    onPressed: () {
+                      setState(() => _newBelow = 0);
+                      _scrollToBottom();
+                    },
+                    child: Text(_newBelow > 9 ? '9+' : '$_newBelow'),
+                  ),
+                ),
+              ),
+            if (_replyingTo != null)
+              _ReplyComposerPreview(
+                message: _replyingTo!,
+                onClose: () => setState(() => _replyingTo = null),
+              ),
             if (_recording)
               _RecordingBar(
                 clock: _recClock,
+                amplitudes: _amplitudes,
+                recording: true,
+                paused: _recordingPaused,
+                locked: _recordingLocked,
                 onDelete: () => _stopRecording(send: false),
-                onSend: () => _toggleRecording(),
+                onPause: _togglePauseRecording,
+                onStop: () => _stopRecording(send: true),
+                onSend: null,
+                onCancelSwipe: () => _stopRecording(send: false),
+                onLockSwipe: () => setState(() => _recordingLocked = true),
+              )
+            else if (_pendingVoice != null)
+              _VoicePreviewBar(
+                attachment: _pendingVoice!,
+                onDelete: _deletePendingVoice,
+                onSend: _sendPendingVoice,
               )
             else
               _Composer(
@@ -470,9 +893,16 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 hasText: _hasText,
                 sending: sending,
                 onSend: _sendText,
+                onStop: () async {
+                  await _activeVoiceBubble?._pauseFromAnotherBubble();
+                  ref.read(aiChatProvider.notifier).stopGeneration(widget.characterId);
+                },
                 onAttach: _openAttachSheet,
                 onCamera: () => _pickImage(ImageSource.camera),
                 onMic: _toggleRecording,
+                onMicHoldStart: _onMicHoldStart,
+                onMicHoldMove: _onMicHoldMove,
+                onMicHoldEnd: _onMicHoldEnd,
                 onEmojiToggle: () {
                   if (_showEmoji) {
                     setState(() => _showEmoji = false);
@@ -492,6 +922,247 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         ),
       ),
     );
+  }
+
+  bool _sameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  void _moveSearch(int delta, List<AiChatMessage> matches) {
+    if (matches.isEmpty) return;
+    setState(() {
+      _searchIndex = (_searchIndex + delta) % matches.length;
+      if (_searchIndex < 0) _searchIndex += matches.length;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToSearchMatch());
+  }
+
+  void _scrollToSearchMatch() {
+    final query = _search.text.trim().toLowerCase();
+    if (query.isEmpty) return;
+    final messages = ref
+        .read(aiChatProvider.notifier)
+        .threadOf(widget.characterId)
+        .messages
+        .where((m) => !m.deleted && m.text.toLowerCase().contains(query))
+        .toList();
+    if (messages.isEmpty) return;
+    final index = _searchIndex.clamp(0, messages.length - 1).toInt();
+    final key = _messageKeys[messages[index].id];
+    final target = key?.currentContext;
+    if (target != null) {
+      Scrollable.ensureVisible(
+        target,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+        alignment: 0.35,
+      );
+    }
+  }
+
+  void _copySelected(List<AiChatMessage> messages) {
+    final text = messages
+        .where((m) => _selectedMessageIds.contains(m.id) && !m.deleted)
+        .map((m) {
+          if (m.text.isNotEmpty) return m.text;
+          if (m.allAttachments.isNotEmpty) {
+            return m.allAttachments.map((item) => item.label).join(' · ');
+          }
+          return '';
+        })
+        .where((value) => value.isNotEmpty)
+        .join('\n\n');
+    if (text.isNotEmpty) Clipboard.setData(ClipboardData(text: text));
+    setState(_selectedMessageIds.clear);
+  }
+
+  void _deleteSelected() {
+    final ctl = ref.read(aiChatProvider.notifier);
+    for (final id in _selectedMessageIds) {
+      ctl.deleteMessage(widget.characterId, id);
+    }
+    setState(_selectedMessageIds.clear);
+  }
+
+  Future<void> _shareMessage(AiChatMessage message) async {
+    final attachments = message.allAttachments
+        .where((item) => File(item.path).existsSync())
+        .toList();
+    await SharePlus.instance.share(
+      ShareParams(
+        text: message.text.isEmpty ? null : message.text,
+        files: [
+          for (final attachment in attachments)
+            XFile(
+              attachment.path,
+              name: attachment.name,
+              mimeType: lookupMimeType(attachment.path),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _saveMessageMedia(AiChatMessage message) async {
+    final items = message.allAttachments
+        .where((item) => File(item.path).existsSync())
+        .toList();
+    if (items.isEmpty) return;
+
+    var saved = 0;
+    for (final item in items) {
+      try {
+        final fallbackName = item.kind == 'image'
+            ? 'masanawa-photo.jpg'
+            : item.kind == 'voice'
+            ? 'masanawa-voice.m4a'
+            : item.kind == 'video'
+            ? 'masanawa-video.mp4'
+            : 'masanawa-file';
+        final bytes = await File(item.path).readAsBytes();
+        final output = await FilePicker.saveFile(
+          dialogTitle: 'Save from Masanawa',
+          fileName: item.name ?? fallbackName,
+          bytes: bytes,
+          mimeType:
+              lookupMimeType(item.path) ?? 'application/octet-stream',
+        );
+        if (output == null) break;
+        saved++;
+      } catch (_) {}
+    }
+    if (mounted && saved > 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            saved == 1 ? 'Saved 1 file' : 'Saved $saved files',
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _forwardMessage(AiChatMessage message) async {
+    final agents = ref.read(agentDirectoryProvider).agents;
+    final target = await showModalBottomSheet<AgentDirectoryEntry>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            const ListTile(
+              title: Text('Forward to agent'),
+              subtitle: Text('Choose a conversation'),
+            ),
+            for (final entry in agents)
+              ListTile(
+                leading: CircleAvatar(child: Text(entry.initial)),
+                title: Text(entry.displayName),
+                subtitle: Text(entry.roleLabel),
+                onTap: () => Navigator.pop(sheetContext, entry),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (target == null) return;
+    final ctl = ref.read(aiChatProvider.notifier);
+    if (message.allAttachments.isNotEmpty) {
+      await ctl.sendAttachments(
+        target.characterId,
+        message.allAttachments,
+        caption: message.text,
+      );
+    } else if (message.text.isNotEmpty) {
+      await ctl.sendText(target.characterId, message.text);
+    }
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Forwarded to ${target.displayName}')),
+      );
+    }
+  }
+
+  Future<void> _runAgentAction(AiChatMessage message, String action) async {
+    final ctl = ref.read(aiChatProvider.notifier);
+    final quoted = message.text;
+    final prompt = switch (action) {
+      'regenerate' => 'Answer my previous request again. Improve the answer and avoid unnecessary repetition.',
+      'shorter' => 'Make this answer much shorter while preserving the important points:\n\n$quoted',
+      'detail' => 'Expand this answer with more useful detail and practical steps:\n\n$quoted',
+      'simple' => 'Explain this much more simply:\n\n$quoted',
+      'translate' => 'Translate this answer into the language I am currently using, preserving meaning:\n\n$quoted',
+      'continue' => 'Continue this answer exactly from where it stopped:\n\n$quoted',
+      'audio' => 'Repeat this answer faithfully so I can listen to the native audio version:\n\n$quoted',
+      _ => '',
+    };
+    if (prompt.isEmpty) return;
+    await ctl.sendText(
+      widget.characterId,
+      prompt,
+      replyToId: message.id,
+      replyPreview: quoted.isEmpty ? 'Agent response' : quoted,
+    );
+  }
+
+  Future<void> _editMessage(AiChatMessage message) async {
+    final editor = TextEditingController(text: message.text);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Edit message'),
+        content: TextField(
+          controller: editor,
+          autofocus: true,
+          minLines: 1,
+          maxLines: 6,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, editor.text),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    editor.dispose();
+    if (result != null) {
+      ref.read(aiChatProvider.notifier).editMessage(
+        widget.characterId,
+        message.id,
+        result,
+      );
+    }
+  }
+
+  Future<void> _renameConversation() async {
+    final thread = ref.read(aiChatProvider.notifier).threadOf(widget.characterId);
+    final editor = TextEditingController(text: thread.title ?? '');
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Rename conversation'),
+        content: TextField(controller: editor, autofocus: true),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, editor.text),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    editor.dispose();
+    if (result != null) {
+      ref.read(aiChatProvider.notifier).renameThread(widget.characterId, result);
+    }
   }
 
   void _confirmClear(AgentDirectoryEntry agent) {
@@ -565,9 +1236,13 @@ class _Composer extends StatelessWidget {
     required this.hasText,
     required this.sending,
     required this.onSend,
+    required this.onStop,
     required this.onAttach,
     required this.onCamera,
     required this.onMic,
+    required this.onMicHoldStart,
+    required this.onMicHoldMove,
+    required this.onMicHoldEnd,
     required this.onEmojiToggle,
   });
 
@@ -575,9 +1250,13 @@ class _Composer extends StatelessWidget {
   final bool hasText;
   final bool sending;
   final VoidCallback onSend;
+  final VoidCallback onStop;
   final VoidCallback onAttach;
   final VoidCallback onCamera;
   final VoidCallback onMic;
+  final ValueChanged<LongPressStartDetails> onMicHoldStart;
+  final ValueChanged<LongPressMoveUpdateDetails> onMicHoldMove;
+  final ValueChanged<LongPressEndDetails> onMicHoldEnd;
   final VoidCallback onEmojiToggle;
 
   @override
@@ -640,35 +1319,36 @@ class _Composer extends StatelessWidget {
             Semantics(
               button: true,
               label: hasText ? 'Send message' : 'Record voice note',
-              child: Material(
-                color: u.brand,
-                shape: const CircleBorder(),
-                clipBehavior: Clip.antiAlias,
-                child: InkWell(
-                  onTap: sending ? null : (hasText ? onSend : onMic),
-                  child: SizedBox(
-                    width: 52,
-                    height: 52,
-                    child: sending
-                        ? const Center(
-                            child: SizedBox(
-                              width: 19,
-                              height: 19,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            ),
-                          )
-                        : AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 160),
-                            child: Icon(
-                              hasText ? Icons.send_rounded : Icons.mic_rounded,
-                              key: ValueKey(hasText),
-                              color: Colors.white,
-                              size: 23,
-                            ),
-                          ),
+              child: GestureDetector(
+                onLongPressStart:
+                    sending || hasText ? null : onMicHoldStart,
+                onLongPressMoveUpdate:
+                    sending || hasText ? null : onMicHoldMove,
+                onLongPressEnd:
+                    sending || hasText ? null : onMicHoldEnd,
+                child: Material(
+                  color: u.brand,
+                  shape: const CircleBorder(),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: sending ? onStop : (hasText ? onSend : onMic),
+                    child: SizedBox(
+                      width: 52,
+                      height: 52,
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 160),
+                        child: Icon(
+                          sending
+                              ? Icons.stop_rounded
+                              : hasText
+                              ? Icons.send_rounded
+                              : Icons.mic_rounded,
+                          key: ValueKey('$sending-$hasText'),
+                          color: Colors.white,
+                          size: 23,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -711,11 +1391,151 @@ class _ComposerIcon extends StatelessWidget {
 class _RecordingBar extends StatelessWidget {
   const _RecordingBar({
     required this.clock,
+    required this.amplitudes,
+    required this.recording,
+    required this.paused,
+    required this.locked,
+    required this.onDelete,
+    required this.onPause,
+    required this.onStop,
+    required this.onSend,
+    required this.onCancelSwipe,
+    required this.onLockSwipe,
+  });
+
+  final String clock;
+  final List<double> amplitudes;
+  final bool recording;
+  final bool paused;
+  final bool locked;
+  final VoidCallback onDelete;
+  final VoidCallback? onPause;
+  final VoidCallback? onStop;
+  final VoidCallback? onSend;
+  final VoidCallback onCancelSwipe;
+  final VoidCallback onLockSwipe;
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    return SafeArea(
+      top: false,
+      child: GestureDetector(
+        onHorizontalDragEnd: locked
+            ? null
+            : (details) {
+                if ((details.primaryVelocity ?? 0) < -250) onCancelSwipe();
+              },
+        onVerticalDragEnd: locked
+            ? null
+            : (details) {
+                if ((details.primaryVelocity ?? 0) < -250) onLockSwipe();
+              },
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+          decoration: BoxDecoration(
+            color: u.surfaceCard,
+            borderRadius: BorderRadius.circular(26),
+            border: Border.all(color: u.structuralBorder),
+          ),
+          child: Row(
+            children: [
+              IconButton(
+                tooltip: 'Delete recording',
+                icon: const Icon(Icons.delete_outline),
+                onPressed: onDelete,
+              ),
+              if (recording)
+                Icon(
+                  locked ? Icons.lock : Icons.lock_open,
+                  size: 17,
+                  color: u.textMuted,
+                ),
+              if (recording) const SizedBox(width: 6),
+              Container(
+                width: 9,
+                height: 9,
+                decoration: BoxDecoration(
+                  color: recording && !paused ? Colors.red : u.textMuted,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 7),
+              Text(
+                clock,
+                style: TextStyle(
+                  color: u.textPrimary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: SizedBox(
+                  height: 32,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      for (final value in amplitudes.take(28))
+                        Container(
+                          width: 2,
+                          height: 4 + (value * 22),
+                          decoration: BoxDecoration(
+                            color: u.brand.withValues(alpha: .75),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      if (amplitudes.isEmpty)
+                        Text(
+                          recording
+                              ? (locked ? 'Locked recording' : '← cancel   ↑ lock')
+                              : 'Voice note ready',
+                          style: TextStyle(color: u.textMuted, fontSize: 11),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              if (onPause != null)
+                IconButton(
+                  tooltip: paused ? 'Resume' : 'Pause',
+                  icon: Icon(paused ? Icons.mic : Icons.pause),
+                  onPressed: onPause,
+                ),
+              if (onStop != null)
+                IconButton(
+                  tooltip: 'Preview',
+                  icon: const Icon(Icons.stop_circle_outlined),
+                  onPressed: onStop,
+                ),
+              if (onSend != null)
+                Material(
+                  color: u.brand,
+                  shape: const CircleBorder(),
+                  child: IconButton(
+                    tooltip: 'Send voice note',
+                    icon: const Icon(Icons.send_rounded, color: Colors.white),
+                    onPressed: onSend,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _VoicePreviewBar extends StatelessWidget {
+  const _VoicePreviewBar({
+    required this.attachment,
     required this.onDelete,
     required this.onSend,
   });
 
-  final String clock;
+  final ChatAttachment attachment;
   final VoidCallback onDelete;
   final VoidCallback onSend;
 
@@ -726,47 +1546,27 @@ class _RecordingBar extends StatelessWidget {
       top: false,
       child: Container(
         margin: const EdgeInsets.fromLTRB(8, 6, 8, 8),
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
         decoration: BoxDecoration(
           color: u.surfaceCard,
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(26),
           border: Border.all(color: u.structuralBorder),
         ),
         child: Row(
           children: [
             IconButton(
-              tooltip: 'Delete recording',
+              tooltip: 'Discard',
               icon: const Icon(Icons.delete_outline),
               onPressed: onDelete,
             ),
-            Container(
-              width: 10,
-              height: 10,
-              decoration: const BoxDecoration(
-                color: Colors.red,
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              clock,
-              style: TextStyle(
-                color: u.textPrimary,
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const Spacer(),
-            GestureDetector(
-              onTap: onSend,
-              child: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: u.brand,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.send, color: Colors.white, size: 20),
+            Expanded(child: _VoiceBubble(attachment: attachment)),
+            Material(
+              color: u.brand,
+              shape: const CircleBorder(),
+              child: IconButton(
+                tooltip: 'Send voice note',
+                icon: const Icon(Icons.send_rounded, color: Colors.white),
+                onPressed: onSend,
               ),
             ),
           ],
@@ -776,11 +1576,190 @@ class _RecordingBar extends StatelessWidget {
   }
 }
 
-class _ChatBubble extends StatelessWidget {
-  const _ChatBubble({required this.message, this.onRetry});
+class _ReplyComposerPreview extends StatelessWidget {
+  const _ReplyComposerPreview({
+    required this.message,
+    required this.onClose,
+  });
 
   final AiChatMessage message;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    final preview = message.text.isNotEmpty
+        ? message.text
+        : message.attachment?.label ?? 'Message';
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+      padding: const EdgeInsets.fromLTRB(10, 7, 4, 7),
+      decoration: BoxDecoration(
+        color: u.surfaceCard,
+        borderRadius: BorderRadius.circular(10),
+        border: Border(
+          left: BorderSide(color: u.brand, width: 3),
+          top: BorderSide(color: u.structuralBorder),
+          right: BorderSide(color: u.structuralBorder),
+          bottom: BorderSide(color: u.structuralBorder),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              preview,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: u.textMuted, fontSize: 12.5),
+            ),
+          ),
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(Icons.close, size: 18),
+            onPressed: onClose,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ChatBubble extends StatelessWidget {
+  const _ChatBubble({
+    required this.message,
+    required this.selected,
+    required this.highlighted,
+    required this.onSelect,
+    required this.onReply,
+    required this.onReact,
+    required this.onDelete,
+    required this.onCopy,
+    required this.onForward,
+    required this.onShare,
+    this.onSaveMedia,
+    this.onEdit,
+    this.onRetry,
+    this.onAgentAction,
+  });
+
+  final AiChatMessage message;
+  final bool selected;
+  final bool highlighted;
+  final VoidCallback onSelect;
+  final VoidCallback onReply;
+  final ValueChanged<String> onReact;
+  final VoidCallback onDelete;
+  final VoidCallback onCopy;
+  final VoidCallback onForward;
+  final VoidCallback onShare;
+  final VoidCallback? onSaveMedia;
+  final VoidCallback? onEdit;
   final VoidCallback? onRetry;
+  final ValueChanged<String>? onAgentAction;
+
+  Future<void> _showActions(BuildContext context) async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.reply),
+              title: const Text('Reply'),
+              onTap: () => Navigator.pop(sheetContext, 'reply'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.copy_outlined),
+              title: const Text('Copy'),
+              onTap: () => Navigator.pop(sheetContext, 'copy'),
+            ),
+            if (onEdit != null)
+              ListTile(
+                leading: const Icon(Icons.edit_outlined),
+                title: const Text('Edit'),
+                onTap: () => Navigator.pop(sheetContext, 'edit'),
+              ),
+            ListTile(
+              leading: const Icon(Icons.forward_outlined),
+              title: const Text('Forward'),
+              onTap: () => Navigator.pop(sheetContext, 'forward'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.share_outlined),
+              title: const Text('Share'),
+              onTap: () => Navigator.pop(sheetContext, 'share'),
+            ),
+            if (onSaveMedia != null)
+              ListTile(
+                leading: const Icon(Icons.download_outlined),
+                title: const Text('Save media'),
+                onTap: () => Navigator.pop(sheetContext, 'save'),
+              ),
+            ListTile(
+              leading: const Icon(Icons.checklist_outlined),
+              title: const Text('Select'),
+              onTap: () => Navigator.pop(sheetContext, 'select'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_outline),
+              title: const Text('Delete'),
+              onTap: () => Navigator.pop(sheetContext, 'delete'),
+            ),
+            if (!message.isUser) ...[
+              const Divider(height: 1),
+              for (final item in const [
+                ('regenerate', Icons.refresh, 'Regenerate'),
+                ('shorter', Icons.compress, 'Shorter'),
+                ('detail', Icons.subject, 'More detailed'),
+                ('simple', Icons.lightbulb_outline, 'Explain simply'),
+                ('translate', Icons.translate, 'Translate'),
+                ('audio', Icons.volume_up_outlined, 'Read aloud'),
+                ('continue', Icons.playlist_add, 'Continue'),
+              ])
+                ListTile(
+                  leading: Icon(item.$2),
+                  title: Text(item.$3),
+                  onTap: () => Navigator.pop(sheetContext, 'agent:${item.$1}'),
+                ),
+            ],
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  for (final emoji in const ['👍', '❤️', '😂', '😮', '😢', '🙏'])
+                    InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () => Navigator.pop(sheetContext, 'react:$emoji'),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Text(emoji, style: const TextStyle(fontSize: 24)),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (action == null) return;
+    if (action == 'reply') onReply();
+    if (action == 'copy') onCopy();
+    if (action == 'forward') onForward();
+    if (action == 'share') onShare();
+    if (action == 'save') onSaveMedia?.call();
+    if (action == 'select') onSelect();
+    if (action == 'edit') onEdit?.call();
+    if (action == 'delete') onDelete();
+    if (action.startsWith('react:')) onReact(action.substring(6));
+    if (action.startsWith('agent:')) {
+      onAgentAction?.call(action.substring(6));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -790,70 +1769,174 @@ class _ChatBubble extends StatelessWidget {
       (p) => p.kind == AgentMessagePartKind.status && p.status == 'failed',
     );
     final failure = failedParts.isEmpty ? null : failedParts.first;
-    final attachment = message.attachment;
+    final attachments = message.allAttachments;
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 3),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.78,
-        ),
-        decoration: BoxDecoration(
-          // Token-driven user bubble: success tint over card, no raw hex.
-          color: isUser
-              ? Color.lerp(u.surfaceCard, u.success, 0.18)!
-              : u.surfaceCard,
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(14),
-            topRight: const Radius.circular(14),
-            bottomLeft: Radius.circular(isUser ? 14 : 4),
-            bottomRight: Radius.circular(isUser ? 4 : 14),
-          ),
-          border: isUser ? null : Border.all(color: u.structuralBorder),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
+      child: GestureDetector(
+        onLongPress: () => _showActions(context),
+        onHorizontalDragEnd: (details) {
+          if ((details.primaryVelocity ?? 0) > 250) onReply();
+        },
+        child: Stack(
+          clipBehavior: Clip.none,
           children: [
-            if (attachment != null) ...[
-              _AttachmentView(attachment: attachment),
-              if (message.text.isNotEmpty) const SizedBox(height: 6),
-            ],
-            if (message.text.isNotEmpty)
-              Text(
-                message.text,
-                style: TextStyle(
-                  color: u.textPrimary,
-                  fontSize: 15,
-                  height: 1.4,
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 3),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.82,
+              ),
+              decoration: BoxDecoration(
+                color: isUser
+                    ? Color.lerp(u.surfaceCard, u.success, 0.18)!
+                    : u.surfaceCard,
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(14),
+                  topRight: const Radius.circular(14),
+                  bottomLeft: Radius.circular(isUser ? 14 : 4),
+                  bottomRight: Radius.circular(isUser ? 4 : 14),
                 ),
+                border: selected || highlighted
+                    ? Border.all(
+                        color: highlighted ? u.warning : u.brand,
+                        width: 2,
+                      )
+                    : isUser
+                    ? null
+                    : Border.all(color: u.structuralBorder),
               ),
-            if (message.parts.any((p) => p != failure))
-              MessagePartsView(
-                parts: message.parts.where((p) => p != failure).toList(),
-              ),
-            if (failure != null)
-              TextButton.icon(
-                onPressed: onRetry,
-                icon: const Icon(Icons.refresh, size: 18),
-                label: Text(failure.actionLabel ?? 'Try again'),
-              ),
-            const SizedBox(height: 3),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Text(
-                  formatClock(message.createdAt),
-                  style: TextStyle(color: u.textMuted, fontSize: 10.5),
-                ),
-                if (isUser) ...[
-                  const SizedBox(width: 3),
-                  Icon(Icons.done_all, size: 14, color: u.textMuted),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (message.replyPreview case final preview?
+                      when preview.trim().isNotEmpty)
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 7),
+                      padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+                      decoration: BoxDecoration(
+                        color: u.surfaceBg.withValues(alpha: .65),
+                        borderRadius: BorderRadius.circular(7),
+                        border: Border(left: BorderSide(color: u.brand, width: 3)),
+                      ),
+                      child: Text(
+                        preview,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: u.textMuted, fontSize: 12),
+                      ),
+                    ),
+                  if (message.deleted)
+                    Text(
+                      'This message was deleted',
+                      style: TextStyle(
+                        color: u.textMuted,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    )
+                  else ...[
+                    if (attachments.isNotEmpty) ...[
+                      _AttachmentGallery(attachments: attachments),
+                      if (message.text.isNotEmpty) const SizedBox(height: 6),
+                    ],
+                    if (message.uploadProgress case final progress?
+                        when message.deliveryStatus == 'uploading' ||
+                            message.deliveryStatus == 'processing') ...[
+                      const SizedBox(height: 6),
+                      LinearProgressIndicator(
+                        value: message.deliveryStatus == 'processing'
+                            ? null
+                            : progress,
+                        minHeight: 3,
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        message.deliveryStatus == 'processing'
+                            ? 'Processing attachments…'
+                            : 'Uploading ${(progress * 100).round()}%',
+                        style: TextStyle(color: u.textMuted, fontSize: 10.5),
+                      ),
+                    ],
+                    if (message.text.isNotEmpty)
+                      _RichMessageText(text: message.text),
+                    if (message.parts.any((p) => p != failure))
+                      MessagePartsView(
+                        parts: message.parts.where((p) => p != failure).toList(),
+                      ),
+                  ],
+                  if (failure != null)
+                    TextButton.icon(
+                      onPressed: onRetry,
+                      icon: const Icon(Icons.refresh, size: 18),
+                      label: Text(failure.actionLabel ?? 'Try again'),
+                    ),
+                  const SizedBox(height: 3),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (message.editedAt != null)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 4),
+                          child: Text(
+                            'edited',
+                            style: TextStyle(color: u.textMuted, fontSize: 10),
+                          ),
+                        ),
+                      Text(
+                        formatClock(message.createdAt),
+                        style: TextStyle(color: u.textMuted, fontSize: 10.5),
+                      ),
+                      if (message.deliveryStatus == 'streaming') ...[
+                        const SizedBox(width: 4),
+                        SizedBox(
+                          width: 9,
+                          height: 9,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 1.5,
+                            color: u.brand,
+                          ),
+                        ),
+                      ],
+                      if (isUser) ...[
+                        const SizedBox(width: 3),
+                        Icon(
+                          switch (message.deliveryStatus) {
+                            'sending' || 'uploading' || 'processing' =>
+                              Icons.schedule,
+                            'queued' => Icons.cloud_off_outlined,
+                            'failed' => Icons.error_outline,
+                            'stopped' => Icons.stop_circle_outlined,
+                            _ => Icons.done_all,
+                          },
+                          size: 14,
+                          color: message.deliveryStatus == 'failed'
+                              ? u.emergency
+                              : message.deliveryStatus == 'queued'
+                              ? u.warning
+                              : u.textMuted,
+                        ),
+                      ],
+                    ],
+                  ),
                 ],
-              ],
+              ),
             ),
+            if ((message.reaction ?? '').isNotEmpty)
+              Positioned(
+                right: isUser ? 8 : null,
+                left: isUser ? null : 8,
+                bottom: -6,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: u.surfaceCard,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: u.structuralBorder),
+                  ),
+                  child: Text(message.reaction!, style: const TextStyle(fontSize: 14)),
+                ),
+              ),
           ],
         ),
       ),
@@ -861,18 +1944,218 @@ class _ChatBubble extends StatelessWidget {
   }
 }
 
+class _DateSeparator extends StatelessWidget {
+  const _DateSeparator({required this.date});
+  final DateTime date;
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    final now = DateTime.now();
+    final label = _label(now, date);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: u.surfaceCard,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: u.structuralBorder),
+          ),
+          child: Text(label, style: TextStyle(color: u.textMuted, fontSize: 11)),
+        ),
+      ),
+    );
+  }
+
+  String _label(DateTime now, DateTime date) {
+    final today = DateTime(now.year, now.month, now.day);
+    final day = DateTime(date.year, date.month, date.day);
+    final diff = today.difference(day).inDays;
+    if (diff == 0) return 'Today';
+    if (diff == 1) return 'Yesterday';
+    return '${date.day}/${date.month}/${date.year}';
+  }
+}
+
+class _RichMessageText extends StatelessWidget {
+  const _RichMessageText({required this.text});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    final chunks = text.split('```');
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < chunks.length; i++)
+          if (i.isEven)
+            if (chunks[i].trim().isNotEmpty)
+              MarkdownBody(
+                data: chunks[i],
+                selectable: true,
+                onTapLink: (_, href, __) async {
+                  if (href == null) return;
+                  final uri = Uri.tryParse(href);
+                  if (uri != null &&
+                      (uri.scheme == 'https' || uri.scheme == 'http')) {
+                    await launchUrl(
+                      uri,
+                      mode: LaunchMode.externalApplication,
+                    );
+                  }
+                },
+                styleSheet: MarkdownStyleSheet(
+                  p: TextStyle(
+                    color: u.textPrimary,
+                    fontSize: 15,
+                    height: 1.4,
+                  ),
+                  h1: TextStyle(
+                    color: u.textPrimary,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  h2: TextStyle(
+                    color: u.textPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  h3: TextStyle(
+                    color: u.textPrimary,
+                    fontSize: 16.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  code: TextStyle(
+                    color: u.textPrimary,
+                    fontFamily: 'monospace',
+                    fontSize: 12.5,
+                  ),
+                  tableBorder: TableBorder.all(color: u.structuralBorder),
+                  tableCellsPadding: const EdgeInsets.all(6),
+                ),
+              )
+          else
+            _CodeBlock(raw: chunks[i]),
+      ],
+    );
+  }
+}
+
+class _CodeBlock extends StatelessWidget {
+  const _CodeBlock({required this.raw});
+  final String raw;
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    final firstBreak = raw.indexOf('\n');
+    final value = firstBreak > 0 &&
+            RegExp(r'^[a-zA-Z0-9_+#.-]+$').hasMatch(raw.substring(0, firstBreak))
+        ? raw.substring(firstBreak + 1).trimRight()
+        : raw.trim();
+    if (value.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(vertical: 5),
+      padding: const EdgeInsets.fromLTRB(10, 10, 4, 10),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: .07),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: SelectableText(
+              value,
+              style: TextStyle(
+                color: u.textPrimary,
+                fontFamily: 'monospace',
+                fontSize: 12.5,
+                height: 1.35,
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: 'Copy code',
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(Icons.copy, size: 16),
+            onPressed: () => Clipboard.setData(ClipboardData(text: value)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AttachmentGallery extends StatelessWidget {
+  const _AttachmentGallery({required this.attachments});
+  final List<ChatAttachment> attachments;
+
+  @override
+  Widget build(BuildContext context) {
+    final imageAttachments =
+        attachments.where((item) => item.kind == 'image').toList();
+    final imagePaths = imageAttachments.map((item) => item.path).toList();
+
+    if (attachments.length == 1) {
+      return _AttachmentView(
+        attachment: attachments.first,
+        imagePaths: imagePaths,
+        imageIndex: 0,
+      );
+    }
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 260),
+      child: Wrap(
+        spacing: 4,
+        runSpacing: 4,
+        children: [
+          for (final attachment in attachments)
+            SizedBox(
+              width: attachment.kind == 'image' ? 126 : 250,
+              child: _AttachmentView(
+                attachment: attachment,
+                imagePaths: imagePaths,
+                imageIndex: attachment.kind == 'image'
+                    ? imageAttachments.indexOf(attachment)
+                    : 0,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 class _AttachmentView extends StatelessWidget {
-  const _AttachmentView({required this.attachment});
+  const _AttachmentView({
+    required this.attachment,
+    this.imagePaths = const [],
+    this.imageIndex = 0,
+  });
 
   final ChatAttachment attachment;
+  final List<String> imagePaths;
+  final int imageIndex;
 
   @override
   Widget build(BuildContext context) {
     switch (attachment.kind) {
       case 'image':
-        return _ImageAttachment(path: attachment.path);
+        return _ImageAttachment(
+          path: attachment.path,
+          galleryPaths: imagePaths.isEmpty ? [attachment.path] : imagePaths,
+          initialIndex: imageIndex,
+        );
       case 'voice':
         return _VoiceBubble(attachment: attachment);
+      case 'video':
+        return _VideoAttachment(attachment: attachment);
       default:
         return _DocTile(attachment: attachment);
     }
@@ -880,24 +2163,26 @@ class _AttachmentView extends StatelessWidget {
 }
 
 class _ImageAttachment extends StatelessWidget {
-  const _ImageAttachment({required this.path});
+  const _ImageAttachment({
+    required this.path,
+    required this.galleryPaths,
+    required this.initialIndex,
+  });
+
   final String path;
+  final List<String> galleryPaths;
+  final int initialIndex;
 
   @override
   Widget build(BuildContext context) {
     final file = File(path);
     return GestureDetector(
-      onTap: () => showDialog<void>(
-        context: context,
-        builder: (_) => Dialog(
-          insetPadding: const EdgeInsets.all(16),
-          child: Image.file(
-            file,
-            fit: BoxFit.contain,
-            errorBuilder: (_, __, ___) => const Padding(
-              padding: EdgeInsets.all(24),
-              child: Text('Photo no longer available on this device.'),
-            ),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          fullscreenDialog: true,
+          builder: (_) => _ImageGalleryViewer(
+            paths: galleryPaths,
+            initialIndex: initialIndex,
           ),
         ),
       ),
@@ -906,6 +2191,7 @@ class _ImageAttachment extends StatelessWidget {
         child: Image.file(
           file,
           width: 220,
+          height: galleryPaths.length > 1 ? 126 : null,
           fit: BoxFit.cover,
           errorBuilder: (_, __, ___) => Container(
             width: 220,
@@ -914,6 +2200,195 @@ class _ImageAttachment extends StatelessWidget {
             alignment: Alignment.center,
             child: const Icon(Icons.broken_image_outlined),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ImageGalleryViewer extends StatefulWidget {
+  const _ImageGalleryViewer({
+    required this.paths,
+    required this.initialIndex,
+  });
+
+  final List<String> paths;
+  final int initialIndex;
+
+  @override
+  State<_ImageGalleryViewer> createState() => _ImageGalleryViewerState();
+}
+
+class _ImageGalleryViewerState extends State<_ImageGalleryViewer> {
+  late final PageController _controller;
+  late int _index;
+
+  @override
+  void initState() {
+    super.initState();
+    _index = widget.initialIndex
+        .clamp(0, widget.paths.length - 1)
+        .toInt();
+    _controller = PageController(initialPage: _index);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        backgroundColor: Colors.black,
+        body: SafeArea(
+          child: Stack(
+            children: [
+              PageView.builder(
+                controller: _controller,
+                itemCount: widget.paths.length,
+                onPageChanged: (index) => setState(() => _index = index),
+                itemBuilder: (_, index) => Center(
+                  child: InteractiveViewer(
+                    minScale: 0.7,
+                    maxScale: 5,
+                    child: Image.file(
+                      File(widget.paths[index]),
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Text(
+                          'Photo no longer available on this device.',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 8,
+                left: 8,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ),
+              if (widget.paths.length > 1)
+                Positioned(
+                  top: 16,
+                  left: 0,
+                  right: 0,
+                  child: IgnorePointer(
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Text(
+                          '${_index + 1}/${widget.paths.length}',
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
+}
+
+class _VideoAttachment extends StatefulWidget {
+  const _VideoAttachment({required this.attachment});
+  final ChatAttachment attachment;
+
+  @override
+  State<_VideoAttachment> createState() => _VideoAttachmentState();
+}
+
+class _VideoAttachmentState extends State<_VideoAttachment> {
+  VideoPlayerController? _controller;
+  bool _failed = false;
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _toggle() async {
+    try {
+      final controller = _controller ??= VideoPlayerController.file(
+        File(widget.attachment.path),
+      );
+      if (!controller.value.isInitialized) {
+        await controller.initialize();
+      }
+      if (controller.value.isPlaying) {
+        await controller.pause();
+      } else {
+        await controller.play();
+      }
+      if (mounted) setState(() {});
+    } catch (_) {
+      if (mounted) setState(() => _failed = true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    final controller = _controller;
+    final initialized = controller?.value.isInitialized ?? false;
+    return GestureDetector(
+      onTap: _toggle,
+      child: Container(
+        width: 230,
+        height: 140,
+        decoration: BoxDecoration(
+          color: Colors.black87,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (initialized)
+              FittedBox(
+                fit: BoxFit.cover,
+                child: SizedBox(
+                  width: controller!.value.size.width,
+                  height: controller.value.size.height,
+                  child: VideoPlayer(controller),
+                ),
+              )
+            else
+              Center(
+                child: _failed
+                    ? const Icon(Icons.error_outline, color: Colors.white)
+                    : Icon(
+                        Icons.play_circle_fill,
+                        color: u.surfaceCard,
+                        size: 48,
+                      ),
+              ),
+            if (initialized)
+              Center(
+                child: Icon(
+                  controller!.value.isPlaying
+                      ? Icons.pause_circle_filled
+                      : Icons.play_circle_fill,
+                  color: Colors.white70,
+                  size: 46,
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -966,6 +2441,8 @@ class _DocTile extends StatelessWidget {
   }
 }
 
+_VoiceBubbleState? _activeVoiceBubble;
+
 class _VoiceBubble extends StatefulWidget {
   const _VoiceBubble({required this.attachment});
   final ChatAttachment attachment;
@@ -977,40 +2454,94 @@ class _VoiceBubble extends StatefulWidget {
 class _VoiceBubbleState extends State<_VoiceBubble> {
   AudioPlayer? _player;
   StreamSubscription<PlayerState>? _stateSub;
+  StreamSubscription<Duration>? _positionSub;
   bool _playing = false;
   bool _broken = false;
+  bool _speakerOn = true;
+  Duration _position = Duration.zero;
+  Duration _duration = Duration.zero;
+  double _speed = 1;
 
   @override
   void dispose() {
+    if (identical(_activeVoiceBubble, this)) _activeVoiceBubble = null;
     _stateSub?.cancel();
+    _positionSub?.cancel();
     _player?.dispose();
     super.dispose();
+  }
+
+  Future<void> _pauseFromAnotherBubble() async {
+    if (!_playing) return;
+    await _player?.pause();
+    if (mounted) setState(() => _playing = false);
+  }
+
+  Future<void> _ensurePlayer() async {
+    if (_player != null) return;
+    final player = AudioPlayer();
+    _player = player;
+    _stateSub = player.playerStateStream.listen((state) {
+      if (!mounted) return;
+      if (state.processingState == ProcessingState.completed) {
+        setState(() {
+          _playing = false;
+          _position = Duration.zero;
+        });
+        player.seek(Duration.zero);
+      }
+    });
+    _positionSub = player.positionStream.listen((value) {
+      if (mounted) setState(() => _position = value);
+    });
+    final duration = await player.setFilePath(widget.attachment.path);
+    _duration = duration ??
+        Duration(milliseconds: widget.attachment.durationMs ?? 0);
+    await player.setSpeed(_speed);
   }
 
   Future<void> _toggle() async {
     try {
       if (_broken && mounted) setState(() => _broken = false);
-      _player ??= AudioPlayer();
-      // Subscribe once per player; re-toggling must not stack listeners.
-      _stateSub ??= _player!.playerStateStream.listen((s) {
-        if (s.processingState == ProcessingState.completed && mounted) {
-          setState(() => _playing = false);
-        }
-      });
+      final session = await AudioSession.instance;
+      await session.configure(
+        AudioSessionConfiguration(
+          avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
+          avAudioSessionCategoryOptions:
+              AVAudioSessionCategoryOptions.allowBluetooth,
+          avAudioSessionMode: AVAudioSessionMode.spokenAudio,
+          androidAudioAttributes: const AndroidAudioAttributes(
+            contentType: AndroidAudioContentType.speech,
+            usage: AndroidAudioUsage.voiceCommunication,
+          ),
+          androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
+          androidWillPauseWhenDucked: true,
+        ),
+      );
+      await LivePcmAudio.setSpeaker(_speakerOn);
+      await _ensurePlayer();
       if (_playing) {
         await _player!.pause();
         if (mounted) setState(() => _playing = false);
         return;
       }
-      await _player!.setFilePath(widget.attachment.path);
-      if (!mounted) return;
-      setState(() => _playing = true);
-      unawaited(_player!.play());
+      final other = _activeVoiceBubble;
+      if (other != null && !identical(other, this)) {
+        await other._pauseFromAnotherBubble();
+      }
+      _activeVoiceBubble = this;
+      if (_position >= _duration && _duration > Duration.zero) {
+        await _player!.seek(Duration.zero);
+      }
+      await _player!.play();
+      if (mounted) setState(() => _playing = true);
     } catch (_) {
       await _player?.dispose();
       _player = null;
       await _stateSub?.cancel();
       _stateSub = null;
+      await _positionSub?.cancel();
+      _positionSub = null;
       if (mounted) {
         setState(() {
           _playing = false;
@@ -1020,26 +2551,72 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
     }
   }
 
+  Future<void> _seek(double fraction) async {
+    try {
+      await _ensurePlayer();
+      final totalMs = _duration.inMilliseconds;
+      if (totalMs <= 0) return;
+      await _player!.seek(
+        Duration(milliseconds: (totalMs * fraction).round()),
+      );
+    } catch (_) {}
+  }
+
+  Future<void> _toggleAudioRoute() async {
+    final next = !_speakerOn;
+    await LivePcmAudio.setSpeaker(next);
+    if (mounted) setState(() => _speakerOn = next);
+  }
+
+  Future<void> _cycleSpeed() async {
+    final next = _speed == 1
+        ? 1.5
+        : _speed == 1.5
+        ? 2.0
+        : 1.0;
+    setState(() => _speed = next);
+    try {
+      await _ensurePlayer();
+      await _player!.setSpeed(next);
+    } catch (_) {}
+  }
+
   @override
   Widget build(BuildContext context) {
     final u = context.masanawa;
-    final total = formatDurationMs(widget.attachment.durationMs ?? 0);
+    final fallbackMs = widget.attachment.durationMs ?? 0;
+    final totalMs = _duration.inMilliseconds > 0
+        ? _duration.inMilliseconds
+        : fallbackMs;
+    final progress = totalMs <= 0
+        ? 0.0
+        : (_position.inMilliseconds / totalMs)
+              .clamp(0.0, 1.0)
+              .toDouble();
+    final remaining = totalMs <= 0
+        ? formatDurationMs(fallbackMs)
+        : formatDurationMs(
+            (totalMs - _position.inMilliseconds)
+                .clamp(0, totalMs)
+                .toInt(),
+          );
+
     return SizedBox(
-      width: 200,
+      width: 235,
       child: Row(
         children: [
           GestureDetector(
             onTap: _toggle,
             child: Container(
-              width: 38,
-              height: 38,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 color: u.brand.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 _broken
-                    ? Icons.error_outline
+                    ? Icons.refresh
                     : _playing
                     ? Icons.pause
                     : Icons.play_arrow,
@@ -1047,28 +2624,65 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  height: 3,
-                  decoration: BoxDecoration(
-                    color: u.textMuted.withValues(alpha: 0.35),
-                    borderRadius: BorderRadius.circular(2),
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    trackHeight: 2,
+                    thumbShape: const RoundSliderThumbShape(
+                      enabledThumbRadius: 5,
+                    ),
+                    overlayShape: SliderComponentShape.noOverlay,
+                  ),
+                  child: Slider(
+                    value: progress,
+                    onChanged: _broken ? null : _seek,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  _broken ? 'Unavailable' : total,
-                  style: TextStyle(color: u.textMuted, fontSize: 11),
+                Row(
+                  children: [
+                    Text(
+                      _broken ? 'Tap to retry' : remaining,
+                      style: TextStyle(color: u.textMuted, fontSize: 11),
+                    ),
+                    const Spacer(),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: _cycleSpeed,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 2,
+                        ),
+                        child: Text(
+                          '${_speed.toStringAsFixed(_speed == 1 ? 0 : 1)}×',
+                          style: TextStyle(
+                            color: u.textMuted,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 4),
-          Icon(Icons.mic, size: 16, color: u.textMuted),
+          const SizedBox(width: 2),
+          IconButton(
+            tooltip: _speakerOn ? 'Use earpiece' : 'Use speaker',
+            visualDensity: VisualDensity.compact,
+            iconSize: 18,
+            onPressed: _toggleAudioRoute,
+            icon: Icon(
+              _speakerOn ? Icons.volume_up_outlined : Icons.hearing_outlined,
+              color: u.textMuted,
+            ),
+          ),
         ],
       ),
     );
