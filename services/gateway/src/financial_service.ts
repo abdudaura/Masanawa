@@ -410,9 +410,10 @@ export function createFinancialService(input: {
       if (!qualifyAccountCapability(evidence.account, capability).eligible) return null;
     }
     const eligible = evidence.routes.filter(route => qualifyRoute(route, "withdraw").eligible);
-    const customerManaged =
-      qualifyAccountCapability(evidence.account, "customer_management").eligible;
-    return customerManaged ? eligible : routesCoveredByCustody(auth, eligible);
+    // Masanawa currently settles user ownership in the canonical internal ledger.
+    // Customer Management capability alone does not prove a specific provider
+    // sub-account is bound to this user, so live pooled coverage is always required.
+    return routesCoveredByCustody(auth, eligible);
   }
 
   async function qualifiedConversionRoutes(auth: FinancialAuthority) {
@@ -423,9 +424,7 @@ export function createFinancialService(input: {
       if (!qualifyAccountCapability(evidence.account, capability).eligible) return null;
     }
     const eligible = evidence.routes.filter((route) => qualifyRoute(route, "convert").eligible);
-    const customerManaged =
-      qualifyAccountCapability(evidence.account, "customer_management").eligible;
-    return customerManaged ? eligible : routesCoveredByCustody(auth, eligible);
+    return routesCoveredByCustody(auth, eligible);
   }
 
   async function preflightWithdrawal(
