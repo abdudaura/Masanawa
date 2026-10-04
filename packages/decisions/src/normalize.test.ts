@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createCanonicalId } from "@masanawa/contracts";
 import {
+  assertDecisionRequestMatchesDefinition,
   createDecisionDefinition,
   createDecisionRequest,
   createDecisionResult,
@@ -214,4 +215,71 @@ describe("Decision/JEV contracts", () => {
       }),
     ).toThrow(/does not match the declared decision schema/u);
   });
+
+  it("rejects invalid runtime enum casts and non-plain packet objects", () => {
+    expect(() =>
+      createDecisionDefinition({
+        ...definitionInput(),
+        risk: "critical" as never,
+      }),
+    ).toThrow(/risk must be low, medium or high/u);
+
+    expect(() =>
+      createDecisionDefinition({
+        ...definitionInput(),
+        rollout: "disabled" as never,
+      }),
+    ).toThrow(/rollout must be shadow or active/u);
+
+    expect(() =>
+      createDecisionRequest({
+        decisionClass: "star_skill_route",
+        schemaVersion: "star_skill_route.v1",
+        packet: {
+          when: new Date() as never,
+        },
+        trace: {
+          tenantId: createCanonicalId("tenant"),
+          requestId: createCanonicalId("request"),
+          correlationId: createCanonicalId("correlation"),
+          taskId: null,
+          workflowRunId: null,
+          operationIds: [],
+        },
+      }),
+    ).toThrow(/plain JSON-like objects/u);
+  });
+
+  it("binds provider requests to the exact declared decision schema", () => {
+    const definition = createDecisionDefinition(definitionInput());
+    const request = createDecisionRequest({
+      decisionClass: definition.decisionClass,
+      schemaVersion: definition.schemaVersion,
+      packet: { candidate_count: 2 },
+      trace: {
+        tenantId: createCanonicalId("tenant"),
+        requestId: createCanonicalId("request"),
+        correlationId: createCanonicalId("correlation"),
+        taskId: null,
+        workflowRunId: null,
+        operationIds: [],
+      },
+    });
+
+    expect(() =>
+      assertDecisionRequestMatchesDefinition(definition, request),
+    ).not.toThrow();
+
+    expect(() =>
+      assertDecisionRequestMatchesDefinition(
+        {
+          ...definition,
+          decisionClass: "other_route",
+          schemaVersion: "other_route.v1",
+        },
+        request,
+      ),
+    ).toThrow(/does not match the declared decision schema/u);
+  });
+
 });
