@@ -31,3 +31,13 @@ Verification: 23 tests in 2 files passed locally (Vitest 5.0.3), covering exact 
 ## Complete service qualification scope
 
 Additional isolated paths: services/gateway/src/financial_service.test.ts; adapters/crypto/nowpayments/src/payout.ts and payout.test.ts. Financial service will require fresh account and exact-route evidence before withdrawal admission. Test snapshot is isolated from the active billing checkout. Shared runtime composition, applied migrations, Commerce storage and deployment remain unowned and unchanged.
+
+## Service acceptance and external blockers — 2026-10-04
+
+Implementation head: 979931c715051e45a13285e45fbe0d183718bba9. Added actual financial-service tests, fresh custody/customer-management/payout/IP/destination-whitelist and exact-route eligibility, numeric-wire precision guards before principal reservation/authentication, bounded provider dispatch/requery, terminal payout verification guard, exact signed IPN paid amounts and principal/currency validation.
+
+Fresh verification in isolated recovered runtime snapshot: 186 passed, 29 database-dependent skipped, 25 passed files/2 skipped files; Gateway, NOWPayments and PostgreSQL adapter strict typechecks passed. This snapshot contains newer billing tests from the active billing window, preserved and not published by this workstream. No real PostgreSQL, physical app or hosted acceptance claimed.
+
+Confirmed Railway variable inventory contains NOWPAYMENTS_API_KEY and NOWPAYMENTS_IPN_SECRET, but neither NOWPAYMENTS_PAYOUT_EMAIL nor NOWPAYMENTS_PAYOUT_PASSWORD. Values were redacted. No fresh provider custody/customer-management/conversion/withdrawal-route evidence is available. API key/catalog evidence does not qualify those operations. Runtime composition must supply withdrawalEvidence from a provider-qualified owner port; default remains unavailable. Provider-authenticated account setup and custody evidence block production conversion/withdrawal/reconciliation qualification.
+
+Shared dependency requests: #100 owns deployment/runtime integration; #104 owns mobile and shared shell surfaces; Commerce storage remains actively owned. These paths are unchanged. Integrators must preserve billing relay code, wire fresh evidence, run real PostgreSQL financial acceptance and app/channel journey tests before commercial availability. Conversion ledger settlement, provider segregated customer custody reconciliation and confirmed fee quotes remain required, not completed. No merged-main/production completion claim.
