@@ -3,6 +3,52 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'shell_document.dart';
+import 'shell_document_session.dart';
+
+/// Mount inside a conversation bubble. The owning authenticated transport feeds
+/// session.apply; the same document ID then changes in place as work progresses.
+class ShellDocumentSessionView extends StatelessWidget {
+  const ShellDocumentSessionView({
+    super.key,
+    required this.session,
+    required this.documentId,
+    this.onAction,
+  });
+  final ShellDocumentSession session;
+  final String documentId;
+  final ShellActionHandler? onAction;
+
+  @override
+  Widget build(BuildContext context) => StreamBuilder<void>(
+    stream: session.changes,
+    builder: (context, snapshot) {
+      final update = session.read(documentId);
+      if (update == null) return const SizedBox.shrink();
+      final label = switch (update.phase) {
+        ShellDocumentPhase.choosing => 'Choose an option',
+        ShellDocumentPhase.submitted => 'Submitted',
+        ShellDocumentPhase.processing => 'Processing',
+        ShellDocumentPhase.fulfilled => 'Fulfilled',
+        ShellDocumentPhase.failed => 'Failed',
+        ShellDocumentPhase.cancelled => 'Cancelled',
+      };
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Semantics(liveRegion: true, child: Text(label)),
+          const SizedBox(height: 8),
+          ShellDocumentView(
+            key: ValueKey('${session.scope}:$documentId'),
+            document: update.document,
+            onAction: update.phase == ShellDocumentPhase.choosing
+                ? onAction
+                : null,
+          ),
+        ],
+      );
+    },
+  );
+}
 
 class ShellDocumentView extends StatefulWidget {
   const ShellDocumentView({super.key, required this.document, this.onAction});
