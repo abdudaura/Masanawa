@@ -152,6 +152,18 @@ export class NowPaymentsClient {
     return Object.freeze({ ...preflight, payment });
   }
 
+  /** Complete evidence for owner-controlled reconciliation; never dispatches a payment. */
+  async getPaymentEvidence(input: {
+    readonly paymentId: string;
+    readonly signal?: AbortSignal;
+  }): Promise<unknown> {
+    if (!/^[A-Za-z0-9_-]{1,128}$/.test(input.paymentId)) throw new Error("nowpayments.payment_id.invalid");
+    const response = await this.#request(`/payment/${encodeURIComponent(input.paymentId)}`, {
+      method: "GET", ...(input.signal === undefined ? {} : { signal: input.signal }),
+    });
+    return response.json();
+  }
+
   async getPaymentStatus(input: {
     readonly paymentId: string | number;
     readonly signal?: AbortSignal;
