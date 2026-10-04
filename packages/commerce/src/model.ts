@@ -384,3 +384,47 @@ export function normalizeCommerceFulfillmentAdmission(
     createdAt: toInstant(input.createdAt),
   });
 }
+
+
+export interface CommerceFulfillmentCompletion {
+  readonly schemaVersion: 1;
+  readonly tenantId: TenantId;
+  readonly fulfillmentId: FulfillmentId;
+  readonly state: "succeeded";
+  readonly resultReference: string;
+  readonly resultHash: string;
+  readonly completedAt: Instant;
+}
+
+export function normalizeCommerceFulfillmentCompletion(
+  input: CommerceFulfillmentCompletion,
+): CommerceFulfillmentCompletion {
+  if (input.schemaVersion !== 1 || input.state !== "succeeded") {
+    throw new TypeError("Unsupported fulfillment completion schema");
+  }
+  if (!isCanonicalId("fulfillment", input.fulfillmentId)) {
+    throw new TypeError("completion fulfillmentId is invalid");
+  }
+  const resultReference = bounded(
+    input.resultReference,
+    "completion.resultReference",
+    2000,
+  );
+  const resultHash = bounded(
+    input.resultHash,
+    "completion.resultHash",
+    71,
+  ).toLowerCase();
+  if (!/^sha256:[0-9a-f]{64}$/u.test(resultHash)) {
+    throw new TypeError("completion resultHash must be sha256:<64 lowercase hex>");
+  }
+  return Object.freeze({
+    schemaVersion: 1,
+    tenantId: parseCanonicalId("tenant", input.tenantId),
+    fulfillmentId: input.fulfillmentId,
+    state: "succeeded",
+    resultReference,
+    resultHash,
+    completedAt: toInstant(input.completedAt),
+  });
+}
