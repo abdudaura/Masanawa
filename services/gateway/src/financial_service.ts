@@ -215,7 +215,7 @@ function payoutSucceeded(status: string | null): boolean {
 }
 
 function payoutFailed(status: string | null): boolean {
-  return status !== null && ["failed", "rejected", "cancelled", "canceled", "expired"].includes(status);
+  return status !== null && ["failed", "rejected", "rejected_not_checked", "cancelled", "canceled", "expired"].includes(status);
 }
 
 function decimalUnits(value: string, allowZero = false): bigint {
