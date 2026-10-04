@@ -311,6 +311,71 @@ describe("financial service recovery and admission", () => {
     }));
     expect(crypto.reserveWithdrawal).not.toHaveBeenCalled();
   });
+  it("releases a payout reserve on deterministic provider rejection", async () => {
+    const { service, crypto, fetch } = setup(
+      null, account, undefined, undefined, undefined, true,
+    );
+    fetch.mockImplementation(async (
+      request: Parameters<typeof globalThis.fetch>[0],
+      init?: Parameters<typeof globalThis.fetch>[1],
+    ) => {
+      const url = String(request);
+      if (url.endsWith("/auth")) return new Response(JSON.stringify({ token: "fixture-jwt" }));
+      if (url.includes("/payout/validate-address")) return new Response("{}");
+      if (url.includes("/payout/fee?")) return new Response(JSON.stringify({ fee: "0.1" }));
+      if (url.includes("/payout-withdrawal/min-amount/")) {
+        return new Response(JSON.stringify({ success: true, result: "1" }));
+      }
+      if (url.endsWith("/balance")) {
+        return new Response(JSON.stringify({ usdttrc20: { amount: "100", pendingAmount: "0" } }));
+      }
+      if (url.endsWith("/payout") && init?.method === "POST") {
+        return new Response("invalid payout", { status: 422 });
+      }
+      return new Response("{}");
+    });
+    await expect(service.createWithdrawal({
+      authorizationHeader, requestId, providerCode: "USDTTRC20",
+      amount: "10", destinationAddress: "address",
+    })).resolves.toMatchObject({ status: "failed", providerPayoutId: "batch-1" });
+    expect(crypto.settleWithdrawal).toHaveBeenCalledWith(expect.objectContaining({
+      succeeded: false, providerReference: null,
+    }));
+    expect(crypto.bindProviderPayout).not.toHaveBeenCalled();
+  });
+
+  it("keeps a payout reserve locked when dispatch transport outcome is unknown", async () => {
+    const { service, crypto, fetch } = setup(
+      null, account, undefined, undefined, undefined, true,
+    );
+    fetch.mockImplementation(async (
+      request: Parameters<typeof globalThis.fetch>[0],
+      init?: Parameters<typeof globalThis.fetch>[1],
+    ) => {
+      const url = String(request);
+      if (url.endsWith("/auth")) return new Response(JSON.stringify({ token: "fixture-jwt" }));
+      if (url.includes("/payout/validate-address")) return new Response("{}");
+      if (url.includes("/payout/fee?")) return new Response(JSON.stringify({ fee: "0.1" }));
+      if (url.includes("/payout-withdrawal/min-amount/")) {
+        return new Response(JSON.stringify({ success: true, result: "1" }));
+      }
+      if (url.endsWith("/balance")) {
+        return new Response(JSON.stringify({ usdttrc20: { amount: "100", pendingAmount: "0" } }));
+      }
+      if (url.endsWith("/payout") && init?.method === "POST") {
+        throw new Error("socket reset");
+      }
+      return new Response("{}");
+    });
+    await expect(service.createWithdrawal({
+      authorizationHeader, requestId, providerCode: "USDTTRC20",
+      amount: "10", destinationAddress: "address",
+    })).rejects.toThrow("nowpayments.payout.transport.unavailable");
+    expect(crypto.reserveWithdrawalWithFee).toHaveBeenCalledOnce();
+    expect(crypto.settleWithdrawal).not.toHaveBeenCalled();
+    expect(crypto.bindProviderPayout).not.toHaveBeenCalled();
+  });
+
   it("never accepts an end-user payout verification code", async () => {
     const { service, fetch } = setup(withdrawalIntent, account);
     await expect(service.verifyWithdrawal({
@@ -453,6 +518,89 @@ describe("financial service recovery and admission", () => {
     }));
     const urls = fetch.mock.calls.map((call) => String(call[0]));
     expect(urls).toContain("https://api.nowpayments.io/v1/conversion");
+  });
+
+  it("releases a conversion reserve on deterministic provider rejection", async () => {
+    const { service, crypto, fetch } = setup(
+      null, account, undefined, undefined, undefined, true, true,
+    );
+    fetch.mockImplementation(async (
+      request: Parameters<typeof globalThis.fetch>[0],
+      init?: Parameters<typeof globalThis.fetch>[1],
+    ) => {
+      const url = String(request);
+      if (url.endsWith("/auth")) return new Response(JSON.stringify({ token: "fixture-jwt" }));
+      if (url.includes("/min-amount?")) {
+        return new Response(JSON.stringify({
+          currency_from: "usdttrc20", currency_to: "btc", min_amount: "1",
+        }));
+      }
+      if (url.includes("/estimate?")) {
+        return new Response(JSON.stringify({
+          currency_from: "usdttrc20", currency_to: "btc",
+          amount_from: "10", estimated_amount: "0.00016",
+        }));
+      }
+      if (url.endsWith("/balance")) {
+        return new Response(JSON.stringify({
+          usdttrc20: { amount: "100", pendingAmount: "0" },
+          btc: { amount: "1", pendingAmount: "0" },
+        }));
+      }
+      if (url.endsWith("/conversion") && init?.method === "POST") {
+        return new Response("invalid conversion", { status: 422 });
+      }
+      return new Response("{}");
+    });
+    await expect(service.createConversion({
+      authorizationHeader, requestId, providerCode: "USDTTRC20",
+      targetProviderCode: "BTC", amount: "10",
+    })).resolves.toMatchObject({ status: "failed", targetAmount: null });
+    expect(crypto.settleConversion).toHaveBeenCalledWith(expect.objectContaining({
+      succeeded: false, targetAmount: null, providerReference: null,
+    }));
+    expect(crypto.bindProviderConversion).not.toHaveBeenCalled();
+  });
+
+  it("keeps a conversion reserve locked when dispatch transport outcome is unknown", async () => {
+    const { service, crypto, fetch } = setup(
+      null, account, undefined, undefined, undefined, true, true,
+    );
+    fetch.mockImplementation(async (
+      request: Parameters<typeof globalThis.fetch>[0],
+      init?: Parameters<typeof globalThis.fetch>[1],
+    ) => {
+      const url = String(request);
+      if (url.endsWith("/auth")) return new Response(JSON.stringify({ token: "fixture-jwt" }));
+      if (url.includes("/min-amount?")) {
+        return new Response(JSON.stringify({
+          currency_from: "usdttrc20", currency_to: "btc", min_amount: "1",
+        }));
+      }
+      if (url.includes("/estimate?")) {
+        return new Response(JSON.stringify({
+          currency_from: "usdttrc20", currency_to: "btc",
+          amount_from: "10", estimated_amount: "0.00016",
+        }));
+      }
+      if (url.endsWith("/balance")) {
+        return new Response(JSON.stringify({
+          usdttrc20: { amount: "100", pendingAmount: "0" },
+          btc: { amount: "1", pendingAmount: "0" },
+        }));
+      }
+      if (url.endsWith("/conversion") && init?.method === "POST") {
+        throw new Error("socket reset");
+      }
+      return new Response("{}");
+    });
+    await expect(service.createConversion({
+      authorizationHeader, requestId, providerCode: "USDTTRC20",
+      targetProviderCode: "BTC", amount: "10",
+    })).rejects.toThrow("nowpayments.custody.transport.unavailable");
+    expect(crypto.reserveConversion).toHaveBeenCalledOnce();
+    expect(crypto.settleConversion).not.toHaveBeenCalled();
+    expect(crypto.bindProviderConversion).not.toHaveBeenCalled();
   });
 
   it("reconciles a completed conversion to the exact target amount", async () => {
