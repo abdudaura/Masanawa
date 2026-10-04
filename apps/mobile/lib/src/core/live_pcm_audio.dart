@@ -36,6 +36,20 @@ class LivePcmAudio {
     }
   }
 
+  static Future<bool> setSpeaker(bool enabled) async {
+    try {
+      return await _channel.invokeMethod<bool>(
+            'speaker',
+            {'enabled': enabled},
+          ) ??
+          false;
+    } on MissingPluginException {
+      return false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
   static Future<void> stop() async {
     try {
       await _channel.invokeMethod<void>('stop');
