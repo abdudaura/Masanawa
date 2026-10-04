@@ -5,6 +5,7 @@ export interface NowPaymentsCurrencyEvidence {
   readonly asset: string;
   readonly network: string | null;
   readonly operations: Readonly<Record<CryptoOperation, boolean | null>>;
+  readonly estimatedNetworkFeeUsd: number | null;
 }
 
 export interface RouteQualification {
@@ -24,9 +25,7 @@ const NETWORK_SUFFIXES: readonly [string, string][] = [
 
 function normalizeCode(value: string): string {
   const code = value.trim().toUpperCase();
-  if (!/^[A-Z0-9_-]{2,32}$/.test(code)) {
-    throw new Error("nowpayments.currency.invalid");
-  }
+  if (!/^[A-Z0-9_-]{2,32}$/.test(code)) throw new Error("nowpayments.currency.invalid");
   return code;
 }
 
@@ -47,21 +46,40 @@ export function normalizeAvailableCurrencies(
   currencies: readonly string[],
 ): readonly NowPaymentsCurrencyEvidence[] {
   const unique = [...new Set(currencies.map(normalizeCode))].sort();
-  return Object.freeze(
-    unique.map((providerCode) => {
-      const { asset, network } = splitProviderCurrency(providerCode);
-      return Object.freeze({
-        providerCode,
-        asset,
-        network,
-        operations: Object.freeze({
-          deposit: true,
-          convert: null,
-          withdraw: null,
-        }),
-      });
-    }),
-  );
+  return Object.freeze(unique.map((providerCode) => {
+    const { asset, network } = splitProviderCurrency(providerCode);
+    return Object.freeze({
+      providerCode,
+      asset,
+      network,
+      operations: Object.freeze({ deposit: true, convert: null, withdraw: null }),
+      estimatedNetworkFeeUsd: null,
+    });
+  }));
+}
+
+export function withRouteEvidence(
+  route: NowPaymentsCurrencyEvidence,
+  evidence: {
+    readonly operation?: CryptoOperation;
+    readonly operationAvailable?: boolean;
+    readonly estimatedNetworkFeeUsd?: number;
+  },
+): NowPaymentsCurrencyEvidence {
+  const operations: Record<CryptoOperation, boolean | null> = { ...route.operations };
+  if (evidence.operation !== undefined && evidence.operationAvailable !== undefined) {
+    operations[evidence.operation] = evidence.operationAvailable;
+  }
+  if (
+    evidence.estimatedNetworkFeeUsd !== undefined &&
+    (!Number.isFinite(evidence.estimatedNetworkFeeUsd) || evidence.estimatedNetworkFeeUsd < 0)
+  ) throw new Error("nowpayments.fee.invalid");
+
+  return Object.freeze({
+    ...route,
+    operations: Object.freeze(operations),
+    estimatedNetworkFeeUsd: evidence.estimatedNetworkFeeUsd ?? route.estimatedNetworkFeeUsd,
+  });
 }
 
 export function qualifyRoute(
@@ -70,13 +88,13 @@ export function qualifyRoute(
   options: {
     readonly excludedNetworks?: readonly string[];
     readonly requireKnownNetwork?: boolean;
+    readonly maxEstimatedNetworkFeeUsd?: number;
   } = {},
 ): RouteQualification {
   const reasons: string[] = [];
   const excluded = new Set(
     (options.excludedNetworks ?? ["ethereum"]).map((network) => network.toLowerCase()),
   );
-
   if (route.network !== null && excluded.has(route.network.toLowerCase())) {
     reasons.push("network.excluded");
   }
@@ -84,16 +102,11 @@ export function qualifyRoute(
     reasons.push("network.unknown");
   }
   if (route.operations[operation] !== true) {
-    reasons.push(
-      route.operations[operation] === false
-        ? "operation.unavailable"
-        : "operation.unverified",
-    );
+    reasons.push(route.operations[operation] === false ? "operation.unavailable" : "operation.unverified");
   }
-
-  return Object.freeze({
-    route,
-    eligible: reasons.length === 0,
-    reasons: Object.freeze(reasons),
-  });
+  if (options.maxEstimatedNetworkFeeUsd !== undefined) {
+    if (route.estimatedNetworkFeeUsd === null) reasons.push("fee.unverified");
+    else if (route.estimatedNetworkFeeUsd > options.maxEstimatedNetworkFeeUsd) reasons.push("fee.too_high");
+  }
+  return Object.freeze({ route, eligible: reasons.length === 0, reasons: Object.freeze(reasons) });
 }
