@@ -171,6 +171,14 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           widget.characterId,
           attachments,
           caption: text,
+          replyToId: reply?.id,
+          replyPreview: reply == null
+              ? null
+              : (reply.text.isNotEmpty
+                  ? reply.text
+                  : reply.allAttachments.isNotEmpty
+                  ? reply.allAttachments.first.label
+                  : 'Message'),
         ),
       );
       return;
@@ -540,11 +548,24 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   Future<void> _sendPendingVoice() async {
     final pending = _pendingVoice;
     if (pending == null) return;
-    setState(() => _pendingVoice = null);
-    ref.read(aiChatProvider.notifier).setDraftVoice(widget.characterId, null);
-    await ref.read(aiChatProvider.notifier).sendAttachment(
+    final reply = _replyingTo;
+    setState(() {
+      _pendingVoice = null;
+      _replyingTo = null;
+    });
+    final ctl = ref.read(aiChatProvider.notifier);
+    ctl.setDraftVoice(widget.characterId, null);
+    await ctl.sendAttachment(
       widget.characterId,
       pending,
+      replyToId: reply?.id,
+      replyPreview: reply == null
+          ? null
+          : (reply.text.isNotEmpty
+              ? reply.text
+              : reply.allAttachments.isNotEmpty
+              ? reply.allAttachments.first.label
+              : 'Message'),
     );
   }
 
