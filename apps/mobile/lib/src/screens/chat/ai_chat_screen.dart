@@ -203,13 +203,13 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
   Future<void> _pickDocument() async {
     try {
-      final files = await FilePicker.pickFiles(allowMultiple: true);
+      final files = await FilePicker.pickFiles();
       if (files.isEmpty) return;
       final attachments = <ChatAttachment>[];
       for (final file in files.take(6)) {
         final path = file.path;
         if (path == null || path.isEmpty) continue;
-        final size = await file.length();
+        final size = await file.length() ?? 0;
         attachments.add(
           ChatAttachment(
             kind: 'doc',
@@ -958,12 +958,15 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             : item.kind == 'video'
             ? 'masanawa-video.mp4'
             : 'masanawa-file';
-        final output = await FilePicker.platform.saveFile(
+        final bytes = await File(item.path).readAsBytes();
+        final output = await FilePicker.saveFile(
           dialogTitle: 'Save from Masanawa',
           fileName: item.name ?? fallbackName,
+          bytes: bytes,
+          mimeType:
+              lookupMimeType(item.path) ?? 'application/octet-stream',
         );
         if (output == null) break;
-        await File(item.path).copy(output);
         saved++;
       } catch (_) {}
     }
