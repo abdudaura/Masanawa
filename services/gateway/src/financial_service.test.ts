@@ -62,6 +62,7 @@ function setup(
   }) => Promise<string | null>,
   shouldDispatch = false,
   enableConversions = false,
+  destinationApproved = true,
 ) {
   const payload = { payment_id: "123", order_id: tenantId+"."+requestId, price_amount: "10",
     price_currency: "usdttrc20", pay_currency: "usdttrc20", pay_amount: "10",
@@ -210,6 +211,7 @@ function setup(
     nowPaymentsCustody: new NowPaymentsCustodyClient({ apiKey: "fixture-key", email: "test@example.com", password: "fixture-password", fetch }),
     nowPaymentsPayout: new NowPaymentsPayoutClient({ apiKey: "fixture-key", email: "test@example.com", password: "fixture-password", fetch }),
     nowPaymentsIpnSecret: "fixture-ipn", publicBaseUrl: "https://example.com", now: () => at,
+    withdrawalDestinationApproved: vi.fn(async () => destinationApproved),
     ...(evidence === undefined ? {} : { withdrawalEvidence: async () => ({
       account: evidence,
       routes: [{ providerCode: "USDTTRC20", asset: "USDT", network: "tron",
