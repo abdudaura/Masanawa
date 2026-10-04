@@ -8,6 +8,7 @@ WORKDIR /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json tsconfig.base.json vitest.config.ts ./
 COPY packages ./packages
+COPY apps/web ./apps/web
 COPY adapters ./adapters
 COPY infra ./infra
 COPY services ./services
