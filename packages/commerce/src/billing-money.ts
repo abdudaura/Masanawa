@@ -40,6 +40,10 @@ export interface BillingQuote {
 export interface BillingQuoteRepository extends BillingFundingAuthority {
   createQuote(input: BillingQuote): Promise<BillingQuote>;
   readQuote(input: Readonly<{ tenantId: TenantId; userId: UserId; quoteId: QuoteId }>): Promise<BillingQuote | null>;
+  /** Server-internal webhook/status lookup. fulfillmentReference is globally unique. */
+  readByFulfillmentReference(input: Readonly<{
+    fulfillmentReference: string;
+  }>): Promise<BillingQuote | null>;
   listQuotes(input: Readonly<{ tenantId: TenantId; userId: UserId; limit: number }>): Promise<readonly BillingQuote[]>;
   confirmQuote(input: Readonly<{
     tenantId: TenantId; userId: UserId; quoteId: QuoteId; quoteRevision: number; confirmedAt: string;
