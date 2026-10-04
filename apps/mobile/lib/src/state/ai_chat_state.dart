@@ -64,6 +64,12 @@ class AiChatMessage {
     required this.createdAt,
     this.attachment,
     this.parts = const [],
+    this.replyToId,
+    this.replyPreview,
+    this.reaction,
+    this.editedAt,
+    this.deleted = false,
+    this.deliveryStatus = 'sent',
   });
 
   final String id;
@@ -72,6 +78,37 @@ class AiChatMessage {
   final DateTime createdAt;
   final ChatAttachment? attachment;
   final List<AgentMessagePart> parts;
+  final String? replyToId;
+  final String? replyPreview;
+  final String? reaction;
+  final DateTime? editedAt;
+  final bool deleted;
+  final String deliveryStatus;
+
+  AiChatMessage copyWith({
+    String? text,
+    ChatAttachment? attachment,
+    List<AgentMessagePart>? parts,
+    String? replyToId,
+    String? replyPreview,
+    String? reaction,
+    DateTime? editedAt,
+    bool? deleted,
+    String? deliveryStatus,
+  }) => AiChatMessage(
+    id: id,
+    isUser: isUser,
+    text: text ?? this.text,
+    createdAt: createdAt,
+    attachment: attachment ?? this.attachment,
+    parts: parts ?? this.parts,
+    replyToId: replyToId ?? this.replyToId,
+    replyPreview: replyPreview ?? this.replyPreview,
+    reaction: reaction ?? this.reaction,
+    editedAt: editedAt ?? this.editedAt,
+    deleted: deleted ?? this.deleted,
+    deliveryStatus: deliveryStatus ?? this.deliveryStatus,
+  );
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -80,6 +117,12 @@ class AiChatMessage {
     'createdAt': createdAt.toIso8601String(),
     if (attachment != null) 'attachment': attachment!.toJson(),
     if (parts.isNotEmpty) 'parts': [for (final part in parts) part.toJson()],
+    if (replyToId != null) 'replyToId': replyToId,
+    if (replyPreview != null) 'replyPreview': replyPreview,
+    if (reaction != null) 'reaction': reaction,
+    if (editedAt != null) 'editedAt': editedAt!.toIso8601String(),
+    if (deleted) 'deleted': true,
+    if (deliveryStatus != 'sent') 'deliveryStatus': deliveryStatus,
   };
 
   factory AiChatMessage.fromJson(Map<String, dynamic> json) => AiChatMessage(
@@ -97,6 +140,12 @@ class AiChatMessage {
       for (final raw in (json['parts'] as List? ?? const []))
         if (raw is Map) AgentMessagePart.fromJson(raw.cast<String, dynamic>()),
     ],
+    replyToId: json['replyToId'] as String?,
+    replyPreview: json['replyPreview'] as String?,
+    reaction: json['reaction'] as String?,
+    editedAt: DateTime.tryParse(json['editedAt'] as String? ?? ''),
+    deleted: json['deleted'] as bool? ?? false,
+    deliveryStatus: json['deliveryStatus'] as String? ?? 'sent',
   );
 }
 
@@ -109,6 +158,10 @@ class ChatThread {
     DateTime? updatedAt,
     this.characterSessionId,
     this.agentRunId,
+    this.draft = '',
+    this.title,
+    this.pinned = false,
+    this.archived = false,
   }) : updatedAt = updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
 
   final String characterId;
@@ -117,6 +170,10 @@ class ChatThread {
   final DateTime updatedAt;
   final String? characterSessionId;
   final String? agentRunId;
+  final String draft;
+  final String? title;
+  final bool pinned;
+  final bool archived;
 
   AiChatMessage? get lastMessage => messages.isEmpty ? null : messages.last;
 
@@ -126,6 +183,10 @@ class ChatThread {
     DateTime? updatedAt,
     String? characterSessionId,
     String? agentRunId,
+    String? draft,
+    String? title,
+    bool? pinned,
+    bool? archived,
   }) => ChatThread(
     characterId: characterId,
     messages: messages ?? this.messages,
@@ -133,6 +194,10 @@ class ChatThread {
     updatedAt: updatedAt ?? this.updatedAt,
     characterSessionId: characterSessionId ?? this.characterSessionId,
     agentRunId: agentRunId ?? this.agentRunId,
+    draft: draft ?? this.draft,
+    title: title ?? this.title,
+    pinned: pinned ?? this.pinned,
+    archived: archived ?? this.archived,
   );
 
   Map<String, dynamic> toJson() => {
@@ -142,6 +207,10 @@ class ChatThread {
     'updatedAt': updatedAt.toIso8601String(),
     if (characterSessionId != null) 'characterSessionId': characterSessionId,
     if (agentRunId != null) 'agentRunId': agentRunId,
+    if (draft.isNotEmpty) 'draft': draft,
+    if (title != null) 'title': title,
+    if (pinned) 'pinned': true,
+    if (archived) 'archived': true,
   };
 
   factory ChatThread.fromJson(Map<String, dynamic> json) {
@@ -157,6 +226,10 @@ class ChatThread {
       updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? ''),
       characterSessionId: json['characterSessionId'] as String?,
       agentRunId: json['agentRunId'] as String?,
+      draft: json['draft'] as String? ?? '',
+      title: json['title'] as String?,
+      pinned: json['pinned'] as bool? ?? false,
+      archived: json['archived'] as bool? ?? false,
     );
   }
 }
@@ -173,8 +246,13 @@ class AiChatState {
   final String? openThreadId;
 
   List<ChatThread> get chatList {
-    final list = threads.values.where((t) => t.messages.isNotEmpty).toList();
-    list.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    final list = threads.values
+        .where((t) => t.messages.isNotEmpty && !t.archived)
+        .toList();
+    list.sort((a, b) {
+      if (a.pinned != b.pinned) return a.pinned ? -1 : 1;
+      return b.updatedAt.compareTo(a.updatedAt);
+    });
     return list;
   }
 
@@ -224,7 +302,12 @@ class AiChatController extends Notifier<AiChatState> {
 
   void closeThread() => state = state.copyWith(clearOpen: true);
 
-  Future<void> sendText(String characterId, String rawText) async {
+  Future<void> sendText(
+    String characterId,
+    String rawText, {
+    String? replyToId,
+    String? replyPreview,
+  }) async {
     final text = rawText.trim();
     if (text.isEmpty || state.sendingIn.contains(characterId)) return;
     await _dispatchUserMessage(
@@ -234,6 +317,9 @@ class AiChatController extends Notifier<AiChatState> {
         isUser: true,
         text: text,
         createdAt: DateTime.now(),
+        replyToId: replyToId,
+        replyPreview: replyPreview,
+        deliveryStatus: 'sending',
       ),
     );
   }
@@ -252,6 +338,7 @@ class AiChatController extends Notifier<AiChatState> {
         text: (caption ?? '').trim(),
         createdAt: DateTime.now(),
         attachment: attachment,
+        deliveryStatus: 'sending',
       ),
     );
   }
@@ -293,6 +380,7 @@ class AiChatController extends Notifier<AiChatState> {
       if (connectionGeneration != _connectionGeneration) {
         throw const ApiException('Connection changed');
       }
+      _setDelivery(characterId, userMsg.id, 'delivered');
       ChatAttachment? replyAudio;
       if (result.audioBytes case final audio? when audio.isNotEmpty) {
         final dir = await getTemporaryDirectory();
@@ -456,13 +544,15 @@ class AiChatController extends Notifier<AiChatState> {
     if (_disposed) return;
     final thread = threadOf(characterId);
     final isOpen = state.openThreadId == characterId;
+    final id = _newId();
     final msg = AiChatMessage(
-      id: _newId(),
+      id: id,
       isUser: false,
-      text: text,
+      text: '',
       parts: parts,
       attachment: attachment,
       createdAt: DateTime.now(),
+      deliveryStatus: 'streaming',
     );
     final sending = {...state.sendingIn}..remove(characterId);
     state = state.copyWith(
@@ -478,6 +568,34 @@ class AiChatController extends Notifier<AiChatState> {
       sendingIn: sending,
     );
     _save();
+    unawaited(_streamReply(characterId, id, text));
+  }
+
+  Future<void> _streamReply(String characterId, String messageId, String text) async {
+    if (text.isEmpty) {
+      _updateMessage(characterId, messageId, (m) => m.copyWith(deliveryStatus: 'delivered'));
+      return;
+    }
+    final words = text.split(RegExp(r'(?<=\\s)'));
+    final buffer = StringBuffer();
+    for (var i = 0; i < words.length; i++) {
+      if (_disposed) return;
+      buffer.write(words[i]);
+      if (i % 3 == 2 || i == words.length - 1) {
+        _updateMessage(
+          characterId,
+          messageId,
+          (m) => m.copyWith(
+            text: buffer.toString(),
+            deliveryStatus: i == words.length - 1 ? 'delivered' : 'streaming',
+          ),
+          persist: i == words.length - 1,
+        );
+        if (i != words.length - 1) {
+          await Future<void>.delayed(const Duration(milliseconds: 28));
+        }
+      }
+    }
   }
 
   void seedGreeting(String characterId, String? greeting) {
@@ -513,6 +631,136 @@ class AiChatController extends Notifier<AiChatState> {
       throw StateError('Scenario injection is debug-only');
     }
     _appendAi(characterId, text, parts: [part]);
+  }
+
+  void setDraft(String characterId, String value) {
+    final thread = threadOf(characterId);
+    state = state.copyWith(
+      threads: {...state.threads, characterId: thread.copyWith(draft: value)},
+    );
+    _save();
+  }
+
+  void reactToMessage(String characterId, String messageId, String? emoji) {
+    _updateMessage(characterId, messageId, (m) => m.copyWith(reaction: emoji ?? ''));
+  }
+
+  void editMessage(String characterId, String messageId, String text) {
+    final value = text.trim();
+    if (value.isEmpty) return;
+    _updateMessage(
+      characterId,
+      messageId,
+      (m) => m.isUser && !m.deleted
+          ? m.copyWith(text: value, editedAt: DateTime.now())
+          : m,
+    );
+  }
+
+  void deleteMessage(String characterId, String messageId) {
+    _updateMessage(
+      characterId,
+      messageId,
+      (m) => m.copyWith(
+        text: '',
+        deleted: true,
+        deliveryStatus: 'deleted',
+      ),
+    );
+  }
+
+  void renameThread(String characterId, String title) {
+    final thread = threadOf(characterId);
+    state = state.copyWith(
+      threads: {
+        ...state.threads,
+        characterId: thread.copyWith(title: title.trim().isEmpty ? null : title.trim()),
+      },
+    );
+    _save();
+  }
+
+  void togglePin(String characterId) {
+    final thread = threadOf(characterId);
+    state = state.copyWith(
+      threads: {...state.threads, characterId: thread.copyWith(pinned: !thread.pinned)},
+    );
+    _save();
+  }
+
+  void toggleArchive(String characterId) {
+    final thread = threadOf(characterId);
+    state = state.copyWith(
+      threads: {...state.threads, characterId: thread.copyWith(archived: !thread.archived)},
+    );
+    _save();
+  }
+
+  void stopGeneration(String characterId) {
+    _threadGenerations[characterId] = (_threadGenerations[characterId] ?? 0) + 1;
+    state = state.copyWith(
+      sendingIn: {...state.sendingIn}..remove(characterId),
+    );
+  }
+
+  Future<void> newContext(String characterId) async {
+    _threadGenerations[characterId] = (_threadGenerations[characterId] ?? 0) + 1;
+    final old = _bindings.remove(characterId);
+    if (old != null) {
+      unawaited(ref.read(agentTransportProvider).closeSession(old));
+    }
+    final thread = threadOf(characterId);
+    state = state.copyWith(
+      threads: {
+        ...state.threads,
+        characterId: thread.copyWith(
+          characterSessionId: '',
+          agentRunId: '',
+        ),
+      },
+      sendingIn: {...state.sendingIn}..remove(characterId),
+    );
+    await _save();
+  }
+
+  List<AiChatMessage> searchMessages(String characterId, String query) {
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) return const [];
+    return threadOf(characterId)
+        .messages
+        .where((m) => !m.deleted && m.text.toLowerCase().contains(q))
+        .toList();
+  }
+
+  void _setDelivery(String characterId, String messageId, String status) {
+    _updateMessage(characterId, messageId, (m) => m.copyWith(deliveryStatus: status));
+  }
+
+  void _updateMessage(
+    String characterId,
+    String messageId,
+    AiChatMessage Function(AiChatMessage) transform, {
+    bool persist = true,
+  }) {
+    final thread = threadOf(characterId);
+    var changed = false;
+    final messages = [
+      for (final m in thread.messages)
+        if (m.id == messageId) ...[
+          transform(m),
+        ] else
+          m,
+    ];
+    if (!thread.messages.any((m) => m.id == messageId)) return;
+    changed = true;
+    if (!changed) return;
+    state = state.copyWith(
+      threads: {
+        ...state.threads,
+        characterId: thread.copyWith(messages: messages, updatedAt: DateTime.now()),
+      },
+    );
+    if (persist) _save();
   }
 
   void clearThread(String characterId) {
