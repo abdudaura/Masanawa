@@ -708,6 +708,95 @@ class SkillsPage extends StatefulWidget {
 class _SkillsPageState extends State<SkillsPage> {
   late Future<List<AdminSkill>> _future = widget.api.skills();
 
+  Future<void> _edit(AdminSkill skill) async {
+    var state = skill.readiness == 'unknown' ? 'disabled' : skill.readiness;
+    var advertised = skill.advertised;
+    final reason = TextEditingController(text: skill.reasonCode ?? '');
+
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(skill.displayName),
+          content: SizedBox(
+            width: 420,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  initialValue: state,
+                  decoration: const InputDecoration(labelText: 'Readiness'),
+                  items: const [
+                    DropdownMenuItem(value: 'ready', child: Text('Ready')),
+                    DropdownMenuItem(value: 'degraded', child: Text('Degraded')),
+                    DropdownMenuItem(value: 'blocked', child: Text('Blocked')),
+                    DropdownMenuItem(value: 'disabled', child: Text('Disabled')),
+                  ],
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setDialogState(() {
+                      state = value;
+                      if (state != 'ready') advertised = false;
+                    });
+                  },
+                ),
+                const SizedBox(height: 12),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: advertised,
+                  onChanged: state == 'ready'
+                      ? (value) => setDialogState(() => advertised = value)
+                      : null,
+                  title: const Text('Advertise to runtime'),
+                  subtitle: const Text('Only Ready Skills may be advertised.'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: reason,
+                  decoration: const InputDecoration(
+                    labelText: 'Reason code',
+                    hintText: 'Optional, e.g. provider.degraded',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                try {
+                  await widget.api.updateSkillReadiness(
+                    skill,
+                    state: state,
+                    advertised: advertised,
+                    reasonCode: reason.text,
+                  );
+                  if (context.mounted) Navigator.of(context).pop(true);
+                } catch (error) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(error.toString())),
+                    );
+                  }
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+    reason.dispose();
+
+    if (saved == true && mounted) {
+      setState(() => _future = widget.api.skills());
+    }
+  }
+
   @override
   Widget build(BuildContext context) => AsyncPanel<List<AdminSkill>>(
         future: _future,
@@ -716,25 +805,38 @@ class _SkillsPageState extends State<SkillsPage> {
           padding: const EdgeInsets.all(16),
           children: [
             Text('Skills', style: Theme.of(context).textTheme.headlineSmall),
+            const SizedBox(height: 4),
+            Text(
+              'Inspect and manage runtime readiness and advertising.',
+              style: TextStyle(color: context.masanawa.textMuted),
+            ),
             const SizedBox(height: 12),
             ...items.map(
               (skill) => Card(
                 child: ListTile(
+                  onTap: () => _edit(skill),
                   leading: Icon(
                     Icons.extension_outlined,
                     color: context.masanawa.brand,
                   ),
                   title: Text(skill.displayName),
                   subtitle: Text(
-                    '${skill.key} · ${skill.version}\n${skill.description}',
+                    '${skill.key} · ${skill.version}'
+                    '${skill.reasonCode == null ? '' : '\n${skill.reasonCode}'}',
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  isThreeLine: true,
-                  trailing: Tooltip(
-                    message:
-                        skill.advertised ? 'Advertised' : 'Not advertised',
-                    child: Chip(label: Text(skill.readiness)),
+                  isThreeLine: skill.reasonCode != null,
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (skill.advertised)
+                        const Padding(
+                          padding: EdgeInsets.only(right: 6),
+                          child: Icon(Icons.campaign_outlined),
+                        ),
+                      Chip(label: Text(skill.readiness)),
+                    ],
                   ),
                 ),
               ),
