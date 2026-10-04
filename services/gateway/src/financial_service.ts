@@ -751,7 +751,7 @@ export function createFinancialService(input: {
         requestId,
         providerPaymentId: payment.paymentId,
         payAddress: payment.payAddress,
-        providerPayAmount: String(payment.payAmount),
+        providerPayAmount: payment.payAmountExact,
         updatedAt: now(),
       });
       return depositView(bound);
