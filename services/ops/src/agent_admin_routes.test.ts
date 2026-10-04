@@ -28,6 +28,22 @@ describe("Ops agent admin routes", () => {
       async readSkillAssignment() {
         return null;
       },
+      async putSkillReadiness(input) {
+        return {
+          skillVersionId: input.skillVersionId,
+          key: "test.skill",
+          version: "1",
+          displayName: "Test Skill",
+          description: "Test",
+          readiness: input.state,
+          advertised: input.advertised,
+          reasonCode: input.reasonCode,
+          checkedAt: "2026-10-05T00:00:00.000Z",
+          revision: input.expectedRevision === null
+              ? 1
+              : input.expectedRevision + 1,
+        };
+      },
       async putPresentation(input) {
         calls.push(`presentation-write:${input.authorizationHeader ?? ""}`);
         return {
