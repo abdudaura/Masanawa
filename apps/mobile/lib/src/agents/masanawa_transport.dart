@@ -15,7 +15,7 @@ import '../chat/shell_document.dart';
 
 const String kAgentBaseUrl = String.fromEnvironment(
   'AGENT_BASE_URL',
-  defaultValue: '',
+  defaultValue: 'https://nurainworker-production.up.railway.app',
 );
 
 const bool kAgentRuntimeEnabled = bool.fromEnvironment(
@@ -233,7 +233,7 @@ class MasanawaCreatorSkillTransport implements CreatorSkillTransport {
 
   @override
   Future<List<CreatorSkillEntry>> load() async {
-    return _parse(await _client.get('/v1/creator/skills'));
+    return _parse(await _client.get('/creator/skills'));
   }
 
   @override
@@ -241,7 +241,7 @@ class MasanawaCreatorSkillTransport implements CreatorSkillTransport {
     String skillVersionId,
     bool enabled,
   ) async {
-    return _parse(await _client.put('/v1/creator/skills', {
+    return _parse(await _client.put('/creator/skills', {
       'skillVersionId': skillVersionId,
       'enabled': enabled,
     }));
@@ -263,13 +263,13 @@ class MasanawaCreatorEconomyTransport implements CreatorEconomyTransport {
 
   @override
   Future<CreatorEconomySnapshot> load() async {
-    final data = await _client.get('/v1/creator/economy');
+    final data = await _client.get('/creator/economy');
     return CreatorEconomySnapshot.fromJson(data);
   }
 
   @override
   Future<CreatorEconomySnapshot> allocateFloat(int amountCredits) async {
-    final data = await _client.post('/v1/creator/float', {
+    final data = await _client.post('/creator/float', {
       'amountCredits': amountCredits,
     });
     return CreatorEconomySnapshot.fromJson(data);
@@ -297,7 +297,7 @@ class MasanawaCreatorCloneTransport implements CreatorCloneTransport {
     required List<String> personality,
     required List<String> expertise,
   }) async {
-    final data = await _client.post('/v1/creator/clone', {
+    final data = await _client.post('/creator/clone', {
       'displayName': displayName,
       'biography': biography,
       'languages': languages,
