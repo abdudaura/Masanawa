@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { fingerprintCanonicalJson } from "@masanawa/security";
 import {
   createCanonicalId,
   toInstant,
@@ -60,6 +61,33 @@ function lesson(): TeachingLessonPlan {
     ],
     resources: [],
     uncertaintyNotes: [],
+  };
+}
+
+function admissionEvidence(
+  active: TeachingLessonPlan,
+  key = "core.teaching",
+) {
+  const orderedVersions = [
+    {
+      ordinal: 0,
+      skillVersionId: active.skillVersionId,
+      key,
+      version: "1.0.0",
+      definitionHash: `sha256:${"d".repeat(64)}`,
+    },
+  ] as const;
+  return {
+    revisionPin: {
+      schemaVersion: 1 as const,
+      rootSkillVersionId: active.skillVersionId,
+      orderedVersions,
+      contentHash: `sha256:${fingerprintCanonicalJson({
+        schemaVersion: 1,
+        rootSkillVersionId: active.skillVersionId,
+        orderedVersions,
+      })}`,
+    },
   };
 }
 
@@ -884,19 +912,7 @@ describe("Teaching admission evidence bridge", () => {
     const active = lesson();
     const result = createTeachingRuntimeBindingFromAdmission({
       relationshipId: active.learner.relationshipId,
-      admission: {
-        revisionPin: {
-          rootSkillVersionId: active.skillVersionId,
-          orderedVersions: [
-            {
-              skillVersionId: active.skillVersionId,
-              key: "core.teaching",
-              definitionHash: `sha256:${"d".repeat(64)}`,
-            },
-          ],
-          contentHash: `sha256:${"e".repeat(64)}`,
-        },
-      },
+      admission: admissionEvidence(active),
       guideContentHash: `sha256:${"a".repeat(64)}`,
     });
 
@@ -908,49 +924,72 @@ describe("Teaching admission evidence bridge", () => {
     });
   });
 
-  it("refuses an admitted non-Teaching root even when the SkillVersionId is canonical", () => {
+  it("refuses an admitted non-Teaching root even when the revision pin is valid", () => {
     const active = lesson();
     expect(() =>
       createTeachingRuntimeBindingFromAdmission({
         relationshipId: active.learner.relationshipId,
-        admission: {
-          revisionPin: {
-            rootSkillVersionId: active.skillVersionId,
-            orderedVersions: [
-              {
-                skillVersionId: active.skillVersionId,
-                key: "research.web",
-                definitionHash: `sha256:${"d".repeat(64)}`,
-              },
-            ],
-            contentHash: `sha256:${"e".repeat(64)}`,
-          },
-        },
+        admission: admissionEvidence(active, "research.web"),
         guideContentHash: `sha256:${"a".repeat(64)}`,
       }),
     ).toThrow(/must pin core\.teaching/);
   });
 
-  it("refuses malformed admission revision evidence", () => {
+  it("refuses a tampered admission revision pin hash", () => {
     const active = lesson();
+    const valid = admissionEvidence(active);
     expect(() =>
       createTeachingRuntimeBindingFromAdmission({
         relationshipId: active.learner.relationshipId,
         admission: {
           revisionPin: {
-            rootSkillVersionId: active.skillVersionId,
-            orderedVersions: [
-              {
-                skillVersionId: active.skillVersionId,
-                key: "core.teaching",
-                definitionHash: `sha256:${"d".repeat(64)}`,
-              },
-            ],
-            contentHash: "not-a-hash",
+            ...valid.revisionPin,
+            contentHash: `sha256:${"f".repeat(64)}`,
           },
         },
         guideContentHash: `sha256:${"a".repeat(64)}`,
       }),
-    ).toThrow(/revision pin hash/);
+    ).toThrow(/hash does not match its contents/);
+  });
+
+  it("refuses a revision pin whose root is not the final ordered entry", () => {
+    const active = lesson();
+    const dependencyId = createCanonicalId("skill-version");
+    const orderedVersions = [
+      {
+        ordinal: 0,
+        skillVersionId: active.skillVersionId,
+        key: "core.teaching",
+        version: "1.0.0",
+        definitionHash: `sha256:${"d".repeat(64)}`,
+      },
+      {
+        ordinal: 1,
+        skillVersionId: dependencyId,
+        key: "subject.math",
+        version: "1.0.0",
+        definitionHash: `sha256:${"e".repeat(64)}`,
+      },
+    ] as const;
+    const admission = {
+      revisionPin: {
+        schemaVersion: 1 as const,
+        rootSkillVersionId: active.skillVersionId,
+        orderedVersions,
+        contentHash: `sha256:${fingerprintCanonicalJson({
+          schemaVersion: 1,
+          rootSkillVersionId: active.skillVersionId,
+          orderedVersions,
+        })}`,
+      },
+    };
+
+    expect(() =>
+      createTeachingRuntimeBindingFromAdmission({
+        relationshipId: active.learner.relationshipId,
+        admission,
+        guideContentHash: `sha256:${"a".repeat(64)}`,
+      }),
+    ).toThrow(/exact root SkillVersion/);
   });
 });
