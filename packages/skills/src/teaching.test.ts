@@ -4,8 +4,10 @@ import type { SkillCertification } from "./certification.js";
 import {
   createCoreTeachingSkillBundle,
   normalizeTeachingAnswerEvaluation,
+  normalizeTeachingExerciseCard,
   normalizeTeachingLessonPlan,
   normalizeTeachingProgressHandoff,
+  normalizeTeachingSubjectReference,
   type TeachingLessonPlan,
 } from "./teaching.js";
 
@@ -263,5 +265,84 @@ describe("Core Teaching Skill authoring", () => {
     expect(bundle.skillVersion.dependencies).toEqual([]);
     expect(bundle.skillVersion).not.toHaveProperty("offerId");
     expect(bundle.skillVersion).not.toHaveProperty("providerId");
+  });
+});
+
+
+describe("Teaching surface projections", () => {
+  it("normalizes selectable exercises without exposing correctness in the card", () => {
+    const relationshipId = createCanonicalId("relationship");
+    const skillVersionId = createCanonicalId("skill-version");
+    const card = normalizeTeachingExerciseCard({
+      relationshipId,
+      skillVersionId,
+      lessonStepKey: "factor-basics",
+      exerciseKey: "factor-choice-1",
+      prompt: "Which factorization is correct?",
+      kind: "single-select",
+      options: [
+        { optionKey: "choice-a", label: "(x + 2)(x + 3)" },
+        { optionKey: "choice-b", label: "(x + 1)(x + 6)" },
+      ],
+    });
+
+    expect(card.options).toHaveLength(2);
+    expect(card.options[0]).toEqual({
+      optionKey: "choice-a",
+      label: "(x + 2)(x + 3)",
+    });
+    expect(card).not.toHaveProperty("correctOptionKey");
+    expect(Object.isFrozen(card.options)).toBe(true);
+  });
+
+  it("rejects malformed selectable and free-response exercise shapes", () => {
+    const base = {
+      relationshipId: createCanonicalId("relationship"),
+      skillVersionId: createCanonicalId("skill-version"),
+      lessonStepKey: "step",
+      exerciseKey: "exercise",
+      prompt: "Answer this.",
+    };
+    expect(() =>
+      normalizeTeachingExerciseCard({
+        ...base,
+        kind: "single-select",
+        options: [{ optionKey: "only", label: "Only option" }],
+      }),
+    ).toThrow(/at least two options/);
+
+    expect(() =>
+      normalizeTeachingExerciseCard({
+        ...base,
+        kind: "free-response",
+        options: [
+          { optionKey: "hidden", label: "This should not be selectable" },
+        ],
+      }),
+    ).toThrow(/cannot expose options/);
+  });
+
+  it("keeps subject resources and subskills exact and mutually exclusive", () => {
+    const resource = normalizeTeachingSubjectReference({
+      referenceKey: "quadratics-notes",
+      kind: "resource",
+      resourcePath: "references/math/quadratics.md",
+      skillVersionId: null,
+    });
+    expect(resource).toEqual({
+      referenceKey: "quadratics-notes",
+      kind: "resource",
+      resourcePath: "references/math/quadratics.md",
+      skillVersionId: null,
+    });
+
+    const subjectSkillVersionId = createCanonicalId("skill-version");
+    const subskill = normalizeTeachingSubjectReference({
+      referenceKey: "calculus-module",
+      kind: "subskill",
+      resourcePath: null,
+      skillVersionId: subjectSkillVersionId,
+    });
+    expect(subskill.skillVersionId).toBe(subjectSkillVersionId);
   });
 });
