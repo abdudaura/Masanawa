@@ -232,7 +232,6 @@ class MasanawaAgentTransport implements AgentTransport {
         '/v1/agent/sessions/${binding.characterSessionId}/turn',
         {'characterId': binding.characterId, 'text': text},
         cancelToken: token,
-        onSendProgress: onUploadProgress,
       );
       final reply = data['reply'];
       if (reply is! String || reply.isEmpty) {
@@ -299,6 +298,7 @@ class MasanawaAgentTransport implements AgentTransport {
           'dataBase64': base64Encode(bytes),
         },
         cancelToken: token,
+        onSendProgress: onUploadProgress,
       );
     } finally {
       if (identical(_turnTokens[binding.characterId], token)) {
