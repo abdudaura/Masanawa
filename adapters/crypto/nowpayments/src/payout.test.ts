@@ -32,7 +32,7 @@ describe("NOWPayments payout client", () => {
       amount: "10.00",
       currency: "usdttrc20",
       address: "address",
-    })).toEqual({ payoutId: "123", status: "waiting" });
+    })).toEqual({ payoutId: "123", withdrawalId: null, status: "waiting" });
     expect(fetch).toHaveBeenCalledTimes(2);
     expect(JSON.parse(String(fetch.mock.calls[1]?.[1]?.body)).withdrawals[0].amount).toBe(10);
   });
@@ -82,7 +82,24 @@ describe("NOWPayments payout client", () => {
     expect(fetch.mock.calls[1]?.[0]).toBe("https://api.nowpayments.io/v1/payout-withdrawal/min-amount/trx");
   });
 
-  it("reconciles a stored batch id through the single withdrawal in that batch", async () => {
+  it("preserves batch and individual withdrawal identity from creation", async () => {
+    const fetch = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ token: "fixture-jwt" })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        id: "batch-1",
+        withdrawals: [{ id: "withdrawal-1", status: "WAITING" }],
+      })));
+    await expect(client(fetch).createPayout({
+      amount: "10", currency: "trx", address: "address",
+      uniqueExternalId: "tenant.request",
+    })).resolves.toEqual({
+      payoutId: "batch-1", withdrawalId: "withdrawal-1", status: "waiting",
+    });
+    expect(JSON.parse(String(fetch.mock.calls[1]?.[1]?.body)).withdrawals[0].unique_external_id)
+      .toBe("tenant.request");
+  });
+
+  it("reconciles a stored batch id through exact single-withdrawal evidence", async () => {
     const fetch = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ token: "fixture-jwt" })))
       .mockResolvedValueOnce(new Response(JSON.stringify({
@@ -90,9 +107,21 @@ describe("NOWPayments payout client", () => {
           id: "withdrawal-1",
           batch_withdrawal_id: "batch-1",
           payout_status: "FINISHED",
+          currency: "trx",
+          amount: "10.000000",
+          address: "address",
+          unique_external_id: "tenant.request",
         }],
       })));
-    await expect(client(fetch).getPayoutStatus({ payoutId: "batch-1" })).resolves.toBe("finished");
+    await expect(client(fetch).getPayoutEvidence({ payoutId: "batch-1" })).resolves.toEqual({
+      batchId: "batch-1",
+      withdrawalId: "withdrawal-1",
+      status: "finished",
+      currency: "TRX",
+      amount: "10",
+      address: "address",
+      uniqueExternalId: "tenant.request",
+    });
     const url = new URL(String(fetch.mock.calls[1]?.[0]));
     expect(url.pathname).toBe("/v1/payout");
     expect(url.searchParams.get("batch_id")).toBe("batch-1");
