@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/admin_api.dart';
 import '../theme/masanawa_theme.dart';
+import 'platform_pages.dart';
 
 class AdminShell extends StatefulWidget {
   const AdminShell({super.key, required this.api, required this.onSignOut});
@@ -12,87 +13,126 @@ class AdminShell extends StatefulWidget {
   State<AdminShell> createState() => _AdminShellState();
 }
 
+class _AdminSection {
+  const _AdminSection(this.label, this.icon);
+  final String label;
+  final IconData icon;
+}
+
 class _AdminShellState extends State<AdminShell> {
   int _index = 0;
 
-  static const _destinations = <NavigationDestination>[
-    NavigationDestination(
-      icon: Icon(Icons.dashboard_outlined),
-      selectedIcon: Icon(Icons.dashboard),
-      label: 'Overview',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.smart_toy_outlined),
-      selectedIcon: Icon(Icons.smart_toy),
-      label: 'Agents',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.extension_outlined),
-      selectedIcon: Icon(Icons.extension),
-      label: 'Skills',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.people_outline),
-      selectedIcon: Icon(Icons.people),
-      label: 'Users',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.receipt_long_outlined),
-      selectedIcon: Icon(Icons.receipt_long),
-      label: 'Money',
-    ),
+  static const _sections = <_AdminSection>[
+    _AdminSection('Overview', Icons.dashboard_outlined),
+    _AdminSection('Users', Icons.people_outline),
+    _AdminSection('Agents', Icons.smart_toy_outlined),
+    _AdminSection('Skills', Icons.extension_outlined),
+    _AdminSection('Runtime', Icons.timeline_outlined),
+    _AdminSection('Commerce', Icons.account_balance_wallet_outlined),
+    _AdminSection('Operations', Icons.rule_outlined),
+    _AdminSection('Providers', Icons.hub_outlined),
+    _AdminSection('Audit', Icons.fact_check_outlined),
   ];
 
-  @override
-  Widget build(BuildContext context) {
-    final pages = <Widget>[
-      OverviewPage(api: widget.api),
-      AgentsPage(api: widget.api),
-      SkillsPage(api: widget.api),
-      const ContractPendingPage(
-        icon: Icons.people_outline,
-        title: 'Users',
-        message:
-            'User administration is waiting for an authorized server-side admin contract. The app will not query the database directly.',
-      ),
-      const ContractPendingPage(
-        icon: Icons.receipt_long_outlined,
-        title: 'Transactions',
-        message:
-            'Billing, crypto and settlement administration will connect here after scoped Ops projections are available.',
-      ),
-    ];
+  List<Widget> get _pages => [
+        OverviewPage(api: widget.api),
+        UsersAdminPage(api: widget.api),
+        AgentsPage(api: widget.api),
+        SkillsPage(api: widget.api),
+        RuntimeAdminPage(api: widget.api),
+        CommerceAdminPage(api: widget.api),
+        OperationsAdminPage(api: widget.api),
+        ProvidersAdminPage(api: widget.api),
+        AuditAdminPage(api: widget.api),
+      ];
 
-    return Scaffold(
-      appBar: AppBar(
-        titleSpacing: 16,
-        title: Row(
-          children: [
-            Image.asset(
-              'assets/brand/masanawa_agent_logo.png',
-              width: 32,
-              height: 32,
-            ),
-            const SizedBox(width: 10),
-            const Text('Masanawa Admin'),
-          ],
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Sign out',
-            onPressed: widget.onSignOut,
-            icon: const Icon(Icons.logout),
-          ),
-        ],
-      ),
-      body: IndexedStack(index: _index, children: pages),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (value) => setState(() => _index = value),
-        destinations: _destinations,
-      ),
-    );
+  void _select(int value) {
+    setState(() => _index = value);
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) navigator.pop();
   }
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+        builder: (context, constraints) {
+          final wide = constraints.maxWidth >= 840;
+          final pages = _pages;
+          final content = IndexedStack(index: _index, children: pages);
+
+          return Scaffold(
+            appBar: AppBar(
+              titleSpacing: 16,
+              title: Row(
+                children: [
+                  Image.asset(
+                    'assets/brand/masanawa_agent_logo.png',
+                    width: 30,
+                    height: 30,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      wide
+                          ? 'Masanawa Admin · ${_sections[_index].label}'
+                          : _sections[_index].label,
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                IconButton(
+                  tooltip: 'Sign out',
+                  onPressed: widget.onSignOut,
+                  icon: const Icon(Icons.logout),
+                ),
+              ],
+            ),
+            drawer: wide
+                ? null
+                : NavigationDrawer(
+                    selectedIndex: _index,
+                    onDestinationSelected: _select,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.fromLTRB(28, 20, 16, 10),
+                        child: Text('Platform control'),
+                      ),
+                      ..._sections.map(
+                        (section) => NavigationDrawerDestination(
+                          icon: Icon(section.icon),
+                          label: Text(section.label),
+                        ),
+                      ),
+                    ],
+                  ),
+            body: wide
+                ? Row(
+                    children: [
+                      NavigationRail(
+                        selectedIndex: _index,
+                        onDestinationSelected: _select,
+                        labelType: NavigationRailLabelType.all,
+                        leading: const Padding(
+                          padding: EdgeInsets.only(bottom: 8),
+                          child: Text('Control'),
+                        ),
+                        destinations: _sections
+                            .map(
+                              (section) => NavigationRailDestination(
+                                icon: Icon(section.icon),
+                                label: Text(section.label),
+                              ),
+                            )
+                            .toList(growable: false),
+                      ),
+                      const VerticalDivider(width: 1),
+                      Expanded(child: content),
+                    ],
+                  )
+                : content,
+          );
+        },
+      );
 }
 
 class OverviewPage extends StatefulWidget {
@@ -109,11 +149,11 @@ class _OverviewPageState extends State<OverviewPage> {
   Future<_OverviewData> _load() async {
     await widget.api.health();
     final readiness = await widget.api.readiness();
-    final agents = await widget.api.agents();
+    final summary = await widget.api.platformSummary();
     final skills = await widget.api.skills();
     return _OverviewData(
       readiness: readiness,
-      agents: agents.length,
+      summary: summary,
       skills: skills.length,
     );
   }
@@ -131,6 +171,11 @@ class _OverviewPageState extends State<OverviewPage> {
                 'Platform overview',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
+              const SizedBox(height: 4),
+              Text(
+                'Live operational truth across the Masanawa tenant.',
+                style: TextStyle(color: context.masanawa.textMuted),
+              ),
               const SizedBox(height: 14),
               Wrap(
                 spacing: 12,
@@ -144,14 +189,49 @@ class _OverviewPageState extends State<OverviewPage> {
                         : Icons.warning_amber_rounded,
                   ),
                   MetricCard(
-                    label: 'Agents',
-                    value: '${data.agents}',
+                    label: 'Users',
+                    value: '${data.summary.users}',
+                    icon: Icons.people_outline,
+                  ),
+                  MetricCard(
+                    label: 'Characters',
+                    value: '${data.summary.characters}',
                     icon: Icons.smart_toy_outlined,
+                  ),
+                  MetricCard(
+                    label: 'Active sessions',
+                    value: '${data.summary.activeSessions}',
+                    icon: Icons.forum_outlined,
+                  ),
+                  MetricCard(
+                    label: 'Running AgentRuns',
+                    value: '${data.summary.runningAgentRuns}',
+                    icon: Icons.play_circle_outline,
                   ),
                   MetricCard(
                     label: 'Skills',
                     value: '${data.skills}',
                     icon: Icons.extension_outlined,
+                  ),
+                  MetricCard(
+                    label: 'Enabled offers',
+                    value: '${data.summary.enabledOffers}',
+                    icon: Icons.sell_outlined,
+                  ),
+                  MetricCard(
+                    label: 'Fulfilled',
+                    value: '${data.summary.completedFulfillments}',
+                    icon: Icons.task_alt_outlined,
+                  ),
+                  MetricCard(
+                    label: 'Needs reconciliation',
+                    value: '${data.summary.openReconciliationCases}',
+                    icon: Icons.rule_outlined,
+                  ),
+                  MetricCard(
+                    label: 'Provider credentials',
+                    value: '${data.summary.activeProviderCredentials}',
+                    icon: Icons.key_outlined,
                   ),
                 ],
               ),
@@ -190,11 +270,11 @@ class _OverviewPageState extends State<OverviewPage> {
 class _OverviewData {
   const _OverviewData({
     required this.readiness,
-    required this.agents,
+    required this.summary,
     required this.skills,
   });
   final OpsReadiness readiness;
-  final int agents;
+  final PlatformSummary summary;
   final int skills;
 }
 
