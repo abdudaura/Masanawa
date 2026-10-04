@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/masanawa_launch_background" />
+    <item>
+        <bitmap
+            android:gravity="center"
+            android:src="@drawable/masanawa_agent_logo" />
+    </item>
+</layer-list>
