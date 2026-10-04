@@ -185,3 +185,30 @@ then uses the binding's canonical RequestId for replay-safe persistence.
 The binding hash is an integrity fingerprint for server-held state, not a bearer
 credential or client-authentication mechanism. #91/#92 must keep the full binding
 server-side and expose only the opaque action key.
+
+
+## Durable lesson-plan identity
+
+Durable learner progress is now bound to a deterministic `planHash`.
+
+The hash intentionally covers pedagogical identity:
+- exact RelationshipId + SkillVersionId;
+- topic, level and learner goals;
+- sequence title;
+- normalized lesson steps;
+- reviewed resource evidence;
+- uncertainty notes.
+
+Presentation preferences are deliberately excluded:
+- language;
+- accessibility presentation preferences;
+- text/voice modality.
+
+This means a learner may switch English -> Hausa or text -> voice without resetting
+progress, while a silently regenerated curriculum/step sequence under the same
+Relationship + SkillVersion is rejected on resume.
+
+Every persisted selection attempt carries the exact `planHash`. A
+`TeachingProgressPort.load()` result must return both that hash and the durable
+progress handoff. Resume fails closed when the supplied plan does not match the
+persisted pedagogical plan.
