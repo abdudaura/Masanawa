@@ -5,9 +5,12 @@ import type {
 } from "@masanawa/agents";
 import type { CharacterVersionReferenceReader } from "@masanawa/identity";
 import type { SkillRepository } from "@masanawa/skills";
-import type { CommerceRepository } from "@masanawa/commerce";
-import type { WorldRepository } from "@masanawa/world";
-import { readRequiredEnv } from "@masanawa/contracts";
+import {
+  createCanonicalId,
+  nowInstant,
+  parseCanonicalId,
+  readRequiredEnv,
+} from "@masanawa/contracts";
 import {
   createDrainState,
   readNodeServiceRuntimeConfig,
@@ -36,9 +39,13 @@ import {
 } from "./admin_auth.js";
 import {
   createPlatformAdminService,
+  type PlatformAdminOfferCommands,
   type PlatformAdminQuery,
 } from "./platform_admin.js";
-import { createSystemAdminService } from "./system_admin.js";
+import {
+  createSystemAdminService,
+  type SystemAdminWorldCommands,
+} from "./system_admin.js";
 import {
   createOpsApp,
   type OpsAppOptions,
@@ -58,8 +65,8 @@ export interface ServiceDatabaseDependency {
   readonly characterSkillAssignments?: CharacterSkillAssignmentRepository;
   readonly characterVersions?: CharacterVersionReferenceReader;
   readonly skills?: SkillRepository;
-  readonly commerce?: CommerceRepository;
-  readonly worlds?: WorldRepository;
+  readonly offerCommands?: PlatformAdminOfferCommands;
+  readonly worldCommands?: SystemAdminWorldCommands;
   readonly platformAdminDatabase?: PlatformAdminQuery;
   close(): Promise<void>;
 }
@@ -120,6 +127,80 @@ function createDefaultDatabaseDependency(
     connectionString,
     applicationName: "masanawa-ops",
   });
+  const commerce = createPostgresCommerceRepository(database.pool);
+  const worlds = createPostgresWorldRepository(database.pool);
+
+  const offerCommands: PlatformAdminOfferCommands = Object.freeze({
+    async setEnabled(input) {
+      const offerId = parseCanonicalId("offer", input.offerId);
+      const current = await commerce.readOfferRevision({
+        tenantId: input.tenantId,
+        offerId,
+        revision: input.expectedRevision,
+      });
+      if (!current) {
+        const error = new Error("Offer revision changed or was not found") as Error & {
+          statusCode: number;
+        };
+        error.statusCode = 409;
+        throw error;
+      }
+      const next = await commerce.registerOfferRevision({
+        ...current,
+        revision: current.revision + 1,
+        active: input.enabled,
+        createdAt: nowInstant(),
+      });
+      return {
+        offerId: next.offerId,
+        key: next.key,
+        revision: next.revision,
+        enabled: next.active,
+        updatedAt: next.createdAt,
+      };
+    },
+  });
+
+  const worldCommands: SystemAdminWorldCommands = Object.freeze({
+    async pause(input) {
+      const world = await worlds.pauseWorld({
+        tenantId: input.tenantId,
+        worldId: parseCanonicalId("world", input.worldId),
+        expectedRevision: input.expectedRevision,
+        pausedAt: nowInstant(),
+      });
+      return {
+        worldId: world.worldId,
+        status: world.status,
+        policyRevision: world.policyRevision,
+        currentGenerationNumber: world.currentGenerationNumber,
+        simulationTime: world.simulationTime,
+        revision: world.revision,
+        updatedAt: world.updatedAt,
+      };
+    },
+    async resume(input) {
+      const worldId = parseCanonicalId("world", input.worldId);
+      const result = await worlds.recoverPausedWorld({
+        tenantId: input.tenantId,
+        worldId,
+        expectedRevision: input.expectedRevision,
+        nextGenerationId: createCanonicalId("world-generation"),
+        resumeTo: nowInstant(),
+        requestedAt: nowInstant(),
+      });
+      return {
+        worldId: result.world.worldId,
+        status: result.world.status,
+        policyRevision: result.world.policyRevision,
+        currentGenerationNumber: result.world.currentGenerationNumber,
+        simulationTime: result.world.simulationTime,
+        revision: result.world.revision,
+        updatedAt: result.world.updatedAt,
+      };
+    },
+  });
+
   return Object.freeze({
     readinessCheck: database.readinessCheck,
     agentPresentations: createPostgresAgentPresentationRepository(database.pool),
@@ -128,8 +209,8 @@ function createDefaultDatabaseDependency(
     characterVersions:
       createPostgresCharacterVersionReferenceReader(database.pool),
     skills: createPostgresSkillRepository(database.pool),
-    commerce: createPostgresCommerceRepository(database.pool),
-    worlds: createPostgresWorldRepository(database.pool),
+    offerCommands,
+    worldCommands,
     platformAdminDatabase: database.pool as unknown as PlatformAdminQuery,
     close: database.close,
   });
@@ -175,7 +256,7 @@ export async function startOpsService(
       ? createSystemAdminService({
           database: database.platformAdminDatabase,
           authorizer: adminAuthorizer,
-          ...(database.worlds ? { worlds: database.worlds } : {}),
+          ...(database.worldCommands ? { worldCommands: database.worldCommands } : {}),
         })
       : undefined);
 
@@ -185,7 +266,7 @@ export async function startOpsService(
       ? createPlatformAdminService({
           database: database.platformAdminDatabase,
           authorizer: adminAuthorizer,
-          ...(database.commerce ? { commerce: database.commerce } : {}),
+          ...(database.offerCommands ? { offerCommands: database.offerCommands } : {}),
         })
       : undefined);
 
