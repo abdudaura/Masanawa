@@ -86,14 +86,16 @@ function rubric(plan: TeachingLessonPlan): TeachingSelectableExerciseRubric {
 }
 
 class MemoryProgressPort implements TeachingProgressPort {
-  progress: TeachingProgressHandoff | null = null;
+  progress: { planHash: string; progress: TeachingProgressHandoff } | null = null;
   readonly attempts = new Map<RequestId, TeachingSelectionAttempt>();
 
-  async load(key: TeachingProgressKey): Promise<TeachingProgressHandoff | null> {
+  async load(
+    key: TeachingProgressKey,
+  ): Promise<{ planHash: string; progress: TeachingProgressHandoff } | null> {
     if (
       this.progress !== null &&
-      (this.progress.relationshipId !== key.relationshipId ||
-        this.progress.skillVersionId !== key.skillVersionId)
+      (this.progress.progress.relationshipId !== key.relationshipId ||
+        this.progress.progress.skillVersionId !== key.skillVersionId)
     ) {
       return null;
     }
@@ -111,7 +113,10 @@ class MemoryProgressPort implements TeachingProgressPort {
       return "replay";
     }
     this.attempts.set(attempt.requestId, attempt);
-    this.progress = attempt.progress;
+    this.progress = {
+      planHash: attempt.planHash,
+      progress: attempt.progress,
+    };
     return "stored";
   }
 }
