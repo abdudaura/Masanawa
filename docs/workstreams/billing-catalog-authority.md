@@ -7,6 +7,7 @@
 - Purpose: remove client authority over Flutterwave bill catalog metadata and correctly support provider-declared variable-value products without weakening recipient/min/max validation.
 - Exact owned paths:
   - `services/gateway/src/financial_billing.ts`
+  - `services/gateway/src/financial_billing.test.ts`
   - `packages/providers/src/flutterwave-bills/commerce-orchestrator.ts`
   - `packages/providers/src/flutterwave-bills/commerce-orchestrator.test.ts`
   - `docs/workstreams/billing-catalog-authority.md`
