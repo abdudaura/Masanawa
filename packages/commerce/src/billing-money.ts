@@ -57,6 +57,11 @@ export interface BillingQuoteRepository extends BillingFundingAuthority {
     txRef: string; providerTransactionId: string; providerReference: string | null;
     amountKobo: number; currency: "NGN"; verifiedAt: string;
   }>): Promise<BillingQuote>;
+  /** Move verified but not-yet-reserved customer funds into refund custody. */
+  requestFundedRefund(input: Readonly<{
+    tenantId: TenantId; userId: UserId; quoteId: QuoteId; quoteRevision: number;
+    requestedAt: string;
+  }>): Promise<BillingQuote>;
   claimRefundDispatch(input: Readonly<{
     tenantId: TenantId; userId: UserId; quoteId: QuoteId; providerTransactionId: string;
     claimedAt: string;
