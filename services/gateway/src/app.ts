@@ -98,6 +98,25 @@ const AgentMediaTurnBodySchema = Type.Object(
   { additionalProperties: false },
 );
 
+const AgentMediaSetTurnBodySchema = Type.Object(
+  {
+    characterId: Type.String(),
+    caption: Type.String({ maxLength: 32000 }),
+    media: Type.Array(
+      Type.Object(
+        {
+          mimeType: Type.String({ minLength: 3, maxLength: 160 }),
+          dataBase64: Type.String({ minLength: 1, maxLength: 12000000 }),
+          name: Type.Optional(Type.String({ maxLength: 240 })),
+        },
+        { additionalProperties: false },
+      ),
+      { minItems: 2, maxItems: 8 },
+    ),
+  },
+  { additionalProperties: false },
+);
+
 const AgentTurnResponseSchema = Type.Object(
   {
     reply: Type.String(),
@@ -327,6 +346,46 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
         };
       },
     );
+
+    app.post(
+      "/v1/agent/sessions/:characterSessionId/media-set-turn",
+      {
+        bodyLimit: 17_000_000,
+        schema: {
+          params: AgentSessionParamsSchema,
+          body: AgentMediaSetTurnBodySchema,
+          response: { 200: AgentTurnResponseSchema },
+        },
+      },
+      async (request) => {
+        const result = await conversation.mediaSetTurn({
+          authorizationHeader: request.headers.authorization,
+          characterSessionId: request.params.characterSessionId,
+          characterId: request.body.characterId,
+          caption: request.body.caption,
+          media: request.body.media,
+          requestId: parseCanonicalId(
+            "request",
+            request.headers["x-request-id"] as string,
+          ),
+          correlationId: parseCanonicalId(
+            "correlation",
+            request.headers["x-correlation-id"] as string,
+          ),
+        });
+        return {
+          reply: result.reply,
+          agentRunId: result.agentRunId,
+          parts: [...result.parts],
+          ...(result.audioBase64 ? { audioBase64: result.audioBase64 } : {}),
+          ...(result.audioMimeType ? { audioMimeType: result.audioMimeType } : {}),
+          ...(result.audioDurationMs !== undefined
+            ? { audioDurationMs: result.audioDurationMs }
+            : {}),
+        };
+      },
+    );
+
 
     app.post(
       "/v1/agent/sessions/:characterSessionId/close",
