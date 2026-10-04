@@ -6,10 +6,9 @@ import {
   type BillingFulfillmentRecord,
 } from "@masanawa/providers";
 import {
-  createPostgresBillingFulfillmentStore,
   type FinancialOperationsRepository,
 } from "@masanawa/postgres";
-import type { Pool } from "pg";
+import type { BillingFulfillmentStore } from "@masanawa/providers";
 import type { FinancialAuthorizer } from "./financial_crypto.js";
 
 export interface BillingFinancialService {
@@ -68,7 +67,7 @@ function referenceFromWebhook(payload: Readonly<Record<string, unknown>>): strin
 }
 
 export function createBillingFinancialService(input: Readonly<{
-  pool: Pool;
+  billingStore: (identity: Readonly<{ tenantId: string; userId: string }>) => BillingFulfillmentStore;
   repository: FinancialOperationsRepository;
   authorizer: FinancialAuthorizer;
   flutterwaveSecretKey: string;
@@ -90,7 +89,7 @@ export function createBillingFinancialService(input: Readonly<{
   function orchestrator(identity: Readonly<{ tenantId: string; userId: string }>) {
     return new BillingCommerceOrchestrator({
       provider,
-      store: createPostgresBillingFulfillmentStore(input.pool, identity),
+      store: input.billingStore(identity),
     });
   }
 
@@ -143,7 +142,7 @@ export function createBillingFinancialService(input: Readonly<{
     async readPurchase(request) {
       const identity = input.authorizer.authorize(request.authorizationHeader);
       const service = orchestrator(identity);
-      const current = await createPostgresBillingFulfillmentStore(input.pool, identity).read(request.reference);
+      const current = await input.billingStore(identity).read(request.reference);
       if (!current) throw new Error("financial.billing_not_found");
       if (!request.refresh ||
           ["succeeded","failed","reversed","manual_review"].includes(current.state)) {
