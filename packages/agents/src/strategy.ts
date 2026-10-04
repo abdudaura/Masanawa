@@ -30,6 +30,8 @@ export interface AgentStrategyPresentation {
 }
 
 export interface AgentStrategyRequest {
+  /** Optional ephemeral UI stream. It never becomes transcript or durable truth. */
+  readonly onTextDelta?: (delta: string) => void | Promise<void>;
   /** Custody-bound selection only; no authority or assignment supplied by a strategy. */
   readonly prepareSkillSelection?: (input: {
     readonly skillVersionId: import("@masanawa/contracts").SkillVersionId;
@@ -76,6 +78,7 @@ export interface AgentInferenceResult {
 export interface AgentInferenceControls {
   readonly signal: AbortSignal;
   readonly maxOutputTokens: number;
+  readonly onTextDelta?: (delta: string) => void | Promise<void>;
 }
 
 export interface AgentInferenceProvider {
