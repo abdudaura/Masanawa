@@ -13,7 +13,8 @@ Dependencies:
 Owned paths for this workstream:
 - new `apps/mobile/lib/src/finance/**`;
 - new `apps/mobile/test/crypto_*.dart`;
-- exact navigation entry points needed only to expose the new crypto wallet screen, after rechecking current main;
+- `apps/mobile/lib/src/router/app_router.dart` only for the protected `/wallet` route;
+- `apps/mobile/lib/src/screens/chat/chat_list_screen.dart` only for the wallet app-bar entry point;
 - this claim file.
 
 Purpose:
