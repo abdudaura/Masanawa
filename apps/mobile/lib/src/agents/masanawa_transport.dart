@@ -70,6 +70,41 @@ class _GatewayClient {
     }
   }
 
+  Stream<Map<String, dynamic>> postStream(
+    String path,
+    Map<String, dynamic> body, {
+    CancelToken? cancelToken,
+  }) async* {
+    try {
+      final res = await dio.post<ResponseBody>(
+        '$baseUrl$path',
+        data: body,
+        options: options(turn: true).copyWith(
+          responseType: ResponseType.stream,
+        ),
+        cancelToken: cancelToken,
+      );
+      final bodyStream = res.data?.stream;
+      if (bodyStream == null) {
+        throw const ApiException('Empty response from server');
+      }
+      await for (final line in bodyStream
+          .transform(utf8.decoder)
+          .transform(const LineSplitter())) {
+        final trimmed = line.trim();
+        if (trimmed.isEmpty) continue;
+        final decoded = jsonDecode(trimmed);
+        if (decoded is Map) {
+          yield decoded.cast<String, dynamic>();
+        }
+      }
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    } on FormatException {
+      throw const ApiException('Invalid streaming response from server');
+    }
+  }
+
   Future<Map<String, dynamic>> get(String path) async {
     try {
       final res = await dio.get<Map<String, dynamic>>(
@@ -148,26 +183,70 @@ class MasanawaAgentTransport implements AgentTransport {
   Future<AgentTurnResult> sendTurn({
     required AgentSessionBinding binding,
     required String text,
+    void Function(String delta)? onTextDelta,
   }) async {
     final token = CancelToken();
     _turnTokens[binding.characterId]?.cancel('Superseded by a new turn');
     _turnTokens[binding.characterId] = token;
-    late final Map<String, dynamic> data;
+
     try {
-      data = await _client.post(
+      if (onTextDelta != null) {
+        var streamedText = '';
+        Map<String, dynamic>? done;
+        await for (final event in _client.postStream(
+          '/v1/agent/sessions/${binding.characterSessionId}/turn-stream',
+          {'characterId': binding.characterId, 'text': text},
+          cancelToken: token,
+        )) {
+          final type = event['type'];
+          if (type == 'delta') {
+            final delta = event['text'];
+            if (delta is String && delta.isNotEmpty) {
+              streamedText += delta;
+              onTextDelta(delta);
+            }
+            continue;
+          }
+          if (type == 'error') {
+            throw const ApiException('Agent streaming turn failed');
+          }
+          if (type == 'done') done = event;
+        }
+        final data = done;
+        if (data == null) {
+          throw const ApiException('Agent stream ended unexpectedly');
+        }
+        final finalReply = data['reply'];
+        final reply = finalReply is String && finalReply.isNotEmpty
+            ? finalReply
+            : streamedText;
+        if (reply.isEmpty) {
+          throw const ApiException('Agent service returned no result');
+        }
+        return _turnResultFromData(data, reply: reply);
+      }
+
+      final data = await _client.post(
         '/v1/agent/sessions/${binding.characterSessionId}/turn',
         {'characterId': binding.characterId, 'text': text},
         cancelToken: token,
       );
+      final reply = data['reply'];
+      if (reply is! String || reply.isEmpty) {
+        throw const ApiException('Agent service unavailable');
+      }
+      return _turnResultFromData(data, reply: reply);
     } finally {
       if (identical(_turnTokens[binding.characterId], token)) {
         _turnTokens.remove(binding.characterId);
       }
     }
-    final reply = data['reply'];
-    if (reply is! String) {
-      throw const ApiException('Agent service unavailable');
-    }
+  }
+
+  AgentTurnResult _turnResultFromData(
+    Map<String, dynamic> data, {
+    required String reply,
+  }) {
     final rawParts = data['parts'];
     final parts = <AgentMessagePart>[];
     if (rawParts is List) {
@@ -175,16 +254,11 @@ class MasanawaAgentTransport implements AgentTransport {
         if (raw is Map) {
           try {
             parts.add(AgentMessagePart.fromJson(raw.cast<String, dynamic>()));
-          } catch (_) {
-            // Unknown future part types must not break the conversation.
-          }
+          } catch (_) {}
         }
       }
     }
     final runId = data['agentRunId'];
-    if (reply.isEmpty && parts.isEmpty) {
-      throw const ApiException('Agent service returned no result');
-    }
     final audioBase64 = data['audioBase64'];
     final audioMimeType = data['audioMimeType'];
     final audioDurationMs = data['audioDurationMs'];
