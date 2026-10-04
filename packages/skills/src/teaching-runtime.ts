@@ -21,6 +21,7 @@ import {
   type TeachingLessonStep,
   type TeachingProgressHandoff,
   type TeachingSelectableExerciseRubric,
+  type TeachingResourceEvidence,
   coreTeachingSkillKey,
   type TeachingSelectionSubmission,
 } from "./teaching.js";
@@ -137,6 +138,30 @@ export type TeachingRuntimeProjection =
       persistence: "stored" | "replay";
     }>;
 
+export interface TeachingEvidenceRequest {
+  readonly relationshipId: RelationshipId;
+  readonly skillVersionId: SkillVersionId;
+  readonly lessonStepKey: string;
+  readonly query: string;
+  readonly purpose: "current-claim" | "specialist-claim" | "source-check";
+}
+
+export type TeachingEvidenceResult =
+  | Readonly<{
+      status: "verified";
+      evidence: readonly TeachingResourceEvidence[];
+      uncertaintyNote: null;
+    }>
+  | Readonly<{
+      status: "insufficient";
+      evidence: readonly TeachingResourceEvidence[];
+      uncertaintyNote: string;
+    }>;
+
+export interface TeachingEvidencePort {
+  resolve(request: TeachingEvidenceRequest): Promise<TeachingEvidenceResult>;
+}
+
 export interface TeachingPresentationPort {
   publish(projection: TeachingRuntimeProjection): Promise<void>;
 }
@@ -144,6 +169,7 @@ export interface TeachingPresentationPort {
 export interface TeachingRuntimeCoordinatorOptions {
   readonly progress: TeachingProgressPort;
   readonly presentation?: TeachingPresentationPort;
+  readonly evidence?: TeachingEvidencePort;
 }
 
 export function fingerprintTeachingSelectionAttempt(input: {
@@ -276,10 +302,12 @@ function normalizeTeachingArtifactPresentation(
 export class TeachingRuntimeCoordinator {
   readonly #progress: TeachingProgressPort;
   readonly #presentation: TeachingPresentationPort | undefined;
+  readonly #evidence: TeachingEvidencePort | undefined;
 
   constructor(options: TeachingRuntimeCoordinatorOptions) {
     this.#progress = options.progress;
     this.#presentation = options.presentation;
+    this.#evidence = options.evidence;
   }
 
   async resume(
@@ -344,6 +372,107 @@ export class TeachingRuntimeCoordinator {
     });
     await this.#presentation?.publish(projection);
     return projection;
+  }
+
+  async resolveEvidence(
+    binding: TeachingRuntimeBinding,
+    requestInput: TeachingEvidenceRequest,
+  ): Promise<TeachingEvidenceResult> {
+    assertBindingScope(
+      binding,
+      requestInput.relationshipId,
+      requestInput.skillVersionId,
+    );
+    const lessonStepKey = requestInput.lessonStepKey.trim().toLowerCase();
+    const query = requestInput.query.trim();
+    if (!/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u.test(lessonStepKey)) {
+      throw new TypeError("Teaching evidence lessonStepKey is invalid");
+    }
+    if (query.length < 1 || query.length > 4000) {
+      throw new TypeError("Teaching evidence query is invalid");
+    }
+    if (
+      !(
+        ["current-claim", "specialist-claim", "source-check"] as readonly string[]
+      ).includes(requestInput.purpose)
+    ) {
+      throw new TypeError("Teaching evidence purpose is invalid");
+    }
+
+    if (this.#evidence === undefined) {
+      return Object.freeze({
+        status: "insufficient" as const,
+        evidence: Object.freeze([] as TeachingResourceEvidence[]),
+        uncertaintyNote:
+          "No evidence-capable Teaching integration is available for this claim.",
+      });
+    }
+
+    const result = await this.#evidence.resolve(
+      Object.freeze({
+        relationshipId: requestInput.relationshipId,
+        skillVersionId: requestInput.skillVersionId,
+        lessonStepKey,
+        query,
+        purpose: requestInput.purpose,
+      }),
+    );
+    if (!Array.isArray(result.evidence) || result.evidence.length > 64) {
+      throw new TypeError("Teaching evidence result is invalid");
+    }
+
+    const evidence = result.evidence.map((item) => {
+      const resourceKey = item.resourceKey.trim().toLowerCase();
+      const title = item.title.trim();
+      const reference = item.reference.trim();
+      const contentHash = item.contentHash.trim().toLowerCase();
+      if (!/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u.test(resourceKey)) {
+        throw new TypeError("Teaching evidence resourceKey is invalid");
+      }
+      if (title.length < 1 || title.length > 300) {
+        throw new TypeError("Teaching evidence title is invalid");
+      }
+      if (reference.length < 1 || reference.length > 2000) {
+        throw new TypeError("Teaching evidence reference is invalid");
+      }
+      if (!/^sha256:[0-9a-f]{64}$/u.test(contentHash)) {
+        throw new TypeError("Teaching evidence contentHash is invalid");
+      }
+      return Object.freeze({
+        resourceKey,
+        title,
+        reference,
+        contentHash,
+        checkedAt: toInstant(item.checkedAt),
+      });
+    });
+
+    if (result.status === "verified") {
+      if (evidence.length < 1 || result.uncertaintyNote !== null) {
+        throw new TypeError(
+          "Verified Teaching evidence requires evidence and no uncertainty note",
+        );
+      }
+      return Object.freeze({
+        status: "verified" as const,
+        evidence: Object.freeze(evidence),
+        uncertaintyNote: null,
+      });
+    }
+    if (result.status !== "insufficient") {
+      throw new TypeError("Teaching evidence status is invalid");
+    }
+    const uncertaintyNote = result.uncertaintyNote.trim();
+    if (uncertaintyNote.length < 1 || uncertaintyNote.length > 2000) {
+      throw new TypeError(
+        "Insufficient Teaching evidence requires an uncertainty note",
+      );
+    }
+    return Object.freeze({
+      status: "insufficient" as const,
+      evidence: Object.freeze(evidence),
+      uncertaintyNote,
+    });
   }
 
   async submitSelection(binding: TeachingRuntimeBinding, input: {
