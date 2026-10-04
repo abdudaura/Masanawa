@@ -1159,9 +1159,14 @@ export function createFinancialService(input: {
       const intent = await input.crypto.readIntentByRequestId(identity);
       if (!intent) throw new Error("financial.ipn.intent_unavailable");
 
+      if (intent.providerPaymentId === null) {
+        throw new Error("financial.ipn.intent_unavailable");
+      }
       const admitted = admitPaymentEvidence(request.payload, {
-        paymentId: evidence.paymentId, orderId: providerOrderId(intent.tenantId, intent.requestId),
-        asset: intent.asset, amount: intent.amount,
+        paymentId: intent.providerPaymentId,
+        orderId: providerOrderId(intent.tenantId, intent.requestId),
+        asset: intent.asset,
+        amount: intent.amount,
       });
       const event: CryptoProviderPaymentEvent = {
         paymentId: evidence.paymentId,
