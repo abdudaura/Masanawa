@@ -190,13 +190,17 @@ async function aggregateLiability(
   input: { tenantId: TenantId; asset: string; network: string | null },
 ): Promise<string> {
   const result = await client.query<{ liability: string }>(
-    `SELECT GREATEST(
-       COALESCE(SUM(CASE direction WHEN 'credit' THEN amount ELSE -amount END),0),
-       0
-     )::text AS liability
-       FROM commerce.crypto_ledger_entries
-      WHERE tenant_id=$1 AND asset=$2
-        AND network IS NOT DISTINCT FROM $3`,
+    `SELECT COALESCE(SUM(GREATEST(user_balance, 0)), 0)::text AS liability
+       FROM (
+         SELECT user_id,
+                COALESCE(SUM(
+                  CASE direction WHEN 'credit' THEN amount ELSE -amount END
+                ), 0) AS user_balance
+           FROM commerce.crypto_ledger_entries
+          WHERE tenant_id=$1 AND asset=$2
+            AND network IS NOT DISTINCT FROM $3
+          GROUP BY user_id
+       ) AS user_balances`,
     [input.tenantId, input.asset, input.network],
   );
   return result.rows[0]?.liability ?? "0";
