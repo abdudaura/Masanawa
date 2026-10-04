@@ -11,7 +11,7 @@ export interface PayoutBindingEvidence {
   readonly currency: string;
   readonly amount: string;
   readonly address: string;
-  readonly uniqueExternalId: string;
+  readonly uniqueExternalId: string | null;
 }
 
 export interface FinancialPayoutEvidence extends PayoutBindingEvidence {
@@ -85,11 +85,16 @@ export function parseVerifiedPayoutIpn(input: {
     currency: currency(payload.currency),
     amount: amount(payload.amount),
     address: address(payload.address),
-    uniqueExternalId: identity(
-      payload.unique_external_id,
-      "financial.crypto.payout_evidence_invalid",
-      256,
-    ),
+    uniqueExternalId:
+      payload.unique_external_id === undefined ||
+      payload.unique_external_id === null ||
+      payload.unique_external_id === ""
+        ? null
+        : identity(
+            payload.unique_external_id,
+            "financial.crypto.payout_evidence_invalid",
+            256,
+          ),
     payloadHash: createHash("sha256").update(canonical, "utf8").digest("hex"),
   });
 }
@@ -101,7 +106,7 @@ export function assertPayoutEvidence(
     readonly currency: string;
     readonly amount: string;
     readonly address: string;
-    readonly uniqueExternalId: string;
+    readonly uniqueExternalId?: string;
   },
 ): void {
   if (
@@ -109,7 +114,11 @@ export function assertPayoutEvidence(
     evidence.currency !== expected.currency.trim().toUpperCase() ||
     evidence.amount !== amount(expected.amount) ||
     evidence.address !== expected.address.trim() ||
-    evidence.uniqueExternalId !== expected.uniqueExternalId
+    (
+      evidence.uniqueExternalId !== null &&
+      expected.uniqueExternalId !== undefined &&
+      evidence.uniqueExternalId !== expected.uniqueExternalId
+    )
   ) {
     throw new Error("financial.crypto.payout_evidence_mismatch");
   }
