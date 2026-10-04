@@ -61,6 +61,7 @@ CREATE TABLE IF NOT EXISTS commerce.crypto_ledger_entries (
   reason text NOT NULL CHECK (
     reason IN (
       'provider-deposit',
+      'provider-refund',
       'withdrawal-reserve',
       'withdrawal-release',
       'conversion-debit',
