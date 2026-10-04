@@ -67,6 +67,9 @@ class AdminSkill {
     required this.description,
     required this.readiness,
     required this.advertised,
+    required this.reasonCode,
+    required this.checkedAt,
+    required this.revision,
   });
 
   final String skillVersionId;
@@ -76,6 +79,9 @@ class AdminSkill {
   final String description;
   final String readiness;
   final bool advertised;
+  final String? reasonCode;
+  final String? checkedAt;
+  final int? revision;
 
   factory AdminSkill.fromJson(Map<String, dynamic> json) => AdminSkill(
         skillVersionId: json['skillVersionId'] as String,
@@ -85,6 +91,9 @@ class AdminSkill {
         description: json['description'] as String? ?? '',
         readiness: json['readiness'] as String? ?? 'unknown',
         advertised: json['advertised'] as bool? ?? false,
+        reasonCode: json['reasonCode'] as String?,
+        checkedAt: json['checkedAt'] as String?,
+        revision: json['revision'] as int?,
       );
 }
 
@@ -710,6 +719,29 @@ class AdminApi {
     return _list(response.data)
         .map((item) => AdminSkill.fromJson(_map(item)))
         .toList(growable: false);
+  }
+
+
+  Future<AdminSkill> updateSkillReadiness(
+    AdminSkill skill, {
+    required String state,
+    required bool advertised,
+    required String? reasonCode,
+  }) async {
+    final response = await _request(
+      () => _dio.put<dynamic>(
+        '/v1/skills/${Uri.encodeComponent(skill.skillVersionId)}/readiness',
+        options: _auth,
+        data: {
+          'state': state,
+          'advertised': advertised,
+          'reasonCode':
+              reasonCode?.trim().isEmpty == true ? null : reasonCode?.trim(),
+          'expectedRevision': skill.revision,
+        },
+      ),
+    );
+    return AdminSkill.fromJson(_map(response.data));
   }
 
   Future<AgentSkillAssignment?> agentSkills(String characterId) async {
