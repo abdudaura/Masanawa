@@ -70,6 +70,7 @@ abstract class AgentTransport {
     required AgentSessionBinding binding,
     required String text,
     void Function(String delta)? onTextDelta,
+    Future<void> Function(Uint8List pcmChunk)? onAudioPcmChunk,
   });
 
   Future<AgentTurnResult> sendMediaTurn({
@@ -111,6 +112,7 @@ class PreviewAgentTransport implements AgentTransport {
     required AgentSessionBinding binding,
     required String text,
     void Function(String delta)? onTextDelta,
+    Future<void> Function(Uint8List pcmChunk)? onAudioPcmChunk,
   }) async {
     final reply = await sendPreview(text, binding.characterId);
     onTextDelta?.call(reply);
