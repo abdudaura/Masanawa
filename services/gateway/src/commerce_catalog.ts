@@ -107,7 +107,10 @@ export function createCommerceCatalogService(input: {
         authorizationHeader: request.authorizationHeader,
         capability: "commerce.quote.write",
       });
-      const offerId = parseCanonicalId("offer", request.offerId);
+      const offerId = request.offerId.trim();
+      if (!offerId.startsWith("offer_") || offerId.length > 80) {
+        throw new TypeError("offerId is invalid");
+      }
       const originatingCharacterId = parseCanonicalId(
         "character",
         request.originatingCharacterId,
