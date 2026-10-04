@@ -185,6 +185,7 @@ class ChatThread {
     this.title,
     this.pinned = false,
     this.archived = false,
+    this.scrollOffset = 0,
   }) : updatedAt = updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
 
   final String characterId;
@@ -197,6 +198,7 @@ class ChatThread {
   final String? title;
   final bool pinned;
   final bool archived;
+  final double scrollOffset;
 
   AiChatMessage? get lastMessage => messages.isEmpty ? null : messages.last;
 
@@ -210,6 +212,7 @@ class ChatThread {
     String? title,
     bool? pinned,
     bool? archived,
+    double? scrollOffset,
   }) => ChatThread(
     characterId: characterId,
     messages: messages ?? this.messages,
@@ -221,6 +224,7 @@ class ChatThread {
     title: title ?? this.title,
     pinned: pinned ?? this.pinned,
     archived: archived ?? this.archived,
+    scrollOffset: scrollOffset ?? this.scrollOffset,
   );
 
   Map<String, dynamic> toJson() => {
@@ -234,6 +238,7 @@ class ChatThread {
     if (title != null) 'title': title,
     if (pinned) 'pinned': true,
     if (archived) 'archived': true,
+    if (scrollOffset > 0) 'scrollOffset': scrollOffset,
   };
 
   factory ChatThread.fromJson(Map<String, dynamic> json) {
@@ -253,6 +258,7 @@ class ChatThread {
       title: json['title'] as String?,
       pinned: json['pinned'] as bool? ?? false,
       archived: json['archived'] as bool? ?? false,
+      scrollOffset: (json['scrollOffset'] as num?)?.toDouble() ?? 0,
     );
   }
 }
@@ -305,11 +311,16 @@ class AiChatController extends Notifier<AiChatState> {
   @override
   AiChatState build() {
     scheduleMicrotask(_load);
-    _connectivitySub = Connectivity().onConnectivityChanged.listen((results) {
-      if (!results.contains(ConnectivityResult.none)) {
-        unawaited(_flushQueuedMessages());
-      }
-    });
+    try {
+      _connectivitySub = Connectivity().onConnectivityChanged.listen(
+        (results) {
+          if (!results.contains(ConnectivityResult.none)) {
+            unawaited(_flushQueuedMessages());
+          }
+        },
+        onError: (_) {},
+      );
+    } catch (_) {}
     ref.onDispose(() {
       _disposed = true;
       _connectivitySub?.cancel();
@@ -925,6 +936,19 @@ class AiChatController extends Notifier<AiChatState> {
       throw StateError('Scenario injection is debug-only');
     }
     unawaited(_appendAi(characterId, text, parts: [part]));
+  }
+
+  void setScrollOffset(String characterId, double offset) {
+    final thread = threadOf(characterId);
+    final safe = offset.isFinite && offset > 0 ? offset : 0.0;
+    if ((thread.scrollOffset - safe).abs() < 12) return;
+    state = state.copyWith(
+      threads: {
+        ...state.threads,
+        characterId: thread.copyWith(scrollOffset: safe),
+      },
+    );
+    _save();
   }
 
   void setDraft(String characterId, String value) {
