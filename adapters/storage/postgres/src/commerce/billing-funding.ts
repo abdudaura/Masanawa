@@ -160,6 +160,21 @@ export function createPostgresBillingQuoteRepository(pool: Pool): BillingQuoteRe
       }, { isolation: "repeatable read", readOnly: true });
     },
 
+    async readByFulfillmentReference(input) {
+      const reference = input.fulfillmentReference.trim();
+      if (!reference || reference.length > 128) {
+        throw new TypeError("financial.billing.fulfillment_reference_invalid");
+      }
+      return withTransaction(pool, async (client) => {
+        const result = await client.query<BillingQuoteRow>(
+          `SELECT * FROM commerce.billing_quotes
+            WHERE fulfillment_reference=$1`,
+          [reference],
+        );
+        return result.rows[0] ? quote(result.rows[0]) : null;
+      }, { isolation: "repeatable read", readOnly: true });
+    },
+
     async listQuotes(input) {
       if (!Number.isSafeInteger(input.limit) || input.limit < 1 || input.limit > 100) {
         throw new TypeError("financial.billing.history_limit_invalid");
