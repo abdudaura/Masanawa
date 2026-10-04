@@ -7,9 +7,10 @@
 - Task references: 133–134 (bounded commercial groundwork; neither gate is closed)
 - Selected scope: persistent Agent Float allocation commands with atomic ledger transfer
   and replay/conflict protection inside the canonical Commerce repository, plus bounded
-  user-scoped receipt history with keyset pagination and optional Character filtering.
+  user-scoped receipt history with keyset pagination and optional Character filtering;
+  next: immutable per-job custody links and protection of outstanding funds from pooled spending.
 - Last update: 2026-10-04
-- Current step: receipt history implemented and verified; coordinated integration pending.
+- Current step: per-fulfillment payment/reserve custody and protected platform Float.
 
 ## Exact owned paths
 
@@ -18,6 +19,9 @@
 - `packages/commerce/src/repository.ts`
 - `packages/commerce/src/float-allocation.test.ts`
 - `packages/commerce/migrations/0004_float_allocation_commands.sql`
+- `packages/commerce/migrations/0005_fulfillment_custody.sql`
+- `packages/commerce/src/fulfillment-custody.test.ts`
+- `adapters/storage/postgres/src/commerce/fulfillment-custody.integration.test.ts`
 - `adapters/storage/postgres/src/commerce/repository.ts`
 - `adapters/storage/postgres/src/commerce/float-allocation.integration.test.ts`
 
@@ -82,5 +86,16 @@ The existing Gateway allocation flow still uses the old transfer port and must b
 adopted by its owning window before any UI idempotency claim. Do not bypass authorization.
 
 This window retains only the exact paths above until merge or explicit transfer.
-Provider billing/crypto, reserves/refunds, teaching/channel implementation and roadmap
+Provider billing/crypto, actual-cost/refund policy, teaching/channel implementation and roadmap
 completion remain outside this claim.
+
+## Per-job custody continuation
+
+Owned here: new migration 0005, model/read ports, Commerce adapter and exact acceptance
+files listed above. Current policy remains unchanged: no commission percentage, cost
+allocation or refund decision is introduced. New immutable custody links identify each
+admission's existing customer-payment and creator-reserve ledger entries. Platform Float
+outgoing transfers must exclude outstanding held principal. Completion frees only its
+own custody atomically with existing receipt/settlement; rollback restores the hold.
+Migration backfill must validate legacy custody and fail closed on missing or unfunded
+history instead of fabricating funding. No deployment or edits to applied migrations.
