@@ -315,6 +315,15 @@ describe("financial service recovery and admission", () => {
     }));
     expect(crypto.reserveWithdrawal).not.toHaveBeenCalled();
   });
+  it("never accepts an end-user payout verification code", async () => {
+    const { service, fetch } = setup(withdrawalIntent, account);
+    await expect(service.verifyWithdrawal({
+      authorizationHeader,
+      requestId,
+      verificationCode: "123456",
+    })).rejects.toThrow("financial.crypto.withdrawal_verification_server_only");
+    expect(fetch).not.toHaveBeenCalled();
+  });
   it("automatically verifies a dispatched payout using only the server-side merchant code provider", async () => {
     const reserveWithFee = vi.fn(async (value: {
       readonly intent: CryptoIntent;
