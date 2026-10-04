@@ -82,6 +82,23 @@ export function createTeachingRuntimeBinding(input: {
   });
 }
 
+export interface TeachingSelectionActionBinding {
+  readonly actionKey: string;
+  readonly requestId: RequestId;
+  readonly relationshipId: RelationshipId;
+  readonly skillVersionId: SkillVersionId;
+  readonly lessonStepKey: string;
+  readonly exerciseKey: string;
+  readonly rubric: TeachingSelectableExerciseRubric;
+  readonly expiresAt: Instant;
+  readonly bindingHash: string;
+}
+
+export interface TeachingOpaqueSelection {
+  readonly actionKey: string;
+  readonly selectedOptionKeys: readonly string[];
+}
+
 export interface TeachingSelectionAttempt {
   readonly requestId: RequestId;
   readonly payloadHash: string;
@@ -170,6 +187,129 @@ export interface TeachingRuntimeCoordinatorOptions {
   readonly progress: TeachingProgressPort;
   readonly presentation?: TeachingPresentationPort;
   readonly evidence?: TeachingEvidencePort;
+}
+
+function teachingActionBindingPayload(input: {
+  readonly actionKey: string;
+  readonly requestId: RequestId;
+  readonly relationshipId: RelationshipId;
+  readonly skillVersionId: SkillVersionId;
+  readonly lessonStepKey: string;
+  readonly exerciseKey: string;
+  readonly rubric: TeachingSelectableExerciseRubric;
+  readonly expiresAt: Instant;
+}) {
+  return Object.freeze({
+    actionKey: input.actionKey,
+    requestId: input.requestId,
+    relationshipId: input.relationshipId,
+    skillVersionId: input.skillVersionId,
+    lessonStepKey: input.lessonStepKey,
+    exerciseKey: input.exerciseKey,
+    rubric: input.rubric,
+    expiresAt: input.expiresAt,
+  });
+}
+
+export function createTeachingSelectionActionBinding(input: {
+  readonly binding: TeachingRuntimeBinding;
+  readonly actionKey: string;
+  readonly requestId: RequestId;
+  readonly rubric: TeachingSelectableExerciseRubric;
+  readonly expiresAt: Instant;
+}): TeachingSelectionActionBinding {
+  if (!isCanonicalId("request", input.requestId)) {
+    throw new TypeError("Teaching action RequestId is invalid");
+  }
+  const actionKey = input.actionKey.trim();
+  if (
+    actionKey.length < 8 ||
+    actionKey.length > 256 ||
+    !/^[A-Za-z0-9._:-]+$/u.test(actionKey)
+  ) {
+    throw new TypeError("Teaching action key is invalid");
+  }
+
+  const rubric = normalizeTeachingSelectableExerciseRubric(input.rubric);
+  assertBindingScope(
+    input.binding,
+    rubric.relationshipId,
+    rubric.skillVersionId,
+  );
+  const expiresAt = toInstant(input.expiresAt);
+  if (Date.parse(expiresAt) <= Date.now()) {
+    throw new TypeError("Teaching action binding must expire in the future");
+  }
+
+  const payload = teachingActionBindingPayload({
+    actionKey,
+    requestId: input.requestId,
+    relationshipId: rubric.relationshipId,
+    skillVersionId: rubric.skillVersionId,
+    lessonStepKey: rubric.lessonStepKey,
+    exerciseKey: rubric.exerciseKey,
+    rubric,
+    expiresAt,
+  });
+  const bindingHash =
+    `sha256:${fingerprintCanonicalJson(JSON.parse(canonicalJson(payload)))}`;
+
+  return Object.freeze({
+    ...payload,
+    bindingHash,
+  });
+}
+
+export function resolveTeachingOpaqueSelection(input: {
+  readonly binding: TeachingRuntimeBinding;
+  readonly action: TeachingSelectionActionBinding;
+  readonly selection: TeachingOpaqueSelection;
+  readonly now: Instant;
+}): {
+  readonly requestId: RequestId;
+  readonly rubric: TeachingSelectableExerciseRubric;
+  readonly submission: TeachingSelectionSubmission;
+} {
+  const expectedPayload = teachingActionBindingPayload({
+    actionKey: input.action.actionKey,
+    requestId: input.action.requestId,
+    relationshipId: input.action.relationshipId,
+    skillVersionId: input.action.skillVersionId,
+    lessonStepKey: input.action.lessonStepKey,
+    exerciseKey: input.action.exerciseKey,
+    rubric: input.action.rubric,
+    expiresAt: input.action.expiresAt,
+  });
+  const expectedHash =
+    `sha256:${fingerprintCanonicalJson(
+      JSON.parse(canonicalJson(expectedPayload)),
+    )}`;
+  if (input.action.bindingHash !== expectedHash) {
+    throw new TypeError("Teaching action binding hash does not match payload");
+  }
+  assertBindingScope(
+    input.binding,
+    input.action.relationshipId,
+    input.action.skillVersionId,
+  );
+  if (input.selection.actionKey !== input.action.actionKey) {
+    throw new TypeError("Teaching selection action key does not match binding");
+  }
+  if (Date.parse(toInstant(input.now)) > Date.parse(input.action.expiresAt)) {
+    throw new TypeError("Teaching action binding has expired");
+  }
+
+  return Object.freeze({
+    requestId: input.action.requestId,
+    rubric: input.action.rubric,
+    submission: Object.freeze({
+      relationshipId: input.action.relationshipId,
+      skillVersionId: input.action.skillVersionId,
+      lessonStepKey: input.action.lessonStepKey,
+      exerciseKey: input.action.exerciseKey,
+      selectedOptionKeys: Object.freeze([...input.selection.selectedOptionKeys]),
+    }),
+  });
 }
 
 export function fingerprintTeachingSelectionAttempt(input: {
@@ -472,6 +612,28 @@ export class TeachingRuntimeCoordinator {
       status: "insufficient" as const,
       evidence: Object.freeze(evidence),
       uncertaintyNote,
+    });
+  }
+
+  async submitOpaqueSelection(input: {
+    readonly binding: TeachingRuntimeBinding;
+    readonly action: TeachingSelectionActionBinding;
+    readonly selection: TeachingOpaqueSelection;
+    readonly plan: TeachingLessonPlan;
+    readonly now: Instant;
+  }): Promise<TeachingRuntimeProjection> {
+    const resolved = resolveTeachingOpaqueSelection({
+      binding: input.binding,
+      action: input.action,
+      selection: input.selection,
+      now: input.now,
+    });
+    return this.submitSelection(input.binding, {
+      requestId: resolved.requestId,
+      plan: input.plan,
+      rubric: resolved.rubric,
+      submission: resolved.submission,
+      recordedAt: input.now,
     });
   }
 
