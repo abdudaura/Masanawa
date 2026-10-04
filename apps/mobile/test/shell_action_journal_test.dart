@@ -115,8 +115,6 @@ void main() {
           '{"version":1,"records":{}}'
       ..data['masanawa.shell.actions.v1:$ownerNamespace2'] =
           '{"version":1,"records":{}}'
-      ..data['masanawa.shell.actions.v1:user-1:legacy-session'] =
-          '{"version":1,"records":{}}'
       ..data['masanawa.shell.actions.v1:$otherNamespace'] =
           '{"version":1,"records":{}}'
       ..data['unrelated.secure.key'] = 'keep';
@@ -130,8 +128,7 @@ void main() {
       store.data.keys.where(
         (key) =>
             key == 'masanawa.shell.actions.v1:$ownerNamespace' ||
-            key == 'masanawa.shell.actions.v1:$ownerNamespace2' ||
-            key == 'masanawa.shell.actions.v1:user-1:legacy-session',
+            key == 'masanawa.shell.actions.v1:$ownerNamespace2',
       ),
       isEmpty,
     );
