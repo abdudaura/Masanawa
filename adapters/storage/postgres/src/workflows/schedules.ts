@@ -4,7 +4,6 @@ import {
   createCanonicalId,
   toInstant,
   type CorrelationId,
-  type EventId,
   type Instant,
   type OutboxEventId,
   type TenantId,
