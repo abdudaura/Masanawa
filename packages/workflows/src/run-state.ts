@@ -401,24 +401,14 @@ export function assertChildTaskLineage(
   child: WorkflowTask,
   parent: WorkflowTask,
 ): void {
-  assertTaskBelongsToRun(child, {
-    tenantId: parent.tenantId,
-    workflowRunId: parent.workflowRunId,
-    workflowId: "" as WorkflowRun["workflowId"],
-    workflowVersionId: parent.workflowVersionId,
-    graphSignature: parent.graphSignature,
-    initiatedByUserId: null,
-    state: "running",
-    revision: 1,
-    createdAt: parent.createdAt,
-    updatedAt: parent.updatedAt,
-    startedAt: parent.startedAt ?? parent.createdAt,
-    terminalAt: null,
-    waitReason: null,
-    failure: null,
-    cancellationReason: null,
-  });
-
+  if (
+    child.tenantId !== parent.tenantId ||
+    child.workflowRunId !== parent.workflowRunId ||
+    child.workflowVersionId !== parent.workflowVersionId ||
+    child.graphSignature !== parent.graphSignature
+  ) {
+    fail("Child Task is not bound to the same WorkflowRun/version/graph as parent");
+  }
   if (
     child.lineage.parentTaskId !== parent.taskId ||
     child.lineage.rootTaskId !== parent.lineage.rootTaskId ||
