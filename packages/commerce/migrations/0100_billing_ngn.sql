@@ -3,7 +3,7 @@ CREATE TABLE commerce.billing_quotes (
   user_id text NOT NULL,
   quote_id text NOT NULL,
   revision bigint NOT NULL DEFAULT 1 CHECK (revision > 0),
-  state text NOT NULL CHECK (state IN ('quoted','confirmed','checkout-created','funded','reserved','succeeded','refund-pending','refund-submitted','refunded','expired')),
+  state text NOT NULL CHECK (state IN ('quoted','confirmed','checkout-created','funded','reserved','succeeded','refund-pending','refund-dispatching','refund-submitted','refunded','expired')),
   category_code text,
   biller_code text NOT NULL CHECK (length(btrim(biller_code)) BETWEEN 1 AND 128),
   item_code text NOT NULL CHECK (length(btrim(item_code)) BETWEEN 1 AND 128),
