@@ -4,6 +4,7 @@ import { nowInstant, parseCanonicalId } from "@masanawa/contracts";
 import type { AgentDirectoryService } from "./agent_directory.js";
 import type { AgentConversationService } from "./agent_conversation_contract.js";
 import type { CreatorCloneService } from "./creator_clone.js";
+import type { CreatorEconomyService } from "./creator_economy.js";
 import {
   admitTelemetryCorrelation,
   injectCorrelationHeaders,
@@ -23,6 +24,7 @@ export interface GatewayAppOptions {
   readonly agentDirectory?: AgentDirectoryService;
   readonly agentConversation?: AgentConversationService;
   readonly creatorClone?: CreatorCloneService;
+  readonly creatorEconomy?: CreatorEconomyService;
 }
 
 const HealthResponseSchema = Type.Object(
@@ -199,6 +201,49 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
   }
 
 
+
+
+  if (options.creatorEconomy) {
+    const creatorEconomy = options.creatorEconomy;
+    const EconomyResponse = Type.Object(
+      {
+        hasClone: Type.Boolean(),
+        characterId: Type.Union([Type.String(), Type.Null()]),
+        customerCredits: Type.Integer({ minimum: 0 }),
+        agentFloatCredits: Type.Integer({ minimum: 0 }),
+        pendingEarningsCredits: Type.Integer({ minimum: 0 }),
+        availableEarningsCredits: Type.Integer({ minimum: 0 }),
+      },
+      { additionalProperties: false },
+    );
+
+    app.get(
+      "/creator/economy",
+      { schema: { response: { 200: EconomyResponse } } },
+      async (request) =>
+        creatorEconomy.read({
+          authorizationHeader: request.headers.authorization,
+        }),
+    );
+
+    app.post(
+      "/creator/float",
+      {
+        schema: {
+          body: Type.Object(
+            { amountCredits: Type.Integer({ minimum: 1, maximum: 1000000000 }) },
+            { additionalProperties: false },
+          ),
+          response: { 200: EconomyResponse },
+        },
+      },
+      async (request) =>
+        creatorEconomy.allocateFloat({
+          authorizationHeader: request.headers.authorization,
+          amountCredits: request.body.amountCredits,
+        }),
+    );
+  }
 
   if (options.creatorClone) {
     const creatorClone = options.creatorClone;
