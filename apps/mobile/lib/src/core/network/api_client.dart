@@ -2,12 +2,12 @@ import 'package:dio/dio.dart';
 
 import '../api/models.dart';
 
-/// Base URL for the UNigeria API. Overridable at build/run time:
+/// Stable Masanawa public API origin. Overridable at build/run time:
 ///   flutter run --dart-define=API_BASE_URL=https://staging.example.com
-/// Defaults to the production Railway deployment.
+/// The backing provider may change without rebuilding the app.
 const String kApiBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
-  defaultValue: 'https://unigeria.up.railway.app',
+  defaultValue: 'https://api.masanawa.com',
 );
 
 /// Thrown for contract-level / transport failures with a message safe to show.
