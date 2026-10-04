@@ -147,6 +147,7 @@ function setup(
   const crypto = {
     readIntent: vi.fn(async () => existing),
     readIntentByRequestId: vi.fn(async () => existing),
+    readIntentByProviderPayoutId: vi.fn(async () => existing),
     applyProviderPaymentEvent: vi.fn(async () => ({ ...intent, status: "succeeded" as const })),
     bindProviderPayment: vi.fn(async (value: {
       readonly providerPaymentId: string;
@@ -811,6 +812,29 @@ describe("financial service recovery and admission", () => {
       tenantId, userId, requestId, succeeded: true, providerReference: "withdrawal-1",
     }));
   });
+  it("accepts exact signed payout evidence when the provider omits unique_external_id", async () => {
+    const { service, crypto } = setup(withdrawalIntent, account);
+    const payout = {
+      id: "withdrawal-1",
+      batch_withdrawal_id: "batch-1",
+      payout_status: "FINISHED",
+      currency: "usdttrc20",
+      amount: "10",
+      address: "address",
+    };
+    const signature = createHmac("sha512", "fixture-ipn")
+      .update(canonicalizeIpnPayload(payout)).digest("hex");
+    await expect(service.handleNowPaymentsPayoutIpn({ payload: payout, signature }))
+      .resolves.toEqual({ accepted: true, requestId });
+    expect(crypto.readIntentByProviderPayoutId).toHaveBeenCalledWith({
+      providerPayoutId: "batch-1",
+    });
+    expect(crypto.settleWithdrawal).toHaveBeenCalledWith(expect.objectContaining({
+      succeeded: true,
+      providerReference: "withdrawal-1",
+    }));
+  });
+
   it("rejects changed signed payout terms before ledger settlement", async () => {
     const { service, crypto } = setup(withdrawalIntent, account);
     const payout = {
@@ -842,7 +866,7 @@ describe("financial service recovery and admission", () => {
     await expect(service.handleNowPaymentsPayoutIpn({
       payload: payout, signature: "0".repeat(128),
     })).rejects.toThrow("nowpayments.ipn.signature.invalid");
-    expect(crypto.readIntentByRequestId).not.toHaveBeenCalled();
+    expect(crypto.readIntentByProviderPayoutId).not.toHaveBeenCalled();
     expect(crypto.settleWithdrawal).not.toHaveBeenCalled();
   });
   it("accepts an idempotent duplicate terminal payout and rejects a contradictory terminal callback", async () => {
