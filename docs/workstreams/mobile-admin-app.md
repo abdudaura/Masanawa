@@ -12,18 +12,43 @@ Owned paths:
 Non-owned / read-only dependencies:
 - `apps/mobile/**` is reference-only; no edits in this workstream.
 - Gateway/Ops/shared contracts, migrations, billing, crypto, channels and customer authentication remain owned by their active workstreams.
-- Existing `apps/ops/**` is reference-only.
+- Existing `apps/ops/**` and `services/ops/**` are reference-only.
 
-Scope:
-1. Create a separately installable Flutter admin app, not a second mode hidden inside the customer app.
-2. Reuse only the approved Agent Blue identity/theme and minimal networking/auth foundations needed by admins.
-3. Do not copy customer chat/media/commerce/creator UX into the admin binary.
-4. Establish an admin information architecture for overview, users, agents, Skills, transactions, operations and settings.
-5. Wire server reads only where an existing authorized contract is already available; otherwise use explicit unavailable/coming-online states rather than fake data.
-6. Keep customer app behavior untouched.
+Implemented:
+- separate Android-first Flutter application at `apps/admin_mobile`;
+- independent application id `ng.masanawa.admin`, so it installs beside the customer app;
+- approved Masanawa Agent Blue logo/theme reused without customer chat/media/commerce/creator code;
+- minimal Android permissions only: Internet and network state;
+- operator credential persisted with `flutter_secure_storage`; no credential committed;
+- configurable `ADMIN_BASE_URL`;
+- Ops health/readiness dashboard;
+- real Agent list from `GET /v1/agents`;
+- real Skill catalog from `GET /v1/skills`;
+- Agent editor for display name, role label, about, greeting, visibility and sort order via the existing revision-checked presentation write contract;
+- Agent Skill assignment editor using the existing read/write assignment contracts;
+- Users and Transactions sections are intentionally explicit contract-pending states rather than fake data or direct database access.
 
-Current step: bootstrap the independent Flutter app shell and admin navigation, then add typed admin API boundaries and initial operational screens.
+Current server dependencies:
+- `GET /healthz`
+- `GET /readyz`
+- `GET /v1/agents`
+- `PUT /v1/agents/:characterId/presentation`
+- `GET /v1/skills`
+- `GET /v1/agents/:characterId/skills`
+- `PUT /v1/agents/:characterId/skills`
 
-Implementation status: in progress.
-Verification status: pending.
+Verification:
+- branch diff is isolated to `apps/admin_mobile/**` plus this claim;
+- customer `apps/mobile/**` is untouched;
+- no secret/token is committed;
+- source/API shapes were checked against current `services/ops/src/app.ts`;
+- Flutter/Dart SDK is not installed in this execution environment, so a real `flutter analyze`/APK compile is not claimed.
+
+Next:
+- expose scoped Ops projections for users, billing/crypto transactions, provider health and audit events;
+- replace bootstrap bearer entry with the production admin identity/sign-in flow once that contract is available;
+- run Flutter analyze/build on a machine with the SDK and fix any toolchain-specific issues.
+
+Implementation status: first functional slice complete.
+Verification status: source/contract verified; physical compile pending.
 Deployment status: not deployed.
