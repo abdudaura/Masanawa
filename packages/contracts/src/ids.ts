@@ -40,6 +40,7 @@ export const canonicalIdKinds = [
   "event",
   "audit-event",
   "outbox-event",
+  "offer",
   "quote",
   "payment",
   "ledger-entry",
@@ -148,6 +149,7 @@ export type ReconciliationCaseId = CanonicalId<"reconciliation-case">;
 export type EventId = CanonicalId<"event">;
 export type AuditEventId = CanonicalId<"audit-event">;
 export type OutboxEventId = CanonicalId<"outbox-event">;
+export type OfferId = CanonicalId<"offer">;
 export type QuoteId = CanonicalId<"quote">;
 export type PaymentId = CanonicalId<"payment">;
 export type LedgerEntryId = CanonicalId<"ledger-entry">;
