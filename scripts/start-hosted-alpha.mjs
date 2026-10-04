@@ -108,6 +108,83 @@ async function start() {
     console.info(`Hosted Alpha credential metadata checks: ${JSON.stringify(results)}`);
   }
   await startGatewayService();
+  if (process.argv.includes("--verify-stream")) {
+    try {
+      const baseUrl = `http://127.0.0.1:${process.env.PORT ?? 3000}`;
+      const headers = {
+        authorization: `Bearer ${process.env.MASANAWA_ALPHA_DEV_TOKEN}`,
+        "content-type": "application/json",
+      };
+      const directoryResponse = await fetch(`${baseUrl}/v1/agent/directory`, {
+        headers,
+        signal: AbortSignal.timeout(10000),
+      });
+      const directory = await directoryResponse.json();
+      const characterId = directory?.agents?.[0]?.characterId;
+      if (!characterId) throw new Error("No streamed-test Character available");
+      const openResponse = await fetch(`${baseUrl}/v1/agent/sessions/open`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ characterId }),
+        signal: AbortSignal.timeout(10000),
+      });
+      const opened = await openResponse.json();
+      if (!opened?.characterSessionId) throw new Error("Stream session open failed");
+      const response = await fetch(
+        `${baseUrl}/v1/agent/sessions/${opened.characterSessionId}/turn-stream`,
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            characterId,
+            text: "Reply with exactly one short sentence confirming streamed chat works.",
+          }),
+          signal: AbortSignal.timeout(70000),
+        },
+      );
+      if (!response.ok || !response.body) throw new Error("Stream HTTP request failed");
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let pending = "";
+      let deltaCount = 0;
+      let characterCount = 0;
+      let done = false;
+      while (true) {
+        const result = await reader.read();
+        if (result.done) break;
+        pending += decoder.decode(result.value, { stream: true });
+        let newline = pending.indexOf("\n");
+        while (newline >= 0) {
+          const raw = pending.slice(0, newline).trim();
+          pending = pending.slice(newline + 1);
+          if (raw) {
+            const event = JSON.parse(raw);
+            if (event.type === "delta" && typeof event.text === "string") {
+              deltaCount += 1;
+              characterCount += event.text.length;
+            }
+            if (event.type === "done") done = true;
+            if (event.type === "error") throw new Error("Stream emitted failure");
+          }
+          newline = pending.indexOf("\n");
+        }
+      }
+      console.info(
+        `Hosted Alpha stream verification: ${JSON.stringify({
+          passed: done && deltaCount > 0 && characterCount > 0,
+          deltaCount,
+          characterCount,
+          done,
+        })}`,
+      );
+    } catch (error) {
+      console.error(
+        `Hosted Alpha stream verification failed: ${
+          error instanceof Error ? error.message : "unknown"
+        }`,
+      );
+    }
+  }
   if (process.argv.includes("--verify-live-audio")) {
     try {
       const { createGeminiLiveAudioRenderer } = await import("../services/gateway/dist/native_audio.js");
