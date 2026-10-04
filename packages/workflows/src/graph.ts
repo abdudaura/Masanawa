@@ -95,6 +95,9 @@ function normalizeExecutor(
 
 function normalizeNode(node: WorkflowNode): WorkflowNode {
   const nodeKey = key(node.key, "node.key");
+  if (!["executor", "decision", "wait", "join", "terminal"].includes(node.kind)) {
+    fail(`nodes.${nodeKey}.kind is not supported`);
+  }
   const label = bounded(
     node.label,
     `nodes.${nodeKey}.label`,
@@ -217,6 +220,7 @@ function assertReachable(
 }
 
 function assertNodeSemantics(
+  entryNodeKeys: readonly string[],
   nodes: readonly WorkflowNode[],
   edges: readonly WorkflowEdge[],
 ): void {
@@ -227,12 +231,22 @@ function assertNodeSemantics(
     incoming.get(edge.to)!.push(edge);
   }
 
+  const entrySet = new Set(entryNodeKeys);
   for (const node of nodes) {
     const out = outgoing.get(node.key)!;
     const inc = incoming.get(node.key)!;
 
+    if (entrySet.has(node.key) && inc.length !== 0) {
+      fail(`entry node ${node.key} cannot have incoming edges`);
+    }
+    if (!entrySet.has(node.key) && inc.length === 0) {
+      fail(`root node ${node.key} must be declared as an entry node`);
+    }
     if (node.kind === "terminal" && out.length !== 0) {
       fail(`terminal node ${node.key} cannot have outgoing edges`);
+    }
+    if (node.kind !== "terminal" && out.length === 0) {
+      fail(`non-terminal node ${node.key} must have an outgoing edge`);
     }
     if (node.kind === "join" && inc.length < 2) {
       fail(`join node ${node.key} requires at least two incoming edges`);
@@ -335,7 +349,7 @@ export function createWorkflowGraph(input: WorkflowGraph): WorkflowGraph {
 
   assertAcyclic(nodes, edges);
   assertReachable(entryNodeKeys, nodes, edges);
-  assertNodeSemantics(nodes, edges);
+  assertNodeSemantics(entryNodeKeys, nodes, edges);
 
   return Object.freeze({
     entryNodeKeys: Object.freeze(entryNodeKeys),
@@ -358,6 +372,14 @@ export function createWorkflowVersion(
     fail("workflow versionNumber must be a positive safe integer");
   }
   const graph = createWorkflowGraph(input.graph);
+  for (const node of graph.nodes) {
+    if (
+      node.executor?.kind === "subworkflow" &&
+      node.executor.workflowVersionId === input.workflowVersionId
+    ) {
+      fail("workflow version cannot directly reference itself as a subworkflow");
+    }
+  }
   const graphSignature = workflowGraphSignature(graph);
   if (input.graphSignature && input.graphSignature !== graphSignature) {
     fail("supplied graphSignature does not match normalized workflow graph");
