@@ -6,10 +6,18 @@ import {
   createWorkflowVersion,
   workflowGraphLimits,
   workflowGraphSignature,
+  type WorkflowEdge,
   type WorkflowGraph,
+  type WorkflowNode,
 } from "./index.js";
 
-function baseGraph(): WorkflowGraph {
+interface TestGraph {
+  entryNodeKeys: string[];
+  nodes: WorkflowNode[];
+  edges: WorkflowEdge[];
+}
+
+function baseGraph(): TestGraph {
   return {
     entryNodeKeys: ["start"],
     nodes: [
@@ -153,7 +161,8 @@ describe("Workflow/WorkflowVersion graph contracts", () => {
     });
 
     const before = version.graphSignature;
-    (graph.nodes[0] as { label: string }).label = "Mutated outside";
+    const mutableFirstNode = graph.nodes[0] as unknown as { label: string };
+    mutableFirstNode.label = "Mutated outside";
     graph.edges.reverse();
 
     expect(version.graphSignature).toBe(before);
@@ -172,7 +181,7 @@ describe("Workflow/WorkflowVersion graph contracts", () => {
         to: "missing",
         condition: { kind: "always" },
       },
-    ] as never;
+    ];
     expect(() => createWorkflowGraph(dangling)).toThrow(/missing node/u);
 
     const hiddenRoot = baseGraph();
@@ -188,7 +197,7 @@ describe("Workflow/WorkflowVersion graph contracts", () => {
           version: "v1",
         },
       },
-    ] as never;
+    ];
     hiddenRoot.edges = [
       ...hiddenRoot.edges,
       {
@@ -196,7 +205,7 @@ describe("Workflow/WorkflowVersion graph contracts", () => {
         to: "done",
         condition: { kind: "always" },
       },
-    ] as never;
+    ];
     expect(() => createWorkflowGraph(hiddenRoot)).toThrow(
       /root node other_root must be declared as an entry/u,
     );
@@ -212,7 +221,7 @@ describe("Workflow/WorkflowVersion graph contracts", () => {
         label: "Orphan",
         executor: null,
       },
-    ] as never;
+    ];
     expect(() => createWorkflowGraph(unreachable)).toThrow(/unreachable nodes/u);
 
     const cycle = baseGraph();
@@ -223,7 +232,7 @@ describe("Workflow/WorkflowVersion graph contracts", () => {
         to: "start",
         condition: { kind: "always" },
       },
-    ] as never;
+    ];
     expect(() => createWorkflowGraph(cycle)).toThrow(/must be acyclic/u);
   });
 
@@ -231,7 +240,7 @@ describe("Workflow/WorkflowVersion graph contracts", () => {
     const badDecision = baseGraph();
     badDecision.edges = badDecision.edges.filter(
       (edge) => !(edge.from === "route" && edge.to === "branch_b"),
-    ) as never;
+    );
     expect(() => createWorkflowGraph(badDecision)).toThrow(
       /decision node route requires at least two outgoing edges/u,
     );
@@ -239,7 +248,7 @@ describe("Workflow/WorkflowVersion graph contracts", () => {
     const badJoin = baseGraph();
     badJoin.edges = badJoin.edges.filter(
       (edge) => !(edge.from === "branch_b" && edge.to === "join_results"),
-    ) as never;
+    );
     expect(() => createWorkflowGraph(badJoin)).toThrow(
       /join node join_results requires at least two incoming edges/u,
     );
@@ -252,7 +261,7 @@ describe("Workflow/WorkflowVersion graph contracts", () => {
         to: "branch_a",
         condition: { kind: "always" },
       },
-    ] as never;
+    ];
     expect(() => createWorkflowGraph(terminalOutgoing)).toThrow(
       /terminal node done cannot have outgoing edges/u,
     );
@@ -260,7 +269,7 @@ describe("Workflow/WorkflowVersion graph contracts", () => {
     const implicitSink = baseGraph();
     implicitSink.edges = implicitSink.edges.filter(
       (edge) => edge.from !== "join_results",
-    ) as never;
+    );
     expect(() => createWorkflowGraph(implicitSink)).toThrow(
       /non-terminal node join_results must have an outgoing edge/u,
     );
@@ -271,7 +280,7 @@ describe("Workflow/WorkflowVersion graph contracts", () => {
     duplicateNode.nodes = [
       ...duplicateNode.nodes,
       duplicateNode.nodes[0]!,
-    ] as never;
+    ];
     expect(() => createWorkflowGraph(duplicateNode)).toThrow(
       /duplicate node keys/u,
     );
@@ -280,7 +289,7 @@ describe("Workflow/WorkflowVersion graph contracts", () => {
     duplicateEdge.edges = [
       ...duplicateEdge.edges,
       duplicateEdge.edges[0]!,
-    ] as never;
+    ];
     expect(() => createWorkflowGraph(duplicateEdge)).toThrow(/duplicate edges/u);
 
     const huge: WorkflowGraph = {
