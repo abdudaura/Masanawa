@@ -115,6 +115,27 @@ found across the reference vault and explicitly assessed post-freeze candidates.
 
 Do not recreate donor project boundaries. The repository is the source of truth.
 
+## Current product-direction overlay — creator clones and reseller economy
+
+The canonical product decision is now recorded in
+`docs/CREATOR-CLONE-ECONOMY.md`.
+
+Key constraints to preserve while continuing the numbered roadmap:
+- one personal clone per ordinary User;
+- Masanawa owns Offer pricing, margins, routing and settlement;
+- creators may fund Agent Float, but insufficient Float can trigger fallback rather than
+  dropping the customer request;
+- the originating clone keeps reseller/customer attribution even if another executor
+  performs fulfillment;
+- Gwani and Gwana are peer platform/support Characters with the same role/capability
+  model;
+- Gwani is the default platform/support Character and prefers Gemini voice Bodi;
+- Gwana is selectable in Settings and prefers Gemini voice Sulafat;
+- voice/default selection is configuration, not Character identity or a parallel runtime.
+
+Do not create a temporary wallet, marketplace, clone runtime or privileged Gwani/Gwana
+code path outside the canonical package owners.
+
 ## Mandatory read order
 
 1. `README.md`
@@ -122,22 +143,23 @@ Do not recreate donor project boundaries. The repository is the source of truth.
 3. `docs/PRODUCT-NORTH-STAR.md`
 4. `docs/PRODUCT-PROJECT-STRUCTURE.md`
 5. `docs/PRODUCTION-MASTER-TASKS.md`
-6. `docs/ARCHITECTURE.md`
-7. `docs/AGENT-PHONE-EMBODIMENT.md`
-8. `docs/TECHNOLOGY.md`
-9. `docs/SOURCE-OWNERSHIP.md`
-10. `docs/REWRITE-PLAN.md`
-11. `docs/migration/LANDSCAPE-EXPANSION.md`
-12. `docs/migration/SOURCE-LOCK.md`
-13. `references/README.md`
-14. `references/SOURCES.md`
-15. `docs/migration/FORENSICS-METHOD.md`
-16. `docs/migration/FEATURE-LEDGER.md`
-17. `docs/migration/BEHAVIOUR-LEDGER.md`
-18. `docs/migration/DATA-LEDGER.md`
-19. `docs/migration/INTEGRATION-LEDGER.md`
-20. relevant files under `docs/migration/sources/`
-21. the active phase implementation record named below.
+6. `docs/CREATOR-CLONE-ECONOMY.md`
+7. `docs/ARCHITECTURE.md`
+8. `docs/AGENT-PHONE-EMBODIMENT.md`
+9. `docs/TECHNOLOGY.md`
+10. `docs/SOURCE-OWNERSHIP.md`
+11. `docs/REWRITE-PLAN.md`
+12. `docs/migration/LANDSCAPE-EXPANSION.md`
+13. `docs/migration/SOURCE-LOCK.md`
+14. `references/README.md`
+15. `references/SOURCES.md`
+16. `docs/migration/FORENSICS-METHOD.md`
+17. `docs/migration/FEATURE-LEDGER.md`
+18. `docs/migration/BEHAVIOUR-LEDGER.md`
+19. `docs/migration/DATA-LEDGER.md`
+20. `docs/migration/INTEGRATION-LEDGER.md`
+21. relevant files under `docs/migration/sources/`
+22. the active phase implementation record named below.
 
 `docs/migration/LICENSE-LEDGER.md` is compliance/provenance metadata and is **not** part
 of architectural feature selection.
