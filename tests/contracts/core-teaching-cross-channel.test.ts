@@ -424,3 +424,42 @@ describe("Core Teaching language and modality continuity", () => {
     });
   });
 });
+
+
+describe("Core Teaching durable plan identity", () => {
+  it("rejects cross-channel resume against a regenerated pedagogical sequence", async () => {
+    const active = plan();
+    const durable = new DurableTeachingPort();
+    const app = new TeachingRuntimeCoordinator({ progress: durable });
+
+    await app.submitSelection(binding(active), {
+      requestId: createCanonicalId("request"),
+      plan: active,
+      rubric: rubric(active),
+      submission: {
+        relationshipId: active.learner.relationshipId,
+        skillVersionId: active.skillVersionId,
+        lessonStepKey: "common-denominator",
+        exerciseKey: "common-denominator-choice",
+        selectedOptionKeys: ["six"],
+      },
+      recordedAt: toInstant("2026-10-04T18:30:00.000Z"),
+    });
+
+    const regenerated: TeachingLessonPlan = {
+      ...active,
+      steps: [
+        active.steps[0]!,
+        {
+          ...active.steps[1]!,
+          title: "A silently regenerated lesson title",
+        },
+      ],
+    };
+
+    const telegram = new TeachingRuntimeCoordinator({ progress: durable });
+    await expect(
+      telegram.resume(binding(regenerated), regenerated),
+    ).rejects.toThrow(/different lesson plan/);
+  });
+});
