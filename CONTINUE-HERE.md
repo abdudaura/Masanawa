@@ -1,5 +1,45 @@
 # Continue Here
 
+## Hosted phone testing verified — 2026-10-04
+
+Mobile implementation is on main at `927c7572f28f1f90b8420bb56a35efe2d61ffb4f`.
+The user's older laptop-configured debug APK must be rebuilt for the new
+Settings > Developer > Connect test app flow. Keep the existing hosted token;
+copy MASANAWA_ALPHA_DEV_TOKEN privately from the Railway worker Variables.
+Do not reuse the laptop bootstrap token with the hosted Gateway.
+
+Gateway: https://nurainworker-production.up.railway.app
+Verified deployment: `fb8b6f75-8428-4005-8333-740022e0c0c4` on
+runtime source `2ed4cab128872f5a282abadfc3a13560f3a8c69e`.
+Operator smoke passed readiness, authorized directory (one visible Character,
+Amina), real session admission, real text inference, real text-document
+inference with durable AgentRun results, and close. This is server verification;
+physical phone recording, TTS, restart and reconnect still need device testing.
+
+The context compiler's Memory/World schema dependencies are now included in
+readiness and bootstrap. Registered hosted Alpha upgrades use transactional,
+checksum-checked migrations without reseeding canonical identities. The database
+now uses pgvector/pgvector:0.8.6-pg18-bookworm on its existing PostgreSQL 18
+volume. Plain-text media is decoded as strict UTF-8 user content (128,000-char
+bound); PDF/audio/image retain the MIME/base64 adapter path.
+
+All six imported credentials passed model-metadata lookup. The second pooled
+inference credential returned HTTP 404/NOT_FOUND despite that lookup; other
+credentials have not been qualified for inference. Alpha is explicitly pinned
+to imported credential index 0 via MASANAWA_ALPHA_GEMINI_ACTIVE_CREDENTIAL_INDEX.
+Text/document inference both passed with it. The full encrypted imported pool
+is retained; there is no automatic retry across credentials or quota cycling.
+The normal startup command is restored after smoke verification so routine
+restarts do not make test inference calls.
+
+Checks for this slice: 51 Flutter tests, zero Flutter analysis errors (existing
+warnings/info remain), 40 targeted Gateway/context tests, five Node operator
+smoke/credential-selection tests, and strict Gateway/Postgres typechecking.
+Gateway dependency builds pass frozen install. Prior full-suite and CI evidence
+below remains historical; no task gate, CI waiver or PR #89 merge is claimed.
+There are no executable Skills seeded by Alpha bootstrap; Skills execution,
+admin provisioning and production email delivery remain future implementation.
+
 ## Mobile testing checkpoint — 2026-10-04
 
 The user built an installable debug APK locally and pushed build fixes to main
@@ -20,8 +60,7 @@ build fixes and the user's cleaned lockfile are preserved.
 Verification: Flutter 3.47.6 / Dart 3.13.5; mobile analysis has no compilation
 errors (existing warnings/info remain), 51 Flutter tests pass, and three Node
 hosted-smoke tests pass. See apps/mobile/README.md for exact install/connect
-steps. The hosted Gateway's /readyz returned 200; authenticated hosted checks
-are being performed through the operator smoke path. Physical recording/TTS,
+steps. Authenticated hosted checks passed; see the verified checkpoint above. Physical recording/TTS,
 device restart/retry and full live inference are not implied by unit tests.
 
 PR #89 remains the unmerged runtime work on task073-inference-hardening.
