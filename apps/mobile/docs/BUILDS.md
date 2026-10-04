@@ -8,7 +8,7 @@ A normal app build is production-shaped:
 
 | Flag | Default | Meaning |
 | --- | --- | --- |
-| `API_BASE_URL` | `https://unigeria.up.railway.app` | Existing platform API that owns OTP login and session refresh. |
+| `API_BASE_URL` | `https://api.masanawa.com` | Stable platform API origin; its backing provider can move without rebuilding the app. |
 | `AGENT_BASE_URL` | `https://gateway.masanawa.com` | Stable Masanawa Gateway origin; hosting can move without rebuilding the app. |
 | `AGENT_RUNTIME_ENABLED` | `true` | Live Masanawa agent runtime. Set `false` only for an explicit offline/compatibility build. |
 
