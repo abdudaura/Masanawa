@@ -19,3 +19,4 @@ export * from "./agents/context.js";
 export * from "./agents/selection.js";
 
 export * from "./commerce/repository.js";
+export * from "./commerce/crypto-repository.js";
