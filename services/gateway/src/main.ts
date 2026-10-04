@@ -213,14 +213,18 @@ export async function startGatewayService(
       presentations: database.agentPresentations,
       skillAssignments: database.characterSkillAssignments,
     });
+    const alphaGeminiKeys = parseAlphaGeminiKeys({
+      apiKey: env.MASANAWA_ALPHA_GEMINI_API_KEY,
+      apiKeysJson: env.MASANAWA_ALPHA_GEMINI_API_KEYS_JSON,
+    });
     strategy ??= createAlphaInferenceStrategy({
       inference: createGeminiAlphaInferencePool({
-        apiKeys: parseAlphaGeminiKeys({ apiKey: env.MASANAWA_ALPHA_GEMINI_API_KEY, apiKeysJson: env.MASANAWA_ALPHA_GEMINI_API_KEYS_JSON }),
+        apiKeys: alphaGeminiKeys,
         model: requiredAlphaEnv(env, "MASANAWA_ALPHA_GEMINI_MODEL"),
       }),
     });
     nativeAudio = createGeminiLiveAudioRenderer({
-      apiKey: requiredAlphaEnv(env, "MASANAWA_ALPHA_GEMINI_API_KEY"),
+      apiKey: alphaGeminiKeys[0]!,
       model: env.MASANAWA_ALPHA_GEMINI_LIVE_MODEL ?? "gemini-3.8-live",
       voiceName: env.MASANAWA_ALPHA_GEMINI_LIVE_VOICE ?? "Kore",
     });
