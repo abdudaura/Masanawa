@@ -12,9 +12,7 @@ export interface NowPaymentsClientOptions {
   readonly fetch?: typeof globalThis.fetch;
 }
 
-interface CurrenciesResponse {
-  readonly currencies?: unknown;
-}
+interface CurrenciesResponse { readonly currencies?: unknown; }
 
 export class NowPaymentsClient {
   readonly #apiKey: string;
@@ -23,9 +21,7 @@ export class NowPaymentsClient {
 
   constructor(options: NowPaymentsClientOptions) {
     const apiKey = options.apiKey.trim();
-    if (apiKey.length === 0) {
-      throw new Error("nowpayments.api_key.required");
-    }
+    if (apiKey.length === 0) throw new Error("nowpayments.api_key.required");
     this.#apiKey = apiKey;
     this.#baseUrl = (options.baseUrl ?? "https://api.nowpayments.io/v1").replace(/\/+$/, "");
     this.#fetch = options.fetch ?? globalThis.fetch;
@@ -44,18 +40,23 @@ export class NowPaymentsClient {
     readonly operation?: CryptoOperation;
     readonly excludedNetworks?: readonly string[];
     readonly requireKnownNetwork?: boolean;
+    readonly maxEstimatedNetworkFeeUsd?: number;
     readonly signal?: AbortSignal;
   } = {}): Promise<readonly RouteQualification[]> {
     const routes = await this.listPaymentCurrencies(options.signal);
-    const operation = options.operation ?? "deposit";
+    const qualificationOptions: {
+      excludedNetworks?: readonly string[];
+      requireKnownNetwork?: boolean;
+      maxEstimatedNetworkFeeUsd?: number;
+    } = {};
+    if (options.excludedNetworks !== undefined) qualificationOptions.excludedNetworks = options.excludedNetworks;
+    if (options.requireKnownNetwork !== undefined) qualificationOptions.requireKnownNetwork = options.requireKnownNetwork;
+    if (options.maxEstimatedNetworkFeeUsd !== undefined) {
+      qualificationOptions.maxEstimatedNetworkFeeUsd = options.maxEstimatedNetworkFeeUsd;
+    }
     return Object.freeze(
       routes
-        .map((route) =>
-          qualifyRoute(route, operation, {
-            excludedNetworks: options.excludedNetworks,
-            requireKnownNetwork: options.requireKnownNetwork,
-          }),
-        )
+        .map((route) => qualifyRoute(route, options.operation ?? "deposit", qualificationOptions))
         .filter((result) => result.eligible),
     );
   }
@@ -63,11 +64,12 @@ export class NowPaymentsClient {
   async #request(path: string, signal?: AbortSignal): Promise<Response> {
     let response: Response;
     try {
-      response = await this.#fetch(`${this.#baseUrl}${path}`, {
+      const init: RequestInit = {
         method: "GET",
         headers: { "x-api-key": this.#apiKey, accept: "application/json" },
-        signal,
-      });
+      };
+      if (signal !== undefined) init.signal = signal;
+      response = await this.#fetch(`${this.#baseUrl}${path}`, init);
     } catch {
       throw new Error("nowpayments.transport.unavailable");
     }
