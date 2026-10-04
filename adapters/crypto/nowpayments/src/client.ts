@@ -93,7 +93,7 @@ export class NowPaymentsClient {
         currency_from: input.currencyFrom,
         currency_to: input.currencyTo,
       })}`,
-      { method: "GET", signal: input.signal },
+      withSignal({ method: "GET" as const }, input.signal),
     );
     return parseEstimate(await response.json(), input);
   }
