@@ -144,22 +144,23 @@ code path outside the canonical package owners.
 4. `docs/PRODUCT-PROJECT-STRUCTURE.md`
 5. `docs/PRODUCTION-MASTER-TASKS.md`
 6. `docs/CREATOR-CLONE-ECONOMY.md`
-7. `docs/ARCHITECTURE.md`
-8. `docs/AGENT-PHONE-EMBODIMENT.md`
-9. `docs/TECHNOLOGY.md`
-10. `docs/SOURCE-OWNERSHIP.md`
-11. `docs/REWRITE-PLAN.md`
-12. `docs/migration/LANDSCAPE-EXPANSION.md`
-13. `docs/migration/SOURCE-LOCK.md`
-14. `references/README.md`
-15. `references/SOURCES.md`
-16. `docs/migration/FORENSICS-METHOD.md`
-17. `docs/migration/FEATURE-LEDGER.md`
-18. `docs/migration/BEHAVIOUR-LEDGER.md`
-19. `docs/migration/DATA-LEDGER.md`
-20. `docs/migration/INTEGRATION-LEDGER.md`
-21. relevant files under `docs/migration/sources/`
-22. the active phase implementation record named below.
+7. `docs/SKILL-DESIGN.md`
+8. `docs/ARCHITECTURE.md`
+9. `docs/AGENT-PHONE-EMBODIMENT.md`
+10. `docs/TECHNOLOGY.md`
+11. `docs/SOURCE-OWNERSHIP.md`
+12. `docs/REWRITE-PLAN.md`
+13. `docs/migration/LANDSCAPE-EXPANSION.md`
+14. `docs/migration/SOURCE-LOCK.md`
+15. `references/README.md`
+16. `references/SOURCES.md`
+17. `docs/migration/FORENSICS-METHOD.md`
+18. `docs/migration/FEATURE-LEDGER.md`
+19. `docs/migration/BEHAVIOUR-LEDGER.md`
+20. `docs/migration/DATA-LEDGER.md`
+21. `docs/migration/INTEGRATION-LEDGER.md`
+22. relevant files under `docs/migration/sources/`
+23. the active phase implementation record named below.
 
 `docs/migration/LICENSE-LEDGER.md` is compliance/provenance metadata and is **not** part
 of architectural feature selection.
