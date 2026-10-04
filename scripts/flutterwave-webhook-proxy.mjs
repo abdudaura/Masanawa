@@ -265,6 +265,19 @@ export function startHostedAlphaWithFlutterwaveWebhook() {
     flutterwaveSecretKey,
   });
 
+  if (process.env.MASANAWA_EGRESS_IP_PROBE === "1") {
+    fetch("https://api.ipify.org?format=json")
+      .then((response) => response.json())
+      .then((body) => {
+        if (typeof body?.ip === "string") {
+          console.info("Masanawa runtime egress IPv4", { ip: body.ip });
+        }
+      })
+      .catch((error) => {
+        console.warn("Masanawa runtime egress probe failed", { message: error?.message ?? "unknown" });
+      });
+  }
+
   const shutdown = (signal) => {
     server.close(() => {
       if (!child.killed) child.kill(signal);
