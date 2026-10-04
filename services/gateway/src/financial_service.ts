@@ -249,6 +249,16 @@ export function createFinancialService(input: {
      */
     readonly pooledCustodyLiabilityCoverageSatisfied?: boolean;
   }>;
+  /**
+   * Canonical Commerce/Postgres hook for a payout whose live network fee is non-zero.
+   * The implementation must atomically reserve principal and durably account for the
+   * quoted fee policy (user-funded or platform-funded) before provider dispatch.
+   */
+  readonly reserveWithdrawalWithFee?: (input: {
+    readonly intent: CryptoIntent;
+    readonly networkFee: string;
+    readonly quotedAt: Instant;
+  }) => Promise<CryptoIntent>;
   readonly nowPaymentsIpnSecret: string;
   readonly publicBaseUrl: string;
   readonly now?: () => Instant;
@@ -543,9 +553,9 @@ export function createFinancialService(input: {
         return withdrawalView(existing);
       }
 
-      await preflightWithdrawal(providerCode, amount, address);
+      const quote = await preflightWithdrawal(providerCode, amount, address);
       const createdAt = now();
-      const admitted = await input.crypto.reserveWithdrawal({
+      const withdrawalIntent: CryptoIntent = {
         schemaVersion: 1,
         tenantId: auth.tenantId,
         userId: auth.userId,
@@ -565,7 +575,17 @@ export function createFinancialService(input: {
         status: "processing",
         createdAt,
         updatedAt: createdAt,
-      });
+      };
+      const admitted =
+        quote.networkFee === "0"
+          ? await input.crypto.reserveWithdrawal(withdrawalIntent)
+          : input.reserveWithdrawalWithFee
+            ? await input.reserveWithdrawalWithFee({
+                intent: withdrawalIntent,
+                networkFee: quote.networkFee,
+                quotedAt: quote.quotedAt,
+              })
+            : (() => { throw new Error("financial.crypto.withdrawal_fee_settlement_unavailable"); })();
 
       assertFinancialReplay(admitted, terms);
       const dispatch = await input.crypto.beginProviderDispatch({
