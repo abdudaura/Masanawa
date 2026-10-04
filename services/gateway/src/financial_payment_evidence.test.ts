@@ -9,12 +9,25 @@ describe("complete deposit recovery evidence", () => {
     expect(admitPaymentEvidence(payload, expected)).toMatchObject({ actuallyPaid: "0", priceAmount: expected.amount });
   });
   it.each([{ payment_id: "other" }, { order_id: "other" }, { price_currency: "BTC" },
-    { pay_currency: "BTC" }, { price_amount: "10.000000000000000002" }])("rejects changed binding %j", change => {
+    { pay_currency: "BTC" }, { price_amount: "10.000000000000000002" },
+    { pay_amount: "9" }])("rejects changed binding %j", change => {
     expect(() => admitPaymentEvidence({ ...payload, ...change }, expected)).toThrow("financial.crypto.evidence_mismatch");
   });
   it.each([{ payment_status: "invented" }, { actually_paid: "-1" }, { pay_amount: "1e-8" },
     { payment_id: Number.MAX_SAFE_INTEGER + 1 }, { pay_amount: undefined }])("rejects incomplete or unsafe evidence %j", change => {
     expect(() => admitPaymentEvidence({ ...payload, ...change }, expected)).toThrow("financial.crypto.evidence_invalid");
+  });
+  it("requires a finished payment to have actually paid at least the bound pay amount", () => {
+    expect(() => admitPaymentEvidence({
+      ...payload,
+      payment_status: "finished",
+      actually_paid: "9.999999999999999999",
+    }, expected)).toThrow("financial.crypto.evidence_mismatch");
+    expect(admitPaymentEvidence({
+      ...payload,
+      payment_status: "finished",
+      actually_paid: "10.000000000000000002",
+    }, expected)).toMatchObject({ actuallyPaid: "10.000000000000000002" });
   });
   it("does not admit status-only responses", () => {
     expect(() => admitPaymentEvidence({ payment_status: "finished" }, expected)).toThrow();
