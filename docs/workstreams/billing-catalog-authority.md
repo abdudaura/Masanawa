@@ -1,0 +1,22 @@
+# Workstream claim — billing-catalog-authority
+
+- Owner/window: ChatGPT billing catalog authority hardening — 2026-10-04
+- Branch: `work/billing-catalog-authority-20261004`
+- Base ref: `work/integration-flutterwave-webhook-live-20261004`
+- Workstream: financial integration hardening
+- Purpose: remove client authority over Flutterwave bill catalog metadata and correctly support provider-declared variable-value products without weakening recipient/min/max validation.
+- Exact owned paths:
+  - `services/gateway/src/financial_billing.ts`
+  - `packages/providers/src/flutterwave-bills/commerce-orchestrator.ts`
+  - `packages/providers/src/flutterwave-bills/commerce-orchestrator.test.ts`
+  - `docs/workstreams/billing-catalog-authority.md`
+- Collision constraints:
+  - do not edit Gateway app routes, main composition, Commerce ledger, migrations, mobile, NOWPayments, channel adapters, root config, or lockfile;
+  - preserve deployment-owned Flutterwave webhook/proxy work;
+  - provider catalog and recipient-validation evidence are authoritative; client-supplied catalog labels/amounts never authorize value.
+- Planned verification:
+  - provider package typecheck;
+  - gateway typecheck;
+  - focused Flutterwave billing tests;
+  - no live bill purchase dispatch while provider account remains unqualified.
+- Status: claimed before implementation.
