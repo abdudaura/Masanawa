@@ -214,6 +214,7 @@ describe("BillingFinancialService catalog authority", () => {
       country: "NG",
     });
     const store = new MemoryStore();
+    const fundingEvents: string[] = [];
     const authorizer: FinancialAuthorizer = {
       async authorize() {
         return {
@@ -230,6 +231,12 @@ describe("BillingFinancialService catalog authority", () => {
 
     const service = createBillingFinancialService({
       billingStore: () => store,
+      billingFunding: () => fundingRepository(fundingEvents),
+      pricingPolicy: createBillingCreditPricingPolicy({
+        creditsPerNgn: 1,
+        platformMarginBps: 1_000,
+        version: "test-v1",
+      }),
       webhookRepository,
       authorizer,
       flutterwaveSecretKey: "test-secret",
