@@ -66,6 +66,8 @@ abstract class AgentTransport {
     required String caption,
   });
 
+  void cancelTurn(String characterId);
+
   Future<void> closeSession(AgentSessionBinding binding);
 }
 
@@ -103,6 +105,9 @@ class PreviewAgentTransport implements AgentTransport {
       'Preview transport cannot inspect attachment bytes',
     );
   }
+
+  @override
+  void cancelTurn(String characterId) {}
 
   @override
   Future<void> closeSession(AgentSessionBinding binding) async {}
