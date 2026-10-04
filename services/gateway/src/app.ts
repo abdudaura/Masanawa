@@ -223,6 +223,28 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       return;
     }
 
+    const statusCode =
+      typeof error.statusCode === "number" ? error.statusCode : 500;
+    if (statusCode >= 400 && statusCode < 500) {
+      void reply.status(statusCode).send({
+        error: {
+          code:
+            statusCode === 400
+              ? "gateway.invalid_request"
+              : "gateway.request_rejected",
+          message:
+            statusCode === 400
+              ? "Invalid request"
+              : statusCode === 404
+                ? "Not found"
+                : statusCode === 429
+                  ? "Too many requests"
+                  : "Request rejected",
+        },
+      });
+      return;
+    }
+
     request.log.error(error);
     void reply.status(500).send({
       error: {
