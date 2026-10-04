@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -89,18 +88,6 @@ class SessionError extends SessionState {
   final int? resendInSeconds;
 }
 
-const String kAlphaDevAccessToken = String.fromEnvironment(
-  'ALPHA_DEV_ACCESS_TOKEN',
-  defaultValue: '',
-);
-
-/// Dev sessions carry either the build-provided Alpha token or a local
-/// `dev-` prefix. Release builds still cannot invoke devLogin.
-bool isDevAccessToken(String? token) =>
-    token != null &&
-    (token.startsWith('dev-') ||
-        (kAlphaDevAccessToken.isNotEmpty && token == kAlphaDevAccessToken));
-
 class SessionController extends Notifier<SessionState> {
   @override
   SessionState build() {
@@ -117,10 +104,7 @@ class SessionController extends Notifier<SessionState> {
       }
       final client = ref.read(apiClientProvider);
       client.accessToken = stored.accessToken;
-      // Dev sessions never hit the refresh endpoint: a 401 simply surfaces
-      // as an error and the local session stays put.
-      client.onUnauthorized =
-          isDevAccessToken(stored.accessToken) ? () async => null : _rotateOn401;
+      client.onUnauthorized = _rotateOn401;
       state = SessionSignedIn(stored.user, stored);
     } catch (_) {
       state = const SessionSignedOut();
@@ -187,11 +171,6 @@ class SessionController extends Notifier<SessionState> {
   Future<void> refresh() async {
     final stored = await _readPersisted();
     if (stored == null) return;
-    if (isDevAccessToken(stored.accessToken)) {
-      // Local dev session — nothing to rotate; re-emit so it stays signed in.
-      state = SessionSignedIn(stored.user, stored);
-      return;
-    }
     try {
       final rotated =
           await ref.read(apiClientProvider).refresh(stored.refreshToken);
@@ -212,81 +191,6 @@ class SessionController extends Notifier<SessionState> {
     return null;
   }
 
-  /// Local dev sign-in — debug/test only, never in release.
-  ///
-  /// Production phone login must go through `sendOtp(phone:)` + `verifyOtp`.
-  /// This helper exists so widget tests and local debug builds can open the
-  /// shell without an OTP service. Release UI must never call it (guarded by
-  /// kDebugMode below).
-  Future<void> devLogin({
-    String? phone,
-    String? email,
-    String? name,
-    String? countryIso,
-  }) async {
-    if (!kDebugMode) {
-      throw StateError('devLogin is debug-only; use OTP verify in release.');
-    }
-    final now = DateTime.now().toUtc().toIso8601String();
-    final displayName = (name ?? '').trim();
-    final user = AuthUser(
-      id: 'dev-${DateTime.now().microsecondsSinceEpoch}',
-      name: displayName,
-      phone: phone,
-      email: email,
-      locale: (countryIso ?? 'NG').toLowerCase(),
-      status: 'ACTIVE',
-      role: 'USER',
-      isNewUser: displayName.isEmpty,
-      createdAt: now,
-    );
-    final stamp = DateTime.now().microsecondsSinceEpoch;
-    final tokens = AuthTokens(
-      accessToken: kAlphaDevAccessToken.isNotEmpty
-          ? kAlphaDevAccessToken
-          : 'dev-access-$stamp',
-      refreshToken: 'dev-refresh-$stamp',
-      accessExpiresIn: 86400,
-      user: user,
-    );
-    await _persist(tokens);
-    state = SessionSignedIn(user, tokens);
-  }
-
-  /// Completes a dev registration (name + email) after a phone login.
-  Future<void> updateDevProfile({
-    required String name,
-    String? email,
-  }) async {
-    final current = state;
-    if (current is! SessionSignedIn) return;
-    if (!isDevAccessToken(current.tokens.accessToken)) return;
-    final cleanName = name.trim();
-    if (cleanName.isEmpty) return;
-    final cleanEmail = (email ?? '').trim();
-    final user = AuthUser(
-      id: current.user.id,
-      name: cleanName,
-      phone: current.user.phone,
-      email: cleanEmail.isEmpty ? current.user.email : cleanEmail,
-      locale: current.user.locale,
-      status: current.user.status,
-      role: current.user.role,
-      isNewUser: false,
-      communityId: current.user.communityId,
-      stateId: current.user.stateId,
-      createdAt: current.user.createdAt,
-    );
-    final tokens = AuthTokens(
-      accessToken: current.tokens.accessToken,
-      refreshToken: current.tokens.refreshToken,
-      accessExpiresIn: current.tokens.accessExpiresIn,
-      user: user,
-    );
-    await _persist(tokens);
-    state = SessionSignedIn(user, tokens);
-  }
-
   Future<void> logout() async {
     try {
       await ref.read(apiClientProvider).logout();
@@ -300,8 +204,7 @@ class SessionController extends Notifier<SessionState> {
   Future<void> _persist(AuthTokens tokens) async {
     final client = ref.read(apiClientProvider);
     client.accessToken = tokens.accessToken;
-    client.onUnauthorized =
-        isDevAccessToken(tokens.accessToken) ? () async => null : _rotateOn401;
+    client.onUnauthorized = _rotateOn401;
     await _storage.write(key: _kAccess, value: tokens.accessToken);
     await _storage.write(key: _kRefresh, value: tokens.refreshToken);
     await _storage.write(
