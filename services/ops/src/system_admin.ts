@@ -1,4 +1,10 @@
-import type { TenantId } from "@masanawa/contracts";
+import {
+  createCanonicalId,
+  nowInstant,
+  parseCanonicalId,
+  type TenantId,
+} from "@masanawa/contracts";
+import type { World, WorldRepository } from "@masanawa/world";
 import type { AgentAdminAuthorizer } from "./agent_admin.js";
 import type { PlatformAdminQuery } from "./platform_admin.js";
 
@@ -84,6 +90,16 @@ export interface SystemAdminService {
   listWorlds(input: {
     readonly authorizationHeader: string | undefined;
   }): Promise<readonly SystemAdminWorld[]>;
+  pauseWorld(input: {
+    readonly authorizationHeader: string | undefined;
+    readonly worldId: string;
+    readonly expectedRevision: number;
+  }): Promise<SystemAdminWorld>;
+  resumeWorld(input: {
+    readonly authorizationHeader: string | undefined;
+    readonly worldId: string;
+    readonly expectedRevision: number;
+  }): Promise<SystemAdminWorld>;
   listApprovals(input: {
     readonly authorizationHeader: string | undefined;
   }): Promise<readonly SystemAdminApproval[]>;
@@ -103,9 +119,23 @@ function tenant(authority: { readonly tenantId: TenantId }): TenantId {
   return authority.tenantId;
 }
 
+
+function projectWorld(world: World): SystemAdminWorld {
+  return {
+    worldId: world.worldId,
+    status: world.status,
+    policyRevision: world.policyRevision,
+    currentGenerationNumber: world.currentGenerationNumber,
+    simulationTime: world.simulationTime,
+    revision: world.revision,
+    updatedAt: world.updatedAt,
+  };
+}
+
 export function createSystemAdminService(input: {
   readonly database: PlatformAdminQuery;
   readonly authorizer: AgentAdminAuthorizer;
+  readonly worlds?: WorldRepository;
 }): SystemAdminService {
   return Object.freeze<SystemAdminService>({
     async snapshot(request) {
@@ -297,6 +327,43 @@ export function createSystemAdminService(input: {
         revision: count(row.revision),
         updatedAt: iso(row.updated_at),
       }));
+    },
+
+    async pauseWorld(request) {
+      const authority = await input.authorizer.authorize({
+        authorizationHeader: request.authorizationHeader,
+        capability: "world.admin.write",
+      });
+      if (!input.worlds) {
+        throw new Error("World administration is unavailable");
+      }
+      const world = await input.worlds.pauseWorld({
+        tenantId: tenant(authority),
+        worldId: parseCanonicalId("world", request.worldId),
+        expectedRevision: request.expectedRevision,
+        pausedAt: nowInstant(),
+      });
+      return projectWorld(world);
+    },
+
+    async resumeWorld(request) {
+      const authority = await input.authorizer.authorize({
+        authorizationHeader: request.authorizationHeader,
+        capability: "world.admin.write",
+      });
+      if (!input.worlds) {
+        throw new Error("World administration is unavailable");
+      }
+      const worldId = parseCanonicalId("world", request.worldId);
+      const result = await input.worlds.recoverPausedWorld({
+        tenantId: tenant(authority),
+        worldId,
+        expectedRevision: request.expectedRevision,
+        nextGenerationId: createCanonicalId("world-generation"),
+        resumeTo: nowInstant(),
+        requestedAt: nowInstant(),
+      });
+      return projectWorld(result.world);
     },
 
     async listApprovals(request) {
