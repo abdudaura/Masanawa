@@ -1,5 +1,47 @@
 # Continue Here
 
+## Masanawa Agent Blue brand checkpoint — 2026-10-04
+
+The user approved the blue agent/conversation logo generated in ChatGPT and
+explicitly chose it as the Masanawa identity. Preserve the artwork exactly:
+a vivid cobalt-to-cyan rounded-square mark with a white conversation bubble
+wrapped by a fluid blue/cyan agent ribbon. Do not replace it with a gold M,
+lettermark, map pin, location motif, or the retired UNigeria symbol.
+
+Canonical asset:
+- `apps/mobile/assets/brand/masanawa_agent_logo.png`
+
+Brand palette is now Agent Blue, not green:
+- primary `#0A6FFA`
+- strong cobalt `#0121D2`
+- gradient `#0121D2 → #1DA4FD`
+- dark gradient `#034EF6 → #24B9FF`
+- light background `#F6FAFF`
+- dark background `#06132C`
+Semantic success/warning/error colors remain green/amber/red by meaning; they
+must not be reinterpreted as brand colors.
+
+Implemented:
+- Flutter semantic tokens and Material theme surfaces use Agent Blue;
+- in-app logo widgets render the approved artwork;
+- Android launcher and round icon reference the approved drawable directly;
+- pre-Android-12 and Android-12 native splash screens use the approved mark;
+- launcher/native-splash generator config points to the approved asset;
+- web/PWA theme metadata, favicon and 192/512 icons use the new identity;
+- the old procedural UNigeria map-pin asset generator was retired and now only
+  resizes the approved artwork.
+
+The Android namespace/applicationId remains `ng.unigeria.unigeria` strictly as
+an internal installed-app identity for upgrade compatibility. It is not visible
+branding. Do not rename it casually; changing it would create a different app
+identity on Android.
+
+The checked-in iOS AppIcon set remains generated output. Before an iOS release,
+run `dart run flutter_launcher_icons` from `apps/mobile` so the approved
+canonical asset regenerates every iOS size. The next Android APK does not depend
+on those iOS generated files.
+
+
 ## Chat UX + Gemini Live checkpoint — 2026-10-04
 
 The WhatsApp-style chat overhaul is implemented on current `main`; do not
