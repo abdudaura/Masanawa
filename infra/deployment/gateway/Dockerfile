@@ -7,6 +7,8 @@ RUN corepack enable && corepack prepare pnpm@12.8.2 --activate
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json tsconfig.base.json vitest.config.ts ./
+COPY apps/web/package.json ./apps/web/package.json
+COPY apps/ops/package.json ./apps/ops/package.json
 COPY packages ./packages
 COPY adapters ./adapters
 COPY infra ./infra

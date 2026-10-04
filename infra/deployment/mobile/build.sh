@@ -26,7 +26,7 @@ if ! command -v java >/dev/null; then
 fi
 # Select an official stable archive and verify its SHA-256 from the official manifest.
 if [[ ! -x "$CACHE_DIR/flutter/bin/flutter" ]]; then
-  curl -fsSL --retry 2 https://storage.googleapis.com/flutter_infra_release/flutter/releases/releases_linux.json -o "$CACHE_DIR/releases.json"
+  curl -fsSL --retry 2 https://storage.googleapis.com/flutter_infra_release/releases/releases_linux.json -o "$CACHE_DIR/releases.json"
   python3 - "$CACHE_DIR" <<'PY'
 import json, pathlib, sys
 root = pathlib.Path(sys.argv[1]); data = json.loads((root / 'releases.json').read_text())
