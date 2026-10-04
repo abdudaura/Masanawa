@@ -4,7 +4,7 @@
 - Branch: `work/integration-flutterwave-webhook-live-20261004`
 - Base SHA: `39e893e58ef2b89beaf94116366ad8fd7fc713c2`
 - Workstream: integration
-- Purpose: expose a live Flutterwave v3 webhook endpoint on the existing Masanawa Railway worker without editing the active Gateway/runtime owner's source paths, while preserving the current NOWPayments integration.
+- Purpose: expose a live Flutterwave v3 webhook endpoint and a narrowly scoped operator Bills execution surface on the existing Masanawa Railway worker without editing the active Gateway/runtime owner's source paths, while preserving the current NOWPayments integration.
 - Exact owned paths:
   - `docs/workstreams/integration-flutterwave-webhook-live.md`
   - `scripts/flutterwave-webhook-proxy.mjs`
@@ -16,8 +16,9 @@
 - Collision constraints:
   - do not edit `services/gateway/**`, `scripts/start-hosted-alpha.mjs`, Commerce, mobile, channels, migrations, package exports, root config or lockfile;
   - preserve PR #98 NOWPayments adapter and pre-deploy checks;
-  - webhook payload is authenticated evidence only and must not directly settle value.
-- Current step: live webhook endpoint deployed on the existing Masanawa Railway worker at `POST /webhooks/flutterwave`.
+  - webhook payload is authenticated evidence only and must not directly settle value;
+  - operator Bills execution must be separately authenticated, use deterministic request references, requery-before-dispatch, fail closed on ambiguous provider outcomes and never become the canonical customer Commerce API.
+- Current step: extend the owned proxy with a protected operator Bills execution endpoint for live provider qualification and one-off controlled purchases; no Gateway/Commerce ownership changes.
 - Implementation commit before handoff update: `67302ac593d5d877a70f573715b1f3e587b4d906`.
 - Verification/deployment status:
   - Railway deployment `1fd2db39-0ff6-488e-b10c-940cb6659b39` succeeded in `ams`;
