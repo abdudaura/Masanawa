@@ -1,0 +1,37 @@
+# Workstream claim — integration-flutterwave-webhook-live
+
+- Owner/window: ChatGPT Flutterwave live webhook integration window — 2026-10-04
+- Branch: `work/integration-flutterwave-webhook-live-20261004`
+- Base SHA: `39e893e58ef2b89beaf94116366ad8fd7fc713c2`
+- Workstream: integration
+- Purpose: expose a live Flutterwave v3 webhook endpoint on the existing Masanawa Railway worker without editing the active Gateway/runtime owner's source paths, while preserving the current NOWPayments integration.
+- Exact owned paths:
+  - `docs/workstreams/integration-flutterwave-webhook-live.md`
+  - `scripts/flutterwave-webhook-proxy.mjs`
+  - `scripts/flutterwave-webhook-proxy.test.mjs`
+- Shared/deployment operations:
+  - Railway production worker start command may be changed to launch the owned proxy wrapper.
+  - Railway production worker source may be repointed to this branch after review.
+  - Existing Flutterwave variables remain service secrets; no secret values are committed.
+- Collision constraints:
+  - do not edit `services/gateway/**`, `scripts/start-hosted-alpha.mjs`, Commerce, mobile, channels, migrations, package exports, root config or lockfile;
+  - preserve PR #98 NOWPayments adapter and pre-deploy checks;
+  - webhook payload is authenticated evidence only and must not directly settle value.
+- Current step: live webhook endpoint deployed on the existing Masanawa Railway worker at `POST /webhooks/flutterwave`.
+- Implementation commit before handoff update: `67302ac593d5d877a70f573715b1f3e587b4d906`.
+- Verification/deployment status:
+  - Railway deployment `1fd2db39-0ff6-488e-b10c-940cb6659b39` succeeded in `ams`;
+  - frozen install/Gateway dependency build succeeded;
+  - existing NOWPayments typecheck, 7 files / 38 tests and live read-only smoke succeeded;
+  - Flutterwave webhook suite: 8/8 passed;
+  - production start wrapper launched the canonical Gateway on internal port 8081 and serves the public proxy on Railway PORT;
+  - unsigned public POST to the webhook URL returned HTTP 401, proving the route is live and enforcing `verif-hash`;
+  - Flutterwave credentials are recognized (not 401/403), but Bills catalog readiness is false: HTTP 400, provider message `This request cannot be processed. Please contact your account administrator`;
+  - no purchase or settlement was triggered during verification.
+- Provider/infrastructure blocker:
+  - Flutterwave Bills prerequisites include account/KYC readiness, funded source balance and whitelisted server IPs;
+  - the current Railway plan does not provide a static outbound IP; Railway documents Static Outbound IPs as a Pro-plan feature, so production Bills egress needs either Railway Pro static egress or a separate stable-egress integration host before IP allowlisting can be relied upon.
+- Handoff:
+  - keep webhook payloads as authenticated evidence only; bill callbacks are provider-requeried by exact `customer_reference` before HTTP 200;
+  - PR #97 must bind deployment-owned `FLUTTERWAVE_WEBHOOK_URL` into the existing provider `callbackUrl` field during shared composition;
+  - contact/enable Flutterwave Bills on the merchant account and solve static egress/IP allowlisting before claiming live bill purchases.
