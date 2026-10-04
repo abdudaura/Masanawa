@@ -33,6 +33,18 @@ class AgentSessionBinding {
 
 /// One assistant turn. Text/audio narration and structured work results may
 /// coexist. Structured parts carry durable references, never local authority.
+class AgentMediaInput {
+  const AgentMediaInput({
+    required this.bytes,
+    required this.mimeType,
+    this.name,
+  });
+
+  final Uint8List bytes;
+  final String mimeType;
+  final String? name;
+}
+
 class AgentTurnResult {
   const AgentTurnResult({
     required this.text,
@@ -65,6 +77,13 @@ abstract class AgentTransport {
     required Uint8List bytes,
     required String mimeType,
     required String caption,
+  });
+
+  Future<AgentTurnResult> sendMediaSetTurn({
+    required AgentSessionBinding binding,
+    required List<AgentMediaInput> media,
+    required String caption,
+    void Function(int sent, int total)? onUploadProgress,
   });
 
   void cancelTurn(String characterId);
@@ -107,6 +126,22 @@ class PreviewAgentTransport implements AgentTransport {
     throw UnsupportedError(
       'Preview transport cannot inspect attachment bytes',
     );
+  }
+
+  @override
+  Future<AgentTurnResult> sendMediaSetTurn({
+    required AgentSessionBinding binding,
+    required List<AgentMediaInput> media,
+    required String caption,
+    void Function(int sent, int total)? onUploadProgress,
+  }) async {
+    final total = media.fold<int>(0, (sum, item) => sum + item.bytes.length);
+    onUploadProgress?.call(total, total);
+    final reply = await sendPreview(
+      caption.isEmpty ? 'Review these ${media.length} attachments.' : caption,
+      binding.characterId,
+    );
+    return AgentTurnResult(text: reply);
   }
 
   @override
