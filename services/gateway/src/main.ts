@@ -22,7 +22,7 @@ import type {
   UserRelationshipReader,
 } from "@masanawa/identity";
 import type { CommerceRepository } from "@masanawa/commerce";
-import { readRequiredEnv } from "@masanawa/contracts";
+import { parseCanonicalId, readRequiredEnv } from "@masanawa/contracts";
 import {
   createDrainState,
   readNodeServiceRuntimeConfig,
@@ -51,6 +51,8 @@ import {
   createPostgresMobileShellRepository,
   createPostgresMobilePushRepository,
   createPostgresMobileAgentActivityRepository,
+  createPostgresProductionUserIdentityRepository,
+  type ProductionUserIdentityRepository,
 } from "@masanawa/postgres";
 import {
   createAgentDirectoryService,
@@ -98,6 +100,11 @@ import {
   type GatewayAppOptions,
   type ReadinessCheck,
 } from "./app.js";
+import {
+  createProductionAuthService,
+  createProductionAuthorizers,
+  type ProductionAuthService,
+} from "./production_auth.js";
 
 export type ServiceSignal = "SIGINT" | "SIGTERM";
 
@@ -124,6 +131,7 @@ export interface ServiceDatabaseDependency {
   readonly mobileShell?: MobileShellRepository;
   readonly mobilePush?: MobilePushRepository;
   readonly mobileActivity?: MobileAgentActivityRepository;
+  readonly productionUsers?: ProductionUserIdentityRepository;
   close(): Promise<void>;
 }
 
@@ -211,6 +219,7 @@ function createDefaultDatabaseDependency(
     mobileShell: createPostgresMobileShellRepository(database.pool),
     mobilePush: createPostgresMobilePushRepository(database.pool),
     mobileActivity: createPostgresMobileAgentActivityRepository(database.pool),
+    productionUsers: createPostgresProductionUserIdentityRepository(database.pool),
     close: database.close,
   });
 }
@@ -228,6 +237,47 @@ function requiredAlphaEnv(
   const value = env[key]?.trim();
   if (!value) throw new TypeError(`${key} is required when Alpha mode is enabled`);
   return value;
+}
+
+function productionAuthEnabled(
+  env: Readonly<Record<string, string | undefined>>,
+): boolean {
+  return env.MASANAWA_PRODUCTION_AUTH_ENABLED === "true";
+}
+
+function requiredProductionEnv(
+  env: Readonly<Record<string, string | undefined>>,
+  key: string,
+): string {
+  const value = env[key]?.trim();
+  if (!value) throw new TypeError(`${key} is required when production auth is enabled`);
+  return value;
+}
+
+function productionGeminiApiKey(
+  env: Readonly<Record<string, string | undefined>>,
+): string {
+  const direct =
+    env.MASANAWA_GEMINI_API_KEY?.trim() ??
+    env.MASANAWA_ALPHA_GEMINI_API_KEY?.trim();
+  if (direct) return direct;
+  const raw =
+    env.MASANAWA_GEMINI_API_KEYS_JSON?.trim() ??
+    env.MASANAWA_ALPHA_GEMINI_API_KEYS_JSON?.trim();
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      if (Array.isArray(parsed)) {
+        const first = parsed.find(
+          (value): value is string => typeof value === "string" && value.trim().length > 0,
+        );
+        if (first) return first.trim();
+      }
+    } catch {
+      // Fail below with one stable configuration error.
+    }
+  }
+  throw new TypeError("A Gemini API key is required for the production Agent runtime");
 }
 
 export async function startGatewayService(
@@ -250,6 +300,7 @@ export async function startGatewayService(
   let nativeAudio;
   let liveVoiceTokens: LiveVoiceTokenService | undefined;
   let pushSender: MobilePushSender | undefined;
+  let productionAuth: ProductionAuthService | undefined;
 
   if (alphaEnabled(env)) {
     if (
@@ -328,6 +379,84 @@ export async function startGatewayService(
       authorizer: conversationAuthorizer!,
       model: env.MASANAWA_ALPHA_GEMINI_LIVE_MODEL ?? "gemini-3.8-live",
       voiceName: env.MASANAWA_ALPHA_GEMINI_LIVE_VOICE ?? "Kore",
+    });
+  }
+
+  if (productionAuthEnabled(env)) {
+    if (
+      !database.productionUsers ||
+      !database.agentPresentations ||
+      !database.characterSkillAssignments ||
+      !database.relationships ||
+      !database.platformAgentProfiles ||
+      !database.skills ||
+      !database.skillGuides
+    ) {
+      await database.close().catch(() => undefined);
+      throw new Error("Production auth requires canonical identity and Agent repositories");
+    }
+
+    const tenantId = parseCanonicalId(
+      "tenant",
+      requiredProductionEnv(env, "MASANAWA_PLATFORM_TENANT_ID"),
+    );
+    productionAuth = createProductionAuthService({
+      supabaseUrl: requiredProductionEnv(env, "SUPABASE_URL"),
+      publishableKey: requiredProductionEnv(env, "SUPABASE_PUBLISHABLE_KEY"),
+      tenantId,
+      identities: database.productionUsers,
+    });
+    const productionAuthorizers = createProductionAuthorizers({
+      auth: productionAuth,
+      identities: database.productionUsers,
+      presentations: database.agentPresentations,
+      skillAssignments: database.characterSkillAssignments,
+      relationships: database.relationships,
+      platformProfiles: database.platformAgentProfiles,
+      policyRevision:
+        env.MASANAWA_PLATFORM_POLICY_REVISION?.trim() ||
+        "production-mobile-v1",
+    });
+    directoryAuthorizer = productionAuthorizers.directory;
+    conversationAuthorizer = productionAuthorizers.conversation;
+    creatorCloneAuthorizer = productionAuthorizers.creator;
+    commerceAuthorizer = productionAuthorizers.commerce;
+
+    const apiKey = productionGeminiApiKey(env);
+    const model =
+      env.MASANAWA_GEMINI_MODEL?.trim() ||
+      env.MASANAWA_ALPHA_GEMINI_MODEL?.trim() ||
+      "gemini-3.8-flash";
+    strategy ??= createAlphaInferenceStrategy({
+      inference: createGeminiAlphaInferenceProvider({
+        apiKey,
+        model,
+      }),
+      skills: database.skills,
+      guides: database.skillGuides,
+    });
+    nativeAudio ??= createGeminiLiveAudioRenderer({
+      apiKey,
+      model:
+        env.MASANAWA_GEMINI_LIVE_MODEL?.trim() ||
+        env.MASANAWA_ALPHA_GEMINI_LIVE_MODEL?.trim() ||
+        "gemini-3.8-live",
+      voiceName:
+        env.MASANAWA_GEMINI_LIVE_VOICE?.trim() ||
+        env.MASANAWA_ALPHA_GEMINI_LIVE_VOICE?.trim() ||
+        "Kore",
+    });
+    liveVoiceTokens = createGeminiLiveTokenService({
+      apiKey,
+      authorizer: conversationAuthorizer,
+      model:
+        env.MASANAWA_GEMINI_LIVE_MODEL?.trim() ||
+        env.MASANAWA_ALPHA_GEMINI_LIVE_MODEL?.trim() ||
+        "gemini-3.8-live",
+      voiceName:
+        env.MASANAWA_GEMINI_LIVE_VOICE?.trim() ||
+        env.MASANAWA_ALPHA_GEMINI_LIVE_VOICE?.trim() ||
+        "Kore",
     });
   }
 
@@ -490,6 +619,7 @@ export async function startGatewayService(
   try {
     app = appFactory({
       ...(options.appOptions ?? {}),
+      ...(productionAuth ? { productionAuth } : {}),
       ...(composedDirectory ? { agentDirectory: composedDirectory } : {}),
       ...(composedConversation
         ? { agentConversation: composedConversation }
