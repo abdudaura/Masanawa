@@ -360,6 +360,11 @@ class ChatListScreen extends ConsumerWidget {
               onPressed: () => _showArchived(context, ref, directory),
             ),
           IconButton(
+            tooltip: 'Wallet',
+            icon: const Icon(Icons.account_balance_wallet_outlined),
+            onPressed: () => context.push('/wallet'),
+          ),
+          IconButton(
             tooltip: 'Agents',
             icon: const Icon(Icons.groups_outlined),
             onPressed: () => context.push('/agents'),
