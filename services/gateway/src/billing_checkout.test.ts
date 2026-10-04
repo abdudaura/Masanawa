@@ -61,6 +61,19 @@ class MemoryQuotes implements BillingQuoteRepository {
     return this.quote;
   }
 
+  async requestFundedRefund(input: Parameters<BillingQuoteRepository["requestFundedRefund"]>[0]) {
+    if (!this.quote || this.quote.state !== "funded") {
+      throw new Error("financial.billing.funded_refund_not_allowed");
+    }
+    this.quote = Object.freeze({
+      ...this.quote,
+      state: "refund-pending",
+      settlementState: "failed",
+      updatedAt: input.requestedAt,
+    });
+    return this.quote;
+  }
+
   async reserveConfirmedBill(input: Parameters<BillingQuoteRepository["reserveConfirmedBill"]>[0]) {
     if (!this.quote || this.quote.state !== "funded") throw new Error("financial.billing.funds_not_available");
     if (
