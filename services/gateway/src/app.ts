@@ -219,31 +219,43 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
           response: { 200: AgentTurnResponseSchema },
         },
       },
-      async (request) => {
-        const result = await conversation.turn({
-          authorizationHeader: request.headers.authorization,
-          characterSessionId: request.params.characterSessionId,
-          characterId: request.body.characterId,
-          text: request.body.text,
-          requestId: parseCanonicalId(
-            "request",
-            request.headers["x-request-id"] as string,
-          ),
-          correlationId: parseCanonicalId(
-            "correlation",
-            request.headers["x-correlation-id"] as string,
-          ),
-        });
-        return {
-          reply: result.reply,
-          agentRunId: result.agentRunId,
-          parts: [...result.parts],
-          ...(result.audioBase64 ? { audioBase64: result.audioBase64 } : {}),
-          ...(result.audioMimeType ? { audioMimeType: result.audioMimeType } : {}),
-          ...(result.audioDurationMs !== undefined
-            ? { audioDurationMs: result.audioDurationMs }
-            : {}),
+      async (request, reply) => {
+        const controller = new AbortController();
+        let finished = false;
+        const abort = () => {
+          if (!finished) controller.abort();
         };
+        reply.raw.once("close", abort);
+        try {
+          const result = await conversation.turn({
+            authorizationHeader: request.headers.authorization,
+            characterSessionId: request.params.characterSessionId,
+            characterId: request.body.characterId,
+            text: request.body.text,
+            requestId: parseCanonicalId(
+              "request",
+              request.headers["x-request-id"] as string,
+            ),
+            correlationId: parseCanonicalId(
+              "correlation",
+              request.headers["x-correlation-id"] as string,
+            ),
+            signal: controller.signal,
+          });
+          return {
+            reply: result.reply,
+            agentRunId: result.agentRunId,
+            parts: [...result.parts],
+            ...(result.audioBase64 ? { audioBase64: result.audioBase64 } : {}),
+            ...(result.audioMimeType ? { audioMimeType: result.audioMimeType } : {}),
+            ...(result.audioDurationMs !== undefined
+              ? { audioDurationMs: result.audioDurationMs }
+              : {}),
+          };
+        } finally {
+          finished = true;
+          reply.raw.off("close", abort);
+        }
       },
     );
 
@@ -262,6 +274,13 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
         reply.raw.setHeader("content-type", "application/x-ndjson; charset=utf-8");
         reply.raw.setHeader("cache-control", "no-cache, no-transform");
         reply.raw.setHeader("x-content-type-options", "nosniff");
+
+        const controller = new AbortController();
+        let finished = false;
+        const abort = () => {
+          if (!finished) controller.abort();
+        };
+        reply.raw.once("close", abort);
 
         const emit = (event: Record<string, unknown>) => {
           if (!reply.raw.destroyed && !reply.raw.writableEnded) {
@@ -286,6 +305,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
             onTextDelta: async (delta) => {
               if (delta) emit({ type: "delta", text: delta });
             },
+            signal: controller.signal,
           });
           emit({
             type: "done",
@@ -301,6 +321,8 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
         } catch {
           emit({ type: "error", code: "turn_failed" });
         } finally {
+          finished = true;
+          reply.raw.off("close", abort);
           if (!reply.raw.writableEnded) reply.raw.end();
         }
       },
@@ -317,33 +339,45 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
           response: { 200: AgentTurnResponseSchema },
         },
       },
-      async (request) => {
-        const result = await conversation.mediaTurn({
-          authorizationHeader: request.headers.authorization,
-          characterSessionId: request.params.characterSessionId,
-          characterId: request.body.characterId,
-          caption: request.body.caption,
-          mimeType: request.body.mimeType,
-          dataBase64: request.body.dataBase64,
-          requestId: parseCanonicalId(
-            "request",
-            request.headers["x-request-id"] as string,
-          ),
-          correlationId: parseCanonicalId(
-            "correlation",
-            request.headers["x-correlation-id"] as string,
-          ),
-        });
-        return {
-          reply: result.reply,
-          agentRunId: result.agentRunId,
-          parts: [...result.parts],
-          ...(result.audioBase64 ? { audioBase64: result.audioBase64 } : {}),
-          ...(result.audioMimeType ? { audioMimeType: result.audioMimeType } : {}),
-          ...(result.audioDurationMs !== undefined
-            ? { audioDurationMs: result.audioDurationMs }
-            : {}),
+      async (request, reply) => {
+        const controller = new AbortController();
+        let finished = false;
+        const abort = () => {
+          if (!finished) controller.abort();
         };
+        reply.raw.once("close", abort);
+        try {
+          const result = await conversation.mediaTurn({
+            authorizationHeader: request.headers.authorization,
+            characterSessionId: request.params.characterSessionId,
+            characterId: request.body.characterId,
+            caption: request.body.caption,
+            mimeType: request.body.mimeType,
+            dataBase64: request.body.dataBase64,
+            requestId: parseCanonicalId(
+              "request",
+              request.headers["x-request-id"] as string,
+            ),
+            correlationId: parseCanonicalId(
+              "correlation",
+              request.headers["x-correlation-id"] as string,
+            ),
+            signal: controller.signal,
+          });
+          return {
+            reply: result.reply,
+            agentRunId: result.agentRunId,
+            parts: [...result.parts],
+            ...(result.audioBase64 ? { audioBase64: result.audioBase64 } : {}),
+            ...(result.audioMimeType ? { audioMimeType: result.audioMimeType } : {}),
+            ...(result.audioDurationMs !== undefined
+              ? { audioDurationMs: result.audioDurationMs }
+              : {}),
+          };
+        } finally {
+          finished = true;
+          reply.raw.off("close", abort);
+        }
       },
     );
 
@@ -357,32 +391,44 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
           response: { 200: AgentTurnResponseSchema },
         },
       },
-      async (request) => {
-        const result = await conversation.mediaSetTurn({
-          authorizationHeader: request.headers.authorization,
-          characterSessionId: request.params.characterSessionId,
-          characterId: request.body.characterId,
-          caption: request.body.caption,
-          media: request.body.media,
-          requestId: parseCanonicalId(
-            "request",
-            request.headers["x-request-id"] as string,
-          ),
-          correlationId: parseCanonicalId(
-            "correlation",
-            request.headers["x-correlation-id"] as string,
-          ),
-        });
-        return {
-          reply: result.reply,
-          agentRunId: result.agentRunId,
-          parts: [...result.parts],
-          ...(result.audioBase64 ? { audioBase64: result.audioBase64 } : {}),
-          ...(result.audioMimeType ? { audioMimeType: result.audioMimeType } : {}),
-          ...(result.audioDurationMs !== undefined
-            ? { audioDurationMs: result.audioDurationMs }
-            : {}),
+      async (request, reply) => {
+        const controller = new AbortController();
+        let finished = false;
+        const abort = () => {
+          if (!finished) controller.abort();
         };
+        reply.raw.once("close", abort);
+        try {
+          const result = await conversation.mediaSetTurn({
+            authorizationHeader: request.headers.authorization,
+            characterSessionId: request.params.characterSessionId,
+            characterId: request.body.characterId,
+            caption: request.body.caption,
+            media: request.body.media,
+            requestId: parseCanonicalId(
+              "request",
+              request.headers["x-request-id"] as string,
+            ),
+            correlationId: parseCanonicalId(
+              "correlation",
+              request.headers["x-correlation-id"] as string,
+            ),
+            signal: controller.signal,
+          });
+          return {
+            reply: result.reply,
+            agentRunId: result.agentRunId,
+            parts: [...result.parts],
+            ...(result.audioBase64 ? { audioBase64: result.audioBase64 } : {}),
+            ...(result.audioMimeType ? { audioMimeType: result.audioMimeType } : {}),
+            ...(result.audioDurationMs !== undefined
+              ? { audioDurationMs: result.audioDurationMs }
+              : {}),
+          };
+        } finally {
+          finished = true;
+          reply.raw.off("close", abort);
+        }
       },
     );
 
