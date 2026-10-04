@@ -5,9 +5,95 @@ import {
   verifyFlutterwaveV3Webhook,
   type BillingFulfillmentRecord,
 } from "@masanawa/providers";
-import type { ProviderWebhookRepository } from "@masanawa/postgres";
+import type {
+  BillingFundingRepository,
+  ProviderWebhookRepository,
+} from "@masanawa/postgres";
 import type { BillingFulfillmentStore } from "@masanawa/providers";
 import type { FinancialAuthorizer } from "./financial_service.js";
+
+
+export interface BillingCreditPricingPolicy {
+  readonly version: string;
+  quote(input: Readonly<{
+    providerAmountNgn: string;
+    billerCode: string;
+    itemCode: string;
+  }>): Readonly<{
+    customerPriceCredits: number;
+    providerReserveCredits: number;
+    platformMarginCredits: number;
+  }>;
+}
+
+function positiveInteger(value: number, label: string): number {
+  if (!Number.isSafeInteger(value) || value < 1) {
+    throw new TypeError(`${label} is invalid`);
+  }
+  return value;
+}
+
+function nonNegativeInteger(value: number, label: string): number {
+  if (!Number.isSafeInteger(value) || value < 0) {
+    throw new TypeError(`${label} is invalid`);
+  }
+  return value;
+}
+
+function ceilRatio(numerator: bigint, denominator: bigint): bigint {
+  return (numerator + denominator - 1n) / denominator;
+}
+
+export function createBillingCreditPricingPolicy(input: Readonly<{
+  creditsPerNgn: number;
+  platformMarginBps: number;
+  version: string;
+}>): BillingCreditPricingPolicy {
+  const creditsPerNgn = positiveInteger(input.creditsPerNgn, "creditsPerNgn");
+  const platformMarginBps = nonNegativeInteger(
+    input.platformMarginBps,
+    "platformMarginBps",
+  );
+  if (platformMarginBps > 10_000) {
+    throw new TypeError("platformMarginBps is invalid");
+  }
+  const version = input.version.trim();
+  if (!version || version.length > 128 || !/^[A-Za-z0-9._:-]+$/u.test(version)) {
+    throw new TypeError("billing pricing version is invalid");
+  }
+
+  return Object.freeze({
+    version,
+    quote(request) {
+      const normalized = request.providerAmountNgn.trim();
+      if (!/^(?:0|[1-9]\d*)(?:\.\d+)?$/u.test(normalized) ||
+          /^0(?:\.0+)?$/u.test(normalized)) {
+        throw new TypeError("providerAmountNgn is invalid");
+      }
+      const [whole = "0", fraction = ""] = normalized.split(".");
+      const denominator = 10n ** BigInt(fraction.length);
+      const raw = BigInt(whole + fraction) * BigInt(creditsPerNgn);
+      const reserveBig = ceilRatio(raw, denominator);
+      const marginBig = ceilRatio(
+        reserveBig * BigInt(platformMarginBps),
+        10_000n,
+      );
+      const priceBig = reserveBig + marginBig;
+      if (
+        reserveBig > BigInt(Number.MAX_SAFE_INTEGER) ||
+        marginBig > BigInt(Number.MAX_SAFE_INTEGER) ||
+        priceBig > BigInt(Number.MAX_SAFE_INTEGER)
+      ) {
+        throw new RangeError("billing pricing exceeds safe integer range");
+      }
+      return Object.freeze({
+        providerReserveCredits: Number(reserveBig),
+        platformMarginCredits: Number(marginBig),
+        customerPriceCredits: Number(priceBig),
+      });
+    },
+  });
+}
 
 export interface BillingFinancialService {
   listCategories(input: Readonly<{ authorizationHeader: string | undefined; signal?: AbortSignal }>): Promise<unknown>;
@@ -60,6 +146,8 @@ function referenceFromWebhook(payload: Readonly<Record<string, unknown>>): strin
 
 export function createBillingFinancialService(input: Readonly<{
   billingStore: (identity: Readonly<{ tenantId: string; userId: string }>) => BillingFulfillmentStore;
+  billingFunding: (identity: Readonly<{ tenantId: string; userId: string }>) => BillingFundingRepository;
+  pricingPolicy: BillingCreditPricingPolicy;
   webhookRepository: ProviderWebhookRepository;
   authorizer: FinancialAuthorizer;
   flutterwaveSecretKey: string;
@@ -143,30 +231,88 @@ export function createBillingFinancialService(input: Readonly<{
           : { recipientValidation: request.recipientValidation }),
         ...(request.signal === undefined ? {} : { signal: request.signal }),
       });
+
+      const economics = input.pricingPolicy.quote({
+        providerAmountNgn: prepared.amount,
+        billerCode: prepared.billerCode,
+        itemCode: prepared.itemCode,
+      });
+      const funding = input.billingFunding(identity);
+      await funding.reserve({
+        reference: prepared.fulfillmentReference,
+        providerAmountNgn: prepared.amount,
+        ...economics,
+        pricingPolicyVersion: input.pricingPolicy.version,
+        observedAt: new Date().toISOString(),
+      });
+
+      const settleTerminal = async (record: BillingFulfillmentRecord) => {
+        if (record.state === "succeeded") {
+          await funding.settle({
+            reference: record.fulfillmentReference,
+            outcome: "succeeded",
+            observedAt: new Date().toISOString(),
+          });
+        } else if (record.state === "failed" || record.state === "reversed") {
+          await funding.settle({
+            reference: record.fulfillmentReference,
+            outcome: "refunded",
+            observedAt: new Date().toISOString(),
+          });
+        }
+        return record;
+      };
+
       if (
         prepared.state === "succeeded" ||
         prepared.state === "failed" ||
         prepared.state === "reversed" ||
         prepared.state === "manual_review"
       ) {
-        return prepared;
+        return settleTerminal(prepared);
       }
-      return service.dispatch(prepared.fulfillmentReference, {
-        callbackUrl,
-        ...(request.signal === undefined ? {} : { signal: request.signal }),
-      });
+
+      try {
+        const dispatched = await service.dispatch(prepared.fulfillmentReference, {
+          callbackUrl,
+          ...(request.signal === undefined ? {} : { signal: request.signal }),
+        });
+        return await settleTerminal(dispatched);
+      } catch (error) {
+        await funding.settle({
+          reference: prepared.fulfillmentReference,
+          outcome: "refunded",
+          observedAt: new Date().toISOString(),
+        });
+        throw error;
+      }
     },
 
     async readPurchase(request) {
       const identity = await input.authorizer.authorize({ authorizationHeader: request.authorizationHeader });
       const service = orchestrator(identity);
+      const funding = input.billingFunding(identity);
       const current = await input.billingStore(identity).read(request.reference);
       if (!current) throw new Error("financial.billing_not_found");
-      if (!request.refresh ||
-          ["succeeded","failed","reversed","manual_review"].includes(current.state)) {
-        return current;
+      const record =
+        !request.refresh ||
+        ["succeeded","failed","reversed","manual_review"].includes(current.state)
+          ? current
+          : await service.reconcile(request.reference, request.signal);
+      if (record.state === "succeeded") {
+        await funding.settle({
+          reference: record.fulfillmentReference,
+          outcome: "succeeded",
+          observedAt: new Date().toISOString(),
+        });
+      } else if (record.state === "failed" || record.state === "reversed") {
+        await funding.settle({
+          reference: record.fulfillmentReference,
+          outcome: "refunded",
+          observedAt: new Date().toISOString(),
+        });
       }
-      return service.reconcile(request.reference, request.signal);
+      return record;
     },
 
     async receiveWebhook(request) {
