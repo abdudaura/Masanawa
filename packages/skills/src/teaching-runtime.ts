@@ -196,6 +196,19 @@ export interface TeachingChannelSelectionBinding {
   readonly bindingHash: string;
 }
 
+export interface TeachingChannelOption {
+  readonly optionKey: string;
+  readonly label: string;
+  readonly selectionId: string;
+}
+
+export interface TeachingChannelSingleSelectProjection {
+  readonly prompt: string;
+  readonly options: readonly TeachingChannelOption[];
+  readonly bindings: readonly TeachingChannelSelectionBinding[];
+  readonly expiresAt: Instant;
+}
+
 export function createTeachingChannelSelectionBinding(input: {
   readonly action: TeachingSelectionActionBinding;
   readonly callbackToken: string;
@@ -225,6 +238,92 @@ export function createTeachingChannelSelectionBinding(input: {
     ...payload,
     bindingHash:
       `sha256:${fingerprintCanonicalJson(JSON.parse(canonicalJson(payload)))}`,
+  });
+}
+
+export function createTeachingChannelSingleSelectProjection(input: {
+  readonly binding: TeachingRuntimeBinding;
+  readonly card: TeachingExerciseCard;
+  readonly action: TeachingSelectionActionBinding;
+  readonly callbackTokens: Readonly<Record<string, string>>;
+}): TeachingChannelSingleSelectProjection {
+  const card = normalizeTeachingExerciseCard(input.card);
+  assertBindingScope(input.binding, card.relationshipId, card.skillVersionId);
+
+  if (
+    card.kind !== "single-select" ||
+    input.action.rubric.kind !== "single-select"
+  ) {
+    throw new TypeError(
+      "Teaching channel option projection supports single-select only",
+    );
+  }
+  if (
+    input.action.relationshipId !== card.relationshipId ||
+    input.action.skillVersionId !== card.skillVersionId ||
+    input.action.lessonStepKey !== card.lessonStepKey ||
+    input.action.exerciseKey !== card.exerciseKey
+  ) {
+    throw new TypeError(
+      "Teaching channel card must match the server action binding scope",
+    );
+  }
+  const visible = [...card.options.map((option) => option.optionKey)].sort();
+  const allowed = [...input.action.rubric.allowedOptionKeys].sort();
+  if (
+    visible.length !== allowed.length ||
+    visible.some((key, index) => key !== allowed[index])
+  ) {
+    throw new TypeError(
+      "Teaching channel card options must match the server rubric",
+    );
+  }
+
+  const suppliedKeys = Object.keys(input.callbackTokens).sort();
+  if (
+    suppliedKeys.length !== visible.length ||
+    suppliedKeys.some((key, index) => key !== visible[index])
+  ) {
+    throw new TypeError(
+      "Teaching channel callback tokens must cover every visible option exactly",
+    );
+  }
+
+  const seenTokens = new Set<string>();
+  const bindings = card.options.map((option) => {
+    const callbackToken = input.callbackTokens[option.optionKey];
+    if (callbackToken === undefined) {
+      throw new TypeError("Teaching channel callback token is missing");
+    }
+    if (!seenTokens.add(callbackToken)) {
+      throw new TypeError("Teaching channel callback tokens must be unique");
+    }
+    return createTeachingChannelSelectionBinding({
+      action: input.action,
+      callbackToken,
+      optionKey: option.optionKey,
+    });
+  });
+  const byOption = new Map(
+    bindings.map((entry) => [entry.optionKey, entry] as const),
+  );
+  const options = card.options.map((option) => {
+    const channelBinding = byOption.get(option.optionKey);
+    if (channelBinding === undefined) {
+      throw new TypeError("Teaching channel callback binding is missing");
+    }
+    return Object.freeze({
+      optionKey: option.optionKey,
+      label: option.label,
+      selectionId: channelBinding.callbackToken,
+    });
+  });
+
+  return Object.freeze({
+    prompt: card.prompt,
+    options: Object.freeze(options),
+    bindings: Object.freeze(bindings),
+    expiresAt: input.action.expiresAt,
   });
 }
 
