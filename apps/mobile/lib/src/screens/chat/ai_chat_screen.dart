@@ -22,7 +22,12 @@ import '../../agents/agent_directory.dart';
 import '../../chat/chat_format.dart';
 import '../../chat/message_parts.dart';
 import '../../chat/message_parts_view.dart';
+import '../../chat/shell_document.dart';
 import '../../core/live_pcm_audio.dart';
+import '../../core/live_voice_session.dart';
+import '../../core/app_permissions.dart';
+import '../../agents/agent_shell.dart';
+import '../../core/providers.dart';
 import '../../state/agent_directory_state.dart';
 import '../../state/ai_chat_state.dart';
 import '../../state/session_state.dart';
@@ -228,6 +233,32 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         .showSnackBar(SnackBar(content: Text('$what are coming soon.')));
   }
 
+  Future<bool> _ensurePermission(
+    AppPermission permission,
+    String label,
+  ) async {
+    final result = await AppPermissions.request(permission);
+    if (result.granted) return true;
+    if (!mounted) return false;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          result.permanentlyDenied
+              ? '$label permission is disabled in system settings.'
+              : '$label permission is needed for this action.',
+        ),
+        action: result.permanentlyDenied
+            ? SnackBarAction(
+                label: 'Settings',
+                onPressed: AppPermissions.openSettings,
+              )
+            : null,
+      ),
+    );
+    return false;
+  }
+
   // ---- Attachments ---------------------------------------------------------
 
   void _openAttachSheet() {
@@ -244,10 +275,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               runSpacing: 12,
               alignment: WrapAlignment.center,
               children: [
-                // Attachment actions follow the active Agent Blue theme.
+                // Token roles: brand → doc, verified → gallery, warning → camera.
                 _AttachOption(
                   icon: Icons.insert_drive_file,
-                  color: context.masanawa.brand,
+                  color: const Color(0xFF047857),
                   label: 'Document',
                   onTap: () {
                     Navigator.of(sheetContext).pop();
@@ -256,7 +287,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 ),
                 _AttachOption(
                   icon: Icons.photo,
-                  color: context.masanawa.verified,
+                  color: const Color(0xFF1D4ED8),
                   label: 'Gallery',
                   onTap: () {
                     Navigator.of(sheetContext).pop();
@@ -265,7 +296,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 ),
                 _AttachOption(
                   icon: Icons.camera_alt,
-                  color: context.masanawa.warning,
+                  color: const Color(0xFFD97706),
                   label: 'Camera',
                   onTap: () {
                     Navigator.of(sheetContext).pop();
@@ -316,6 +347,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
+    if (source == ImageSource.camera &&
+        !await _ensurePermission(AppPermission.camera, 'Camera')) {
+      return;
+    }
     try {
       final picked = await _imagePicker.pickImage(
         source: source,
@@ -356,8 +391,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           ),
         );
       }
-      if (attachments.isNotEmpty && mounted) {
-        _stageAttachments(attachments);
+      if (attachments.isNotEmpty) {
+        await ref
+            .read(aiChatProvider.notifier)
+            .sendAttachments(widget.characterId, attachments);
       }
     } catch (_) {
       if (mounted) _comingSoon('Photos');
@@ -406,6 +443,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
   Future<void> _startRecording() async {
     if (_recording) return;
+    if (!await _ensurePermission(AppPermission.microphone, 'Microphone')) {
+      return;
+    }
     try {
       await _activeVoiceBubble?._pauseFromAnotherBubble();
       final session = await AudioSession.instance;
@@ -608,6 +648,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     final agent = directory.find(widget.characterId);
     final chat = ref.watch(aiChatProvider);
     final thread = chat.threads[widget.characterId];
+    final shellConfig = chat.shellConfigs[widget.characterId];
+    final updateRequired = shellConfig?.requiresUpdate() ?? false;
+    final liveVoiceEnabled =
+        shellConfig?.feature('liveVoice', fallback: true) ?? true;
     final allMessages = thread?.messages ?? const <AiChatMessage>[];
     final query = _search.text.trim().toLowerCase();
     final messages = allMessages;
@@ -815,9 +859,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               onPressed: () => _comingSoon('Video calls'),
             ),
             IconButton(
-              tooltip: 'Voice call',
+              tooltip: 'Live voice',
               icon: const Icon(Icons.call_outlined),
-              onPressed: () => _comingSoon('Voice calls'),
+              onPressed: updateRequired || !liveVoiceEnabled
+                  ? null
+                  : () => _openLiveVoice(agent),
             ),
             IconButton(
               tooltip: 'Agents',
@@ -847,6 +893,31 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         ),
         body: Column(
           children: [
+            if (updateRequired)
+              MaterialBanner(
+                content: Text(
+                  'This Masanawa service now requires app version '
+                  '${shellConfig!.minimumAppVersion} or newer.',
+                ),
+                actions: const [SizedBox.shrink()],
+              ),
+            if (!chat.online)
+              Semantics(
+                liveRegion: true,
+                child: Container(
+                  width: double.infinity,
+                  color: u.warning.withValues(alpha: .14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 7,
+                  ),
+                  child: Text(
+                    'Offline · messages will send when your connection returns',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: u.textPrimary, fontSize: 12),
+                  ),
+                ),
+              ),
             Expanded(
               child: messages.isEmpty && !sending
                   ? const SizedBox.shrink()
@@ -917,6 +988,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                           onAgentAction: message.isUser
                               ? null
                               : (action) => _runAgentAction(message, action),
+                          onShellAction: message.isUser
+                              ? null
+                              : (action) => ref
+                                  .read(aiChatProvider.notifier)
+                                  .submitShellAction(widget.characterId, action),
                           onRetry: failure == null || sending
                               ? null
                               : () async {
@@ -992,15 +1068,15 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               _Composer(
                 controller: _input,
                 hasText: _hasText || _pendingAttachments.isNotEmpty,
-                sending: sending,
-                onSend: _sendText,
+                sending: sending || updateRequired,
+                onSend: updateRequired ? () {} : _sendText,
                 onStop: () async {
                   await _activeVoiceBubble?._pauseFromAnotherBubble();
                   ref.read(aiChatProvider.notifier).stopGeneration(widget.characterId);
                 },
                 onAttach: _openAttachSheet,
                 onCamera: () => _pickImage(ImageSource.camera),
-                onMic: _toggleRecording,
+                onMic: updateRequired ? () {} : _toggleRecording,
                 onMicHoldStart: _onMicHoldStart,
                 onMicHoldMove: _onMicHoldMove,
                 onMicHoldEnd: _onMicHoldEnd,
@@ -1185,6 +1261,64 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     }
   }
 
+  Future<void> _openLiveVoice(AgentDirectoryEntry agent) async {
+    if (!await _ensurePermission(AppPermission.microphone, 'Microphone')) {
+      return;
+    }
+    final transport = ref.read(agentTransportProvider);
+    if (transport is! AgentShellTransport) {
+      if (mounted) _comingSoon('Live voice');
+      return;
+    }
+    LiveVoiceSession? session;
+    try {
+      await _activeVoiceBubble?._pauseFromAnotherBubble();
+      await transport.setPresence(
+        characterId: agent.characterId,
+        state: 'on_call',
+        durationMs: 5 * 60 * 1000,
+      );
+      unawaited(ref.read(agentDirectoryProvider.notifier).refresh());
+      final grant = await transport.mintLiveVoiceGrant(agent.characterId);
+      if (!mounted) return;
+      session = LiveVoiceSession(
+        grant: grant,
+        characterName: agent.displayName,
+      );
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        enableDrag: false,
+        builder: (_) => _LiveVoiceSheet(
+          agent: agent,
+          session: session!,
+        ),
+      );
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Live voice could not start. Check microphone access and connection.',
+            ),
+          ),
+        );
+      }
+    } finally {
+      await session?.close();
+      await transport
+          .setPresence(
+            characterId: agent.characterId,
+            state: 'available',
+            durationMs: 60 * 1000,
+          )
+          .catchError((_) {});
+      if (mounted) {
+        unawaited(ref.read(agentDirectoryProvider.notifier).refresh());
+      }
+    }
+  }
+
   Future<void> _runAgentAction(AiChatMessage message, String action) async {
     final ctl = ref.read(aiChatProvider.notifier);
     final quoted = message.text;
@@ -1289,6 +1423,181 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _LiveVoiceSheet extends StatefulWidget {
+  const _LiveVoiceSheet({
+    required this.agent,
+    required this.session,
+  });
+
+  final AgentDirectoryEntry agent;
+  final LiveVoiceSession session;
+
+  @override
+  State<_LiveVoiceSheet> createState() => _LiveVoiceSheetState();
+}
+
+class _LiveVoiceSheetState extends State<_LiveVoiceSheet> {
+  bool _muted = false;
+  bool _speaker = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.session.errors.listen((message) {
+      if (mounted) setState(() => _error = message);
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.session.start().catchError((_) {});
+    });
+  }
+
+  @override
+  void dispose() {
+    widget.session.close();
+    super.dispose();
+  }
+
+  String _label(LiveVoiceState state) => switch (state) {
+        LiveVoiceState.connecting => 'Connecting…',
+        LiveVoiceState.listening => _muted ? 'Muted' : 'Listening…',
+        LiveVoiceState.speaking => 'Speaking…',
+        LiveVoiceState.interrupted => 'Listening…',
+        LiveVoiceState.failed => 'Connection problem',
+        LiveVoiceState.ended => 'Call ended',
+        LiveVoiceState.idle => 'Ready',
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 28, 24, 30),
+        child: StreamBuilder<LiveVoiceState>(
+          stream: widget.session.states,
+          initialData: LiveVoiceState.connecting,
+          builder: (context, snapshot) {
+            final state = snapshot.data ?? LiveVoiceState.connecting;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircleAvatar(
+                  radius: 38,
+                  backgroundColor: u.brand,
+                  child: Text(
+                    widget.agent.initial,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  widget.agent.displayName,
+                  style: TextStyle(
+                    color: u.textPrimary,
+                    fontSize: 21,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    _error ?? _label(state),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: _error == null ? u.textMuted : u.emergency,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 28),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _CallControl(
+                      label: _muted ? 'Unmute' : 'Mute',
+                      icon: _muted ? Icons.mic_off : Icons.mic,
+                      selected: _muted,
+                      onTap: () async {
+                        final next = !_muted;
+                        await widget.session.mute(next);
+                        if (mounted) setState(() => _muted = next);
+                      },
+                    ),
+                    const SizedBox(width: 24),
+                    _CallControl(
+                      label: _speaker ? 'Speaker' : 'Earpiece',
+                      icon: _speaker ? Icons.volume_up : Icons.hearing,
+                      selected: _speaker,
+                      onTap: () async {
+                        final next = !_speaker;
+                        await widget.session.setSpeaker(next);
+                        if (mounted) setState(() => _speaker = next);
+                      },
+                    ),
+                    const SizedBox(width: 24),
+                    _CallControl(
+                      label: 'End',
+                      icon: Icons.call_end,
+                      danger: true,
+                      onTap: () async {
+                        await widget.session.close();
+                        if (context.mounted) Navigator.of(context).pop();
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _CallControl extends StatelessWidget {
+  const _CallControl({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+    this.selected = false,
+    this.danger = false,
+  });
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool selected;
+  final bool danger;
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    final color = danger ? u.emergency : (selected ? u.brand : u.surfaceMuted);
+    return Column(
+      children: [
+        Material(
+          color: color,
+          shape: const CircleBorder(),
+          child: IconButton(
+            onPressed: onTap,
+            icon: Icon(
+              icon,
+              color: danger || selected ? Colors.white : u.textPrimary,
+            ),
+          ),
+        ),
+        const SizedBox(height: 5),
+        Text(label, style: TextStyle(color: u.textMuted, fontSize: 11)),
+      ],
     );
   }
 }
@@ -1843,6 +2152,7 @@ class _ChatBubble extends StatelessWidget {
     this.onEdit,
     this.onRetry,
     this.onAgentAction,
+    this.onShellAction,
   });
 
   final AiChatMessage message;
@@ -1859,6 +2169,7 @@ class _ChatBubble extends StatelessWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onRetry;
   final ValueChanged<String>? onAgentAction;
+  final ShellActionHandler? onShellAction;
 
   Future<void> _showActions(BuildContext context) async {
     final action = await showModalBottomSheet<String>(
@@ -2065,6 +2376,7 @@ class _ChatBubble extends StatelessWidget {
                     if (message.parts.any((p) => p != failure))
                       MessagePartsView(
                         parts: message.parts.where((p) => p != failure).toList(),
+                        onAction: onShellAction,
                       ),
                   ],
                   if (failure != null)

@@ -71,6 +71,7 @@ abstract class AgentTransport {
     required String text,
     void Function(String delta)? onTextDelta,
     Future<void> Function(Uint8List pcmChunk)? onAudioPcmChunk,
+    String? requestId,
   });
 
   Future<AgentTurnResult> sendMediaTurn({
@@ -79,6 +80,7 @@ abstract class AgentTransport {
     required String mimeType,
     required String caption,
     void Function(int sent, int total)? onUploadProgress,
+    String? requestId,
   });
 
   Future<AgentTurnResult> sendMediaSetTurn({
@@ -86,6 +88,7 @@ abstract class AgentTransport {
     required List<AgentMediaInput> media,
     required String caption,
     void Function(int sent, int total)? onUploadProgress,
+    String? requestId,
   });
 
   void cancelTurn(String characterId);
@@ -113,6 +116,7 @@ class PreviewAgentTransport implements AgentTransport {
     required String text,
     void Function(String delta)? onTextDelta,
     Future<void> Function(Uint8List pcmChunk)? onAudioPcmChunk,
+    String? requestId,
   }) async {
     final reply = await sendPreview(text, binding.characterId);
     onTextDelta?.call(reply);
@@ -126,6 +130,7 @@ class PreviewAgentTransport implements AgentTransport {
     required String mimeType,
     required String caption,
     void Function(int sent, int total)? onUploadProgress,
+    String? requestId,
   }) async {
     onUploadProgress?.call(bytes.length, bytes.length);
     throw UnsupportedError(
@@ -139,6 +144,7 @@ class PreviewAgentTransport implements AgentTransport {
     required List<AgentMediaInput> media,
     required String caption,
     void Function(int sent, int total)? onUploadProgress,
+    String? requestId,
   }) async {
     final total = media.fold<int>(0, (sum, item) => sum + item.bytes.length);
     onUploadProgress?.call(total, total);

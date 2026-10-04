@@ -22,6 +22,15 @@ export type AgentStrategyInput =
       readonly caption: string;
       readonly mimeType: string;
       readonly dataBase64: string;
+    }
+  | {
+      readonly kind: "media-set";
+      readonly caption: string;
+      readonly media: readonly {
+        readonly mimeType: string;
+        readonly dataBase64: string;
+        readonly name?: string;
+      }[];
     };
 
 export interface AgentStrategyPresentation {
@@ -31,6 +40,8 @@ export interface AgentStrategyPresentation {
 }
 
 export interface AgentStrategyRequest {
+  readonly onTextDelta?: (delta: string) => void | Promise<void>;
+  readonly signal?: AbortSignal;
   readonly agentRunId: AgentRunId;
   readonly characterSessionId: CharacterSessionId;
   readonly characterVersionId: CharacterVersionId;
@@ -69,6 +80,15 @@ export interface AgentInferenceResult {
   readonly text: string;
 }
 
+export interface AgentInferenceControls {
+  readonly signal?: AbortSignal;
+  readonly maxOutputTokens?: number;
+  readonly onTextDelta?: (delta: string) => void | Promise<void>;
+}
+
 export interface AgentInferenceProvider {
-  generate(input: AgentInferenceRequest): Promise<AgentInferenceResult>;
+  generate(
+    input: AgentInferenceRequest,
+    controls?: AgentInferenceControls,
+  ): Promise<AgentInferenceResult>;
 }

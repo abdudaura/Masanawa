@@ -75,10 +75,19 @@ export function createAlphaInferenceStrategy(input: {
         }
       }
 
-      const result = await input.inference.generate({
-        systemInstructions: Object.freeze(instructions),
-        input: request.input,
-      });
+      const result = await input.inference.generate(
+        {
+          systemInstructions: Object.freeze(instructions),
+          input: request.input,
+        },
+        {
+          ...(request.signal ? { signal: request.signal } : {}),
+          maxOutputTokens: 2048,
+          ...(request.onTextDelta
+            ? { onTextDelta: request.onTextDelta }
+            : {}),
+        },
+      );
       const reply = result.text.trim();
       if (!reply) throw new Error("Alpha inference returned no text");
       return Object.freeze({

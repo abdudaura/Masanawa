@@ -7,6 +7,9 @@ import type {
   CharacterSkillAssignmentRepository,
   PlatformAgentProfileRepository,
   UserAgentPreferenceRepository,
+  MobileShellRepository,
+  MobilePushRepository,
+  MobileAgentActivityRepository,
 } from "@masanawa/agents";
 import type {
   SkillDistributionRepository,
@@ -45,6 +48,9 @@ import {
   createPostgresPersonalCloneProvisioningRepository,
   createPostgresUserRelationshipReader,
   createPostgresServiceDependency,
+  createPostgresMobileShellRepository,
+  createPostgresMobilePushRepository,
+  createPostgresMobileAgentActivityRepository,
 } from "@masanawa/postgres";
 import {
   createAgentDirectoryService,
@@ -75,6 +81,18 @@ import {
 } from "./alpha_dev.js";
 import { createGeminiAlphaInferenceProvider } from "./alpha_executor.js";
 import { createAlphaInferenceStrategy } from "./alpha_strategy.js";
+import { createGeminiLiveAudioRenderer } from "./native_audio.js";
+import { createAgentShellService } from "./agent_shell.js";
+import type {
+  AgentShellActionExecutor,
+  LiveVoiceTokenService,
+} from "./agent_shell_contract.js";
+import { createGeminiLiveTokenService } from "./live_voice_token.js";
+import {
+  createMobilePushRegistrationService,
+  createFcmPushSender,
+  type MobilePushSender,
+} from "./mobile_push.js";
 import {
   createGatewayApp,
   type GatewayAppOptions,
@@ -103,6 +121,9 @@ export interface ServiceDatabaseDependency {
   readonly relationships?: UserRelationshipReader;
   readonly commerce?: CommerceRepository;
   readonly ownerships?: CharacterOwnershipReader;
+  readonly mobileShell?: MobileShellRepository;
+  readonly mobilePush?: MobilePushRepository;
+  readonly mobileActivity?: MobileAgentActivityRepository;
   close(): Promise<void>;
 }
 
@@ -124,12 +145,14 @@ export interface StartGatewayServiceOptions {
   readonly creatorCloneAuthorizer?: CreatorCloneAuthorizer;
   readonly commerceAuthorizer?: CommerceUserAuthorizer;
   readonly agentStrategy?: AgentStrategy;
+  readonly agentShellActionExecutor?: AgentShellActionExecutor;
 }
 
 export interface GatewayServiceRuntime {
   readonly config: GatewayServiceConfig;
   readonly address: string;
   readonly app: ManagedNodeServer;
+  readonly pushSender?: MobilePushSender;
   isDraining(): boolean;
   drain(): void;
   shutdown(reason?: ServiceSignal | "manual"): Promise<void>;
@@ -185,6 +208,9 @@ function createDefaultDatabaseDependency(
     relationships: createPostgresUserRelationshipReader(database.pool),
     commerce: createPostgresCommerceRepository(database.pool),
     ownerships: createPostgresCharacterOwnershipReader(database.pool),
+    mobileShell: createPostgresMobileShellRepository(database.pool),
+    mobilePush: createPostgresMobilePushRepository(database.pool),
+    mobileActivity: createPostgresMobileAgentActivityRepository(database.pool),
     close: database.close,
   });
 }
@@ -221,6 +247,9 @@ export async function startGatewayService(
   let creatorCloneAuthorizer = options.creatorCloneAuthorizer;
   let commerceAuthorizer = options.commerceAuthorizer;
   let strategy = options.agentStrategy;
+  let nativeAudio;
+  let liveVoiceTokens: LiveVoiceTokenService | undefined;
+  let pushSender: MobilePushSender | undefined;
 
   if (alphaEnabled(env)) {
     if (
@@ -277,13 +306,28 @@ export async function startGatewayService(
       skillAssignments: database.characterSkillAssignments,
       ...(database.relationships ? { relationships: database.relationships } : {}),
     });
+    const alphaGeminiApiKey = requiredAlphaEnv(
+      env,
+      "MASANAWA_ALPHA_GEMINI_API_KEY",
+    );
     strategy ??= createAlphaInferenceStrategy({
       inference: createGeminiAlphaInferenceProvider({
-        apiKey: requiredAlphaEnv(env, "MASANAWA_ALPHA_GEMINI_API_KEY"),
+        apiKey: alphaGeminiApiKey,
         model: requiredAlphaEnv(env, "MASANAWA_ALPHA_GEMINI_MODEL"),
       }),
       skills: database.skills,
       guides: database.skillGuides,
+    });
+    nativeAudio = createGeminiLiveAudioRenderer({
+      apiKey: alphaGeminiApiKey,
+      model: env.MASANAWA_ALPHA_GEMINI_LIVE_MODEL ?? "gemini-3.8-live",
+      voiceName: env.MASANAWA_ALPHA_GEMINI_LIVE_VOICE ?? "Kore",
+    });
+    liveVoiceTokens = createGeminiLiveTokenService({
+      apiKey: alphaGeminiApiKey,
+      authorizer: conversationAuthorizer!,
+      model: env.MASANAWA_ALPHA_GEMINI_LIVE_MODEL ?? "gemini-3.8-live",
+      voiceName: env.MASANAWA_ALPHA_GEMINI_LIVE_VOICE ?? "Kore",
     });
   }
 
@@ -298,6 +342,9 @@ export async function startGatewayService(
             : {}),
           ...(database.userAgentPreferences
             ? { userPreferences: database.userAgentPreferences }
+            : {}),
+          ...(database.mobileActivity
+            ? { activity: database.mobileActivity }
             : {}),
         })
       : undefined);
@@ -391,7 +438,51 @@ export async function startGatewayService(
           runs: database.agentRuns,
           authorizer: conversationAuthorizer,
           strategy,
+          ...(nativeAudio ? { nativeAudio } : {}),
+          ...(database.mobileShell ? { mobileShell: database.mobileShell } : {}),
           sessionDurationMs: 24 * 60 * 60 * 1000,
+        })
+      : undefined);
+
+  const composedPush =
+    options.appOptions?.mobilePush ??
+    (conversationAuthorizer && database.mobilePush
+      ? createMobilePushRegistrationService({
+          authorizer: conversationAuthorizer,
+          repository: database.mobilePush,
+        })
+      : undefined);
+
+  if (
+    database.mobilePush &&
+    env.MASANAWA_FIREBASE_SERVICE_ACCOUNT_JSON?.trim()
+  ) {
+    pushSender = createFcmPushSender({
+      serviceAccountJson: env.MASANAWA_FIREBASE_SERVICE_ACCOUNT_JSON,
+      repository: database.mobilePush,
+    });
+  }
+
+  const composedShell =
+    options.appOptions?.agentShell ??
+    (conversationAuthorizer &&
+    database.characterSessions &&
+    database.mobileShell
+      ? createAgentShellService({
+          authorizer: conversationAuthorizer,
+          sessions: database.characterSessions,
+          repository: database.mobileShell,
+          ...(database.mobileActivity
+            ? { activity: database.mobileActivity }
+            : {}),
+          ...(options.agentShellActionExecutor
+            ? { actionExecutor: options.agentShellActionExecutor }
+            : {}),
+          minimumAppVersion: env.MASANAWA_MOBILE_MIN_VERSION ?? "1.0.0",
+          recommendedAppVersion:
+            env.MASANAWA_MOBILE_RECOMMENDED_VERSION ??
+            env.MASANAWA_MOBILE_MIN_VERSION ??
+            "1.0.0",
         })
       : undefined);
 
@@ -403,6 +494,9 @@ export async function startGatewayService(
       ...(composedConversation
         ? { agentConversation: composedConversation }
         : {}),
+      ...(composedShell ? { agentShell: composedShell } : {}),
+      ...(liveVoiceTokens ? { liveVoiceTokens } : {}),
+      ...(composedPush ? { mobilePush: composedPush } : {}),
       ...(composedCreatorClone ? { creatorClone: composedCreatorClone } : {}),
       ...(composedCreatorEconomy
         ? { creatorEconomy: composedCreatorEconomy }
@@ -442,6 +536,7 @@ export async function startGatewayService(
     config,
     address: lifecycle.address,
     app,
+    ...(pushSender ? { pushSender } : {}),
     isDraining: drain.isDraining,
     drain: drain.beginDraining,
     shutdown: (reason: ServiceSignal | "manual" = "manual") =>
