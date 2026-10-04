@@ -431,10 +431,13 @@ class AiChatController extends Notifier<AiChatState> {
       final attachment = userMsg.attachment;
       final streamMessageId =
           attachment == null ? _beginAiStream(characterId) : null;
+      final promptText = userMsg.replyPreview?.trim().isNotEmpty == true
+          ? 'Replying to this earlier message:\n"${userMsg.replyPreview}"\n\n${userMsg.text}'
+          : userMsg.text;
       final result = attachment == null
           ? await _sendViaTransport(
               characterId,
-              userMsg.text,
+              promptText,
               onTextDelta: (delta) {
                 if (streamMessageId != null) {
                   _appendAiDelta(characterId, streamMessageId, delta);
@@ -848,13 +851,18 @@ class AiChatController extends Notifier<AiChatState> {
     ref.read(agentTransportProvider).cancelTurn(characterId);
     _threadGenerations[characterId] = (_threadGenerations[characterId] ?? 0) + 1;
     final thread = threadOf(characterId);
-    final messages = [
-      for (final message in thread.messages)
-        if (!message.isUser && message.deliveryStatus == 'streaming')
-          message.copyWith(deliveryStatus: 'stopped')
-        else
-          message,
-    ];
+    final messages = [...thread.messages];
+    for (var i = messages.length - 1; i >= 0; i--) {
+      final message = messages[i];
+      if (!message.isUser && message.deliveryStatus == 'streaming') {
+        messages[i] = message.copyWith(deliveryStatus: 'stopped');
+        continue;
+      }
+      if (message.isUser && message.deliveryStatus == 'sending') {
+        messages[i] = message.copyWith(deliveryStatus: 'stopped');
+        break;
+      }
+    }
     state = state.copyWith(
       threads: {
         ...state.threads,
