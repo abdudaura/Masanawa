@@ -3,9 +3,11 @@ import { createCanonicalId, toInstant, type SkillVersionId } from "@masanawa/con
 import type { SkillCertification } from "./certification.js";
 import {
   createCoreTeachingSkillBundle,
+  evaluateTeachingSelection,
   normalizeTeachingAnswerEvaluation,
   normalizeTeachingExerciseCard,
   normalizeTeachingLessonPlan,
+  normalizeTeachingSelectableExerciseRubric,
   normalizeTeachingProgressHandoff,
   normalizeTeachingSubjectReference,
   resolveTeachingContinuation,
@@ -441,5 +443,136 @@ describe("Teaching continuity decisions", () => {
     expect(() =>
       resolveTeachingContinuation(input, otherRelationship),
     ).toThrow(/must match the lesson SkillVersion and Relationship/);
+  });
+});
+
+
+describe("Teaching selectable answer custody", () => {
+  it("evaluates single-select answers server-side and advances only on a correct choice", () => {
+    const relationshipId = createCanonicalId("relationship");
+    const skillVersionId = createCanonicalId("skill-version");
+    const rubric = normalizeTeachingSelectableExerciseRubric({
+      relationshipId,
+      skillVersionId,
+      lessonStepKey: "factor-basics",
+      exerciseKey: "factor-choice-1",
+      kind: "single-select",
+      allowedOptionKeys: ["choice-a", "choice-b"],
+      correctOptionKeys: ["choice-a"],
+      correctFeedback: "Correct. Those factors multiply to 6 and add to 5.",
+      retryFeedback: "Not yet. Check both the product and the sum.",
+      alternativeExplanation: "List factor pairs of 6, then compare their sums.",
+    });
+
+    const wrong = evaluateTeachingSelection(rubric, {
+      relationshipId,
+      skillVersionId,
+      lessonStepKey: "factor-basics",
+      exerciseKey: "factor-choice-1",
+      selectedOptionKeys: ["choice-b"],
+    });
+    expect(wrong).toMatchObject({
+      correct: false,
+      nextCheckpointState: "needs-reteaching",
+    });
+
+    const correct = evaluateTeachingSelection(rubric, {
+      relationshipId,
+      skillVersionId,
+      lessonStepKey: "factor-basics",
+      exerciseKey: "factor-choice-1",
+      selectedOptionKeys: ["choice-a"],
+    });
+    expect(correct).toMatchObject({
+      correct: true,
+      nextCheckpointState: "ready-to-advance",
+    });
+  });
+
+  it("compares multi-select answers as an exact set rather than by client order", () => {
+    const relationshipId = createCanonicalId("relationship");
+    const skillVersionId = createCanonicalId("skill-version");
+    const rubric = normalizeTeachingSelectableExerciseRubric({
+      relationshipId,
+      skillVersionId,
+      lessonStepKey: "prime-numbers",
+      exerciseKey: "choose-primes",
+      kind: "multi-select",
+      allowedOptionKeys: ["two", "three", "four"],
+      correctOptionKeys: ["two", "three"],
+      correctFeedback: "Correct.",
+      retryFeedback: "Try again.",
+      alternativeExplanation: null,
+    });
+    expect(
+      evaluateTeachingSelection(rubric, {
+        relationshipId,
+        skillVersionId,
+        lessonStepKey: "prime-numbers",
+        exerciseKey: "choose-primes",
+        selectedOptionKeys: ["three", "two"],
+      }),
+    ).toMatchObject({ correct: true, nextCheckpointState: "ready-to-advance" });
+  });
+
+  it("rejects forged option keys and cross-Relationship submissions", () => {
+    const relationshipId = createCanonicalId("relationship");
+    const skillVersionId = createCanonicalId("skill-version");
+    const rubric = normalizeTeachingSelectableExerciseRubric({
+      relationshipId,
+      skillVersionId,
+      lessonStepKey: "factor-basics",
+      exerciseKey: "factor-choice-1",
+      kind: "single-select",
+      allowedOptionKeys: ["choice-a", "choice-b"],
+      correctOptionKeys: ["choice-a"],
+      correctFeedback: "Correct.",
+      retryFeedback: "Try again.",
+      alternativeExplanation: null,
+    });
+
+    expect(() =>
+      evaluateTeachingSelection(rubric, {
+        relationshipId,
+        skillVersionId,
+        lessonStepKey: "factor-basics",
+        exerciseKey: "factor-choice-1",
+        selectedOptionKeys: ["forged"],
+      }),
+    ).toThrow(/unknown option/);
+
+    expect(() =>
+      evaluateTeachingSelection(rubric, {
+        relationshipId: createCanonicalId("relationship"),
+        skillVersionId,
+        lessonStepKey: "factor-basics",
+        exerciseKey: "factor-choice-1",
+        selectedOptionKeys: ["choice-a"],
+      }),
+    ).toThrow(/match rubric scope/);
+  });
+
+  it("never accepts an incorrect or unknown result as advance-ready", () => {
+    expect(() =>
+      normalizeTeachingAnswerEvaluation({
+        assessmentKind: "formative",
+        correct: false,
+        feedback: "Incorrect.",
+        misconception: "Needs another example.",
+        alternativeExplanation: "Try a visual method.",
+        nextCheckpointState: "ready-to-advance",
+      }),
+    ).toThrow(/cannot advance/);
+
+    expect(() =>
+      normalizeTeachingAnswerEvaluation({
+        assessmentKind: "formative",
+        correct: null,
+        feedback: "Insufficient evidence.",
+        misconception: null,
+        alternativeExplanation: null,
+        nextCheckpointState: "completed",
+      }),
+    ).toThrow(/cannot advance/);
   });
 });
