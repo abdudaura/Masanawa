@@ -70,7 +70,7 @@ function money(kobo: number): string {
   return `₦${formatNgnKobo(kobo)}`;
 }
 
-function documentFor(quote: BillingQuote, actionSecret: string): unknown {
+function documentFor(quote: BillingQuote, actionSecret: string, requireEmail = false): unknown {
   const phase = quotePhase(quote);
   const documentId = `billing:${quote.quoteId}`;
   const expiry = quote.expiresAt;
@@ -96,6 +96,14 @@ function documentFor(quote: BillingQuote, actionSecret: string): unknown {
           tone: "warning",
           text: "You will pay securely on Flutterwave before Masanawa sends this bill.",
         },
+        ...(requireEmail ? [{
+          type: "input",
+          id: "checkoutEmail",
+          text: "Email for secure payment",
+          subtitle: "Flutterwave requires an email for hosted checkout.",
+          inputKind: "email",
+          required: true,
+        }] : []),
         {
           type: "button",
           id: "confirm-payment",
@@ -126,6 +134,9 @@ function documentFor(quote: BillingQuote, actionSecret: string): unknown {
   const nodes: unknown[] = [
     ...base,
     { type: "notice", tone: phase === "fulfilled" ? "success" : phase === "refunded" ? "warning" : "info", text: statusText },
+    ...(phase === "checkout" && quote.checkoutUrl
+      ? [{ type: "detail", text: "Secure payment link", value: quote.checkoutUrl }]
+      : []),
   ];
   if (phase === "checkout") {
     const action = "billing.checkout.verify";
@@ -222,6 +233,7 @@ export interface BillingCheckoutService {
     authorizationHeader: string | undefined;
     quoteId: string;
     quoteRevision: number;
+    checkoutEmail?: string;
     signal?: AbortSignal;
   }>): Promise<BillingCheckoutView>;
   verifyAndPurchase(request: Readonly<{
@@ -240,6 +252,7 @@ export interface BillingCheckoutService {
     revision: number;
     actionId: string;
     token: string;
+    values?: Readonly<Record<string, string>>;
   }>): Promise<Readonly<{
     accepted: true;
     phase: string;
@@ -385,13 +398,17 @@ export function createBillingCheckoutService(input: Readonly<{
     });
   }
 
-  function view(quote: BillingQuote, purchase: unknown | null = null): BillingCheckoutView {
+  function view(
+    quote: BillingQuote,
+    purchase: unknown | null = null,
+    owner?: PlatformSessionIdentity,
+  ): BillingCheckoutView {
     return Object.freeze({
       quote,
       phase: quotePhase(quote),
       checkoutUrl: quote.checkoutUrl,
       purchase,
-      document: documentFor(quote,input.actionSecret),
+      document: documentFor(quote,input.actionSecret,owner?.profile.email == null),
     });
   }
 
@@ -453,13 +470,13 @@ export function createBillingCheckoutService(input: Readonly<{
         createdAt,
         expiresAt: new Date(Date.parse(createdAt) + quoteTtlSeconds * 1000).toISOString(),
       });
-      return view(await input.quotes.createQuote(quote));
+      return view(await input.quotes.createQuote(quote),null,owner);
     },
 
     async startCheckout(request) {
       const owned = await ownedQuote(request.authorizationHeader,request.quoteId);
       if (owned.quote.revision !== request.quoteRevision) throw new Error("financial.billing.quote_revision_conflict");
-      if (owned.quote.checkoutUrl && owned.quote.checkoutTxRef) return view(owned.quote);
+      if (owned.quote.checkoutUrl && owned.quote.checkoutTxRef) return view(owned.quote,null,owned.identity);
       const confirmed = await input.quotes.confirmQuote({
         tenantId: owned.identity.tenantId,
         userId: owned.identity.userId,
@@ -467,8 +484,10 @@ export function createBillingCheckoutService(input: Readonly<{
         quoteRevision: request.quoteRevision,
         confirmedAt: now(),
       });
-      const email = owned.identity.profile.email;
-      if (!email) throw new Error("financial.billing.email_required_for_checkout");
+      const email = (request.checkoutEmail ?? owned.identity.profile.email ?? "").trim().toLowerCase();
+      if (email.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(email)) {
+        throw new Error("financial.billing.email_required_for_checkout");
+      }
       const checkout = await input.funding.createCheckout({
         txRef: txRef(confirmed),
         amount: formatNgnKobo(confirmed.totalAmountKobo),
@@ -489,7 +508,7 @@ export function createBillingCheckoutService(input: Readonly<{
         checkoutUrl: checkout.checkoutUrl,
         boundAt: now(),
       });
-      return view(bound);
+      return view(bound,null,owned.identity);
     },
 
     async verifyAndPurchase(request) {
@@ -595,6 +614,9 @@ export function createBillingCheckoutService(input: Readonly<{
             authorizationHeader: request.authorizationHeader,
             quoteId: owned.quote.quoteId,
             quoteRevision: owned.quote.revision,
+            ...(request.values?.checkoutEmail
+              ? { checkoutEmail: request.values.checkoutEmail }
+              : {}),
           })
         : request.actionId === "billing.checkout.verify"
           ? await this.verifyAndPurchase({
