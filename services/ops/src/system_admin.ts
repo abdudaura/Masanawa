@@ -48,10 +48,39 @@ export interface SystemAdminApproval {
   readonly approverKey: string | null;
 }
 
+
+export interface SystemAdminMemoryJob {
+  readonly memoryExtractionId: string;
+  readonly state: string;
+  readonly scopeKind: string;
+  readonly sourceKind: string;
+  readonly extractorKey: string;
+  readonly attempt: number;
+  readonly maxAttempts: number;
+  readonly safeErrorCode: string | null;
+  readonly updatedAt: string;
+}
+
+export interface SystemAdminQueueIssue {
+  readonly direction: "inbox" | "outbox";
+  readonly recordId: string;
+  readonly state: string;
+  readonly route: string;
+  readonly attempt: number;
+  readonly safeErrorCode: string | null;
+  readonly updatedAt: string;
+}
+
 export interface SystemAdminService {
   snapshot(input: {
     readonly authorizationHeader: string | undefined;
   }): Promise<SystemAdminSnapshot>;
+  listMemoryJobs(input: {
+    readonly authorizationHeader: string | undefined;
+  }): Promise<readonly SystemAdminMemoryJob[]>;
+  listQueueIssues(input: {
+    readonly authorizationHeader: string | undefined;
+  }): Promise<readonly SystemAdminQueueIssue[]>;
   listWorlds(input: {
     readonly authorizationHeader: string | undefined;
   }): Promise<readonly SystemAdminWorld[]>;
@@ -146,6 +175,95 @@ export function createSystemAdminService(input: {
           inboxDeadLetter: count(row.inbox_dead_letter),
         },
       };
+    },
+
+    async listMemoryJobs(request) {
+      const authority = await input.authorizer.authorize({
+        authorizationHeader: request.authorizationHeader,
+        capability: "memory.admin.read",
+      });
+      const result = await input.database.query<{
+        memory_extraction_id: string;
+        state: string;
+        scope_kind: string;
+        source_kind: string;
+        extractor_key: string;
+        attempt: number;
+        max_attempts: number;
+        safe_error_code: string | null;
+        updated_at: Date | string;
+      }>(
+        `SELECT memory_extraction_id, state, scope_kind, source_kind,
+                extractor_key, attempt, max_attempts, safe_error_code,
+                updated_at
+           FROM memory.extraction_jobs
+          WHERE tenant_id = $1
+            AND state IN ('processing','retry-scheduled','dead-letter')
+          ORDER BY updated_at DESC
+          LIMIT 100`,
+        [tenant(authority)],
+      );
+      return result.rows.map((row) => ({
+        memoryExtractionId: row.memory_extraction_id,
+        state: row.state,
+        scopeKind: row.scope_kind,
+        sourceKind: row.source_kind,
+        extractorKey: row.extractor_key,
+        attempt: row.attempt,
+        maxAttempts: row.max_attempts,
+        safeErrorCode: row.safe_error_code,
+        updatedAt: iso(row.updated_at),
+      }));
+    },
+
+    async listQueueIssues(request) {
+      const authority = await input.authorizer.authorize({
+        authorizationHeader: request.authorizationHeader,
+        capability: "queues.admin.read",
+      });
+      const result = await input.database.query<{
+        direction: "inbox" | "outbox";
+        record_id: string;
+        state: string;
+        route: string;
+        attempt: number;
+        safe_error_code: string | null;
+        updated_at: Date | string;
+      }>(
+        `SELECT 'outbox'::text AS direction,
+                outbox_event_id AS record_id,
+                state,
+                destination AS route,
+                attempt,
+                safe_error_code,
+                updated_at
+           FROM events.outbox
+          WHERE tenant_id = $1
+            AND state IN ('retry-scheduled','unknown','dead-letter','claimed')
+          UNION ALL
+         SELECT 'inbox'::text AS direction,
+                event_id AS record_id,
+                state,
+                namespace AS route,
+                attempt,
+                safe_error_code,
+                updated_at
+           FROM events.inbox
+          WHERE tenant_id = $1
+            AND state IN ('processing','failed','dead-letter')
+          ORDER BY updated_at DESC
+          LIMIT 100`,
+        [tenant(authority)],
+      );
+      return result.rows.map((row) => ({
+        direction: row.direction,
+        recordId: row.record_id,
+        state: row.state,
+        route: row.route,
+        attempt: row.attempt,
+        safeErrorCode: row.safe_error_code,
+        updatedAt: iso(row.updated_at),
+      }));
     },
 
     async listWorlds(request) {
