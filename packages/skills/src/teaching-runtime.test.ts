@@ -1094,6 +1094,39 @@ describe("Teaching channel callback binding", () => {
     ).toThrow(/binding hash does not match payload/);
   });
 
+  it("rejects a valid callback paired with a different exact Teaching action", () => {
+    const active = lesson();
+    const admitted = binding(active);
+    const action = createTeachingSelectionActionBinding({
+      binding: admitted,
+      actionKey: "teach.action.denominator-choice.shared",
+      requestId: createCanonicalId("request"),
+      rubric: rubric(active),
+      expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
+    });
+    const channel = createTeachingChannelSelectionBinding({
+      action,
+      callbackToken: "tch_cb_AbC12348",
+      optionKey: "six",
+    });
+    const otherAction = createTeachingSelectionActionBinding({
+      binding: admitted,
+      actionKey: "teach.action.denominator-choice.shared",
+      requestId: createCanonicalId("request"),
+      rubric: rubric(active),
+      expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
+    });
+
+    expect(() =>
+      resolveTeachingChannelSelection({
+        selectionId: channel.callbackToken,
+        binding: channel,
+        action: otherAction,
+        now: toInstant("2026-10-04T18:40:00.000Z"),
+      }),
+    ).toThrow(/does not match the exact action binding/);
+  });
+
   it("enforces the common Telegram-safe 64-character callback limit", () => {
     const active = lesson();
     const action = createTeachingSelectionActionBinding({
