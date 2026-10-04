@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "domains": {
+    "api": "api.masanawa.com",
+    "gateway": "gateway.masanawa.com",
+    "billing": "billing.masanawa.com",
+    "calls": "calls.masanawa.com",
+    "admin": "admin.masanawa.com",
+    "relay": "relay.masanawa.com"
+  },
+  "rule": "Application code and mobile builds must reference these stable hostnames, never provider-generated Railway/Render/DigitalOcean hostnames."
+}
