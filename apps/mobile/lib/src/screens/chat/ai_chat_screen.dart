@@ -962,7 +962,13 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   void _copySelected(List<AiChatMessage> messages) {
     final text = messages
         .where((m) => _selectedMessageIds.contains(m.id) && !m.deleted)
-        .map((m) => m.text.isNotEmpty ? m.text : m.attachment?.label ?? '')
+        .map((m) {
+          if (m.text.isNotEmpty) return m.text;
+          if (m.allAttachments.isNotEmpty) {
+            return m.allAttachments.map((item) => item.label).join(' · ');
+          }
+          return '';
+        })
         .where((value) => value.isNotEmpty)
         .join('\n\n');
     if (text.isNotEmpty) Clipboard.setData(ClipboardData(text: text));
