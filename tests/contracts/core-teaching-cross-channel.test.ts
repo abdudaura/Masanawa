@@ -8,6 +8,7 @@ import {
   createTeachingRuntimeBinding,
   createTeachingSelectionActionBinding,
   TeachingRuntimeCoordinator,
+  resolveTeachingShellAction,
   type TeachingProgressKey,
   type TeachingProgressPort,
   type TeachingRuntimeProjection,
@@ -199,15 +200,21 @@ describe("Core Teaching cross-channel acceptance", () => {
       expect(exerciseProjection.card).not.toHaveProperty("correctOptionKeys");
     }
 
+    const shellSelection = resolveTeachingShellAction({
+      documentId: "teaching.fractions.exercise.1",
+      revision: 1,
+      nodeId: "six",
+      actionId: "teaching.select",
+      token: action.actionKey,
+      values: {},
+    });
+
     surfaces.failNext = true;
     await expect(
       app.submitOpaqueSelection({
         binding: binding(active),
         action,
-        selection: {
-          actionKey: action.actionKey,
-          selectedOptionKeys: ["six"],
-        },
+        selection: shellSelection,
         plan: active,
         now: toInstant("2026-10-04T17:00:00.000Z"),
       }),
