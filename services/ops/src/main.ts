@@ -27,6 +27,10 @@ import {
   type AgentAdminAuthorizer,
 } from "./agent_admin.js";
 import {
+  createPlatformAdminService,
+  type PlatformAdminQuery,
+} from "./platform_admin.js";
+import {
   createOpsApp,
   type OpsAppOptions,
   type ReadinessCheck,
@@ -45,6 +49,7 @@ export interface ServiceDatabaseDependency {
   readonly characterSkillAssignments?: CharacterSkillAssignmentRepository;
   readonly characterVersions?: CharacterVersionReferenceReader;
   readonly skills?: SkillRepository;
+  readonly platformAdminDatabase?: PlatformAdminQuery;
   close(): Promise<void>;
 }
 
@@ -112,6 +117,7 @@ function createDefaultDatabaseDependency(
     characterVersions:
       createPostgresCharacterVersionReferenceReader(database.pool),
     skills: createPostgresSkillRepository(database.pool),
+    platformAdminDatabase: database.pool,
     close: database.close,
   });
 }
@@ -144,11 +150,21 @@ export async function startOpsService(
         })
       : undefined);
 
+  const composedPlatformAdmin =
+    options.appOptions?.platformAdmin ??
+    (options.agentAdminAuthorizer && database.platformAdminDatabase
+      ? createPlatformAdminService({
+          database: database.platformAdminDatabase,
+          authorizer: options.agentAdminAuthorizer,
+        })
+      : undefined);
+
   let app: ManagedNodeServer;
   try {
     app = appFactory({
       ...(options.appOptions ?? {}),
       ...(composedAgentAdmin ? { agentAdmin: composedAgentAdmin } : {}),
+      ...(composedPlatformAdmin ? { platformAdmin: composedPlatformAdmin } : {}),
       readinessChecks: [
         ...(options.appOptions?.readinessChecks ?? []),
         database.readinessCheck,
