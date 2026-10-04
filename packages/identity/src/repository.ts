@@ -15,6 +15,8 @@ import type {
   Tenant,
   User,
   UserCharacterRelationship,
+  CharacterOwnership,
+  CharacterOwnershipKind,
 } from "./model.js";
 
 export interface CreateTenantInput {
@@ -57,6 +59,14 @@ export interface ActivateCharacterVersionInput {
   readonly expectedCharacterRevision: number;
   readonly activatedAt: Instant;
 }
+export interface AssignCharacterOwnershipInput {
+  readonly tenantId: TenantId;
+  readonly characterId: CharacterId;
+  readonly kind: CharacterOwnershipKind;
+  readonly ownerUserId: UserId | null;
+  readonly createdAt: Instant;
+}
+
 export interface GetOrCreateRelationshipInput {
   readonly tenantId: TenantId;
   readonly relationshipId: RelationshipId;
@@ -88,6 +98,17 @@ export interface IdentityRepository {
   getOrCreateRelationship(
     input: GetOrCreateRelationshipInput,
   ): Promise<UserCharacterRelationship>;
+  assignCharacterOwnership(
+    input: AssignCharacterOwnershipInput,
+  ): Promise<CharacterOwnership>;
+  readCharacterOwnership(input: {
+    readonly tenantId: TenantId;
+    readonly characterId: CharacterId;
+  }): Promise<CharacterOwnership | null>;
+  readPersonalCloneForUser(input: {
+    readonly tenantId: TenantId;
+    readonly userId: UserId;
+  }): Promise<CharacterOwnership | null>;
 }
 
 
