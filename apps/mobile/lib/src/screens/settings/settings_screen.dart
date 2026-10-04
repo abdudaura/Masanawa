@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../state/ai_chat_state.dart';
 import '../../state/agent_directory_state.dart';
+import '../../state/creator_economy_state.dart';
 import '../../state/session_state.dart';
 import '../../core/providers.dart';
 import '../../theme/masanawa_theme.dart';
@@ -23,6 +24,70 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _notifications = true;
   String? _savingDefaultAgentId;
 
+  Future<void> _addFloat(BuildContext context, int availableCredits) async {
+    final controller = TextEditingController();
+    final amount = await showDialog<int>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Add Agent Float'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Available Credits: $availableCredits'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'Credits to allocate',
+                hintText: '100',
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Agent Float is execution capacity for your clone. It is not withdrawable earnings.',
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final value = int.tryParse(controller.text.trim());
+              if (value == null || value < 1 || value > availableCredits) {
+                return;
+              }
+              Navigator.pop(dialogContext, value);
+            },
+            child: const Text('Add Float'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (amount == null || !mounted) return;
+
+    await ref.read(creatorEconomyProvider.notifier).allocateFloat(amount);
+    if (!mounted) return;
+    final result = ref.read(creatorEconomyProvider);
+    if (result.hasError) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not add Agent Float. Check your Credits and try again.'),
+        ),
+      );
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('$amount Credits added to Agent Float')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final u = context.masanawa;
@@ -31,6 +96,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final name = user?.name ?? 'Citizen';
     final contact = user?.phone ?? user?.email ?? 'No contact saved';
     final directory = ref.watch(agentDirectoryProvider);
+    final economy = ref.watch(creatorEconomyProvider);
+    final economySnapshot = economy.asData?.value;
     final supportAgents = directory.agents
         .where((agent) => agent.supportAgent)
         .toList(growable: false);
@@ -109,6 +176,89 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
               ],
             ),
+          ),
+          const SizedBox(height: 16),
+          _Card(children: [
+            ListTile(
+              leading: Icon(Icons.person_outline, color: u.brand),
+              title: const Text('Your clone'),
+              subtitle: Text(
+                economySnapshot?.hasClone == true
+                    ? 'Open your personal Masanawa clone'
+                    : 'Create your one personal Masanawa clone',
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                final characterId = economySnapshot?.characterId;
+                if (characterId != null && characterId.isNotEmpty) {
+                  context.push('/chat/$characterId');
+                } else {
+                  context.push('/clone');
+                }
+              },
+            ),
+          ]),
+          const SizedBox(height: 16),
+          economy.when(
+            data: (snapshot) {
+              if (snapshot == null) return const SizedBox.shrink();
+              return _Card(children: [
+                ListTile(
+                  leading: Icon(Icons.account_balance_wallet_outlined, color: u.brand),
+                  title: const Text('Creator economy'),
+                  subtitle: Text(
+                    snapshot.hasClone
+                        ? 'Credits fund work; earnings are kept separate'
+                        : 'Create your clone to activate Agent Float',
+                  ),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  title: const Text('Credits'),
+                  trailing: Text('${snapshot.customerCredits}'),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  title: const Text('Agent Float'),
+                  trailing: Text('${snapshot.agentFloatCredits}'),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  title: const Text('Earnings'),
+                  subtitle: Text(
+                    '${snapshot.pendingEarningsCredits} pending',
+                  ),
+                  trailing: Text('${snapshot.availableEarningsCredits} available'),
+                ),
+                if (snapshot.hasClone && snapshot.customerCredits > 0) ...[
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: Icon(Icons.add_circle_outline, color: u.brand),
+                    title: const Text('Add Agent Float'),
+                    subtitle: const Text('Allocate Credits so your clone can fund eligible work'),
+                    onTap: () => _addFloat(context, snapshot.customerCredits),
+                  ),
+                ],
+              ]);
+            },
+            loading: () => _Card(children: const [
+              ListTile(
+                leading: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                title: Text('Loading creator economy…'),
+              ),
+            ]),
+            error: (_, __) => _Card(children: [
+              ListTile(
+                leading: Icon(Icons.sync_problem_outlined, color: u.brand),
+                title: const Text('Creator economy unavailable'),
+                subtitle: const Text('Tap to try again'),
+                onTap: () => ref.read(creatorEconomyProvider.notifier).refresh(),
+              ),
+            ]),
           ),
           const SizedBox(height: 16),
           if (supportAgents.isNotEmpty) ...[
