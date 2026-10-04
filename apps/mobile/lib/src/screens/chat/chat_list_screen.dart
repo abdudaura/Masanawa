@@ -76,6 +76,11 @@ class ChatListScreen extends ConsumerWidget {
               title: const Text('Rename'),
               onTap: () => Navigator.pop(sheetContext, 'rename'),
             ),
+            ListTile(
+              leading: const Icon(Icons.delete_outline),
+              title: const Text('Delete chat'),
+              onTap: () => Navigator.pop(sheetContext, 'delete'),
+            ),
           ],
         ),
       ),
@@ -84,6 +89,28 @@ class ChatListScreen extends ConsumerWidget {
     final ctl = ref.read(aiChatProvider.notifier);
     if (action == 'pin') ctl.togglePin(thread.characterId);
     if (action == 'archive') ctl.toggleArchive(thread.characterId);
+    if (action == 'delete') {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Delete chat?'),
+          content: const Text(
+            'This removes the conversation and its local drafts from this device.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Delete'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed == true) ctl.clearThread(thread.characterId);
+    }
     if (action == 'rename') {
       final editor = TextEditingController(text: thread.title ?? '');
       final value = await showDialog<String>(
