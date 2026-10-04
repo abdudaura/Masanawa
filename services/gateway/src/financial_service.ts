@@ -336,17 +336,10 @@ export function createFinancialService(input: {
   readonly withdrawalEvidence?: () => Promise<{
     readonly account: NowPaymentsAccountEvidence;
     readonly routes: readonly NowPaymentsCurrencyEvidence[];
-    /**
-     * Required when Extended Custody / Customer Management is not enabled.
-     * A canonical ledger owner must prove aggregate user liabilities are covered
-     * by reconciled master-custody assets before pooled custody can fund payouts.
-     */
-    readonly pooledCustodyLiabilityCoverageSatisfied?: boolean;
   }>;
   readonly conversionEvidence?: () => Promise<{
     readonly account: NowPaymentsAccountEvidence;
     readonly routes: readonly NowPaymentsCurrencyEvidence[];
-    readonly pooledCustodyLiabilityCoverageSatisfied?: boolean;
   }>;
   readonly withdrawalFeePayer?: CryptoWithdrawalFeePayer;
   /**
@@ -382,37 +375,61 @@ export function createFinancialService(input: {
     return routes.find((candidate) => candidate.route.providerCode === providerCode)?.route ?? null;
   }
 
-  async function qualifiedWithdrawalRoutes() {
+  async function routesCoveredByCustody(
+    auth: FinancialAuthority,
+    routes: readonly NowPaymentsCurrencyEvidence[],
+  ): Promise<readonly NowPaymentsCurrencyEvidence[]> {
+    if (!input.nowPaymentsCustody) return Object.freeze([]);
+    const balances = await input.nowPaymentsCustody.readBalances(AbortSignal.timeout(15_000));
+    const balanceByCurrency = new Map(
+      balances.map((entry) => [entry.currency, entry.available] as const),
+    );
+    const covered: NowPaymentsCurrencyEvidence[] = [];
+    for (const route of routes) {
+      const liability = await input.crypto.readAggregateLiability({
+        tenantId: auth.tenantId,
+        asset: route.providerCode,
+        network: route.network,
+      });
+      const custodyBalance = balanceByCurrency.get(route.providerCode) ?? "0";
+      if (
+        decimalUnits(custodyBalance, true) >=
+        decimalUnits(liability, true)
+      ) {
+        covered.push(route);
+      }
+    }
+    return Object.freeze(covered);
+  }
+
+  async function qualifiedWithdrawalRoutes(auth: FinancialAuthority) {
     if (!input.nowPaymentsPayout || !input.nowPaymentsCustody || !input.withdrawalEvidence) return null;
     const evidence = await input.withdrawalEvidence();
     assertFreshAccountEvidence(evidence.account, { now: new Date(now()) });
     for (const capability of ["custody", "payout"] as const) {
       if (!qualifyAccountCapability(evidence.account, capability).eligible) return null;
     }
+    const eligible = evidence.routes.filter(route => qualifyRoute(route, "withdraw").eligible);
     const customerManaged =
       qualifyAccountCapability(evidence.account, "customer_management").eligible;
-    if (!customerManaged && evidence.pooledCustodyLiabilityCoverageSatisfied !== true) {
-      return null;
-    }
-    return evidence.routes.filter(route => qualifyRoute(route, "withdraw").eligible);
+    return customerManaged ? eligible : routesCoveredByCustody(auth, eligible);
   }
 
-  async function qualifiedConversionRoutes() {
+  async function qualifiedConversionRoutes(auth: FinancialAuthority) {
     if (!input.nowPaymentsCustody || !input.conversionEvidence) return null;
     const evidence = await input.conversionEvidence();
     assertFreshAccountEvidence(evidence.account, { now: new Date(now()) });
     for (const capability of ["custody", "conversion"] as const) {
       if (!qualifyAccountCapability(evidence.account, capability).eligible) return null;
     }
+    const eligible = evidence.routes.filter((route) => qualifyRoute(route, "convert").eligible);
     const customerManaged =
       qualifyAccountCapability(evidence.account, "customer_management").eligible;
-    if (!customerManaged && evidence.pooledCustodyLiabilityCoverageSatisfied !== true) {
-      return null;
-    }
-    return evidence.routes.filter((route) => qualifyRoute(route, "convert").eligible);
+    return customerManaged ? eligible : routesCoveredByCustody(auth, eligible);
   }
 
   async function preflightWithdrawal(
+    auth: FinancialAuthority,
     providerCode: string,
     amount: string,
     address: string,
@@ -432,7 +449,7 @@ export function createFinancialService(input: {
       throw new Error("financial.crypto.amount_unavailable");
     }
 
-    const routes = await qualifiedWithdrawalRoutes();
+    const routes = await qualifiedWithdrawalRoutes(auth);
     const route = routes?.find((candidate) => candidate.providerCode === providerCode);
     if (!route) throw new Error("financial.crypto.withdrawal_unavailable");
 
@@ -469,6 +486,7 @@ export function createFinancialService(input: {
   }
 
   async function preflightConversion(
+    auth: FinancialAuthority,
     providerCode: string,
     targetProviderCode: string,
     amount: string,
@@ -485,7 +503,7 @@ export function createFinancialService(input: {
       throw new Error("financial.crypto.amount_unavailable");
     }
 
-    const routes = await qualifiedConversionRoutes();
+    const routes = await qualifiedConversionRoutes(auth);
     if (
       !routes?.some((route) => route.providerCode === providerCode) ||
       !routes.some((route) => route.providerCode === targetProviderCode)
@@ -609,15 +627,15 @@ export function createFinancialService(input: {
 
   return Object.freeze<FinancialService>({
     async capabilities(request) {
-      await authority(request.authorizationHeader);
+      const auth = await authority(request.authorizationHeader);
       let withdrawals = false;
       let conversions = false;
       try {
-        const routes = await qualifiedWithdrawalRoutes();
+        const routes = await qualifiedWithdrawalRoutes(auth);
         withdrawals = routes !== null && routes.length > 0;
       } catch { /* Unknown/stale evidence denies admission. */ }
       try {
-        const routes = await qualifiedConversionRoutes();
+        const routes = await qualifiedConversionRoutes(auth);
         conversions = routes !== null && routes.length > 1;
       } catch { /* Unknown/stale evidence denies admission. */ }
       return Object.freeze({
@@ -644,8 +662,8 @@ export function createFinancialService(input: {
     },
 
     async listConversionRoutes(request) {
-      await authority(request.authorizationHeader);
-      return Object.freeze((await qualifiedConversionRoutes()) ?? []);
+      const auth = await authority(request.authorizationHeader);
+      return Object.freeze((await qualifiedConversionRoutes(auth)) ?? []);
     },
 
     async createDeposit(request) {
@@ -739,12 +757,12 @@ export function createFinancialService(input: {
     },
 
     async quoteWithdrawal(request) {
-      await authority(request.authorizationHeader);
+      const auth = await authority(request.authorizationHeader);
       const providerCode = normalizeCryptoAsset(request.providerCode);
       const amount = normalizeCryptoAmount(request.amount);
       const address = request.destinationAddress.trim();
       if (!address || address.length > 512) throw new Error("financial.crypto.destination_invalid");
-      return preflightWithdrawal(providerCode, amount, address);
+      return preflightWithdrawal(auth, providerCode, amount, address);
     },
 
     async createWithdrawal(request) {
@@ -772,7 +790,7 @@ export function createFinancialService(input: {
         return withdrawalView(existing);
       }
 
-      const quote = await preflightWithdrawal(providerCode, amount, address);
+      const quote = await preflightWithdrawal(auth, providerCode, amount, address);
       const createdAt = now();
       const withdrawalIntent: CryptoIntent = {
         schemaVersion: 1,
@@ -858,11 +876,11 @@ export function createFinancialService(input: {
     },
 
     async quoteConversion(request) {
-      await authority(request.authorizationHeader);
+      const auth = await authority(request.authorizationHeader);
       const providerCode = normalizeCryptoAsset(request.providerCode);
       const targetProviderCode = normalizeCryptoAsset(request.targetProviderCode);
       const amount = normalizeCryptoAmount(request.amount);
-      return preflightConversion(providerCode, targetProviderCode, amount);
+      return preflightConversion(auth, providerCode, targetProviderCode, amount);
     },
 
     async createConversion(request) {
@@ -894,7 +912,7 @@ export function createFinancialService(input: {
         return conversionView(existing);
       }
 
-      await preflightConversion(providerCode, targetProviderCode, amount);
+      await preflightConversion(auth, providerCode, targetProviderCode, amount);
       const createdAt = now();
       const admitted = await input.crypto.reserveConversion({
         schemaVersion: 1,
