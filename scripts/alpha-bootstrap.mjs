@@ -13,6 +13,7 @@ import {
   createPostgresPlatformAgentProfileRepository,
   createPostgresPool,
   createPostgresSkillGuideRepository,
+  createPostgresSkillDistributionRepository,
   createPostgresSkillRepository,
   createPostgresUserAgentPreferenceRepository,
   runMigrations,
@@ -260,6 +261,113 @@ const supportSkills = [
   }),
 ];
 
+const personalSkills = [
+  authoredSkill({
+    key: "business.plan",
+    displayName: "Business Planning",
+    description:
+      "Turns a business idea or existing business problem into a practical structured plan.",
+    activationExamples: [
+      "Help me create a business plan",
+      "Plan how I can launch this business",
+    ],
+    negativeActivationExamples: [
+      "Do not make a business plan",
+      "I only want a quick definition",
+    ],
+    capability: "business.plan.draft",
+    guide: {
+      triggerDescription:
+        "Use when the user wants to plan, improve, validate, or structure a business or commercial idea.",
+      instructions: [
+        "# Business Planning",
+        "Start from the user's actual goal, market, resources, constraints, and current stage.",
+        "Produce practical decisions rather than generic entrepreneurship advice.",
+        "When information is missing, make clearly labeled assumptions instead of inventing facts.",
+        "Structure the result around customer, value proposition, offer, acquisition, operations, costs, revenue, risks, and next actions when those sections are relevant.",
+        "Do not claim current market facts or competitor research unless a Tool or runtime evidence actually supplied them.",
+      ].join("\n\n"),
+    },
+    discovery: {
+      priority: 75,
+      phrases: ["business plan", "plan my business", "business idea"],
+      allOf: [["start", "business"], ["improve", "business"]],
+      anyOf: ["business", "startup", "revenue", "customer", "market"],
+      noneOf: ["do not make a business plan"],
+      minScore: 20,
+    },
+  }),
+  authoredSkill({
+    key: "documents.cv-draft",
+    displayName: "CV Drafting",
+    description:
+      "Produces and improves clear CV or résumé content from information the user provides.",
+    activationExamples: [
+      "Write my CV",
+      "Improve my resume",
+    ],
+    negativeActivationExamples: [
+      "Do not edit my CV",
+      "I am not asking for a resume",
+    ],
+    capability: "documents.cv.draft",
+    guide: {
+      triggerDescription:
+        "Use when the user wants to create, rewrite, improve, or tailor CV or résumé content.",
+      instructions: [
+        "# CV Drafting",
+        "Use only facts supplied by the user or present in authorized context.",
+        "Never invent employers, qualifications, dates, achievements, metrics, or references.",
+        "Prioritize concise evidence-based accomplishment language and a structure appropriate to the target role.",
+        "Ask for missing critical facts only when the output would otherwise be misleading; otherwise provide a clearly marked draft with placeholders.",
+        "Do not claim a PDF/DOCX file was generated unless a file-generation Tool actually produced it.",
+      ].join("\n\n"),
+    },
+    discovery: {
+      priority: 80,
+      phrases: ["write my cv", "improve my resume", "tailor my cv"],
+      allOf: [["cv", "job"], ["resume", "job"]],
+      anyOf: ["cv", "resume", "résumé", "experience"],
+      noneOf: ["do not edit my cv"],
+      minScore: 20,
+    },
+  }),
+  authoredSkill({
+    key: "content.social-draft",
+    displayName: "Social Content Drafting",
+    description:
+      "Drafts platform-appropriate social posts and content ideas without pretending they were published.",
+    activationExamples: [
+      "Write a Facebook post for me",
+      "Create social media content",
+    ],
+    negativeActivationExamples: [
+      "Do not write a social post",
+      "Publish this exact post without changes",
+    ],
+    capability: "content.social.draft",
+    guide: {
+      triggerDescription:
+        "Use when the user wants to draft, rewrite, adapt, or brainstorm social-media content.",
+      instructions: [
+        "# Social Content Drafting",
+        "Match the audience, platform, language, tone, and objective the user provides.",
+        "Keep claims grounded in supplied context and avoid fabricating fresh facts, results, endorsements, or testimonials.",
+        "Return publish-ready copy when enough context exists; otherwise make assumptions explicit.",
+        "Drafting is not publishing. Never say content was posted, scheduled, or sent unless an authorized Tool returns evidence.",
+      ].join("\n\n"),
+    },
+    discovery: {
+      priority: 70,
+      phrases: ["facebook post", "social media content", "write a post"],
+      allOf: [["write", "post"], ["create", "content"]],
+      anyOf: ["facebook", "instagram", "linkedin", "social", "caption", "post"],
+      noneOf: ["do not write a social post"],
+      minScore: 20,
+    },
+  }),
+];
+
 const characters = [
   {
     key: "gwani",
@@ -358,6 +466,7 @@ try {
 
   const skills = createPostgresSkillRepository(pool);
   const guides = createPostgresSkillGuideRepository(pool);
+  const distribution = createPostgresSkillDistributionRepository(pool);
   const skillAssignments =
     createPostgresCharacterSkillAssignmentRepository(pool);
   const presentations = createPostgresAgentPresentationRepository(pool);
@@ -365,8 +474,9 @@ try {
   const preferences = createPostgresUserAgentPreferenceRepository(pool);
   const commerce = createPostgresCommerceRepository(pool);
 
-  await skills.registerBatch(supportSkills.map((item) => item.version));
-  for (const item of supportSkills) {
+  const allSkills = [...supportSkills, ...personalSkills];
+  await skills.registerBatch(allSkills.map((item) => item.version));
+  for (const item of allSkills) {
     await guides.putGuide(item.guide);
     await skills.putReadiness({
       expectedRevision: null,
@@ -377,6 +487,27 @@ try {
         reasonCode: null,
         checkedAt: at,
       },
+    });
+  }
+
+  for (const [index, item] of supportSkills.entries()) {
+    await distribution.put({
+      schemaVersion: 1,
+      skillVersionId: item.version.skillVersionId,
+      audiences: ["platform-support"],
+      installMode: "automatic",
+      category: "masanawa-support",
+      sortOrder: index,
+    });
+  }
+  for (const [index, item] of personalSkills.entries()) {
+    await distribution.put({
+      schemaVersion: 1,
+      skillVersionId: item.version.skillVersionId,
+      audiences: ["personal-clone"],
+      installMode: "optional",
+      category: "productivity",
+      sortOrder: index,
     });
   }
 
@@ -503,6 +634,9 @@ try {
       `Default support Character: Gwani / ${gwani.characterId}`,
       "Seeded development Credits: 1000",
       `Assigned support Skills: ${supportSkills
+        .map((item) => item.version.key)
+        .join(", ")}`,
+      `Optional personal-clone Skills: ${personalSkills
         .map((item) => item.version.key)
         .join(", ")}`,
       "",
