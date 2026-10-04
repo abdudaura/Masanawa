@@ -2,9 +2,9 @@ import type { TenantId } from "@masanawa/contracts";
 import type { AgentAdminAuthorizer } from "./agent_admin.js";
 
 export interface PlatformAdminQuery {
-  query<T extends Record<string, unknown> = Record<string, unknown>>(
+  query<T extends object = Record<string, unknown>>(
     text: string,
-    values?: readonly unknown[],
+    values?: unknown[],
   ): Promise<{ readonly rows: readonly T[]; readonly rowCount?: number | null }>;
 }
 
