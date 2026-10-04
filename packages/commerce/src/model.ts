@@ -8,6 +8,7 @@ import {
   type LedgerEntryId,
   type OfferId,
   type QuoteId,
+  type RequestId,
   type SkillVersionId,
   type TenantId,
   type UserId,
@@ -87,6 +88,45 @@ export interface CommerceQuote {
   readonly platformMarginCredits: number;
   readonly expiresAt: Instant;
   readonly createdAt: Instant;
+}
+
+/** Supplied by an authorized caller; retries preserve the same request identity. */
+export interface AgentFloatAllocationCommand {
+  readonly schemaVersion: 1;
+  readonly tenantId: TenantId;
+  readonly userId: UserId;
+  readonly characterId: CharacterId;
+  readonly requestId: RequestId;
+  readonly amountCredits: number;
+}
+
+export interface AgentFloatAllocation extends AgentFloatAllocationCommand {
+  readonly ledgerEntryId: LedgerEntryId;
+  readonly createdAt: Instant;
+}
+
+export function normalizeAgentFloatAllocationCommand(
+  input: AgentFloatAllocationCommand,
+): AgentFloatAllocationCommand {
+  if (input.schemaVersion !== 1) throw new TypeError("Unsupported Float allocation schema");
+  const amountCredits = credits(input.amountCredits, "allocation.amountCredits", false);
+  if (amountCredits > 1_000_000_000) throw new RangeError("allocation.amountCredits exceeds limit");
+  return Object.freeze({
+    schemaVersion: 1,
+    tenantId: parseCanonicalId("tenant", input.tenantId),
+    userId: parseCanonicalId("user", input.userId),
+    characterId: parseCanonicalId("character", input.characterId),
+    requestId: parseCanonicalId("request", input.requestId),
+    amountCredits,
+  });
+}
+
+export function normalizeAgentFloatAllocation(input: AgentFloatAllocation): AgentFloatAllocation {
+  return Object.freeze({
+    ...normalizeAgentFloatAllocationCommand(input),
+    ledgerEntryId: parseCanonicalId("ledger-entry", input.ledgerEntryId),
+    createdAt: toInstant(input.createdAt),
+  });
 }
 
 const keyPattern = /^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u;

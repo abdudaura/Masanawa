@@ -8,7 +8,7 @@
 - Selected scope: persistent Agent Float allocation commands with atomic ledger transfer
   and replay/conflict protection inside the canonical Commerce repository.
 - Last update: 2026-10-04
-- Current step: publish/verify ownership, then resume the financial-command idempotency gap.
+- Current step: implementation complete; review and coordinated integration pending.
 
 ## Exact owned paths
 
@@ -42,10 +42,27 @@ were present in main/open PRs at selection time. Recheck before writes and commi
 
 ## Status and handoff
 
-- Implemented: not yet.
-- Verified: ownership publication pending; no implementation verification yet.
-- Deployed: no.
-- Planned evidence: strict Commerce/Postgres typechecks; atomic replay, altered payload,
-  cross-tenant/user isolation, insufficient-funds rollback and restart tests.
-- Known limits: provider billing/crypto, per-job reserves/refunds, teaching/channel
-  implementation and roadmap completion are outside this claim.
+- Implemented: immutable tenant/user/RequestId command receipts, atomic customer-credit
+  to Agent Float transfer, exact replay, changed-payload conflict rejection and scoped reads.
+- Verified: claim published and read back before edits; 39 Commerce/architecture tests;
+  8 SQL persistence acceptance cases on PGlite PostgreSQL 18.3; Commerce, Postgres and
+  Gateway strict typechecks; Gateway dependency build; whitespace checks.
+- PGlite serializes its connections. Separate-session PostgreSQL concurrency qualification
+  remains required using the checked-in integration suite and MASANAWA_TEST_DATABASE_URL.
+- Deployed: no. Migration 0004 is new and unapplied. Tasks 133–134 remain open.
+- Rechecked: main remains at the base SHA; PRs 89, 91 and 44 do not overlap owned paths.
+- Implementation commit: recorded in the PR handoff after publication.
+
+### Next integration step
+
+Integration owner: check current creator authority and one-clone constraints, then call
+allocateAgentFloat with one stable canonical RequestId for each confirmed intent.
+Persist that ID across network retries, restarts and channel retries. Replay identical
+terms with the same ID; changed terms require new confirmation and a new ID.
+Failed atomic commands leave no receipt and can be retried after funding.
+The existing Gateway allocation flow still uses the old transfer port and must be
+adopted by its owning window before any UI idempotency claim. Do not bypass authorization.
+
+This window retains only the exact paths above until merge or explicit transfer.
+Provider billing/crypto, reserves/refunds, teaching/channel implementation and roadmap
+completion remain outside this claim.

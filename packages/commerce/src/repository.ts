@@ -1,10 +1,13 @@
 import type {
   CharacterId,
   OfferId,
+  RequestId,
   TenantId,
   UserId,
 } from "@masanawa/contracts";
 import type {
+  AgentFloatAllocation,
+  AgentFloatAllocationCommand,
   CommerceAccountRef,
   CommerceFulfillmentAdmission,
   CommerceFulfillmentCompletion,
@@ -14,6 +17,13 @@ import type {
 } from "./model.js";
 
 export interface CommerceRepository {
+  /** Atomic command/ledger custody. Does not grant Character ownership or authority. */
+  allocateAgentFloat(input: AgentFloatAllocationCommand): Promise<AgentFloatAllocation>;
+  readAgentFloatAllocation(input: {
+    readonly tenantId: TenantId;
+    readonly userId: UserId;
+    readonly requestId: RequestId;
+  }): Promise<AgentFloatAllocation | null>;
   registerOfferRevision(input: OfferRevision): Promise<OfferRevision>;
   readOfferRevision(input: {
     readonly tenantId: TenantId;

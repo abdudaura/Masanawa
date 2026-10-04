@@ -1,5 +1,7 @@
 import {
   assertFulfillmentAdmissionTransfers,
+  normalizeAgentFloatAllocation,
+  normalizeAgentFloatAllocationCommand,
   planFulfillmentSettlement,
   normalizeCommerceAccountRef,
   normalizeCommerceFulfillmentAdmission,
@@ -8,6 +10,7 @@ import {
   normalizeCommerceQuote,
   normalizeOfferRevision,
   type CommerceAccountRef,
+  type AgentFloatAllocation,
   type CommerceFulfillmentAdmission,
   type CommerceFulfillmentCompletion,
   type CommerceLedgerTransfer,
@@ -16,7 +19,7 @@ import {
   type OfferRevision,
 } from "@masanawa/commerce";
 import { canonicalJson } from "@masanawa/security";
-import { PlatformError } from "@masanawa/contracts";
+import { createCanonicalId, nowInstant, parseCanonicalId, PlatformError } from "@masanawa/contracts";
 import type { Pool } from "pg";
 import { withTransaction } from "../transaction.js";
 
@@ -144,6 +147,68 @@ async function postTransferWithClient(
 
 export function createPostgresCommerceRepository(pool: Pool): CommerceRepository {
   return Object.freeze<CommerceRepository>({
+    async allocateAgentFloat(input) {
+      const command = normalizeAgentFloatAllocationCommand(input);
+      return withTransaction(pool, async (client) => {
+        await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+          `commerce:float-allocation:${command.tenantId}:${command.userId}:${command.requestId}`,
+        ]);
+        const existing = await client.query<{ definition: AgentFloatAllocation }>(
+          `SELECT definition FROM commerce.agent_float_allocations
+           WHERE tenant_id=$1 AND user_id=$2 AND request_id=$3`,
+          [command.tenantId, command.userId, command.requestId],
+        );
+        if (existing.rows[0]) {
+          const allocation = normalizeAgentFloatAllocation(existing.rows[0].definition);
+          if (canonicalJson(normalizeAgentFloatAllocationCommand(allocation)) !== canonicalJson(command)) {
+            throw conflict("commerce.float_allocation_replay_conflict",
+              "Float allocation request identity was reused with different terms");
+          }
+          return allocation;
+        }
+
+        const allocation = normalizeAgentFloatAllocation({
+          ...command, ledgerEntryId: createCanonicalId("ledger-entry"), createdAt: nowInstant(),
+        });
+        await postTransferWithClient(client, {
+          schemaVersion: 1,
+          tenantId: allocation.tenantId,
+          ledgerEntryId: allocation.ledgerEntryId,
+          debit: { tenantId: allocation.tenantId, kind: "customer-credit",
+            userId: allocation.userId, characterId: null },
+          credit: { tenantId: allocation.tenantId, kind: "agent-float",
+            userId: allocation.userId, characterId: allocation.characterId },
+          amountCredits: allocation.amountCredits,
+          reason: "agent-float-topup", quoteId: null, fulfillmentId: null,
+          createdAt: allocation.createdAt,
+        });
+        await client.query(
+          `INSERT INTO commerce.agent_float_allocations(
+             tenant_id, user_id, request_id, character_id, amount_credits,
+             ledger_entry_id, definition, created_at
+           ) VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8)`,
+          [allocation.tenantId, allocation.userId, allocation.requestId,
+            allocation.characterId, allocation.amountCredits, allocation.ledgerEntryId,
+            canonicalJson(allocation), allocation.createdAt],
+        );
+        return allocation;
+      });
+    },
+
+    async readAgentFloatAllocation(input) {
+      const tenantId = parseCanonicalId("tenant", input.tenantId);
+      const userId = parseCanonicalId("user", input.userId);
+      const requestId = parseCanonicalId("request", input.requestId);
+      return withTransaction(pool, async (client) => {
+        const result = await client.query<{ definition: AgentFloatAllocation }>(
+          `SELECT definition FROM commerce.agent_float_allocations
+           WHERE tenant_id=$1 AND user_id=$2 AND request_id=$3`,
+          [tenantId, userId, requestId],
+        );
+        return result.rows[0] ? normalizeAgentFloatAllocation(result.rows[0].definition) : null;
+      }, { isolation: "repeatable read", readOnly: true });
+    },
+
     async registerOfferRevision(input) {
       const offer = normalizeOfferRevision(input);
       return withTransaction(pool, async (client) => {
