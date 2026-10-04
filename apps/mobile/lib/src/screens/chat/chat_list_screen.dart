@@ -101,6 +101,67 @@ class ChatListScreen extends ConsumerWidget {
     }
   }
 
+  Future<void> _showArchived(
+    BuildContext context,
+    WidgetRef ref,
+    AgentDirectoryState directory,
+  ) async {
+    final archived = ref
+        .read(aiChatProvider)
+        .threads
+        .values
+        .where((thread) => thread.archived)
+        .where((thread) => directory.find(thread.characterId) != null)
+        .toList()
+      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: archived.isEmpty
+            ? const Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(child: Text('No archived chats')),
+              )
+            : ListView.builder(
+                shrinkWrap: true,
+                itemCount: archived.length,
+                itemBuilder: (_, index) {
+                  final thread = archived[index];
+                  final agent = directory.find(thread.characterId)!;
+                  return ListTile(
+                    leading: const Icon(Icons.archive_outlined),
+                    title: Text(
+                      thread.title?.trim().isNotEmpty == true
+                          ? thread.title!
+                          : agent.displayName,
+                    ),
+                    subtitle: Text(
+                      _snippet(thread),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: IconButton(
+                      tooltip: 'Unarchive',
+                      icon: const Icon(Icons.unarchive_outlined),
+                      onPressed: () {
+                        ref
+                            .read(aiChatProvider.notifier)
+                            .toggleArchive(thread.characterId);
+                        Navigator.pop(sheetContext);
+                      },
+                    ),
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      context.push('/chat/${thread.characterId}');
+                    },
+                  );
+                },
+              ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final u = context.masanawa;
@@ -124,6 +185,12 @@ class ChatListScreen extends ConsumerWidget {
         automaticallyImplyLeading: false,
         title: const MasanawaWordmark(light: true),
         actions: [
+          if (chat.threads.values.any((t) => t.archived))
+            IconButton(
+              tooltip: 'Archived chats',
+              icon: const Icon(Icons.archive_outlined),
+              onPressed: () => _showArchived(context, ref, directory),
+            ),
           IconButton(
             tooltip: 'Agents',
             icon: const Icon(Icons.groups_outlined),
