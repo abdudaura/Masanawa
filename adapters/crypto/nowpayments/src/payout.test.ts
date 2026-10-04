@@ -59,6 +59,15 @@ describe("NOWPayments payout client", () => {
     })).rejects.toThrow("nowpayments.payout.address.invalid");
   });
 
+  it("rejects a representable seven-decimal fee quote before provider access", async () => {
+    const fetch = vi.fn();
+    await expect(client(fetch).getPayoutFeeEstimate({
+      currency: "TRX",
+      amount: "1.1234567",
+    })).rejects.toThrow("nowpayments.payout.amount.invalid");
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   it("returns exact current network fee and payout minimum evidence", async () => {
     const fetch = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ currency: "trx", fee: "0.123400" })))
