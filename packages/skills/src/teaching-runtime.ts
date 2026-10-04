@@ -264,9 +264,6 @@ export function createTeachingSelectionActionBinding(input: {
     rubric.skillVersionId,
   );
   const expiresAt = toInstant(input.expiresAt);
-  if (Date.parse(expiresAt) <= Date.now()) {
-    throw new TypeError("Teaching action binding must expire in the future");
-  }
 
   const payload = teachingActionBindingPayload({
     actionKey,
