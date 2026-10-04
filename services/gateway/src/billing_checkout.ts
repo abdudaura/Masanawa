@@ -344,7 +344,8 @@ export function createBillingCheckoutService(input: Readonly<{
       ["successful","completed-bank-transfer","completed-momo","completed-mpgs",
        "completed-offline","completed-preauth"].includes(status);
 
-    if (quote.state === "refund-pending") {
+    const newlyClaimed = quote.state === "refund-pending";
+    if (newlyClaimed) {
       quote = await input.quotes.claimRefundDispatch({
         tenantId: owner.tenantId,
         userId: owner.userId,
@@ -355,14 +356,15 @@ export function createBillingCheckoutService(input: Readonly<{
     }
 
     if (quote.state === "refund-dispatching") {
-      // Persist-before-send prevents an automatic duplicate refund if the POST
-      // outcome is unknown. First reconcile any provider-side refund by the
-      // original transaction ID.
-      const existing = await input.funding.findRefund({
-        transactionId: quote.providerTransactionId,
-        ...(signal ? { signal } : {}),
-      });
-      if (existing) {
+      // A pre-existing dispatching state means an earlier POST may already have
+      // reached Flutterwave. Such calls are reconciliation-only forever; an
+      // empty/lagging refund list is not proof that another POST is safe.
+      if (!newlyClaimed) {
+        const existing = await input.funding.findRefund({
+          transactionId: quote.providerTransactionId,
+          ...(signal ? { signal } : {}),
+        });
+        if (!existing) return quote;
         quote = await input.quotes.recordRefundInitiated({
           tenantId: owner.tenantId,
           userId: owner.userId,
@@ -384,6 +386,8 @@ export function createBillingCheckoutService(input: Readonly<{
         return quote;
       }
 
+      // Only the caller that atomically claimed refund-pending may issue the
+      // external refund request.
       const receipt = await input.funding.refund({
         transactionId: quote.providerTransactionId,
         amount: formatNgnKobo(quote.totalAmountKobo),
