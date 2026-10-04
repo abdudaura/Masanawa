@@ -105,7 +105,7 @@ export function createGeminiAlphaInferenceProvider(input: {
       let response: Response;
       try {
         response = await fetchImpl(
-        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:${controls?.onTextDelta ? "streamGenerateContent?alt=sse" : "generateContent"}`,
         {
           method: "POST",
           ...(controls ? { signal: controls.signal } : {}),
@@ -147,19 +147,68 @@ export function createGeminiAlphaInferenceProvider(input: {
       }
       let text: string;
       try {
-        const payload = (await response.json()) as GeminiResponse;
-        const parts = payload.candidates?.[0]?.content?.parts;
-        if (!Array.isArray(parts)) throw new TypeError("Invalid response");
-        text = parts
-          .filter((part) => part && part.thought !== true)
-          .map((part) => {
-            if (part.text !== undefined && typeof part.text !== "string") {
-              throw new TypeError("Invalid response");
+        if (controls?.onTextDelta) {
+          if (!response.body) throw new TypeError("Missing response body");
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let pending = "";
+          let assembled = "";
+
+          const accept = async (line: string) => {
+            const trimmed = line.trim();
+            if (!trimmed.startsWith("data:")) return;
+            const json = trimmed.slice(5).trim();
+            if (!json || json === "[DONE]") return;
+            const payload = JSON.parse(json) as GeminiResponse;
+            const parts = payload.candidates?.[0]?.content?.parts;
+            if (!Array.isArray(parts)) return;
+            const delta = parts
+              .filter((part) => part && part.thought !== true)
+              .map((part) => {
+                if (part.text !== undefined && typeof part.text !== "string") {
+                  throw new TypeError("Invalid response");
+                }
+                return part.text ?? "";
+              })
+              .join("");
+            if (!delta) return;
+            assembled += delta;
+            if (assembled.length > 128_000) {
+              throw new TypeError("Response too large");
             }
-            return part.text ?? "";
-          })
-          .join("")
-          .trim();
+            await controls.onTextDelta!(delta);
+          };
+
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            pending += decoder.decode(value, { stream: true });
+            let newline = pending.indexOf("\n");
+            while (newline >= 0) {
+              const line = pending.slice(0, newline);
+              pending = pending.slice(newline + 1);
+              await accept(line);
+              newline = pending.indexOf("\n");
+            }
+          }
+          pending += decoder.decode();
+          if (pending.trim()) await accept(pending);
+          text = assembled.trim();
+        } else {
+          const payload = (await response.json()) as GeminiResponse;
+          const parts = payload.candidates?.[0]?.content?.parts;
+          if (!Array.isArray(parts)) throw new TypeError("Invalid response");
+          text = parts
+            .filter((part) => part && part.thought !== true)
+            .map((part) => {
+              if (part.text !== undefined && typeof part.text !== "string") {
+                throw new TypeError("Invalid response");
+              }
+              return part.text ?? "";
+            })
+            .join("")
+            .trim();
+        }
         if (!text || text.length > 128_000) throw new TypeError("Invalid response");
       } catch {
         throw new AgentInferenceError("inference.invalid_response");
