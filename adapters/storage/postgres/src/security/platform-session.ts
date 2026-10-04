@@ -143,12 +143,14 @@ export function createPostgresPlatformSessionRepository(pool: Pool): PlatformSes
           );
           return row.attempts + 1 >= row.max_attempts ? "locked" as const : "invalid" as const;
         }
-        await client.query(
-          `UPDATE security.platform_otp_challenges
-              SET consumed_at=$4
-            WHERE tenant_id=$1 AND channel=$2 AND identifier=$3`,
-          [input.tenantId,input.channel,input.identifier,input.consumedAt],
-        );
+        if (input.consume !== false) {
+          await client.query(
+            `UPDATE security.platform_otp_challenges
+                SET consumed_at=$4
+              WHERE tenant_id=$1 AND channel=$2 AND identifier=$3`,
+            [input.tenantId,input.channel,input.identifier,input.consumedAt],
+          );
+        }
         return "accepted" as const;
       });
     },
