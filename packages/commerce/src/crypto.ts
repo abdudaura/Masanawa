@@ -202,6 +202,10 @@ export interface CryptoRepository {
     readonly userId: UserId;
     readonly requestId: RequestId;
   }): Promise<CryptoIntent | null>;
+  readIntentByRequestId(input: {
+    readonly tenantId: TenantId;
+    readonly requestId: RequestId;
+  }): Promise<CryptoIntent | null>;
   listIntents(input: CryptoIntentHistoryQuery): Promise<readonly CryptoIntent[]>;
   bindProviderPayment(input: {
     readonly tenantId: TenantId;
