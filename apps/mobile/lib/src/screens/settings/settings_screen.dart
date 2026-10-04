@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../state/ai_chat_state.dart';
+import '../../state/agent_directory_state.dart';
 import '../../state/session_state.dart';
+import '../../core/providers.dart';
 import '../../theme/masanawa_theme.dart';
 import '../../tokens/masanawa_tokens.dart';
 
@@ -19,6 +21,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _notifications = true;
+  String? _savingDefaultAgentId;
 
   @override
   Widget build(BuildContext context) {
@@ -27,6 +30,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final user = session is SessionSignedIn ? session.user : null;
     final name = user?.name ?? 'Citizen';
     final contact = user?.phone ?? user?.email ?? 'No contact saved';
+    final directory = ref.watch(agentDirectoryProvider);
+    final supportAgents = directory.agents
+        .where((agent) => agent.supportAgent)
+        .toList(growable: false);
+    String? selectedSupportAgentId;
+    for (final agent in supportAgents) {
+      if (agent.defaultPlatformAgent) {
+        selectedSupportAgentId = agent.characterId;
+        break;
+      }
+    }
 
     return Scaffold(
       backgroundColor: u.surfaceBg,
@@ -97,6 +111,88 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ),
           const SizedBox(height: 16),
+          if (supportAgents.isNotEmpty) ...[
+            _Card(children: [
+              ListTile(
+                leading: Icon(Icons.support_agent_outlined, color: u.brand),
+                title: const Text('Default Masanawa agent'),
+                subtitle: const Text(
+                  'Choose who handles support, onboarding and platform guidance',
+                ),
+              ),
+              const Divider(height: 1),
+              for (var index = 0; index < supportAgents.length; index++) ...[
+                Builder(
+                  builder: (context) {
+                    final agent = supportAgents[index];
+                    final selected = agent.defaultPlatformAgent;
+                    final saving = _savingDefaultAgentId == agent.characterId;
+                    final voice = agent.voiceName == null ||
+                            agent.voiceName!.isEmpty
+                        ? null
+                        : agent.voiceName;
+                    return RadioListTile<String>(
+                      value: agent.characterId,
+                      groupValue: selectedSupportAgentId,
+                      onChanged: saving
+                          ? null
+                          : (value) async {
+                              if (value == null || selected) return;
+                              setState(() => _savingDefaultAgentId = value);
+                              try {
+                                await ref
+                                    .read(agentDirectoryTransportProvider)
+                                    .setDefaultPlatformAgent(value);
+                                await ref
+                                    .read(agentDirectoryProvider.notifier)
+                                    .refresh();
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        '${agent.displayName} is now your default Masanawa agent',
+                                      ),
+                                    ),
+                                  );
+                                }
+                              } catch (_) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Could not update your default agent. Please try again.',
+                                      ),
+                                    ),
+                                  );
+                                }
+                              } finally {
+                                if (mounted) {
+                                  setState(() => _savingDefaultAgentId = null);
+                                }
+                              }
+                            },
+                      secondary: CircleAvatar(
+                        backgroundColor: u.brand.withValues(alpha: 0.12),
+                        child: Text(
+                          agent.initial,
+                          style: TextStyle(color: u.brand),
+                        ),
+                      ),
+                      title: Text(agent.displayName),
+                      subtitle: Text(
+                        voice == null
+                            ? agent.roleLabel
+                            : '${agent.roleLabel} · Gemini ${voice}',
+                      ),
+                    );
+                  },
+                ),
+                if (index != supportAgents.length - 1)
+                  const Divider(height: 1),
+              ],
+            ]),
+            const SizedBox(height: 16),
+          ],
           _Card(children: [
             SwitchListTile(
               secondary: Icon(Icons.notifications_outlined, color: u.brand),
