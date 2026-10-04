@@ -206,10 +206,30 @@ class MasanawaAgentTransport implements AgentTransport {
     if (reply is! String || reply.isEmpty) {
       throw const ApiException('Agent media service unavailable');
     }
+    final rawParts = data['parts'];
+    final parts = <AgentMessagePart>[];
+    if (rawParts is List) {
+      for (final raw in rawParts) {
+        if (raw is Map) {
+          try {
+            parts.add(AgentMessagePart.fromJson(raw.cast<String, dynamic>()));
+          } catch (_) {}
+        }
+      }
+    }
     final runId = data['agentRunId'];
+    final audioBase64 = data['audioBase64'];
+    final audioMimeType = data['audioMimeType'];
+    final audioDurationMs = data['audioDurationMs'];
     return AgentTurnResult(
       text: reply,
+      parts: List.unmodifiable(parts),
       agentRunId: runId is String && runId.isNotEmpty ? runId : null,
+      audioBytes: audioBase64 is String && audioBase64.isNotEmpty
+          ? base64Decode(audioBase64)
+          : null,
+      audioMimeType: audioMimeType is String ? audioMimeType : null,
+      audioDurationMs: audioDurationMs is num ? audioDurationMs.round() : null,
     );
   }
 
