@@ -99,6 +99,7 @@ export function createAgentConversationService(input: {
           agentRunId,
           characterSessionId,
           characterVersionId: session.characterVersionId,
+          skillVersionIds: session.bindings.skillVersionIds,
           presentation: admission.presentation,
           input: Object.freeze({ kind: "text" as const, text }),
         });
@@ -187,6 +188,7 @@ export function createAgentConversationService(input: {
           agentRunId,
           characterSessionId,
           characterVersionId: session.characterVersionId,
+          skillVersionIds: session.bindings.skillVersionIds,
           presentation: admission.presentation,
           input: Object.freeze({
             kind: "media" as const,
