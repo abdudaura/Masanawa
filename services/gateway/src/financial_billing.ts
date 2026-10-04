@@ -65,17 +65,20 @@ export function createBillingFinancialService(input: Readonly<{
   flutterwaveSecretKey: string;
   flutterwaveWebhookHash: string;
   flutterwaveWebhookUrl: string;
+  providerClient?: FlutterwaveBillsClient;
 }>): BillingFinancialService {
   const secretKey = input.flutterwaveSecretKey.trim();
   const webhookHash = input.flutterwaveWebhookHash.trim();
   if (!secretKey) throw new Error("flutterwave.secret_key.required");
   if (!webhookHash) throw new Error("flutterwave.webhook_hash.required");
 
-  const provider = new FlutterwaveBillsClient({
-    secretKey,
-    transport: new FlutterwaveHttpTransport(),
-    country: "NG",
-  });
+  const provider =
+    input.providerClient ??
+    new FlutterwaveBillsClient({
+      secretKey,
+      transport: new FlutterwaveHttpTransport(),
+      country: "NG",
+    });
   const callbackUrl = (() => {
     const url = new URL(input.flutterwaveWebhookUrl);
     if (url.protocol !== "https:") throw new Error("flutterwave.webhook_url.https_required");
@@ -107,15 +110,20 @@ export function createBillingFinancialService(input: Readonly<{
 
     async purchase(request) {
       const identity = await input.authorizer.authorize({ authorizationHeader: request.authorizationHeader });
+      const items = await provider.listItems(request.billerCode, request.signal);
+      const selected = items.find((item) => item.itemCode === request.itemCode);
+      if (!selected || selected.billerCode !== request.billerCode) {
+        throw new Error("financial.billing.catalog_item_unavailable");
+      }
       const service = orchestrator(identity);
       const prepared = await service.prepare({
         fulfillmentReference: request.requestId,
-        billerCode: request.billerCode,
-        itemCode: request.itemCode,
-        itemName: request.itemName,
+        billerCode: selected.billerCode,
+        itemCode: selected.itemCode,
+        itemName: selected.name,
         customerId: request.customerId,
         amount: request.amount,
-        catalogAmount: request.catalogAmount,
+        catalogAmount: selected.amount,
         ...(request.recipientValidation === undefined
           ? {}
           : { recipientValidation: request.recipientValidation }),

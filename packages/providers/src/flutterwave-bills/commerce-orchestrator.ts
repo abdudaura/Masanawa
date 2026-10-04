@@ -98,6 +98,21 @@ function amount(value: string): string {
   return normalized;
 }
 
+function providerCatalogAmount(value: string): string {
+  const normalized = bounded(value, "catalog amount", 80);
+  if (!DECIMAL.test(normalized)) {
+    throw new BillingCommerceError(
+      "invalid_catalog_amount",
+      "Provider catalog amount is invalid",
+    );
+  }
+  return normalized;
+}
+
+function zeroDecimal(value: string): boolean {
+  return /^0(?:\.0+)?$/u.test(value);
+}
+
 function decimalParts(value: string): readonly [bigint, number] {
   const [whole = "0", fraction = ""] = value.split(".");
   return [BigInt(whole + fraction), fraction.length] as const;
@@ -247,8 +262,9 @@ export class BillingCommerceOrchestrator {
       amount: amount(input.amount),
       currency: "NGN" as const,
     };
-    const catalogAmount = amount(input.catalogAmount);
-    if (!decimalEqual(preparedBase.amount, catalogAmount)) {
+    const catalogAmount = providerCatalogAmount(input.catalogAmount);
+    const variableValue = zeroDecimal(catalogAmount);
+    if (!variableValue && !decimalEqual(preparedBase.amount, catalogAmount)) {
       throw new BillingCommerceError(
         "catalog_amount_mismatch",
         "Bill amount does not match the selected provider catalog item",
