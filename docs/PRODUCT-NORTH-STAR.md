@@ -19,6 +19,15 @@ Masanawa is a platform for creating persistent AI beings that can maintain ident
 
 The fundamental product unit is the **Character**.
 
+For the consumer product, Masanawa additionally distinguishes platform Characters,
+one personal clone per ordinary User, and later business Characters. A personal clone
+is still a canonical Character; "clone" is a product relationship/ownership concept,
+not a second identity system. Masanawa owns the platform, product/service catalog,
+pricing, execution standards, routing and settlement. See
+`docs/CREATOR-CLONE-ECONOMY.md`.
+
+The fundamental product unit is the **Character**.
+
 A Character is the durable identity of an AI being. It is not:
 - a prompt;
 - a model;
@@ -239,11 +248,16 @@ The target product is complete only when an agent can combine the following capa
 - keep platform memory independent of third-party app storage.
 
 ### Commerce
+- platform-owned Offer catalog linked to executable Skills/capabilities;
+- deterministic platform pricing, creator commission and Masanawa margin;
+- Customer Credits, creator Agent Float and explicit fulfillment reservations;
+- reseller/originating-Character attribution independent from fulfillment executor;
 - quote;
 - approve;
 - pay/receive where product policy permits;
-- ledger;
-- reconcile;
+- route eligible fallback fulfillment when the originating clone cannot fund/execute;
+- append-only ledger and settlement;
+- reconcile refunds/adjustments;
 - produce receipts;
 - prevent model text from becoming financial truth.
 
@@ -289,7 +303,13 @@ Files, artifacts, long-running work, approvals, calls and receipts return into t
 conversation as typed result parts. Ordinary users should not need top-level Skills,
 Tools, Workflows, Runs, Files or Devices dashboards to get work done.
 
-See `docs/MOBILE-AGENT-EXPERIENCE.md`.
+Gwani and Gwana are peer platform/support Characters with the same role and eligible
+capability surface. Gwani is the default new-user platform/support Character and uses
+the configured Gemini voice preference **Bodi**; Gwana uses **Sulafat**. Users may
+change the default platform/support Character in Settings. Voice preference is
+presentation/provider configuration, not Character identity.
+
+See `docs/MOBILE-AGENT-EXPERIENCE.md` and `docs/CREATOR-CLONE-ECONOMY.md`.
 
 ## 6. The Agent Loop
 
@@ -346,6 +366,15 @@ Implementation should be prioritized by whether it makes these experiences real.
 8. A world event changes shared Character life state without leaking private relationship memory.
 9. A consequential action has an auditable operation, authority, provider/device receipt and reconciliation path.
 10. Replacing the model, phone or channel does not erase the Character.
+11. A nontechnical user can create one personal clone conversationally, enable a
+    commercial Skill without seeing Tool/provider internals, and share the clone.
+12. A customer can buy an Offer through a creator's clone; if that clone lacks
+    sufficient Agent Float or execution capacity, Masanawa can transparently route
+    fulfillment elsewhere while preserving the originating relationship and deterministic
+    creator attribution.
+13. Gwani is available as the default platform/support Character, Gwana can be selected
+    instead in Settings, and switching between them does not create a new platform
+    authority model.
 
 ## 9. Priority rule for roadmap decisions
 
