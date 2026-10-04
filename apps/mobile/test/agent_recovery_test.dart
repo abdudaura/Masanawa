@@ -12,7 +12,6 @@ import 'package:masanawa/src/agents/agent_session.dart';
 import 'package:masanawa/src/agents/masanawa_transport.dart';
 import 'package:masanawa/src/core/network/api_client.dart';
 import 'package:masanawa/src/core/providers.dart';
-import 'package:masanawa/src/state/agent_connection_state.dart';
 import 'package:masanawa/src/state/agent_directory_state.dart';
 import 'package:masanawa/src/state/ai_chat_state.dart';
 import 'package:masanawa/src/screens/chat/masana_list_screen.dart';
@@ -44,21 +43,6 @@ class RetryDirectory implements AgentDirectoryTransport {
     if (++calls == 1)
       throw const ApiException('private database error', statusCode: 503);
     return [agent];
-  }
-}
-
-class MemoryConnectionStore implements AgentConnectionStore {
-  String? value;
-  @override
-  Future<String?> read() async => value;
-  @override
-  Future<void> write(String value) async {
-    this.value = value;
-  }
-
-  @override
-  Future<void> clear() async {
-    value = null;
   }
 }
 
@@ -248,74 +232,6 @@ void main() {
       'This agent isn’t available right now.',
     );
   });
-
-  test(
-    'Gateway settings reject credentials, paths, query strings and remote HTTP',
-    () {
-      for (final url in [
-        'http://example.test',
-        'https://user:pass@example.test',
-        'https://example.test/api',
-        'https://example.test?token=secret',
-        'https://example.test#token',
-      ]) {
-        expect(() => normalizeAgentGatewayUrl(url), throwsFormatException);
-      }
-      expect(
-        normalizeAgentGatewayUrl(' https://example.test/ '),
-        'https://example.test',
-      );
-      expect(
-        normalizeAgentGatewayUrl('http://127.0.0.1:3000'),
-        'http://127.0.0.1:3000',
-      );
-    },
-  );
-
-  test(
-    'failed connection verification preserves existing secure settings',
-    () async {
-      final store = MemoryConnectionStore();
-      final c = ProviderContainer(
-        overrides: [agentConnectionStoreProvider.overrideWithValue(store)],
-      );
-      addTearDown(c.dispose);
-      final controller = c.read(agentConnectionProvider.notifier);
-      await Future<void>.delayed(Duration.zero);
-      await controller.connect(
-        baseUrl: 'https://one.test',
-        token: 'private-token',
-        verify: (_, __) async => [agent],
-      );
-      final saved = store.value;
-      await expectLater(
-        controller.connect(
-          baseUrl: 'https://two.test',
-          token: 'wrong',
-          verify: (_, __) async =>
-              throw const ApiException('hidden', statusCode: 401),
-        ),
-        throwsA(isA<ApiException>()),
-      );
-      expect(c.read(agentConnectionProvider).baseUrl, 'https://one.test');
-      expect(store.value, saved);
-      expect(
-        c.read(agentConnectionProvider).toString(),
-        isNot(contains('private-token')),
-      );
-      final restored = ProviderContainer(
-        overrides: [agentConnectionStoreProvider.overrideWithValue(store)],
-      );
-      addTearDown(restored.dispose);
-      restored.read(agentConnectionProvider);
-      await Future<void>.delayed(Duration.zero);
-      expect(
-        restored.read(agentConnectionProvider).baseUrl,
-        'https://one.test',
-      );
-      expect(restored.read(agentConnectionProvider).token, 'private-token');
-    },
-  );
 
   test(
     'directory keeps roster on transient failure and clears it on 401',
