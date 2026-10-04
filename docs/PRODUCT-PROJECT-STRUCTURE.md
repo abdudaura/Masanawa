@@ -73,6 +73,38 @@ owning packages/services.
 
 See `docs/MOBILE-AGENT-EXPERIENCE.md` and `docs/AGENT-GATEWAY-CONTRACT.md`.
 
+### 11. Keep creator/reseller economics in canonical owners
+
+The digital-twin/reseller product does not justify a separate marketplace service,
+wallet service or clone runtime.
+
+- `packages/identity` owns canonical User/Character identity and the durable basis for
+  platform/personal-clone/business ownership classification.
+- `packages/agents` owns Character runtime/configuration projections such as presentation,
+  Skill assignment and future default platform-agent preferences where appropriate; it
+  does not own money or Skill definitions.
+- `packages/skills` continues to own Skill/SkillVersion truth, certification, readiness
+  and execution composition. Retail price is not Skill truth.
+- `packages/commerce` owns Offer/pricing revisions, Customer Credits, Agent Float,
+  fulfillment reservations, reseller attribution, commissions, settlement, refunds and
+  receipts once those contracts are implemented.
+- `packages/workflows` owns durable multi-step fulfillment state.
+- Gateway/Worker compose selection and execution but do not invent another ledger or
+  catalog.
+
+The originating Character and fulfillment executor are separate facts. A personal clone
+may keep the customer relationship while another eligible executor fulfills the work.
+Insufficient Agent Float may trigger deterministic fallback without changing the visible
+conversation.
+
+Gwani and Gwana are normal platform Characters composed from these same canonical
+systems. Both have the same platform/support product role. Gwani is the default
+platform/support Character for new users; Gwana is selectable in Settings. Their Bodi
+and Sulafat Gemini voice preferences are presentation/provider configuration, not
+special identity/runtime branches.
+
+See `docs/CREATOR-CLONE-ECONOMY.md`.
+
 ## Target top-level structure
 
 - `apps/`: web, ops.
@@ -92,6 +124,10 @@ See `docs/MOBILE-AGENT-EXPERIENCE.md` and `docs/AGENT-GATEWAY-CONTRACT.md`.
 - Memory is not transcript storage.
 - Provider is not Tool.
 - Skill is not Provider-specific implementation.
+- Skill is not a retail price or creator commission.
+- Customer Credit, Agent Float and withdrawable earnings are distinct ledger concepts.
+- Originating/reseller Character is not necessarily the fulfillment executor.
+- Gwani/Gwana product defaults do not create privileged runtime classes.
 - Apps do not query domain repositories directly.
 - Services compose domain packages; they do not redefine domain truth.
 - Adapters depend inward; domain packages never depend on concrete adapters.
