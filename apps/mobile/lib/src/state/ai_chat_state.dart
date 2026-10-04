@@ -1627,7 +1627,7 @@ class AiChatController extends Notifier<AiChatState> {
     _save();
   }
 
-  void clearAll() {
+  Future<void> clearAll() async {
     final ids = <String>{...state.threads.keys, ..._bindings.keys};
     for (final id in ids) {
       _threadGenerations[id] = (_threadGenerations[id] ?? 0) + 1;
@@ -1635,17 +1635,18 @@ class AiChatController extends Notifier<AiChatState> {
     final transport = ref.read(agentTransportProvider);
     final bindings = [..._bindings.values];
     _bindings.clear();
-    for (final binding in bindings) {
-      unawaited(transport.closeSession(binding).catchError((_) {}));
-    }
-    for (final subscription in _eventSubscriptions.values) {
-      unawaited(subscription.cancel());
-    }
+    final subscriptions = [..._eventSubscriptions.values];
     _eventSubscriptions.clear();
     _eventCursors.clear();
-    unawaited(LivePcmAudio.stop());
     state = state.copyWith(threads: {}, sendingIn: {}, shellConfigs: {});
-    _save();
+    await _save();
+    await Future.wait([
+      for (final binding in bindings)
+        transport.closeSession(binding).catchError((_) {}),
+      for (final subscription in subscriptions)
+        subscription.cancel().catchError((_) {}),
+      LivePcmAudio.stop().catchError((_) {}),
+    ]);
   }
 
   List<double> _pcmWaveform(Uint8List wavBytes, {int bars = 36}) {
@@ -1679,15 +1680,31 @@ class AiChatController extends Notifier<AiChatState> {
 
   Future<File?> _threadsFile() async {
     try {
+      final session = ref.read(sessionProvider);
+      if (session is! SessionSignedIn || session.user.id.isEmpty) return null;
       final dir = await getApplicationDocumentsDirectory();
-      return File('${dir.path}/$_kThreadsFile');
+      final owner = base64Url
+          .encode(utf8.encode(session.user.id))
+          .replaceAll('=', '');
+      return File('${dir.path}/masanawa_threads_v2_$owner.json');
     } catch (_) {
       return null;
     }
   }
 
+  Future<void> _deleteLegacyThreadCache() async {
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final legacy = File('${dir.path}/$_kThreadsFile');
+      if (await legacy.exists()) await legacy.delete();
+    } catch (_) {
+      // Legacy cache is never loaded; failed deletion does not block startup.
+    }
+  }
+
   Future<void> _load() async {
     try {
+      await _deleteLegacyThreadCache();
       final file = await _threadsFile();
       if (file == null || !await file.exists()) return;
       final raw = jsonDecode(await file.readAsString());
