@@ -32,6 +32,7 @@ class _AdminShellState extends State<AdminShell> {
     _AdminSection('Operations', Icons.rule_outlined),
     _AdminSection('Providers', Icons.hub_outlined),
     _AdminSection('System', Icons.settings_suggest_outlined),
+    _AdminSection('Modules', Icons.grid_view_outlined),
     _AdminSection('Audit', Icons.fact_check_outlined),
   ];
 
@@ -45,6 +46,7 @@ class _AdminShellState extends State<AdminShell> {
         OperationsAdminPage(api: widget.api),
         ProvidersAdminPage(api: widget.api),
         SystemAdminPage(api: widget.api),
+        const ModulesAdminPage(),
         AuditAdminPage(api: widget.api),
       ];
 
