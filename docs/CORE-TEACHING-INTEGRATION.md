@@ -230,3 +230,57 @@ It does not perform readiness/authority checks itself and does not import #89's
 `selection.ts`. The runtime owner remains responsible for calling its canonical
 selection/admission machinery first. This keeps Teaching dependent on admission evidence,
 not on a second selection implementation.
+
+
+## ShellDocument v1 projection
+
+`projectTeachingToShellDocument()` maps Teaching runtime projections into the exact
+bounded primitive model already implemented by mobile PR #91. It does not invent a new
+mobile component family.
+
+Current mapping:
+- lesson step -> heading/text/card/notice;
+- single-select exercise -> heading/text/options/button;
+- feedback -> notice/detail;
+- artifact metadata -> card/detail reference presentation.
+
+For a bound single-select exercise:
+- each visible option key becomes the Shell button/node id;
+- the Shell action id is the fixed allowlisted value `teaching.select`;
+- the opaque Teaching action key becomes the Shell token;
+- the Shell document expiry is derived from the exact Teaching action expiry and a
+  conflicting caller-supplied expiry is rejected;
+- RelationshipId, SkillVersionId, rubric and correct answers never enter the ShellDocument.
+
+`resolveTeachingShellAction()` converts the resulting #91 `ShellAction` shape back
+into exactly `actionKey + selectedOptionKeys` for Teaching. It rejects non-Teaching
+action IDs, malformed scope and injected form values.
+
+ShellDocument v1 does not currently provide a native multi-select control. The Teaching
+adapter therefore refuses actionable multi-select rather than pretending independent
+buttons represent one multi-answer submission. #91 must either add an explicit bounded
+multi-select primitive/state contract or the server must choose a different pedagogical
+interaction. No silent downgrade is allowed.
+
+## WhatsApp and Telegram compact callbacks
+
+PR #92 normalizes interactive replies into a single `selectionId`. Telegram callback
+data is limited to 64 bytes, so the full Teaching action key and option cannot safely be
+serialized into provider payloads.
+
+`createTeachingChannelSingleSelectProjection()` therefore emits:
+- visible prompt/labels;
+- one compact opaque `selectionId` per option, using a caller-supplied unique token;
+- server-held `TeachingChannelSelectionBinding` records mapping each callback token to
+  the full Teaching action key, exact option key and action expiry.
+
+The common callback token format is ASCII-only and capped at 64 characters so the same
+contract works for both Telegram and WhatsApp. Provider payloads never contain
+RelationshipId, SkillVersionId, rubric, correct answers or the full action binding.
+
+On ingress, `resolveTeachingChannelSelection()` checks the server-held binding hash,
+callback identity and expiry, then returns the same opaque Teaching selection shape used
+by the app shell. Changed/tampered callbacks fail closed.
+
+This currently supports single-select only. Multi-select across messaging channels needs
+a real staged selection/commit protocol before it can be considered executable.
