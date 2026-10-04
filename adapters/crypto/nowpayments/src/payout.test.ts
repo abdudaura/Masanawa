@@ -99,6 +99,29 @@ describe("NOWPayments payout client", () => {
       .toBe("tenant.request");
   });
 
+  it("rejects non-six-digit verification codes before authentication", async () => {
+    const fetch = vi.fn();
+    await expect(client(fetch).verifyPayout({
+      payoutId: "batch-1",
+      verificationCode: "1234",
+    })).rejects.toThrow("nowpayments.payout.verification_code.invalid");
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("verifies the payout batch with a six-digit merchant code", async () => {
+    const fetch = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ token: "fixture-jwt" })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "PROCESSING" })));
+    await expect(client(fetch).verifyPayout({
+      payoutId: "batch-1",
+      verificationCode: "123456",
+    })).resolves.toEqual({ status: "processing" });
+    expect(fetch.mock.calls[1]?.[0])
+      .toBe("https://api.nowpayments.io/v1/payout/batch-1/verify");
+    expect(JSON.parse(String(fetch.mock.calls[1]?.[1]?.body)))
+      .toEqual({ verification_code: "123456" });
+  });
+
   it("reconciles a stored batch id through exact single-withdrawal evidence", async () => {
     const fetch = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ token: "fixture-jwt" })))
