@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:mime/mime.dart';
@@ -276,11 +277,21 @@ class AiChatController extends Notifier<AiChatState> {
   final Map<String, AgentSessionBinding> _bindings = {};
   int _connectionGeneration = 0;
   final Map<String, int> _threadGenerations = {};
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
+  bool _flushingQueue = false;
 
   @override
   AiChatState build() {
     scheduleMicrotask(_load);
-    ref.onDispose(() => _disposed = true);
+    _connectivitySub = Connectivity().onConnectivityChanged.listen((results) {
+      if (!results.contains(ConnectivityResult.none)) {
+        unawaited(_flushQueuedMessages());
+      }
+    });
+    ref.onDispose(() {
+      _disposed = true;
+      _connectivitySub?.cancel();
+    });
     ref.listen(agentTransportProvider, (_, __) {
       _connectionGeneration++;
       _bindings.clear();
@@ -298,9 +309,57 @@ class AiChatController extends Notifier<AiChatState> {
       openThreadId: characterId,
     );
     _save();
+    unawaited(_flushQueuedMessages());
   }
 
   void closeThread() => state = state.copyWith(clearOpen: true);
+
+  Future<bool> _offlineNow() async {
+    try {
+      final results = await Connectivity().checkConnectivity();
+      return results.contains(ConnectivityResult.none);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> _enqueueMessage(
+    String characterId,
+    AiChatMessage message,
+  ) async {
+    final thread = threadOf(characterId);
+    state = state.copyWith(
+      threads: {
+        ...state.threads,
+        characterId: thread.copyWith(
+          messages: [...thread.messages, message.copyWith(deliveryStatus: 'queued')],
+          updatedAt: DateTime.now(),
+        ),
+      },
+    );
+    await _save();
+  }
+
+  Future<void> _flushQueuedMessages() async {
+    if (_flushingQueue || _disposed) return;
+    _flushingQueue = true;
+    try {
+      for (final entry in state.threads.entries.toList()) {
+        final characterId = entry.key;
+        final queued = entry.value.messages
+            .where((m) => m.isUser && m.deliveryStatus == 'queued')
+            .toList();
+        for (final message in queued) {
+          if (_disposed) return;
+          if (await _offlineNow()) return;
+          _setDelivery(characterId, message.id, 'sending');
+          await _dispatchUserMessage(characterId, message, retry: true);
+        }
+      }
+    } finally {
+      _flushingQueue = false;
+    }
+  }
 
   Future<void> sendText(
     String characterId,
@@ -310,18 +369,20 @@ class AiChatController extends Notifier<AiChatState> {
   }) async {
     final text = rawText.trim();
     if (text.isEmpty || state.sendingIn.contains(characterId)) return;
-    await _dispatchUserMessage(
-      characterId,
-      AiChatMessage(
-        id: _newId(),
-        isUser: true,
-        text: text,
-        createdAt: DateTime.now(),
-        replyToId: replyToId,
-        replyPreview: replyPreview,
-        deliveryStatus: 'sending',
-      ),
+    final message = AiChatMessage(
+      id: _newId(),
+      isUser: true,
+      text: text,
+      createdAt: DateTime.now(),
+      replyToId: replyToId,
+      replyPreview: replyPreview,
+      deliveryStatus: 'sending',
     );
+    if (await _offlineNow()) {
+      await _enqueueMessage(characterId, message);
+      return;
+    }
+    await _dispatchUserMessage(characterId, message);
   }
 
   Future<void> sendAttachment(
@@ -330,17 +391,19 @@ class AiChatController extends Notifier<AiChatState> {
     String? caption,
   }) async {
     if (state.sendingIn.contains(characterId)) return;
-    await _dispatchUserMessage(
-      characterId,
-      AiChatMessage(
-        id: _newId(),
-        isUser: true,
-        text: (caption ?? '').trim(),
-        createdAt: DateTime.now(),
-        attachment: attachment,
-        deliveryStatus: 'sending',
-      ),
+    final message = AiChatMessage(
+      id: _newId(),
+      isUser: true,
+      text: (caption ?? '').trim(),
+      createdAt: DateTime.now(),
+      attachment: attachment,
+      deliveryStatus: 'sending',
     );
+    if (await _offlineNow()) {
+      await _enqueueMessage(characterId, message);
+      return;
+    }
+    await _dispatchUserMessage(characterId, message);
   }
 
   Future<void> _dispatchUserMessage(
