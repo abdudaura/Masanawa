@@ -21,6 +21,10 @@ export interface PostgresPlatformIdentityBridge {
     readonly userId: UserId;
     readonly characterId: CharacterId;
   }): Promise<RelationshipId>;
+  listCharacterIdsForUser(input: {
+    readonly tenantId: TenantId;
+    readonly userId: UserId;
+  }): Promise<readonly CharacterId[]>;
 }
 
 function subject(externalUserId: string): ExternalSubjectRef {
@@ -86,6 +90,23 @@ export function createPostgresPlatformIdentityBridge(
         });
         return relationship.relationshipId;
       });
+    },
+
+    async listCharacterIdsForUser(input) {
+      return withTransaction(
+        pool,
+        async (client) => {
+          const result = await client.query<{ character_id: CharacterId }>(
+            `SELECT character_id
+               FROM identity.relationships
+              WHERE tenant_id = $1 AND user_id = $2 AND state = 'active'
+              ORDER BY character_id`,
+            [input.tenantId, input.userId],
+          );
+          return Object.freeze(result.rows.map((row) => row.character_id));
+        },
+        { isolation: "repeatable read", readOnly: true },
+      );
     },
   });
 }
