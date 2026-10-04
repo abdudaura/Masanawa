@@ -82,6 +82,22 @@ describe("NOWPayments payout client", () => {
     expect(fetch.mock.calls[1]?.[0]).toBe("https://api.nowpayments.io/v1/payout-withdrawal/min-amount/trx");
   });
 
+  it("classifies payout validation rejection separately from transport ambiguity", async () => {
+    const rejectedFetch = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ token: "fixture-jwt" })))
+      .mockResolvedValueOnce(new Response("invalid payout", { status: 422 }));
+    await expect(client(rejectedFetch).createPayout({
+      amount: "10", currency: "trx", address: "address",
+    })).rejects.toThrow("nowpayments.payout.request_rejected");
+
+    const transportFetch = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ token: "fixture-jwt" })))
+      .mockRejectedValueOnce(new Error("socket reset"));
+    await expect(client(transportFetch).createPayout({
+      amount: "10", currency: "trx", address: "address",
+    })).rejects.toThrow("nowpayments.payout.transport.unavailable");
+  });
+
   it("preserves batch and individual withdrawal identity from creation", async () => {
     const fetch = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ token: "fixture-jwt" })))
