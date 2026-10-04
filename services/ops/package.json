@@ -19,7 +19,9 @@
     "@masanawa/agents": "workspace:*",
     "@masanawa/security": "workspace:*",
     "@masanawa/skills": "workspace:*",
-    "@masanawa/identity": "workspace:*"
+    "@masanawa/identity": "workspace:*",
+    "@masanawa/commerce": "workspace:*",
+    "@masanawa/world": "workspace:*"
   },
   "devDependencies": {
     "vitest": "5.0.3"
