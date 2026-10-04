@@ -515,6 +515,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       kind: 'voice',
       path: path!,
       durationMs: seconds * 1000,
+      waveform: _compactWaveform(_amplitudes),
     );
     setState(() {
       _pendingVoice = attachment;
@@ -554,6 +555,23 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     if (pending != null) {
       try { await File(pending.path).delete(); } catch (_) {}
     }
+  }
+
+  List<double> _compactWaveform(List<double> source, {int bars = 36}) {
+    if (source.isEmpty) return const [];
+    if (source.length <= bars) return List.unmodifiable(source);
+    final result = <double>[];
+    final bucket = source.length / bars;
+    for (var i = 0; i < bars; i++) {
+      final start = (i * bucket).floor();
+      final end = ((i + 1) * bucket).ceil().clamp(start + 1, source.length);
+      var peak = 0.0;
+      for (var j = start; j < end; j++) {
+        if (source[j] > peak) peak = source[j];
+      }
+      result.add(peak.clamp(0.06, 1.0).toDouble());
+    }
+    return List.unmodifiable(result);
   }
 
   String get _recClock {
@@ -2606,6 +2624,76 @@ class _DocTile extends StatelessWidget {
   }
 }
 
+class _VoiceWaveform extends StatelessWidget {
+  const _VoiceWaveform({
+    required this.values,
+    required this.progress,
+    required this.enabled,
+    required this.onSeek,
+  });
+
+  final List<double> values;
+  final double progress;
+  final bool enabled;
+  final ValueChanged<double> onSeek;
+
+  List<double> _fallback() {
+    const bars = 34;
+    return List<double>.generate(bars, (index) {
+      final wave = ((index * 17 + 11) % 23) / 23;
+      return 0.2 + (wave * 0.8);
+    }, growable: false);
+  }
+
+  void _seekFromDx(double dx, double width) {
+    if (!enabled || width <= 0) return;
+    onSeek((dx / width).clamp(0.0, 1.0).toDouble());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    final bars = values.isEmpty ? _fallback() : values;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: (details) => _seekFromDx(details.localPosition.dx, width),
+          onHorizontalDragUpdate: (details) =>
+              _seekFromDx(details.localPosition.dx, width),
+          child: SizedBox(
+            height: 34,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                for (var i = 0; i < bars.length; i++) ...[
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: Container(
+                        width: 2,
+                        height: 5 + bars[i].clamp(0.0, 1.0) * 23,
+                        decoration: BoxDecoration(
+                          color: (i / bars.length) <= progress
+                              ? u.brand
+                              : u.textMuted.withValues(alpha: .42),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (i != bars.length - 1) const SizedBox(width: 1),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 _VoiceBubbleState? _activeVoiceBubble;
 
 class _VoiceBubble extends StatefulWidget {
@@ -2794,18 +2882,11 @@ class _VoiceBubbleState extends State<_VoiceBubble> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SliderTheme(
-                  data: SliderTheme.of(context).copyWith(
-                    trackHeight: 2,
-                    thumbShape: const RoundSliderThumbShape(
-                      enabledThumbRadius: 5,
-                    ),
-                    overlayShape: SliderComponentShape.noOverlay,
-                  ),
-                  child: Slider(
-                    value: progress,
-                    onChanged: _broken ? null : _seek,
-                  ),
+                _VoiceWaveform(
+                  values: widget.attachment.waveform,
+                  progress: progress,
+                  enabled: !_broken,
+                  onSeek: _seek,
                 ),
                 Row(
                   children: [
