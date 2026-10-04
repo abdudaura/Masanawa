@@ -57,6 +57,7 @@ abstract class AgentTransport {
   Future<AgentTurnResult> sendTurn({
     required AgentSessionBinding binding,
     required String text,
+    void Function(String delta)? onTextDelta,
   });
 
   Future<AgentTurnResult> sendMediaTurn({
@@ -89,10 +90,12 @@ class PreviewAgentTransport implements AgentTransport {
   Future<AgentTurnResult> sendTurn({
     required AgentSessionBinding binding,
     required String text,
-  }) async =>
-      AgentTurnResult(
-        text: await sendPreview(text, binding.characterId),
-      );
+    void Function(String delta)? onTextDelta,
+  }) async {
+    final reply = await sendPreview(text, binding.characterId);
+    onTextDelta?.call(reply);
+    return AgentTurnResult(text: reply);
+  }
 
   @override
   Future<AgentTurnResult> sendMediaTurn({
