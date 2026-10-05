@@ -17,6 +17,7 @@ import 'package:masanawa/src/state/agent_directory_state.dart';
 import 'package:masanawa/src/state/ai_chat_state.dart';
 import 'package:masanawa/src/state/session_state.dart';
 import 'package:masanawa/src/chat/message_parts.dart';
+import 'package:masanawa/src/chat/shell_document.dart';
 import 'package:masanawa/src/screens/chat/masana_list_screen.dart';
 import 'package:masanawa/src/theme/masanawa_theme.dart';
 
