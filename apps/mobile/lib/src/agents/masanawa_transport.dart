@@ -15,7 +15,7 @@ import '../chat/shell_document.dart';
 
 const String kAgentBaseUrl = String.fromEnvironment(
   'AGENT_BASE_URL',
-  defaultValue: 'https://gateway.masanawa.com',
+  defaultValue: 'https://masanawa-gateway-production.up.railway.app',
 );
 
 const bool kAgentRuntimeEnabled = bool.fromEnvironment(
