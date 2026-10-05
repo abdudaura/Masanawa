@@ -77,10 +77,11 @@ export interface OwnerAccessQuotePort {
 }
 
 export interface OwnerAccessRequestPort {
-  create(input: {
+  createFromQuote(input: {
     readonly tenantId: TenantId;
     readonly requesterUserId: UserId;
-    readonly quote: OwnerAccessQuote;
+    readonly characterId: CharacterId;
+    readonly quoteId: string;
   }): Promise<OwnerAccessRequest>;
 
   act(input: {
@@ -117,7 +118,7 @@ export interface OwnerAccessService {
   request(input: {
     readonly authorizationHeader: string | undefined;
     readonly characterId: string;
-    readonly quote: OwnerAccessQuote;
+    readonly quoteId: string;
   }): Promise<OwnerAccessRequest>;
 
   act(input: {
@@ -184,13 +185,11 @@ export function createOwnerAccessService(input: {
         characterId,
         capability: "owner-access.request",
       });
-      if (request.quote.originatingCharacterId !== characterId) {
-        throw new Error("Owner access quote belongs to another twin");
-      }
-      return input.requests.create({
+      return input.requests.createFromQuote({
         tenantId: authority.tenantId,
         requesterUserId: authority.userId,
-        quote: request.quote,
+        characterId,
+        quoteId: requestId(request.quoteId),
       });
     },
 
