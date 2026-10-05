@@ -50,9 +50,35 @@ describe("Ops admin agent delegation", () => {
       },
     } as never;
 
-    const service = createAdminAgentDelegationService({ config, authorizer });
+    const presentations = {
+      readForCharacter: async () => ({
+        schemaVersion: 1,
+        tenantId,
+        characterId: gwaniId,
+        characterVersionId:
+          "character-version_0199cabc-1234-7abc-8def-1234567890ad",
+        displayName: "Gwani",
+        roleLabel: "Masanawa support",
+        about: "",
+        greeting: null,
+        visibleInUserApp: true,
+        sortOrder: 0,
+        revision: 1,
+      }),
+    } as never;
+    const service = createAdminAgentDelegationService({
+      config,
+      authorizer,
+      presentations,
+    });
     await expect(service.list({ authorizationHeader: "Bearer token" }))
-      .resolves.toHaveLength(1);
+      .resolves.toEqual([
+        expect.objectContaining({
+          characterId: gwaniId,
+          displayName: "Gwani",
+          ready: true,
+        }),
+      ]);
   });
 
   it("never permits configuration to disable write approval", () => {
