@@ -410,15 +410,17 @@ export function createBillingCheckoutService(input: Readonly<{
       ["successful","completed-bank-transfer","completed-momo","completed-mpgs",
        "completed-offline","completed-preauth"].includes(status);
 
-    const newlyClaimed = quote.state === "refund-pending";
-    if (newlyClaimed) {
-      quote = await input.quotes.claimRefundDispatch({
+    let newlyClaimed = false;
+    if (quote.state === "refund-pending") {
+      const claim = await input.quotes.claimRefundDispatch({
         tenantId: owner.tenantId,
         userId: owner.userId,
         quoteId: quote.quoteId,
         providerTransactionId,
         claimedAt: now(),
       });
+      quote = claim.quote;
+      newlyClaimed = claim.claimed;
     }
 
     if (quote.state === "refund-dispatching") {
