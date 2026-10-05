@@ -49,7 +49,7 @@ export function createMyTwinEconomyPerformanceReader(input: {
     throw new RangeError("My Twin summary event limit is invalid");
   }
 
-  return Object.freeze({
+  return Object.freeze<MyTwinActivitySummaryReader>({
     async readSummary(request) {
       const events = await input.events.listForOwnerTwin({
         ...request,
