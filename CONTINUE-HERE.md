@@ -88,6 +88,35 @@ and verified.
 
 Next workstream: PostgreSQL Workflows persistence and recovery semantics.
 
+
+### PostgreSQL durable Work persistence — merged 2026-10-05
+
+PR #154 merged at `39268d36ec6a4b3949c9023dac215a3cce508a74`.
+
+Implemented:
+- dedicated `workflows` PostgreSQL migration owner/schema;
+- Task, WorkflowRun and immutable WorkflowCheckpoint persistence;
+- optimistic revision conflict protection and terminal-state guards;
+- legal transitions enforced in domain code and database triggers;
+- checkpoint append is atomic with WorkflowRun checkpoint revision and exact replay-safe;
+- current policy/revocation is revalidated transaction-locally on repository operations;
+- platform product migration/readiness includes the Workflows migration owner;
+- frozen pnpm lock includes `@masanawa/workflows`;
+- recovery tests cover fresh repository instances reading persisted Work, stale revisions,
+  terminal restart rejection, checkpoint replay/conflict and stale policy rejection.
+
+Authority rule: a relationship-scoped authority may access that relationship's Work when
+`taskIds`/`workflowRunIds` are omitted; present ID lists narrow scope. Do not revert this
+to "missing list denies all."
+
+Critical remaining boundary:
+Work state now survives service/process restart, but execution does not yet automatically resume.
+Do not claim autonomous restart-safe execution until graph signature compatibility, checkpoint
+restore, executor progression, approval pause/resume and immediate current-authority revalidation
+before resumed consequential mutation are implemented.
+
+Next workstream: canonical Workflow executor/resume semantics and harness composition.
+
 ## Core teaching and ownership checkpoint — 2026-10-04
 
 Teaching is required Core: detailed adaptive lessons across topics, worked examples,
