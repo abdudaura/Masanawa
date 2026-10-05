@@ -103,9 +103,18 @@ class MemoryQuotes implements BillingQuoteRepository {
   }
 
   async claimRefundDispatch(input: Parameters<BillingQuoteRepository["claimRefundDispatch"]>[0]) {
-    if (!this.quote || this.quote.providerTransactionId !== input.providerTransactionId) throw new Error("missing");
-    this.quote = Object.freeze({ ...this.quote, state: "refund-dispatching", updatedAt: input.claimedAt });
-    return this.quote;
+    if (!this.quote || this.quote.providerTransactionId !== input.providerTransactionId) {
+      throw new Error("missing");
+    }
+    if (this.quote.state !== "refund-pending") {
+      return Object.freeze({ quote: this.quote, claimed: false });
+    }
+    this.quote = Object.freeze({
+      ...this.quote,
+      state: "refund-dispatching",
+      updatedAt: input.claimedAt,
+    });
+    return Object.freeze({ quote: this.quote, claimed: true });
   }
   async recordRefundInitiated(input: Parameters<BillingQuoteRepository["recordRefundInitiated"]>[0]) {
     if (!this.quote) throw new Error("missing");
