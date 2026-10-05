@@ -49,6 +49,21 @@ function replayTurn(command: MobileTurnCommand) {
   });
 }
 
+export interface TwinConversationObserver {
+  opened(input: {
+    readonly tenantId: string;
+    readonly userId: string;
+    readonly characterId: string;
+    readonly characterSessionId: string;
+  }): Promise<void>;
+  completed(input: {
+    readonly tenantId: string;
+    readonly userId: string;
+    readonly characterId: string;
+    readonly referenceId: string;
+  }): Promise<void>;
+}
+
 export function createAgentConversationService(input: {
   readonly sessions: CharacterSessionRepository;
   readonly runs: AgentRunRepository;
@@ -56,6 +71,7 @@ export function createAgentConversationService(input: {
   readonly strategy: AgentStrategy;
   readonly nativeAudio?: NativeAudioRenderer;
   readonly mobileShell?: MobileShellRepository;
+  readonly twinObserver?: TwinConversationObserver;
   readonly sessionDurationMs: number;
 }): AgentConversationService {
   if (
@@ -102,6 +118,12 @@ export function createAgentConversationService(input: {
         durationMs: input.sessionDurationMs,
         bindings: admission.bindings,
       });
+      await input.twinObserver?.opened({
+        tenantId: admission.scope.tenantId,
+        userId: admission.scope.userId,
+        characterId: admission.scope.characterId,
+        characterSessionId,
+      }).catch(() => undefined);
       return Object.freeze({ characterSessionId });
     },
 
@@ -207,6 +229,13 @@ export function createAgentConversationService(input: {
             },
           });
         }
+
+        await input.twinObserver?.completed({
+          tenantId: admission.scope.tenantId,
+          userId: admission.scope.userId,
+          characterId: admission.scope.characterId,
+          referenceId: request.requestId,
+        }).catch(() => undefined);
 
         const audio = await renderAudio(
           reply,
@@ -375,6 +404,20 @@ export function createAgentConversationService(input: {
             },
           });
         }
+
+        await input.twinObserver?.completed({
+          tenantId: admission.scope.tenantId,
+          userId: admission.scope.userId,
+          characterId: admission.scope.characterId,
+          referenceId: request.requestId,
+        }).catch(() => undefined);
+
+        await input.twinObserver?.completed({
+          tenantId: admission.scope.tenantId,
+          userId: admission.scope.userId,
+          characterId: admission.scope.characterId,
+          referenceId: request.requestId,
+        }).catch(() => undefined);
 
         const audio = await renderAudio(reply, request.signal);
         return Object.freeze({
