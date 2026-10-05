@@ -1653,6 +1653,28 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         builder: (_) => _LiveVoiceSheet(
           agent: agent,
           session: session!,
+          onMediaStarted: paidAdmission == null
+              ? null
+              : () async {
+                  try {
+                    await ref
+                        .read(paidVoiceControllerProvider.notifier)
+                        .mediaStarted(
+                          admissionId: paidAdmission!.admissionId,
+                        );
+                  } catch (_) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Voice usage could not be verified, so this call was ended without charging you.',
+                          ),
+                        ),
+                      );
+                    }
+                    rethrow;
+                  }
+                },
         ),
       );
     } catch (_) {
@@ -1801,10 +1823,12 @@ class _LiveVoiceSheet extends StatefulWidget {
   const _LiveVoiceSheet({
     required this.agent,
     required this.session,
+    this.onMediaStarted,
   });
 
   final AgentDirectoryEntry agent;
   final LiveVoiceSession session;
+  final Future<void> Function()? onMediaStarted;
 
   @override
   State<_LiveVoiceSheet> createState() => _LiveVoiceSheetState();
@@ -1822,8 +1846,23 @@ class _LiveVoiceSheetState extends State<_LiveVoiceSheet> {
       if (mounted) setState(() => _error = message);
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      widget.session.start().catchError((_) {});
+      unawaited(_startVerifiedSession());
     });
+  }
+
+  Future<void> _startVerifiedSession() async {
+    try {
+      await widget.session.start();
+      await widget.session.ready;
+      await widget.onMediaStarted?.call();
+    } catch (_) {
+      await widget.session.close();
+      if (!mounted) return;
+      setState(() {
+        _error ??= 'Voice session could not be verified.';
+      });
+      Navigator.of(context).pop();
+    }
   }
 
   @override
