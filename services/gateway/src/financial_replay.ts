@@ -1,6 +1,6 @@
 /** Compare normalized admitted terms before reusing a durable financial request. */
 export interface FinancialReplayTerms {
-  readonly operation: "deposit" | "withdraw" | "convert";
+  readonly operation: "deposit" | "withdraw" | "convert" | "buy";
   readonly asset: string;
   readonly network: string | null;
   readonly amount: string;
