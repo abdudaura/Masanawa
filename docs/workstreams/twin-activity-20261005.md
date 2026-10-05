@@ -48,7 +48,8 @@ Implemented:
 - mobile TwinActivity models/parser;
 - Riverpod Activity state/controller with integration-owned transport seam;
 - new Activity screen with Visitors / Chats / Earned summary, Needs You card and recent events;
-- mobile model tests.
+- mobile model tests;
+- twin-economy event -> Activity adapter with strict owner/twin scope checks.
 
 Verification:
 - GitHub Foundation CI run 37279313865 and Mobile Build run 37279314068 both failed before execution with zero job steps; this is the repository's known runner-allocation failure and is not a code-test result.
@@ -59,5 +60,5 @@ Integration handoff:
 - register twin_activity_routes from shared app/main integration;
 - implement authenticated TwinActivityTransport and override/provide twinActivityTransportProvider;
 - add Activity to the four-tab router/root shell;
-- feed canonical activity records from later attribution/gift/voice/owner-access lanes.
+- connect the twin-economy event reader/outbox to the provided Activity adapter.
 - do not use Activity as financial truth.
