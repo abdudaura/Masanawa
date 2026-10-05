@@ -48,6 +48,8 @@ function quotePhase(quote: BillingQuote): BillingCheckoutView["phase"] {
     case "quoted":
     case "confirmed":
       return "quoted";
+    case "checkout-dispatching":
+      return "processing";
     case "checkout-created":
       return "checkout";
     case "funded":
@@ -91,27 +93,29 @@ function presentationRevision(quote: BillingQuote): number {
     case "quoted":
     case "confirmed":
       return 1;
-    case "checkout-created":
+    case "checkout-dispatching":
       return 2;
-    case "funded":
+    case "checkout-created":
       return 3;
-    case "reserved":
+    case "funded":
       return 4;
-    case "succeeded":
+    case "reserved":
       return 5;
+    case "succeeded":
+      return 6;
     // A later provider reversal can move an already-succeeded bill into refund
     // custody. That must advance the presentation revision rather than replace
     // the successful document at the same revision.
     case "refund-pending":
-      return 6;
-    case "refund-dispatching":
       return 7;
-    case "refund-submitted":
+    case "refund-dispatching":
       return 8;
-    case "refunded":
+    case "refund-submitted":
       return 9;
-    case "expired":
+    case "refunded":
       return 10;
+    case "expired":
+      return 11;
   }
 }
 
@@ -170,9 +174,11 @@ function documentFor(
     });
   }
   const statusText =
-    quote.state === "refund-dispatching" || quote.state === "refund-submitted"
-      ? "The bill could not be completed. Your refund is being reconciled with Flutterwave."
-      : phase === "checkout"
+    quote.state === "checkout-dispatching"
+      ? "Secure checkout creation is being reconciled. Masanawa will not create a second checkout while the first attempt is uncertain."
+      : quote.state === "refund-dispatching" || quote.state === "refund-submitted"
+        ? "The bill could not be completed. Your refund is being reconciled with Flutterwave."
+        : phase === "checkout"
         ? "Secure checkout created. Open the payment link, complete payment, then choose Verify payment."
         : phase === "paid" || phase === "processing"
           ? "Payment verified. Masanawa is completing your bill."
@@ -624,21 +630,49 @@ export function createBillingCheckoutService(input: Readonly<{
 
     async startCheckout(request) {
       const owned = await ownedQuote(request.authorizationHeader,request.quoteId);
-      if (owned.quote.revision !== request.quoteRevision) throw new Error("financial.billing.quote_revision_conflict");
-      if (owned.quote.checkoutUrl && owned.quote.checkoutTxRef) return view(owned.quote,null,owned.identity);
+      if (owned.quote.revision !== request.quoteRevision) {
+        throw new Error("financial.billing.quote_revision_conflict");
+      }
+      if (owned.quote.checkoutUrl && owned.quote.checkoutTxRef) {
+        return view(owned.quote,null,owned.identity);
+      }
+      if (owned.quote.state === "checkout-dispatching") {
+        throw new Error("financial.billing.checkout_creation_in_progress");
+      }
+
+      const confirmedAt = now();
       const confirmed = await input.quotes.confirmQuote({
         tenantId: owned.identity.tenantId,
         userId: owned.identity.userId,
         quoteId: owned.quote.quoteId,
         quoteRevision: request.quoteRevision,
-        confirmedAt: now(),
+        confirmedAt,
       });
-      const email = (request.checkoutEmail ?? owned.identity.profile.email ?? "").trim().toLowerCase();
+      const email = (request.checkoutEmail ?? owned.identity.profile.email ?? "")
+        .trim()
+        .toLowerCase();
       if (email.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(email)) {
         throw new Error("financial.billing.email_required_for_checkout");
       }
+
+      const checkoutTxRef = txRef(confirmed);
+      const claim = await input.quotes.claimCheckoutDispatch({
+        tenantId: owned.identity.tenantId,
+        userId: owned.identity.userId,
+        quoteId: confirmed.quoteId,
+        quoteRevision: confirmed.revision,
+        txRef: checkoutTxRef,
+        claimedAt: now(),
+      });
+      if (!claim.claimed) {
+        if (claim.quote.checkoutUrl) {
+          return view(claim.quote,null,owned.identity);
+        }
+        throw new Error("financial.billing.checkout_creation_in_progress");
+      }
+
       const checkout = await input.funding.createCheckout({
-        txRef: txRef(confirmed),
+        txRef: checkoutTxRef,
         amount: formatNgnKobo(confirmed.totalAmountKobo),
         redirectUrl: redirect.toString(),
         customer: {
@@ -653,7 +687,7 @@ export function createBillingCheckoutService(input: Readonly<{
         userId: owned.identity.userId,
         quoteId: confirmed.quoteId,
         quoteRevision: confirmed.revision,
-        txRef: checkout.txRef,
+        txRef: checkoutTxRef,
         checkoutUrl: checkout.checkoutUrl,
         boundAt: now(),
       });
