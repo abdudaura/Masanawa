@@ -250,6 +250,119 @@ describe("platform-session Agent authorization", () => {
     })).rejects.toMatchObject({ code: "FORBIDDEN", statusCode: 403 });
   });
 
+
+
+  it("admits a discoverable public Twin on first contact and blocks continued chat after a safety block", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const userId = createCanonicalId("user");
+    const characterId = createCanonicalId("character");
+    const characterVersionId = createCanonicalId("character-version");
+    const relationshipId = createCanonicalId("relationship");
+    let relationship: Awaited<ReturnType<UserRelationshipReader["readForUserCharacter"]>> = null;
+    let blocked = false;
+
+    const sessions: PlatformCustomerSessionAuthorizer = {
+      async authorize() {
+        return Object.freeze({
+          tenantId,
+          userId,
+          profile: Object.freeze({
+            tenantId,
+            userId,
+            name: "Visitor",
+            email: "visitor@example.com",
+            phone: null,
+            locale: "en-NG",
+            createdAt: "2026-10-05T00:00:00.000Z",
+          }),
+        });
+      },
+    };
+    const presentation: AgentPresentation = {
+      schemaVersion: 1,
+      tenantId,
+      characterId,
+      characterVersionId,
+      displayName: "Public Twin",
+      roleLabel: "AI twin",
+      about: "Public twin",
+      greeting: null,
+      visibleInUserApp: true,
+      sortOrder: 10,
+      revision: 1,
+    };
+
+    const authorizers = createPlatformCustomerAuthorizers({
+      sessions,
+      presentations: {
+        async readForCharacter(input) {
+          return input.characterId === characterId ? presentation : null;
+        },
+        async listAll() { return [presentation]; },
+        async listVisible() { return [presentation]; },
+        async put(input) { return input.presentation; },
+      },
+      skillAssignments: {
+        async readForCharacter() { return null; },
+        async put(input) { return input.assignment; },
+      },
+      relationships: {
+        async readForUserCharacter() { return relationship; },
+        async listForUser() { return relationship ? [relationship] : []; },
+      },
+      relationshipProvisioner: {
+        async getOrCreateForUserCharacter(input) {
+          relationship = Object.freeze({
+            tenantId,
+            relationshipId,
+            userId,
+            characterId: input.characterId,
+            state: "active" as const,
+            stage: null,
+            tone: null,
+            preferences: Object.freeze({}),
+            disclosures: Object.freeze({}),
+            permissions: Object.freeze({}),
+            revision: 1,
+            createdAt: nowInstant(),
+            updatedAt: nowInstant(),
+          });
+          return relationship;
+        },
+      },
+      platformProfiles: {
+        async readForCharacter() { return null; },
+        async listSupportAgents() { return []; },
+        async put(input) { return input.profile; },
+      },
+      publicTwinAdmission: {
+        async canChat(input) {
+          expect(input.characterId).toBe(characterId);
+          return !blocked;
+        },
+        async canContinue(input) {
+          expect(input.characterId).toBe(characterId);
+          return !blocked;
+        },
+      },
+      policyRevision: "production-v1",
+    });
+
+    await expect(authorizers.conversation.authorize({
+      authorizationHeader: "Bearer session",
+      characterId,
+    })).resolves.toMatchObject({
+      scope: { tenantId, userId, characterId, relationshipId },
+    });
+    expect(relationship).not.toBeNull();
+
+    blocked = true;
+    await expect(authorizers.conversation.authorize({
+      authorizationHeader: "Bearer session",
+      characterId,
+    })).rejects.toMatchObject({ code: "FORBIDDEN", statusCode: 403 });
+  });
+
   it("maps a rejected platform session to a mobile 401", async () => {
     const tenantId = createCanonicalId("tenant");
     const sessions: PlatformCustomerSessionAuthorizer = {
