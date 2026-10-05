@@ -1,12 +1,16 @@
 import type { AuthorityContext } from "@masanawa/security";
 import type {
-  WorkflowCheckpoint,
   WorkflowExecutorLease,
   WorkflowExecutorLeaseRepository,
+} from "./executor-lease.js";
+import type {
   WorkflowResumeDisposition,
+} from "./resume.js";
+import type {
+  WorkflowCheckpoint,
   WorkflowRun,
   WorkflowRunScope,
-} from "./index.js";
+} from "./workflow-run.js";
 
 export interface WorkflowExecutionSessionClock {
   now(): WorkflowRun["updatedAt"];
