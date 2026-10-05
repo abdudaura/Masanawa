@@ -8,6 +8,19 @@ describe("billing NGN money", () => {
     expect(formatNgnKobo(10005)).toBe("100.05");
     expect(() => parseNgnKobo("1.001")).toThrow();
   });
+  it("keeps NGN parsing and percentage fees exact at the safe-integer boundary", () => {
+    expect(parseNgnKobo("90071992547409.91")).toBe(Number.MAX_SAFE_INTEGER);
+    expect(() => parseNgnKobo("90071992547409.92")).toThrow(
+      "NGN amount exceeds safe range",
+    );
+    expect(
+      calculateBillingFeeKobo(Number.MAX_SAFE_INTEGER, {
+        basisPoints: 1,
+        fixedKobo: 0,
+      }),
+    ).toBe(900719925475);
+  });
+
   it("builds fee-inclusive immutable terms", () => {
     const serviceAmountKobo = parseNgnKobo("100");
     const feeAmountKobo = calculateBillingFeeKobo(serviceAmountKobo, { basisPoints: 250, fixedKobo: 50 });
