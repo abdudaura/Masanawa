@@ -4,6 +4,7 @@ import { nowInstant, parseCanonicalId } from "@masanawa/contracts";
 import type { AgentAdminService } from "./agent_admin.js";
 import type { PlatformAdminService } from "./platform_admin.js";
 import type { SystemAdminService } from "./system_admin.js";
+import type { AdminAgentDelegationService } from "./admin_delegation.js";
 import {
   admitTelemetryCorrelation,
   injectCorrelationHeaders,
@@ -23,7 +24,26 @@ export interface OpsAppOptions {
   readonly agentAdmin?: AgentAdminService;
   readonly platformAdmin?: PlatformAdminService;
   readonly systemAdmin?: SystemAdminService;
+  readonly adminAgentDelegation?: AdminAgentDelegationService;
 }
+
+
+const AdminAgentDelegateSchema = Type.Object(
+  {
+    characterId: Type.String(),
+    label: Type.String(),
+    purpose: Type.String(),
+    autonomy: Type.Union([
+      Type.Literal("advisory"),
+      Type.Literal("read-autonomous"),
+      Type.Literal("confirm-writes"),
+    ]),
+    capabilities: Type.Array(Type.String()),
+    enabled: Type.Boolean(),
+    approvalRequiredForWrites: Type.Literal(true),
+  },
+  { additionalProperties: false },
+);
 
 const HealthResponseSchema = Type.Object(
   {
@@ -462,6 +482,24 @@ export function createOpsApp(options: OpsAppOptions = {}) {
     );
   }
 
+
+
+  if (options.adminAgentDelegation) {
+    const delegation = options.adminAgentDelegation;
+    app.get(
+      "/v1/admin/delegates",
+      {
+        schema: {
+          response: { 200: Type.Array(AdminAgentDelegateSchema) },
+        },
+      },
+      async (request) => [
+        ...await delegation.list({
+          authorizationHeader: request.headers.authorization,
+        }),
+      ],
+    );
+  }
 
   if (options.platformAdmin) {
     const platformAdmin = options.platformAdmin;
