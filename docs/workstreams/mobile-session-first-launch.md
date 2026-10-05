@@ -34,8 +34,10 @@ Implemented:
 - focused tests count one current-key read plus one bulk fallback on empty/legacy stores.
 
 Verification:
+- PR #170 merged into `work/billing-main-integration-20261005` at `24ce71124a08bd32da51793817b05405454ed69a`;
+- Mobile Build run 37294120216 and Foundation CI run 37294120292 both ended before any steps executed (`steps: null`), so no hosted test result is claimed;
 - changed paths are limited to session restore, focused tests and checkpoint docs;
 - no auth protocol, token semantics, Gateway or APK changes;
 - executable Flutter verification remains subject to the hosted runner-allocation issue.
 
-Status: implementation checkpoint complete pending PR integration.
+Status: merged implementation checkpoint.
