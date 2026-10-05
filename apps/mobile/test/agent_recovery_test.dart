@@ -10,6 +10,7 @@ import 'package:masanawa/src/agents/agent_directory.dart';
 import 'package:masanawa/src/agents/agent_feedback.dart';
 import 'package:masanawa/src/agents/agent_session.dart';
 import 'package:masanawa/src/agents/masanawa_transport.dart';
+import 'package:masanawa/src/core/api/models.dart';
 import 'package:masanawa/src/core/network/api_client.dart';
 import 'package:masanawa/src/core/providers.dart';
 import 'package:masanawa/src/state/agent_directory_state.dart';
@@ -17,6 +18,29 @@ import 'package:masanawa/src/state/ai_chat_state.dart';
 import 'package:masanawa/src/state/session_state.dart';
 import 'package:masanawa/src/screens/chat/masana_list_screen.dart';
 import 'package:masanawa/src/theme/masanawa_theme.dart';
+
+const _directoryUser = AuthUser(
+  id: 'user-directory',
+  name: 'Directory User',
+  email: 'directory@example.com',
+  locale: 'en-NG',
+  status: 'ACTIVE',
+  role: 'USER',
+  isNewUser: false,
+  createdAt: '2026-10-05T00:00:00Z',
+);
+
+const _directoryTokens = AuthTokens(
+  accessToken: 'directory-access',
+  refreshToken: 'directory-refresh',
+  accessExpiresIn: 900,
+  user: _directoryUser,
+);
+
+class _SignedInSessionController extends SessionController {
+  @override
+  SessionState build() => const SessionSignedIn(_directoryUser, _directoryTokens);
+}
 
 class _SignedOutSessionController extends SessionController {
   @override
@@ -249,7 +273,7 @@ void main() {
         ProviderScope(
           overrides: [
             agentDirectoryTransportProvider.overrideWithValue(directory),
-            sessionProvider.overrideWith(_SignedOutSessionController.new),
+            sessionProvider.overrideWith(_SignedInSessionController.new),
           ],
           child: MaterialApp(
             theme: buildMasanawaTheme(brightness: Brightness.light),
@@ -303,7 +327,7 @@ void main() {
       final c = ProviderContainer(
         overrides: [
           agentDirectoryTransportProvider.overrideWithValue(transport),
-          sessionProvider.overrideWith(_SignedOutSessionController.new),
+          sessionProvider.overrideWith(_SignedInSessionController.new),
         ],
       );
       addTearDown(c.dispose);
@@ -332,7 +356,7 @@ void main() {
     final c = ProviderContainer(
       overrides: [
       agentDirectoryTransportProvider.overrideWithValue(transport),
-      sessionProvider.overrideWith(_SignedOutSessionController.new),
+      sessionProvider.overrideWith(_SignedInSessionController.new),
     ],
     );
     addTearDown(c.dispose);
@@ -354,7 +378,7 @@ void main() {
       final c = ProviderContainer(
         overrides: [
         agentTransportProvider.overrideWithValue(transport),
-        sessionProvider.overrideWith(_SignedOutSessionController.new),
+        sessionProvider.overrideWith(_SignedInSessionController.new),
       ],
       );
       addTearDown(c.dispose);
