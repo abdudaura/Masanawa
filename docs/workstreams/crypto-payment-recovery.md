@@ -106,8 +106,11 @@ Deployment/Caddy/systemd changes remain runtime-owned because the connected Digi
 
 Hosted fiat Buy is now durable across a missed first callback. `NowPaymentsCustodyClient.findPaymentEvidence` authenticates server-side and reads at
 most 100 recent provider payments through the existing NOWPayments base/relay,
-requiring one exact `order_id` + `invoice_id` match. No match leaves the
-canonical Buy pending; more than one match fails closed as ambiguous. The fixed-egress
+using the provider's exact `invoiceid` query filter and then requiring one exact
+Masanawa `order_id` result. NOWPayments' published list response does not echo
+`invoice_id`, so the adapter binds only the same invoice id that was supplied to
+that authenticated provider filter before exact on-ramp admission. No match leaves
+the canonical Buy pending; more than one exact-order result fails closed as ambiguous. The fixed-egress
 relay allowlist now admits only the authenticated GET `/v1/payment/` list path
 in addition to the previously allowed exact payment identity endpoint, and preserves
 query parameters. This continues to target the existing 209.38.107.173 relay only.
