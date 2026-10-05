@@ -35,6 +35,10 @@ import '../../state/my_twin_state.dart';
 import '../../state/wallet_state.dart';
 import '../../voice/paid_voice.dart';
 import '../../voice/paid_voice_state.dart';
+import '../../owner_access/owner_access.dart';
+import '../../owner_access/owner_access_state.dart';
+import '../../safety/twin_safety.dart';
+import '../../safety/twin_safety_state.dart';
 import '../../theme/masanawa_theme.dart';
 
 /// One Character conversation. Voice is the primary action while text,
@@ -883,14 +887,25 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 if (value == 'pin') ctl.togglePin(widget.characterId);
                 if (value == 'archive') ctl.toggleArchive(widget.characterId);
                 if (value == 'rename') _renameConversation();
+                if (value == 'gift') await _sendTwinGift(agent);
+                if (value == 'owner') await _requestOwnerChat(agent);
+                if (value == 'block') await _blockTwin(agent);
+                if (value == 'report') await _reportTwin(agent);
               },
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'new', child: Text('New context')),
-                PopupMenuItem(value: 'rename', child: Text('Rename chat')),
-                PopupMenuItem(value: 'pin', child: Text('Pin / unpin')),
-                PopupMenuItem(value: 'archive', child: Text('Archive / unarchive')),
-                PopupMenuDivider(),
-                PopupMenuItem(value: 'clear', child: Text('Clear chat')),
+              itemBuilder: (_) => [
+                const PopupMenuItem(value: 'new', child: Text('New context')),
+                const PopupMenuItem(value: 'rename', child: Text('Rename chat')),
+                const PopupMenuItem(value: 'pin', child: Text('Pin / unpin')),
+                const PopupMenuItem(value: 'archive', child: Text('Archive / unarchive')),
+                if (!agent.supportAgent) ...const [
+                  PopupMenuDivider(),
+                  PopupMenuItem(value: 'gift', child: Text('Send gift')),
+                  PopupMenuItem(value: 'owner', child: Text('Talk to owner')),
+                  PopupMenuItem(value: 'block', child: Text('Block Twin')),
+                  PopupMenuItem(value: 'report', child: Text('Report Twin')),
+                ],
+                const PopupMenuDivider(),
+                const PopupMenuItem(value: 'clear', child: Text('Clear chat')),
               ],
             ),
           ],
@@ -1275,6 +1290,175 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     }
   }
 
+  Future<void> _sendTwinGift(AgentDirectoryEntry agent) async {
+    final amountController = TextEditingController();
+    final amount = await showDialog<int>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Gift ${agent.displayName}'),
+        content: TextField(
+          controller: amountController,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'Credits',
+            hintText: 'Enter amount',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final value = int.tryParse(amountController.text.trim());
+              if (value != null && value > 0) {
+                Navigator.of(dialogContext).pop(value);
+              }
+            },
+            child: const Text('Review gift'),
+          ),
+        ],
+      ),
+    );
+    amountController.dispose();
+    if (amount == null || !mounted) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Send gift?'),
+        content: Text('Send $amount Credits as a gift? Gifts do not create referral commission.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Send'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final receipt = await ref.read(walletProvider.notifier).sendGift(
+      recipientCharacterId: agent.characterId,
+      amountCredits: amount,
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(receipt == null ? 'Could not send gift.' : 'Gift sent.'),
+      ),
+    );
+  }
+
+  Future<void> _requestOwnerChat(AgentDirectoryEntry agent) async {
+    final controller = ref.read(ownerAccessControllerProvider.notifier);
+    OwnerAccessQuote? quote;
+    for (final minutes in const [15, 30, 60]) {
+      quote = await controller.quote(
+        characterId: agent.characterId,
+        modality: OwnerAccessModality.voice,
+        durationMinutes: minutes,
+      );
+      if (quote != null) break;
+    }
+    if (quote == null || !mounted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('The owner is not accepting requests right now.')),
+        );
+      }
+      return;
+    }
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Talk to the owner'),
+        content: Text(
+          quote!.isTrial
+              ? 'Your ${quote.trialDurationDays}-day trial covers this ${quote.durationMinutes}-minute owner voice request.'
+              : 'Request ${quote.durationMinutes} minutes with the real owner for ${quote.priceCredits} Credits. Funds are held until the session is completed; otherwise eligible refunds are returned.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Not now'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Send request'),
+          ),
+        ],
+      ),
+    );
+    if (accepted != true) return;
+    final request = await controller.submit(characterId: agent.characterId);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(request == null ? 'Could not send owner request.' : 'Owner request sent.'),
+      ),
+    );
+  }
+
+  Future<void> _blockTwin(AgentDirectoryEntry agent) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Block ${agent.displayName}?'),
+        content: const Text('This Twin will no longer be available to you until you unblock it.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Block'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final ok = await ref.read(twinSafetyControllerProvider.notifier).block(agent.characterId);
+    if (!mounted) return;
+    if (ok) {
+      unawaited(ref.read(agentDirectoryProvider.notifier).refresh());
+      context.go('/home');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not block this Twin.')),
+      );
+    }
+  }
+
+  Future<void> _reportTwin(AgentDirectoryEntry agent) async {
+    final selected = await showDialog<TwinReportReason>(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: const Text('Report Twin'),
+        children: [
+          for (final reason in TwinReportReason.values)
+            SimpleDialogOption(
+              onPressed: () => Navigator.of(dialogContext).pop(reason),
+              child: Text(twinReportReasonLabel(reason)),
+            ),
+        ],
+      ),
+    );
+    if (selected == null) return;
+    final ok = await ref.read(twinSafetyControllerProvider.notifier).report(
+      characterId: agent.characterId,
+      reason: selected,
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(ok ? 'Report submitted.' : 'Could not submit report.')),
+    );
+  }
   Future<void> _openLiveVoice(AgentDirectoryEntry agent) async {
     if (!await _ensurePermission(AppPermission.microphone, 'Microphone')) {
       return;
