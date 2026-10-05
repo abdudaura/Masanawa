@@ -91,10 +91,8 @@ function harness() {
       async readPersonalClone() {
         return {
           characterId,
-          characterVersionId:
-            "character-version_00000000-0000-4000-8000-000000000004",
-          relationshipId:
-            "relationship_00000000-0000-4000-8000-000000000005",
+          characterVersionId: createCanonicalId("character-version"),
+          relationshipId: createCanonicalId("relationship"),
         };
       },
     } as never,
