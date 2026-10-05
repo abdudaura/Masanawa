@@ -135,6 +135,15 @@ export interface UserRelationshipReader {
   }): Promise<readonly UserCharacterRelationship[]>;
 }
 
+export interface UserRelationshipProvisioner {
+  getOrCreateForUserCharacter(input: {
+    readonly tenantId: TenantId;
+    readonly userId: UserId;
+    readonly characterId: CharacterId;
+    readonly createdAt: Instant;
+  }): Promise<UserCharacterRelationship>;
+}
+
 
 export interface CharacterOwnershipReader {
   readForCharacter(input: {
