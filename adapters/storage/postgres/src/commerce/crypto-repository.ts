@@ -211,6 +211,27 @@ async function aggregateLiability(
   return result.rows[0]?.liability ?? "0";
 }
 
+async function platformAggregateLiability(
+  client: PoolClient,
+  input: { asset: string; network: string | null },
+): Promise<string> {
+  const result = await client.query<{ liability: string }>(
+    `SELECT COALESCE(SUM(GREATEST(user_balance, 0)), 0)::text AS liability
+       FROM (
+         SELECT tenant_id, user_id,
+                COALESCE(SUM(
+                  CASE direction WHEN 'credit' THEN amount ELSE -amount END
+                ), 0) AS user_balance
+           FROM commerce.crypto_ledger_entries
+          WHERE asset=$1
+            AND network IS NOT DISTINCT FROM $2
+          GROUP BY tenant_id, user_id
+       ) AS user_balances`,
+    [input.asset, input.network],
+  );
+  return result.rows[0]?.liability ?? "0";
+}
+
 async function lockBalance(
   client: PoolClient,
   input: { tenantId: TenantId; userId: UserId; asset: string; network: string | null },
@@ -1018,6 +1039,18 @@ export function createPostgresCryptoRepository(pool: Pool): CryptoRepository {
       return withTransaction(
         pool,
         (client) => aggregateLiability(client, normalized),
+        { isolation: "repeatable read", readOnly: true },
+      );
+    },
+
+    async readPlatformAggregateLiability(input) {
+      const normalized = {
+        asset: normalizeCryptoAsset(input.asset),
+        network: normalizeCryptoNetwork(input.network),
+      };
+      return withTransaction(
+        pool,
+        (client) => platformAggregateLiability(client, normalized),
         { isolation: "repeatable read", readOnly: true },
       );
     },
