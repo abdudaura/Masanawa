@@ -20,12 +20,15 @@ export interface BootstrapAdminAuthConfig {
 }
 
 export interface PlatformSessionAdminGrant {
-  readonly userId: UserId;
+  readonly tenantId: TenantId;
+  readonly userId: UserId | null;
+  readonly email: string | null;
+  readonly phone: string | null;
   readonly capabilities: ReadonlySet<AgentAdminCapability>;
 }
 
 export interface PlatformSessionAdminAuthConfig {
-  readonly grants: ReadonlyMap<UserId, ReadonlySet<AgentAdminCapability>>;
+  readonly grants: readonly PlatformSessionAdminGrant[];
 }
 
 const KNOWN_ADMIN_CAPABILITIES = new Set<AgentAdminCapability>([
@@ -109,20 +112,49 @@ export function readPlatformSessionAdminAuthConfig(
     throw new Error("MASANAWA_OPS_ADMIN_GRANTS_JSON must be a non-empty array");
   }
 
-  const grants = new Map<UserId, ReadonlySet<AgentAdminCapability>>();
+  const grants: PlatformSessionAdminGrant[] = [];
+  const seen = new Set<string>();
   for (const entry of parsed) {
     if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
       throw new Error("Invalid Ops admin grant");
     }
     const record = entry as Record<string, unknown>;
-    if (typeof record.userId !== "string") {
-      throw new Error("Each Ops admin grant requires userId");
+    if (typeof record.tenantId !== "string") {
+      throw new Error("Each Ops admin grant requires tenantId");
     }
-    const userId = parseCanonicalId("user", record.userId);
-    if (grants.has(userId)) throw new Error("Duplicate Ops admin user grant");
-    grants.set(userId, parseCapabilities(record.capabilities));
+    const tenantId = parseCanonicalId("tenant", record.tenantId);
+    const userId = typeof record.userId === "string"
+      ? parseCanonicalId("user", record.userId)
+      : null;
+    const email = typeof record.email === "string"
+      ? record.email.trim().toLowerCase()
+      : null;
+    const phone = typeof record.phone === "string"
+      ? record.phone.trim().replace(/[\\s()-]/gu, "")
+      : null;
+    const selectors = [userId, email, phone].filter(Boolean);
+    if (selectors.length !== 1) {
+      throw new Error("Each Ops admin grant requires exactly one of userId, email or phone");
+    }
+    if (email && (email.length > 320 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/u.test(email))) {
+      throw new Error("Ops admin grant email is invalid");
+    }
+    if (phone && !/^\\+[1-9]\\d{6,14}$/u.test(phone)) {
+      throw new Error("Ops admin grant phone is invalid");
+    }
+    const selectorKey = userId ? `user:${userId}` : email ? `email:${email}` : `phone:${phone}`;
+    const key = `${tenantId}:${selectorKey}`;
+    if (seen.has(key)) throw new Error("Duplicate Ops admin grant");
+    seen.add(key);
+    grants.push(Object.freeze({
+      tenantId,
+      userId,
+      email,
+      phone,
+      capabilities: parseCapabilities(record.capabilities),
+    }));
   }
-  return Object.freeze({ grants });
+  return Object.freeze({ grants: Object.freeze(grants) });
 }
 
 export function createPlatformSessionAdminAuthorizer(input: Readonly<{
@@ -150,8 +182,17 @@ export function createPlatformSessionAdminAuthorizer(input: Readonly<{
       });
       if (!identity) throw new AdminAuthorizationError();
 
-      const capabilities = input.config.grants.get(identity.userId);
-      if (!capabilities || !capabilities.has(request.capability)) {
+      const grant = input.config.grants.find((candidate) =>
+        candidate.tenantId === identity.tenantId &&
+        (
+          candidate.userId === identity.userId ||
+          (candidate.email !== null &&
+            candidate.email === identity.profile.email?.trim().toLowerCase()) ||
+          (candidate.phone !== null &&
+            candidate.phone === identity.profile.phone?.trim().replace(/[\\s()-]/gu, ""))
+        ),
+      );
+      if (!grant || !grant.capabilities.has(request.capability)) {
         throw new AdminAuthorizationError(403);
       }
       return Object.freeze({ tenantId: identity.tenantId });
