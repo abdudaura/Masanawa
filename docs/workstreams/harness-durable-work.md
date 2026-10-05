@@ -18,7 +18,9 @@ Owned paths:
 - `apps/mobile/lib/src/chat/message_parts_view.dart` only for Work status presentation
 - focused tests for the above
 - `docs/AGENT-HARNESS.md`
-- canonical workflow foundation under `packages/workflows/**` (new package only; no PostgreSQL composition yet)
+- canonical workflow foundation under `packages/workflows/**`;
+- PostgreSQL Work repository/migration under `adapters/storage/postgres/src/workflows/**` and `packages/workflows/migrations/**`;
+- `adapters/storage/postgres/package.json` and `src/index.ts` only for the new workflow dependency/export
 - this claim file
 
 Boundaries:
@@ -55,7 +57,6 @@ Continuation ownership:
 - after completing the projection checkpoint, this same window may establish the isolated
   canonical `@masanawa/workflows` domain/repository contract because that package is still
   a placeholder and no active workstream claims it;
-- this continuation must not mark roadmap Tasks 084-096 complete, alter shared migration
-  registries or compose production persistence without a fresh checkpoint/claim update.
+- this continuation must not mark roadmap Tasks 084-096 complete or alter shared service migration roots/deployment composition; PostgreSQL ownership may be added behind an explicit workflows-only migration root without changing current production roots.
 
 Status: projection/execution-seam checkpoint complete; canonical Workflow foundation now active.
