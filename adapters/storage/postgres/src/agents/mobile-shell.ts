@@ -66,7 +66,7 @@ function action(row: any): MobileShellActionRecord {
 }
 
 export function createPostgresMobileShellRepository(pool: Pool): MobileShellRepository {
-  return Object.freeze({
+  const repository: MobileShellRepository = {
     async claimTurn(input) {
       return withTransaction(pool, async client => {
         const result = await client.query(
@@ -284,12 +284,13 @@ export function createPostgresMobileShellRepository(pool: Pool): MobileShellRepo
       );
       return result.rows[0] ? action(result.rows[0]) : null;
     },
-  });
+  };
+  return Object.freeze(repository);
 }
 
 
 export function createPostgresMobilePushRepository(pool: Pool): MobilePushRepository {
-  return Object.freeze({
+  const repository: MobilePushRepository = {
     async register(input) {
       if (
         input.installationId.trim().length < 16 ||
@@ -344,14 +345,15 @@ export function createPostgresMobilePushRepository(pool: Pool): MobilePushReposi
         updatedAt: toInstant(row.updated_at),
       })));
     },
-  });
+  };
+  return Object.freeze(repository);
 }
 
 
 export function createPostgresMobileAgentActivityRepository(
   pool: Pool,
 ): MobileAgentActivityRepository {
-  return Object.freeze({
+  const repository: MobileAgentActivityRepository = {
     async setPresence(input) {
       if (
         !Number.isSafeInteger(input.durationMs) ||
@@ -406,5 +408,6 @@ export function createPostgresMobileAgentActivityRepository(
         activeWorkCount: Number(row.active_work_count) || 0,
       })));
     },
-  });
+  };
+  return Object.freeze(repository);
 }
