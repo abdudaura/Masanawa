@@ -83,7 +83,7 @@ import {
 } from "./alpha_dev.js";
 import { createGeminiAlphaInferenceProvider } from "./alpha_executor.js";
 import { createPlatformSessionVerifier, createProductionAuthorizers } from "./production_auth.js";
-import { createGeminiCredentialPoolInferenceProvider, parseGeminiCredentialPool } from "./production_inference.js";
+import { createGeminiCredentialPoolInferenceProvider, createSupabaseGeminiPoolInferenceProvider, loadSupabaseGeminiCredentialPool, parseGeminiCredentialPool } from "./production_inference.js";
 import { createProductionAgentStrategy } from "./production_strategy.js";
 import { createAlphaInferenceStrategy } from "./alpha_strategy.js";
 import { createGeminiLiveAudioRenderer } from "./native_audio.js";
@@ -406,30 +406,64 @@ export async function startGatewayService(
         await database.close().catch(() => undefined);
         throw new Error("Platform auth requires Skill repositories for production inference");
       }
-      const credentialsJson =
-        env.MASANAWA_GEMINI_CREDENTIALS_JSON ??
-        env.MASANAWA_ALPHA_GEMINI_IMPORTED_CREDENTIALS_JSON;
-      const apiKey = env.MASANAWA_GEMINI_API_KEY;
       const models =
         env.MASANAWA_GEMINI_REPLY_MODELS ??
         env.GEMINI_REPLY_MODELS;
-      const pool = parseGeminiCredentialPool({
-        ...(credentialsJson ? { credentialsJson } : {}),
-        ...(apiKey ? { apiKey } : {}),
-        ...(models ? { models } : {}),
-        fallbackModel:
-          env.MASANAWA_GEMINI_MODEL ??
-          env.MASANAWA_ALPHA_GEMINI_MODEL ??
-          "gemini-3.8-flash",
-      });
-      strategy = createProductionAgentStrategy({
-        inference: createGeminiCredentialPoolInferenceProvider({ pool }),
-        skills: database.skills,
-        guides: database.skillGuides,
-      });
+      const fallbackModel =
+        env.MASANAWA_GEMINI_MODEL ??
+        env.MASANAWA_ALPHA_GEMINI_MODEL ??
+        "gemini-3.8-flash";
+      const supabaseUrl = env.SUPABASE_URL?.trim();
+      const supabaseServiceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+      const credentialEncryptionKey = env.CREDENTIAL_ENCRYPTION_KEY?.trim();
+
+      let startupPool;
+      if (
+        supabaseUrl &&
+        supabaseServiceRoleKey &&
+        credentialEncryptionKey
+      ) {
+        const loaderInput = {
+          supabaseUrl,
+          serviceRoleKey: supabaseServiceRoleKey,
+          encryptionKey: credentialEncryptionKey,
+          ...(env.CREDENTIAL_ENCRYPTION_KEY_PREVIOUS?.trim()
+            ? {
+                encryptionKeyPrevious:
+                  env.CREDENTIAL_ENCRYPTION_KEY_PREVIOUS.trim(),
+              }
+            : {}),
+          ...(models ? { models } : {}),
+          fallbackModel,
+        };
+        startupPool = await loadSupabaseGeminiCredentialPool(loaderInput);
+        strategy = createProductionAgentStrategy({
+          inference: createSupabaseGeminiPoolInferenceProvider(loaderInput),
+          skills: database.skills,
+          guides: database.skillGuides,
+        });
+      } else {
+        const credentialsJson =
+          env.MASANAWA_GEMINI_CREDENTIALS_JSON ??
+          env.MASANAWA_ALPHA_GEMINI_IMPORTED_CREDENTIALS_JSON;
+        const apiKey = env.MASANAWA_GEMINI_API_KEY;
+        startupPool = parseGeminiCredentialPool({
+          ...(credentialsJson ? { credentialsJson } : {}),
+          ...(apiKey ? { apiKey } : {}),
+          ...(models ? { models } : {}),
+          fallbackModel,
+        });
+        strategy = createProductionAgentStrategy({
+          inference: createGeminiCredentialPoolInferenceProvider({
+            pool: startupPool,
+          }),
+          skills: database.skills,
+          guides: database.skillGuides,
+        });
+      }
 
       if (!liveVoiceApiKey) {
-        liveVoiceApiKey = pool.apiKeys[0];
+        liveVoiceApiKey = startupPool.apiKeys[0];
         liveVoiceModel =
           env.MASANAWA_GEMINI_LIVE_MODEL ??
           env.MASANAWA_ALPHA_GEMINI_LIVE_MODEL ??
