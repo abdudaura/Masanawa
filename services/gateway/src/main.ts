@@ -83,7 +83,7 @@ import {
 } from "./alpha_dev.js";
 import { createGeminiAlphaInferenceProvider } from "./alpha_executor.js";
 import { createPlatformSessionVerifier, createProductionAuthorizers } from "./production_auth.js";
-import { createGeminiCredentialPoolInferenceProvider, createSupabaseGeminiPoolInferenceProvider, loadSupabaseGeminiCredentialPool, parseGeminiCredentialPool } from "./production_inference.js";
+import { createGeminiCredentialPoolInferenceProvider, createSupabaseGeminiPoolInferenceProvider, loadSupabaseGeminiCredentialPool, parseGeminiCredentialPool, parseNurainImportedGeminiCredentialPool } from "./production_inference.js";
 import { createProductionAgentStrategy } from "./production_strategy.js";
 import { createAlphaInferenceStrategy } from "./alpha_strategy.js";
 import { createGeminiLiveAudioRenderer } from "./native_audio.js";
@@ -439,12 +439,34 @@ export async function startGatewayService(
       }
 
       if (!strategy) {
-        startupPool = parseGeminiCredentialPool({
-          ...(credentialsJson ? { credentialsJson } : {}),
-          ...(apiKey ? { apiKey } : {}),
-          ...(models ? { models } : {}),
-          fallbackModel,
-        });
+        if (credentialsJson?.trim() && credentialEncryptionKey) {
+          try {
+            startupPool = parseNurainImportedGeminiCredentialPool({
+              importedCredentialsJson: credentialsJson,
+              encryptionKey: credentialEncryptionKey,
+              ...(env.CREDENTIAL_ENCRYPTION_KEY_PREVIOUS?.trim()
+                ? {
+                    encryptionKeyPrevious:
+                      env.CREDENTIAL_ENCRYPTION_KEY_PREVIOUS.trim(),
+                  }
+                : {}),
+              ...(models ? { models } : {}),
+              fallbackModel,
+            });
+          } catch {
+            // The canonical plaintext list format remains supported below.
+          }
+        }
+
+        if (!startupPool) {
+          startupPool = parseGeminiCredentialPool({
+            ...(credentialsJson ? { credentialsJson } : {}),
+            ...(apiKey ? { apiKey } : {}),
+            ...(models ? { models } : {}),
+            fallbackModel,
+          });
+        }
+
         strategy = createProductionAgentStrategy({
           inference: createGeminiCredentialPoolInferenceProvider({
             pool: startupPool,
