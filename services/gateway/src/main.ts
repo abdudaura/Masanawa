@@ -105,6 +105,15 @@ import {
 import { createGeminiAlphaInferenceProvider } from "./alpha_executor.js";
 import { createAlphaInferenceStrategy } from "./alpha_strategy.js";
 import {
+  createGeminiCredentialPoolInferenceProvider,
+  loadSupabaseGeminiCredentialPool,
+  parseGeminiCredentialPool,
+  parseNurainImportedGeminiCredentialPool,
+  verifyGeminiCredentialPool,
+  type GeminiCredentialPool,
+} from "./production_inference.js";
+import { createProductionAgentStrategy } from "./production_strategy.js";
+import {
   createFinancialService,
   type FinancialAuthorizer,
 } from "./financial_service.js";
@@ -539,6 +548,7 @@ export async function startGatewayService(
       commerceAuthorizer = customerAuthorizers.commerce;
     }
 
+    let productionGeminiPool: GeminiCredentialPool | undefined;
     if (!strategy) {
       if (!database.skills || !database.skillGuides) {
         await database.close().catch(() => undefined);
@@ -546,45 +556,134 @@ export async function startGatewayService(
           "Production Agent runtime requires canonical Skill repositories",
         );
       }
-      const apiKey = productionGeminiApiKey(env);
-      strategy = createAlphaInferenceStrategy({
-        inference: createGeminiAlphaInferenceProvider({
-          apiKey,
-          model:
-            env.MASANAWA_GEMINI_MODEL?.trim() ||
-            env.MASANAWA_ALPHA_GEMINI_MODEL?.trim() ||
-            "gemini-3.8-flash",
+
+      const models =
+        env.MASANAWA_GEMINI_REPLY_MODELS?.trim() ||
+        env.GEMINI_REPLY_MODELS?.trim();
+      const fallbackModel =
+        env.MASANAWA_GEMINI_MODEL?.trim() ||
+        env.MASANAWA_ALPHA_GEMINI_MODEL?.trim() ||
+        "gemini-3.8-flash";
+      const credentialsJson =
+        env.MASANAWA_GEMINI_CREDENTIALS_JSON?.trim() ||
+        env.MASANAWA_ALPHA_GEMINI_IMPORTED_CREDENTIALS_JSON?.trim();
+      const encryptionKey = env.CREDENTIAL_ENCRYPTION_KEY?.trim();
+      const encryptionKeyPrevious =
+        env.CREDENTIAL_ENCRYPTION_KEY_PREVIOUS?.trim();
+      const supabaseUrl = env.SUPABASE_URL?.trim();
+      const supabaseServiceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+      const directApiKey =
+        env.MASANAWA_GEMINI_API_KEY?.trim() ||
+        env.MASANAWA_ALPHA_GEMINI_API_KEY?.trim();
+      let importedBridgeFailure: string | undefined;
+
+      if (credentialsJson && encryptionKey) {
+        try {
+          productionGeminiPool = parseNurainImportedGeminiCredentialPool({
+            importedCredentialsJson: credentialsJson,
+            encryptionKey,
+            ...(encryptionKeyPrevious ? { encryptionKeyPrevious } : {}),
+            ...(models ? { models } : {}),
+            fallbackModel,
+          });
+        } catch (error) {
+          importedBridgeFailure =
+            error instanceof Error
+              ? error.message.slice(0, 160)
+              : "Imported Gemini bridge failed";
+        }
+      }
+
+      if (
+        !productionGeminiPool &&
+        supabaseUrl &&
+        supabaseServiceRoleKey &&
+        encryptionKey
+      ) {
+        try {
+          productionGeminiPool = await loadSupabaseGeminiCredentialPool({
+            supabaseUrl,
+            serviceRoleKey: supabaseServiceRoleKey,
+            encryptionKey,
+            ...(encryptionKeyPrevious ? { encryptionKeyPrevious } : {}),
+            ...(models ? { models } : {}),
+            fallbackModel,
+          });
+        } catch (error) {
+          if (!importedBridgeFailure) {
+            importedBridgeFailure =
+              error instanceof Error
+                ? error.message.slice(0, 160)
+                : "Supabase Gemini pool load failed";
+          }
+        }
+      }
+
+      if (!productionGeminiPool && directApiKey) {
+        productionGeminiPool = parseGeminiCredentialPool({
+          apiKey: directApiKey,
+          ...(models ? { models } : {}),
+          fallbackModel,
+        });
+      }
+
+      if (!productionGeminiPool) {
+        throw new Error(
+          importedBridgeFailure
+            ? `Gemini credential bridge failed: ${importedBridgeFailure}`
+            : "Production Gemini pool failed to initialize",
+        );
+      }
+
+      if (env.MASANAWA_GEMINI_VERIFY_ON_START === "true") {
+        const verification = await verifyGeminiCredentialPool({
+          pool: productionGeminiPool,
+        });
+        process.stdout.write(
+          `${JSON.stringify({
+            event: "gemini.pool_verified",
+            checked: verification.checked,
+            authenticated: verification.authenticated,
+            model: verification.model,
+          })}\n`,
+        );
+      }
+
+      strategy = createProductionAgentStrategy({
+        inference: createGeminiCredentialPoolInferenceProvider({
+          pool: productionGeminiPool,
         }),
         skills: database.skills,
         guides: database.skillGuides,
       });
     }
 
-    const apiKey = productionGeminiApiKey(env);
-    nativeAudio ??= createGeminiLiveAudioRenderer({
-      apiKey,
-      model:
+    const liveApiKey =
+      productionGeminiPool?.apiKeys[0] ||
+      env.MASANAWA_GEMINI_API_KEY?.trim() ||
+      env.MASANAWA_ALPHA_GEMINI_API_KEY?.trim();
+    if (liveApiKey) {
+      const liveModel =
         env.MASANAWA_GEMINI_LIVE_MODEL?.trim() ||
         env.MASANAWA_ALPHA_GEMINI_LIVE_MODEL?.trim() ||
-        "gemini-3.8-live",
-      voiceName:
+        "gemini-3.8-live";
+      const liveVoice =
         env.MASANAWA_GEMINI_LIVE_VOICE?.trim() ||
         env.MASANAWA_ALPHA_GEMINI_LIVE_VOICE?.trim() ||
-        "Kore",
-    });
-    if (conversationAuthorizer) {
-      liveVoiceTokens = createGeminiLiveTokenService({
-        apiKey,
-        authorizer: conversationAuthorizer,
-        model:
-          env.MASANAWA_GEMINI_LIVE_MODEL?.trim() ||
-          env.MASANAWA_ALPHA_GEMINI_LIVE_MODEL?.trim() ||
-          "gemini-3.8-live",
-        voiceName:
-          env.MASANAWA_GEMINI_LIVE_VOICE?.trim() ||
-          env.MASANAWA_ALPHA_GEMINI_LIVE_VOICE?.trim() ||
-          "Kore",
+        "Bodi";
+      nativeAudio ??= createGeminiLiveAudioRenderer({
+        apiKey: liveApiKey,
+        model: liveModel,
+        voiceName: liveVoice,
       });
+      if (conversationAuthorizer) {
+        liveVoiceTokens = createGeminiLiveTokenService({
+          apiKey: liveApiKey,
+          authorizer: conversationAuthorizer,
+          model: liveModel,
+          voiceName: liveVoice,
+        });
+      }
     }
   }
 
