@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/providers.dart';
 import 'owner_access.dart';
+import 'owner_access_http_transport.dart';
 
 final ownerAccessTransportProvider = Provider<OwnerAccessTransport>(
-  (ref) => const UnavailableOwnerAccessTransport(),
+  (ref) => GatewayOwnerAccessTransport(api: ref.watch(apiClientProvider)),
 );
 
 class OwnerAccessUiState {
