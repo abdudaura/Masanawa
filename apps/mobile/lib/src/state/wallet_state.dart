@@ -1,0 +1,65 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../commerce/wallet_http_transport.dart';
+import '../commerce/wallet_models.dart';
+import '../core/providers.dart';
+import 'session_state.dart';
+
+final walletTransportProvider = Provider<WalletTransport>(
+  (ref) => GatewayWalletTransport(api: ref.watch(apiClientProvider)),
+);
+
+class WalletController extends AsyncNotifier<WalletView?> {
+  @override
+  Future<WalletView?> build() async {
+    final signedIn = ref.watch(isSignedInProvider);
+    final transport = ref.watch(walletTransportProvider);
+    if (!signedIn) return null;
+    return transport.load();
+  }
+
+  Future<void> refresh() async {
+    if (!ref.read(isSignedInProvider)) return;
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(
+      () => ref.read(walletTransportProvider).load(),
+    );
+  }
+
+  Future<CreditTransferReceipt?> sendCredits({
+    required String recipient,
+    required int amountCredits,
+  }) async {
+    try {
+      final receipt = await ref.read(walletTransportProvider).sendCredits(
+            recipient: recipient,
+            amountCredits: amountCredits,
+          );
+      await refresh();
+      return receipt;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<GiftReceipt?> sendGift({
+    required String recipientCharacterId,
+    required int amountCredits,
+  }) async {
+    try {
+      final receipt = await ref.read(walletTransportProvider).sendGift(
+            recipientCharacterId: recipientCharacterId,
+            amountCredits: amountCredits,
+          );
+      await refresh();
+      return receipt;
+    } catch (_) {
+      return null;
+    }
+  }
+}
+
+final walletProvider =
+    AsyncNotifierProvider<WalletController, WalletView?>(
+  WalletController.new,
+);
