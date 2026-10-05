@@ -52,6 +52,7 @@ export interface PersistedTwinVoiceAdmission {
   readonly characterId: CharacterId;
   readonly chargeMode: "trial" | "paid";
   readonly admittedAt: string;
+  readonly startedAt: string | null;
   readonly expiresAt: string;
   readonly spendCapCredits: number;
   readonly reservationLedgerEntryId: LedgerEntryId | null;
@@ -197,6 +198,12 @@ export interface TwinRuntimeRepository {
     readonly tenantId: TenantId;
     readonly admissionId: string;
   }): Promise<PersistedTwinVoiceAdmission | null>;
+
+  markVoiceStarted(input: {
+    readonly tenantId: TenantId;
+    readonly admissionId: string;
+    readonly startedAt: string;
+  }): Promise<PersistedTwinVoiceAdmission>;
 
   markVoiceSettled(input: {
     readonly tenantId: TenantId;
