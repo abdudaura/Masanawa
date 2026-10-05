@@ -29,7 +29,9 @@ export type AgentAdminCapability =
   | "world.admin.read"
   | "world.admin.write"
   | "approvals.admin.read"
-  | "queues.admin.read";
+  | "queues.admin.read"
+  | "admin.delegates.read"
+  | "admin.delegates.write";
 
 export interface AgentAdminAuthority {
   readonly tenantId: TenantId;
