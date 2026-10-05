@@ -1,7 +1,5 @@
-import type {
-  WalletHistoryRecord,
-  WalletHistorySubsource,
-} from "./wallet_projection_sources.js";
+import type { WalletHistoryRecord } from "./wallet_projection.js";
+import type { WalletHistorySubsource } from "./wallet_projection_sources.js";
 
 export type TwinEconomyWalletEventType =
   | "twin.purchase.completed"
