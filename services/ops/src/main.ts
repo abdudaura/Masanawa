@@ -135,6 +135,7 @@ function createDefaultDatabaseDependency(
     applicationName: "masanawa-ops",
   });
   const commerce = createPostgresCommerceRepository(database.pool);
+  const skills = createPostgresSkillRepository(database.pool);
   const worlds = createPostgresWorldRepository(database.pool);
 
   const offerCommands: PlatformAdminOfferCommands = Object.freeze({
@@ -162,6 +163,101 @@ function createDefaultDatabaseDependency(
         offerId: next.offerId,
         key: next.key,
         revision: next.revision,
+        title: next.title,
+        description: next.description,
+        skillVersionId: next.skillVersionId,
+        priceCredits: next.priceCredits,
+        fulfillmentReserveCredits: next.fulfillmentReserveCredits,
+        creatorCommissionCredits: next.creatorCommissionCredits,
+        fallbackCommissionCredits: next.fallbackCommissionCredits,
+        platformMarginCredits: next.platformMarginCredits,
+        regions: next.regions,
+        enabled: next.active,
+        updatedAt: next.createdAt,
+      };
+    },
+
+    async saveRevision(input) {
+      const snapshot = await skills.readSnapshot();
+      if (!snapshot.versions.some(
+        (version) => version.skillVersionId === input.skillVersionId,
+      )) {
+        const error = new Error("Offer SkillVersion is unavailable") as Error & {
+          statusCode: number;
+        };
+        error.statusCode = 409;
+        throw error;
+      }
+
+      const creating = input.offerId === null;
+      if (creating !== (input.expectedRevision === null)) {
+        const error = new Error("Offer revision precondition is invalid") as Error & {
+          statusCode: number;
+        };
+        error.statusCode = 409;
+        throw error;
+      }
+
+      const offerId = creating
+        ? createCanonicalId("offer")
+        : parseCanonicalId("offer", input.offerId!);
+      let revision = 1;
+      let key = input.key;
+      if (!creating) {
+        const current = await commerce.readOfferRevision({
+          tenantId: input.tenantId,
+          offerId,
+          revision: input.expectedRevision!,
+        });
+        if (!current) {
+          const error = new Error("Offer revision changed or was not found") as Error & {
+            statusCode: number;
+          };
+          error.statusCode = 409;
+          throw error;
+        }
+        if (current.key !== input.key.trim().toLowerCase()) {
+          const error = new Error("Offer key cannot change across revisions") as Error & {
+            statusCode: number;
+          };
+          error.statusCode = 409;
+          throw error;
+        }
+        revision = current.revision + 1;
+        key = current.key;
+      }
+
+      const next = await commerce.registerOfferRevision({
+        schemaVersion: 1,
+        tenantId: input.tenantId,
+        offerId,
+        revision,
+        key,
+        title: input.title,
+        description: input.description,
+        skillVersionId: parseCanonicalId("skill-version", input.skillVersionId),
+        priceCredits: input.priceCredits,
+        fulfillmentReserveCredits: input.fulfillmentReserveCredits,
+        creatorCommissionCredits: input.creatorCommissionCredits,
+        fallbackCommissionCredits: input.fallbackCommissionCredits,
+        platformMarginCredits: input.platformMarginCredits,
+        active: input.enabled,
+        regions: input.regions,
+        createdAt: nowInstant(),
+      });
+      return {
+        offerId: next.offerId,
+        key: next.key,
+        revision: next.revision,
+        title: next.title,
+        description: next.description,
+        skillVersionId: next.skillVersionId,
+        priceCredits: next.priceCredits,
+        fulfillmentReserveCredits: next.fulfillmentReserveCredits,
+        creatorCommissionCredits: next.creatorCommissionCredits,
+        fallbackCommissionCredits: next.fallbackCommissionCredits,
+        platformMarginCredits: next.platformMarginCredits,
+        regions: next.regions,
         enabled: next.active,
         updatedAt: next.createdAt,
       };
@@ -254,7 +350,7 @@ function createDefaultDatabaseDependency(
       createPostgresCharacterSkillAssignmentRepository(database.pool),
     characterVersions:
       createPostgresCharacterVersionReferenceReader(database.pool),
-    skills: createPostgresSkillRepository(database.pool),
+    skills,
     offerCommands,
     credentialCommands,
     receiptReader,
