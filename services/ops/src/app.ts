@@ -51,6 +51,8 @@ const AdminAgentActionBodySchema = Type.Object(
       Type.Literal("world.resume"),
     ]),
     arguments: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
+    agentRunId: Type.Optional(Type.String()),
+    idempotencyKey: Type.Optional(Type.String({ minLength: 1, maxLength: 256 })),
   },
   { additionalProperties: false },
 );
@@ -65,6 +67,9 @@ const AdminAgentActionResultSchema = Type.Object(
     data: Type.Optional(Type.Unknown()),
     capability: Type.Optional(Type.String()),
     reason: Type.Optional(Type.String()),
+    approvalId: Type.Optional(Type.String()),
+    operationId: Type.Optional(Type.String()),
+    reused: Type.Optional(Type.Boolean()),
   },
   { additionalProperties: false },
 );
@@ -546,6 +551,12 @@ export function createOpsApp(options: OpsAppOptions = {}) {
           action: request.body.action,
           ...(request.body.arguments
             ? { arguments: request.body.arguments }
+            : {}),
+          ...(request.body.agentRunId
+            ? { agentRunId: request.body.agentRunId }
+            : {}),
+          ...(request.body.idempotencyKey
+            ? { idempotencyKey: request.body.idempotencyKey }
             : {}),
         }),
     );
