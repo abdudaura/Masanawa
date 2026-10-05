@@ -19,6 +19,7 @@ export type TwinActivityStatus =
 
 export interface TwinActivityRecord {
   readonly eventId: string;
+  readonly referenceId: string;
   readonly tenantId: TenantId;
   readonly characterId: CharacterId;
   readonly kind: TwinActivityKind;
@@ -49,6 +50,7 @@ export interface TwinActivitySource {
 
 export interface TwinActivityItem {
   readonly eventId: string;
+  readonly referenceId: string | null;
   readonly kind: TwinActivityKind;
   readonly status: TwinActivityStatus;
   readonly occurredAt: string;
@@ -179,6 +181,7 @@ export function createTwinActivityService(input: {
       let conversations = 0;
       let earningsCredits = 0;
       let pendingOwnerRequests = 0;
+      const seenOwnerRequests = new Set<string>();
       const items: TwinActivityItem[] = [];
 
       for (const record of records) {
@@ -188,13 +191,20 @@ export function createTwinActivityService(input: {
         const amountCredits = safeAmount(record.amountCredits);
         if (record.kind === "visit" && record.status !== "failed") visitors += 1;
         if (record.kind === "conversation" && record.status !== "failed") conversations += 1;
-        if (record.kind === "owner-request" && record.status === "pending") pendingOwnerRequests += 1;
+        if (
+          record.kind === "owner-request" &&
+          !seenOwnerRequests.has(record.referenceId)
+        ) {
+          seenOwnerRequests.add(record.referenceId);
+          if (record.status === "pending") pendingOwnerRequests += 1;
+        }
         if (record.kind === "earning" && record.status === "completed" && amountCredits !== null) {
           earningsCredits += amountCredits;
         }
         const copy = presentation(record);
         items.push(Object.freeze({
           eventId: record.eventId,
+          referenceId: record.kind === "owner-request" ? record.referenceId : null,
           kind: record.kind,
           status: record.status,
           occurredAt: record.occurredAt,
