@@ -21,6 +21,24 @@ export type AdminAgentActionKey =
   | "world.pause"
   | "world.resume";
 
+export interface AdminAgentApprovalCommands {
+  prepare(input: {
+    readonly tenantId: import("@masanawa/contracts").TenantId;
+    readonly operatorUserId: import("@masanawa/contracts").UserId;
+    readonly characterId: string;
+    readonly agentRunId: string;
+    readonly action: AdminAgentActionKey;
+    readonly capability: AgentAdminCapability;
+    readonly risk: "low" | "consequential" | "restricted";
+    readonly arguments: Readonly<Record<string, unknown>>;
+    readonly idempotencyKey: string;
+  }): Promise<{
+    readonly approvalId: string;
+    readonly operationId: string;
+    readonly reused: boolean;
+  }>;
+}
+
 export type AdminAgentActionResult =
   | {
       readonly status: "completed";
@@ -32,6 +50,9 @@ export type AdminAgentActionResult =
       readonly action: AdminAgentActionKey;
       readonly capability: AgentAdminCapability;
       readonly reason: string;
+      readonly approvalId: string;
+      readonly operationId: string;
+      readonly reused: boolean;
     };
 
 export interface AdminAgentActionBroker {
@@ -40,6 +61,8 @@ export interface AdminAgentActionBroker {
     readonly characterId: string;
     readonly action: AdminAgentActionKey;
     readonly arguments?: Readonly<Record<string, unknown>>;
+    readonly agentRunId?: string;
+    readonly idempotencyKey?: string;
   }): Promise<AdminAgentActionResult>;
 }
 
@@ -129,6 +152,7 @@ export function createAdminAgentActionBroker(input: {
   readonly config: AdminAgentDelegationConfig;
   readonly authorizer: AgentAdminAuthorizer;
   readonly platformAdmin: PlatformAdminService;
+  readonly approvalCommands?: AdminAgentApprovalCommands;
 }): AdminAgentActionBroker {
   return Object.freeze({
     async execute(request) {
@@ -154,21 +178,46 @@ export function createAdminAgentActionBroker(input: {
       if (!decision.allowed) {
         throw forbidden(`Delegated admin action denied: ${decision.reason}`);
       }
+      const args = request.arguments ?? {};
       if (decision.requiresApproval) {
         if (!operator.operatorUserId) {
           throw forbidden(
             "A canonical operator PlatformSession is required for governed admin writes",
           );
         }
+        if (!input.approvalCommands) {
+          throw forbidden("Governed admin write approvals are not configured");
+        }
+        const agentRunId = optionalString(request.agentRunId, "agentRunId");
+        const idempotencyKey = optionalString(
+          request.idempotencyKey,
+          "idempotencyKey",
+        );
+        if (!agentRunId || !idempotencyKey) {
+          throw new TypeError(
+            "Governed admin writes require agentRunId and idempotencyKey",
+          );
+        }
+        const prepared = await input.approvalCommands.prepare({
+          tenantId: operator.tenantId,
+          operatorUserId: operator.operatorUserId,
+          characterId: request.characterId,
+          agentRunId,
+          action: request.action,
+          capability: definition.capability,
+          risk: definition.risk === "read-only" ? "low" : definition.risk,
+          arguments: args,
+          idempotencyKey,
+        });
         return Object.freeze({
           status: "approval-required" as const,
           action: request.action,
           capability: definition.capability,
           reason: decision.reason,
+          ...prepared,
         });
       }
 
-      const args = request.arguments ?? {};
       const authorizationHeader = request.authorizationHeader;
 
       switch (request.action) {
