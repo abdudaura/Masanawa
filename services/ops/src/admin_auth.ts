@@ -52,6 +52,7 @@ const KNOWN_ADMIN_CAPABILITIES = new Set<AgentAdminCapability>([
   "world.admin.read",
   "world.admin.write",
   "approvals.admin.read",
+  "approvals.admin.write",
   "queues.admin.read",
   "admin.delegates.read",
   "admin.delegates.write",
