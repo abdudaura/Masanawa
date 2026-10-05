@@ -17,10 +17,27 @@ class _UsersAdminPageState extends State<UsersAdminPage> {
   @override
   Widget build(BuildContext context) => AdminFuture<List<AdminUser>>(
         future: _future,
-        retry: () => setState(() => _future = widget.api.users()),
+        retry: () => setState(() => _future = _load()),
         builder: (users) => AdminPageList(
           title: 'Users & identity',
           subtitle: 'Tenant users, linked identities and relationship counts. Lifecycle changes stay read-only until Identity exposes a canonical state-transition command.',
+          controls: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ChoiceChip(
+                label: const Text('All'),
+                selected: _stateFilter == null,
+                onSelected: (_) => _setStateFilter(null),
+              ),
+              for (final state in const ['active', 'disabled', 'archived'])
+                ChoiceChip(
+                  label: Text(state),
+                  selected: _stateFilter == state,
+                  onSelected: (_) => _setStateFilter(state),
+                ),
+            ],
+          ),
           children: users.map((user) => Card(
             child: ListTile(
               leading: CircleAvatar(
@@ -48,15 +65,43 @@ class RuntimeAdminPage extends StatefulWidget {
 }
 
 class _RuntimeAdminPageState extends State<RuntimeAdminPage> {
-  late Future<List<AdminAgentRun>> _future = widget.api.agentRuns();
+  String? _stateFilter;
+  late Future<List<AdminAgentRun>> _future = _load();
+
+  Future<List<AdminAgentRun>> _load() =>
+      widget.api.agentRuns(state: _stateFilter);
+
+  void _setStateFilter(String? state) {
+    setState(() {
+      _stateFilter = state;
+      _future = _load();
+    });
+  }
 
   @override
   Widget build(BuildContext context) => AdminFuture<List<AdminAgentRun>>(
         future: _future,
-        retry: () => setState(() => _future = widget.api.agentRuns()),
+        retry: () => setState(() => _future = _load()),
         builder: (runs) => AdminPageList(
           title: 'Agent runtime',
           subtitle: 'Recent AgentRun execution, failures and correlation traces.',
+          controls: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ChoiceChip(
+                label: const Text('All'),
+                selected: _stateFilter == null,
+                onSelected: (_) => _setStateFilter(null),
+              ),
+              for (final state in const ['running', 'completed', 'failed'])
+                ChoiceChip(
+                  label: Text(state),
+                  selected: _stateFilter == state,
+                  onSelected: (_) => _setStateFilter(state),
+                ),
+            ],
+          ),
           children: runs.map((run) => Card(
             child: ListTile(
               leading: Icon(
@@ -754,10 +799,12 @@ class AdminPageList extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.children,
+    this.controls,
   });
   final String title;
   final String subtitle;
   final List<Widget> children;
+  final Widget? controls;
 
   @override
   Widget build(BuildContext context) => ListView(
@@ -766,6 +813,10 @@ class AdminPageList extends StatelessWidget {
           Text(title, style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 4),
           Text(subtitle, style: TextStyle(color: context.masanawa.textMuted)),
+          if (controls != null) ...[
+            const SizedBox(height: 12),
+            controls!,
+          ],
           const SizedBox(height: 14),
           if (children.isEmpty)
             const Card(child: ListTile(title: Text('No records')))
