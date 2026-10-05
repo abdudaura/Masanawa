@@ -111,6 +111,16 @@ BEGIN
      OR NEW.created_at IS DISTINCT FROM OLD.created_at THEN
     RAISE EXCEPTION 'Task identity is immutable' USING ERRCODE = '23514';
   END IF;
+  IF NEW.revision <> OLD.revision + 1 THEN
+    RAISE EXCEPTION 'Task revision must advance exactly once' USING ERRCODE = '23514';
+  END IF;
+  IF OLD.state IN ('completed','failed','cancelled') AND NEW.state <> OLD.state THEN
+    RAISE EXCEPTION 'Terminal Task state is immutable' USING ERRCODE = '23514';
+  END IF;
+  IF OLD.workflow_run_id IS NOT NULL
+     AND NEW.workflow_run_id IS DISTINCT FROM OLD.workflow_run_id THEN
+    RAISE EXCEPTION 'Task WorkflowRun binding is immutable once assigned' USING ERRCODE = '23514';
+  END IF;
   RETURN NEW;
 END;
 $$;
@@ -135,6 +145,15 @@ BEGIN
      OR NEW.created_at IS DISTINCT FROM OLD.created_at THEN
     RAISE EXCEPTION 'WorkflowRun identity is immutable' USING ERRCODE = '23514';
   END IF;
+  IF NEW.revision <> OLD.revision + 1 THEN
+    RAISE EXCEPTION 'WorkflowRun revision must advance exactly once' USING ERRCODE = '23514';
+  END IF;
+  IF NEW.checkpoint_revision < OLD.checkpoint_revision THEN
+    RAISE EXCEPTION 'WorkflowRun checkpoint revision cannot move backward' USING ERRCODE = '23514';
+  END IF;
+  IF OLD.state IN ('completed','failed','cancelled') AND NEW.state <> OLD.state THEN
+    RAISE EXCEPTION 'Terminal WorkflowRun state is immutable' USING ERRCODE = '23514';
+  END IF;
   RETURN NEW;
 END;
 $$;
@@ -143,3 +162,23 @@ CREATE TRIGGER workflow_runs_immutable_identity
 BEFORE UPDATE ON workflows.workflow_runs
 FOR EACH ROW
 EXECUTE FUNCTION workflows.reject_workflow_run_identity_update();
+
+
+CREATE OR REPLACE FUNCTION workflows.reject_work_history_delete()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RAISE EXCEPTION 'Work history is immutable' USING ERRCODE = '23514';
+END;
+$$;
+
+CREATE TRIGGER tasks_no_delete
+BEFORE DELETE ON workflows.tasks
+FOR EACH ROW
+EXECUTE FUNCTION workflows.reject_work_history_delete();
+
+CREATE TRIGGER workflow_runs_no_delete
+BEFORE DELETE ON workflows.workflow_runs
+FOR EACH ROW
+EXECUTE FUNCTION workflows.reject_work_history_delete();
