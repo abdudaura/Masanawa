@@ -23,7 +23,7 @@ Implemented:
 - explicit Ops endpoint requirement; no accidental customer-Gateway default;
 - secure bootstrap operator credential storage and protected-route validation;
 - platform Overview/readiness;
-- Users/Identity list and optimistic activate/disable/archive command;
+- Users/Identity list and relationship/identity counts; lifecycle state mutation is intentionally read-only because current Identity exposes no canonical state-transition command;
 - complete Character discovery including unconfigured Characters;
 - first-time Agent presentation configuration plus presentation/visibility/order editing;
 - per-Agent Skill assignment and Skill readiness catalog;
@@ -38,11 +38,11 @@ Implemented:
 - Modules readiness view for Channels, Devices, Workflows, Social/Studio, Plugins and Agent Phone;
 - tenant/capability authorization on every new Ops projection;
 - cross-capability same-tenant enforcement in System diagnostics;
-- regression coverage for tenant-scoped reads, optimistic user state writes, authorization-before-storage and secret-safe credential projection.
+- regression coverage for tenant-scoped reads, rejection of direct-SQL user lifecycle mutation, authorization-before-storage and secret-safe credential projection.
 
 Intentionally gated:
 - approval approve/deny requires a real operator Principal/approver identity;
-- provider rotation/revocation, Offer mutation, reconciliation commands, World mutation, Memory correction/purge and policy/role administration require canonical command/use-case contracts rather than direct SQL shortcuts;
+- User lifecycle transition, provider rotation, reconciliation commands, Memory correction/purge and policy/role administration require canonical command/use-case contracts rather than direct SQL shortcuts; provider revocation, Offer enable/disable and World pause/resume already bind canonical storage/domain commands;
 - Channels, Devices, Workflows, billing/crypto administration and later Social/Studio/Plugins/Agent Phone controls integrate as their active platform contracts land.
 
 Verification:
