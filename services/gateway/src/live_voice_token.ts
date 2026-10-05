@@ -11,6 +11,20 @@ export function createGeminiLiveTokenService(input: {
   readonly voiceName?: string;
   readonly fetchImpl?: typeof fetch;
   readonly now?: () => Date;
+  readonly paidVoiceAdmission?: {
+    validate(input: {
+      readonly tenantId: import("@masanawa/contracts").TenantId;
+      readonly userId: import("@masanawa/contracts").UserId;
+      readonly characterId: import("@masanawa/contracts").CharacterId;
+      readonly admissionId: string | null;
+    }): Promise<void>;
+    tokenIssued(input: {
+      readonly tenantId: import("@masanawa/contracts").TenantId;
+      readonly userId: import("@masanawa/contracts").UserId;
+      readonly characterId: import("@masanawa/contracts").CharacterId;
+      readonly admissionId: string | null;
+    }): Promise<void>;
+  };
 }): LiveVoiceTokenService {
   const apiKey = input.apiKey.trim();
   if (!apiKey) throw new TypeError("Gemini API key is required");
@@ -25,6 +39,12 @@ export function createGeminiLiveTokenService(input: {
       const admission = await input.authorizer.authorize({
         authorizationHeader: request.authorizationHeader,
         characterId,
+      });
+      await input.paidVoiceAdmission?.validate({
+        tenantId: admission.scope.tenantId,
+        userId: admission.scope.userId,
+        characterId,
+        admissionId: request.admissionId ?? null,
       });
       const profile = input.platformProfiles
         ? await input.platformProfiles.readForCharacter({
@@ -74,6 +94,12 @@ export function createGeminiLiveTokenService(input: {
       if (typeof payload.name !== "string" || payload.name.length < 16) {
         throw new Error("Gemini Live token provisioning returned no token");
       }
+      await input.paidVoiceAdmission?.tokenIssued({
+        tenantId: admission.scope.tenantId,
+        userId: admission.scope.userId,
+        characterId,
+        admissionId: request.admissionId ?? null,
+      });
       return Object.freeze({
         token: payload.name,
         websocketUrl:
