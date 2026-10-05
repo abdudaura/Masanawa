@@ -86,4 +86,86 @@ void main() {
     expect(seen?['amountCredits'], 100);
     expect(seen?.containsKey('recipientUserId'), isFalse);
   });
+
+  test('reuses the same transfer request id after an ambiguous network failure', () async {
+    final requestIds = <String>[];
+    var attempt = 0;
+    final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
+    dio.httpClientAdapter = _Adapter((options) async {
+      attempt += 1;
+      final data = (options.data as Map).cast<String, dynamic>();
+      requestIds.add(data['requestId'] as String);
+      if (attempt == 1) {
+        throw DioException(
+          requestOptions: options,
+          type: DioExceptionType.connectionError,
+          error: 'response lost',
+        );
+      }
+      return ResponseBody.fromString(
+        '{"transferId":"transfer-replayed","recipientUserId":"user-b","amountCredits":250,"completedAt":"2026-10-05T10:00:00Z"}',
+        200,
+        headers: {
+          Headers.contentTypeHeader: ['application/json'],
+        },
+      );
+    });
+
+    final transport = GatewayWalletTransport(
+      api: ApiClient(dio: dio),
+      now: () => DateTime.utc(2026, 10, 5, 10),
+    );
+
+    await expectLater(
+      transport.sendCredits(
+        recipient: 'friend@example.com',
+        amountCredits: 250,
+      ),
+      throwsA(isA<DioException>()),
+    );
+
+    final receipt = await transport.sendCredits(
+      recipient: 'friend@example.com',
+      amountCredits: 250,
+    );
+
+    expect(receipt.transferId, 'transfer-replayed');
+    expect(requestIds.length, 2);
+    expect(requestIds[1], requestIds[0]);
+  });
+
+  test('uses a new request id for the next intentional identical transfer after success', () async {
+    final requestIds = <String>[];
+    final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
+    dio.httpClientAdapter = _Adapter((options) async {
+      final data = (options.data as Map).cast<String, dynamic>();
+      requestIds.add(data['requestId'] as String);
+      return ResponseBody.fromString(
+        '{"transferId":"transfer-ok","recipientUserId":"user-b","amountCredits":50,"completedAt":"2026-10-05T10:00:00Z"}',
+        200,
+        headers: {
+          Headers.contentTypeHeader: ['application/json'],
+        },
+      );
+    });
+
+    var tick = 0;
+    final transport = GatewayWalletTransport(
+      api: ApiClient(dio: dio),
+      now: () => DateTime.utc(2026, 10, 5, 10, 0, tick++),
+    );
+
+    await transport.sendCredits(
+      recipient: 'friend@example.com',
+      amountCredits: 50,
+    );
+    await transport.sendCredits(
+      recipient: 'friend@example.com',
+      amountCredits: 50,
+    );
+
+    expect(requestIds.length, 2);
+    expect(requestIds[1], isNot(requestIds[0]));
+  });
+
 }
