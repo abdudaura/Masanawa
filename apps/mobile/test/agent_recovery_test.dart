@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:masanawa/src/agents/agent_directory.dart';
+import 'package:masanawa/src/agents/agent_directory_cache.dart';
 import 'package:masanawa/src/agents/agent_feedback.dart';
 import 'package:masanawa/src/agents/agent_session.dart';
 import 'package:masanawa/src/agents/masanawa_transport.dart';
@@ -67,6 +68,30 @@ class FakeDirectory implements AgentDirectoryTransport {
 
   @override
   Future<void> setDefaultPlatformAgent(String characterId) async {}
+}
+
+class _NoopDirectoryCache implements AgentDirectoryCache {
+  @override
+  Future<List<AgentDirectoryEntry>?> read(String ownerId) async => null;
+
+  @override
+  Future<void> write(
+    String ownerId,
+    List<AgentDirectoryEntry> agents,
+  ) async {}
+
+  @override
+  Future<void> clear() async {}
+}
+
+Future<void> _waitForDirectoryRequests(
+  FakeDirectory transport,
+  int count,
+) async {
+  for (var attempt = 0; attempt < 20 && transport.requests.length < count; attempt++) {
+    await Future<void>.delayed(Duration.zero);
+  }
+  expect(transport.requests, hasLength(count));
 }
 
 class RetryDirectory implements AgentDirectoryTransport {
@@ -273,6 +298,7 @@ void main() {
         ProviderScope(
           overrides: [
             agentDirectoryTransportProvider.overrideWithValue(directory),
+            agentDirectoryCacheProvider.overrideWithValue(_NoopDirectoryCache()),
             sessionProvider.overrideWith(_SignedInSessionController.new),
           ],
           child: MaterialApp(
@@ -327,12 +353,13 @@ void main() {
       final c = ProviderContainer(
         overrides: [
           agentDirectoryTransportProvider.overrideWithValue(transport),
+          agentDirectoryCacheProvider.overrideWithValue(_NoopDirectoryCache()),
           sessionProvider.overrideWith(_SignedInSessionController.new),
         ],
       );
       addTearDown(c.dispose);
       c.read(agentDirectoryProvider);
-      await Future<void>.delayed(Duration.zero);
+      await _waitForDirectoryRequests(transport, 1);
       transport.requests[0].complete([agent]);
       await Future<void>.delayed(Duration.zero);
       final retry = c.read(agentDirectoryProvider.notifier).refresh();
@@ -361,8 +388,9 @@ void main() {
     );
     addTearDown(c.dispose);
     c.read(agentDirectoryProvider);
-    await Future<void>.delayed(Duration.zero);
+    await _waitForDirectoryRequests(transport, 1);
     final next = c.read(agentDirectoryProvider.notifier).refresh();
+    await _waitForDirectoryRequests(transport, 2);
     transport.requests[1].complete([agent]);
     await next;
     transport.requests[0].completeError(const ApiException('old failure'));
