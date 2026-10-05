@@ -28,3 +28,4 @@ export * from "./agents/selection.js";
 export * from "./agents/mobile-shell.js";
 
 export * from "./identity/production-auth.js";
+export * from "./commerce/billing-funding.js";
