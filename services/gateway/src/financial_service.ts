@@ -312,6 +312,27 @@ function conversionView(intent: CryptoIntent): FinancialConversionView {
   });
 }
 
+function fiatPurchaseView(intent: CryptoIntent): FinancialFiatPurchaseView {
+  if (intent.operation !== "buy" || intent.targetAsset === null) {
+    throw new Error("financial.crypto.fiat_onramp_unavailable");
+  }
+  return Object.freeze({
+    requestId: intent.requestId,
+    fiatAmount: intent.amount,
+    fiatCurrency: intent.asset,
+    settlementAsset: intent.targetAsset,
+    settlementNetwork: intent.targetNetwork ?? null,
+    cryptoAmount: intent.providerTargetAmount ?? null,
+    status: intent.status,
+    providerInvoiceId: intent.providerInvoiceId ?? null,
+    providerPaymentId: intent.providerPaymentId,
+    checkoutUrl: intent.checkoutUrl ?? null,
+    outcomeUnknown:
+      intent.providerDispatchStartedAt !== null &&
+      (intent.providerInvoiceId ?? null) === null,
+  });
+}
+
 function payoutSucceeded(status: string | null): boolean {
   return status !== null && ["finished", "success", "successful", "sent"].includes(status);
 }
@@ -366,6 +387,23 @@ function decimalFromUnits(units: bigint): string {
   const whole = raw.slice(0, -18).replace(/^0+(?=\d)/u, "") || "0";
   const fraction = raw.slice(-18).replace(/0+$/u, "");
   return fraction ? `${whole}.${fraction}` : whole;
+}
+
+function normalizeFiatAmount(value: string): string {
+  const normalized = normalizeCryptoAmount(value);
+  const decimals = normalized.includes(".")
+    ? normalized.length - normalized.indexOf(".") - 1
+    : 0;
+  if (decimals > 2) throw new Error("financial.crypto.fiat_amount_invalid");
+  const numeric = Number(normalized);
+  if (
+    !Number.isFinite(numeric) ||
+    numeric <= 0 ||
+    numberToPlainDecimal(numeric) !== normalized
+  ) {
+    throw new Error("financial.crypto.fiat_amount_invalid");
+  }
+  return normalized;
 }
 
 export function createFinancialService(input: {
@@ -432,6 +470,19 @@ export function createFinancialService(input: {
   const payoutIpnCallbackUrl =
     new URL("/v1/financial/nowpayments/payout-ipn", base).toString();
   const withdrawalNetworkFeeMode = input.withdrawalNetworkFeeMode ?? null;
+  const fiatOnRamp = input.fiatOnRamp === undefined
+    ? null
+    : Object.freeze({
+        settlementProviderCode: normalizeCryptoAsset(
+          input.fiatOnRamp.settlementProviderCode,
+        ),
+        fiatCurrencies: Object.freeze([
+          ...new Set(input.fiatOnRamp.fiatCurrencies.map(normalizeCryptoAsset)),
+        ]),
+      });
+  if (fiatOnRamp !== null && fiatOnRamp.fiatCurrencies.length === 0) {
+    throw new TypeError("financial.crypto.fiat_onramp.currencies_required");
+  }
 
   async function authority(header: string | undefined) {
     return input.authorizer.authorize({ authorizationHeader: header });
@@ -458,6 +509,19 @@ export function createFinancialService(input: {
   async function currentDepositRoute(providerCode: string) {
     const routes = await qualifiedDepositRoutes();
     return routes.find((route) => route.providerCode === providerCode) ?? null;
+  }
+
+  async function qualifiedFiatOnRamp() {
+    if (fiatOnRamp === null || !input.nowPaymentsCustody) return null;
+    const routes = await qualifiedDepositRoutes();
+    const settlement = routes.find(
+      (route) => route.providerCode === fiatOnRamp.settlementProviderCode,
+    );
+    if (!settlement) return null;
+    return Object.freeze({
+      settlement,
+      fiatCurrencies: fiatOnRamp.fiatCurrencies,
+    });
   }
 
   async function routesCoveredByCustody(
