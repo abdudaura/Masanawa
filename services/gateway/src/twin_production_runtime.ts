@@ -1925,7 +1925,33 @@ export function createTwinProductionRuntime(input: {
       if (!decision.eligible || decision.commissionCredits === 0) return;
       let settlement = existing;
       if (!settlement) {
-        const ledgerEntryId = createCanonicalId("ledger-entry");
+        const plan = await ensurePlan(input.economy, {
+          tenantId: request.tenantId,
+          planKey: `commission-settle:${request.operationId}`,
+          roles: [{ role: "commission", amountCredits: decision.commissionCredits }],
+        });
+        const ledgerEntryId = planEntry(
+          plan,
+          "commission",
+          decision.commissionCredits,
+        )!;
+        await input.commerce.postTransfer({
+          schemaVersion: 1,
+          ledgerEntryId,
+          tenantId: request.tenantId,
+          debit: account(request.tenantId, "platform-revenue", null, null),
+          credit: account(
+            request.tenantId,
+            "pending-earnings",
+            attribution.ownerUserId as UserId,
+            attribution.characterId as CharacterId,
+          ),
+          amountCredits: decision.commissionCredits,
+          reason: "creator-earning",
+          quoteId: null,
+          fulfillmentId: null,
+          createdAt: plan.createdAt as never,
+        });
         const settlementId = createCanonicalId("operation");
         await input.economy.recordCommissionSettlement({
           tenantId: request.tenantId,
@@ -1953,18 +1979,22 @@ export function createTwinProductionRuntime(input: {
       ) {
         throw new Error("Commission settlement replay conflict");
       }
-      await input.commerce.postTransfer({
-        schemaVersion: 1,
-        ledgerEntryId: settlement.ledgerEntryId,
-        tenantId: request.tenantId,
-        debit: account(request.tenantId, "platform-revenue", null, null),
-        credit: account(request.tenantId, "pending-earnings", settlement.ownerUserId, settlement.characterId),
-        amountCredits: settlement.commissionCredits,
-        reason: "creator-earning",
-        quoteId: null,
-        fulfillmentId: null,
-        createdAt: at() as never,
-      });
+      if (existing) {
+        // Pre-plan settlements created by older builds are replayed through their
+        // persisted ledger id. Canonical Commerce owns duplicate suppression.
+        await input.commerce.postTransfer({
+          schemaVersion: 1,
+          ledgerEntryId: settlement.ledgerEntryId,
+          tenantId: request.tenantId,
+          debit: account(request.tenantId, "platform-revenue", null, null),
+          credit: account(request.tenantId, "pending-earnings", settlement.ownerUserId, settlement.characterId),
+          amountCredits: settlement.commissionCredits,
+          reason: "creator-earning",
+          quoteId: null,
+          fulfillmentId: null,
+          createdAt: at() as never,
+        });
+      }
       await input.events.append({
         tenantId: request.tenantId,
         payload: {
@@ -1997,22 +2027,38 @@ export function createTwinProductionRuntime(input: {
         originalCommissionCredits: original.commissionCredits,
         reversalBaseCredits: request.reversalBaseCredits,
       });
-      const amount = Math.min(-signed, original.commissionCredits - original.reversedCredits);
-      if (amount <= 0) return;
-      const plan = await ensurePlan(input.economy, {
+      const requestedAmount = Math.max(0, -signed);
+      const planKey = `commission-reversal:${request.reversalId}`;
+      const existingPlan = await input.economy.readLedgerPlan({
         tenantId: request.tenantId,
-        planKey: `commission-reversal:${request.reversalId}`,
-        roles: [{ role: "reversal", amountCredits: amount }],
+        planKey,
       });
+      let plan = existingPlan;
+      let amount: number;
+      if (plan) {
+        const planned = plan.entries.find((entry) => entry.role === "reversal");
+        if (
+          !planned ||
+          !Number.isSafeInteger(planned.amountCredits) ||
+          planned.amountCredits <= 0 ||
+          planned.amountCredits > original.commissionCredits
+        ) {
+          throw new Error("Commission reversal ledger plan conflict");
+        }
+        amount = planned.amountCredits;
+      } else {
+        amount = Math.min(
+          requestedAmount,
+          original.commissionCredits - original.reversedCredits,
+        );
+        if (amount <= 0) return;
+        plan = await ensurePlan(input.economy, {
+          tenantId: request.tenantId,
+          planKey,
+          roles: [{ role: "reversal", amountCredits: amount }],
+        });
+      }
       const stableLedger = planEntry(plan, "reversal", amount)!;
-      await input.economy.recordCommissionReversal({
-        tenantId: request.tenantId,
-        operationId: request.operationId,
-        reversalId: request.reversalId,
-        amountCredits: amount,
-        ledgerEntryId: stableLedger,
-        reversedAt: at(),
-      });
       await input.commerce.postTransfer({
         schemaVersion: 1,
         ledgerEntryId: stableLedger,
@@ -2023,7 +2069,15 @@ export function createTwinProductionRuntime(input: {
         reason: "adjustment",
         quoteId: null,
         fulfillmentId: null,
-        createdAt: at() as never,
+        createdAt: plan.createdAt as never,
+      });
+      await input.economy.recordCommissionReversal({
+        tenantId: request.tenantId,
+        operationId: request.operationId,
+        reversalId: request.reversalId,
+        amountCredits: amount,
+        ledgerEntryId: stableLedger,
+        reversedAt: at(),
       });
       await input.events.append({
         tenantId: request.tenantId,
