@@ -20,7 +20,8 @@
     "@masanawa/postgres": "workspace:*",
     "@masanawa/agents": "workspace:*",
     "@masanawa/security": "workspace:*",
-    "@masanawa/skills": "workspace:*"
+    "@masanawa/skills": "workspace:*",
+    "@masanawa/nowpayments": "workspace:*"
   },
   "devDependencies": {
     "vitest": "5.0.3"
