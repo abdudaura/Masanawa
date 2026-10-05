@@ -72,3 +72,8 @@ Not yet integrated:
 - security guard adapter from the abuse-control lane.
 
 No active billing/crypto Commerce files or migrations were modified.
+
+
+## Local verification
+
+Local strict TypeScript verification: `transfers.ts` and `gifts.ts` compile cleanly with `tsc --strict --noEmit` in isolation.
