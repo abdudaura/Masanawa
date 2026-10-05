@@ -22,16 +22,13 @@ export function createGeminiLiveTokenService(input: {
   const service: LiveVoiceTokenService = {
     async mint(request) {
       const characterId = parseCanonicalId("character", request.characterId);
-      await input.authorizer.authorize({
+      const admission = await input.authorizer.authorize({
         authorizationHeader: request.authorizationHeader,
         characterId,
       });
       const profile = input.platformProfiles
         ? await input.platformProfiles.readForCharacter({
-            tenantId: (await input.authorizer.authorize({
-              authorizationHeader: request.authorizationHeader,
-              characterId,
-            })).scope.tenantId,
+            tenantId: admission.scope.tenantId,
             characterId,
           })
         : null;
