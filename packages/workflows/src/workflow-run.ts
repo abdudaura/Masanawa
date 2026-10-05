@@ -396,6 +396,12 @@ export function assertWorkflowRunAccess(
   }
 }
 
+export interface WorkflowCheckpointTransition {
+  readonly to: WorkflowRunState;
+  readonly failureCode?: string;
+  readonly pendingApprovalIds?: readonly ApprovalId[];
+}
+
 export interface WorkflowRunRepository {
   create(input: {
     readonly authority: AuthorityContext;
@@ -431,6 +437,14 @@ export interface WorkflowRunRepository {
     readonly scope: WorkflowRunScope;
     readonly expectedRunRevision: number;
     readonly checkpoint: WorkflowCheckpoint;
+  }): Promise<WorkflowRun>;
+
+  commitCheckpoint(input: {
+    readonly authority: AuthorityContext;
+    readonly scope: WorkflowRunScope;
+    readonly expectedRunRevision: number;
+    readonly checkpoint: WorkflowCheckpoint;
+    readonly transition: WorkflowCheckpointTransition;
   }): Promise<WorkflowRun>;
 
   readLatestCheckpoint(input: {
