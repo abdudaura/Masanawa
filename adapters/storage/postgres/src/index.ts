@@ -17,6 +17,7 @@ export * from "./agents/configuration.js";
 export * from "./agents/runs.js";
 
 export * from "./commerce/repository.js";
+export * from "./commerce/crypto-repository.js";
 export * from "./skills/guides.js";
 export * from "./identity/personal_clone.js";
 export * from "./identity/relationships.js";
