@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/api/models.dart';
 import '../../core/phone/country_codes.dart';
+import '../../core/providers.dart';
 import '../../state/session_state.dart';
 import '../../tokens/masanawa_tokens.dart';
 import '../../ui/components/onboarding_scaffold.dart';
@@ -25,8 +26,40 @@ class PhoneLoginScreen extends ConsumerStatefulWidget {
 class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
   final _phone = TextEditingController();
   final _email = TextEditingController();
-  OtpChannel _channel = OtpChannel.sms;
+  OtpChannel _channel = OtpChannel.email;
+  Set<OtpChannel> _availableChannels = {OtpChannel.email};
+  bool _loadingCapabilities = true;
   PhoneCountry _country = kDefaultCountry;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCapabilities();
+  }
+
+  Future<void> _loadCapabilities() async {
+    Set<OtpChannel> channels;
+    try {
+      final result = await ref.read(apiClientProvider).authCapabilities();
+      channels = result.otpChannels.toSet();
+    } catch (_) {
+      // Older/unreachable gateways fail closed to email rather than exposing
+      // an SMS option that may not be configured.
+      channels = {OtpChannel.email};
+    }
+    if (!mounted) return;
+    setState(() {
+      _availableChannels = channels;
+      _loadingCapabilities = false;
+      if (!_availableChannels.contains(_channel)) {
+        _channel = _availableChannels.contains(OtpChannel.email)
+            ? OtpChannel.email
+            : (_availableChannels.isNotEmpty
+                ? _availableChannels.first
+                : OtpChannel.email);
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -38,6 +71,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
   bool get _isEmail => _channel == OtpChannel.email;
 
   void _continueWithPhone() {
+    if (!_availableChannels.contains(OtpChannel.sms)) return;
     final e164 = normalizeE164(_phone.text);
     final digits = e164.replaceAll(RegExp(r'\D'), '');
     if (digits.length < 7 || digits.length > 15) {
@@ -51,6 +85,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
   }
 
   void _sendEmailCode() {
+    if (!_availableChannels.contains(OtpChannel.email)) return;
     final email = _email.text.trim();
     if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email)) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -81,25 +116,54 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SegmentedButton<OtpChannel>(
-            segments: const [
-              ButtonSegment(
-                value: OtpChannel.sms,
-                label: Text('Phone'),
-                icon: Icon(Icons.phone_outlined),
-              ),
-              ButtonSegment(
-                value: OtpChannel.email,
-                label: Text('Email'),
-                icon: Icon(Icons.mail_outline),
-              ),
-            ],
-            selected: {_channel},
-            onSelectionChanged: (selection) {
-              setState(() => _channel = selection.first);
-            },
-          ),
-          const SizedBox(height: 20),
+          if (_loadingCapabilities) ...[
+            const LinearProgressIndicator(minHeight: 2),
+            const SizedBox(height: 20),
+          ] else if (_availableChannels.length > 1) ...[
+            SegmentedButton<OtpChannel>(
+              segments: [
+                if (_availableChannels.contains(OtpChannel.sms))
+                  const ButtonSegment(
+                    value: OtpChannel.sms,
+                    label: Text('Phone'),
+                    icon: Icon(Icons.phone_outlined),
+                  ),
+                if (_availableChannels.contains(OtpChannel.email))
+                  const ButtonSegment(
+                    value: OtpChannel.email,
+                    label: Text('Email'),
+                    icon: Icon(Icons.mail_outline),
+                  ),
+              ],
+              selected: {_channel},
+              onSelectionChanged: (selection) {
+                if (selection.isNotEmpty) {
+                  setState(() => _channel = selection.first);
+                }
+              },
+            ),
+            const SizedBox(height: 20),
+          ] else if (_availableChannels.isNotEmpty) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  _isEmail ? Icons.mail_outline : Icons.phone_outlined,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Text(_isEmail ? 'Email verification' : 'Phone verification'),
+              ],
+            ),
+            const SizedBox(height: 20),
+          ] else ...[
+            Text(
+              'Sign-in is temporarily unavailable.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+            const SizedBox(height: 20),
+          ],
           if (_isEmail)
             TextField(
               controller: _email,
@@ -147,13 +211,19 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
             PrimaryButton(
               label: sending ? 'Sending code…' : 'Send code',
               loading: sending,
-              onPressed: _sendEmailCode,
+              onPressed: _loadingCapabilities ||
+                      !_availableChannels.contains(OtpChannel.email)
+                  ? null
+                  : _sendEmailCode,
             )
           else
             PrimaryButton(
               label: sending ? 'Sending code…' : 'Continue',
               loading: sending,
-              onPressed: _continueWithPhone,
+              onPressed: _loadingCapabilities ||
+                      !_availableChannels.contains(OtpChannel.sms)
+                  ? null
+                  : _continueWithPhone,
             ),
           const SizedBox(height: 8),
           Text(
