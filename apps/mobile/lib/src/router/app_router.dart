@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../screens/chat/ai_chat_screen.dart';
+import '../screens/billing/billing_screen.dart';
 import '../screens/chat/chat_list_screen.dart';
 import '../screens/chat/masana_list_screen.dart';
 import '../screens/onboarding/name_screen.dart';
@@ -58,6 +59,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path.startsWith('/chat/') ||
           (path == '/agents' || path == '/masana') ||
           path == '/settings' ||
+          path == '/billing' ||
           path == '/clone' ||
           path == '/profile';
       if (!isSignedIn && protected) return '/phone-login';
@@ -82,6 +84,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/agents', builder: (_, _) => const AgentListScreen()),
       GoRoute(path: '/masana', redirect: (_, __) => '/agents'),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
+      GoRoute(path: '/billing', builder: (_, _) => const BillingScreen()),
       GoRoute(path: '/clone', builder: (_, _) => const CloneSetupScreen()),
       GoRoute(path: '/profile', builder: (_, _) => const SettingsScreen()),
     ],
