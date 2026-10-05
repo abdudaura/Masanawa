@@ -22,7 +22,6 @@ import type {
   PersonalCloneProvisioningRepository,
   UserRelationshipProvisioner,
   UserRelationshipReader,
-  IdentityRepository,
 } from "@masanawa/identity";
 import type { BillingQuoteRepository, CommerceRepository, CryptoRepository } from "@masanawa/commerce";
 import { parseCanonicalId, readRequiredEnv } from "@masanawa/contracts";
@@ -69,6 +68,7 @@ import {
   createPostgresBillingQuoteRepository,
   createPostgresBillingFulfillmentStore,
   createPostgresBillingWebhookRepository,
+  withTransaction,
 } from "@masanawa/postgres";
 import {
   createAgentDirectoryService,
@@ -153,7 +153,10 @@ import {
   createBillingCheckoutService,
   type BillingCheckoutService,
 } from "./billing_checkout.js";
-import { ensureDefaultPlatformAgents } from "./platform_agent_bootstrap.js";
+import {
+  ensureDefaultPlatformAgents,
+  type PlatformAgentIdentityProvisioner,
+} from "./platform_agent_bootstrap.js";
 
 export type ServiceSignal = "SIGINT" | "SIGTERM";
 
@@ -164,7 +167,7 @@ export interface ServiceProcess extends NodeSignalSource {
 
 export interface ServiceDatabaseDependency {
   readonly readinessCheck: ReadinessCheck;
-  readonly identity?: IdentityRepository;
+  readonly platformAgentIdentity?: PlatformAgentIdentityProvisioner;
   readonly agentPresentations?: AgentPresentationRepository;
   readonly characterSkillAssignments?: CharacterSkillAssignmentRepository;
   readonly characterSessions?: CharacterSessionRepository;
@@ -259,7 +262,45 @@ function createDefaultDatabaseDependency(
   });
   return Object.freeze({
     readinessCheck: database.readinessCheck,
-    identity: createPostgresIdentityRepository(database.pool),
+    platformAgentIdentity: Object.freeze({
+      async provision(input) {
+        await withTransaction(database.pool, async (client) => {
+          const identity = createPostgresIdentityRepository(client);
+          await identity.createCharacter({
+            tenantId: input.tenantId,
+            characterId: input.characterId,
+            createdAt: input.createdAt,
+          });
+          await identity.assignCharacterOwnership({
+            tenantId: input.tenantId,
+            characterId: input.characterId,
+            kind: "platform",
+            ownerUserId: null,
+            createdAt: input.createdAt,
+          });
+          await identity.createCharacterVersion({
+            tenantId: input.tenantId,
+            characterVersionId: input.characterVersionId,
+            characterId: input.characterId,
+            versionNumber: 1,
+            constitution: input.constitution,
+            createdAt: input.createdAt,
+          });
+          await identity.publishCharacterVersion({
+            tenantId: input.tenantId,
+            characterVersionId: input.characterVersionId,
+            publishedAt: input.createdAt,
+          });
+          await identity.activateCharacterVersion({
+            tenantId: input.tenantId,
+            characterId: input.characterId,
+            characterVersionId: input.characterVersionId,
+            expectedCharacterRevision: 1,
+            activatedAt: input.createdAt,
+          });
+        });
+      },
+    }),
     agentPresentations: createPostgresAgentPresentationRepository(database.pool),
     characterSkillAssignments:
       createPostgresCharacterSkillAssignmentRepository(database.pool),
@@ -492,7 +533,7 @@ export async function startGatewayService(
     const platformTenantId = parseCanonicalId("tenant", platformTenantRaw);
 
     if (env.MASANAWA_BOOTSTRAP_PLATFORM_AGENTS === "true") {
-      if (!database.identity || !database.skillDistribution) {
+      if (!database.platformAgentIdentity || !database.skillDistribution) {
         await database.close().catch(() => undefined);
         throw new Error(
           "Platform Agent bootstrap requires Identity and Skill distribution repositories",
@@ -500,7 +541,7 @@ export async function startGatewayService(
       }
       await ensureDefaultPlatformAgents({
         tenantId: platformTenantId,
-        identity: database.identity,
+        identity: database.platformAgentIdentity,
         presentations: database.agentPresentations,
         profiles: database.platformAgentProfiles,
         skillAssignments: database.characterSkillAssignments,
