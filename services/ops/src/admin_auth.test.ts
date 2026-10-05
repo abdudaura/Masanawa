@@ -64,29 +64,48 @@ describe("Ops platform-session admin authorization", () => {
     const config = readPlatformSessionAdminAuthConfig({
       MASANAWA_OPS_ADMIN_GRANTS_JSON: JSON.stringify([
         {
+          tenantId,
           userId,
           capabilities: ["platform.summary.read", "identity.users.read"],
         },
       ]),
     });
-    expect(config?.grants.get(userId as never)?.has("identity.users.read")).toBe(true);
-    expect(config?.grants.get(userId as never)?.has("commerce.write")).toBe(false);
+    expect(config?.grants[0]?.capabilities.has("identity.users.read")).toBe(true);
+    expect(config?.grants[0]?.capabilities.has("commerce.write")).toBe(false);
+  });
+
+  it("supports a tenant-scoped verified email selector for first admin login", () => {
+    const config = readPlatformSessionAdminAuthConfig({
+      MASANAWA_OPS_ADMIN_GRANTS_JSON: JSON.stringify([
+        {
+          tenantId,
+          email: "Operator@Example.com",
+          capabilities: ["platform.summary.read"],
+        },
+      ]),
+    })!;
+    expect(config.grants[0]).toMatchObject({
+      tenantId,
+      userId: null,
+      email: "operator@example.com",
+      phone: null,
+    });
   });
 
   it("supports full-admin wildcard grants without granting unlisted users", () => {
     const config = readPlatformSessionAdminAuthConfig({
       MASANAWA_OPS_ADMIN_GRANTS_JSON: JSON.stringify([
-        { userId, capabilities: ["*"] },
+        { tenantId, userId, capabilities: ["*"] },
       ]),
     })!;
-    expect(config.grants.get(userId as never)?.has("commerce.write")).toBe(true);
+    expect(config.grants[0]?.capabilities.has("commerce.write")).toBe(true);
     expect(config.grants.size).toBe(1);
   });
 
   it("authorizes a current canonical session only for granted capabilities", async () => {
     const config = readPlatformSessionAdminAuthConfig({
       MASANAWA_OPS_ADMIN_GRANTS_JSON: JSON.stringify([
-        { userId, capabilities: ["platform.summary.read"] },
+        { tenantId, userId, capabilities: ["platform.summary.read"] },
       ]),
     })!;
     const sessions = {
@@ -127,7 +146,7 @@ describe("Ops platform-session admin authorization", () => {
   it("rejects a valid customer session that has no admin grant", async () => {
     const config = readPlatformSessionAdminAuthConfig({
       MASANAWA_OPS_ADMIN_GRANTS_JSON: JSON.stringify([
-        { userId, capabilities: ["platform.summary.read"] },
+        { tenantId, userId, capabilities: ["platform.summary.read"] },
       ]),
     })!;
     const sessions = {
