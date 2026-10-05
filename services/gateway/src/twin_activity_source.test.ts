@@ -85,4 +85,43 @@ describe("twin economy Activity source", () => {
       }),
     ).rejects.toThrow("out-of-scope");
   });
+
+  it("keeps accepted and scheduled owner access pending in Activity", async () => {
+    const events: TwinEconomyActivityEventReader = {
+      async listForCharacter() {
+        return [
+          {
+            eventId: "event-accepted",
+            tenantId,
+            characterId,
+            eventType: "twin.owner-access.accepted",
+            occurredAt: "2026-10-05T09:02:00Z",
+            amountCredits: null,
+            status: "pending",
+          },
+          {
+            eventId: "event-scheduled",
+            tenantId,
+            characterId,
+            eventType: "twin.owner-access.scheduled",
+            occurredAt: "2026-10-05T09:03:00Z",
+            amountCredits: null,
+            status: "pending",
+          },
+        ];
+      },
+    };
+
+    const records = await createTwinEconomyActivitySource({ events }).listForTwin({
+      tenantId,
+      characterId,
+      limit: 50,
+    });
+
+    expect(records.map((record) => record.status)).toEqual([
+      "pending",
+      "pending",
+    ]);
+  });
+
 });
