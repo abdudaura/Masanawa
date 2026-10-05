@@ -28,17 +28,22 @@ describeDatabase("billing runtime PostgreSQL acceptance", () => {
     await pool?.end();
   });
 
-  it("scopes fulfillment evidence by tenant and user and enforces CAS", async () => {
+  it("scopes fulfillment evidence by tenant and user and enforces immutable terms", async () => {
     const tenantId = createCanonicalId("tenant");
+    const otherTenantId = createCanonicalId("tenant");
     const userId = createCanonicalId("user");
     const otherUserId = createCanonicalId("user");
     const store = createPostgresBillingFulfillmentStore(pool, {
       tenantId,
       userId,
     });
-    const other = createPostgresBillingFulfillmentStore(pool, {
+    const otherUser = createPostgresBillingFulfillmentStore(pool, {
       tenantId,
       userId: otherUserId,
+    });
+    const otherTenant = createPostgresBillingFulfillmentStore(pool, {
+      tenantId: otherTenantId,
+      userId,
     });
 
     const initial = Object.freeze({
@@ -59,8 +64,16 @@ describeDatabase("billing runtime PostgreSQL acceptance", () => {
     });
 
     const created = await store.createIfAbsent(initial);
-    expect(created.created).toBe(true);
-    await expect(other.read(initial.fulfillmentReference)).resolves.toBeNull();
+    expect(created).toMatchObject({ created: true, record: initial });
+    await expect(otherUser.read(initial.fulfillmentReference)).resolves.toBeNull();
+    await expect(otherTenant.read(initial.fulfillmentReference)).resolves.toBeNull();
+
+    const replay = await store.createIfAbsent({
+      ...initial,
+      itemCode: "SHOULD-NOT-REPLACE",
+    });
+    expect(replay.created).toBe(false);
+    expect(replay.record).toEqual(initial);
 
     const dispatching = Object.freeze({
       ...initial,
@@ -84,6 +97,51 @@ describeDatabase("billing runtime PostgreSQL acceptance", () => {
       revision: 3,
       state: "checking",
     })).rejects.toThrow("fulfillment_terms_immutable");
+  });
+
+  it("allows only one concurrent compare-and-set winner", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const userId = createCanonicalId("user");
+    const store = createPostgresBillingFulfillmentStore(pool, { tenantId, userId });
+    const initial = Object.freeze({
+      fulfillmentReference: "bill-runtime-cas-race-1",
+      billerCode: "BIL102",
+      itemCode: "AT102",
+      itemName: "MTN Airtime",
+      customerId: "08055550123",
+      customerName: null,
+      amount: "200",
+      currency: "NGN" as const,
+      revision: 1,
+      state: "ready" as const,
+      providerReference: null,
+      providerStatus: null,
+      lastEvidenceAt: null,
+      deliveryCode: null,
+    });
+    await store.createIfAbsent(initial);
+
+    const outcomes = await Promise.allSettled([
+      store.compareAndSet(1, {
+        ...initial,
+        revision: 2,
+        state: "dispatching",
+        lastEvidenceAt: "2026-10-05T01:10:00.000Z",
+      }),
+      store.compareAndSet(1, {
+        ...initial,
+        revision: 2,
+        state: "checking",
+        lastEvidenceAt: "2026-10-05T01:10:01.000Z",
+      }),
+    ]);
+
+    expect(outcomes.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+    expect(outcomes.filter((result) => result.status === "rejected")).toHaveLength(1);
+
+    const persisted = await store.read(initial.fulfillmentReference);
+    expect(persisted?.revision).toBe(2);
+    expect(["dispatching", "checking"]).toContain(persisted?.state);
   });
 
   it("admits each provider webhook fingerprint/event only once", async () => {
@@ -113,5 +171,21 @@ describeDatabase("billing runtime PostgreSQL acceptance", () => {
       receivedAt: at,
       payload: { ignored: true },
     })).resolves.toEqual({ duplicate: true });
+
+    await expect(repository.admitProviderWebhook({
+      provider: "flutterwave",
+      fingerprint: "fingerprint-acceptance-2",
+      eventKey: "bill:reference-2:charge.completed",
+      receivedAt: at,
+      payload: { ignored: true },
+    })).resolves.toEqual({ duplicate: false });
+
+    await expect(repository.admitProviderWebhook({
+      provider: "other-provider",
+      fingerprint: "fingerprint-acceptance-2",
+      eventKey: "bill:reference-2:charge.completed",
+      receivedAt: at,
+      payload: { ignored: true },
+    })).resolves.toEqual({ duplicate: false });
   });
 });
