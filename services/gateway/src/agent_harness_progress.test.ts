@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createCanonicalId, nowInstant } from "@masanawa/contracts";
+import { createCanonicalId, nowInstant, type CharacterSessionId } from "@masanawa/contracts";
 import type {
   AgentHarnessProgress,
   MobileShellEvent,
@@ -20,7 +20,7 @@ describe("agent harness progress projection", () => {
     const repository = {
       async appendEvent(input: {
         scope: MobileShellScope;
-        characterSessionId: ReturnType<typeof createCanonicalId<"character-session">> | null;
+        characterSessionId: CharacterSessionId | null;
         type: string;
         payload: Readonly<Record<string, unknown>>;
       }) {
