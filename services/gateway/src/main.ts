@@ -25,7 +25,7 @@ import type {
   TwinProfileRepository,
 } from "@masanawa/identity";
 import type { BillingQuoteRepository, CommerceRepository, CryptoRepository } from "@masanawa/commerce";
-import { parseCanonicalId, readRequiredEnv } from "@masanawa/contracts";
+import { parseCanonicalId, readRequiredEnv, toInstant } from "@masanawa/contracts";
 import type { PlatformSessionRepository } from "@masanawa/security";
 import {
   FlutterwaveBillsClient,
@@ -1139,6 +1139,100 @@ export async function startGatewayService(
     });
   }
 
+  const composedTwinDirectory =
+    options.appOptions?.twinDirectory ??
+    (twinCustomerAuthorizers && database.twinProfiles
+      ? createTwinDirectoryService({
+          authorizer: twinCustomerAuthorizers.directory,
+          source: Object.freeze({
+            async search(request) {
+              const profiles = await database.twinProfiles!.searchPublic({
+                tenantId: request.tenantId,
+                query: request.query,
+                limit: request.limit,
+              });
+              return Object.freeze(
+                profiles.map((profile) =>
+                  Object.freeze({
+                    tenantId: profile.tenantId,
+                    characterId: profile.characterId,
+                    publicId: profile.publicId,
+                    displayName: profile.displayName,
+                    headline: profile.bio,
+                    avatarUrl: profile.avatarUrl,
+                    discoverable: profile.discoverable,
+                  }),
+                ),
+              );
+            },
+            async findByPublicId(request) {
+              const profile = await database.twinProfiles!.readPublicById({
+                tenantId: request.tenantId,
+                publicId: request.publicId,
+              });
+              if (!profile || !profile.discoverable) return null;
+              return Object.freeze({
+                tenantId: profile.tenantId,
+                characterId: profile.characterId,
+                publicId: profile.publicId,
+                displayName: profile.displayName,
+                headline: profile.bio,
+                avatarUrl: profile.avatarUrl,
+                discoverable: profile.discoverable,
+              });
+            },
+          }),
+        })
+      : undefined);
+
+  const composedMyTwin =
+    options.appOptions?.myTwin ??
+    (twinCustomerAuthorizers && database.twinProfiles
+      ? createMyTwinProjectionService({
+          authorizer: twinCustomerAuthorizers.myTwin,
+          profiles: createCanonicalMyTwinProfileSource({
+            store: Object.freeze({
+              readForOwner: (request) =>
+                database.twinProfiles!.readForOwner(request),
+              update: (request) =>
+                database.twinProfiles!.update({
+                  tenantId: request.tenantId as never,
+                  ownerUserId: request.ownerUserId as never,
+                  characterId: request.characterId as never,
+                  expectedRevision: request.expectedRevision,
+                  patch: request.patch,
+                  updatedAt: toInstant(request.updatedAt),
+                }),
+            }),
+          }),
+          performance: Object.freeze({
+            async read() {
+              return Object.freeze({
+                visitors: 0,
+                conversations: 0,
+                earningsCredits: 0,
+                pendingOwnerRequests: 0,
+              });
+            },
+          }),
+          features: createMyTwinFeatureSource({
+            voice: Object.freeze({
+              async isEnabled() {
+                return false;
+              },
+            }),
+            ownerAccess: Object.freeze({
+              async readOffering() {
+                return null;
+              },
+            }),
+          }),
+          publicTwinBaseUrl:
+            env.MASANAWA_TWIN_PUBLIC_BASE_URL?.trim() ||
+            "https://masanawa.com/t",
+        })
+      : undefined);
+
   const composedShell =
     options.appOptions?.agentShell ??
     (conversationAuthorizer &&
@@ -1171,6 +1265,8 @@ export async function startGatewayService(
       ...(composedBillingCheckout ? { billingCheckout: composedBillingCheckout } : {}),
       ...(composedFinancial ? { financial: composedFinancial } : {}),
       ...(composedDirectory ? { agentDirectory: composedDirectory } : {}),
+      ...(composedMyTwin ? { myTwin: composedMyTwin } : {}),
+      ...(composedTwinDirectory ? { twinDirectory: composedTwinDirectory } : {}),
       ...(composedConversation
         ? { agentConversation: composedConversation }
         : {}),
