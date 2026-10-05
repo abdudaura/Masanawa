@@ -216,6 +216,39 @@ export function createPostgresTwinRuntimeRepository(
       return Number(result.rows[0]?.count ?? "0");
     },
 
+    async listCreditOperationsForUser(input) {
+      const result = await pool.query<{
+        tenant_id: string;
+        request_id: string;
+        kind: "transfer" | "gift";
+        sender_user_id: string;
+        recipient_user_id: string;
+        character_id: string | null;
+        amount_credits: string;
+        ledger_entry_id: string;
+        completed_at: Date | string;
+      }>(
+        `SELECT tenant_id,request_id,kind,sender_user_id,recipient_user_id,
+                character_id,amount_credits::text,ledger_entry_id,completed_at
+           FROM commerce.twin_credit_operations
+          WHERE tenant_id=$1 AND (sender_user_id=$2 OR recipient_user_id=$2)
+          ORDER BY completed_at DESC
+          LIMIT $3`,
+        [input.tenantId, input.userId, Math.max(1, Math.min(200, input.limit))],
+      );
+      return Object.freeze(result.rows.map((row) => Object.freeze({
+        tenantId: row.tenant_id as TenantId,
+        requestId: row.request_id,
+        kind: row.kind,
+        senderUserId: row.sender_user_id as UserId,
+        recipientUserId: row.recipient_user_id as UserId,
+        characterId: row.character_id as CharacterId | null,
+        amountCredits: Number(row.amount_credits),
+        ledgerEntryId: row.ledger_entry_id as LedgerEntryId,
+        completedAt: iso(row.completed_at),
+      })));
+    },
+
     async listRecentTransferEdges(input) {
       const result = await pool.query<{
         sender_user_id: string;
