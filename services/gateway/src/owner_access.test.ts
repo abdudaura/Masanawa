@@ -37,19 +37,19 @@ function build() {
     },
   };
   const requests: OwnerAccessRequestPort = {
-    async create(input) {
+    async createFromQuote(input) {
       return {
-        requestId: input.quote.requestId,
+        requestId: input.quoteId,
         requesterUserId,
-        ownerUserId: input.quote.ownerUserId,
-        originatingCharacterId: input.quote.originatingCharacterId,
-        modality: input.quote.modality,
-        durationMinutes: input.quote.durationMinutes,
-        priceCredits: input.quote.priceCredits,
-        platformFeeCredits: input.quote.platformFeeCredits,
-        ownerEarningCredits: input.quote.ownerEarningCredits,
-        chargeMode: input.quote.chargeMode,
-        trialPolicyRevision: input.quote.trialPolicyRevision,
+        ownerUserId: "user-owner",
+        originatingCharacterId: input.characterId,
+        modality: "voice",
+        durationMinutes: 20,
+        priceCredits: 0,
+        platformFeeCredits: 0,
+        ownerEarningCredits: 0,
+        chargeMode: "trial",
+        trialPolicyRevision: 1,
         state: "requested",
         requestedAt: "2026-10-05T10:00:00Z",
         acceptBy: "2026-10-05T11:00:00Z",
@@ -99,29 +99,13 @@ describe("owner access service", () => {
     expect(quote.priceCredits).toBe(0);
   });
 
-  it("refuses a quote from another twin", async () => {
-    const service = build();
-    await expect(
-      service.request({
-        authorizationHeader: "Bearer user",
-        characterId,
-        quote: {
-          requestId: "owner-request-123",
-          ownerUserId: "user-owner",
-          originatingCharacterId:
-            "character_00000000-0000-4000-8000-000000000099",
-          modality: "voice",
-          durationMinutes: 20,
-          priceCredits: 1000,
-          platformFeeCredits: 100,
-          ownerEarningCredits: 900,
-          chargeMode: "paid",
-          trialDurationDays: 7,
-          policyRevision: 1,
-          trialPolicyRevision: 1,
-          quoteExpiresAt: "2026-10-05T11:00:00Z",
-        },
-      }),
-    ).rejects.toThrow("another twin");
+  it("creates a request from an opaque server quote id only", async () => {
+    const created = await build().request({
+      authorizationHeader: "Bearer user",
+      characterId,
+      quoteId: "owner-request-123",
+    });
+    expect(created.requestId).toBe("owner-request-123");
+    expect(created.originatingCharacterId).toBe(characterId);
   });
 });
