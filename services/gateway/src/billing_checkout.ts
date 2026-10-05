@@ -390,14 +390,14 @@ export function createBillingCheckoutService(input: Readonly<{
   if (redirect.protocol !== "https:") throw new TypeError("billing redirect URL must use HTTPS");
   if (input.actionSecret.length < 32) throw new TypeError("billing action secret too short");
 
-  async function identity(header: string | undefined): Promise<PlatformSessionIdentity> {
+  async function identity(header: string | undefined): Promise<BillingCustomerIdentity> {
     return input.sessions.authorize({ authorizationHeader: header });
   }
 
   async function ownedQuote(
     header: string | undefined,
     rawQuoteId: string,
-  ): Promise<Readonly<{ identity: PlatformSessionIdentity; quote: BillingQuote }>> {
+  ): Promise<Readonly<{ identity: BillingCustomerIdentity; quote: BillingQuote }>> {
     const owner = await identity(header);
     const quote = await input.quotes.readQuote({
       tenantId: owner.tenantId,
