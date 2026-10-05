@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'src/core/admin_api.dart';
+import 'src/core/admin_auth_api.dart';
 import 'src/core/admin_session.dart';
 import 'src/screens/admin_shell.dart';
 import 'src/screens/login_screen.dart';
@@ -20,7 +21,10 @@ class MasanawaAdminApp extends StatefulWidget {
 
 class _MasanawaAdminAppState extends State<MasanawaAdminApp> {
   final _session = AdminSession();
-  String? _token;
+  final _auth = AdminAuthApi();
+
+  String? _accessToken;
+  String? _refreshToken;
   bool _restoring = true;
 
   @override
@@ -30,22 +34,71 @@ class _MasanawaAdminAppState extends State<MasanawaAdminApp> {
   }
 
   Future<void> _restore() async {
-    final token = await _session.restore();
-    if (!mounted) return;
-    setState(() {
-      _token = token;
-      _restoring = false;
-    });
+    final stored = await _session.restore();
+    if (stored == null) {
+      if (mounted) setState(() => _restoring = false);
+      return;
+    }
+
+    try {
+      final refreshed = await _auth.refresh(stored.refreshToken);
+      await _persist(refreshed);
+      await AdminApi(
+        token: refreshed.accessToken,
+        refreshAccessToken: _refreshAccessToken,
+      ).platformSummary();
+    } catch (_) {
+      await _session.clear();
+      _accessToken = null;
+      _refreshToken = null;
+    } finally {
+      if (mounted) setState(() => _restoring = false);
+    }
   }
 
-  Future<void> _authenticate(String token) async {
-    await _session.save(token);
-    if (mounted) setState(() => _token = token.trim());
+  Future<void> _persist(AdminAuthTokens tokens) async {
+    await _session.save(
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+    );
+    _accessToken = tokens.accessToken;
+    _refreshToken = tokens.refreshToken;
+  }
+
+  Future<void> _authenticate(AdminAuthTokens tokens) async {
+    await AdminApi(token: tokens.accessToken).platformSummary();
+    await _persist(tokens);
+    if (mounted) setState(() {});
+  }
+
+  Future<String?> _refreshAccessToken() async {
+    final refresh = _refreshToken;
+    if (refresh == null || refresh.isEmpty) return null;
+    try {
+      final tokens = await _auth.refresh(refresh);
+      await _persist(tokens);
+      return tokens.accessToken;
+    } catch (_) {
+      await _session.clear();
+      _accessToken = null;
+      _refreshToken = null;
+      if (mounted) setState(() {});
+      return null;
+    }
   }
 
   Future<void> _signOut() async {
+    final access = _accessToken;
+    if (access != null && access.isNotEmpty) {
+      await _auth.logout(access);
+    }
     await _session.clear();
-    if (mounted) setState(() => _token = null);
+    if (mounted) {
+      setState(() {
+        _accessToken = null;
+        _refreshToken = null;
+      });
+    }
   }
 
   @override
@@ -57,10 +110,15 @@ class _MasanawaAdminAppState extends State<MasanawaAdminApp> {
         themeMode: ThemeMode.system,
         home: _restoring
             ? const _Splash()
-            : _token == null || adminBaseUrl.trim().isEmpty
+            : _accessToken == null ||
+                    adminBaseUrl.trim().isEmpty ||
+                    adminAuthBaseUrl.trim().isEmpty
                 ? AdminLoginScreen(onAuthenticated: _authenticate)
                 : AdminShell(
-                    api: AdminApi(token: _token!),
+                    api: AdminApi(
+                      token: _accessToken!,
+                      refreshAccessToken: _refreshAccessToken,
+                    ),
                     onSignOut: _signOut,
                   ),
       );
