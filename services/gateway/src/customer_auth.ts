@@ -4,6 +4,7 @@ import {
   hashPlatformSessionToken,
   mintPlatformSessionToken,
   normalizePlatformAuthIdentifier,
+  createAuthorityContext,
   type PlatformAuthChannel,
   type PlatformAuthProfile,
   type PlatformSessionIdentity,
@@ -25,7 +26,6 @@ import type {
   UserRelationshipProvisioner,
   UserRelationshipReader,
 } from "@masanawa/identity";
-import { createAuthorityContext } from "@masanawa/security";
 import type {
   AgentConversationAdmission,
   AgentConversationAuthorizer,
