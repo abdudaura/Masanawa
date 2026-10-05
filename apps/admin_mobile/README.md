@@ -10,9 +10,9 @@ Android application id: `ng.masanawa.admin`.
 - Users — tenant-scoped identity/relationship counts; lifecycle mutation is intentionally read-only until Identity exposes a canonical state-transition command.
 - Agents — discover all canonical Characters, configure first presentation, edit presentation/visibility/order and assign Skills.
 - Skills — catalog and readiness.
-- Runtime — recent AgentRuns, failures and trace correlation.
-- Commerce — Offers, fulfillments and ledger activity.
-- Operations — consequential Operations and reconciliation cases.
+- Runtime — recent AgentRuns, failures, trace correlation and bounded state filtering.
+- Commerce — full immutable-revision Offer create/edit/enable administration with SkillVersion, pricing, commission and region validation; fulfillments and immutable ledger activity.
+- Operations — consequential Operations and reconciliation cases, bounded diagnostics and safe external-receipt drill-down.
 - Providers — encrypted credential metadata and canonical revocation only; never plaintext/ciphertext.
 - System — Memory/extraction health, inbox/outbox recovery queues, Worlds and approval metadata.
 - Modules — readiness map for Channels, Devices, Workflows, Social/Studio, Plugins and Agent Phone as their canonical contracts land.
