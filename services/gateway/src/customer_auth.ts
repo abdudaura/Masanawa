@@ -366,8 +366,13 @@ export function createPlatformCustomerSessionAuthorizer(input: Readonly<{
       } catch {
         throw new Error("financial.auth.unauthorized");
       }
-      const identity = await input.repository.resolveAccess({ accessHash, at: now() });
-      if (!identity) throw new Error("financial.auth.unauthorized");
+      let identity: PlatformSessionIdentity | null;
+      try {
+        identity = await input.repository.resolveAccess({ accessHash, at: now() });
+      } catch {
+        throw new CustomerAuthError("AUTH_UNAVAILABLE", 503);
+      }
+      if (!identity) throw new CustomerAuthError("UNAUTHORIZED", 401);
       return identity;
     },
   });
@@ -400,7 +405,7 @@ export function renderMasanawaOtpEmail(code: string): Readonly<{
   text: string;
   html: string;
 }> {
-  if (!/^\\d{6}$/u.test(code)) {
+  if (!/^\d{6}$/u.test(code)) {
     throw new TypeError("OTP code must contain exactly six digits");
   }
 
