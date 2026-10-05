@@ -15,6 +15,8 @@ Live infrastructure evidence before colocation: authenticated `/agent/directory`
 but took about 3.2–4.7 seconds while Gateway was in SFO and PostgreSQL in AMS. Gateway has now
 been moved to AMS. Do not claim a latency win until a post-move authenticated request is observed.
 
+PR #174 merged the production mobile fast-start reconciliation at `2b2820c7afd121572dd6355d812d81344fc0c05d`.
+
 ## Core teaching and ownership checkpoint — 2026-10-04
 
 Teaching is required Core: detailed adaptive lessons across topics, worked examples,
