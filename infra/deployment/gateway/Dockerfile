@@ -13,13 +13,7 @@ COPY infra ./infra
 COPY services ./services
 COPY apps ./apps
 
-RUN cp pnpm-lock.yaml /tmp/pnpm-lock.before \
- && pnpm install --lockfile-only --no-frozen-lockfile \
- && echo "MASANAWA_LOCKFILE_DIFF_BEGIN" \
- && (diff -u /tmp/pnpm-lock.before pnpm-lock.yaml || true) \
- && echo "MASANAWA_LOCKFILE_DIFF_END" \
- && pnpm install --frozen-lockfile \
- && exit 1
+RUN pnpm install --frozen-lockfile
 RUN pnpm --filter @masanawa/gateway-service... build
 
 ENV NODE_ENV=production
