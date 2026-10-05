@@ -96,8 +96,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     BuildContext context,
     List<int> current,
   ) async {
+    const presets = <int>{15, 30, 60};
     final selected = <int>{
-      ...current.where(const {15, 30, 60}.contains),
+      ...current.where(presets.contains),
     };
     if (selected.isEmpty) selected.add(15);
 
