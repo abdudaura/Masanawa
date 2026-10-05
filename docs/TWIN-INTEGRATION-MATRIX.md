@@ -134,18 +134,21 @@ Current #136 implementation:
 1. owner offerings, quotes and requests are durable;
 2. paid reservations are ledger-first, replay-safe and settle/refund through canonical
    Commerce;
-3. request expiry and scheduled no-show state/refunds are implemented when lifecycle
-   state is evaluated;
-4. owner/requester FCM notifications reuse the existing mobile-push registration/sender;
-5. owner-access events feed Activity with durable request references and latest-status
+3. request expiry and scheduled no-show state/refunds are proactively swept every minute
+   by the production Gateway and are also repaired on reads;
+4. owner-request actions and maintenance transitions use PostgreSQL compare-and-set so
+   accept/cancel/expiry races have one state winner; intermediate terminal states remain
+   crash-repairable before final `refunded`/`settled` state;
+5. owner/requester FCM notifications reuse the existing mobile-push registration/sender;
+6. owner-access events feed Activity with durable request references and latest-status
    deduplication;
-6. Activity lets owners accept/decline/schedule/start/complete; chat lets requesters
+7. Activity lets owners accept/decline/schedule/start/complete; chat lets requesters
    resume/cancel the latest durable request after restart;
-7. Human Access configuration now lives in My Twin rather than legacy creator Settings.
+8. Human Access configuration now lives in My Twin rather than legacy creator Settings.
 
-Still required: proactive expiry/no-show sweeping (rather than relying only on reads),
-stronger human attendance evidence if a real person-to-person media/session primitive is
-available, dispute/reconciliation policy, and production/device qualification.
+Still required: a real participant session/attendance primitive (text can be implemented
+without pretending WebRTC exists; voice/video must remain unavailable until real media is
+present), dispute/reconciliation policy, and production/device qualification.
 
 ### Phase 6 — Mobile simplification
 Current #136 implementation:
