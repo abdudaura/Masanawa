@@ -30,6 +30,10 @@ class AdminAgentActionResult {
     required this.data,
     required this.capability,
     required this.reason,
+    required this.approvalId,
+    required this.operationId,
+    required this.reused,
+    required this.replayed,
   });
 
   final String status;
@@ -37,6 +41,10 @@ class AdminAgentActionResult {
   final dynamic data;
   final String? capability;
   final String? reason;
+  final String? approvalId;
+  final String? operationId;
+  final bool? reused;
+  final bool? replayed;
 
   bool get completed => status == 'completed';
   bool get approvalRequired => status == 'approval-required';
@@ -48,6 +56,10 @@ class AdminAgentActionResult {
         data: json['data'],
         capability: json['capability'] as String?,
         reason: json['reason'] as String?,
+        approvalId: json['approvalId'] as String?,
+        operationId: json['operationId'] as String?,
+        reused: json['reused'] as bool?,
+        replayed: json['replayed'] as bool?,
       );
 }
 
@@ -861,6 +873,8 @@ class AdminApi {
     required String characterId,
     required String action,
     Map<String, dynamic>? arguments,
+    String? agentRunId,
+    String? idempotencyKey,
   }) async {
     final response = await _request(
       () => _dio.post<dynamic>(
@@ -870,6 +884,10 @@ class AdminApi {
           'action': action,
           if (arguments != null && arguments.isNotEmpty)
             'arguments': arguments,
+          if (agentRunId != null && agentRunId.trim().isNotEmpty)
+            'agentRunId': agentRunId.trim(),
+          if (idempotencyKey != null && idempotencyKey.trim().isNotEmpty)
+            'idempotencyKey': idempotencyKey.trim(),
         },
       ),
     );
