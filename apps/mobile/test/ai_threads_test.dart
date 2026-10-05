@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/chat/chat_format.dart';
 import 'package:masanawa/src/core/network/api_client.dart';
@@ -22,6 +23,33 @@ ProviderContainer _container() => ProviderContainer(
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  const secureStorage = MethodChannel(
+    'plugins.it_nomads.com/flutter_secure_storage',
+  );
+
+  setUp(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(secureStorage, (call) async {
+      switch (call.method) {
+        case 'read':
+          return null;
+        case 'write':
+        case 'delete':
+        case 'deleteAll':
+          return null;
+        case 'containsKey':
+          return false;
+        case 'readAll':
+          return <String, String>{};
+      }
+      return null;
+    });
+  });
+
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(secureStorage, null);
+  });
   test('chat threads are keyed by arbitrary Character IDs', () async {
     final container = _container();
     addTearDown(container.dispose);
