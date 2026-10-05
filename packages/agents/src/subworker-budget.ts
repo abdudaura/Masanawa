@@ -105,14 +105,18 @@ export function createBudgetedSubworkerAdmissionService(input: {
       });
 
       if (
+        reservedUsage.schemaVersion !== parentUsageAfterAdmission.schemaVersion ||
         reservedUsage.agentRunId !== request.parentAgentRunId ||
-        reservedUsage.childRuns !== parentUsageAfterAdmission.childRuns ||
+        reservedUsage.startedAt !== parentUsageAfterAdmission.startedAt ||
+        reservedUsage.observedAt !== parentUsageAfterAdmission.observedAt ||
         reservedUsage.inputTokens !== parentUsageAfterAdmission.inputTokens ||
         reservedUsage.outputTokens !== parentUsageAfterAdmission.outputTokens ||
         reservedUsage.toolCalls !== parentUsageAfterAdmission.toolCalls ||
+        reservedUsage.childRuns !== parentUsageAfterAdmission.childRuns ||
         reservedUsage.providerCostMicros !==
           parentUsageAfterAdmission.providerCostMicros ||
-        reservedUsage.observedAt !== parentUsageAfterAdmission.observedAt
+        reservedUsage.providerCostCurrency !==
+          parentUsageAfterAdmission.providerCostCurrency
       ) {
         throw new TypeError(
           "Budget reservation did not persist the expected parent usage",
