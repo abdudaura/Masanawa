@@ -67,4 +67,34 @@ describe("paid feature trial admin service", () => {
     expect(policy.durationDays).toBe(14);
     expect(policy.maxUnits).toBe(2);
   });
+
+  it("exposes the one-session owner-access default through admin reads", async () => {
+    const authorizer: PaidFeatureTrialAdminAuthorizer = {
+      async authorize() {
+        return { tenantId: "tenant-1" };
+      },
+    };
+    const store: PaidFeatureTrialPolicyStore = {
+      async readActive() {
+        return null;
+      },
+      async putRevision() {
+        throw new Error("not used");
+      },
+    };
+    const service = createPaidFeatureTrialAdminService({
+      authorizer,
+      store,
+      now: () => new Date("2026-10-05T09:00:00Z"),
+    });
+
+    const policy = await service.read({
+      authorizationHeader: "Bearer admin",
+      feature: "owner-access",
+    });
+
+    expect(policy.durationDays).toBe(7);
+    expect(policy.maxUnits).toBe(1);
+  });
+
 });
