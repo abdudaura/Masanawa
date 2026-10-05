@@ -50,10 +50,13 @@ describe("platform admin projections", () => {
 
     const users = await service.listUsers({
       authorizationHeader: "Bearer operator",
+      state: "active",
+      limit: 25,
     });
 
     expect(seen).toEqual(["identity.users.read"]);
-    expect(queries[0]?.values?.[0]).toBe(tenantId);
+    expect(queries[0]?.text).toContain("AND u.state = $3");
+    expect(queries[0]?.values).toEqual([tenantId, 25, "active"]);
     expect(users[0]).toMatchObject({
       state: "active",
       revision: 3,
