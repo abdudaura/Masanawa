@@ -13,6 +13,7 @@ billing, crypto, shared Gateway composition or mobile router files.
 ## Owned paths
 
 - new `packages/security/src/twin-economy-*.ts`
+- narrow export additions to `packages/security/src/index.ts`
 - new `services/gateway/src/twin_economy_guard*.ts`
 - focused tests
 - this claim file
