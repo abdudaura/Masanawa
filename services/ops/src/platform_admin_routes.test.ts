@@ -55,6 +55,31 @@ describe("Ops platform admin routes", () => {
     expect(calls).toBe(0);
   });
 
+  it("forwards canonical User relationship drill-downs", async () => {
+    const calls: unknown[] = [];
+    const service = {
+      async listUserRelationships(input: unknown) {
+        calls.push(input);
+        return [];
+      },
+    } as unknown as PlatformAdminService;
+    const app = createOpsApp({ platformAdmin: service });
+    apps.push(app);
+    const userId = "user_00000000-0000-4000-8000-000000000012";
+
+    const response = await app.inject({
+      method: "GET",
+      url: `/v1/admin/users/${userId}/relationships`,
+      headers: { authorization: "Bearer operator" },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(calls).toEqual([{
+      authorizationHeader: "Bearer operator",
+      userId,
+    }]);
+  });
+
   it("forwards canonical Offer creation payloads", async () => {
     const calls: unknown[] = [];
     const service = {
