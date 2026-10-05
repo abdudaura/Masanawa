@@ -32,7 +32,11 @@ function memoryRepository(): {
   };
 }
 
-const trialUsage: OwnerAccessTrialUsagePort = {\n  async consume() {},\n};\n\nconst paidQuote: OwnerAccessQuote = {
+const trialUsage: OwnerAccessTrialUsagePort = {
+  async consume() {},
+};
+
+const paidQuote: OwnerAccessQuote = {
   requestId: "owner-request-paid",
   ownerUserId: "user-owner",
   originatingCharacterId: "character-1",
