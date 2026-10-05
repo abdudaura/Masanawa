@@ -76,6 +76,62 @@ class OwnerAccessController extends StateNotifier<OwnerAccessUiState> {
       );
       return null;
     }
+
+  Future<OwnerAccessRequest?> read({
+    required String characterId,
+    required String requestId,
+  }) async {
+    state = OwnerAccessUiState(
+      quote: state.quote,
+      request: state.request,
+      loading: true,
+    );
+    try {
+      final request = await _transport.read(
+        characterId: characterId,
+        requestId: requestId,
+      );
+      state = OwnerAccessUiState(quote: state.quote, request: request);
+      return request;
+    } catch (_) {
+      state = OwnerAccessUiState(
+        quote: state.quote,
+        error: 'Could not load this owner request right now.',
+      );
+      return null;
+    }
+  }
+
+  Future<OwnerAccessRequest?> act({
+    required String characterId,
+    required String requestId,
+    required String action,
+    DateTime? scheduledFor,
+  }) async {
+    state = OwnerAccessUiState(
+      quote: state.quote,
+      request: state.request,
+      loading: true,
+    );
+    try {
+      final request = await _transport.act(
+        characterId: characterId,
+        requestId: requestId,
+        action: action,
+        scheduledFor: scheduledFor,
+      );
+      state = OwnerAccessUiState(quote: state.quote, request: request);
+      return request;
+    } catch (_) {
+      state = OwnerAccessUiState(
+        quote: state.quote,
+        request: state.request,
+        error: 'Could not update this owner request right now.',
+      );
+      return null;
+    }
+  }
+
   }
 }
 
