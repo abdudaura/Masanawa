@@ -107,7 +107,7 @@ describe("My Twin economy performance reader", () => {
             tenantId: "tenant-1",
             ownerUserId: "user-owner",
             characterId: "character-1",
-            eventType: "twin.owner-access.scheduled",
+            eventType: "twin.owner-access.accepted",
             referenceId: "owner-request-42",
             amountCredits: null,
           },
@@ -130,11 +130,11 @@ describe("My Twin economy performance reader", () => {
       async listForOwnerTwin() {
         return [
           {
-            eventId: "accepted-newer",
+            eventId: "scheduled-newer",
             tenantId: "tenant-1",
             ownerUserId: "user-owner",
             characterId: "character-1",
-            eventType: "twin.owner-access.accepted",
+            eventType: "twin.owner-access.scheduled",
             referenceId: "owner-request-77",
             amountCredits: null,
           },
