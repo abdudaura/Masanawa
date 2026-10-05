@@ -75,7 +75,10 @@ export interface ProductionAuthority {
   readonly subject: string;
 }
 
+export type ProductionOtpChannel = "email" | "sms";
+
 export interface ProductionAuthService {
+  capabilities(): Readonly<{ otpChannels: readonly ProductionOtpChannel[] }>;
   sendOtp(input: {
     readonly phone?: string;
     readonly email?: string;
@@ -187,12 +190,23 @@ export function createProductionAuthService(input: {
   readonly publishableKey: string;
   readonly tenantId: TenantId;
   readonly identities: ProductionUserIdentityRepository;
+  readonly otpChannels?: readonly ProductionOtpChannel[];
   readonly fetchImpl?: typeof fetch;
 }): ProductionAuthService {
   const supabaseUrl = input.supabaseUrl.replace(/\/+$/u, "");
   const projectRef = projectRefFromUrl(supabaseUrl);
   const publishableKey = bounded(input.publishableKey, "Supabase publishable key", 1024);
   const fetchImpl = input.fetchImpl ?? fetch;
+  const otpChannels = Object.freeze(
+    [...new Set(input.otpChannels ?? ["email" as const])].filter(
+      (channel): channel is ProductionOtpChannel =>
+        channel === "email" || channel === "sms",
+    ),
+  );
+  if (otpChannels.length === 0) {
+    throw new TypeError("At least one production OTP channel must be enabled");
+  }
+  const otpChannelSet = new Set<ProductionOtpChannel>(otpChannels);
 
   const headers = (authorization?: string) => ({
     apikey: publishableKey,
@@ -266,11 +280,23 @@ export function createProductionAuthService(input: {
   }
 
   return Object.freeze({
+    capabilities() {
+      return Object.freeze({ otpChannels });
+    },
+
     async sendOtp(request) {
       const hasPhone = typeof request.phone === "string";
       const hasEmail = typeof request.email === "string";
       if (hasPhone === hasEmail) {
         throw new ProductionAuthError("VALIDATION_FAILED", 400, "Choose one sign-in method");
+      }
+      const channel: ProductionOtpChannel = hasPhone ? "sms" : "email";
+      if (!otpChannelSet.has(channel)) {
+        throw new ProductionAuthError(
+          "OTP_CHANNEL_UNAVAILABLE",
+          503,
+          "This sign-in method is not available.",
+        );
       }
       const body = hasPhone
         ? { phone: normalizePhone(request.phone!) }
@@ -296,6 +322,14 @@ export function createProductionAuthService(input: {
       const hasEmail = typeof request.email === "string";
       if (hasPhone === hasEmail) {
         throw new ProductionAuthError("VALIDATION_FAILED", 400, "Choose one sign-in method");
+      }
+      const channel: ProductionOtpChannel = hasPhone ? "sms" : "email";
+      if (!otpChannelSet.has(channel)) {
+        throw new ProductionAuthError(
+          "OTP_CHANNEL_UNAVAILABLE",
+          503,
+          "This sign-in method is not available.",
+        );
       }
       const body = hasPhone
         ? {
