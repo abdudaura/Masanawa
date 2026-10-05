@@ -1443,12 +1443,57 @@ export function createFinancialService(input: {
         userId: auth.userId,
         requestId: parseCanonicalId("request", request.requestId),
       });
-      if (!intent || intent.operation !== "deposit" || intent.providerPaymentId === null ||
-          ["succeeded", "failed", "refunded", "expired"].includes(intent.status)) return intent;
+      if (
+        !intent ||
+        intent.providerPaymentId === null ||
+        ["succeeded", "failed", "refunded", "expired", "manual_review"].includes(
+          intent.status,
+        )
+      ) {
+        return intent;
+      }
       const payload = await input.nowPayments.getPaymentEvidence({
         paymentId: intent.providerPaymentId,
         signal: AbortSignal.timeout(15_000),
       });
+
+      if (intent.operation === "buy") {
+        if (
+          (intent.providerInvoiceId ?? null) === null ||
+          intent.targetAsset === null
+        ) {
+          throw new Error("financial.crypto.fiat_onramp_unavailable");
+        }
+        const evidence = admitFiatOnRampEvidence(payload, {
+          invoiceId: intent.providerInvoiceId!,
+          orderId: providerOrderId(auth.tenantId, intent.requestId),
+          fiatAmount: intent.amount,
+          fiatCurrency: intent.asset,
+          settlementAsset: intent.targetAsset,
+        });
+        return input.crypto.applyProviderPaymentEvent({
+          tenantId: auth.tenantId,
+          userId: auth.userId,
+          event: {
+            paymentId: evidence.paymentId,
+            invoiceId: evidence.invoiceId,
+            parentPaymentId: evidence.parentPaymentId,
+            orderId: intent.requestId,
+            status: evidence.status,
+            priceAmount: evidence.priceAmount,
+            priceCurrency: evidence.priceCurrency,
+            payAmount: evidence.payAmount,
+            payCurrency: evidence.payCurrency,
+            actuallyPaid: evidence.actuallyPaid,
+            outcomeAmount: evidence.outcomeAmount,
+            outcomeCurrency: evidence.outcomeCurrency,
+            payloadHash: evidence.payloadHash,
+            observedAt: now(),
+          },
+        });
+      }
+
+      if (intent.operation !== "deposit") return intent;
       const evidence = admitPaymentEvidence(payload, {
         paymentId: intent.providerPaymentId,
         orderId: providerOrderId(auth.tenantId, intent.requestId),
@@ -1457,7 +1502,8 @@ export function createFinancialService(input: {
         payAmount: intent.providerPayAmount,
       });
       return input.crypto.applyProviderPaymentEvent({
-        tenantId: auth.tenantId, userId: auth.userId,
+        tenantId: auth.tenantId,
+        userId: auth.userId,
         event: { ...evidence, orderId: intent.requestId, observedAt: now() },
       });
     },
@@ -1521,34 +1567,71 @@ export function createFinancialService(input: {
       const intent = await input.crypto.readIntentByRequestId(identity);
       if (!intent) throw new Error("financial.ipn.intent_unavailable");
 
-      if (intent.providerPaymentId === null) {
-        throw new Error("financial.ipn.intent_unavailable");
+      if (intent.operation === "buy") {
+        if (
+          (intent.providerInvoiceId ?? null) === null ||
+          intent.targetAsset === null
+        ) {
+          throw new Error("financial.ipn.intent_unavailable");
+        }
+        const admitted = admitFiatOnRampEvidence(request.payload, {
+          invoiceId: intent.providerInvoiceId!,
+          orderId: providerOrderId(intent.tenantId, intent.requestId),
+          fiatAmount: intent.amount,
+          fiatCurrency: intent.asset,
+          settlementAsset: intent.targetAsset,
+        });
+        const event: CryptoProviderPaymentEvent = {
+          paymentId: admitted.paymentId,
+          invoiceId: admitted.invoiceId,
+          parentPaymentId: admitted.parentPaymentId,
+          orderId: identity.requestId,
+          status: admitted.status,
+          priceAmount: admitted.priceAmount,
+          priceCurrency: admitted.priceCurrency,
+          payAmount: admitted.payAmount,
+          payCurrency: admitted.payCurrency,
+          actuallyPaid: admitted.actuallyPaid,
+          outcomeAmount: admitted.outcomeAmount,
+          outcomeCurrency: admitted.outcomeCurrency,
+          payloadHash: admitted.payloadHash,
+          observedAt: now(),
+        };
+        await input.crypto.applyProviderPaymentEvent({
+          tenantId: intent.tenantId,
+          userId: intent.userId,
+          event,
+        });
+      } else {
+        if (intent.operation !== "deposit" || intent.providerPaymentId === null) {
+          throw new Error("financial.ipn.intent_unavailable");
+        }
+        const admitted = admitPaymentEvidence(request.payload, {
+          paymentId: intent.providerPaymentId,
+          orderId: providerOrderId(intent.tenantId, intent.requestId),
+          asset: intent.asset,
+          amount: intent.amount,
+          payAmount: intent.providerPayAmount,
+        });
+        const event: CryptoProviderPaymentEvent = {
+          paymentId: evidence.paymentId,
+          parentPaymentId: evidence.parentPaymentId,
+          orderId: identity.requestId,
+          status: evidence.status,
+          priceAmount: admitted.priceAmount,
+          priceCurrency: evidence.priceCurrency,
+          payAmount: admitted.payAmount,
+          payCurrency: evidence.payCurrency,
+          actuallyPaid: admitted.actuallyPaid,
+          payloadHash: evidence.payloadHash,
+          observedAt: now(),
+        };
+        await input.crypto.applyProviderPaymentEvent({
+          tenantId: intent.tenantId,
+          userId: intent.userId,
+          event,
+        });
       }
-      const admitted = admitPaymentEvidence(request.payload, {
-        paymentId: intent.providerPaymentId,
-        orderId: providerOrderId(intent.tenantId, intent.requestId),
-        asset: intent.asset,
-        amount: intent.amount,
-        payAmount: intent.providerPayAmount,
-      });
-      const event: CryptoProviderPaymentEvent = {
-        paymentId: evidence.paymentId,
-        parentPaymentId: evidence.parentPaymentId,
-        orderId: identity.requestId,
-        status: evidence.status,
-        priceAmount: admitted.priceAmount,
-        priceCurrency: evidence.priceCurrency,
-        payAmount: admitted.payAmount,
-        payCurrency: evidence.payCurrency,
-        actuallyPaid: admitted.actuallyPaid,
-        payloadHash: evidence.payloadHash,
-        observedAt: now(),
-      };
-      await input.crypto.applyProviderPaymentEvent({
-        tenantId: intent.tenantId,
-        userId: intent.userId,
-        event,
-      });
       return Object.freeze({ accepted: true as const, requestId: intent.requestId });
     },
   });
