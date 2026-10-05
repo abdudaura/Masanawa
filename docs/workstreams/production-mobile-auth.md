@@ -17,6 +17,7 @@ Owned paths for this workstream:
 - `apps/mobile/lib/src/screens/settings/developer_screen.dart` deletion.
 - `apps/mobile/lib/src/screens/onboarding/otp_screen.dart`, `apps/mobile/lib/src/screens/splash/splash_screen.dart`, `apps/mobile/lib/src/screens/chat/ai_chat_screen.dart`, `apps/mobile/lib/src/screens/chat/masana_list_screen.dart`, `apps/mobile/lib/src/state/creator_economy_state.dart`, `apps/mobile/lib/src/state/creator_skills_state.dart`, and `apps/mobile/lib/src/agents/agent_feedback.dart` only to remove dependencies on the retired Developer/connection state and bind recovery to the production session.
 - focused mobile tests affected by the above.
+- production build/documentation cleanup: `apps/mobile/README.md`, `apps/mobile/docs/BUILDS.md`, `apps/mobile/docs/AGENT-GATEWAY-CONTRACT.md`, obsolete `apps/mobile/docs/CHAT-SHELL-LOCAL-TEST.md`, and obsolete Alpha/test build helpers under `apps/mobile/tool/` that still require manual tokens/runtime-enable flags.
 - this claim and production-auth handoff docs.
 
 Production direction:
