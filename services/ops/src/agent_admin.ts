@@ -4,7 +4,7 @@ import type {
   CharacterSkillAssignment,
   CharacterSkillAssignmentRepository,
 } from "@masanawa/agents";
-import { nowInstant, type CharacterId, type TenantId } from "@masanawa/contracts";
+import { nowInstant, type CharacterId, type TenantId, type UserId } from "@masanawa/contracts";
 import type { CharacterVersionReferenceReader } from "@masanawa/identity";
 import type { SkillRepository } from "@masanawa/skills";
 
@@ -35,6 +35,12 @@ export type AgentAdminCapability =
 
 export interface AgentAdminAuthority {
   readonly tenantId: TenantId;
+  /**
+   * Present only when the operator authenticated through a canonical
+   * PlatformSession. Bootstrap-token authorization is intentionally anonymous
+   * and must not be treated as an approver Principal.
+   */
+  readonly operatorUserId: UserId | null;
 }
 
 export interface AgentAdminAuthorizer {
