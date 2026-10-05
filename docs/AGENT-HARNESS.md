@@ -239,3 +239,14 @@ work. The app subscribes to the existing deep-link stream before first paint, th
 This preserves launch/deep-link delivery while avoiding unnecessary platform-channel and
 Firebase setup competing with router/theme/session startup on slower Android devices.
 Do not move noncritical notification initialization back in front of first paint.
+
+
+### Fresh-install session restore optimization
+
+The single-record `auth_session_v2` fast path remains one secure-storage read. When that
+record is absent, compatibility with older APKs now uses one bulk `readAll()` call rather
+than four additional key-by-key calls.
+
+This means a fresh signed-out install performs two secure-storage platform calls for session
+discovery instead of up to five, while legacy installs still migrate asynchronously to the
+single-record format. Do not remove legacy migration until upgrade support is explicitly retired.
