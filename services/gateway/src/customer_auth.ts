@@ -359,12 +359,12 @@ export function createPlatformCustomerSessionAuthorizer(input: Readonly<{
   return Object.freeze({
     async authorize(request: Parameters<PlatformCustomerSessionAuthorizer["authorize"]>[0]) {
       const token = bearer(request.authorizationHeader);
-      if (!token) throw new Error("financial.auth.unauthorized");
+      if (!token) throw new CustomerAuthError("UNAUTHORIZED", 401);
       let accessHash: string;
       try {
         accessHash = hashPlatformSessionToken(token);
       } catch {
-        throw new Error("financial.auth.unauthorized");
+        throw new CustomerAuthError("UNAUTHORIZED", 401);
       }
       let identity: PlatformSessionIdentity | null;
       try {
