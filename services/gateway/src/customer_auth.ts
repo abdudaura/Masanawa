@@ -279,7 +279,6 @@ export function createCustomerAuthService(input: Readonly<{
         identifier: normalized.identifier,
         observedAt: verifiedAt,
       });
-      const isNewUser = profile === null;
       const name = request.name?.trim();
       if (!profile && !name) throw new CustomerAuthError("NAME_REQUIRED_ON_SIGNUP", 400);
 
