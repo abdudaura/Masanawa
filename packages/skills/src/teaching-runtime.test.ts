@@ -1666,7 +1666,7 @@ describe("Core Teaching staged multi-select", () => {
       persistence: "stored",
       evaluation: { correct: true },
     });
-    expect(progress.attempts).toHaveLength(1);
+    expect(progress.attempts.size).toBe(1);
   });
 
   it("uses compact stage-bound channel callbacks and rejects stale callbacks after a toggle", () => {
