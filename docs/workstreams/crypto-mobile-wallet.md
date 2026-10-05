@@ -13,8 +13,7 @@ Dependencies:
 Owned paths for this workstream:
 - new `apps/mobile/lib/src/finance/**`;
 - new `apps/mobile/test/crypto_*.dart`;
-- `apps/mobile/lib/src/router/app_router.dart` only for the protected `/wallet` route;
-- `apps/mobile/lib/src/screens/chat/chat_list_screen.dart` only for the wallet app-bar entry point;
+- `apps/mobile/lib/src/screens/chat/chat_list_screen.dart` only for the wallet app-bar entry point. Wallet opens with a local authenticated page push so this workstream does not own or modify the shared production-auth router;
 - this claim file.
 
 Purpose:
@@ -39,3 +38,8 @@ The mobile client targets the canonical PR #124/#100 HTTP contract:
 - GET `/v1/financial/crypto/intents/:requestId`
 
 No end-user payout verification-code endpoint is used.
+
+
+## Auth/router coordination update — 2026-10-05
+
+PR #128 owns production authentication and `app_router.dart`. This branch has reverted its router file exactly to `main` and no longer depends on a `/wallet` route. The Wallet entry point lives only in the signed-in chat list and pushes `CryptoWalletScreen` locally. Finance transport uses the normal `ApiClient` session bearer/interceptor; it does not read or store any Agent/Alpha/developer token.
