@@ -128,7 +128,16 @@ class _UsersAdminPageState extends State<UsersAdminPage> {
                 '${user.identityCount} identities · '
                 '${user.relationshipCount} relationships · rev ${user.revision}',
               ),
-              trailing: Chip(label: Text(user.state)),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Chip(label: Text(user.state)),
+                  if (user.relationshipCount > 0) ...[
+                    const SizedBox(width: 4),
+                    const Icon(Icons.chevron_right),
+                  ],
+                ],
+              ),
             ),
           )).toList(growable: false),
         ),
