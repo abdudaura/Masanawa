@@ -253,3 +253,34 @@ class UnavailableOwnerAccessTransport implements OwnerAccessTransport {
     throw StateError('Owner access is not connected to the Gateway yet');
   }
 }
+
+
+class OwnerAccessOffering {
+  const OwnerAccessOffering({
+    required this.enabled,
+    required this.modalities,
+    required this.durationOptionsMinutes,
+    required this.priceCreditsPerMinute,
+  });
+
+  final bool enabled;
+  final Set<OwnerAccessModality> modalities;
+  final List<int> durationOptionsMinutes;
+  final int priceCreditsPerMinute;
+
+  OwnerAccessOffering copyWith({
+    bool? enabled,
+    Set<OwnerAccessModality>? modalities,
+    List<int>? durationOptionsMinutes,
+    int? priceCreditsPerMinute,
+  }) {
+    return OwnerAccessOffering(
+      enabled: enabled ?? this.enabled,
+      modalities: modalities ?? this.modalities,
+      durationOptionsMinutes:
+          durationOptionsMinutes ?? this.durationOptionsMinutes,
+      priceCreditsPerMinute:
+          priceCreditsPerMinute ?? this.priceCreditsPerMinute,
+    );
+  }
+}
