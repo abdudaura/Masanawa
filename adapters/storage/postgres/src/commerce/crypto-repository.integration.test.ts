@@ -127,6 +127,39 @@ describeDatabase("crypto conversion and payout fee PostgreSQL acceptance", () =>
     };
   }
 
+  function buyIntent(
+    tenantId: Awaited<ReturnType<typeof fundedFixture>>["tenantId"],
+    userId: Awaited<ReturnType<typeof fundedFixture>>["userId"],
+  ): CryptoIntent {
+    const createdAt = instant(18);
+    return {
+      schemaVersion: 1,
+      tenantId,
+      userId,
+      requestId: createCanonicalId("request"),
+      operation: "buy",
+      asset: "NGN",
+      network: null,
+      amount: "1500",
+      targetAsset: "USDTTRC20",
+      targetNetwork: "tron",
+      destinationAddress: null,
+      provider: "nowpayments",
+      providerPaymentId: null,
+      providerPayoutId: null,
+      providerInvoiceId: null,
+      checkoutUrl: null,
+      providerConversionId: null,
+      providerTargetAmount: null,
+      payAddress: null,
+      providerPayAmount: null,
+      providerDispatchStartedAt: null,
+      status: "quoted",
+      createdAt,
+      updatedAt: createdAt,
+    };
+  }
+
   function withdrawalIntent(
     tenantId: Awaited<ReturnType<typeof fundedFixture>>["tenantId"],
     userId: Awaited<ReturnType<typeof fundedFixture>>["userId"],
@@ -385,6 +418,114 @@ describeDatabase("crypto conversion and payout fee PostgreSQL acceptance", () =>
     expect(await f.repository.readBalance({
       tenantId: f.tenantId, userId: f.userId, asset: "USDTTRC20", network: "tron",
     })).toBe("10");
+  });
+
+  it("credits and refunds the exact fiat-purchase crypto outcome once", async () => {
+    const f = await fundedFixture("20");
+    const purchase = buyIntent(f.tenantId, f.userId);
+    await f.repository.createIntent(purchase);
+    const boundInvoice = await f.repository.bindProviderInvoice({
+      tenantId: f.tenantId,
+      userId: f.userId,
+      requestId: purchase.requestId,
+      providerInvoiceId: "invoice-1",
+      checkoutUrl: "https://nowpayments.io/payment/?iid=invoice-1",
+      updatedAt: instant(19),
+    });
+    expect(boundInvoice.status).toBe("awaiting_payment");
+
+    const finished = {
+      paymentId: "fiat-payment-1",
+      invoiceId: "invoice-1",
+      parentPaymentId: null,
+      orderId: purchase.requestId,
+      status: "finished" as const,
+      priceAmount: "1500",
+      priceCurrency: "NGN",
+      payAmount: "1500",
+      payCurrency: "NGN",
+      actuallyPaid: "1500",
+      outcomeAmount: "1.234567",
+      outcomeCurrency: "USDTTRC20",
+      payloadHash: createHash("sha256").update("fiat-finished-1").digest("hex"),
+      observedAt: instant(20),
+    };
+    const settled = await f.repository.applyProviderPaymentEvent({
+      tenantId: f.tenantId,
+      userId: f.userId,
+      event: finished,
+    });
+    expect(settled.status).toBe("succeeded");
+    expect(settled.providerPaymentId).toBe("fiat-payment-1");
+    expect(settled.providerTargetAmount).toBe("1.234567");
+    expect(await f.repository.readBalance({
+      tenantId: f.tenantId,
+      userId: f.userId,
+      asset: "USDTTRC20",
+      network: "tron",
+    })).toBe("21.234567");
+
+    await f.repository.applyProviderPaymentEvent({
+      tenantId: f.tenantId,
+      userId: f.userId,
+      event: {
+        ...finished,
+        payloadHash: createHash("sha256").update("fiat-finished-2").digest("hex"),
+        observedAt: instant(21),
+      },
+    });
+    expect(await f.repository.readBalance({
+      tenantId: f.tenantId,
+      userId: f.userId,
+      asset: "USDTTRC20",
+      network: "tron",
+    })).toBe("21.234567");
+
+    const refunded = await f.repository.applyProviderPaymentEvent({
+      tenantId: f.tenantId,
+      userId: f.userId,
+      event: {
+        ...finished,
+        status: "refunded" as const,
+        outcomeAmount: null,
+        outcomeCurrency: null,
+        payloadHash: createHash("sha256").update("fiat-refunded-1").digest("hex"),
+        observedAt: instant(22),
+      },
+    });
+    expect(refunded.status).toBe("refunded");
+    expect(refunded.providerTargetAmount).toBeNull();
+    expect(await f.repository.readBalance({
+      tenantId: f.tenantId,
+      userId: f.userId,
+      asset: "USDTTRC20",
+      network: "tron",
+    })).toBe("20");
+
+    await f.repository.applyProviderPaymentEvent({
+      tenantId: f.tenantId,
+      userId: f.userId,
+      event: {
+        ...finished,
+        status: "refunded" as const,
+        outcomeAmount: null,
+        outcomeCurrency: null,
+        payloadHash: createHash("sha256").update("fiat-refunded-2").digest("hex"),
+        observedAt: instant(23),
+      },
+    });
+    const counts = await pool.query<{ reason: string; count: string }>(
+      `SELECT reason, count(*)::text AS count
+         FROM commerce.crypto_ledger_entries
+        WHERE tenant_id=$1 AND user_id=$2 AND request_id=$3
+          AND reason IN ('fiat-purchase-credit','fiat-purchase-refund')
+        GROUP BY reason ORDER BY reason`,
+      [f.tenantId, f.userId, purchase.requestId],
+    );
+    expect(counts.rows).toEqual([
+      { reason: "fiat-purchase-credit", count: "1" },
+      { reason: "fiat-purchase-refund", count: "1" },
+    ]);
   });
 
   it("resolves a payout callback by globally unique provider batch id", async () => {
