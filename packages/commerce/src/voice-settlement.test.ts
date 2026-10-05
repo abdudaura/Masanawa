@@ -21,7 +21,7 @@ describe("verified twin voice settlement", () => {
       customerChargeCredits: 0,
       ownerEarningCredits: 0,
       platformRevenueCredits: 0,
-      refundCredits: 20,
+      refundCredits: 0,
     });
   });
 
@@ -44,7 +44,7 @@ describe("verified twin voice settlement", () => {
       customerChargeCredits: 30,
       ownerEarningCredits: 9,
       platformRevenueCredits: 21,
-      refundCredits: 0,
+      refundCredits: 20,
     });
   });
 
@@ -57,6 +57,7 @@ describe("verified twin voice settlement", () => {
       unitSeconds: 60,
       priceCreditsPerUnit: 10,
       ownerShareBasisPoints: 3000,
+      reservedCredits: 50,
     });
     expect(decision.disposition).toBe("reconcile");
     expect(decision.customerChargeCredits).toBe(0);
@@ -71,6 +72,7 @@ describe("verified twin voice settlement", () => {
       unitSeconds: 60,
       priceCreditsPerUnit: 10,
       ownerShareBasisPoints: 3000,
+      reservedCredits: 0,
     });
     expect(decision.usageUnits).toBe(0);
     expect(decision.trialUnitsConsumed).toBe(0);
