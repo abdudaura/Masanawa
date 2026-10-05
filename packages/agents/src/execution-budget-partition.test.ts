@@ -7,7 +7,7 @@ import {
 } from "./execution-budget.js";
 import { deriveChildExecutionBudget } from "./execution-budget-partition.js";
 
-const rootAgentRunId =
+const parentAgentRunId =
   "agent-run_00000000-0000-4000-8000-000000000001" as never;
 const childAgentRunId =
   "agent-run_00000000-0000-4000-8000-000000000002" as never;
@@ -15,7 +15,7 @@ const startedAt = "2026-10-05T10:00:00.000Z" as never;
 
 const budget = normalizeAgentExecutionBudget({
   schemaVersion: 1,
-  agentRunId: rootAgentRunId,
+  agentRunId: parentAgentRunId,
   maxWallClockMs: 120_000,
   maxInputTokens: 1_000,
   maxOutputTokens: 800,
@@ -28,7 +28,7 @@ const budget = normalizeAgentExecutionBudget({
 
 function baseUsage() {
   return createInitialAgentExecutionUsage({
-    agentRunId: rootAgentRunId,
+    agentRunId: parentAgentRunId,
     startedAt,
     providerCostCurrency: "USD",
   });
@@ -55,7 +55,7 @@ describe("child AgentRun execution budget derivation", () => {
       parentUsage: baseUsage(),
       request: request(),
     });
-    expect(grant.rootAgentRunId).toBe(rootAgentRunId);
+    expect(grant.parentAgentRunId).toBe(parentAgentRunId);
     expect(grant.childBudget.agentRunId).toBe(childAgentRunId);
     expect(grant.childBudget.providerCostCurrency).toBe("USD");
     expect(grant.childBudget.maxTotalTokens).toBe(450);
