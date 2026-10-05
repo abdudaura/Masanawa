@@ -310,9 +310,21 @@ importers:
       '@masanawa/contracts':
         specifier: workspace:*
         version: link:../contracts
+      '@masanawa/identity':
+        specifier: workspace:*
+        version: link:../identity
+      '@masanawa/memory':
+        specifier: workspace:*
+        version: link:../memory
       '@masanawa/security':
         specifier: workspace:*
         version: link:../security
+      '@masanawa/skills':
+        specifier: workspace:*
+        version: link:../skills
+      '@masanawa/world':
+        specifier: workspace:*
+        version: link:../world
     devDependencies:
       vitest:
         specifier: 5.0.3
