@@ -16,6 +16,7 @@ import {
   nowInstant,
   parseCanonicalId,
   readRequiredEnv,
+  toInstant,
 } from "@masanawa/contracts";
 import {
   createDrainState,
@@ -366,9 +367,9 @@ function createDefaultDatabaseDependency(
     async prepare(input) {
       const agentRunId = parseCanonicalId("agent-run", input.agentRunId);
       const requestedAt = nowInstant();
-      const expiresAt = new Date(
-        Date.parse(requestedAt) + 15 * 60 * 1000,
-      ).toISOString();
+      const expiresAt = toInstant(
+        new Date(Date.parse(requestedAt) + 15 * 60 * 1000),
+      );
 
       return withTransaction(database.pool, async (client) => {
         const authorityScopeHash = fingerprintCanonicalJson({
