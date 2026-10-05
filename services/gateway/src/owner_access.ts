@@ -1,11 +1,54 @@
 import type { CharacterId, TenantId, UserId } from "@masanawa/contracts";
 import { parseCanonicalId } from "@masanawa/contracts";
-import type {
-  OwnerAccessModality,
-  OwnerAccessQuote,
-  OwnerAccessRequest,
-  OwnerAccessState,
-} from "@masanawa/commerce";
+export type OwnerAccessModality = "text" | "voice" | "video";
+
+export interface OwnerAccessQuote {
+  readonly requestId: string;
+  readonly ownerUserId: string;
+  readonly originatingCharacterId: string;
+  readonly modality: OwnerAccessModality;
+  readonly durationMinutes: number;
+  readonly priceCredits: number;
+  readonly platformFeeCredits: number;
+  readonly ownerEarningCredits: number;
+  readonly chargeMode: "trial" | "paid";
+  readonly trialDurationDays: number;
+  readonly policyRevision: number;
+  readonly trialPolicyRevision: number;
+  readonly quoteExpiresAt: string;
+}
+
+export interface OwnerAccessRequest {
+  readonly requestId: string;
+  readonly requesterUserId: string;
+  readonly ownerUserId: string;
+  readonly originatingCharacterId: string;
+  readonly modality: OwnerAccessModality;
+  readonly durationMinutes: number;
+  readonly priceCredits: number;
+  readonly platformFeeCredits: number;
+  readonly ownerEarningCredits: number;
+  readonly chargeMode: "trial" | "paid";
+  readonly trialPolicyRevision: number;
+  readonly state:
+    | "requested"
+    | "accepted"
+    | "scheduled"
+    | "active"
+    | "completed"
+    | "settled"
+    | "declined"
+    | "expired"
+    | "cancelled"
+    | "no-show"
+    | "refunded"
+    | "disputed";
+  readonly requestedAt: string;
+  readonly acceptBy: string;
+  readonly scheduledFor: string | null;
+  readonly startedAt: string | null;
+  readonly completedAt: string | null;
+}
 
 export interface OwnerAccessAuthority {
   readonly tenantId: TenantId;
