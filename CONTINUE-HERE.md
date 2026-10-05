@@ -13,6 +13,7 @@ Preserve this startup behavior:
   remains canonical for every admission and consequential operation;
 - do not solve startup speed by hard-coding Gwani, Gwana or any Character in the APK.
 - Cached agents are immediately actionable while the live directory refreshes; only a true empty/no-cache state should show a blocking loading message.
+- PR #166 merged the cache-first presentation polish at `c878f23ce3f77c68dcfb1f76ecc44561f4702d96`.
 
 Implementation paths:
 `apps/mobile/lib/src/agents/agent_directory_cache.dart`,
