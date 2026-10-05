@@ -3,8 +3,11 @@
 Owner/window: ChatGPT harness budget continuation.
 Branch: `work/agent-run-budgets-20261005`
 Base: current main `b27554f1f953d96d5e7d44727cd4f8fef170009f`
+PR: #165
 
-Purpose: add the provider-neutral AgentRun budget contract explicitly left open by the runtime/harness work, without coupling the mobile shell or finance domains to execution control.
+Purpose: add the provider-neutral AgentRun budget contract explicitly left open by
+the runtime/harness work, without coupling the mobile shell or finance domains to
+execution control.
 
 ## Exact owned paths
 
@@ -13,28 +16,61 @@ Purpose: add the provider-neutral AgentRun budget contract explicitly left open 
 - `packages/agents/src/execution-budget.test.ts`
 - append-only export in `packages/agents/src/index.ts`
 
-## Boundaries
+No Gateway/mobile/router/chat, billing/crypto/Commerce, provider adapter, storage,
+migration or deployment files are owned.
 
-- no Gateway/mobile/router/chat edits;
-- no billing/crypto/Commerce ledger edits;
-- no Tool/provider dispatch implementation;
-- no database/migration changes;
-- cost here is provider-metering evidence only and never financial settlement authority;
-- budget checks are fail-closed and intended to run before inference/tool/child dispatch;
-- actual durable meter persistence/composition remains integration-owned.
+## Implemented
 
-## Acceptance
+- immutable budget envelope bound to one canonical AgentRun;
+- wall-clock ceiling;
+- input-token, output-token and combined-token ceilings;
+- Tool-dispatch count ceiling;
+- child-AgentRun count ceiling;
+- provider-cost microunit ceiling bound to an explicit three-letter currency;
+- initial zero-usage constructor;
+- normalized monotonic usage snapshots;
+- inference preflight checks using next-input, maximum-output and estimated provider cost
+  before a provider request is admitted;
+- actual inference usage recording that rejects stale observation time, wrong currency,
+  negative usage and post-response exhaustion;
+- Tool preflight + recording before another Tool dispatch;
+- child-run preflight + recording before another child AgentRun;
+- AgentRun/currency binding checks prevent a usage snapshot or provider estimate from
+  being replayed against a different run/budget;
+- exact-limit behavior is allowed, while the next unit/action fails deterministically.
 
-- bounded run wall-clock duration;
-- bounded input/output/total inference tokens;
-- bounded Tool dispatch count;
-- bounded child AgentRun count;
-- bounded provider-cost microunits under an explicit currency;
-- immutable budget envelope;
-- monotonic usage updates;
-- exact preflight checks before the next inference/tool/child action;
-- stale/negative/non-finite/wrong-currency usage rejected;
-- deterministic exhausted-budget errors;
-- no client/mobile authority over budgets.
+Provider cost in this package is metering evidence only. It does not reserve, debit,
+settle or otherwise authorize customer/creator/platform money.
 
-Status: active.
+## Verification
+
+- Compare against base: branch is 4 commits ahead, 0 behind.
+- Exact changed paths are the four claimed files above.
+- Foundation CI run `37293638731` completed as failure before executing any job step;
+  job `111709670456` has `steps: null`. This is hosted runner non-execution, not a
+  TypeScript/test result.
+- Focused tests are checked in for inference preflight/recording, wall-clock exhaustion,
+  AgentRun/currency binding, Tool limits, child-run limits and malformed usage/budgets.
+- No executable local checkout is available in this connector session, so no fabricated
+  local pass is claimed.
+
+## Integration handoff
+
+1. AgentHarness/root-run admission should create or load the server-owned budget; the
+   client must never supply trusted ceilings.
+2. Inference integration calls `assertCanAdmitInference()` before provider dispatch and
+   `recordInferenceUsage()` from provider-verified usage/cost evidence afterward.
+3. Tool execution calls `assertCanDispatchTool()` before dispatch and records exactly
+   one call only when that dispatch is admitted.
+4. PR #163 subworkers must share or receive an explicitly partitioned parent budget;
+   they must never create fresh unlimited budgets. Child admission calls
+   `assertCanAdmitChildRun()` before creation.
+5. Durable persistence should store budget + monotonic usage under canonical AgentRun
+   custody when the integration/storage owner takes that slice. Do not create a second
+   wallet/Commerce ledger for cost metering.
+6. Android/WhatsApp/Telegram may render budget exhaustion as truthful Work failure or
+   attention state, but they are not execution-budget authorities.
+
+Implementation: complete within the isolated Agents slice.
+Verification: source/diff audit complete; executable CI unavailable.
+Deployment: not claimed.
