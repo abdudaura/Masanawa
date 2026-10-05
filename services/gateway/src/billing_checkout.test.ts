@@ -26,6 +26,7 @@ class MemoryQuotes implements BillingQuoteRepository {
 
   async confirmQuote(input: Parameters<BillingQuoteRepository["confirmQuote"]>[0]) {
     if (!this.quote || this.quote.quoteId !== input.quoteId) throw new Error("missing");
+    if (this.quote.confirmedAt) return this.quote;
     this.quote = Object.freeze({
       ...this.quote,
       state: "confirmed",
@@ -35,12 +36,41 @@ class MemoryQuotes implements BillingQuoteRepository {
     return this.quote;
   }
 
+  async claimCheckoutDispatch(
+    input: Parameters<BillingQuoteRepository["claimCheckoutDispatch"]>[0],
+  ) {
+    if (!this.quote || this.quote.quoteId !== input.quoteId) {
+      throw new Error("missing");
+    }
+    if (this.quote.checkoutTxRef) {
+      if (this.quote.checkoutTxRef !== input.txRef) {
+        throw new Error("financial.billing.checkout_replay_conflict");
+      }
+      return Object.freeze({ quote: this.quote, claimed: false });
+    }
+    if (this.quote.state !== "confirmed") {
+      throw new Error("financial.billing.checkout_not_allowed");
+    }
+    this.quote = Object.freeze({
+      ...this.quote,
+      state: "checkout-dispatching",
+      checkoutTxRef: input.txRef,
+      updatedAt: input.claimedAt,
+    });
+    return Object.freeze({ quote: this.quote, claimed: true });
+  }
+
   async bindCheckout(input: Parameters<BillingQuoteRepository["bindCheckout"]>[0]) {
-    if (!this.quote) throw new Error("missing");
+    if (!this.quote || this.quote.checkoutTxRef !== input.txRef) {
+      throw new Error("financial.billing.checkout_replay_conflict");
+    }
+    if (this.quote.checkoutUrl) return this.quote;
+    if (this.quote.state !== "checkout-dispatching") {
+      throw new Error("financial.billing.checkout_not_allowed");
+    }
     this.quote = Object.freeze({
       ...this.quote,
       state: "checkout-created",
-      checkoutTxRef: input.txRef,
       checkoutUrl: input.checkoutUrl,
       updatedAt: input.boundAt,
     });
