@@ -6,6 +6,7 @@ import '../agents/agent_directory.dart';
 import '../agents/agent_directory_cache.dart';
 import '../agents/agent_feedback.dart';
 import '../agents/agent_shell.dart';
+import '../agents/twin_directory.dart';
 import '../core/mobile_push.dart';
 import '../core/providers.dart';
 import '../core/network/api_client.dart';
@@ -113,6 +114,24 @@ class AgentDirectoryController extends Notifier<AgentDirectoryState> {
     }
 
     await _refreshForOwner(ownerId, request);
+  }
+
+  void primeTwin(TwinDirectoryEntry twin) {
+    if (state.find(twin.characterId) != null) return;
+    final preview = AgentDirectoryEntry(
+      characterId: twin.characterId,
+      characterVersionId: 'pending-public-twin',
+      displayName: twin.displayName,
+      roleLabel: 'AI twin',
+      about: twin.bio,
+      presence: AgentPresence.available,
+      supportAgent: false,
+      defaultPlatformAgent: false,
+    );
+    state = state.copyWith(
+      agents: List.unmodifiable([...state.agents, preview]),
+      clearError: true,
+    );
   }
 
   Future<void> refresh() async {
