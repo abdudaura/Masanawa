@@ -524,8 +524,8 @@ export function createPostgresTwinRuntimeRepository(
         `INSERT INTO commerce.twin_voice_admissions(
            tenant_id,admission_id,quote_id,user_id,owner_user_id,character_id,
            charge_mode,spend_cap_credits,reservation_ledger_entry_id,
-           admitted_at,expires_at,settled_at,definition
-         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb)
+           admitted_at,started_at,expires_at,settled_at,definition
+         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14::jsonb)
          ON CONFLICT DO NOTHING`,
         [
           input.tenantId,
@@ -538,6 +538,7 @@ export function createPostgresTwinRuntimeRepository(
           input.spendCapCredits,
           input.reservationLedgerEntryId,
           input.admittedAt,
+          input.startedAt,
           input.expiresAt,
           input.settledAt,
           canonicalJson(input),
@@ -552,12 +553,42 @@ export function createPostgresTwinRuntimeRepository(
     },
 
     async readVoiceAdmission(input) {
-      const result = await pool.query<{ definition: PersistedTwinVoiceAdmission }>(
-        `SELECT definition FROM commerce.twin_voice_admissions
+      const result = await pool.query<{
+        definition: PersistedTwinVoiceAdmission;
+        started_at: Date | string | null;
+        settled_at: Date | string | null;
+      }>(
+        `SELECT definition,started_at,settled_at
+           FROM commerce.twin_voice_admissions
           WHERE tenant_id=$1 AND admission_id=$2`,
         [input.tenantId, input.admissionId],
       );
-      return result.rows[0] ? Object.freeze(result.rows[0].definition) : null;
+      const row = result.rows[0];
+      return row
+        ? Object.freeze({
+            ...row.definition,
+            startedAt: row.started_at ? iso(row.started_at) : null,
+            settledAt: row.settled_at ? iso(row.settled_at) : null,
+          })
+        : null;
+    },
+
+    async markVoiceStarted(input) {
+      const result = await pool.query(
+        `UPDATE commerce.twin_voice_admissions
+            SET started_at=COALESCE(started_at,$3)
+          WHERE tenant_id=$1 AND admission_id=$2
+            AND settled_at IS NULL
+          RETURNING admission_id`,
+        [input.tenantId, input.admissionId, input.startedAt],
+      );
+      if (result.rowCount !== 1) throw new Error("Voice admission is unavailable");
+      const current = await this.readVoiceAdmission({
+        tenantId: input.tenantId,
+        admissionId: input.admissionId,
+      });
+      if (!current) throw new Error("Voice admission is unavailable");
+      return current;
     },
 
     async markVoiceSettled(input) {
