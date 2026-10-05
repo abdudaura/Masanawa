@@ -87,7 +87,7 @@ export function createPaidFeatureTrialAdminService(input: {
   readonly now?: () => Date;
 }): PaidFeatureTrialAdminService {
   const now = input.now ?? (() => new Date());
-  return Object.freeze({
+  return Object.freeze<PaidFeatureTrialAdminService>({
     async read(request) {
       const authority = await input.authorizer.authorize({
         authorizationHeader: request.authorizationHeader,
