@@ -415,6 +415,15 @@ export function createTwinProductionRuntime(input: {
           : null;
       },
     },
+    visibility: {
+      async canDiscover(request) {
+        return !await input.economy.isTwinBlocked({
+          tenantId: request.tenantId,
+          actorUserId: request.userId,
+          characterId: request.characterId,
+        });
+      },
+    },
   });
 
   const activityEventReader = {
