@@ -637,6 +637,171 @@ export function applyTeachingMultiSelectStageCommand(input: {
   });
 }
 
+
+export interface TeachingMultiSelectStagePort {
+  /**
+   * Create the initial stage exactly once.
+   *
+   * Exact replay must return the already stored identical stage. A different
+   * stage for the same action binding must fail closed.
+   */
+  create(input: {
+    readonly stage: TeachingMultiSelectStage;
+  }): Promise<TeachingMultiSelectStage>;
+
+  load(input: {
+    readonly actionKey: string;
+    readonly actionBindingHash: string;
+  }): Promise<TeachingMultiSelectStage | null>;
+
+  /**
+   * Atomically replace one exact stage revision/hash.
+   *
+   * Implementations must compare both expectedRevision and expectedStageHash.
+   * A concurrent/stale writer must fail; an exact replay of nextStage may
+   * return the already persisted nextStage.
+   */
+  compareAndSet(input: {
+    readonly actionKey: string;
+    readonly actionBindingHash: string;
+    readonly expectedRevision: number;
+    readonly expectedStageHash: string;
+    readonly nextStage: TeachingMultiSelectStage;
+  }): Promise<TeachingMultiSelectStage>;
+}
+
+function assertSameMultiSelectStage(
+  actual: TeachingMultiSelectStage,
+  expected: TeachingMultiSelectStage,
+  message: string,
+): TeachingMultiSelectStage {
+  if (
+    actual.actionKey !== expected.actionKey ||
+    actual.actionBindingHash !== expected.actionBindingHash ||
+    actual.state !== expected.state ||
+    actual.revision !== expected.revision ||
+    actual.expiresAt !== expected.expiresAt ||
+    actual.stageHash !== expected.stageHash ||
+    actual.selectedOptionKeys.length !== expected.selectedOptionKeys.length ||
+    actual.selectedOptionKeys.some(
+      (optionKey, index) => optionKey !== expected.selectedOptionKeys[index],
+    )
+  ) {
+    throw new TypeError(message);
+  }
+  return actual;
+}
+
+export function createTeachingMultiSelectStageCoordinator(input: {
+  readonly stages: TeachingMultiSelectStagePort;
+}) {
+  return Object.freeze({
+    async open(request: {
+      readonly binding: TeachingRuntimeBinding;
+      readonly action: TeachingSelectionActionBinding;
+    }): Promise<TeachingMultiSelectStage> {
+      const initial = createTeachingMultiSelectStage(request);
+      const stored = await input.stages.create({ stage: initial });
+      const validated = validateTeachingMultiSelectStage({
+        binding: request.binding,
+        action: request.action,
+        stage: stored,
+      });
+      return assertSameMultiSelectStage(
+        validated,
+        initial,
+        "Teaching multi-select initial stage persistence conflict",
+      );
+    },
+
+    async load(request: {
+      readonly binding: TeachingRuntimeBinding;
+      readonly action: TeachingSelectionActionBinding;
+    }): Promise<TeachingMultiSelectStage> {
+      assertMultiSelectAction(request.binding, request.action);
+      const stored = await input.stages.load({
+        actionKey: request.action.actionKey,
+        actionBindingHash: request.action.bindingHash,
+      });
+      if (stored === null) {
+        throw new TypeError("Teaching multi-select stage was not found");
+      }
+      return validateTeachingMultiSelectStage({
+        binding: request.binding,
+        action: request.action,
+        stage: stored,
+      });
+    },
+
+    async apply(request: {
+      readonly binding: TeachingRuntimeBinding;
+      readonly action: TeachingSelectionActionBinding;
+      readonly command: TeachingMultiSelectStageCommand;
+      readonly now: Instant;
+    }): Promise<
+      | Readonly<{
+          kind: "staged";
+          stage: TeachingMultiSelectStage;
+        }>
+      | Readonly<{
+          kind: "committed";
+          stage: TeachingMultiSelectStage;
+          selection: TeachingOpaqueSelection;
+        }>
+    > {
+      const current = await this.load({
+        binding: request.binding,
+        action: request.action,
+      });
+      const result = applyTeachingMultiSelectStageCommand({
+        binding: request.binding,
+        action: request.action,
+        stage: current,
+        command: request.command,
+        now: request.now,
+      });
+
+      // Exact re-commit of an already committed stage is a pure replay and
+      // intentionally performs no second storage mutation.
+      if (result.stage.stageHash === current.stageHash) {
+        return result;
+      }
+
+      const stored = await input.stages.compareAndSet({
+        actionKey: current.actionKey,
+        actionBindingHash: current.actionBindingHash,
+        expectedRevision: current.revision,
+        expectedStageHash: current.stageHash,
+        nextStage: result.stage,
+      });
+      const validated = validateTeachingMultiSelectStage({
+        binding: request.binding,
+        action: request.action,
+        stage: stored,
+      });
+      const exact = assertSameMultiSelectStage(
+        validated,
+        result.stage,
+        "Teaching multi-select stage persistence returned a different state",
+      );
+
+      return result.kind === "staged"
+        ? Object.freeze({
+            kind: "staged" as const,
+            stage: exact,
+          })
+        : Object.freeze({
+            kind: "committed" as const,
+            stage: exact,
+            selection: Object.freeze({
+              actionKey: exact.actionKey,
+              selectedOptionKeys: Object.freeze([...exact.selectedOptionKeys]),
+            }),
+          });
+    },
+  });
+}
+
 export interface TeachingChannelMultiSelectBinding {
   readonly callbackToken: string;
   readonly actionKey: string;
