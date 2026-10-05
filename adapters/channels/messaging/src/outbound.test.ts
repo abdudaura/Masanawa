@@ -1,6 +1,8 @@
 import {
   createCanonicalId,
   toInstant,
+  type Instant,
+  type RequestId,
 } from "@masanawa/contracts";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -71,7 +73,7 @@ class MemoryOutbox implements DurableChannelOutbox {
   }
 
   async claimDispatch(input: {
-    readonly requestId: typeof requestId;
+    readonly requestId: RequestId;
     readonly payloadHash: string;
     readonly expectedRevision: number;
   }): Promise<ChannelOutboundRecord> {
@@ -92,11 +94,11 @@ class MemoryOutbox implements DurableChannelOutbox {
   }
 
   async markSent(input: {
-    readonly requestId: typeof requestId;
+    readonly requestId: RequestId;
     readonly payloadHash: string;
     readonly expectedRevision: number;
     readonly providerMessageId: string;
-    readonly acceptedAt: typeof acceptedAt;
+    readonly acceptedAt: Instant;
   }): Promise<ChannelOutboundRecord> {
     const current = this.record!;
     if (
@@ -115,7 +117,7 @@ class MemoryOutbox implements DurableChannelOutbox {
   }
 
   async markFailed(input: {
-    readonly requestId: typeof requestId;
+    readonly requestId: RequestId;
     readonly payloadHash: string;
     readonly expectedRevision: number;
     readonly safeCode: string;
@@ -136,7 +138,7 @@ class MemoryOutbox implements DurableChannelOutbox {
   }
 
   async markUnknown(input: {
-    readonly requestId: typeof requestId;
+    readonly requestId: RequestId;
     readonly payloadHash: string;
     readonly expectedRevision: number;
   }): Promise<ChannelOutboundRecord> {
@@ -155,13 +157,13 @@ class MemoryOutbox implements DurableChannelOutbox {
   }
 
   async resolveAmbiguous(input: {
-    readonly requestId: typeof requestId;
+    readonly requestId: RequestId;
     readonly payloadHash: string;
     readonly expectedRevision: number;
     readonly resolution: "sent" | "not-sent";
     readonly evidenceRef: string;
     readonly providerMessageId: string | null;
-    readonly acceptedAt: typeof acceptedAt | null;
+    readonly acceptedAt: Instant | null;
   }): Promise<ChannelOutboundRecord> {
     const current = this.record!;
     if (
