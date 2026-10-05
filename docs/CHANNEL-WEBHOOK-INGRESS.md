@@ -237,3 +237,46 @@ recipient substitution, unknown messages and binding revision races fail closed.
 prove payment, fulfillment, Teaching progress, approval execution or any other domain
 success. Domain owners may use this evidence only through their own reconciliation
 policies.
+
+
+## Credential-free provider outbound translation
+
+Concrete request translation is now implemented without placing provider secrets in this
+package.
+
+### Telegram
+
+`createTelegramOutboundSender()` validates the configured ChannelAccount/bot namespace
+and direct-chat scope, then maps:
+- text -> Bot API `sendMessage`;
+- opaque options -> `sendMessage` with inline keyboard callback data;
+- OGG/OPUS voice media -> `sendVoice`;
+- other authorized audio media -> `sendAudio`;
+- reply context -> Bot API `reply_parameters`.
+
+The current Telegram Bot API documents callback_data as 1–64 bytes, matching the common
+callback bound already enforced by this adapter. The injected `TelegramBotApiEdge`
+owns the bot token; accepted responses must contain a valid Message ID. Malformed
+accepted responses throw so the durable dispatcher treats the outcome as ambiguous.
+
+### WhatsApp Cloud API
+
+`createWhatsAppOutboundSender()` validates the ChannelAccount/phone-number namespace
+and direct recipient, then maps:
+- text -> Cloud API text message;
+- up to three short choices -> interactive reply buttons;
+- larger bounded choice sets -> interactive list rows;
+- authorized audio -> Cloud API audio media ID;
+- reply context -> message context.
+
+The injected `WhatsAppCloudApiEdge` owns access-token custody and the provider HTTP
+edge. The adapter accepts only the provider message ID as durable receipt evidence.
+Unsupported option presentation or unavailable media returns an explicit safe rejection
+before the provider edge is called.
+
+`ChannelOutboundMediaResolver` is shared by both translators. It converts an already
+authorized opaque platform file reference into a provider file/media ID; upload/fetch
+authorization, retention and credentials remain outside this adapter.
+
+Provider network exceptions and malformed success responses propagate to the durable
+dispatcher, which marks the send ambiguous and blocks blind retry.
