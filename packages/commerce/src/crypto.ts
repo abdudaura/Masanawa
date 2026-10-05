@@ -8,7 +8,7 @@ import {
   type UserId,
 } from "@masanawa/contracts";
 
-export type CryptoOperation = "deposit" | "withdraw" | "convert";
+export type CryptoOperation = "deposit" | "withdraw" | "convert" | "buy";
 export type CryptoWithdrawalFeePayer = "user" | "platform";
 export type CryptoIntentStatus =
   | "quoted"
@@ -37,9 +37,13 @@ export interface CryptoIntent {
   readonly provider: "nowpayments";
   readonly providerPaymentId: string | null;
   readonly providerPayoutId: string | null;
+  /** Durable NOWPayments hosted invoice identity for fiat on-ramp purchases. */
+  readonly providerInvoiceId?: string | null;
+  /** Hosted provider checkout URL for fiat on-ramp purchases. */
+  readonly checkoutUrl?: string | null;
   /** Durable NOWPayments custody conversion identity. */
   readonly providerConversionId?: string | null;
-  /** Exact target amount evidenced by the provider after conversion settlement. */
+  /** Exact target crypto amount evidenced after conversion or fiat purchase settlement. */
   readonly providerTargetAmount?: string | null;
   readonly payAddress: string | null;
   readonly providerPayAmount: string | null;
@@ -71,6 +75,8 @@ export interface CryptoLedgerEntry {
     | "conversion-debit"
     | "conversion-credit"
     | "conversion-release"
+    | "fiat-purchase-credit"
+    | "fiat-purchase-refund"
     | "adjustment";
   readonly requestId: RequestId;
   readonly providerReference: string | null;
@@ -126,7 +132,7 @@ function optional(value: string | null, code: string, max = 512): string | null 
 export function normalizeCryptoIntent(input: CryptoIntent): CryptoIntent {
   if (input.schemaVersion !== 1) throw new TypeError("crypto.intent.schema.invalid");
   const operation = input.operation;
-  if (!["deposit", "withdraw", "convert"].includes(operation)) {
+  if (!["deposit", "withdraw", "convert", "buy"].includes(operation)) {
     throw new TypeError("crypto.intent.operation.invalid");
   }
   const status = input.status;
@@ -145,11 +151,46 @@ export function normalizeCryptoIntent(input: CryptoIntent): CryptoIntent {
     input.targetNetwork === undefined || input.targetNetwork === null
       ? null
       : normalizeCryptoNetwork(input.targetNetwork);
-  if (operation === "convert" && targetAsset === null) {
-    throw new TypeError("crypto.convert.target.required");
+  if ((operation === "convert" || operation === "buy") && targetAsset === null) {
+    throw new TypeError(
+      operation === "convert"
+        ? "crypto.convert.target.required"
+        : "crypto.buy.target.required",
+    );
   }
-  if (operation !== "convert" && (targetAsset !== null || targetNetwork !== null)) {
+  if (
+    operation !== "convert" &&
+    operation !== "buy" &&
+    (targetAsset !== null || targetNetwork !== null)
+  ) {
     throw new TypeError("crypto.target.unexpected");
+  }
+  if (operation === "buy" && (input.network !== null || destinationAddress !== null)) {
+    throw new TypeError("crypto.buy.source_shape.invalid");
+  }
+  const providerInvoiceId =
+    optional(input.providerInvoiceId ?? null, "crypto.provider_invoice.invalid", 128);
+  const checkoutUrl =
+    optional(input.checkoutUrl ?? null, "crypto.checkout_url.invalid", 2048);
+  if (checkoutUrl !== null) {
+    let parsedCheckout: URL;
+    try {
+      parsedCheckout = new URL(checkoutUrl);
+    } catch {
+      throw new TypeError("crypto.checkout_url.invalid");
+    }
+    if (parsedCheckout.protocol !== "https:") {
+      throw new TypeError("crypto.checkout_url.insecure");
+    }
+  }
+  if (
+    operation !== "buy" &&
+    (providerInvoiceId !== null || checkoutUrl !== null)
+  ) {
+    throw new TypeError("crypto.provider_invoice.unexpected");
+  }
+  if ((providerInvoiceId === null) !== (checkoutUrl === null)) {
+    throw new TypeError("crypto.provider_invoice.incomplete");
   }
   const providerConversionId =
     optional(input.providerConversionId ?? null, "crypto.provider_conversion.invalid", 128);
@@ -157,14 +198,29 @@ export function normalizeCryptoIntent(input: CryptoIntent): CryptoIntent {
     input.providerTargetAmount === undefined || input.providerTargetAmount === null
       ? null
       : normalizeCryptoAmount(input.providerTargetAmount);
-  if (
-    operation !== "convert" &&
-    (providerConversionId !== null || providerTargetAmount !== null)
-  ) {
+  if (operation !== "convert" && providerConversionId !== null) {
     throw new TypeError("crypto.provider_conversion.unexpected");
   }
-  if (operation === "convert" && providerTargetAmount !== null && status !== "succeeded") {
+  if (
+    operation !== "convert" &&
+    operation !== "buy" &&
+    providerTargetAmount !== null
+  ) {
     throw new TypeError("crypto.provider_target_amount.unexpected");
+  }
+  if (
+    (operation === "convert" || operation === "buy") &&
+    providerTargetAmount !== null &&
+    status !== "succeeded"
+  ) {
+    throw new TypeError("crypto.provider_target_amount.unexpected");
+  }
+  if (
+    operation === "buy" &&
+    providerTargetAmount !== null &&
+    input.providerPaymentId === null
+  ) {
+    throw new TypeError("crypto.buy.provider_payment.required");
   }
   const providerNetworkFee =
     input.providerNetworkFee === undefined || input.providerNetworkFee === null
@@ -207,6 +263,8 @@ export function normalizeCryptoIntent(input: CryptoIntent): CryptoIntent {
     provider: "nowpayments",
     providerPaymentId: optional(input.providerPaymentId, "crypto.provider_payment.invalid", 128),
     providerPayoutId: optional(input.providerPayoutId, "crypto.provider_payout.invalid", 128),
+    providerInvoiceId,
+    checkoutUrl,
     providerConversionId,
     providerTargetAmount,
     payAddress: optional(input.payAddress, "crypto.pay_address.invalid", 512),
@@ -260,6 +318,9 @@ export interface CryptoProviderPaymentEvent {
   readonly payAmount: string;
   readonly payCurrency: string;
   readonly actuallyPaid: string;
+  readonly invoiceId?: string | null;
+  readonly outcomeAmount?: string | null;
+  readonly outcomeCurrency?: string | null;
   readonly payloadHash: string;
   readonly observedAt: Instant;
 }
@@ -291,6 +352,14 @@ export interface CryptoRepository {
     readonly requestId: RequestId;
     readonly updatedAt: Instant;
   }): Promise<{ readonly intent: CryptoIntent; readonly shouldDispatch: boolean }>;
+  bindProviderInvoice(input: {
+    readonly tenantId: TenantId;
+    readonly userId: UserId;
+    readonly requestId: RequestId;
+    readonly providerInvoiceId: string;
+    readonly checkoutUrl: string;
+    readonly updatedAt: Instant;
+  }): Promise<CryptoIntent>;
   bindProviderPayment(input: {
     readonly tenantId: TenantId;
     readonly userId: UserId;
