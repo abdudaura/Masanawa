@@ -109,12 +109,15 @@ function harness(input: {
   const approvals: WorkflowApprovalResolver = {
     async areSatisfied() { return input.approvalsSatisfied ?? false; },
   };
+  const assertCurrent = vi.fn(async () => undefined);
   return {
     transition,
+    assertCurrent,
     service: createWorkflowResumeService({
       runs,
       graphs,
       approvals,
+      authority: { assertCurrent },
       clock: { now: () => at },
     }),
   };
@@ -124,7 +127,7 @@ const scope = { tenantId, userId, characterId, relationshipId };
 
 describe("workflow resume service", () => {
   it("starts queued Work with current authority", async () => {
-    const { service, transition } = harness({
+    const { service, transition, assertCurrent } = harness({
       current: run("queued", { checkpointRevision: 0 }),
       checkpoint: null,
     });
@@ -132,16 +135,18 @@ describe("workflow resume service", () => {
     expect(result.kind).toBe("execute");
     if (result.kind === "execute") expect(result.resumeFrom).toBe("start");
     expect(transition).toHaveBeenCalledTimes(1);
+    expect(assertCurrent).toHaveBeenCalledTimes(2);
   });
 
   it("resumes running Work only from an exact durable checkpoint", async () => {
-    const { service } = harness({
+    const { service, assertCurrent } = harness({
       current: run("running"),
       checkpoint: checkpoint(),
     });
     const result = await service.inspect({ authority, scope, workflowRunId });
     expect(result.kind).toBe("execute");
     if (result.kind === "execute") expect(result.resumeFrom).toBe("checkpoint");
+    expect(assertCurrent).toHaveBeenCalledTimes(1);
   });
 
   it("blocks a running record that has no checkpoint instead of replaying from the start", async () => {
@@ -170,17 +175,18 @@ describe("workflow resume service", () => {
   });
 
   it("never blindly resumes waiting_external Work", async () => {
-    const { service, transition } = harness({
+    const { service, transition, assertCurrent } = harness({
       current: run("waiting_external"),
       checkpoint: checkpoint(),
     });
     await expect(service.inspect({ authority, scope, workflowRunId }))
       .resolves.toMatchObject({ kind: "reconcile-external" });
     expect(transition).not.toHaveBeenCalled();
+    expect(assertCurrent).toHaveBeenCalledTimes(1);
   });
 
   it("never restarts terminal Work", async () => {
-    const { service, transition } = harness({
+    const { service, transition, assertCurrent } = harness({
       current: run("completed"),
       checkpoint: checkpoint(),
     });
