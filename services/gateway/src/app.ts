@@ -14,6 +14,7 @@ import type {
 } from "./agent_shell_contract.js";
 import { registerAgentShellRoutes } from "./agent_shell_routes.js";
 import type { MobilePushRegistrationService } from "./mobile_push.js";
+import type { FinancialService } from "./financial_service.js";
 import {
   CustomerAuthError,
   type CustomerAuthService,
@@ -45,6 +46,7 @@ export interface GatewayAppOptions {
   readonly liveVoiceTokens?: LiveVoiceTokenService;
   readonly mobilePush?: MobilePushRegistrationService;
   readonly customerAuth?: CustomerAuthService;
+  readonly financial?: FinancialService;
 }
 
 const HealthResponseSchema = Type.Object(
@@ -875,6 +877,225 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
           characterId: request.body.characterId,
         });
         return { closed: true as const };
+      },
+    );
+  }
+
+  if (options.financial) {
+    const financial = options.financial;
+    const auth = (request: { headers: { authorization?: string } }) =>
+      request.headers.authorization;
+
+    app.get("/v1/financial/capabilities", async (request) =>
+      financial.capabilities({ authorizationHeader: auth(request) }));
+
+    app.get("/v1/financial/crypto/routes", async (request) => ({
+      routes: (await financial.listDepositRoutes({
+        authorizationHeader: auth(request),
+      })).map((route) => ({
+        providerCode: route.providerCode,
+        asset: route.asset,
+        network: route.network,
+      })),
+    }));
+
+    app.get("/v1/financial/crypto/conversion-routes", async (request) => ({
+      routes: (await financial.listConversionRoutes({
+        authorizationHeader: auth(request),
+      })).map((route) => ({
+        providerCode: route.providerCode,
+        asset: route.asset,
+        network: route.network,
+      })),
+    }));
+
+    app.post(
+      "/v1/financial/crypto/deposits",
+      { schema: { body: Type.Object({
+        requestId: Type.String(),
+        providerCode: Type.String({ minLength: 2, maxLength: 32 }),
+        amount: Type.String({ minLength: 1, maxLength: 80 }),
+      }, { additionalProperties: false }) } },
+      async (request) => financial.createDeposit({
+        authorizationHeader: auth(request),
+        requestId: request.body.requestId,
+        providerCode: request.body.providerCode,
+        amount: request.body.amount,
+      }),
+    );
+
+    app.post(
+      "/v1/financial/crypto/purchases",
+      { schema: { body: Type.Object({
+        requestId: Type.String(),
+        fiatAmount: Type.String({ minLength: 1, maxLength: 32 }),
+        fiatCurrency: Type.String({ minLength: 2, maxLength: 32 }),
+      }, { additionalProperties: false }) } },
+      async (request) => financial.createFiatPurchase({
+        authorizationHeader: auth(request),
+        requestId: request.body.requestId,
+        fiatAmount: request.body.fiatAmount,
+        fiatCurrency: request.body.fiatCurrency,
+      }),
+    );
+
+    app.post(
+      "/v1/financial/crypto/purchases/:requestId/refresh",
+      { schema: { params: Type.Object({ requestId: Type.String() }, { additionalProperties: false }) } },
+      async (request) => financial.refreshFiatPurchase({
+        authorizationHeader: auth(request),
+        requestId: request.params.requestId,
+      }),
+    );
+
+    app.post(
+      "/v1/financial/crypto/withdrawals/quote",
+      { schema: { body: Type.Object({
+        providerCode: Type.String({ minLength: 2, maxLength: 32 }),
+        amount: Type.String({ minLength: 1, maxLength: 80 }),
+        destinationAddress: Type.String({ minLength: 1, maxLength: 512 }),
+      }, { additionalProperties: false }) } },
+      async (request) => financial.quoteWithdrawal({
+        authorizationHeader: auth(request),
+        providerCode: request.body.providerCode,
+        amount: request.body.amount,
+        destinationAddress: request.body.destinationAddress,
+      }),
+    );
+
+    app.post(
+      "/v1/financial/crypto/withdrawals",
+      { schema: { body: Type.Object({
+        requestId: Type.String(),
+        providerCode: Type.String({ minLength: 2, maxLength: 32 }),
+        amount: Type.String({ minLength: 1, maxLength: 80 }),
+        destinationAddress: Type.String({ minLength: 1, maxLength: 512 }),
+      }, { additionalProperties: false }) } },
+      async (request) => financial.createWithdrawal({
+        authorizationHeader: auth(request),
+        requestId: request.body.requestId,
+        providerCode: request.body.providerCode,
+        amount: request.body.amount,
+        destinationAddress: request.body.destinationAddress,
+      }),
+    );
+
+    app.post(
+      "/v1/financial/crypto/withdrawals/:requestId/refresh",
+      { schema: { params: Type.Object({ requestId: Type.String() }, { additionalProperties: false }) } },
+      async (request) => financial.refreshWithdrawal({
+        authorizationHeader: auth(request),
+        requestId: request.params.requestId,
+      }),
+    );
+
+    app.post(
+      "/v1/financial/crypto/conversions/quote",
+      { schema: { body: Type.Object({
+        providerCode: Type.String({ minLength: 2, maxLength: 32 }),
+        targetProviderCode: Type.String({ minLength: 2, maxLength: 32 }),
+        amount: Type.String({ minLength: 1, maxLength: 80 }),
+      }, { additionalProperties: false }) } },
+      async (request) => financial.quoteConversion({
+        authorizationHeader: auth(request),
+        providerCode: request.body.providerCode,
+        targetProviderCode: request.body.targetProviderCode,
+        amount: request.body.amount,
+      }),
+    );
+
+    app.post(
+      "/v1/financial/crypto/conversions",
+      { schema: { body: Type.Object({
+        requestId: Type.String(),
+        providerCode: Type.String({ minLength: 2, maxLength: 32 }),
+        targetProviderCode: Type.String({ minLength: 2, maxLength: 32 }),
+        amount: Type.String({ minLength: 1, maxLength: 80 }),
+      }, { additionalProperties: false }) } },
+      async (request) => financial.createConversion({
+        authorizationHeader: auth(request),
+        requestId: request.body.requestId,
+        providerCode: request.body.providerCode,
+        targetProviderCode: request.body.targetProviderCode,
+        amount: request.body.amount,
+      }),
+    );
+
+    app.post(
+      "/v1/financial/crypto/conversions/:requestId/refresh",
+      { schema: { params: Type.Object({ requestId: Type.String() }, { additionalProperties: false }) } },
+      async (request) => financial.refreshConversion({
+        authorizationHeader: auth(request),
+        requestId: request.params.requestId,
+      }),
+    );
+
+    app.get(
+      "/v1/financial/crypto/balances/:providerCode",
+      { schema: { params: Type.Object({
+        providerCode: Type.String({ minLength: 2, maxLength: 32 }),
+      }, { additionalProperties: false }) } },
+      async (request) => financial.readBalance({
+        authorizationHeader: auth(request),
+        providerCode: request.params.providerCode,
+      }),
+    );
+
+    app.get(
+      "/v1/financial/crypto/history",
+      { schema: { querystring: Type.Object({
+        limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })),
+      }, { additionalProperties: false }) } },
+      async (request) => ({
+        intents: await financial.listHistory({
+          authorizationHeader: auth(request),
+          ...(request.query.limit === undefined ? {} : { limit: request.query.limit }),
+        }),
+      }),
+    );
+
+    app.get(
+      "/v1/financial/crypto/intents/:requestId",
+      { schema: { params: Type.Object({ requestId: Type.String() }, { additionalProperties: false }) } },
+      async (request, reply) => {
+        const intent = await financial.readIntent({
+          authorizationHeader: auth(request),
+          requestId: request.params.requestId,
+        });
+        if (!intent) {
+          reply.code(404);
+          return { error: "intent_not_found" };
+        }
+        return intent;
+      },
+    );
+
+    const nowPaymentsHeaders = Type.Object(
+      { "x-nowpayments-sig": Type.String({ minLength: 128, maxLength: 128 }) },
+      { additionalProperties: true },
+    );
+    app.post(
+      "/v1/financial/nowpayments/ipn",
+      { bodyLimit: 256_000, schema: { headers: nowPaymentsHeaders, body: Type.Unknown() } },
+      async (request, reply) => {
+        await financial.handleNowPaymentsIpn({
+          signature: request.headers["x-nowpayments-sig"],
+          payload: request.body,
+        });
+        reply.code(202);
+        return { accepted: true as const };
+      },
+    );
+    app.post(
+      "/v1/financial/nowpayments/payout-ipn",
+      { bodyLimit: 256_000, schema: { headers: nowPaymentsHeaders, body: Type.Unknown() } },
+      async (request, reply) => {
+        await financial.handleNowPaymentsPayoutIpn({
+          signature: request.headers["x-nowpayments-sig"],
+          payload: request.body,
+        });
+        reply.code(202);
+        return { accepted: true as const };
       },
     );
   }
