@@ -71,6 +71,10 @@ for the shared integration/deployment paths below.
 - `adapters/storage/postgres/src/commerce/twin-economy.integration.test.ts` (new)
 - `packages/commerce/migrations/0102_twin_economy.sql` (new only; existing migrations immutable)
 - `apps/mobile/lib/src/core/shell_deep_link.dart`
+- `apps/mobile/lib/src/agents/twin_activity.dart`
+- `apps/mobile/lib/src/state/twin_activity_state.dart`
+- `apps/mobile/lib/src/owner_access/owner_access_state.dart`
+- `apps/mobile/lib/src/screens/activity/activity_screen.dart`
 - `apps/mobile/android/app/src/main/AndroidManifest.xml`
 - `apps/mobile/android/app/src/main/kotlin/ng/unigeria/unigeria/MainActivity.kt`
 - `apps/mobile/test/shell_deep_link_test.dart`
