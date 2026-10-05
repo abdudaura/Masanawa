@@ -27,4 +27,23 @@ Return exactly what the mobile My Twin screen needs:
 
 No CharacterVersion, SkillVersion, Workflow, Provider or Agent Float fields.
 
-Status: implementation started 2026-10-05.
+Status: consumer projection implementation complete; concrete source adapters/shared integration pending.
+
+Implemented:
+- authenticated My Twin projection service;
+- composition of profile, performance and paid-feature availability sources;
+- exact consumer response expected by the My Twin mobile screen;
+- stable no-twin empty state;
+- HTTPS-only public twin link construction;
+- simple discoverability update path;
+- isolated GET /v1/my-twin route;
+- isolated PUT /v1/my-twin/discoverability route;
+- focused service and route tests;
+- no CharacterVersion, SkillVersion, Workflow, Provider or Agent Float fields.
+
+Still to wire:
+- profile source adapter from canonical Twin Profile workstream;
+- performance source adapter from Activity/economy events;
+- feature-status adapter from paid-voice policy and owner-access offering;
+- Gateway app/main composition;
+- authenticated mobile provider wiring and router.
