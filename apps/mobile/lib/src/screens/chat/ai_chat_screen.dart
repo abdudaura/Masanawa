@@ -862,21 +862,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               ),
             ],
             IconButton(
-              tooltip: 'Video call',
-              icon: const Icon(Icons.videocam_outlined),
-              onPressed: () => _comingSoon('Video calls'),
-            ),
-            IconButton(
               tooltip: 'Live voice',
               icon: const Icon(Icons.call_outlined),
               onPressed: updateRequired || !liveVoiceEnabled
                   ? null
                   : () => _openLiveVoice(agent),
-            ),
-            IconButton(
-              tooltip: 'Agents',
-              icon: const Icon(Icons.groups_outlined),
-              onPressed: () => context.push('/agents'),
             ),
             PopupMenuButton<String>(
               tooltip: 'More',
@@ -1653,6 +1643,15 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         builder: (_) => _LiveVoiceSheet(
           agent: agent,
           session: session!,
+          maxDuration: paidAdmission == null
+              ? null
+              : Duration(
+                  seconds: ref
+                      .read(paidVoiceControllerProvider)
+                      .quote
+                      ?.estimatedSeconds ??
+                      300,
+                ),
           onMediaStarted: paidAdmission == null
               ? null
               : () async {
@@ -1823,11 +1822,13 @@ class _LiveVoiceSheet extends StatefulWidget {
   const _LiveVoiceSheet({
     required this.agent,
     required this.session,
+    this.maxDuration,
     this.onMediaStarted,
   });
 
   final AgentDirectoryEntry agent;
   final LiveVoiceSession session;
+  final Duration? maxDuration;
   final Future<void> Function()? onMediaStarted;
 
   @override
@@ -1838,6 +1839,7 @@ class _LiveVoiceSheetState extends State<_LiveVoiceSheet> {
   bool _muted = false;
   bool _speaker = true;
   String? _error;
+  Timer? _durationTimer;
 
   @override
   void initState() {
@@ -1855,6 +1857,14 @@ class _LiveVoiceSheetState extends State<_LiveVoiceSheet> {
       await widget.session.start();
       await widget.session.ready;
       await widget.onMediaStarted?.call();
+      final maxDuration = widget.maxDuration;
+      if (maxDuration != null) {
+        _durationTimer?.cancel();
+        _durationTimer = Timer(maxDuration, () async {
+          await widget.session.close();
+          if (mounted) Navigator.of(context).pop();
+        });
+      }
     } catch (_) {
       await widget.session.close();
       if (!mounted) return;
@@ -1867,6 +1877,7 @@ class _LiveVoiceSheetState extends State<_LiveVoiceSheet> {
 
   @override
   void dispose() {
+    _durationTimer?.cancel();
     widget.session.close();
     super.dispose();
   }
