@@ -80,6 +80,19 @@ function sameConversionTerms(left: CryptoIntent, right: CryptoIntent): boolean {
   );
 }
 
+function sameBuyTerms(left: CryptoIntent, right: CryptoIntent): boolean {
+  return (
+    left.operation === "buy" &&
+    right.operation === "buy" &&
+    left.asset === right.asset &&
+    left.network === null &&
+    right.network === null &&
+    left.amount === right.amount &&
+    left.targetAsset === right.targetAsset &&
+    (left.targetNetwork ?? null) === (right.targetNetwork ?? null)
+  );
+}
+
 async function readIntentWithClient(
   client: PoolClient,
   input: { tenantId: TenantId; userId: UserId; requestId: RequestId },
@@ -104,12 +117,13 @@ async function updateIntentWithClient(
     `UPDATE commerce.crypto_intents
         SET operation=$4, asset=$5, network=$6, amount=$7::numeric,
             target_asset=$8, target_network=$9, destination_address=$10, provider=$11,
-            provider_payment_id=$12, provider_payout_id=$13, provider_conversion_id=$14,
-            provider_target_amount=$15::numeric,
-            pay_address=$16, provider_pay_amount=$17::numeric,
-            provider_network_fee=$18::numeric, withdrawal_fee_payer=$19,
-            provider_dispatch_started_at=$20, status=$21,
-            definition=$22::jsonb, updated_at=$23
+            provider_payment_id=$12, provider_payout_id=$13, provider_invoice_id=$14,
+            checkout_url=$15, provider_conversion_id=$16,
+            provider_target_amount=$17::numeric,
+            pay_address=$18, provider_pay_amount=$19::numeric,
+            provider_network_fee=$20::numeric, withdrawal_fee_payer=$21,
+            provider_dispatch_started_at=$22, status=$23,
+            definition=$24::jsonb, updated_at=$25
       WHERE tenant_id=$1 AND user_id=$2 AND request_id=$3`,
     [
       normalized.tenantId,
@@ -125,6 +139,8 @@ async function updateIntentWithClient(
       normalized.provider,
       normalized.providerPaymentId,
       normalized.providerPayoutId,
+      normalized.providerInvoiceId ?? null,
+      normalized.checkoutUrl ?? null,
       normalized.providerConversionId ?? null,
       normalized.providerTargetAmount ?? null,
       normalized.payAddress,
@@ -148,18 +164,20 @@ async function insertIntentWithClient(
   await client.query(
     `INSERT INTO commerce.crypto_intents(
        tenant_id,user_id,request_id,operation,asset,network,amount,target_asset,target_network,
-       destination_address,provider,provider_payment_id,provider_payout_id,provider_conversion_id,
-       provider_target_amount,pay_address,provider_pay_amount,provider_network_fee,withdrawal_fee_payer,
-       provider_dispatch_started_at,status,definition,created_at,updated_at
+       destination_address,provider,provider_payment_id,provider_payout_id,provider_invoice_id,
+       checkout_url,provider_conversion_id,provider_target_amount,pay_address,provider_pay_amount,
+       provider_network_fee,withdrawal_fee_payer,provider_dispatch_started_at,status,definition,
+       created_at,updated_at
      ) VALUES (
-       $1,$2,$3,$4,$5,$6,$7::numeric,$8,$9,$10,$11,$12,$13,$14,$15::numeric,$16,$17::numeric,
-       $18::numeric,$19,$20,$21,$22::jsonb,$23,$24
+       $1,$2,$3,$4,$5,$6,$7::numeric,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17::numeric,$18,$19::numeric,
+       $20::numeric,$21,$22,$23,$24::jsonb,$25,$26
      )`,
     [
       normalized.tenantId, normalized.userId, normalized.requestId, normalized.operation,
       normalized.asset, normalized.network, normalized.amount, normalized.targetAsset,
       normalized.targetNetwork ?? null, normalized.destinationAddress, normalized.provider,
       normalized.providerPaymentId, normalized.providerPayoutId,
+      normalized.providerInvoiceId ?? null, normalized.checkoutUrl ?? null,
       normalized.providerConversionId ?? null, normalized.providerTargetAmount ?? null,
       normalized.payAddress, normalized.providerPayAmount, normalized.providerNetworkFee ?? null,
       normalized.withdrawalFeePayer ?? null, normalized.providerDispatchStartedAt,
@@ -248,6 +266,8 @@ async function postLedger(
       | "conversion-debit"
       | "conversion-credit"
       | "conversion-release"
+      | "fiat-purchase-credit"
+      | "fiat-purchase-refund"
       | "adjustment";
     providerReference: string | null;
     createdAt: Instant;
