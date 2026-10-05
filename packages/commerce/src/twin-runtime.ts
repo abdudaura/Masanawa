@@ -311,6 +311,30 @@ export interface TwinRuntimeRepository {
     readonly reservedCredits: number;
   }>;
 
+  transitionOwnerAccessRequest(input: {
+    readonly tenantId: TenantId;
+    readonly expectedState: OwnerAccessRequest["state"];
+    readonly request: OwnerAccessRequest;
+    readonly reservationId: string | null;
+    readonly reservedCredits: number;
+  }): Promise<{
+    readonly applied: boolean;
+    readonly request: OwnerAccessRequest & {
+      readonly reservationId: string | null;
+      readonly reservedCredits: number;
+    };
+  }>;
+
+  listOwnerAccessLifecycleCandidates(input: {
+    readonly tenantId: TenantId;
+    readonly at: string;
+    readonly startGraceMinutes: number;
+    readonly limit: number;
+  }): Promise<readonly (OwnerAccessRequest & {
+    readonly reservationId: string | null;
+    readonly reservedCredits: number;
+  })[]>;
+
   blockTwin(input: TwinSafetyBlock): Promise<void>;
   unblockTwin(input: {
     readonly tenantId: TenantId;
