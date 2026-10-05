@@ -10,6 +10,7 @@ class GatewayWalletTransport implements WalletTransport {
   final ApiClient api;
   final DateTime Function() _now;
   int _sequence = 0;
+  final Map<String, String> _pendingRequestIds = {};
 
   String _requestId(String kind) {
     _sequence += 1;
@@ -33,16 +34,26 @@ class GatewayWalletTransport implements WalletTransport {
     required String recipient,
     required int amountCredits,
   }) async {
-    final requestId = _requestId('transfer');
-    final response = await api.dio.post<dynamic>(
-      '/v1/wallet/transfers',
-      data: {
-        'requestId': requestId,
-        'recipient': recipient,
-        'amountCredits': amountCredits,
-      },
-    );
-    return CreditTransferReceipt.fromJson(_map(response.data));
+    final fingerprint = 'transfer:${recipient.trim()}:$amountCredits';
+    final requestId =
+        _pendingRequestIds.putIfAbsent(fingerprint, () => _requestId('transfer'));
+    try {
+      final response = await api.dio.post<dynamic>(
+        '/v1/wallet/transfers',
+        data: {
+          'requestId': requestId,
+          'recipient': recipient,
+          'amountCredits': amountCredits,
+        },
+      );
+      final receipt = CreditTransferReceipt.fromJson(_map(response.data));
+      _pendingRequestIds.remove(fingerprint);
+      return receipt;
+    } catch (_) {
+      // Keep the same request id for an ambiguous retry. The server owns
+      // idempotent replay truth, so a lost response cannot create two transfers.
+      rethrow;
+    }
   }
 
   @override
@@ -50,14 +61,23 @@ class GatewayWalletTransport implements WalletTransport {
     required String recipientCharacterId,
     required int amountCredits,
   }) async {
-    final requestId = _requestId('gift');
-    final response = await api.dio.post<dynamic>(
-      '/v1/twins/$recipientCharacterId/gifts',
-      data: {
-        'requestId': requestId,
-        'amountCredits': amountCredits,
-      },
-    );
-    return GiftReceipt.fromJson(_map(response.data));
+    final fingerprint = 'gift:${recipientCharacterId.trim()}:$amountCredits';
+    final requestId =
+        _pendingRequestIds.putIfAbsent(fingerprint, () => _requestId('gift'));
+    try {
+      final response = await api.dio.post<dynamic>(
+        '/v1/twins/$recipientCharacterId/gifts',
+        data: {
+          'requestId': requestId,
+          'amountCredits': amountCredits,
+        },
+      );
+      final receipt = GiftReceipt.fromJson(_map(response.data));
+      _pendingRequestIds.remove(fingerprint);
+      return receipt;
+    } catch (_) {
+      // Preserve request id across ambiguous retries.
+      rethrow;
+    }
   }
 }
