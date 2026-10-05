@@ -47,6 +47,8 @@ describe("verified Agent inference usage evidence", () => {
           outputTokens: 40,
           providerCostMicros: 2_500,
           providerCostCurrency: "usd",
+          evidenceRef: "provider-request:abc123",
+          pricingRevision: source === "platform-metered" ? "pricing-v1" : null,
           observedAt,
         }),
       ).toEqual({
@@ -56,6 +58,8 @@ describe("verified Agent inference usage evidence", () => {
         outputTokens: 40,
         providerCostMicros: 2_500,
         providerCostCurrency: "USD",
+        evidenceRef: "provider-request:abc123",
+        pricingRevision: source === "platform-metered" ? "pricing-v1" : null,
         observedAt,
       });
     },
@@ -70,6 +74,8 @@ describe("verified Agent inference usage evidence", () => {
         outputTokens: 1,
         providerCostMicros: 1,
         providerCostCurrency: "USD",
+        evidenceRef: "estimate:test",
+        pricingRevision: null,
         observedAt,
       }),
     ).toThrow("source is not trusted");
@@ -85,6 +91,8 @@ describe("verified Agent inference usage evidence", () => {
           outputTokens: 0,
           providerCostMicros: 0,
           providerCostCurrency: "USD",
+          evidenceRef: "provider-request:negative-test",
+          pricingRevision: null,
           observedAt,
         }),
       ).toThrow("inputTokens");
@@ -100,6 +108,8 @@ describe("verified Agent inference usage evidence", () => {
         outputTokens: 44,
         providerCostMicros: 1_250,
         providerCostCurrency: "NGN",
+        evidenceRef: "meter:event-1",
+        pricingRevision: "pricing-ng-v3",
         observedAt,
       }),
     ).toEqual({
@@ -122,6 +132,8 @@ describe("verified Agent inference usage evidence", () => {
         outputTokens: 40,
         providerCostMicros: 2_500,
         providerCostCurrency: "USD",
+        evidenceRef: "provider-request:usage-1",
+        pricingRevision: null,
         observedAt,
       },
     });
@@ -144,6 +156,8 @@ describe("verified Agent inference usage evidence", () => {
           outputTokens: 5,
           providerCostMicros: 100,
           providerCostCurrency: "NGN",
+          evidenceRef: "provider-request:currency-mismatch",
+          pricingRevision: null,
           observedAt,
         },
       }),
@@ -162,9 +176,74 @@ describe("verified Agent inference usage evidence", () => {
           outputTokens: 700,
           providerCostMicros: 1_000,
           providerCostCurrency: "USD",
+          evidenceRef: "meter:event-exhausted",
+          pricingRevision: "pricing-usd-v2",
           observedAt,
         },
       }),
     ).toThrow("total-token budget");
   });
+  it("requires an auditable evidence reference", () => {
+    expect(() =>
+      normalizeAgentInferenceUsageEvidence({
+        schemaVersion: 1,
+        source: "provider-reported",
+        inputTokens: 1,
+        outputTokens: 1,
+        providerCostMicros: 1,
+        providerCostCurrency: "USD",
+        evidenceRef: "   ",
+        pricingRevision: null,
+        observedAt,
+      }),
+    ).toThrow("evidenceRef");
+  });
+
+  it("requires pricing revision only for platform-metered cost", () => {
+    expect(() =>
+      normalizeAgentInferenceUsageEvidence({
+        schemaVersion: 1,
+        source: "platform-metered",
+        inputTokens: 1,
+        outputTokens: 1,
+        providerCostMicros: 1,
+        providerCostCurrency: "USD",
+        evidenceRef: "meter:event-no-pricing",
+        pricingRevision: null,
+        observedAt,
+      }),
+    ).toThrow("requires pricingRevision");
+
+    expect(() =>
+      normalizeAgentInferenceUsageEvidence({
+        schemaVersion: 1,
+        source: "provider-reported",
+        inputTokens: 1,
+        outputTokens: 1,
+        providerCostMicros: 1,
+        providerCostCurrency: "USD",
+        evidenceRef: "provider-request:unexpected-pricing",
+        pricingRevision: "pricing-v1",
+        observedAt,
+      }),
+    ).toThrow("must not claim");
+  });
+
+  it("rejects unknown evidence fields", () => {
+    expect(() =>
+      normalizeAgentInferenceUsageEvidence({
+        schemaVersion: 1,
+        source: "provider-reported",
+        inputTokens: 1,
+        outputTokens: 1,
+        providerCostMicros: 1,
+        providerCostCurrency: "USD",
+        evidenceRef: "provider-request:unknown-field",
+        pricingRevision: null,
+        observedAt,
+        fabricated: true,
+      } as never),
+    ).toThrow("unknown fields");
+  });
+
 });
