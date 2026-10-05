@@ -35,4 +35,24 @@ Return only:
 Never surface Agent Float, fulfillment reserves, provider accounts or crypto asset
 balances as if they were Credits.
 
-Status: implementation started 2026-10-05.
+Status: isolated Wallet read model complete; shared integration/history persistence pending.
+
+Implemented:
+- authenticated WalletProjection service;
+- exact consumer balances: Spendable Credits, Pending Earnings, Available Earnings;
+- unified history contract for funding/transfers/purchases/commission/gifts/voice/owner sessions/refunds/withdrawals;
+- strict validation and deterministic newest-first ordering;
+- isolated GET /v1/wallet route registrar;
+- canonical balance adapter over existing Commerce + PersonalClone repositories;
+- creator Agent Float is explicitly dropped from the consumer projection;
+- merged history-source adapter with duplicate consistency checks;
+- focused service/route/source tests.
+
+Not yet integrated:
+- Gateway app/main composition;
+- authenticated mobile Wallet transport;
+- transfer/gift/billing/voice/owner-access history subsources;
+- crypto asset presentation remains separate and must not be folded into Credits;
+- Activity emission and final four-tab router.
+
+No active Commerce/billing/crypto persistence or shared Gateway files were modified.
