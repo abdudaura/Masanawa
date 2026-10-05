@@ -123,3 +123,32 @@ minimum splash duration.
 A harness change is not complete because a model can describe the action. It is
 complete only when the canonical service performed it, durable state proves the
 result, retries are safe and the user can recover the work after reconnecting.
+
+
+## Durable Work projection checkpoint — 2026-10-05
+
+Implemented in the harness continuation:
+- current AgentStrategy execution now crosses the `AgentHarness` boundary through a
+  compatibility adapter, so future orchestration does not need another conversation path;
+- the Gateway converts harness progress callbacks into durable `work.updated` mobile-shell
+  events using TaskId first, then WorkflowRunId, then AgentRunId as the presentation reference;
+- mobile chat updates an existing Work card by `referenceId` and creates a stable recovery
+  card when an event arrives without an existing assistant message;
+- replayed Work events update the same card instead of duplicating it;
+- Work phases are rendered with concise labels such as Working, Approval needed, Waiting,
+  Completed and Failed;
+- focused Gateway and mobile regression coverage was added for the progress bridge and
+  reconnect/replay behavior.
+
+Important implementation boundary discovered during this checkpoint:
+`TaskId`, `WorkflowId`, `WorkflowVersionId` and `WorkflowRunId` are canonical
+contract identities and AgentRun trace references already support them, but
+`packages/workflows` is still a deferred placeholder. Therefore the projection path is
+implemented, while canonical durable Task/Workflow lifecycle persistence and checkpoint
+execution are **not yet implemented**. Do not claim long-running Work survives process/service
+restart until that authority exists and is qualified.
+
+Next implementation dependency:
+build the canonical `@masanawa/workflows` Task/WorkflowRun lifecycle and repository boundary
+according to the adoption rules, then add PostgreSQL checkpoint persistence before allowing
+the harness to create or resume durable Work.

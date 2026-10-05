@@ -64,6 +64,22 @@ class _PartCard extends StatelessWidget {
     AgentMessagePartKind.status => 'Status',
   };
 
+  String? get statusLabel {
+    final value = part.status;
+    if (value == null || value.isEmpty) return null;
+    if (part.kind != AgentMessagePartKind.work) return value;
+    return switch (value.toLowerCase()) {
+      'queued' => 'Queued',
+      'understanding' => 'Preparing',
+      'working' => 'Working',
+      'waiting_approval' => 'Approval needed',
+      'waiting_external' => 'Waiting',
+      'completed' => 'Completed',
+      'failed' => 'Failed',
+      _ => value,
+    };
+  }
+
   Future<void> _openFile() async {
     final value = part.file?.previewUrl ?? part.file?.downloadUrl;
     if (value == null) return;
@@ -108,9 +124,9 @@ class _PartCard extends StatelessWidget {
                   ),
                 ),
               ),
-              if (part.status != null)
+              if (statusLabel != null)
                 Text(
-                  part.status!,
+                  statusLabel!,
                   style: TextStyle(color: u.textMuted, fontSize: 11),
                 ),
             ],

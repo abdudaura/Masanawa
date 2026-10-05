@@ -1,12 +1,14 @@
 import type {
   AgentRunId,
   CharacterSessionId,
+  CharacterVersionId,
   SkillVersionId,
   TaskId,
   WorkflowRunId,
 } from "@masanawa/contracts";
 
 import type {
+  AgentStrategy,
   AgentStrategyInput,
   AgentStrategyPresentation,
   AgentStrategyResult,
@@ -42,6 +44,7 @@ export interface AgentHarnessProgress {
 export interface AgentHarnessRequest {
   readonly agentRunId: AgentRunId;
   readonly characterSessionId: CharacterSessionId;
+  readonly characterVersionId: CharacterVersionId;
   readonly skillVersionIds: readonly SkillVersionId[];
   readonly presentation: AgentStrategyPresentation;
   readonly input: AgentStrategyInput;
@@ -70,4 +73,32 @@ export interface AgentHarnessResult extends AgentStrategyResult {
  */
 export interface AgentHarness {
   execute(input: AgentHarnessRequest): Promise<AgentHarnessResult>;
+}
+
+
+/**
+ * Compatibility harness for the existing strategy runtime. Ordinary chat turns
+ * keep task/workflow references null; richer durable Work can be introduced
+ * later without bypassing this boundary.
+ */
+export function createStrategyAgentHarness(strategy: AgentStrategy): AgentHarness {
+  return Object.freeze({
+    async execute(input) {
+      const result = await strategy.execute({
+        agentRunId: input.agentRunId,
+        characterSessionId: input.characterSessionId,
+        characterVersionId: input.characterVersionId,
+        skillVersionIds: input.skillVersionIds,
+        presentation: input.presentation,
+        input: input.input,
+        ...(input.signal ? { signal: input.signal } : {}),
+        ...(input.onTextDelta ? { onTextDelta: input.onTextDelta } : {}),
+      });
+      return Object.freeze({
+        ...result,
+        taskId: input.taskId,
+        workflowRunId: input.workflowRunId,
+      });
+    },
+  });
 }
