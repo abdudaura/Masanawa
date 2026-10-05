@@ -185,6 +185,41 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
   const now = options.now ?? nowInstant;
   const checks = options.readinessChecks ?? [];
 
+  app.setErrorHandler((error, request, reply) => {
+    if (error instanceof Error && error.message === "financial.auth.unauthorized") {
+      void reply.code(401).send({
+        error: {
+          code: "financial.auth.unauthorized",
+          message: "Authentication required",
+        },
+      });
+      return;
+    }
+    const statusCode =
+      typeof error === "object" &&
+      error !== null &&
+      "statusCode" in error &&
+      typeof (error as { readonly statusCode?: unknown }).statusCode === "number"
+        ? (error as { readonly statusCode: number }).statusCode
+        : 500;
+    if (statusCode >= 400 && statusCode < 500) {
+      void reply.code(statusCode).send({
+        error: {
+          code: statusCode === 400 ? "gateway.invalid_request" : "gateway.request_rejected",
+          message: statusCode === 400 ? "Invalid request" : "Request rejected",
+        },
+      });
+      return;
+    }
+    request.log.error(error);
+    void reply.code(500).send({
+      error: {
+        code: "gateway.internal_error",
+        message: "Internal server error",
+      },
+    });
+  });
+
   app.addHook("onRequest", async (request, reply) => {
     const correlation = admitTelemetryCorrelation({
       carrier: {
