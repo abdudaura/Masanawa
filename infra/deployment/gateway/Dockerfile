@@ -13,7 +13,11 @@ COPY infra ./infra
 COPY services ./services
 COPY apps ./apps
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --lockfile-only --no-frozen-lockfile \
+ && echo "MASANAWA_LOCKFILE_ROOT_BEGIN" \
+ && sed -n '1,90p' pnpm-lock.yaml \
+ && echo "MASANAWA_LOCKFILE_ROOT_END" \
+ && exit 1
 RUN pnpm --filter @masanawa/gateway-service... build
 
 ENV NODE_ENV=production
