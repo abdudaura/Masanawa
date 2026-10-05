@@ -110,10 +110,12 @@ The integration owner must:
   Character/Relationship/CharacterSession. No automatic User linking by phone/ticker/name.
 - Route edits through explicit continuity/context revision semantics; do not treat edits
   as new purchase confirmation or falsely claim historical server context was erased.
-- Resolve callbacks against the canonical server action state, scoped to User,
-  Relationship/conversation, transaction, revision, expiry and RequestId. Display labels
-  or opaque IDs never authorize purchases. A new callback update is not automatically
-  a new financial intent; financial idempotency remains in Commerce.
+- Compose `DurableChannelActionStore` against canonical server action state and then
+  route `ResolvedChannelAction` to the owning action/domain service. Transport-side
+  account/subject/conversation/revision/expiry/RequestId reconciliation is now implemented
+  in this adapter; canonical User/Relationship/transaction authority and domain
+  idempotency remain with their owners. Display labels or opaque IDs never authorize
+  purchases, and a new callback update is not automatically a new financial intent.
 - Download account-scoped media through an authorized provider edge with MIME/size/
   retention/permission checks. No voice transcription is introduced.
 - Deliver replies/audio/options/status/receipts through canonical durable outbox
@@ -150,3 +152,34 @@ No deployment, webhook subscription, outbound send, task closure or public launc
 
 Official Telegram/Meta verification references were read on 2026-10-04. These references
 describe transport contracts, not production account access or provider qualification.
+
+
+## Opaque callback action reconciliation
+
+The messaging adapter now includes a provider-neutral action reconciliation seam after
+durable ingress. It still does not execute any domain action.
+
+`DurableChannelActionStore` resolves an opaque provider `selectionId` to server-owned
+action state and durably records the exact ingress observation while the action binding
+is still current. `createChannelActionReconciler()` enforces:
+
+- only a durably normalized message with `content.kind = selection` may enter;
+- binding channel + ChannelAccountId must match the verified ingress account;
+- exact external subject system/namespace/value/kind must match;
+- exact conversation system/namespace/value/kind must match;
+- the server binding supplies the canonical RequestId, action key and revision;
+- action expiry is checked against the trusted server receipt time;
+- observation persistence is keyed by ingress dedupe/evidence identity;
+- exact provider retry returns `replay: true` with the same canonical RequestId;
+- the store must atomically verify binding key + revision when admitting the observation;
+- if the binding changes between load and durable observation, reconciliation fails closed;
+- storage failures are redacted and retryable.
+
+The returned `ResolvedChannelAction` is routing evidence only. It never grants Tool,
+Commerce, approval, Teaching or other domain authority. The owning server action service
+must revalidate current canonical authority and execute through its existing idempotent
+command path.
+
+This seam supports staged Teaching callbacks without importing Teaching into the channel
+adapter: a Teaching owner can bind each compact stage callback to its server action
+revision/RequestId, while Commerce or approval owners can use the same transport contract.
