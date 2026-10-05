@@ -18,6 +18,11 @@ for the shared integration/deployment paths below.
 - `services/gateway/src/app.ts`
 - `services/gateway/src/main.ts`
 - `services/gateway/src/live_voice_token.ts`
+- `services/gateway/src/agent_shell_contract.ts`
+- `services/gateway/src/agent_shell_routes.ts`
+- `services/gateway/src/financial_billing.ts`
+- `services/gateway/src/financial_service.ts`
+- `services/gateway/src/billing_routes.ts`
 - `services/gateway/src/twin_profile.ts`
 - `services/gateway/src/twin_profile_routes.ts`
 - `services/gateway/src/twin_directory.ts`
@@ -52,12 +57,19 @@ for the shared integration/deployment paths below.
 - `services/gateway/src/twin_production_runtime.test.ts` (new)
 - `packages/events/src/index.ts`
 - `packages/commerce/src/index.ts`
+- `packages/commerce/src/twin-runtime.ts` (new)
+- `packages/identity/migrations/0004_twin_profiles.sql` (new only)
+- `adapters/storage/postgres/src/identity/twin-profile.ts` (new)
+- `adapters/storage/postgres/src/identity/index.ts`
 - `adapters/storage/postgres/src/index.ts`
 - `adapters/storage/postgres/src/commerce/twin-economy.ts` (new)
 - `adapters/storage/postgres/src/commerce/twin-economy.integration.test.ts` (new)
 - `packages/commerce/migrations/0102_twin_economy.sql` (new only; existing migrations immutable)
 - `apps/mobile/lib/src/router/app_router.dart`
 - `apps/mobile/lib/src/agents/masanawa_transport.dart`
+- `apps/mobile/lib/src/voice/paid_voice_http_transport.dart`
+- `apps/mobile/lib/src/owner_access/owner_access_http_transport.dart`
+- `apps/mobile/lib/src/commerce/wallet_http_transport.dart`
 - `apps/mobile/lib/src/screens/chat/ai_chat_screen.dart`
 - `apps/mobile/lib/src/screens/twin/twin_home_shell.dart`
 - `apps/mobile/lib/src/screens/settings/settings_screen.dart`
@@ -79,5 +91,6 @@ for the shared integration/deployment paths below.
 
 ## Current step
 
-Audit the already-merged feature contracts against the production composition and add
-one canonical persistence/composition adapter rather than duplicating domain state.
+Audit complete. Implement the canonical Twin profile store + Twin economy persistence,
+compose existing Twin services into Gateway, then bind chat/Live/provider-success hooks
+and run focused TypeScript/PostgreSQL/Flutter verification without rewriting old migrations.
