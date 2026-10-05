@@ -57,7 +57,7 @@ Product UX rules: `docs/MOBILE-AGENT-EXPERIENCE.md`. Mobile gateway projection: 
 
 ## Runtime and local testing
 
-The universal shell is enabled by default and points at the stable `https://gateway.masanawa.com` Gateway origin. A normal
+The universal shell is enabled by default and points at the stable `https://masanawa-gateway-production.up.railway.app` Gateway origin. A normal
 local `flutter build apk --debug` therefore contains the same agent renderer, chat,
 voice, structured cards/actions, deep-link/push, clone, Skills and creator-economy
 client code used by production. Server-driven presentation and Skill configuration can
