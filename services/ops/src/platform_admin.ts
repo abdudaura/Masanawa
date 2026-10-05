@@ -161,12 +161,6 @@ export interface PlatformAdminService {
     readonly limit?: number;
     readonly state?: PlatformAdminUser["state"];
   }): Promise<readonly PlatformAdminUser[]>;
-  setUserState(input: {
-    readonly authorizationHeader: string | undefined;
-    readonly userId: string;
-    readonly state: PlatformAdminUser["state"];
-    readonly expectedRevision: number;
-  }): Promise<PlatformAdminUser>;
   listAgentRuns(input: {
     readonly authorizationHeader: string | undefined;
     readonly limit?: number;
@@ -257,7 +251,6 @@ export function createPlatformAdminService(input: {
     capability:
       | "platform.summary.read"
       | "identity.users.read"
-      | "identity.users.write"
       | "agents.runs.read"
       | "commerce.read"
       | "commerce.write"
@@ -392,60 +385,6 @@ export function createPlatformAdminService(input: {
         identityCount: numberValue(row.identity_count),
         relationshipCount: numberValue(row.relationship_count),
       }));
-    },
-
-    async setUserState(request) {
-      const authority = await authorize(
-        request.authorizationHeader,
-        "identity.users.write",
-      );
-      const result = await input.database.query<{
-        user_id: string;
-        state: PlatformAdminUser["state"];
-        revision: string | number;
-        created_at: Date | string;
-        updated_at: Date | string;
-      }>(
-        `UPDATE identity.users
-            SET state = $4,
-                revision = revision + 1,
-                updated_at = clock_timestamp()
-          WHERE tenant_id = $1
-            AND user_id = $2
-            AND revision = $3
-          RETURNING user_id, state, revision, created_at, updated_at`,
-        [
-          tenant(authority),
-          request.userId,
-          request.expectedRevision,
-          request.state,
-        ],
-      );
-      const row = result.rows[0];
-      if (!row) {
-        throw new AdminConflictError("User state changed or user was not found");
-      }
-      const counts = await input.database.query<{
-        identity_count: string | number;
-        relationship_count: string | number;
-      }>(
-        `SELECT
-          (SELECT count(*) FROM identity.external_user_identities
-            WHERE tenant_id = $1 AND user_id = $2) AS identity_count,
-          (SELECT count(*) FROM identity.relationships
-            WHERE tenant_id = $1 AND user_id = $2) AS relationship_count`,
-        [tenant(authority), request.userId],
-      );
-      const countRow = counts.rows[0]!;
-      return {
-        userId: row.user_id,
-        state: row.state,
-        revision: numberValue(row.revision),
-        createdAt: iso(row.created_at),
-        updatedAt: iso(row.updated_at),
-        identityCount: numberValue(countRow.identity_count),
-        relationshipCount: numberValue(countRow.relationship_count),
-      };
     },
 
     async listAgentRuns(request) {
