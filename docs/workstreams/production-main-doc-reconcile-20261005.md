@@ -20,4 +20,9 @@ Action:
   checkpoint file stops being the sole textual merge conflict;
 - do not modify Twin implementation files or production runtime files.
 
-Status: active.
+Implemented:
+- production `CONTINUE-HERE.md` now matches current `main` byte-for-byte at the inspected main checkpoint;
+- no Twin implementation, runtime, finance, auth, APK, migration or provider code changed;
+- production-specific evidence remains in dedicated workstream documents.
+
+Status: ready for integration.
