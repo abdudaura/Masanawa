@@ -41,7 +41,7 @@ class _SendCreditsSheetState extends State<SendCreditsSheet> {
               controller: _recipient,
               decoration: const InputDecoration(
                 labelText: 'Recipient',
-                hintText: 'Username, phone or supported identifier',
+                hintText: 'Email or phone number',
               ),
             ),
             const SizedBox(height: 12),
