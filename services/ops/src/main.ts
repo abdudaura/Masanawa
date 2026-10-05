@@ -437,10 +437,11 @@ export async function startOpsService(
 
   const composedAdminAgentDelegation =
     options.appOptions?.adminAgentDelegation ??
-    (adminAuthorizer && adminAgentDelegationConfig
+    (adminAuthorizer && adminAgentDelegationConfig && database.agentPresentations
       ? createAdminAgentDelegationService({
           config: adminAgentDelegationConfig,
           authorizer: adminAuthorizer,
+          presentations: database.agentPresentations!,
         })
       : undefined);
 
