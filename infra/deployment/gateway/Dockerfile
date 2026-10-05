@@ -13,10 +13,12 @@ COPY infra ./infra
 COPY services ./services
 COPY apps ./apps
 
-RUN pnpm install --lockfile-only --no-frozen-lockfile \
- && echo "MASANAWA_LOCKFILE_ROOT_BEGIN" \
- && sed -n '1,90p' pnpm-lock.yaml \
- && echo "MASANAWA_LOCKFILE_ROOT_END" \
+RUN cp pnpm-lock.yaml /tmp/pnpm-lock.before \
+ && pnpm install --lockfile-only --no-frozen-lockfile \
+ && echo "MASANAWA_LOCKFILE_DIFF_BEGIN" \
+ && (diff -u /tmp/pnpm-lock.before pnpm-lock.yaml || true) \
+ && echo "MASANAWA_LOCKFILE_DIFF_END" \
+ && pnpm install --frozen-lockfile \
  && exit 1
 RUN pnpm --filter @masanawa/gateway-service... build
 
