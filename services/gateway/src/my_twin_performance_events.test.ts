@@ -15,6 +15,7 @@ describe("My Twin economy performance reader", () => {
             ownerUserId: "user-owner",
             characterId: "character-1",
             eventType: "twin.visited",
+            referenceId: "visit-1",
             amountCredits: null,
           },
           {
@@ -23,6 +24,7 @@ describe("My Twin economy performance reader", () => {
             ownerUserId: "user-owner",
             characterId: "character-1",
             eventType: "twin.conversation.observed",
+            referenceId: "chat-1",
             amountCredits: null,
           },
           {
@@ -31,6 +33,7 @@ describe("My Twin economy performance reader", () => {
             ownerUserId: "user-owner",
             characterId: "character-1",
             eventType: "twin.earning.settled",
+            referenceId: "earning-1",
             amountCredits: 500,
           },
           {
@@ -39,6 +42,7 @@ describe("My Twin economy performance reader", () => {
             ownerUserId: "user-owner",
             characterId: "character-1",
             eventType: "twin.owner-access.requested",
+            referenceId: "owner-request-1",
             amountCredits: 1000,
           },
         ];
@@ -69,6 +73,7 @@ describe("My Twin economy performance reader", () => {
             ownerUserId: "user-other",
             characterId: "character-1",
             eventType: "twin.visited",
+            referenceId: "visit-1",
             amountCredits: null,
           },
         ];
@@ -83,4 +88,40 @@ describe("My Twin economy performance reader", () => {
       }),
     ).rejects.toThrow("out-of-scope");
   });
+
+  it("removes accepted owner requests from the pending count by shared reference", async () => {
+    const events: MyTwinEconomySummaryEventReader = {
+      async listForOwnerTwin() {
+        return [
+          {
+            eventId: "event-request",
+            tenantId: "tenant-1",
+            ownerUserId: "user-owner",
+            characterId: "character-1",
+            eventType: "twin.owner-access.requested",
+            referenceId: "owner-request-42",
+            amountCredits: 1000,
+          },
+          {
+            eventId: "event-accepted",
+            tenantId: "tenant-1",
+            ownerUserId: "user-owner",
+            characterId: "character-1",
+            eventType: "twin.owner-access.accepted",
+            referenceId: "owner-request-42",
+            amountCredits: null,
+          },
+        ];
+      },
+    };
+
+    const summary = await createMyTwinEconomyPerformanceReader({ events }).readSummary({
+      tenantId: "tenant-1",
+      ownerUserId: "user-owner",
+      characterId: "character-1",
+    });
+
+    expect(summary.pendingOwnerRequests).toBe(0);
+  });
+
 });
