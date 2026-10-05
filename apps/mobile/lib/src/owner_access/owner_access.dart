@@ -199,7 +199,7 @@ abstract class OwnerAccessTransport {
 
   Future<OwnerAccessRequest> request({
     required String characterId,
-    required OwnerAccessQuote quote,
+    required String quoteId,
   });
 
   Future<OwnerAccessRequest?> read({
@@ -230,7 +230,7 @@ class UnavailableOwnerAccessTransport implements OwnerAccessTransport {
   @override
   Future<OwnerAccessRequest> request({
     required String characterId,
-    required OwnerAccessQuote quote,
+    required String quoteId,
   }) {
     throw StateError('Owner access is not connected to the Gateway yet');
   }
