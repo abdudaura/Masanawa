@@ -4,9 +4,8 @@ import '../../theme/masanawa_theme.dart';
 
 /// The approved Masanawa agent-language mark.
 ///
-/// The artwork itself is the source of truth: a blue conversation bubble
-/// wrapped by a fluid agent ribbon. Do not redraw it as a lettermark, map pin,
-/// or location glyph.
+/// Keep this mark aligned with the native Android launcher/splash artwork:
+/// a blue conversation surface with a clear white agent-chat symbol.
 class MasanawaMark extends StatelessWidget {
   const MasanawaMark({
     super.key,
@@ -16,8 +15,7 @@ class MasanawaMark extends StatelessWidget {
 
   final double size;
 
-  /// Retained for call-site compatibility. The approved artwork is identical
-  /// in light and dark contexts.
+  /// Retained for call-site compatibility.
   final bool dark;
 
   @override
@@ -31,6 +29,15 @@ class MasanawaMark extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(size * 0.22),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF1647F5),
+              Color(0xFF0A6FFA),
+              Color(0xFF36C7F4),
+            ],
+          ),
           boxShadow: [
             BoxShadow(
               color: u.brand.withValues(alpha: 0.22),
@@ -39,22 +46,11 @@ class MasanawaMark extends StatelessWidget {
             ),
           ],
         ),
-        clipBehavior: Clip.antiAlias,
-        child: Image.asset(
-          'assets/brand/masanawa_agent_logo.png',
-          width: size,
-          height: size,
-          fit: BoxFit.cover,
-          filterQuality: FilterQuality.high,
-          errorBuilder: (errorContext, error, stackTrace) => Container(
-            color: u.brand,
-            child: Center(
-              child: Icon(
-                Icons.forum_rounded,
-                color: Colors.white,
-                size: size * 0.56,
-              ),
-            ),
+        child: Center(
+          child: Icon(
+            Icons.forum_rounded,
+            color: Colors.white,
+            size: size * 0.58,
           ),
         ),
       ),
