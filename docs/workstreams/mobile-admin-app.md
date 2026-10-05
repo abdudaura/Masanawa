@@ -28,7 +28,7 @@ Implemented:
 - first-time Agent presentation configuration plus presentation/visibility/order editing;
 - per-Agent Skill assignment and Skill readiness catalog;
 - AgentRun diagnostics with bounded state filtering;
-- Offer, fulfillment and immutable ledger views;
+- full canonical Offer create/revise/enable editor with SkillVersion and pricing invariants, plus fulfillment and immutable ledger views;
 - Operation and reconciliation diagnostics, bounded filters, and canonical external-receipt drill-down with payload references/hashes omitted;
 - provider credential reference metadata without ciphertext/plaintext plus canonical credential revocation;
 - audit metadata;
