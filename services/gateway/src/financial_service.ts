@@ -525,7 +525,6 @@ export function createFinancialService(input: {
   }
 
   async function routesCoveredByCustody(
-    auth: FinancialAuthority,
     routes: readonly NowPaymentsCurrencyEvidence[],
   ): Promise<readonly NowPaymentsCurrencyEvidence[]> {
     if (!input.nowPaymentsCustody) return Object.freeze([]);
@@ -550,7 +549,7 @@ export function createFinancialService(input: {
     return Object.freeze(covered);
   }
 
-  async function qualifiedWithdrawalRoutes(auth: FinancialAuthority) {
+  async function qualifiedWithdrawalRoutes() {
     if (
       !input.nowPaymentsPayout ||
       !input.nowPaymentsCustody ||
@@ -567,10 +566,10 @@ export function createFinancialService(input: {
     // Masanawa currently settles user ownership in the canonical internal ledger.
     // Customer Management capability alone does not prove a specific provider
     // sub-account is bound to this user, so live pooled coverage is always required.
-    return routesCoveredByCustody(auth, eligible);
+    return routesCoveredByCustody(eligible);
   }
 
-  async function qualifiedConversionRoutes(auth: FinancialAuthority) {
+  async function qualifiedConversionRoutes() {
     if (!input.nowPaymentsCustody || !input.conversionEvidence) return null;
     const evidence = await input.conversionEvidence();
     assertFreshAccountEvidence(evidence.account, { now: new Date(now()) });
@@ -578,7 +577,7 @@ export function createFinancialService(input: {
       if (!qualifyAccountCapability(evidence.account, capability).eligible) return null;
     }
     const eligible = evidence.routes.filter((route) => qualifyRoute(route, "convert").eligible);
-    return routesCoveredByCustody(auth, eligible);
+    return routesCoveredByCustody(eligible);
   }
 
   async function preflightWithdrawal(
@@ -602,7 +601,7 @@ export function createFinancialService(input: {
       throw new Error("financial.crypto.amount_unavailable");
     }
 
-    const routes = await qualifiedWithdrawalRoutes(auth);
+    const routes = await qualifiedWithdrawalRoutes();
     const route = routes?.find((candidate) => candidate.providerCode === providerCode);
     if (!route) throw new Error("financial.crypto.withdrawal_unavailable");
     if (
@@ -667,7 +666,6 @@ export function createFinancialService(input: {
   }
 
   async function preflightConversion(
-    auth: FinancialAuthority,
     providerCode: string,
     targetProviderCode: string,
     amount: string,
@@ -684,7 +682,7 @@ export function createFinancialService(input: {
       throw new Error("financial.crypto.amount_unavailable");
     }
 
-    const routes = await qualifiedConversionRoutes(auth);
+    const routes = await qualifiedConversionRoutes();
     if (
       !routes?.some((route) => route.providerCode === providerCode) ||
       !routes.some((route) => route.providerCode === targetProviderCode)
@@ -808,7 +806,7 @@ export function createFinancialService(input: {
 
   return Object.freeze<FinancialService>({
     async capabilities(request) {
-      const auth = await authority(request.authorizationHeader);
+      await authority(request.authorizationHeader);
       let deposits = false;
       let withdrawals = false;
       let conversions = false;
@@ -820,11 +818,11 @@ export function createFinancialService(input: {
         qualifiedOnRamp = await qualifiedFiatOnRamp();
       } catch { /* Unknown on-ramp/custody evidence denies admission. */ }
       try {
-        const routes = await qualifiedWithdrawalRoutes(auth);
+        const routes = await qualifiedWithdrawalRoutes();
         withdrawals = routes !== null && routes.length > 0;
       } catch { /* Unknown/stale evidence denies admission. */ }
       try {
-        const routes = await qualifiedConversionRoutes(auth);
+        const routes = await qualifiedConversionRoutes();
         conversions = routes !== null && routes.length > 1;
       } catch { /* Unknown/stale evidence denies admission. */ }
       return Object.freeze({
@@ -857,8 +855,8 @@ export function createFinancialService(input: {
     },
 
     async listConversionRoutes(request) {
-      const auth = await authority(request.authorizationHeader);
-      return Object.freeze((await qualifiedConversionRoutes(auth)) ?? []);
+      await authority(request.authorizationHeader);
+      return Object.freeze((await qualifiedConversionRoutes()) ?? []);
     },
 
     async createDeposit(request) {
@@ -1260,7 +1258,7 @@ export function createFinancialService(input: {
       const providerCode = normalizeCryptoAsset(request.providerCode);
       const targetProviderCode = normalizeCryptoAsset(request.targetProviderCode);
       const amount = normalizeCryptoAmount(request.amount);
-      return preflightConversion(auth, providerCode, targetProviderCode, amount);
+      return preflightConversion(providerCode, targetProviderCode, amount);
     },
 
     async createConversion(request) {
@@ -1292,7 +1290,7 @@ export function createFinancialService(input: {
         return conversionView(existing);
       }
 
-      await preflightConversion(auth, providerCode, targetProviderCode, amount);
+      await preflightConversion(providerCode, targetProviderCode, amount);
       const createdAt = now();
       const admitted = await input.crypto.reserveConversion({
         schemaVersion: 1,
