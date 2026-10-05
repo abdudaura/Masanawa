@@ -39,7 +39,10 @@ try {
     typeof authBody?.jwt === "string" ? authBody.jwt.trim() : "";
   if (!token) throw new Error("auth_token_missing");
 
-  const balance = await request("/balance", { method: "GET" });
+  const balance = await request("/balance", {
+    method: "GET",
+    headers: { authorization: `Bearer ${token}` },
+  });
   const body = await balance.json();
   if (!body || typeof body !== "object" || Array.isArray(body)) {
     throw new Error("balance_invalid");
