@@ -35,4 +35,19 @@ Acceptance:
   channels and progress events as composition around existing authorities;
 - relevant tests are updated and executable when Flutter is available.
 
-Status: active. The new harness seam is provider-neutral and must not execute or bypass domain authorities itself.
+Implemented:
+- removed the 1.2-second minimum Flutter splash delay; first-frame routing now occurs as soon as session restoration resolves;
+- returning-user session restoration now prefers one encrypted `auth_session_v2` read;
+- legacy four-key sessions are read in parallel and migrated asynchronously without delaying navigation;
+- logout clears both new and legacy records in parallel;
+- added focused tests for the one-read fast path and legacy migration;
+- added `docs/AGENT-HARNESS.md` mapping user-visible Work onto existing Task/WorkflowRun authorities;
+- added a provider-neutral `AgentHarness` contract around admitted AgentRuns with truthful progress callbacks and durable Task/WorkflowRun references.
+
+Verification:
+- branch is eight commits ahead of base and zero behind at `0d99b6d436ec37c6fea9b7efa9bc702d58ce90e6`;
+- changed-path audit contains only the claimed mobile startup, harness contract/documentation and focused test paths;
+- no APK rebuild was performed, per user instruction;
+- executable Flutter/TypeScript checks still require an available runner.
+
+Status: implementation complete for this slice. The new harness seam is provider-neutral and does not execute or bypass domain authorities itself.
