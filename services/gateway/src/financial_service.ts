@@ -1027,6 +1027,7 @@ export function createFinancialService(input: {
           priceAmount: fiatAmount,
           priceCurrency: fiatCurrency,
           payCurrency: fiatCurrency,
+          payoutCurrency: settlementProviderCode,
           ipnCallbackUrl,
           orderId: providerOrderId(auth.tenantId, requestId),
           orderDescription: "Masanawa crypto purchase",
