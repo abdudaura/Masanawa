@@ -63,6 +63,7 @@ import {
   createAdminAgentDelegationService,
   readAdminAgentDelegationConfig,
 } from "./admin_delegation.js";
+import { createAdminAgentActionBroker } from "./admin_agent_actions.js";
 import {
   createOpsApp,
   type OpsAppOptions,
@@ -489,6 +490,16 @@ export async function startOpsService(
         })
       : undefined);
 
+
+  const composedAdminAgentActions =
+    options.appOptions?.adminAgentActions ??
+    (adminAgentDelegationConfig && composedPlatformAdmin
+      ? createAdminAgentActionBroker({
+          config: adminAgentDelegationConfig,
+          platformAdmin: composedPlatformAdmin,
+        })
+      : undefined);
+
   let app: ManagedNodeServer;
   try {
     app = appFactory({
@@ -496,6 +507,9 @@ export async function startOpsService(
       ...(composedAgentAdmin ? { agentAdmin: composedAgentAdmin } : {}),
       ...(composedAdminAgentDelegation
         ? { adminAgentDelegation: composedAdminAgentDelegation }
+        : {}),
+      ...(composedAdminAgentActions
+        ? { adminAgentActions: composedAdminAgentActions }
         : {}),
       ...(composedPlatformAdmin ? { platformAdmin: composedPlatformAdmin } : {}),
       ...(composedSystemAdmin ? { systemAdmin: composedSystemAdmin } : {}),
