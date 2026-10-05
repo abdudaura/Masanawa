@@ -135,7 +135,7 @@ export function createMyTwinProjectionService(input: {
     profile: MyTwinProfileRecord | null,
   ): Promise<MyTwinView> {
     if (!profile) {
-      return Object.freeze<MyTwinProjectionService>({
+      return Object.freeze({
         hasTwin: false,
         characterId: null,
         displayName: "",
@@ -176,7 +176,7 @@ export function createMyTwinProjectionService(input: {
     });
   }
 
-  return Object.freeze({
+  return Object.freeze<MyTwinProjectionService>({
     async read(request) {
       const authority = await input.authorizer.authorize({
         authorizationHeader: request.authorizationHeader,
