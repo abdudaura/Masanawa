@@ -430,4 +430,12 @@ export interface CryptoRepository {
     readonly asset: string;
     readonly network: string | null;
   }): Promise<string>;
+  /**
+   * Aggregate all positive user liabilities across every Masanawa tenant
+   * backed by the shared provider custody account.
+   */
+  readPlatformAggregateLiability(input: {
+    readonly asset: string;
+    readonly network: string | null;
+  }): Promise<string>;
 }
