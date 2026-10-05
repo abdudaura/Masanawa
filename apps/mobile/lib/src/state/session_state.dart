@@ -175,7 +175,9 @@ class SessionController extends Notifier<SessionState> {
     } catch (e) {
       final err =
           e is ApiException ? e : const ApiException('Could not update profile');
-      state = SessionError(err.message, code: err.code);
+      // A profile write failure does not invalidate the verified login.
+      state = current;
+      throw err;
     }
   }
 
