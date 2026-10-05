@@ -482,6 +482,19 @@ export async function startGatewayService(
     | ReturnType<typeof createPlatformSessionFinancialAuthorizer>
     | undefined;
 
+  // Push delivery is a best-effort integration dependency. Build the sender
+  // before the Twin runtime so owner-access notifications can reuse the same
+  // canonical registration repository without becoming request/ledger truth.
+  if (
+    database.mobilePush &&
+    env.MASANAWA_FIREBASE_SERVICE_ACCOUNT_JSON?.trim()
+  ) {
+    pushSender = createFcmPushSender({
+      serviceAccountJson: env.MASANAWA_FIREBASE_SERVICE_ACCOUNT_JSON,
+      repository: database.mobilePush,
+    });
+  }
+
   if (alphaEnabled(env)) {
     if (
       !database.agentPresentations ||
@@ -707,6 +720,7 @@ export async function startGatewayService(
         events: database.twinEvents,
         commerce: database.commerce,
         personalClones: database.personalClones,
+        ...(pushSender ? { notifications: pushSender } : {}),
         publicTwinBaseUrl:
           env.MASANAWA_TWIN_PUBLIC_BASE_URL?.trim() ||
           "https://masanawa.com/twin",
@@ -1308,16 +1322,6 @@ export async function startGatewayService(
           repository: database.mobilePush,
         })
       : undefined);
-
-  if (
-    database.mobilePush &&
-    env.MASANAWA_FIREBASE_SERVICE_ACCOUNT_JSON?.trim()
-  ) {
-    pushSender = createFcmPushSender({
-      serviceAccountJson: env.MASANAWA_FIREBASE_SERVICE_ACCOUNT_JSON,
-      repository: database.mobilePush,
-    });
-  }
 
   const composedShell =
     options.appOptions?.agentShell ??
