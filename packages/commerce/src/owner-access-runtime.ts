@@ -223,9 +223,51 @@ export function createOwnerAccessRuntime(input: {
       return Object.freeze({ request: updated, settlement });
     },
 
-    async expireDue() {
-      const at = now();
-      return { checkedAt: at.toISOString() };
+    async expire(requestId: string) {
+      const current = await input.repository.get({ requestId });
+      if (!current) throw new Error("Owner access request not found");
+      if (current.state !== "requested" && current.state !== "accepted") {
+        return Object.freeze({ request: current, expired: false });
+      }
+      if (new Date(current.acceptBy).getTime() > now().getTime()) {
+        return Object.freeze({ request: current, expired: false });
+      }
+
+      const next = transitionOwnerAccess(current.state, "expired");
+      const updated = await input.repository.update({
+        ...current,
+        state: next,
+      });
+      const settlement = decideOwnerAccessSettlement({
+        state: next,
+        chargeMode: current.chargeMode,
+        reservedCredits: current.reservedCredits,
+        ownerEarningCredits: current.ownerEarningCredits,
+        platformFeeCredits: current.platformFeeCredits,
+        attendanceVerified: false,
+        completionVerified: false,
+      });
+      if (
+        settlement.disposition === "refund" &&
+        current.reservationId !== null
+      ) {
+        await input.reservations.release({
+          requestId: current.requestId,
+          reservationId: current.reservationId,
+          refundCredits: settlement.refundCredits,
+        });
+        await input.notifications?.emit({
+          requestId: current.requestId,
+          recipientUserId: current.requesterUserId,
+          event: "refunded",
+          scheduledFor: current.scheduledFor,
+        });
+      }
+      return Object.freeze({
+        request: updated,
+        expired: true,
+        settlement,
+      });
     },
   });
 }
