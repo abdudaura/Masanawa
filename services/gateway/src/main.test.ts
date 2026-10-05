@@ -100,6 +100,32 @@ describe("gateway production lifecycle", () => {
     );
   });
 
+  it("fails closed when billing is enabled without production billing configuration", async () => {
+    const databaseClose = vi.fn(async () => undefined);
+    const appFactory = vi.fn(() => {
+      throw new Error("app must not start");
+    });
+
+    await expect(startGatewayService({
+      env: { FLUTTERWAVE_BILLS_ENABLED: "true" },
+      processRef: processRef(),
+      logger: { info: vi.fn(), error: vi.fn() },
+      databaseFactory: () => ({
+        readinessCheck: {
+          name: "database-schema",
+          check: async () => ({ ready: true }),
+        },
+        close: databaseClose,
+      }),
+      appFactory,
+    })).rejects.toThrow(
+      "Billing is enabled but production auth or Flutterwave billing configuration is incomplete",
+    );
+
+    expect(appFactory).not.toHaveBeenCalled();
+    expect(databaseClose).toHaveBeenCalledTimes(1);
+  });
+
   it("does not require or expose a database URL when an injected dependency is used", async () => {
     const app: ManagedNodeServer = {
       listen: vi.fn(async () => "http://127.0.0.1:3000"),
