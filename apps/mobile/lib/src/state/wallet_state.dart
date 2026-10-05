@@ -23,6 +23,38 @@ class WalletController extends AsyncNotifier<WalletView?> {
       () => ref.read(walletTransportProvider).load(),
     );
   }
+
+  Future<CreditTransferReceipt?> sendCredits({
+    required String recipient,
+    required int amountCredits,
+  }) async {
+    try {
+      final receipt = await ref.read(walletTransportProvider).sendCredits(
+            recipient: recipient,
+            amountCredits: amountCredits,
+          );
+      await refresh();
+      return receipt;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<GiftReceipt?> sendGift({
+    required String recipientCharacterId,
+    required int amountCredits,
+  }) async {
+    try {
+      final receipt = await ref.read(walletTransportProvider).sendGift(
+            recipientCharacterId: recipientCharacterId,
+            amountCredits: amountCredits,
+          );
+      await refresh();
+      return receipt;
+    } catch (_) {
+      return null;
+    }
+  }
 }
 
 final walletProvider =
