@@ -11,7 +11,7 @@ Workflows PostgreSQL owner.
 ## Exact owned paths
 
 - `docs/workstreams/workflow-executor-lease-postgres.md`
-- `packages/workflows/migrations/0002_executor_leases.sql`
+- `packages/workflows/migrations/0010_executor_leases.sql`
 - `adapters/storage/postgres/src/workflows/executor-lease.ts`
 - `adapters/storage/postgres/src/workflows/executor-lease.integration.test.ts`
 - append-only export in `adapters/storage/postgres/src/index.ts`
@@ -21,7 +21,7 @@ provider files are owned.
 
 ## Implemented
 
-- append-only Workflows migration `0002_executor_leases.sql`; `0001_work_runtime.sql`
+- append-only Workflows migration `0010_executor_leases.sql`; `0001_work_runtime.sql`
   is untouched;
 - one durable lease row per tenant + WorkflowRun with a canonical FK to
   `workflows.workflow_runs`;
