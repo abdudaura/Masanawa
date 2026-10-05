@@ -38,14 +38,14 @@ Implemented:
 - audit metadata;
 - Memory lifecycle/extraction and inbox/outbox recovery health;
 - World status/generation diagnostics plus canonical pause/recover;
-- approval metadata; approval decisions remain gated on real operator Principal identity;
+- approval metadata plus canonical approve/deny using the signed-in operator Principal; Gwani governed write proposals now create/reuse an idempotent Operation and exact-bound one-time approval, but approved-action replay/consumption remains the next execution boundary;
 - Modules readiness view for Channels, Devices, Workflows, Social/Studio, Plugins and Agent Phone;
 - tenant/capability authorization on every new Ops projection;
 - cross-capability same-tenant enforcement in System diagnostics;
 - regression coverage for tenant-scoped reads, rejection of direct-SQL user lifecycle mutation, authorization-before-storage and secret-safe credential projection.
 
 Intentionally gated:
-- approval approve/deny requires a real operator Principal/approver identity; PlatformSession proves the User but does not fabricate the governed approver Principal/AuthorityContext;
+- approved Gwani write replay still requires exact approval consumption plus valid Operation state progression before canonical command execution; approve/deny itself is now implemented for PlatformSession operators;
 - User lifecycle transition, provider rotation, reconciliation commands, Memory correction/purge and policy/role administration require canonical command/use-case contracts rather than direct SQL shortcuts; provider revocation, Offer enable/disable and World pause/resume already bind canonical storage/domain commands;
 - Channels, Devices, Workflows, billing/crypto administration and later Social/Studio/Plugins/Agent Phone controls integrate as their active platform contracts land.
 
