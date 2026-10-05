@@ -32,6 +32,9 @@ const AdminAgentDelegateSchema = Type.Object(
   {
     characterId: Type.String(),
     label: Type.String(),
+    displayName: Type.Union([Type.String(), Type.Null()]),
+    roleLabel: Type.Union([Type.String(), Type.Null()]),
+    ready: Type.Boolean(),
     purpose: Type.String(),
     autonomy: Type.Union([
       Type.Literal("advisory"),
