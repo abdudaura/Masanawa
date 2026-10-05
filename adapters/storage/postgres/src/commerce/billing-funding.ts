@@ -309,7 +309,8 @@ export function createPostgresBillingQuoteRepository(pool: Pool): BillingQuoteRe
         if (!row.confirmed_at || !row.payment_verified_at || !row.provider_transaction_id) {
           throw new Error("financial.billing.funds_unverified");
         }
-        if (row.biller_code !== input.billerCode || row.item_code !== input.itemCode ||
+        if (row.category_code !== input.categoryCode ||
+            row.biller_code !== input.billerCode || row.item_code !== input.itemCode ||
             row.customer_id !== input.customerId ||
             amountKobo !== integer(row.service_amount_kobo, "service_amount") ||
             input.currency !== "NGN") {
