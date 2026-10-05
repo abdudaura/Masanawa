@@ -109,13 +109,15 @@ class _AdminAgentsPageState extends State<AdminAgentsPage> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        delegate.label,
+                                        delegate.displayName ?? delegate.label,
                                         style: Theme.of(context)
                                             .textTheme
                                             .titleMedium,
                                       ),
                                       Text(
-                                        delegate.purpose,
+                                        delegate.ready
+                                            ? delegate.purpose
+                                            : 'Character presentation is not ready · ${delegate.purpose}',
                                         style: TextStyle(
                                           color: context.masanawa.textMuted,
                                         ),
@@ -146,7 +148,8 @@ class _AdminAgentsPageState extends State<AdminAgentsPage> {
                             ),
                             const SizedBox(height: 10),
                             FilledButton.icon(
-                              onPressed: () => Navigator.of(context).push(
+                              onPressed: delegate.ready
+                                  ? () => Navigator.of(context).push(
                                 MaterialPageRoute<void>(
                                   builder: (_) => AdminAgentChatScreen(
                                     api: widget.api,
