@@ -27,4 +27,15 @@ Acceptance:
 - focused tests cover current, legacy and empty-store paths;
 - docs updated before merge.
 
-Status: active.
+Implemented:
+- current-format sessions retain the one-key `auth_session_v2` fast path;
+- legacy/fresh-install fallback now uses one `FlutterSecureStorage.readAll()` call;
+- legacy sessions still migrate asynchronously to the current record;
+- focused tests count one current-key read plus one bulk fallback on empty/legacy stores.
+
+Verification:
+- changed paths are limited to session restore, focused tests and checkpoint docs;
+- no auth protocol, token semantics, Gateway or APK changes;
+- executable Flutter verification remains subject to the hosted runner-allocation issue.
+
+Status: implementation checkpoint complete pending PR integration.
