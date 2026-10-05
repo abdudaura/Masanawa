@@ -55,6 +55,13 @@ Implemented:
 - Security package exports;
 - focused tests.
 
+Also implemented:
+- mobile safety transport/state;
+- Block / Unblock action sheet;
+- bounded Report flow with explicit reasons;
+- isolated Gateway block/unblock/report service and routes;
+- report submission never implies automatic guilt/moderation outcome.
+
 Not yet integrated:
 - policy persistence/admin configuration;
 - real transfer/gift/attribution history adapter;
