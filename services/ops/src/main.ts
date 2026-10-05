@@ -24,8 +24,10 @@ import {
   createPostgresAgentPresentationRepository,
   createPostgresCharacterSkillAssignmentRepository,
   createPostgresCharacterVersionReferenceReader,
+  createPostgresCharacterOwnershipReader,
   createPostgresCommerceRepository,
   createPostgresServiceDependency,
+  createPostgresUserRelationshipReader,
   createPostgresWorldRepository,
   createPostgresSkillRepository,
   listExternalReceiptsForOperation,
@@ -46,6 +48,8 @@ import {
   type PlatformAdminOfferCommands,
   type PlatformAdminQuery,
   type PlatformAdminReceiptReader,
+  type PlatformAdminRelationshipReader,
+  type PlatformAdminCharacterOwnershipReader,
 } from "./platform_admin.js";
 import {
   createSystemAdminService,
@@ -73,6 +77,8 @@ export interface ServiceDatabaseDependency {
   readonly offerCommands?: PlatformAdminOfferCommands;
   readonly credentialCommands?: PlatformAdminCredentialCommands;
   readonly receiptReader?: PlatformAdminReceiptReader;
+  readonly relationshipReader?: PlatformAdminRelationshipReader;
+  readonly ownershipReader?: PlatformAdminCharacterOwnershipReader;
   readonly worldCommands?: SystemAdminWorldCommands;
   readonly platformAdminDatabase?: PlatformAdminQuery;
   close(): Promise<void>;
@@ -303,6 +309,37 @@ function createDefaultDatabaseDependency(
     },
   });
 
+  const relationships = createPostgresUserRelationshipReader(database.pool);
+  const ownerships = createPostgresCharacterOwnershipReader(database.pool);
+
+  const relationshipReader: PlatformAdminRelationshipReader = Object.freeze({
+    async list(input) {
+      const rows = await relationships.listForUser({
+        tenantId: input.tenantId,
+        userId: parseCanonicalId("user", input.userId),
+      });
+      return rows.map((relationship) => ({
+        relationshipId: relationship.relationshipId,
+        userId: relationship.userId,
+        characterId: relationship.characterId,
+        state: relationship.state,
+        revision: relationship.revision,
+        createdAt: relationship.createdAt,
+        updatedAt: relationship.updatedAt,
+      }));
+    },
+  });
+
+  const ownershipReader: PlatformAdminCharacterOwnershipReader = Object.freeze({
+    async read(input) {
+      const ownership = await ownerships.readForCharacter({
+        tenantId: input.tenantId,
+        characterId: parseCanonicalId("character", input.characterId),
+      });
+      return ownership?.kind ?? null;
+    },
+  });
+
   const worldCommands: SystemAdminWorldCommands = Object.freeze({
     async pause(input) {
       const world = await worlds.pauseWorld({
@@ -354,6 +391,8 @@ function createDefaultDatabaseDependency(
     offerCommands,
     credentialCommands,
     receiptReader,
+    relationshipReader,
+    ownershipReader,
     worldCommands,
     platformAdminDatabase: database.pool as unknown as PlatformAdminQuery,
     close: database.close,
@@ -415,6 +454,10 @@ export async function startOpsService(
             ? { credentialCommands: database.credentialCommands }
             : {}),
           ...(database.receiptReader ? { receiptReader: database.receiptReader } : {}),
+          ...(database.relationshipReader
+            ? { relationshipReader: database.relationshipReader }
+            : {}),
+          ...(database.ownershipReader ? { ownershipReader: database.ownershipReader } : {}),
         })
       : undefined);
 
