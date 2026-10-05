@@ -115,7 +115,7 @@ export function createWalletProjectionService(input: {
   readonly balances: WalletBalanceSource;
   readonly history: WalletHistorySource;
 }): WalletProjectionService {
-  return Object.freeze({
+  return Object.freeze<WalletProjectionService>({
     async read(request) {
       const authority = await input.authorizer.authorize({
         authorizationHeader: request.authorizationHeader,
