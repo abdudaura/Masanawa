@@ -11,6 +11,7 @@ describe("NOWPayments hosted fiat invoice", () => {
       priceAmount: "1500.25",
       priceCurrency: "NGN",
       payCurrency: "NGN",
+      payoutCurrency: "USDTTRC20",
       ipnCallbackUrl: "https://gateway.masanawa.com/v1/financial/nowpayments/ipn",
       orderId: "tenant.request",
       orderDescription: "Masanawa crypto purchase",
@@ -18,6 +19,7 @@ describe("NOWPayments hosted fiat invoice", () => {
       price_amount: 1500.25,
       price_currency: "ngn",
       pay_currency: "ngn",
+      payout_currency: "usdttrc20",
       ipn_callback_url: "https://gateway.masanawa.com/v1/financial/nowpayments/ipn",
       order_id: "tenant.request",
       order_description: "Masanawa crypto purchase",
@@ -47,6 +49,7 @@ describe("NOWPayments hosted fiat invoice", () => {
       price_amount: 1500.25,
       price_currency: "ngn",
       pay_currency: "ngn",
+      payout_currency: "usdttrc20",
       invoice_url: "https://nowpayments.io/payment/?iid=invoice-1",
     };
     expect(parseCreatedInvoice(body, {
@@ -54,6 +57,7 @@ describe("NOWPayments hosted fiat invoice", () => {
       priceAmount: "1500.25",
       priceCurrency: "NGN",
       payCurrency: "NGN",
+      payoutCurrency: "USDTTRC20",
     })).toEqual({
       invoiceId: "invoice-1",
       checkoutUrl: "https://nowpayments.io/payment/?iid=invoice-1",
@@ -61,6 +65,7 @@ describe("NOWPayments hosted fiat invoice", () => {
       priceAmount: "1500.25",
       priceCurrency: "NGN",
       payCurrency: "NGN",
+      payoutCurrency: "USDTTRC20",
     });
     expect(() => parseCreatedInvoice(
       { ...body, order_id: "tenant.other" },
@@ -69,6 +74,7 @@ describe("NOWPayments hosted fiat invoice", () => {
         priceAmount: "1500.25",
         priceCurrency: "NGN",
         payCurrency: "NGN",
+        payoutCurrency: "USDTTRC20",
       },
     )).toThrow("nowpayments.invoice.evidence_mismatch");
   });
@@ -100,6 +106,7 @@ describe("NOWPayments hosted fiat invoice", () => {
       priceAmount: "2500",
       priceCurrency: "NGN",
       payCurrency: "NGN",
+      payoutCurrency: "USDTTRC20",
       ipnCallbackUrl: "https://gateway.masanawa.com/v1/financial/nowpayments/ipn",
       orderId: "tenant.request",
     })).resolves.toMatchObject({
@@ -107,6 +114,7 @@ describe("NOWPayments hosted fiat invoice", () => {
       priceAmount: "2500",
       priceCurrency: "NGN",
       payCurrency: "NGN",
+      payoutCurrency: "USDTTRC20",
     });
   });
 });
