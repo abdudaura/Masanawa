@@ -75,6 +75,7 @@ class TwinActivitySummary {
 class TwinActivityItem {
   const TwinActivityItem({
     required this.eventId,
+    required this.referenceId,
     required this.kind,
     required this.status,
     required this.occurredAt,
@@ -84,6 +85,7 @@ class TwinActivityItem {
   });
 
   final String eventId;
+  final String? referenceId;
   final TwinActivityKind kind;
   final TwinActivityStatus status;
   final DateTime occurredAt;
@@ -93,6 +95,7 @@ class TwinActivityItem {
 
   factory TwinActivityItem.fromJson(Map<String, dynamic> json) {
     final eventId = json['eventId'];
+    final referenceId = json['referenceId'];
     final kind = json['kind'];
     final status = json['status'];
     final occurredAt = json['occurredAt'];
@@ -105,11 +108,13 @@ class TwinActivityItem {
         occurredAt is! String ||
         title is! String ||
         detail is! String ||
+        (referenceId != null && referenceId is! String) ||
         (amount != null && (amount is! num || amount < 0))) {
       throw const FormatException('Invalid twin activity item');
     }
     return TwinActivityItem(
       eventId: eventId,
+      referenceId: referenceId as String?,
       kind: _kind(kind),
       status: _status(status),
       occurredAt: DateTime.parse(occurredAt).toLocal(),
