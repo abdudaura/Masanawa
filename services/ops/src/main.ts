@@ -28,6 +28,7 @@ import {
   createPostgresServiceDependency,
   createPostgresWorldRepository,
   createPostgresSkillRepository,
+  listExternalReceiptsForOperation,
   revokeProviderCredentialRef,
   withTransaction,
 } from "@masanawa/postgres";
@@ -44,6 +45,7 @@ import {
   type PlatformAdminCredentialCommands,
   type PlatformAdminOfferCommands,
   type PlatformAdminQuery,
+  type PlatformAdminReceiptReader,
 } from "./platform_admin.js";
 import {
   createSystemAdminService,
@@ -70,6 +72,7 @@ export interface ServiceDatabaseDependency {
   readonly skills?: SkillRepository;
   readonly offerCommands?: PlatformAdminOfferCommands;
   readonly credentialCommands?: PlatformAdminCredentialCommands;
+  readonly receiptReader?: PlatformAdminReceiptReader;
   readonly worldCommands?: SystemAdminWorldCommands;
   readonly platformAdminDatabase?: PlatformAdminQuery;
   close(): Promise<void>;
@@ -182,6 +185,28 @@ function createDefaultDatabaseDependency(
     },
   });
 
+  const receiptReader: PlatformAdminReceiptReader = Object.freeze({
+    async list(input) {
+      return withTransaction(database.pool, async (client) => {
+        const receipts = await listExternalReceiptsForOperation(
+          client,
+          input.tenantId,
+          parseCanonicalId("operation", input.operationId),
+        );
+        return receipts.map((receipt) => ({
+          externalReceiptId: receipt.externalReceiptId,
+          operationId: receipt.operationId,
+          provider: receipt.provider,
+          normalizedStatus: receipt.normalizedStatus,
+          observedAt: receipt.observedAt,
+          verificationMethod: receipt.verificationMethod,
+          providerVersion: receipt.providerVersion,
+          createdAt: receipt.createdAt,
+        }));
+      });
+    },
+  });
+
   const worldCommands: SystemAdminWorldCommands = Object.freeze({
     async pause(input) {
       const world = await worlds.pauseWorld({
@@ -232,6 +257,7 @@ function createDefaultDatabaseDependency(
     skills: createPostgresSkillRepository(database.pool),
     offerCommands,
     credentialCommands,
+    receiptReader,
     worldCommands,
     platformAdminDatabase: database.pool as unknown as PlatformAdminQuery,
     close: database.close,
@@ -292,6 +318,7 @@ export async function startOpsService(
           ...(database.credentialCommands
             ? { credentialCommands: database.credentialCommands }
             : {}),
+          ...(database.receiptReader ? { receiptReader: database.receiptReader } : {}),
         })
       : undefined);
 
