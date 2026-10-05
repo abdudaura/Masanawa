@@ -31,4 +31,22 @@ Acceptance:
 - focused Vitest coverage for normalization, legal/illegal transitions and checkpoint validation;
 - docs updated at checkpoint.
 
-Status: active.
+Implemented:
+- initialized the real `@masanawa/workflows` package with workspace/build metadata;
+- added strict Task and WorkflowRun lifecycle models;
+- added legal transition guards and terminal-state protection;
+- added checkpoint contracts containing graph signature, committed/executor/edge state and
+  pending approvals;
+- added bounded JSON checkpoint normalization;
+- added present-authority access guards and repository ports;
+- added focused Vitest coverage for normalization, invalid transitions, approval waiting
+  invariants and checkpoint validation;
+- updated the package README and harness architecture checkpoint.
+
+Not yet implemented:
+- PostgreSQL persistence/migrations;
+- restore graph-signature compatibility enforcement;
+- resumed current-authority revalidation in a concrete executor;
+- side-effect receipt/reconciliation integration.
+
+Status: contract foundation complete; persistence is the next workstream dependency.
