@@ -149,6 +149,7 @@ export interface TwinProductionEventStore {
     readonly ownerUserId: string;
     readonly characterId: string;
     readonly customerUserId: string | null;
+    readonly referenceId: string;
     readonly eventType: string;
     readonly occurredAt: string;
     readonly amountCredits: number | null;
@@ -441,6 +442,7 @@ export function createTwinProductionRuntime(input: {
         rows.map((row) =>
           Object.freeze({
             eventId: row.eventId,
+            referenceId: row.referenceId,
             tenantId: request.tenantId,
             characterId: row.characterId,
             eventType: row.eventType as never,
@@ -482,14 +484,19 @@ export function createTwinProductionRuntime(input: {
         let conversations = 0;
         let earningsCredits = 0;
         let pendingOwnerRequests = 0;
+        const seenOwnerRequests = new Set<string>();
         for (const row of rows) {
           if (row.kind === "visit") visitors += 1;
           if (row.kind === "conversation") conversations += 1;
           if (row.kind === "earning" && row.status === "completed") {
             earningsCredits += row.amountCredits ?? 0;
           }
-          if (row.kind === "owner-request" && row.status === "pending") {
-            pendingOwnerRequests += 1;
+          if (
+            row.kind === "owner-request" &&
+            !seenOwnerRequests.has(row.referenceId)
+          ) {
+            seenOwnerRequests.add(row.referenceId);
+            if (row.status === "pending") pendingOwnerRequests += 1;
           }
         }
         return Object.freeze({
