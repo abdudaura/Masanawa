@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 import '../core/network/api_client.dart';
 import 'twin_directory.dart';
 
@@ -35,5 +37,27 @@ class GatewayTwinDirectoryTransport implements TwinDirectoryTransport {
       // pagination. Keep the page shape future-compatible.
       nextCursor: null,
     );
+  }
+
+  @override
+  Future<TwinDirectoryEntry?> resolve({
+    required String publicId,
+  }) async {
+    try {
+      final response = await api.dio.get<dynamic>(
+        '/agent/twins/${Uri.encodeComponent(publicId)}',
+      );
+      final data = response.data;
+      if (data is Map<String, dynamic>) {
+        return TwinDirectoryEntry.fromJson(data);
+      }
+      if (data is Map) {
+        return TwinDirectoryEntry.fromJson(data.cast<String, dynamic>());
+      }
+      throw const FormatException('Invalid public twin response');
+    } on DioException catch (error) {
+      if (error.response?.statusCode == 404) return null;
+      rethrow;
+    }
   }
 }
