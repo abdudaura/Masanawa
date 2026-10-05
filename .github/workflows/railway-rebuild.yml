@@ -6,7 +6,10 @@ on:
       project_name:
         description: Railway project name
         required: false
-        default: empowering-education
+        default: masanawa
+      confirm_rebuild:
+        description: Type REBUILD to confirm infrastructure reconciliation
+        required: true
 
 permissions:
   contents: read
@@ -17,15 +20,20 @@ concurrency:
 
 jobs:
   rebuild:
+    if: ${{ inputs.confirm_rebuild == 'REBUILD' }}
     runs-on: ubuntu-latest
     environment: production
     env:
       RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      AGENT_TOKEN: ${{ secrets.AGENT_TOKEN }}
+      CALL_GATEWAY_TOKEN: ${{ secrets.CALL_GATEWAY_TOKEN }}
       CREDENTIAL_ENCRYPTION_KEY: ${{ secrets.CREDENTIAL_ENCRYPTION_KEY }}
       FLUTTERWAVE_ENCRYPTION_KEY: ${{ secrets.FLUTTERWAVE_ENCRYPTION_KEY }}
+      FLUTTERWAVE_OPERATOR_TEST_TOKEN: ${{ secrets.FLUTTERWAVE_OPERATOR_TEST_TOKEN }}
       FLUTTERWAVE_PUBLIC_KEY: ${{ secrets.FLUTTERWAVE_PUBLIC_KEY }}
       FLUTTERWAVE_SECRET_KEY: ${{ secrets.FLUTTERWAVE_SECRET_KEY }}
       FLUTTERWAVE_WEBHOOK_SECRET_HASH: ${{ secrets.FLUTTERWAVE_WEBHOOK_SECRET_HASH }}
+      MASANAWA_ALPHA_GEMINI_IMPORTED_CREDENTIALS_JSON: ${{ secrets.MASANAWA_ALPHA_GEMINI_IMPORTED_CREDENTIALS_JSON }}
       MASANAWA_AUTH_OTP_PEPPER: ${{ secrets.MASANAWA_AUTH_OTP_PEPPER }}
       MASANAWA_BILLING_ACTION_SECRET: ${{ secrets.MASANAWA_BILLING_ACTION_SECRET }}
       MASANAWA_FLUTTERWAVE_RELAY_TOKEN: ${{ secrets.MASANAWA_FLUTTERWAVE_RELAY_TOKEN }}
@@ -44,17 +52,16 @@ jobs:
         with:
           node-version: 24
 
-      - name: Install Railway CLI
-        run: npm install --global @railway/cli
+      - name: Install tooling
+        run: |
+          npm install --global @railway/cli
+          corepack enable
+          corepack prepare pnpm@12.8.2 --activate
+          pnpm install --frozen-lockfile
 
       - name: Validate portable secret contract
-        shell: bash
-        run: |
-          set -euo pipefail
-          node scripts/railway/validate-portable-secrets.mjs
+        run: node scripts/railway/validate-portable-secrets.mjs
 
       - name: Rebuild Railway runtime
         shell: bash
-        run: |
-          set -euo pipefail
-          bash scripts/railway/rebuild-production.sh "${{ inputs.project_name }}"
+        run: bash scripts/railway/rebuild-production.sh "${{ inputs.project_name }}"
