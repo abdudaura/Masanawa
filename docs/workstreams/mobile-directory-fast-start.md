@@ -11,6 +11,7 @@ Purpose:
 
 Owned paths:
 - `apps/mobile/lib/src/agents/agent_directory.dart`
+- `apps/mobile/lib/src/agents/agent_directory_cache.dart`
 - `apps/mobile/lib/src/state/agent_directory_state.dart`
 - focused mobile tests for directory caching/startup behavior
 - `docs/AGENT-HARNESS.md` only for the fast-client checkpoint
