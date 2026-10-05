@@ -157,7 +157,7 @@ function mapEvent(event: TwinEconomyActivityEvent): TwinActivityRecord | null {
 export function createTwinEconomyActivitySource(input: {
   readonly events: TwinEconomyActivityEventReader;
 }): TwinActivitySource {
-  return Object.freeze({
+  return Object.freeze<TwinActivitySource>({
     async listForTwin(request) {
       const events = await input.events.listForCharacter({
         tenantId: request.tenantId,
