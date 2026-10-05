@@ -36,8 +36,10 @@ Implemented:
 - later cache saves/deletes reuse the same resolved documents directory.
 
 Verification:
+- PR #172 merged into `work/billing-main-integration-20261005` at `6917a7eb7e8305123a3c44a8d2e9fa9441db3f0a`;
+- Foundation CI run 37295587072 and Mobile Build run 37295587173 both ended before any steps executed (`steps: null`), so no hosted application test result is claimed;
 - changed paths are limited to AiChat local-cache/startup scheduling and checkpoint docs;
 - no Gateway, auth, workflow, finance, provider or APK changes;
 - executable Flutter verification remains subject to the repository hosted-runner allocation issue.
 
-Status: implementation checkpoint complete pending PR integration.
+Status: merged implementation checkpoint.
