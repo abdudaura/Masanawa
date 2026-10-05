@@ -124,4 +124,59 @@ describe("My Twin economy performance reader", () => {
     expect(summary.pendingOwnerRequests).toBe(0);
   });
 
+
+  it("is order-independent for reversals and owner-request lifecycle", async () => {
+    const events: MyTwinEconomySummaryEventReader = {
+      async listForOwnerTwin() {
+        return [
+          {
+            eventId: "accepted-newer",
+            tenantId: "tenant-1",
+            ownerUserId: "user-owner",
+            characterId: "character-1",
+            eventType: "twin.owner-access.accepted",
+            referenceId: "owner-request-77",
+            amountCredits: null,
+          },
+          {
+            eventId: "earning-reversal-newer",
+            tenantId: "tenant-1",
+            ownerUserId: "user-owner",
+            characterId: "character-1",
+            eventType: "twin.earning.reversed",
+            referenceId: "earning-77",
+            amountCredits: 40,
+          },
+          {
+            eventId: "requested-older",
+            tenantId: "tenant-1",
+            ownerUserId: "user-owner",
+            characterId: "character-1",
+            eventType: "twin.owner-access.requested",
+            referenceId: "owner-request-77",
+            amountCredits: 1000,
+          },
+          {
+            eventId: "earning-settlement-older",
+            tenantId: "tenant-1",
+            ownerUserId: "user-owner",
+            characterId: "character-1",
+            eventType: "twin.earning.settled",
+            referenceId: "earning-77",
+            amountCredits: 100,
+          },
+        ];
+      },
+    };
+
+    const summary = await createMyTwinEconomyPerformanceReader({ events }).readSummary({
+      tenantId: "tenant-1",
+      ownerUserId: "user-owner",
+      characterId: "character-1",
+    });
+
+    expect(summary.earningsCredits).toBe(60);
+    expect(summary.pendingOwnerRequests).toBe(0);
+  });
+
 });
