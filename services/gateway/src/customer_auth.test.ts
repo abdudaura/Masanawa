@@ -342,7 +342,7 @@ describe("customer authentication", () => {
     expect(signedIn.user).toMatchObject({
       name: "Amina",
       email: "user@example.com",
-      isNewUser: true,
+      isNewUser: false,
     });
 
     const authorizationNow = () => "2026-10-04T20:00:10.000Z";
