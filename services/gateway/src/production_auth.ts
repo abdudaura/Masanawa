@@ -168,7 +168,7 @@ export function createProductionAuthorizers(input: {
     return Object.freeze({ tenantId: input.tenantId, userId });
   };
 
-  const directory: AgentDirectoryAuthorizer = Object.freeze({
+  const directory: AgentDirectoryAuthorizer = {
     async authorize(request) {
       const user = await authorizeUser(request.authorizationHeader);
       const [related, support] = await Promise.all([
@@ -188,21 +188,21 @@ export function createProductionAuthorizers(input: {
         ]),
       });
     },
-  });
+  };
 
-  const creator: CreatorCloneAuthorizer = Object.freeze({
+  const creator: CreatorCloneAuthorizer = {
     async authorize(request) {
       return authorizeUser(request.authorizationHeader);
     },
-  });
+  };
 
-  const commerce: CommerceUserAuthorizer = Object.freeze({
+  const commerce: CommerceUserAuthorizer = {
     async authorize(request) {
       return authorizeUser(request.authorizationHeader);
     },
-  });
+  };
 
-  const conversation: AgentConversationAuthorizer = Object.freeze({
+  const conversation: AgentConversationAuthorizer = {
     async authorize(request): Promise<AgentConversationAdmission> {
       const user = await authorizeUser(request.authorizationHeader);
       const characterId = parseCanonicalId("character", request.characterId);
@@ -288,7 +288,12 @@ export function createProductionAuthorizers(input: {
         }),
       });
     },
-  });
+  };
 
-  return Object.freeze({ directory, conversation, creator, commerce });
+  return Object.freeze({
+    directory: Object.freeze(directory),
+    conversation: Object.freeze(conversation),
+    creator: Object.freeze(creator),
+    commerce: Object.freeze(commerce),
+  });
 }
