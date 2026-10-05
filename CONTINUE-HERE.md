@@ -9,6 +9,7 @@ Preserve this startup rule:
   still queued/delivered through the existing PendingDeepLink path;
 - do not move notification setup, token registration or Firebase initialization back into
   pre-first-frame startup unless a measured correctness requirement demands it.
+- PR #168 merged this deferral at `93df1c6bcd29446eb5204ae09e7b5e0685e20486`.
 
 ## Mobile directory fast-start checkpoint — 2026-10-05
 
