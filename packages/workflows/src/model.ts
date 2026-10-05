@@ -1,4 +1,5 @@
 import {
+  PlatformError,
   parseCanonicalId,
   toInstant,
   type AgentRunId,
@@ -11,6 +12,7 @@ import {
   type WorkflowRunId,
   type WorkflowVersionId,
 } from "@masanawa/contracts";
+import type { AuthorityContext } from "@masanawa/security";
 
 export const taskStates = [
   "queued",
@@ -273,4 +275,43 @@ export function canTransitionWork(
   if (["completed", "failed", "cancelled"].includes(from)) return false;
   if (to === "queued") return false;
   return true;
+}
+
+
+export type WorkAction =
+  | "task.create"
+  | "task.read"
+  | "task.update"
+  | "run.create"
+  | "run.read"
+  | "run.update";
+
+/**
+ * Work references never grant permission. Every repository operation rechecks
+ * the current authority against the exact relationship-scoped Work owner.
+ */
+export function assertWorkAccess(
+  authority: AuthorityContext,
+  scope: WorkScope,
+  action: WorkAction,
+  at: Instant,
+): void {
+  const capability = `workflows.${action}`;
+  const valid =
+    authority.tenantId === scope.tenantId &&
+    authority.capabilities.includes(capability) &&
+    authority.resourceScope.relationshipIds?.includes(scope.relationshipId) &&
+    (authority.principal.kind === "user"
+      ? authority.principal.userId === scope.userId
+      : authority.capabilities.includes("workflows.manage-other")) &&
+    authority.issuedAt <= at &&
+    (!authority.expiresAt || authority.expiresAt > at);
+  if (!valid) {
+    throw new PlatformError({
+      code: "workflows.work_access_denied",
+      category: "authorization",
+      message: "Current authority does not allow this Work operation",
+      retryable: false,
+    });
+  }
 }
