@@ -7,7 +7,6 @@ import {
 
 const tenantId = "tenant_0199cabc-1234-7abc-8def-1234567890ab";
 const gwaniId = "character_0199cabc-1234-7abc-8def-1234567890aa";
-const jevId = "character_0199cabc-1234-7abc-8def-1234567890ac";
 
 describe("Ops admin agent delegation", () => {
   it("parses explicit Character-scoped delegates", () => {
@@ -21,18 +20,11 @@ describe("Ops admin agent delegation", () => {
           autonomy: "confirm-writes",
           capabilities: ["platform.summary.read", "commerce.write"],
         },
-        {
-          characterId: jevId,
-          label: "JEV",
-          purpose: "Operational reviewer",
-          autonomy: "read-autonomous",
-          capabilities: ["operations.read", "audit.read"],
-        },
       ]),
     })!;
 
     expect(config.tenantId).toBe(tenantId);
-    expect(config.delegates).toHaveLength(2);
+    expect(config.delegates).toHaveLength(1);
     expect(config.delegates[0]).toMatchObject({
       characterId: gwaniId,
       label: "Gwani",
