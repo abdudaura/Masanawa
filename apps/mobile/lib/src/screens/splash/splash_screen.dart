@@ -10,7 +10,8 @@ import '../../tokens/masanawa_tokens.dart';
 import '../../theme/masanawa_theme.dart';
 import '../../state/session_state.dart';
 
-/// Brand moment (≤1.5 s), then route to the chats or to login when signed out.
+/// First-frame brand surface. Navigation starts as soon as session restore resolves;
+/// there is deliberately no minimum splash duration.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -19,19 +20,22 @@ class SplashScreen extends ConsumerStatefulWidget {
 }
 
 class _SplashScreenState extends ConsumerState<SplashScreen> {
-  Timer? _brandTimer;
   Timer? _restoreDeadline;
-  bool _brandReady = false;
   bool _navigated = false;
 
   @override
   void initState() {
     super.initState();
-    _brandTimer = Timer(const Duration(milliseconds: 1200), () {
-      _brandReady = true;
+
+    // Let Flutter paint one frame, then leave immediately when the session is
+    // already known. This avoids the previous artificial 1.2 s brand delay.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       _navigate(ref.read(sessionProvider));
     });
-    // Preserve the original bounded restore wait without polling.
+
+    // Fail open to sign-in rather than leaving a user trapped on splash if a
+    // device keystore/plugin restore stalls unexpectedly.
     _restoreDeadline = Timer(const Duration(milliseconds: 6200), () {
       if (!mounted || _navigated) return;
       final session = ref.read(sessionProvider);
@@ -42,13 +46,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   }
 
   void _navigate(SessionState session) {
-    if (!mounted || !_brandReady || _navigated ||
-        session is SessionRestoring) return;
+    if (!mounted || _navigated || session is SessionRestoring) return;
     _navigated = true;
-    _brandTimer?.cancel();
     _restoreDeadline?.cancel();
+
     if (session is SessionSignedIn) {
-      context.go('/chats');
+      context.go(session.user.isNewUser ? '/name' : '/chats');
     } else if (session is SessionNameRequired) {
       context.go('/name');
     } else if (session is SessionAwaitingOtp ||
@@ -62,17 +65,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   @override
   void dispose() {
-    _brandTimer?.cancel();
     _restoreDeadline?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(sessionProvider, (_, next) {
-      if (_brandReady) _navigate(next);
-    });
+    ref.listen(sessionProvider, (_, next) => _navigate(next));
     final u = context.masanawa;
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Container(
@@ -87,7 +88,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              MasanawaLogo(dark: true, height: 120, showWordmark: false),
+              const MasanawaLogo(
+                dark: true,
+                height: 120,
+                showWordmark: false,
+              ),
               SizedBox(height: MasanawaTokens.spacing[4]),
               const MasanawaWordmark(light: true, fontSize: 30),
               SizedBox(height: MasanawaTokens.spacing[2]),
@@ -106,5 +111,3 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     );
   }
 }
-
-
