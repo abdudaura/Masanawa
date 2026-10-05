@@ -52,7 +52,7 @@ function requestDefinition(
 export function createPostgresTwinRuntimeRepository(
   pool: Pool,
 ): TwinRuntimeRepository {
-  return Object.freeze<TwinRuntimeRepository>({
+  const repository: TwinRuntimeRepository = {
     async readLedgerPlan(input) {
       const result = await pool.query<{ definition: import("@masanawa/commerce").TwinLedgerPlan }>(
         `SELECT definition FROM commerce.twin_ledger_plans
@@ -74,7 +74,7 @@ export function createPostgresTwinRuntimeRepository(
           input.plan.createdAt,
         ],
       );
-      const current = await this.readLedgerPlan({
+      const current = await repository.readLedgerPlan({
         tenantId: input.tenantId,
         planKey: input.plan.planKey,
       });
@@ -163,7 +163,7 @@ export function createPostgresTwinRuntimeRepository(
           input.completedAt,
         ],
       );
-      const current = await this.readCreditOperation({
+      const current = await repository.readCreditOperation({
         tenantId: input.tenantId,
         requestId: input.requestId,
       });
@@ -311,7 +311,7 @@ export function createPostgresTwinRuntimeRepository(
           canonicalJson(policy),
         ],
       );
-      const current = await this.readCommissionPolicy({
+      const current = await repository.readCommissionPolicy({
         tenantId: input.tenantId,
         eventType: policy.eventType,
         at: policy.effectiveAt,
@@ -349,7 +349,7 @@ export function createPostgresTwinRuntimeRepository(
           canonicalJson(a),
         ],
       );
-      const current = await this.readAttributionForOperation({
+      const current = await repository.readAttributionForOperation({
         tenantId: input.tenantId,
         operationId: a.operationId,
         eventType: a.eventType,
@@ -566,7 +566,7 @@ export function createPostgresTwinRuntimeRepository(
           input.quoteExpiresAt,
         ],
       );
-      const current = await this.readVoiceQuote({
+      const current = await repository.readVoiceQuote({
         tenantId: input.tenantId,
         quoteId: input.quoteId,
       });
@@ -610,7 +610,7 @@ export function createPostgresTwinRuntimeRepository(
           canonicalJson(input),
         ],
       );
-      const current = await this.readVoiceAdmission({
+      const current = await repository.readVoiceAdmission({
         tenantId: input.tenantId,
         admissionId: input.admissionId,
       });
@@ -647,7 +647,7 @@ export function createPostgresTwinRuntimeRepository(
       );
       const admissionId = result.rows[0]?.admission_id;
       return admissionId
-        ? this.readVoiceAdmission({ tenantId: input.tenantId, admissionId })
+        ? repository.readVoiceAdmission({ tenantId: input.tenantId, admissionId })
         : null;
     },
 
@@ -661,7 +661,7 @@ export function createPostgresTwinRuntimeRepository(
         [input.tenantId, input.admissionId, input.startedAt],
       );
       if (result.rowCount !== 1) throw new Error("Voice admission is unavailable");
-      const current = await this.readVoiceAdmission({
+      const current = await repository.readVoiceAdmission({
         tenantId: input.tenantId,
         admissionId: input.admissionId,
       });
@@ -714,7 +714,7 @@ export function createPostgresTwinRuntimeRepository(
           input.quote.quoteExpiresAt,
         ],
       );
-      const current = await this.readOwnerAccessQuote({
+      const current = await repository.readOwnerAccessQuote({
         tenantId: input.tenantId,
         quoteId: input.quote.requestId,
       });
@@ -776,7 +776,7 @@ export function createPostgresTwinRuntimeRepository(
           canonicalJson(offering),
         ],
       );
-      const current = await this.readOwnerAccessOffering({
+      const current = await repository.readOwnerAccessOffering({
         tenantId: input.tenantId,
         ownerUserId: offering.ownerUserId as UserId,
       });
@@ -804,7 +804,7 @@ export function createPostgresTwinRuntimeRepository(
           input.request.requestedAt,
         ],
       );
-      const current = await this.readOwnerAccessRequest({
+      const current = await repository.readOwnerAccessRequest({
         tenantId: input.tenantId,
         requestId: input.request.requestId,
       });
@@ -902,5 +902,6 @@ export function createPostgresTwinRuntimeRepository(
         ],
       );
     },
-  });
+  };
+  return Object.freeze(repository);
 }
