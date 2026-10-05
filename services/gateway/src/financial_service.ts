@@ -470,7 +470,7 @@ export function createFinancialService(input: {
   const payoutIpnCallbackUrl =
     new URL("/v1/financial/nowpayments/payout-ipn", base).toString();
   const withdrawalNetworkFeeMode = input.withdrawalNetworkFeeMode ?? null;
-  const fiatOnRamp = input.fiatOnRamp === undefined
+  const fiatOnRamp = input.fiatOnRamp?.enabled !== true
     ? null
     : Object.freeze({
         settlementProviderCode: normalizeCryptoAsset(
