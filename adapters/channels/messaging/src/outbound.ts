@@ -75,6 +75,19 @@ export type ChannelProviderSendResult =
       safeCode: string;
     }>;
 
+export interface ChannelOutboundMediaResolver {
+  /**
+   * Resolve an already-authorized opaque platform file reference to a provider
+   * media/file id. Implementations own upload/fetch authorization and secrets.
+   */
+  resolve(input: {
+    readonly channel: MessagingChannel;
+    readonly accountId: ChannelAccountId;
+    readonly fileRef: string;
+    readonly mimeType: string;
+  }): Promise<{ readonly providerFileId: string }>;
+}
+
 export interface ChannelProviderSender {
   send(request: ChannelOutboundRequest): Promise<ChannelProviderSendResult>;
 }
