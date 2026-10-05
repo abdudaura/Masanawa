@@ -28,3 +28,12 @@ export {
   type ChannelProviderSendResult,
   type DurableChannelOutbox,
 } from "./outbound.js";
+
+export {
+  createChannelDeliveryReconciler,
+  normalizeChannelDeliveryBinding,
+  type ChannelDeliveryBinding,
+  type ChannelDeliveryObservation,
+  type DurableChannelDeliveryStore,
+  type ResolvedChannelDelivery,
+} from "./delivery-reconciliation.js";
