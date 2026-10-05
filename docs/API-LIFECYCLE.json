@@ -13,6 +13,15 @@
     "operationalUnversionedPaths": [
       "/healthz",
       "/readyz"
+    ],
+    "compatibilityUnversionedPrefixes": [
+      "/agent",
+      "/auth",
+      "/billing/return",
+      "/creator",
+      "/fulfillments",
+      "/offers",
+      "/quotes"
     ]
   },
   "deprecations": []
