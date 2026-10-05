@@ -10,7 +10,7 @@ export function createPlatformCreditRecipientResolver(input: {
 }): CreditRecipientResolver {
   const now = input.now ?? (() => new Date().toISOString());
 
-  return Object.freeze({
+  return Object.freeze<CreditRecipientResolver>({
     async resolve(request) {
       const raw = request.recipient.trim();
       let normalized;
