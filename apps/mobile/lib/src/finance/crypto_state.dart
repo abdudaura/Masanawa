@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../agents/masanawa_transport.dart';
 import '../core/providers.dart';
-import '../state/agent_connection_state.dart';
 import 'crypto_models.dart';
 import 'crypto_transport.dart';
 
@@ -60,14 +59,10 @@ class CryptoWalletSnapshot {
 }
 
 final cryptoWalletTransportProvider = Provider<CryptoWalletTransport>((ref) {
-  final connection = ref.watch(agentConnectionProvider);
   final api = ref.watch(apiClientProvider);
-  final baseUrl = connection.baseUrl.trim().isNotEmpty
-      ? connection.baseUrl
-      : kAgentBaseUrl;
   return MasanawaCryptoWalletTransport(
     dio: api.dio,
-    baseUrl: baseUrl,
+    baseUrl: kAgentBaseUrl,
   );
 });
 
