@@ -662,35 +662,68 @@ export function createTwinProductionRuntime(input: {
     readonly characterId: CharacterId | null;
     readonly amountCredits: number;
   }) {
-    let receipt = await input.economy.readCreditOperation({
+    const existing = await input.economy.readCreditOperation({
       tenantId: request.tenantId,
       requestId: request.requestId,
     });
-    if (!receipt) {
-      receipt = await input.economy.recordCreditOperation({
+    if (existing) {
+      if (
+        existing.kind !== request.kind ||
+        existing.senderUserId !== request.senderUserId ||
+        existing.recipientUserId !== request.recipientUserId ||
+        existing.amountCredits !== request.amountCredits ||
+        existing.characterId !== request.characterId
+      ) {
+        throw new Error("Credit operation idempotency conflict");
+      }
+      await input.commerce.postTransfer({
+        schemaVersion: 1,
+        ledgerEntryId: existing.ledgerEntryId,
         tenantId: request.tenantId,
-        requestId: request.requestId,
-        kind: request.kind,
-        senderUserId: request.senderUserId,
-        recipientUserId: request.recipientUserId,
-        characterId: request.characterId,
+        debit: account(request.tenantId, "customer-credit", request.senderUserId, null),
+        credit: account(request.tenantId, "customer-credit", request.recipientUserId, null),
         amountCredits: request.amountCredits,
-        ledgerEntryId: createCanonicalId("ledger-entry"),
-        completedAt: at(),
+        reason: "adjustment",
+        quoteId: null,
+        fulfillmentId: null,
+        createdAt: existing.completedAt as never,
+      });
+      return Object.freeze({ receipt: existing, replayed: true as const });
+    }
+
+    const planKey = `credit:${request.kind}:${request.requestId}`;
+    let plan = await input.economy.readLedgerPlan({
+      tenantId: request.tenantId,
+      planKey,
+    });
+    if (!plan) {
+      plan = await input.economy.putLedgerPlan({
+        tenantId: request.tenantId,
+        plan: Object.freeze({
+          planKey,
+          entries: Object.freeze([
+            Object.freeze({
+              ledgerEntryId: createCanonicalId("ledger-entry"),
+              role: "credit-move",
+              amountCredits: request.amountCredits,
+            }),
+          ]),
+          createdAt: at(),
+        }),
       });
     }
+    const entry = plan.entries[0];
     if (
-      receipt.kind !== request.kind ||
-      receipt.senderUserId !== request.senderUserId ||
-      receipt.recipientUserId !== request.recipientUserId ||
-      receipt.amountCredits !== request.amountCredits ||
-      receipt.characterId !== request.characterId
+      !entry ||
+      entry.role !== "credit-move" ||
+      entry.amountCredits !== request.amountCredits
     ) {
-      throw new Error("Credit operation idempotency conflict");
+      throw new Error("Credit operation ledger plan conflict");
     }
+
     await input.commerce.postTransfer({
       schemaVersion: 1,
-      ledgerEntryId: receipt.ledgerEntryId,
+      ledgerEntryId: entry.ledgerEntryId,
       tenantId: request.tenantId,
       debit: account(request.tenantId, "customer-credit", request.senderUserId, null),
       credit: account(request.tenantId, "customer-credit", request.recipientUserId, null),
@@ -698,9 +731,21 @@ export function createTwinProductionRuntime(input: {
       reason: "adjustment",
       quoteId: null,
       fulfillmentId: null,
-      createdAt: receipt.completedAt as never,
+      createdAt: plan.createdAt as never,
     });
-    return receipt;
+
+    const receipt = await input.economy.recordCreditOperation({
+      tenantId: request.tenantId,
+      requestId: request.requestId,
+      kind: request.kind,
+      senderUserId: request.senderUserId,
+      recipientUserId: request.recipientUserId,
+      characterId: request.characterId,
+      amountCredits: request.amountCredits,
+      ledgerEntryId: entry.ledgerEntryId,
+      completedAt: plan.createdAt,
+    });
+    return Object.freeze({ receipt, replayed: false as const });
   }
 
   const creditTransfer = createCreditTransferService({
@@ -728,7 +773,7 @@ export function createTwinProductionRuntime(input: {
     },
     executor: {
       async execute(request) {
-        const receipt = await executeCreditMove({
+        const { receipt } = await executeCreditMove({
           tenantId: request.tenantId as TenantId,
           requestId: request.requestId,
           kind: "transfer",
@@ -775,7 +820,7 @@ export function createTwinProductionRuntime(input: {
     },
     executor: {
       async execute(request) {
-        const receipt = await executeCreditMove({
+        const { receipt, replayed } = await executeCreditMove({
           tenantId: request.tenantId as TenantId,
           requestId: request.requestId,
           kind: "gift",
@@ -784,7 +829,7 @@ export function createTwinProductionRuntime(input: {
           characterId: request.recipientCharacterId as CharacterId,
           amountCredits: request.amountCredits,
         });
-        await input.events.append({
+        if (!replayed) await input.events.append({
           tenantId: request.tenantId as TenantId,
           payload: {
             eventType: "twin.gift.completed",
