@@ -6,9 +6,23 @@ import {
   verifyFlutterwaveV3Webhook,
   type BillingFulfillmentRecord,
 } from "@masanawa/providers";
-import type { ProviderWebhookRepository } from "@masanawa/postgres";
 import type { BillingFulfillmentStore } from "@masanawa/providers";
-import type { FinancialAuthorizer } from "./financial_service.js";
+
+export interface BillingFinancialAuthorizer {
+  authorize(input: Readonly<{
+    authorizationHeader: string | undefined;
+  }>): Promise<Readonly<{ tenantId: string; userId: string }>>;
+}
+
+export interface BillingWebhookAdmissionRepository {
+  admitProviderWebhook(input: Readonly<{
+    provider: string;
+    fingerprint: string;
+    eventKey: string;
+    receivedAt: string;
+    payload: Readonly<Record<string, unknown>>;
+  }>): Promise<Readonly<{ duplicate: boolean }>>;
+}
 
 export interface BillingFinancialService {
   listCategories(input: Readonly<{ authorizationHeader: string | undefined; signal?: AbortSignal }>): Promise<unknown>;
@@ -71,8 +85,8 @@ function referenceFromWebhook(payload: Readonly<Record<string, unknown>>): strin
 
 export function createBillingFinancialService(input: Readonly<{
   billingStore: (identity: Readonly<{ tenantId: string; userId: string }>) => BillingFulfillmentStore;
-  webhookRepository: ProviderWebhookRepository;
-  authorizer: FinancialAuthorizer;
+  webhookRepository: BillingWebhookAdmissionRepository;
+  authorizer: BillingFinancialAuthorizer;
   flutterwaveSecretKey: string;
   flutterwaveWebhookHash: string;
   flutterwaveWebhookUrl: string;
