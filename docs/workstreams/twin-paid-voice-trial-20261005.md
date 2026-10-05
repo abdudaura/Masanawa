@@ -83,3 +83,8 @@ CI:
 Integration rule:
 A Live token must not be minted for paid twin voice until a valid trial/paid admission
 exists. Client duration is never canonical billing evidence.
+
+
+## Local verification
+
+Local strict TypeScript verification: `trial.ts`, `voice-product.ts`, and `voice-settlement.ts` compile cleanly with `tsc --strict --noEmit` in isolation.
