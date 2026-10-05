@@ -72,4 +72,13 @@ describe("paid feature trial policy", () => {
     expect(decision.eligible).toBe(false);
     expect(decision.reason).toBe("expired");
   });
+  it("caps the default owner-access trial at one completed session", () => {
+    const policy = defaultPaidFeatureTrialPolicy(
+      "owner-access",
+      "2026-10-05T08:00:00Z",
+    );
+    expect(policy.durationDays).toBe(7);
+    expect(policy.maxUnits).toBe(1);
+  });
+
 });
