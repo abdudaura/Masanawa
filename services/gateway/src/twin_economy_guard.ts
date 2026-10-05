@@ -38,7 +38,7 @@ export function createTwinEconomyGuardService(input: {
   readonly policies: TwinEconomyGuardPolicyPort;
   readonly history: TwinEconomyGuardHistoryPort;
 }): TwinEconomyGuardService {
-  return Object.freeze({
+  return Object.freeze<TwinEconomyGuardService>({
     async preflight(request) {
       const [policy, counts] = await Promise.all([
         input.policies.readPolicy({
