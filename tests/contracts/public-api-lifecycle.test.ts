@@ -37,6 +37,7 @@ interface ApiLifecycle {
     readonly currentMajor: number;
     readonly supportedMajors: readonly number[];
     readonly operationalUnversionedPaths: readonly string[];
+    readonly compatibilityUnversionedPrefixes: readonly string[];
   };
   readonly deprecations: readonly ApiDeprecation[];
 }
@@ -135,6 +136,15 @@ describe("public API lifecycle", () => {
       "/healthz",
       "/readyz",
     ]);
+    expect(lifecycle.http.compatibilityUnversionedPrefixes).toEqual([
+      "/agent",
+      "/auth",
+      "/billing/return",
+      "/creator",
+      "/fulfillments",
+      "/offers",
+      "/quotes",
+    ]);
   });
 
   it("uses SemVer metadata and root-only exports for reusable workspaces", () => {
@@ -195,6 +205,7 @@ describe("public API lifecycle", () => {
     const supported = new Set(
       lifecycle.http.supportedMajors.map((major) => `/v${major}`),
     );
+    const compatibility = lifecycle.http.compatibilityUnversionedPrefixes;
     const offenders: string[] = [];
 
     for (const file of sourceFiles(path.resolve("services"))) {
@@ -204,6 +215,9 @@ describe("public API lifecycle", () => {
       )) {
         const route = match[1]!;
         if (operational.has(route)) continue;
+        if (compatibility.some(
+          (prefix) => route === prefix || route.startsWith(`${prefix}/`),
+        )) continue;
 
         const valid = [...supported].some(
           (prefix) => route === prefix || route.startsWith(`${prefix}/`),
