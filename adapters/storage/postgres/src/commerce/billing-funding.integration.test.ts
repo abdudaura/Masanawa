@@ -356,8 +356,9 @@ describeDatabase("billing NGN funding PostgreSQL acceptance", () => {
         claimedAt: new Date().toISOString(),
       }),
     ]);
-    expect(claimedA.state).toBe("refund-dispatching");
-    expect(claimedB.state).toBe("refund-dispatching");
+    expect(claimedA.quote.state).toBe("refund-dispatching");
+    expect(claimedB.quote.state).toBe("refund-dispatching");
+    expect([claimedA.claimed,claimedB.claimed].sort()).toEqual([false,true]);
 
     const submitted = await f.repository.recordRefundInitiated({
       tenantId: f.tenantId,
