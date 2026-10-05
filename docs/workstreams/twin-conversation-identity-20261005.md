@@ -23,4 +23,21 @@ The customer must always be able to distinguish:
 
 No AI output may be visually presented as if the human personally authored it.
 
-Status: implementation started 2026-10-05.
+Status: isolated identity UI primitive complete; shared chat integration pending.
+
+Implemented:
+- AI Twin presence state;
+- real Human Owner presence state;
+- explicit explanatory copy in each state;
+- visually distinct AI/Owner badge;
+- widget tests for both identities.
+
+Not yet integrated:
+- ai_chat header/composer surface;
+- real owner session presence events;
+- owner join/leave runtime;
+- shared router/chat integration.
+
+Invariant:
+AI-generated messages must never be presented as if the human owner personally authored
+them; switching to Owner state requires actual verified human presence.
