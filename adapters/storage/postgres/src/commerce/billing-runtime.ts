@@ -64,7 +64,7 @@ export function createPostgresBillingFulfillmentStore(
   identity: Readonly<{ tenantId: string; userId: string }>,
 ): BillingFulfillmentStore {
   return Object.freeze({
-    async createIfAbsent(input) {
+    async createIfAbsent(input: BillingFulfillmentRecord) {
       return withTransaction(pool, async (client) => {
         const inserted = await client.query<BillingFulfillmentRow>(
           `INSERT INTO commerce.billing_fulfillments(
@@ -115,7 +115,7 @@ export function createPostgresBillingFulfillmentStore(
       }, { isolation: "serializable" });
     },
 
-    async read(reference) {
+    async read(reference: string) {
       const normalized = reference.trim();
       if (!normalized || normalized.length > 128) {
         throw new TypeError("financial.billing.fulfillment_reference_invalid");
@@ -130,7 +130,7 @@ export function createPostgresBillingFulfillmentStore(
       }, { isolation: "repeatable read", readOnly: true });
     },
 
-    async compareAndSet(expectedRevision,next) {
+    async compareAndSet(expectedRevision: number, next: BillingFulfillmentRecord) {
       if (
         !Number.isSafeInteger(expectedRevision) ||
         expectedRevision < 1 ||
@@ -203,7 +203,7 @@ export function createPostgresBillingWebhookRepository(
   pool: Pool,
 ): BillingWebhookAdmissionRepository {
   return Object.freeze({
-    async admitProviderWebhook(input) {
+    async admitProviderWebhook(input: Parameters<BillingWebhookAdmissionRepository["admitProviderWebhook"]>[0]) {
       const provider = input.provider.trim();
       const fingerprint = input.fingerprint.trim();
       const eventKey = input.eventKey.trim();
