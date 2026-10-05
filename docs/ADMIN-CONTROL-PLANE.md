@@ -46,8 +46,9 @@ Initial decision flow:
 5. the current Ops admin-action broker can execute a bounded allowlist of admitted read-only actions through canonical admin services;
 6. write requests create/reuse an idempotent prepared Operation plus exact-bound one-time Security approval tied to the Gwani AgentRun and arguments fingerprint;
 7. the signed-in canonical operator can explicitly approve or deny the pending approval from the mobile admin app;
-8. approval still does not equal execution: the approved request must replay through the same Operation and canonical command before any side effect occurs;
-9. canonical command/Operation/provider/reconciliation evidence returns to Gwani for explanation to the operator.
+8. approval still does not itself cause a side effect: an exact replay of the same AgentRun/action/arguments/idempotency identity consumes the allow-once approval, progresses the same Operation through `authorized` and `dispatching`, and only then invokes the existing canonical command;
+9. successful local canonical writes progress the Operation to `succeeded`; ambiguous command failures move it to `unknown` so they are reconciled instead of automatically repeated;
+10. canonical command/Operation/provider/reconciliation evidence returns to Gwani for explanation to the operator.
 
 The broker never derives authority from JEV output. JEV may influence routing/escalation only; capability admission remains deterministic.
 
@@ -55,8 +56,8 @@ The broker never derives authority from JEV output. JEV may influence routing/es
 
 These are legitimate admin features, but they require a canonical command/use-case contract rather than a direct SQL mutation:
 
-- approved Gwani action replay/consumption through the exact bound Operation and canonical write command; approve/deny is now implemented with the real operator Principal;
-- reconciliation check/retry/resolve actions through Operation/Reconciliation APIs;
+- Gateway Tool integration so a live Gwani AgentRun can call the Ops action broker with its exact `agentRunId` and idempotency identity; the broker-side approved replay/consumption boundary is now implemented;
+- reconciliation check/retry/resolve actions through Operation/Reconciliation APIs, including explicit recovery for admin Operations left `unknown` after ambiguous dispatch;
 - provider credential rotate/health-test without exposing credential material; revocation is already implemented canonically;
 - World restart and governed canon-event administration; pause/recover is already implemented canonically;
 - Memory correction/tombstone/purge tools with scope/privacy authorization;
