@@ -82,4 +82,20 @@ describe("twin economy events", () => {
       }),
     ).toThrow("raw conversation");
   });
+  it("rejects contradictory event status", () => {
+    expect(() =>
+      createTwinEconomyEvent({
+        eventType: "twin.gift.completed",
+        ownerUserId: "user-owner",
+        characterId: "character-owner",
+        customerUserId: "user-customer",
+        referenceId: "gift-2",
+        visibility: "owner",
+        occurredAt: "2026-10-05T09:00:00Z" as never,
+        amountCredits: 100,
+        status: "refunded",
+      }),
+    ).toThrow("status does not match");
+  });
+
 });
