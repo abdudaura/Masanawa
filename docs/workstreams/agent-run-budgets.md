@@ -14,7 +14,9 @@ execution control.
 - `docs/workstreams/agent-run-budgets.md`
 - `packages/agents/src/execution-budget.ts`
 - `packages/agents/src/execution-budget.test.ts`
-- append-only export in `packages/agents/src/index.ts`
+- `packages/agents/src/execution-budget-partition.ts`
+- `packages/agents/src/execution-budget-partition.test.ts`
+- append-only exports in `packages/agents/src/index.ts`
 
 No Gateway/mobile/router/chat, billing/crypto/Commerce, provider adapter, storage,
 migration or deployment files are owned.
