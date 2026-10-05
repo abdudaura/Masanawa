@@ -36,6 +36,14 @@ export interface WorkflowResumeClock {
   now(): Instant;
 }
 
+export interface WorkflowPresentAuthorityValidator {
+  assertCurrent(input: {
+    readonly authority: AuthorityContext;
+    readonly run: WorkflowRun;
+    readonly at: Instant;
+  }): Promise<void>;
+}
+
 export type WorkflowResumeDisposition =
   | {
       readonly kind: "execute";
@@ -140,6 +148,7 @@ export function createWorkflowResumeService(input: {
   readonly runs: WorkflowRunRepository;
   readonly graphs: WorkflowGraphResolver;
   readonly approvals: WorkflowApprovalResolver;
+  readonly authority: WorkflowPresentAuthorityValidator;
   readonly clock: WorkflowResumeClock;
 }) {
   return Object.freeze({
@@ -160,12 +169,6 @@ export function createWorkflowResumeService(input: {
       });
 
       assertCheckpointMatchesRun(run, checkpoint);
-      await assertGraphCompatible({
-        authority: request.authority,
-        run,
-        checkpoint,
-        graphs: input.graphs,
-      });
 
       switch (run.state) {
         case "completed":
@@ -180,6 +183,11 @@ export function createWorkflowResumeService(input: {
               "Externally waiting Work requires a durable checkpoint before reconciliation",
             );
           }
+          await input.authority.assertCurrent({
+            authority: request.authority,
+            run,
+            at: input.clock.now(),
+          });
           return Object.freeze({
             kind: "reconcile-external",
             run,
@@ -193,7 +201,18 @@ export function createWorkflowResumeService(input: {
               "Approval-waiting Work requires a durable checkpoint",
             );
           }
+          await assertGraphCompatible({
+            authority: request.authority,
+            run,
+            checkpoint,
+            graphs: input.graphs,
+          });
           const at = input.clock.now();
+          await input.authority.assertCurrent({
+            authority: request.authority,
+            run,
+            at,
+          });
           const satisfied = await input.approvals.areSatisfied({
             authority: request.authority,
             run,
@@ -217,6 +236,11 @@ export function createWorkflowResumeService(input: {
             updatedAt: at,
             pendingApprovalIds: [],
           });
+          await input.authority.assertCurrent({
+            authority: request.authority,
+            run: resumed,
+            at: input.clock.now(),
+          });
           return Object.freeze({
             kind: "execute",
             run: resumed,
@@ -226,7 +250,18 @@ export function createWorkflowResumeService(input: {
         }
 
         case "queued": {
+          if (checkpoint !== null) {
+            throw conflict(
+              "workflows.resume_queued_checkpoint_unexpected",
+              "Queued Work cannot already have an execution checkpoint",
+            );
+          }
           const at = input.clock.now();
+          await input.authority.assertCurrent({
+            authority: request.authority,
+            run,
+            at,
+          });
           const running = await input.runs.transition({
             authority: request.authority,
             scope: request.scope,
@@ -235,11 +270,16 @@ export function createWorkflowResumeService(input: {
             to: "running",
             updatedAt: at,
           });
+          await input.authority.assertCurrent({
+            authority: request.authority,
+            run: running,
+            at: input.clock.now(),
+          });
           return Object.freeze({
             kind: "execute",
             run: running,
-            checkpoint,
-            resumeFrom: checkpoint === null ? "start" : "checkpoint",
+            checkpoint: null,
+            resumeFrom: "start",
           });
         }
 
@@ -251,6 +291,17 @@ export function createWorkflowResumeService(input: {
               reason: "running-without-checkpoint",
             });
           }
+          await assertGraphCompatible({
+            authority: request.authority,
+            run,
+            checkpoint,
+            graphs: input.graphs,
+          });
+          await input.authority.assertCurrent({
+            authority: request.authority,
+            run,
+            at: input.clock.now(),
+          });
           return Object.freeze({
             kind: "execute",
             run,
