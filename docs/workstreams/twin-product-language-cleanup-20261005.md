@@ -1,6 +1,6 @@
 # Twin product-language cleanup claim
 
-Status: active
+Status: ready for integration
 Owner/window: ChatGPT twin-transformation continuation
 Branch: `work/twin-product-language-cleanup-20261005`
 Base: `2bdd99908d94cc39ada639af1f21ebbdccb6bfe2`
@@ -38,3 +38,26 @@ This claim does not own:
 - qualifying purchases still preserve originating-Twin attribution and fallback execution;
 - internal reserve/settlement/Commerce ownership remains documented as infrastructure;
 - Gwani/Gwana remain platform/support Twins/Characters without privileged runtime paths.
+
+
+## Implementation handoff
+
+Updated canonical product language:
+- personal **Twin** is now the ordinary-user term; persisted `personal-clone` remains
+  explicitly internal compatibility/domain vocabulary;
+- mobile north star now names **My Twin / Explore / Activity / Wallet** as the root shell;
+- ordinary-user journeys no longer require enabling a commercial Skill;
+- purchase journeys no longer expose Agent Float or executor-capacity fallback;
+- originating-Twin attribution and configurable owner commission remain explicit;
+- internal Agent Float/reserves remain preserved inside Commerce ownership rather than
+  ordinary Wallet fields;
+- Gwani/Gwana remain normal platform/support Characters with no privileged runtime.
+
+Validation:
+- branch diff is exactly the three claimed documentation paths;
+- branch was 0 commits behind current `main` at verification;
+- targeted residual scan confirmed the replaced contradictory phrases
+  `commercial Skill`, `creator's clone`, `creator/reseller economics` and
+  `digital-twin/reseller product` no longer occur in these two canonical documents;
+- no code, migration, checksum, package export, Gateway/mobile path or deployment config
+  changed.
