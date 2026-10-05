@@ -612,7 +612,10 @@ export function createPostgresCryptoRepository(pool: Pool): CryptoRepository {
         if (!invoiceMatches || !priceMatches || !samePayment) {
           return updateIntentWithClient(client, {
             ...current,
-            status: "manual_review",
+            status:
+              current.status === "succeeded" || current.status === "refunded"
+                ? current.status
+                : "manual_review",
             updatedAt: event.observedAt,
           });
         }
