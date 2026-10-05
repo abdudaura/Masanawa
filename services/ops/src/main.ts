@@ -60,6 +60,10 @@ import {
   type SystemAdminWorldCommands,
 } from "./system_admin.js";
 import {
+  createAdminAgentDelegationService,
+  readAdminAgentDelegationConfig,
+} from "./admin_delegation.js";
+import {
   createOpsApp,
   type OpsAppOptions,
   type ReadinessCheck,
@@ -419,6 +423,7 @@ export async function startOpsService(
   const appFactory = options.appFactory ?? createOpsApp;
   const platformSessionAdminConfig = readPlatformSessionAdminAuthConfig(env);
   const bootstrapAdminConfig = readBootstrapAdminAuthConfig(env);
+  const adminAgentDelegationConfig = readAdminAgentDelegationConfig(env);
   const adminAuthorizer =
     options.agentAdminAuthorizer ??
     (platformSessionAdminConfig && database.platformSessions
@@ -429,6 +434,15 @@ export async function startOpsService(
       : bootstrapAdminConfig
         ? createBootstrapAdminAuthorizer(bootstrapAdminConfig)
         : undefined);
+
+  const composedAdminAgentDelegation =
+    options.appOptions?.adminAgentDelegation ??
+    (adminAuthorizer && adminAgentDelegationConfig
+      ? createAdminAgentDelegationService({
+          config: adminAgentDelegationConfig,
+          authorizer: adminAuthorizer,
+        })
+      : undefined);
 
   const composedAgentAdmin =
     options.appOptions?.agentAdmin ??
@@ -479,6 +493,9 @@ export async function startOpsService(
     app = appFactory({
       ...(options.appOptions ?? {}),
       ...(composedAgentAdmin ? { agentAdmin: composedAgentAdmin } : {}),
+      ...(composedAdminAgentDelegation
+        ? { adminAgentDelegation: composedAdminAgentDelegation }
+        : {}),
       ...(composedPlatformAdmin ? { platformAdmin: composedPlatformAdmin } : {}),
       ...(composedSystemAdmin ? { systemAdmin: composedSystemAdmin } : {}),
       readinessChecks: [
