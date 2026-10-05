@@ -25,4 +25,21 @@ approved simplified twin product architecture.
 
 The guard is additive and does not remove current legacy surfaces before their migration.
 
-Status: implementation started 2026-10-05.
+Status: guard implementation complete and locally verified.
+
+Implemented:
+- reusable changed-file architecture validator;
+- rejection of new human feed/posts/followers/likes screen subsystems;
+- rejection of second wallet/marketplace/clone-runtime/social packages/services;
+- rejection of Agent Float, SkillVersion, CharacterVersion, Workflow and Provider terms
+  inside new My Twin / Explore / Activity / Wallet consumer surfaces;
+- readable failure messages pointing developers back to canonical product docs;
+- Node test suite.
+
+Verification:
+- local `node --test scripts/twin-product-architecture-guard.test.mjs`
+- 5 tests passed, 0 failed.
+
+Not yet integrated:
+- CI changed-file collection/piping into this guard. That wiring belongs to the shared
+  CI/integration owner because package/workflow files are actively owned elsewhere.
