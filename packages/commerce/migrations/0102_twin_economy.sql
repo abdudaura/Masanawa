@@ -133,6 +133,7 @@ CREATE TABLE commerce.twin_voice_admissions (
   spend_cap_credits bigint NOT NULL CHECK (spend_cap_credits >= 0),
   reservation_ledger_entry_id text,
   admitted_at timestamptz NOT NULL,
+  started_at timestamptz,
   expires_at timestamptz NOT NULL,
   settled_at timestamptz,
   definition jsonb NOT NULL CHECK (jsonb_typeof(definition)='object'),
