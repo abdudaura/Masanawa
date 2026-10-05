@@ -1373,14 +1373,15 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       }
       return;
     }
+    final offer = quote;
     final accepted = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Talk to the owner'),
         content: Text(
-          quote!.isTrial
-              ? 'Your ${quote.trialDurationDays}-day trial covers this ${quote.durationMinutes}-minute owner voice request.'
-              : 'Request ${quote.durationMinutes} minutes with the real owner for ${quote.priceCredits} Credits. Funds are held until the session is completed; otherwise eligible refunds are returned.',
+          offer.isTrial
+              ? 'Your ${offer.trialDurationDays}-day trial covers this ${offer.durationMinutes}-minute owner voice request.'
+              : 'Request ${offer.durationMinutes} minutes with the real owner for ${offer.priceCredits} Credits. Funds are held until the session is completed; otherwise eligible refunds are returned.',
         ),
         actions: [
           TextButton(
