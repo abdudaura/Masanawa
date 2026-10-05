@@ -261,6 +261,77 @@ class _OperationsAdminPageState extends State<OperationsAdminPage> {
         reconciliation: await widget.api.reconciliationCases(),
       );
 
+  Future<void> _showReceipts(AdminOperation operation) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (context) => FractionallySizedBox(
+        heightFactor: 0.78,
+        child: SafeArea(
+          child: FutureBuilder<List<AdminExternalReceipt>>(
+            future: widget.api.operationReceipts(operation.operationId),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState != ConnectionState.done) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                      snapshot.error.toString(),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                );
+              }
+              final receipts = snapshot.data ?? const <AdminExternalReceipt>[];
+              return ListView(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                children: [
+                  Text(
+                    'External receipts',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${operation.kind} · ${shortId(operation.operationId)}',
+                    style: TextStyle(color: context.masanawa.textMuted),
+                  ),
+                  const SizedBox(height: 12),
+                  if (receipts.isEmpty)
+                    const Card(
+                      child: ListTile(
+                        title: Text('No external receipts recorded'),
+                      ),
+                    )
+                  else
+                    ...receipts.map(
+                      (receipt) => Card(
+                        child: ListTile(
+                          leading: const Icon(Icons.receipt_long_outlined),
+                          title: Text(
+                            '${receipt.provider} · ${receipt.normalizedStatus}',
+                          ),
+                          subtitle: Text(
+                            '${receipt.verificationMethod}\n'
+                            '${receipt.observedAt}'
+                            '${receipt.providerVersion == null ? '' : ' · ${receipt.providerVersion}'}',
+                          ),
+                          isThreeLine: true,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => AdminFuture<OperationsData>(
         future: _future,
@@ -279,6 +350,7 @@ class _OperationsAdminPageState extends State<OperationsAdminPage> {
                     padding: const EdgeInsets.all(16),
                     children: data.operations.map((operation) => Card(
                       child: ListTile(
+                        onTap: () => _showReceipts(operation),
                         leading: const Icon(Icons.sync_alt_outlined),
                         title: Text(operation.kind),
                         subtitle: Text(
@@ -286,7 +358,14 @@ class _OperationsAdminPageState extends State<OperationsAdminPage> {
                           '${operation.provider == null ? '' : ' · ${operation.provider}'}'
                           '${operation.terminalErrorCode == null ? '' : '\n${operation.terminalErrorCode}'}',
                         ),
-                        trailing: Chip(label: Text(operation.state)),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Chip(label: Text(operation.state)),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.chevron_right),
+                          ],
+                        ),
                       ),
                     )).toList(growable: false),
                   ),
