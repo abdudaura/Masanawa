@@ -389,6 +389,40 @@ class AdminOperation {
       );
 }
 
+class AdminExternalReceipt {
+  const AdminExternalReceipt({
+    required this.externalReceiptId,
+    required this.operationId,
+    required this.provider,
+    required this.normalizedStatus,
+    required this.observedAt,
+    required this.verificationMethod,
+    required this.providerVersion,
+    required this.createdAt,
+  });
+
+  final String externalReceiptId;
+  final String operationId;
+  final String provider;
+  final String normalizedStatus;
+  final String observedAt;
+  final String verificationMethod;
+  final String? providerVersion;
+  final String createdAt;
+
+  factory AdminExternalReceipt.fromJson(Map<String, dynamic> json) =>
+      AdminExternalReceipt(
+        externalReceiptId: json['externalReceiptId'] as String,
+        operationId: json['operationId'] as String,
+        provider: json['provider'] as String,
+        normalizedStatus: json['normalizedStatus'] as String,
+        observedAt: json['observedAt'] as String,
+        verificationMethod: json['verificationMethod'] as String,
+        providerVersion: json['providerVersion'] as String?,
+        createdAt: json['createdAt'] as String,
+      );
+}
+
 class AdminReconciliationCase {
   const AdminReconciliationCase({
     required this.reconciliationCaseId,
@@ -930,6 +964,20 @@ class AdminApi {
     );
     return _list(response.data)
         .map((item) => AdminOperation.fromJson(_map(item)))
+        .toList(growable: false);
+  }
+
+  Future<List<AdminExternalReceipt>> operationReceipts(
+    String operationId,
+  ) async {
+    final response = await _request(
+      () => _dio.get<dynamic>(
+        '/v1/admin/operations/${Uri.encodeComponent(operationId)}/receipts',
+        options: _auth,
+      ),
+    );
+    return _list(response.data)
+        .map((item) => AdminExternalReceipt.fromJson(_map(item)))
         .toList(growable: false);
   }
 
