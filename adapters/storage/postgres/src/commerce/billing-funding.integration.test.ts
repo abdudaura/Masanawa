@@ -148,6 +148,34 @@ describeDatabase("billing NGN funding PostgreSQL acceptance", () => {
     });
   });
 
+  it("moves verified unreserved funds into refund custody idempotently", async () => {
+    const f = await funded();
+    const first = await f.repository.requestFundedRefund({
+      tenantId: f.tenantId,
+      userId: f.userId,
+      quoteId: f.quote.quoteId,
+      quoteRevision: f.quote.revision,
+      requestedAt: new Date().toISOString(),
+    });
+    const replay = await f.repository.requestFundedRefund({
+      tenantId: f.tenantId,
+      userId: f.userId,
+      quoteId: f.quote.quoteId,
+      quoteRevision: f.quote.revision,
+      requestedAt: new Date().toISOString(),
+    });
+    expect(first).toMatchObject({
+      state: "refund-pending",
+      settlementState: "failed",
+      fulfillmentReference: null,
+    });
+    expect(replay.state).toBe("refund-pending");
+
+    await expect(f.repository.readByFulfillmentReference({
+      fulfillmentReference: `bill-${f.quote.quoteId}`,
+    })).resolves.toBeNull();
+  });
+
   it("keeps funding and bill provider references separate through settlement", async () => {
     const f = await funded();
     const fulfillmentReference = `bill-${f.quote.quoteId}`;
