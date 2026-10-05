@@ -15,7 +15,7 @@ The admin app is intended to replace the need for a desktop-only control surface
 | Agents | list and edit presentation, visibility, sort order | existing Agent admin capabilities |
 | Skills | catalog/readiness and per-Agent assignment | existing Skill admin capabilities |
 | Runtime | recent AgentRuns, bounded state filtering, failure and correlation trace | `agents.runs.read` |
-| Commerce | Offers, fulfillments and immutable ledger activity; Offer enable/disable creates a canonical new Offer revision | `commerce.read/write` |
+| Commerce | full Offer create/revise editor with SkillVersion binding, pricing/commission/region invariants and enable state; fulfillments and immutable ledger activity | `commerce.read/write` |
 | Operations | consequential Operation state/provider outcome plus safe external-receipt drill-down with payload material excluded | `operations.read` |
 | Reconciliation | unresolved/active reconciliation cases and safe-retry metadata | `reconciliation.read` |
 | Providers | encrypted credential reference metadata plus canonical revocation; never ciphertext/plaintext | `providers.credentials.read/write` |
@@ -33,7 +33,6 @@ The UI uses a responsive NavigationRail on wide/tablet screens and a NavigationD
 These are legitimate admin features, but they require a canonical command/use-case contract rather than a direct SQL mutation:
 
 - approval approve/deny/revoke, with a real operator Principal/approver identity;
-- Offer create/revise and richer catalog administration; enable/disable is already implemented through canonical Commerce revisions;
 - reconciliation check/retry/resolve actions through Operation/Reconciliation APIs;
 - provider credential rotate/health-test without exposing credential material; revocation is already implemented canonically;
 - World restart and governed canon-event administration; pause/recover is already implemented canonically;
