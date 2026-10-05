@@ -379,7 +379,7 @@ export function createPlatformSessionFinancialAuthorizer(input: Readonly<{
 }>): FinancialAuthorizer {
   const now = input.now ?? (() => new Date().toISOString());
   return Object.freeze({
-    async authorize(request: Parameters<FinancialAuthorizer["authorize"]>[0]) {
+    async authorize(request: Parameters<PlatformFinancialAuthorizer["authorize"]>[0]) {
       const token = bearer(request.authorizationHeader);
       if (!token) throw new Error("financial.auth.unauthorized");
       let accessHash: string;
