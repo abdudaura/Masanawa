@@ -104,6 +104,13 @@ function project(
 export function createTwinDirectoryService(input: {
   readonly authorizer: TwinDirectoryAuthorizer;
   readonly source: PublicTwinDirectorySource;
+  readonly visibility?: {
+    canDiscover(input: {
+      readonly tenantId: TenantId;
+      readonly userId: UserId;
+      readonly characterId: CharacterId;
+    }): Promise<boolean>;
+  };
 }): TwinDirectoryService {
   return Object.freeze<TwinDirectoryService>({
     async search(request) {
@@ -116,7 +123,21 @@ export function createTwinDirectoryService(input: {
         query: cleanQuery(request.query),
         limit: boundedLimit(request.limit),
       });
-      return Object.freeze(records.map((record) => project(authority, record)));
+      const visible = input.visibility
+        ? (await Promise.all(
+            records.map(async (record) => ({
+              record,
+              allowed: await input.visibility!.canDiscover({
+                tenantId: authority.tenantId,
+                userId: authority.userId,
+                characterId: record.characterId,
+              }),
+            })),
+          ))
+            .filter((entry) => entry.allowed)
+            .map((entry) => entry.record)
+        : records;
+      return Object.freeze(visible.map((record) => project(authority, record)));
     },
     async resolve(request) {
       const authority = await input.authorizer.authorize({
@@ -127,7 +148,18 @@ export function createTwinDirectoryService(input: {
         tenantId: authority.tenantId,
         publicId: cleanPublicId(request.publicId),
       });
-      return record ? project(authority, record) : null;
+      if (!record) return null;
+      if (
+        input.visibility &&
+        !(await input.visibility.canDiscover({
+          tenantId: authority.tenantId,
+          userId: authority.userId,
+          characterId: record.characterId,
+        }))
+      ) {
+        return null;
+      }
+      return project(authority, record);
     },
   });
 }
