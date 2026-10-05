@@ -40,7 +40,7 @@ export interface AgentAdminAuthority {
    * PlatformSession. Bootstrap-token authorization is intentionally anonymous
    * and must not be treated as an approver Principal.
    */
-  readonly operatorUserId: UserId | null;
+  readonly operatorUserId?: UserId | null;
 }
 
 export interface AgentAdminAuthorizer {
