@@ -288,6 +288,101 @@ describe("BillingFinancialService catalog authority", () => {
     }]);
   });
 
+  it("rejects a client category relabel at the funding boundary before provider dispatch", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const userId = createCanonicalId("user");
+    let paymentPosts = 0;
+    const transport: FlutterwaveBillsTransport = {
+      async request(request) {
+        if (request.method === "GET" && request.path === "/v3/billers/BIL119/items") {
+          return {
+            status: 200,
+            body: {
+              status: "success",
+              data: [{
+                biller_code: "BIL119",
+                item_code: "ITEM119",
+                name: "Provider item",
+                amount: "0",
+                currency: "NGN",
+                label_name: "Customer",
+              }],
+            },
+          };
+        }
+        if (request.method === "GET" && request.path === "/v3/top-bill-categories") {
+          return {
+            status: 200,
+            body: {
+              status: "success",
+              data: [{
+                code: "AIRTIME",
+                name: "Airtime",
+                description: "Airtime",
+                country_code: "NG",
+              }],
+            },
+          };
+        }
+        if (request.method === "GET" && request.path === "/v3/bills/AIRTIME/billers") {
+          return {
+            status: 200,
+            body: {
+              status: "success",
+              data: [{ biller_code: "BIL119", name: "Provider biller" }],
+            },
+          };
+        }
+        if (request.method === "POST") {
+          paymentPosts += 1;
+          throw new Error("provider dispatch must not happen");
+        }
+        throw new Error(`unexpected request: ${request.method} ${request.path}`);
+      },
+    };
+    const service = createBillingFinancialService({
+      billingStore: () => new MemoryStore(),
+      webhookRepository: {
+        async admitProviderWebhook() { return { duplicate: false }; },
+      },
+      authorizer: {
+        async authorize() { return { tenantId, userId }; },
+      },
+      flutterwaveSecretKey: "test-secret",
+      flutterwaveWebhookHash: "test-hash",
+      flutterwaveWebhookUrl: "https://example.com/webhooks/flutterwave",
+      providerClient: new FlutterwaveBillsClient({
+        secretKey: "test-secret",
+        transport,
+        country: "NG",
+      }),
+      billingFunding: {
+        async reserveConfirmedBill(input) {
+          if (input.categoryCode !== "UTILITYBILLS") {
+            throw new Error("financial.billing.quote_terms_mismatch");
+          }
+        },
+        async settleBill() {},
+      },
+    });
+
+    await expect(service.purchase({
+      authorizationHeader: "Bearer test",
+      requestId: "billing-request-category-tamper",
+      quoteId: "quote-bound-to-utility",
+      quoteRevision: 1,
+      categoryCode: "AIRTIME",
+      billerCode: "BIL119",
+      itemCode: "ITEM119",
+      itemName: "Tampered item",
+      customerId: "07010102053",
+      amount: "100",
+      catalogAmount: "100",
+    })).rejects.toThrow("financial.billing.quote_terms_mismatch");
+
+    expect(paymentPosts).toBe(0);
+  });
+
   it("never calls a provider without canonical verified funding and a confirmed quote", async () => {
     let calls = 0;
     const identity = {tenantId: createCanonicalId("tenant"), userId: createCanonicalId("user")};
