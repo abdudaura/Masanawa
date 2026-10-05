@@ -140,6 +140,7 @@ class _GatewayClient {
         throw const ApiException('Empty response from server');
       }
       await for (final line in bodyStream
+          .cast<List<int>>()
           .transform(utf8.decoder)
           .transform(const LineSplitter())) {
         final trimmed = line.trim();
@@ -165,6 +166,7 @@ class _GatewayClient {
       final bodyStream = res.data?.stream;
       if (bodyStream == null) throw const ApiException('Empty response from server');
       await for (final line in bodyStream
+          .cast<List<int>>()
           .transform(utf8.decoder)
           .transform(const LineSplitter())) {
         final value = line.trim();
