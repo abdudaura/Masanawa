@@ -141,7 +141,12 @@ export function normalizeTask(input: Task): Task {
     throw new TypeError("Task schema or state is invalid");
   }
   assertRevision(input.revision);
-  const scope = normalizeTaskScope(input);
+  const scope = normalizeTaskScope({
+    tenantId: input.tenantId,
+    userId: input.userId,
+    characterId: input.characterId,
+    relationshipId: input.relationshipId,
+  });
   const createdAt = toInstant(input.createdAt);
   const updatedAt = toInstant(input.updatedAt);
   const completedAt =
