@@ -227,6 +227,8 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       });
     };
 
+    app.get("/auth/capabilities", async () => auth.capabilities());
+
     app.post("/auth/otp", async (request, reply) => {
       try {
         const body = request.body as { phone?: unknown; email?: unknown };
