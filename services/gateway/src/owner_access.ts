@@ -172,7 +172,7 @@ export function createOwnerAccessService(input: {
   readonly quotes: OwnerAccessQuotePort;
   readonly requests: OwnerAccessRequestPort;
 }): OwnerAccessService {
-  return Object.freeze({
+  return Object.freeze<OwnerAccessService>({
     async quote(request) {
       const characterId = parseCanonicalId("character", request.characterId);
       const authority = await input.authorizer.authorize({
