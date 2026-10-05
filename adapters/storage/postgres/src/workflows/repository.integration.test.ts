@@ -371,6 +371,90 @@ describePostgres("PostgreSQL Work persistence", () => {
     ).rejects.toMatchObject({ code: "workflows.checkpoint_conflict" });
   });
 
+  it("atomically commits a checkpoint with an approval wait transition", async () => {
+    const f = await fixture();
+    const tasks = createPostgresTaskRepository(pool);
+    const runs = createPostgresWorkflowRunRepository(pool);
+    const taskId = createCanonicalId("task");
+    await tasks.create({
+      authority: f.authority,
+      task: {
+        schemaVersion: 1,
+        ...f.scope,
+        taskId,
+        title: "Approve purchase",
+        state: "running",
+        workflowRunId: null,
+        revision: 1,
+        createdAt: f.at,
+        updatedAt: f.at,
+        completedAt: null,
+        failureCode: null,
+      },
+    });
+    const workflowRunId = createCanonicalId("workflow-run");
+    const run = await runs.create({
+      authority: f.authority,
+      run: {
+        schemaVersion: 1,
+        ...f.scope,
+        workflowRunId,
+        workflowVersionId: createCanonicalId("workflow-version"),
+        taskId,
+        state: "running",
+        revision: 1,
+        checkpointRevision: 0,
+        pendingApprovalIds: [],
+        createdAt: f.at,
+        updatedAt: f.at,
+        completedAt: null,
+        failureCode: null,
+      },
+    });
+    const approvalId = createCanonicalId("approval");
+    const checkpoint = {
+      schemaVersion: 1 as const,
+      workflowRunId,
+      checkpointRevision: 1,
+      graphSignature: "graph:approval:v1",
+      committedState: { quote: "ready" },
+      executorState: { currentNodeId: "purchase", stepCount: 1 },
+      edgeState: {},
+      pendingApprovalIds: [approvalId],
+      createdAt: nowInstant(),
+    };
+
+    const paused = await runs.commitCheckpoint({
+      authority: f.authority,
+      scope: f.scope,
+      expectedRunRevision: run.revision,
+      checkpoint,
+      transition: {
+        to: "waiting_approval",
+        pendingApprovalIds: [approvalId],
+      },
+    });
+
+    expect(paused.state).toBe("waiting_approval");
+    expect(paused.checkpointRevision).toBe(1);
+    expect(paused.pendingApprovalIds).toEqual([approvalId]);
+
+    const restored = await createPostgresWorkflowRunRepository(pool).read({
+      authority: f.authority,
+      scope: f.scope,
+      workflowRunId,
+    });
+    const restoredCheckpoint =
+        await createPostgresWorkflowRunRepository(pool).readLatestCheckpoint({
+      authority: f.authority,
+      scope: f.scope,
+      workflowRunId,
+    });
+    expect(restored.state).toBe("waiting_approval");
+    expect(restoredCheckpoint?.pendingApprovalIds).toEqual([approvalId]);
+    expect(restoredCheckpoint?.committedState).toEqual({ quote: "ready" });
+  });
+
   it("revalidates current policy before reads and transitions", async () => {
     const f = await fixture();
     const tasks = createPostgresTaskRepository(pool);
