@@ -481,6 +481,23 @@ describeDatabase("crypto conversion and payout fee PostgreSQL acceptance", () =>
       network: "tron",
     })).toBe("21.234567");
 
+    await expect(f.repository.applyProviderPaymentEvent({
+      tenantId: f.tenantId,
+      userId: f.userId,
+      event: {
+        ...finished,
+        outcomeAmount: "1.234568",
+        payloadHash: createHash("sha256").update("fiat-finished-conflict").digest("hex"),
+        observedAt: instant(21),
+      },
+    })).rejects.toThrow("crypto.buy.terminal_conflict");
+    expect(await f.repository.readBalance({
+      tenantId: f.tenantId,
+      userId: f.userId,
+      asset: "USDTTRC20",
+      network: "tron",
+    })).toBe("21.234567");
+
     const refunded = await f.repository.applyProviderPaymentEvent({
       tenantId: f.tenantId,
       userId: f.userId,
