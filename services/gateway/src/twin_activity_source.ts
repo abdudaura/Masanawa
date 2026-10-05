@@ -118,7 +118,9 @@ function mapEvent(event: TwinEconomyActivityEvent): TwinActivityRecord | null {
         characterId: event.characterId as never,
         kind: "owner-request",
         status:
-          event.eventType === "twin.owner-access.requested"
+          event.eventType === "twin.owner-access.requested" ||
+          event.eventType === "twin.owner-access.accepted" ||
+          event.eventType === "twin.owner-access.scheduled"
             ? "pending"
             : event.eventType === "twin.owner-access.refunded"
               ? "refunded"
