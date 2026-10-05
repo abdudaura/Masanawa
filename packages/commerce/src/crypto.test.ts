@@ -66,7 +66,51 @@ describe("crypto intent normalization", () => {
       providerConversionId: null,
       providerTargetAmount: "1",
       status: "succeeded",
-    })).toThrow("crypto.provider_conversion.unexpected");
+    })).toThrow("crypto.provider_target_amount.unexpected");
+  });
+
+  it("normalizes a hosted fiat Buy only with paired invoice evidence and exact settlement", () => {
+    const purchase: CryptoIntent = {
+      ...base,
+      operation: "buy",
+      asset: "NGN",
+      network: null,
+      amount: "1500.00",
+      targetAsset: "USDTTRC20",
+      targetNetwork: "tron",
+      providerPaymentId: "fiat-payment-1",
+      providerPayoutId: null,
+      providerInvoiceId: "invoice-1",
+      checkoutUrl: "https://nowpayments.io/payment/?iid=invoice-1",
+      providerConversionId: null,
+      providerTargetAmount: "1.234567000000000001",
+      payAddress: null,
+      providerPayAmount: null,
+      status: "succeeded",
+    };
+    expect(normalizeCryptoIntent(purchase)).toMatchObject({
+      operation: "buy",
+      asset: "NGN",
+      network: null,
+      amount: "1500",
+      targetAsset: "USDTTRC20",
+      targetNetwork: "tron",
+      providerInvoiceId: "invoice-1",
+      checkoutUrl: "https://nowpayments.io/payment/?iid=invoice-1",
+      providerTargetAmount: "1.234567000000000001",
+    });
+    expect(() => normalizeCryptoIntent({
+      ...purchase,
+      providerInvoiceId: null,
+    })).toThrow("crypto.provider_invoice.incomplete");
+    expect(() => normalizeCryptoIntent({
+      ...purchase,
+      checkoutUrl: "http://example.com/checkout",
+    })).toThrow("crypto.checkout_url.insecure");
+    expect(() => normalizeCryptoIntent({
+      ...purchase,
+      targetAsset: null,
+    })).toThrow("crypto.buy.target.required");
   });
 
   it("requires payout fee amount and payer to be complete and withdrawal-scoped", () => {
