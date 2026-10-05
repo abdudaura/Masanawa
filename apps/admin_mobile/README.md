@@ -13,7 +13,7 @@ Android application id: `ng.masanawa.admin`.
 - Runtime — recent AgentRuns, failures and trace correlation.
 - Commerce — Offers, fulfillments and ledger activity.
 - Operations — consequential Operations and reconciliation cases.
-- Providers — encrypted credential metadata only; never plaintext/ciphertext.
+- Providers — encrypted credential metadata and canonical revocation only; never plaintext/ciphertext.
 - System — Memory/extraction health, inbox/outbox recovery queues, Worlds and approval metadata.
 - Modules — readiness map for Channels, Devices, Workflows, Social/Studio, Plugins and Agent Phone as their canonical contracts land.
 - Audit — security-safe audit metadata.
