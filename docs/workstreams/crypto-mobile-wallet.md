@@ -43,3 +43,25 @@ No end-user payout verification-code endpoint is used.
 ## Auth/router coordination update — 2026-10-05
 
 PR #128 owns production authentication and `app_router.dart`. This branch has reverted its router file exactly to `main` and no longer depends on a `/wallet` route. The Wallet entry point lives only in the signed-in chat list and pushes `CryptoWalletScreen` locally. Finance transport uses the normal `ApiClient` session bearer/interceptor; it does not read or store any Agent/Alpha/developer token.
+
+## Hosted Buy mobile checkpoint — 2026-10-05
+
+The owned Wallet surface now implements the real hosted fiat Buy journey. Buy is
+enabled only when the Gateway reports `fiatOnRamp=true`, at least one fiat
+currency and a qualified settlement provider code. The app creates one canonical
+purchase request, opens only the HTTPS provider checkout URL with `url_launcher`,
+and never receives merchant credentials or payout verification codes.
+
+After checkout opens, returning users can immediately choose **Check status**. The
+controller calls the canonical purchase refresh endpoint, merges the refreshed intent
+into Activity, refreshes the affected balance after succeeded/refunded settlement, and
+shows the exact provider-evidenced crypto amount on success. Pending Buy rows retain
+their Activity refresh action, so a failed browser launch or later reconciliation does
+not require creating a duplicate purchase. Existing Activity rendering displays exact
+`providerTargetAmount` when settlement succeeds.
+
+This branch continues to use `apiClientProvider.dio` with no developer-token
+reader or storage. PR #128 remains the owner of the normal production session
+interceptor/router and PR #100 remains the owner of shared Gateway financial route
+composition; neither owner's files were edited here.
+
