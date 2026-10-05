@@ -39,6 +39,30 @@ work/task store, or user-visible "research/billing/document subagents" in place 
 single Gwani/Gwana/twin relationship.
 
 
+
+### Durable Work projection — merged 2026-10-05
+
+PR #151 merged at `dca4fc5ec9b071dc91969a6ff37827697fa09434`.
+
+Implemented:
+- admitted text/media/media-set turns now cross the `AgentHarness` boundary through the
+  strategy compatibility adapter;
+- harness progress callbacks project to durable `work.updated` shell events;
+- mobile chat creates a stable Work recovery card when a progress event arrives without
+  an existing assistant narration and updates it in place by `referenceId`;
+- TaskId is preferred for Work identity, then WorkflowRunId, then AgentRunId;
+- Work status labels are concise and user-facing;
+- Gateway and mobile regression coverage was added for progress projection and replay.
+
+Critical boundary: this is **projection + execution seam**, not complete durable workflow
+execution. `packages/workflows` is still a placeholder; canonical Task/Workflow IDs exist,
+but Task lifecycle, WorkflowRun checkpoints, restart/resume persistence and HITL checkpoint
+storage are not yet implemented. No window may claim service-restart-safe Work until that
+canonical runtime and PostgreSQL persistence are implemented and verified.
+
+Next dependency: implement `@masanawa/workflows` canonical Task/WorkflowRun lifecycle and
+repository boundary, then durable PostgreSQL checkpoints and resume/revalidation.
+
 ## Core teaching and ownership checkpoint — 2026-10-04
 
 Teaching is required Core: detailed adaptive lessons across topics, worked examples,
