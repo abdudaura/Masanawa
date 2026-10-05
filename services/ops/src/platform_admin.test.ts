@@ -74,6 +74,76 @@ describe("platform admin projections", () => {
     expect("setUserState" in service).toBe(false);
   });
 
+  it("tenant-scopes canonical Offer revisions and preserves preconditions", async () => {
+    const seen: string[] = [];
+    const calls: unknown[] = [];
+    const service = createPlatformAdminService({
+      database: { async query() { return { rows: [] }; } } as unknown as PlatformAdminQuery,
+      authorizer: authorizer(seen),
+      offerCommands: {
+        async setEnabled() {
+          throw new Error("not used");
+        },
+        async saveRevision(input) {
+          calls.push(input);
+          return {
+            offerId: "offer_00000000-0000-4000-8000-000000000010",
+            key: input.key,
+            revision: 1,
+            title: input.title,
+            description: input.description,
+            skillVersionId: input.skillVersionId,
+            priceCredits: input.priceCredits,
+            fulfillmentReserveCredits: input.fulfillmentReserveCredits,
+            creatorCommissionCredits: input.creatorCommissionCredits,
+            fallbackCommissionCredits: input.fallbackCommissionCredits,
+            platformMarginCredits: input.platformMarginCredits,
+            regions: input.regions,
+            enabled: input.enabled,
+            updatedAt: "2026-10-05T00:00:00.000Z",
+          };
+        },
+      },
+    });
+
+    await service.saveOfferRevision({
+      authorizationHeader: "Bearer operator",
+      offerId: null,
+      expectedRevision: null,
+      key: "airtime.ng",
+      title: "Airtime",
+      description: "Buy airtime",
+      skillVersionId:
+        "skill-version_00000000-0000-4000-8000-000000000011",
+      priceCredits: 100,
+      fulfillmentReserveCredits: 70,
+      creatorCommissionCredits: 20,
+      fallbackCommissionCredits: 10,
+      platformMarginCredits: 10,
+      regions: ["NG"],
+      enabled: true,
+    });
+
+    expect(seen).toEqual(["commerce.write"]);
+    expect(calls).toEqual([{
+      tenantId,
+      offerId: null,
+      expectedRevision: null,
+      key: "airtime.ng",
+      title: "Airtime",
+      description: "Buy airtime",
+      skillVersionId:
+        "skill-version_00000000-0000-4000-8000-000000000011",
+      priceCredits: 100,
+      fulfillmentReserveCredits: 70,
+      creatorCommissionCredits: 20,
+      fallbackCommissionCredits: 10,
+      platformMarginCredits: 10,
+      regions: ["NG"],
+      enabled: true,
+    }]);
+  });
+
   it("tenant-scopes canonical external receipt drill-downs", async () => {
     const seen: string[] = [];
     const receiptCalls: Array<{ tenantId: TenantId; operationId: string }> = [];
