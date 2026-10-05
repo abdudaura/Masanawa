@@ -475,7 +475,6 @@ describe("financial service recovery and admission", () => {
     );
     const recoveredPayload = {
       payment_id: "fiat-payment-recovered",
-      invoice_id: "invoice-1",
       order_id: tenantId+"."+requestId,
       payment_status: "finished",
       price_amount: "1500",
@@ -517,7 +516,8 @@ describe("financial service recovery and admission", () => {
     expect(fetch.mock.calls.some((call) => {
       const url = new URL(String(call[0]));
       return url.pathname.endsWith("/payment/") &&
-        url.searchParams.get("limit") === "100";
+        url.searchParams.get("limit") === "100" &&
+        url.searchParams.get("invoiceid") === "invoice-1";
     })).toBe(true);
   });
 
