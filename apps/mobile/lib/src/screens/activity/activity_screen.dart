@@ -89,11 +89,12 @@ class ActivityScreen extends ConsumerWidget {
       context: context,
       builder: (dialogContext) {
         final trial = request.chargeMode == 'trial';
+        final priceLabel =
+            trial ? 'trial' : '${request.priceCredits} Credits';
         return AlertDialog(
           title: const Text('Talk-to-owner request'),
           content: Text(
-            '${request.durationMinutes} minutes · '
-            '${trial ? 'trial' : '${request.priceCredits} Credits'}\n'
+            '${request.durationMinutes} minutes · $priceLabel\n'
             '${_stateLabel(request.state)}',
           ),
           actions: [
