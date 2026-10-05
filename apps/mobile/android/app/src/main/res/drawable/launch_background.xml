@@ -2,8 +2,11 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@color/masanawa_launch_background" />
     <item>
-        <bitmap
-            android:gravity="center"
-            android:src="@drawable/android12splash" />
+        <bitmap android:gravity="center" android:src="@android:color/transparent" />
     </item>
+    <item
+        android:width="96dp"
+        android:height="96dp"
+        android:gravity="center"
+        android:drawable="@drawable/masanawa_splash_mark" />
 </layer-list>
