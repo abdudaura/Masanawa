@@ -84,6 +84,66 @@ function parseCapabilities(value: unknown): readonly AgentAdminCapability[] {
   return Object.freeze(output.sort());
 }
 
+
+export type AdminDelegatedActionRisk =
+  | "read-only"
+  | "low"
+  | "consequential"
+  | "restricted";
+
+export interface AdminDelegationDecision {
+  readonly allowed: boolean;
+  readonly requiresApproval: boolean;
+  readonly reason: string;
+}
+
+export function evaluateAdminAgentDelegation(input: {
+  readonly delegate: AdminAgentDelegate;
+  readonly capability: AgentAdminCapability;
+  readonly risk: AdminDelegatedActionRisk;
+}): AdminDelegationDecision {
+  if (!input.delegate.enabled) {
+    return Object.freeze({
+      allowed: false,
+      requiresApproval: false,
+      reason: "delegate-disabled",
+    });
+  }
+  if (!input.delegate.capabilities.includes(input.capability)) {
+    return Object.freeze({
+      allowed: false,
+      requiresApproval: false,
+      reason: "capability-not-delegated",
+    });
+  }
+  if (input.delegate.autonomy === "advisory") {
+    return Object.freeze({
+      allowed: false,
+      requiresApproval: false,
+      reason: "advisory-only",
+    });
+  }
+  if (input.risk === "read-only") {
+    return Object.freeze({
+      allowed: true,
+      requiresApproval: false,
+      reason: "delegated-read",
+    });
+  }
+  if (input.delegate.autonomy !== "confirm-writes") {
+    return Object.freeze({
+      allowed: false,
+      requiresApproval: false,
+      reason: "writes-not-delegated",
+    });
+  }
+  return Object.freeze({
+    allowed: true,
+    requiresApproval: true,
+    reason: input.risk === "low" ? "confirm-write" : "governed-write",
+  });
+}
+
 export function readAdminAgentDelegationConfig(
   env: Readonly<Record<string, string | undefined>>,
 ): AdminAgentDelegationConfig | null {
