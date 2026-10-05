@@ -406,14 +406,17 @@ export async function startGatewayService(
         await database.close().catch(() => undefined);
         throw new Error("Platform auth requires Skill repositories for production inference");
       }
+      const credentialsJson =
+        env.MASANAWA_GEMINI_CREDENTIALS_JSON ??
+        env.MASANAWA_ALPHA_GEMINI_IMPORTED_CREDENTIALS_JSON;
+      const apiKey = env.MASANAWA_GEMINI_API_KEY;
+      const models =
+        env.MASANAWA_GEMINI_REPLY_MODELS ??
+        env.GEMINI_REPLY_MODELS;
       const pool = parseGeminiCredentialPool({
-        credentialsJson:
-          env.MASANAWA_GEMINI_CREDENTIALS_JSON ??
-          env.MASANAWA_ALPHA_GEMINI_IMPORTED_CREDENTIALS_JSON,
-        apiKey: env.MASANAWA_GEMINI_API_KEY,
-        models:
-          env.MASANAWA_GEMINI_REPLY_MODELS ??
-          env.GEMINI_REPLY_MODELS,
+        ...(credentialsJson ? { credentialsJson } : {}),
+        ...(apiKey ? { apiKey } : {}),
+        ...(models ? { models } : {}),
         fallbackModel:
           env.MASANAWA_GEMINI_MODEL ??
           env.MASANAWA_ALPHA_GEMINI_MODEL ??
