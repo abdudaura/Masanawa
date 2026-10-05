@@ -3,23 +3,41 @@ class CryptoCapabilities {
     required this.deposits,
     required this.withdrawals,
     required this.conversions,
+    required this.fiatOnRamp,
+    required this.fiatCurrencies,
+    required this.fiatSettlementProviderCode,
     this.payoutReason,
     this.conversionReason,
+    this.fiatOnRampReason,
   });
 
   final bool deposits;
   final bool withdrawals;
   final bool conversions;
+  final bool fiatOnRamp;
+  final List<String> fiatCurrencies;
+  final String? fiatSettlementProviderCode;
   final String? payoutReason;
   final String? conversionReason;
+  final String? fiatOnRampReason;
 
   factory CryptoCapabilities.fromJson(Map<String, dynamic> json) {
     return CryptoCapabilities(
       deposits: json['deposits'] == true,
       withdrawals: json['withdrawals'] == true,
       conversions: json['conversions'] == true,
-      payoutReason: json['payoutReason'] as String?,
-      conversionReason: json['conversionReason'] as String?,
+      fiatOnRamp: json['fiatOnRamp'] == true,
+      fiatCurrencies: List.unmodifiable(
+        (json['fiatCurrencies'] is List ? json['fiatCurrencies'] as List : const [])
+            .whereType<String>()
+            .map((value) => value.trim().toUpperCase())
+            .where((value) => value.isNotEmpty),
+      ),
+      fiatSettlementProviderCode:
+          _stringOrNull(json['fiatSettlementProviderCode'])?.toUpperCase(),
+      payoutReason: _stringOrNull(json['payoutReason']),
+      conversionReason: _stringOrNull(json['conversionReason']),
+      fiatOnRampReason: _stringOrNull(json['fiatOnRampReason']),
     );
   }
 }
@@ -80,6 +98,8 @@ class CryptoIntent {
     required this.status,
     required this.providerPaymentId,
     required this.providerPayoutId,
+    required this.providerInvoiceId,
+    required this.checkoutUrl,
     required this.providerConversionId,
     required this.providerTargetAmount,
     required this.payAddress,
@@ -101,6 +121,8 @@ class CryptoIntent {
   final String status;
   final String? providerPaymentId;
   final String? providerPayoutId;
+  final String? providerInvoiceId;
+  final String? checkoutUrl;
   final String? providerConversionId;
   final String? providerTargetAmount;
   final String? payAddress;
@@ -123,6 +145,8 @@ class CryptoIntent {
       status: (json['status'] as String? ?? '').trim(),
       providerPaymentId: _stringOrNull(json['providerPaymentId']),
       providerPayoutId: _stringOrNull(json['providerPayoutId']),
+      providerInvoiceId: _stringOrNull(json['providerInvoiceId']),
+      checkoutUrl: _httpsUrlOrNull(json['checkoutUrl']),
       providerConversionId: _stringOrNull(json['providerConversionId']),
       providerTargetAmount: _decimalOrNull(json['providerTargetAmount']),
       payAddress: _stringOrNull(json['payAddress']),
@@ -137,8 +161,13 @@ class CryptoIntent {
     );
   }
 
-  bool get terminal =>
-      const {'succeeded', 'failed', 'refunded', 'expired'}.contains(status);
+  bool get terminal => const {
+        'succeeded',
+        'failed',
+        'refunded',
+        'expired',
+        'manual_review',
+      }.contains(status);
 
   bool get pending => !terminal;
 }
@@ -150,7 +179,9 @@ class CryptoWithdrawalQuote {
     required this.destinationAddress,
     required this.minimumAmount,
     required this.networkFee,
+    required this.networkFeeMode,
     required this.feePayer,
+    required this.estimatedReceiveAmount,
     required this.quotedAt,
   });
 
@@ -159,7 +190,9 @@ class CryptoWithdrawalQuote {
   final String destinationAddress;
   final String minimumAmount;
   final String networkFee;
+  final String networkFeeMode;
   final String feePayer;
+  final String estimatedReceiveAmount;
   final DateTime? quotedAt;
 
   factory CryptoWithdrawalQuote.fromJson(Map<String, dynamic> json) {
@@ -170,10 +203,66 @@ class CryptoWithdrawalQuote {
           (json['destinationAddress'] as String? ?? '').trim(),
       minimumAmount: _decimal(json['minimumAmount']),
       networkFee: _decimal(json['networkFee'], allowZero: true),
+      networkFeeMode:
+          (json['networkFeeMode'] as String? ?? 'receiver').trim(),
       feePayer: (json['feePayer'] as String? ?? 'user').trim(),
+      estimatedReceiveAmount: _decimal(json['estimatedReceiveAmount']),
       quotedAt: _dateOrNull(json['quotedAt']),
     );
   }
+}
+
+class CryptoFiatPurchase {
+  const CryptoFiatPurchase({
+    required this.requestId,
+    required this.fiatAmount,
+    required this.fiatCurrency,
+    required this.settlementAsset,
+    required this.settlementNetwork,
+    required this.cryptoAmount,
+    required this.status,
+    required this.providerInvoiceId,
+    required this.providerPaymentId,
+    required this.checkoutUrl,
+    required this.outcomeUnknown,
+  });
+
+  final String requestId;
+  final String fiatAmount;
+  final String fiatCurrency;
+  final String settlementAsset;
+  final String? settlementNetwork;
+  final String? cryptoAmount;
+  final String status;
+  final String? providerInvoiceId;
+  final String? providerPaymentId;
+  final String? checkoutUrl;
+  final bool outcomeUnknown;
+
+  factory CryptoFiatPurchase.fromJson(Map<String, dynamic> json) {
+    return CryptoFiatPurchase(
+      requestId: (json['requestId'] as String? ?? '').trim(),
+      fiatAmount: _decimal(json['fiatAmount']),
+      fiatCurrency: (json['fiatCurrency'] as String? ?? '').trim().toUpperCase(),
+      settlementAsset:
+          (json['settlementAsset'] as String? ?? '').trim().toUpperCase(),
+      settlementNetwork: _stringOrNull(json['settlementNetwork']),
+      cryptoAmount: _decimalOrNull(json['cryptoAmount']),
+      status: (json['status'] as String? ?? '').trim(),
+      providerInvoiceId: _stringOrNull(json['providerInvoiceId']),
+      providerPaymentId: _stringOrNull(json['providerPaymentId']),
+      checkoutUrl: _httpsUrlOrNull(json['checkoutUrl']),
+      outcomeUnknown: json['outcomeUnknown'] == true,
+    );
+  }
+
+  bool get terminal => const {
+        'succeeded',
+        'failed',
+        'refunded',
+        'expired',
+        'manual_review',
+      }.contains(status);
 }
 
 class CryptoConversionQuote {
@@ -235,6 +324,16 @@ String? _stringOrNull(Object? value) {
   if (value is! String) return null;
   final text = value.trim();
   return text.isEmpty ? null : text;
+}
+
+String? _httpsUrlOrNull(Object? value) {
+  final text = _stringOrNull(value);
+  if (text == null) return null;
+  final uri = Uri.tryParse(text);
+  if (uri == null || uri.scheme != 'https' || uri.host.isEmpty) {
+    throw const FormatException('Invalid secure checkout URL');
+  }
+  return uri.toString();
 }
 
 DateTime? _dateOrNull(Object? value) {
