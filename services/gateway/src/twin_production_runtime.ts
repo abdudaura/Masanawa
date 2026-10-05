@@ -1104,6 +1104,17 @@ export function createTwinProductionRuntime(input: {
             existing.chargeMode === "paid" &&
             existing.spendCapCredits > 0
           ) {
+            const reservePlan = await input.economy.readLedgerPlan({
+              tenantId: request.tenantId,
+              planKey: `voice-reserve:${quote.quoteId}`,
+            });
+            if (
+              reservePlan &&
+              planEntry(reservePlan, "reserve", existing.spendCapCredits) !==
+                existing.reservationLedgerEntryId
+            ) {
+              throw new Error("Voice reservation ledger plan conflict");
+            }
             await input.commerce.postTransfer({
               schemaVersion: 1,
               ledgerEntryId: existing.reservationLedgerEntryId,
@@ -1114,7 +1125,7 @@ export function createTwinProductionRuntime(input: {
               reason: "fulfillment-reserve",
               quoteId: quote.quoteId as never,
               fulfillmentId: null,
-              createdAt: existing.admittedAt as never,
+              createdAt: (reservePlan?.createdAt ?? existing.admittedAt) as never,
             });
           }
           return Object.freeze({
@@ -1436,6 +1447,17 @@ export function createTwinProductionRuntime(input: {
             existing.chargeMode === "paid" &&
             existing.reservedCredits > 0
           ) {
+            const reservePlan = await input.economy.readLedgerPlan({
+              tenantId: request.tenantId,
+              planKey: `owner-access-reserve:${existing.requestId}`,
+            });
+            if (
+              reservePlan &&
+              planEntry(reservePlan, "reserve", existing.reservedCredits) !==
+                existing.reservationId
+            ) {
+              throw new Error("Owner access reservation ledger plan conflict");
+            }
             await input.commerce.postTransfer({
               schemaVersion: 1,
               ledgerEntryId: existing.reservationId as LedgerEntryId,
@@ -1446,7 +1468,7 @@ export function createTwinProductionRuntime(input: {
               reason: "fulfillment-reserve",
               quoteId: null,
               fulfillmentId: null,
-              createdAt: existing.requestedAt as never,
+              createdAt: (reservePlan?.createdAt ?? existing.requestedAt) as never,
             });
           }
           await input.events.append({
@@ -1980,8 +2002,20 @@ export function createTwinProductionRuntime(input: {
         throw new Error("Commission settlement replay conflict");
       }
       if (existing) {
-        // Pre-plan settlements created by older builds are replayed through their
-        // persisted ledger id. Canonical Commerce owns duplicate suppression.
+        // New builds retain a durable plan so a retry can reproduce the exact
+        // transfer envelope. Legacy settlements fall back to their persisted
+        // ledger id and canonical Commerce duplicate suppression.
+        const plan = await input.economy.readLedgerPlan({
+          tenantId: request.tenantId,
+          planKey: `commission-settle:${request.operationId}`,
+        });
+        if (
+          plan &&
+          planEntry(plan, "commission", settlement.commissionCredits) !==
+            settlement.ledgerEntryId
+        ) {
+          throw new Error("Commission settlement ledger plan conflict");
+        }
         await input.commerce.postTransfer({
           schemaVersion: 1,
           ledgerEntryId: settlement.ledgerEntryId,
@@ -1992,7 +2026,7 @@ export function createTwinProductionRuntime(input: {
           reason: "creator-earning",
           quoteId: null,
           fulfillmentId: null,
-          createdAt: at() as never,
+          createdAt: (plan?.createdAt ?? at()) as never,
         });
       }
       await input.events.append({
