@@ -22,6 +22,7 @@ import type {
   PersonalCloneProvisioningRepository,
   UserRelationshipProvisioner,
   UserRelationshipReader,
+  IdentityRepository,
 } from "@masanawa/identity";
 import type { BillingQuoteRepository, CommerceRepository, CryptoRepository } from "@masanawa/commerce";
 import { parseCanonicalId, readRequiredEnv } from "@masanawa/contracts";
@@ -48,6 +49,7 @@ import {
   createPostgresCharacterSessionRepository,
   createPostgresCharacterOwnershipReader,
   createPostgresCharacterSkillAssignmentRepository,
+  createPostgresIdentityRepository,
   createPostgresCommerceRepository,
   createPostgresCryptoRepository,
   createPostgresPlatformAgentProfileRepository,
@@ -151,6 +153,7 @@ import {
   createBillingCheckoutService,
   type BillingCheckoutService,
 } from "./billing_checkout.js";
+import { ensureDefaultPlatformAgents } from "./platform_agent_bootstrap.js";
 
 export type ServiceSignal = "SIGINT" | "SIGTERM";
 
@@ -161,6 +164,7 @@ export interface ServiceProcess extends NodeSignalSource {
 
 export interface ServiceDatabaseDependency {
   readonly readinessCheck: ReadinessCheck;
+  readonly identity?: IdentityRepository;
   readonly agentPresentations?: AgentPresentationRepository;
   readonly characterSkillAssignments?: CharacterSkillAssignmentRepository;
   readonly characterSessions?: CharacterSessionRepository;
@@ -255,6 +259,7 @@ function createDefaultDatabaseDependency(
   });
   return Object.freeze({
     readinessCheck: database.readinessCheck,
+    identity: createPostgresIdentityRepository(database.pool),
     agentPresentations: createPostgresAgentPresentationRepository(database.pool),
     characterSkillAssignments:
       createPostgresCharacterSkillAssignmentRepository(database.pool),
@@ -485,6 +490,24 @@ export async function startGatewayService(
     database.platformAgentProfiles
   ) {
     const platformTenantId = parseCanonicalId("tenant", platformTenantRaw);
+
+    if (env.MASANAWA_BOOTSTRAP_PLATFORM_AGENTS === "true") {
+      if (!database.identity || !database.skillDistribution) {
+        await database.close().catch(() => undefined);
+        throw new Error(
+          "Platform Agent bootstrap requires Identity and Skill distribution repositories",
+        );
+      }
+      await ensureDefaultPlatformAgents({
+        tenantId: platformTenantId,
+        identity: database.identity,
+        presentations: database.agentPresentations,
+        profiles: database.platformAgentProfiles,
+        skillAssignments: database.characterSkillAssignments,
+        skillDistribution: database.skillDistribution,
+      });
+    }
+
     const customerSessions = createPlatformCustomerSessionAuthorizer({
       repository: database.platformSessions,
     });
