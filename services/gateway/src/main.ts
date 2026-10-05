@@ -645,20 +645,18 @@ export async function startGatewayService(
       nowPayments: payments,
       nowPaymentsCustody: custody,
       nowPaymentsPayout: payout,
-      withdrawalEvidence:
-        (env.NOWPAYMENTS_PAYOUTS_ENABLED === "true" ||
+      ...((env.NOWPAYMENTS_PAYOUTS_ENABLED === "true" ||
           env.NOWPAYMENTS_PAYOUT_ENABLED === "true") &&
         env.NOWPAYMENTS_CUSTODY_ENABLED === "true" &&
         env.NOWPAYMENTS_PAYOUT_2FA_READY === "true" &&
         payoutFeeMode !== undefined
-          ? runtimeEvidence
-          : undefined,
-      conversionEvidence:
-        (env.NOWPAYMENTS_CONVERSIONS_ENABLED === "true" ||
+          ? { withdrawalEvidence: runtimeEvidence }
+          : {}),
+      ...((env.NOWPAYMENTS_CONVERSIONS_ENABLED === "true" ||
           env.NOWPAYMENTS_CONVERSION_ENABLED === "true") &&
         env.NOWPAYMENTS_CUSTODY_ENABLED === "true"
-          ? runtimeEvidence
-          : undefined,
+          ? { conversionEvidence: runtimeEvidence }
+          : {}),
       ...(payoutFeeMode === undefined
         ? {}
         : { withdrawalNetworkFeeMode: payoutFeeMode }),
