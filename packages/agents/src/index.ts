@@ -15,3 +15,6 @@ export * from "./inference_limits.js";
 
 export * from "./mobile-shell.js";
 export * from "./subworker.js";
+export * from "./execution-budget.js";
+export * from "./execution-budget-partition.js";
+export * from "./subworker-budget.js";
