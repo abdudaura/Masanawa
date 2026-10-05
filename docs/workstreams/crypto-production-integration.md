@@ -28,3 +28,38 @@ Rules:
 - no second relay/server;
 - no secret values committed;
 - run available CI/typechecks/tests, and record zero-step runner failures honestly.
+
+## Integration checkpoint — 2026-10-05
+
+Implemented on this integration branch:
+- selectively ported the PR #124 canonical NOWPayments adapter, crypto ledger/repository,
+  additive migrations, exact signed payment/payout evidence and hosted fiat Buy service;
+- selectively ported PR #130's Wallet UI/transport, with normal ApiClient production
+  session auth and no developer-token dependency;
+- exposed deposit, Buy, withdrawal quote/create/refresh, conversion quote/create/refresh,
+  balances/history/intents and both NOWPayments IPN routes through the shared Gateway;
+- wired the existing canonical production OTP session repository into FinancialAuthorizer;
+- composed all provider clients through the existing fixed relay URL
+  `https://209-38-107-173.sslip.io/v1`;
+- added strict runtime evidence and operator gates so unavailable evidence keeps each
+  operation disabled;
+- reconciled the workspace lock and package exports.
+
+Production Railway preparation:
+- masanawa-gateway now securely references the existing @nurain/worker NOWPayments
+  API key, IPN secret, payout credentials, custody/conversion/payout flags and payout
+  destination allowlist through Railway reference variables;
+- NOWPAYMENTS_RELAY_URL is pinned to the existing 209.38.107.173 droplet;
+- variables were written with redeploy skipped, so production behavior has not changed.
+
+Remaining deployment dependency:
+- `MASANAWA_NOWPAYMENTS_RELAY_TOKEN` is not present on Railway and cannot be read or
+  installed on the existing DigitalOcean droplet through the currently connected
+  DigitalOcean API (no SSH/remote command capability). The runtime therefore remains
+  fail-closed and will not compose the financial service until that shared relay token
+  exists on both sides.
+- the intended droplet `masanawa-relay-bridge` (209.38.107.173) is active. A separate
+  pre-existing droplet at 165.232.83.17 was observed but is not used by this integration.
+
+No secret values are committed or exposed.
+
