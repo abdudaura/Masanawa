@@ -20,6 +20,8 @@ import type {
 } from "@masanawa/security";
 import {
   createCustomerAuthService,
+  createResendOtpDelivery,
+  renderMasanawaOtpEmail,
   createPlatformCustomerAuthorizers,
   createPlatformCustomerSessionAuthorizer,
   createPlatformSessionFinancialAuthorizer,
@@ -377,6 +379,41 @@ describe("customer authentication", () => {
     await expect(customer.authorize({
       authorizationHeader: `Bearer ${rotated.accessToken}`,
     })).rejects.toMatchObject({ code: "UNAUTHORIZED", statusCode: 401 });
+  });
+
+  it("renders and sends a branded Masanawa OTP email", async () => {
+    const rendered = renderMasanawaOtpEmail("123456");
+    expect(rendered.subject).toBe("Your Masanawa sign-in code");
+    expect(rendered.text).toContain("123456");
+    expect(rendered.html).toContain("Masanawa");
+    expect(rendered.html).toContain("123456");
+    expect(rendered.html).toContain("#0121D2");
+    expect(rendered.html).toContain("#1DA4FD");
+    expect(rendered.html).toContain("Security note");
+
+    let payload: Record<string, unknown> | null = null;
+    const delivery = createResendOtpDelivery({
+      apiKey: "test-key",
+      from: "Masanawa <no-reply@example.test>",
+      fetchImpl: async (_url, init) => {
+        payload = JSON.parse(String(init?.body)) as Record<string, unknown>;
+        return new Response(null, { status: 202 });
+      },
+    });
+
+    await delivery.send({
+      identifier: "user@example.test",
+      code: "123456",
+    });
+
+    expect(payload).toMatchObject({
+      from: "Masanawa <no-reply@example.test>",
+      to: ["user@example.test"],
+      subject: "Your Masanawa sign-in code",
+      text: expect.stringContaining("123456"),
+      html: expect.stringContaining("123456"),
+      tags: [{ name: "category", value: "authentication_otp" }],
+    });
   });
 
   it("removes a challenge when delivery fails instead of accepting an unseen OTP", async () => {
