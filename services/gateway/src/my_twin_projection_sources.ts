@@ -21,7 +21,7 @@ export interface MyTwinActivitySummaryReader {
 export function createMyTwinPerformanceSource(input: {
   readonly activity: MyTwinActivitySummaryReader;
 }): MyTwinPerformanceSource {
-  return Object.freeze({
+  return Object.freeze<MyTwinPerformanceSource>({
     async read(request): Promise<MyTwinPerformanceSummary> {
       const value = await input.activity.readSummary(request);
       return Object.freeze({
@@ -53,7 +53,7 @@ export function createMyTwinFeatureSource(input: {
   readonly voice: TwinVoiceAvailabilityReader;
   readonly ownerAccess: OwnerAccessAvailabilityReader;
 }): MyTwinFeatureSource {
-  return Object.freeze({
+  return Object.freeze<MyTwinFeatureSource>({
     async read(request) {
       const [voiceEnabled, offering] = await Promise.all([
         input.voice.isEnabled({
@@ -82,7 +82,7 @@ export interface TwinVoicePolicyReader {
 export function createPolicyBackedVoiceAvailability(input: {
   readonly policies: TwinVoicePolicyReader;
 }): TwinVoiceAvailabilityReader {
-  return Object.freeze({
+  return Object.freeze<TwinVoiceAvailabilityReader>({
     async isEnabled(request) {
       const policy = await input.policies.readActive(request);
       return policy?.active === true;
@@ -101,7 +101,7 @@ export interface OwnerAccessOfferingReader {
 export function createOfferingBackedOwnerAccessAvailability(input: {
   readonly offerings: OwnerAccessOfferingReader;
 }): OwnerAccessAvailabilityReader {
-  return Object.freeze({
+  return Object.freeze<OwnerAccessAvailabilityReader>({
     async readOffering(request) {
       const offering = await input.offerings.readActive(request);
       return offering
@@ -158,7 +158,7 @@ export function createCanonicalMyTwinProfileSource(input: {
 }): MyTwinProfileSource {
   const now = input.now ?? (() => new Date().toISOString());
 
-  return Object.freeze({
+  return Object.freeze<MyTwinProfileSource>({
     async read(request) {
       const record = await input.store.readForOwner(request);
       if (!record) return null;
