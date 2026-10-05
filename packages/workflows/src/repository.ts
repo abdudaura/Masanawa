@@ -5,6 +5,7 @@ import type {
   WorkflowRunId,
   WorkflowVersionId,
 } from "@masanawa/contracts";
+import type { AuthorityContext } from "@masanawa/security";
 import type {
   Task,
   TaskState,
@@ -13,15 +14,18 @@ import type {
   WorkflowRunState,
 } from "./model.js";
 
-export interface TaskCreateInput {
+export interface WorkRequest {
+  readonly authority: AuthorityContext;
   readonly scope: WorkScope;
+}
+
+export interface TaskCreateInput extends WorkRequest {
   readonly taskId: TaskId;
   readonly title: string;
   readonly createdAt: Instant;
 }
 
-export interface TaskTransitionInput {
-  readonly scope: WorkScope;
+export interface TaskTransitionInput extends WorkRequest {
   readonly taskId: TaskId;
   readonly expectedRevision: number;
   readonly state: TaskState;
@@ -31,16 +35,14 @@ export interface TaskTransitionInput {
   readonly failureCode?: string | null;
 }
 
-export interface WorkflowRunCreateInput {
-  readonly scope: WorkScope;
+export interface WorkflowRunCreateInput extends WorkRequest {
   readonly workflowRunId: WorkflowRunId;
   readonly workflowVersionId: WorkflowVersionId;
   readonly taskId: TaskId;
   readonly createdAt: Instant;
 }
 
-export interface WorkflowRunTransitionInput {
-  readonly scope: WorkScope;
+export interface WorkflowRunTransitionInput extends WorkRequest {
   readonly workflowRunId: WorkflowRunId;
   readonly expectedRevision: number;
   readonly state: WorkflowRunState;
@@ -59,15 +61,13 @@ export interface WorkflowRunTransitionInput {
  */
 export interface WorkflowRepository {
   createTask(input: TaskCreateInput): Promise<Task>;
-  readTask(input: {
-    readonly scope: WorkScope;
+  readTask(input: WorkRequest & {
     readonly taskId: TaskId;
   }): Promise<Task | null>;
   transitionTask(input: TaskTransitionInput): Promise<Task>;
 
   createWorkflowRun(input: WorkflowRunCreateInput): Promise<WorkflowRun>;
-  readWorkflowRun(input: {
-    readonly scope: WorkScope;
+  readWorkflowRun(input: WorkRequest & {
     readonly workflowRunId: WorkflowRunId;
   }): Promise<WorkflowRun | null>;
   transitionWorkflowRun(input: WorkflowRunTransitionInput): Promise<WorkflowRun>;
