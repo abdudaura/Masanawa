@@ -223,9 +223,11 @@ export function registerBillingRoutes(
 
   app.get("/v1/commerce/bills/categories", async (request, reply) => {
     try {
-      return await billing.listCategories({
-        authorizationHeader: request.headers.authorization,
-      });
+      return {
+        categories: await billing.listCategories({
+          authorizationHeader: request.headers.authorization,
+        }),
+      };
     } catch (error) {
       const message = error instanceof Error ? error.message : "";
       reply.code(
@@ -249,10 +251,12 @@ export function registerBillingRoutes(
     async (request, reply) => {
       try {
         const params = request.params as { categoryCode: string };
-        return await billing.listBillers({
-          authorizationHeader: request.headers.authorization,
-          categoryCode: params.categoryCode,
-        });
+        return {
+          billers: await billing.listBillers({
+            authorizationHeader: request.headers.authorization,
+            categoryCode: params.categoryCode,
+          }),
+        };
       } catch (error) {
         const message = error instanceof Error ? error.message : "";
         reply.code(
@@ -277,10 +281,12 @@ export function registerBillingRoutes(
     async (request, reply) => {
       try {
         const params = request.params as { billerCode: string };
-        return await billing.listItems({
-          authorizationHeader: request.headers.authorization,
-          billerCode: params.billerCode,
-        });
+        return {
+          items: await billing.listItems({
+            authorizationHeader: request.headers.authorization,
+            billerCode: params.billerCode,
+          }),
+        };
       } catch (error) {
         const message = error instanceof Error ? error.message : "";
         reply.code(
