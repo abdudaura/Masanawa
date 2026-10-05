@@ -183,7 +183,23 @@ BEGIN
      OR NEW.created_at IS DISTINCT FROM OLD.created_at
      OR NEW.revision <> OLD.revision + 1
      OR NEW.updated_at < OLD.updated_at
-     OR OLD.state IN ('completed','failed','cancelled') THEN
+     OR OLD.state IN ('completed','failed','cancelled')
+     OR (
+       NEW.state IS DISTINCT FROM OLD.state
+       AND NOT (
+         (OLD.state = 'queued' AND NEW.state IN ('running','failed','cancelled'))
+         OR
+         (OLD.state = 'running' AND NEW.state IN (
+           'waiting_approval','waiting_external','completed','failed','cancelled'
+         ))
+         OR
+         (OLD.state = 'waiting_approval' AND NEW.state IN ('running','failed','cancelled'))
+         OR
+         (OLD.state = 'waiting_external' AND NEW.state IN (
+           'running','completed','failed','cancelled'
+         ))
+       )
+     ) THEN
     RAISE EXCEPTION 'Task identity/history is immutable and transitions require an active revision'
       USING ERRCODE = '23514';
   END IF;
@@ -216,8 +232,32 @@ BEGIN
      OR NEW.created_at IS DISTINCT FROM OLD.created_at
      OR NEW.revision <> OLD.revision + 1
      OR NEW.checkpoint_revision < OLD.checkpoint_revision
+     OR NEW.checkpoint_revision > OLD.checkpoint_revision + 1
      OR NEW.updated_at < OLD.updated_at
-     OR OLD.state IN ('completed','failed','cancelled') THEN
+     OR OLD.state IN ('completed','failed','cancelled')
+     OR (
+       NEW.checkpoint_revision = OLD.checkpoint_revision + 1
+       AND (
+         NEW.state IS DISTINCT FROM OLD.state
+         OR NEW.pending_approval_ids IS DISTINCT FROM OLD.pending_approval_ids
+       )
+     )
+     OR (
+       NEW.state IS DISTINCT FROM OLD.state
+       AND NOT (
+         (OLD.state = 'queued' AND NEW.state IN ('running','failed','cancelled'))
+         OR
+         (OLD.state = 'running' AND NEW.state IN (
+           'waiting_approval','waiting_external','completed','failed','cancelled'
+         ))
+         OR
+         (OLD.state = 'waiting_approval' AND NEW.state IN ('running','failed','cancelled'))
+         OR
+         (OLD.state = 'waiting_external' AND NEW.state IN (
+           'running','completed','failed','cancelled'
+         ))
+       )
+     ) THEN
     RAISE EXCEPTION 'WorkflowRun identity/history is immutable and updates require an active revision'
       USING ERRCODE = '23514';
   END IF;
