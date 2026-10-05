@@ -118,9 +118,11 @@ The integration owner must:
   purchases, and a new callback update is not automatically a new financial intent.
 - Download account-scoped media through an authorized provider edge with MIME/size/
   retention/permission checks. No voice transcription is introduced.
-- Deliver replies/audio/options/status/receipts through canonical durable outbox
-  custody, including answerCallbackQuery as appropriate. Reconcile ambiguous outbound
-  sends; no blind resend. Delivery evidence cannot settle Commerce.
+- Compose the new `DurableChannelOutbox` with canonical storage and inject concrete
+  WhatsApp/Telegram provider senders. The adapter-side persist-before-dispatch,
+  no-blind-resend and explicit ambiguity-resolution contract is now implemented.
+  Provider delivery statuses should reconcile that outbox where applicable; delivery
+  evidence still cannot settle Commerce.
 
 These requests are dependencies for PR #89/integration and the Commerce/action owners,
 not ownership transfer. This window edits no existing Gateway/mobile/financial paths.
@@ -183,3 +185,38 @@ command path.
 This seam supports staged Teaching callbacks without importing Teaching into the channel
 adapter: a Teaching owner can bind each compact stage callback to its server action
 revision/RequestId, while Commerce or approval owners can use the same transport contract.
+
+
+## Durable outbound delivery contract
+
+The adapter now also defines a provider-neutral outbound custody protocol for text,
+audio references and bounded opaque-option replies.
+
+`createChannelOutboundDispatcher()` enforces:
+
+1. normalize and fingerprint the exact canonical RequestId payload;
+2. durably admit the outbox request before provider work;
+3. atomically claim `pending -> dispatching` before calling a provider;
+4. explicit provider acceptance must be persisted as `sent` with provider message ID
+   and acceptance time before success is returned;
+5. explicit provider rejection becomes terminal `failed`;
+6. thrown/uncertain provider outcomes become `unknown` where possible;
+7. replay of `dispatching` or `unknown` is blocked with reconciliation required;
+8. replay of `sent` returns the durable receipt without another provider call;
+9. replay of `failed` does not silently retry.
+
+`resolveChannelOutboundAmbiguity()` accepts explicit reconciliation evidence and can
+resolve an uncertain send to either:
+- `sent` with provider message ID + accepted timestamp; or
+- terminal `failed` when there is evidence the provider did not send.
+
+Reconciliation never performs provider redispatch. A new send after proven not-sent must
+be a deliberate domain decision, not an automatic retry of an uncertain request.
+
+Provider-neutral option output is bounded to 10 choices and callback IDs are limited to
+64 UTF-8 bytes so the shared contract remains compatible with Telegram callback data and
+bounded WhatsApp interactive identifiers. Audio output carries only an authorized opaque
+file reference + MIME type; the channel adapter does not fetch or own media bytes.
+
+Remaining implementation is concrete provider sender translation/HTTP edges, durable
+outbox persistence, delivery-status reconciliation and Gateway composition.
