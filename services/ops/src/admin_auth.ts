@@ -197,7 +197,10 @@ export function createPlatformSessionAdminAuthorizer(input: Readonly<{
       if (!grant || !grant.capabilities.has(request.capability)) {
         throw new AdminAuthorizationError(403);
       }
-      return Object.freeze({ tenantId: identity.tenantId });
+      return Object.freeze({
+        tenantId: identity.tenantId,
+        operatorUserId: identity.userId,
+      });
     },
   });
 }
@@ -236,7 +239,10 @@ export function createBootstrapAdminAuthorizer(
       if (!supplied || !constantTimeEqual(supplied, config.token)) {
         throw new AdminAuthorizationError();
       }
-      return Object.freeze({ tenantId: config.tenantId });
+      return Object.freeze({
+        tenantId: config.tenantId,
+        operatorUserId: null,
+      });
     },
   });
 }
