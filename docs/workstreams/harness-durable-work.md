@@ -35,4 +35,20 @@ Acceptance:
 - machine phases are presented as concise human-readable status labels;
 - docs are checkpointed before handoff.
 
-Status: active.
+Implemented:
+- conversation execution now passes through `AgentHarness` using the compatibility strategy adapter;
+- harness progress is projected through `work.updated` shell events;
+- Task/Workflow/AgentRun reference precedence is deterministic;
+- mobile creates a stable Work recovery card when no assistant narration exists and updates
+  it in place on later/replayed events;
+- human-readable Work status presentation added;
+- Gateway progress-projection tests, conversation harness bridge test and mobile replay/recovery
+  regression test added.
+
+Discovered dependency:
+- `packages/workflows` remains a placeholder. Canonical Task/Workflow identities exist, but
+  durable Task/Workflow lifecycle/checkpoint persistence does not. This slice must not be
+  described as service-restart-safe Work execution.
+
+Status: implementation complete for the projection/execution-seam checkpoint; canonical
+Task/Workflow runtime is the next dependency.
