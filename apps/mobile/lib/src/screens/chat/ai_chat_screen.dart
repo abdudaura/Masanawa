@@ -31,6 +31,10 @@ import '../../core/providers.dart';
 import '../../state/agent_directory_state.dart';
 import '../../state/ai_chat_state.dart';
 import '../../state/session_state.dart';
+import '../../state/my_twin_state.dart';
+import '../../state/wallet_state.dart';
+import '../../voice/paid_voice.dart';
+import '../../voice/paid_voice_state.dart';
 import '../../theme/masanawa_theme.dart';
 
 /// One Character conversation. Voice is the primary action while text,
@@ -1281,7 +1285,55 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       return;
     }
     final shellTransport = transport as AgentShellTransport;
+    final ownedCharacterId = ref.read(myTwinProvider).valueOrNull?.characterId;
+    final requiresTwinAdmission =
+        !agent.supportAgent && ownedCharacterId != agent.characterId;
+
+    PaidVoiceAdmission? paidAdmission;
+    if (requiresTwinAdmission) {
+      final controller = ref.read(paidVoiceControllerProvider.notifier);
+      final quote = await controller.quote(
+        characterId: agent.characterId,
+        expectedSeconds: 5 * 60,
+      );
+      if (quote != null) {
+        if (!mounted) return;
+        final accepted = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text('Voice with ${agent.displayName}'),
+            content: Text(
+              quote.isTrial
+                  ? 'Your ${quote.trialDurationDays}-day voice trial covers this call. You will not be charged for trial usage.'
+                  : 'Reserve up to ${quote.spendCapCredits} Credits for about 5 minutes. Only verified call time is charged and unused Credits are returned.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('Not now'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: Text(quote.isTrial ? 'Start trial call' : 'Accept & call'),
+              ),
+            ],
+          ),
+        );
+        if (accepted != true) return;
+        paidAdmission = await controller.accept(characterId: agent.characterId);
+        if (paidAdmission == null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Could not reserve this voice call.')),
+            );
+          }
+          return;
+        }
+      }
+    }
+
     LiveVoiceSession? session;
+    var callSheetOpened = false;
     try {
       await _activeVoiceBubble?._pauseFromAnotherBubble();
       await shellTransport.setPresence(
@@ -1290,12 +1342,16 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         durationMs: 5 * 60 * 1000,
       );
       unawaited(ref.read(agentDirectoryProvider.notifier).refresh());
-      final grant = await shellTransport.mintLiveVoiceGrant(agent.characterId);
+      final grant = await shellTransport.mintLiveVoiceGrant(
+        agent.characterId,
+        admissionId: paidAdmission?.admissionId,
+      );
       if (!mounted) return;
       session = LiveVoiceSession(
         grant: grant,
         characterName: agent.displayName,
       );
+      callSheetOpened = true;
       await showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
@@ -1317,6 +1373,16 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       }
     } finally {
       await session?.close();
+      if (paidAdmission != null) {
+        await ref
+            .read(paidVoiceControllerProvider.notifier)
+            .complete(
+              admissionId: paidAdmission.admissionId,
+              outcome: callSheetOpened ? 'completed' : 'interrupted',
+            )
+            .catchError((_) {});
+        unawaited(ref.read(walletProvider.notifier).refresh());
+      }
       await shellTransport
           .setPresence(
             characterId: agent.characterId,
@@ -1329,7 +1395,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       }
     }
   }
-
   Future<void> _runAgentAction(AiChatMessage message, String action) async {
     final ctl = ref.read(aiChatProvider.notifier);
     final quoted = message.text;
