@@ -1,12 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../agents/twin_activity.dart';
+import '../agents/twin_activity_http_transport.dart';
+import '../core/providers.dart';
 import 'session_state.dart';
 
-/// Feature-local provider. The shared integration lane replaces this with the
-/// authenticated Gateway transport without forcing Activity to own shared files.
 final twinActivityTransportProvider = Provider<TwinActivityTransport>(
-  (ref) => const UnavailableTwinActivityTransport(),
+  (ref) => GatewayTwinActivityTransport(api: ref.watch(apiClientProvider)),
 );
 
 class TwinActivityController extends AsyncNotifier<TwinActivityView?> {
