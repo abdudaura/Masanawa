@@ -77,7 +77,10 @@ import {
   createAgentDirectoryService,
   type AgentDirectoryAuthorizer,
 } from "./agent_directory.js";
-import { createAgentConversationService } from "./agent_conversation.js";
+import {
+  createAgentConversationService,
+  type TwinConversationObserver,
+} from "./agent_conversation.js";
 import {
   createCreatorCloneService,
   type CreatorCloneAuthorizer,
@@ -466,6 +469,7 @@ export async function startGatewayService(
   let strategy = options.agentStrategy;
   let nativeAudio;
   let liveVoiceTokens: LiveVoiceTokenService | undefined;
+  let twinConversationObserver: TwinConversationObserver | undefined;
   let twinProduction: TwinProductionRuntime | undefined =
     options.appOptions?.twinProduction;
   let pushSender: MobilePushSender | undefined;
@@ -635,6 +639,24 @@ export async function startGatewayService(
       relationships: database.relationships,
       relationshipProvisioner: database.relationshipProvisioner,
       platformProfiles: database.platformAgentProfiles,
+      ...(database.twinProfiles && database.twinEconomy
+        ? {
+            publicTwinAdmission: {
+              async canChat(request) {
+                const profile = await database.twinProfiles!.readForCharacter({
+                  tenantId: request.tenantId,
+                  characterId: request.characterId,
+                });
+                if (!profile?.discoverable) return false;
+                return !await database.twinEconomy!.isTwinBlocked({
+                  tenantId: request.tenantId,
+                  actorUserId: request.userId,
+                  characterId: request.characterId,
+                });
+              },
+            },
+          }
+        : {}),
       policyRevision:
         env.MASANAWA_PLATFORM_POLICY_REVISION?.trim() ||
         "production-mobile-v1",
@@ -721,6 +743,53 @@ export async function startGatewayService(
             180,
             "MASANAWA_OWNER_ACCESS_START_GRACE_MINUTES",
           ),
+        },
+      });
+    }
+
+    if (database.twinProfiles && database.twinEvents) {
+      twinConversationObserver = Object.freeze({
+        async opened(request) {
+          const profile = await database.twinProfiles!.readForCharacter({
+            tenantId: request.tenantId as never,
+            characterId: request.characterId as never,
+          });
+          if (!profile) return;
+          await database.twinEvents!.append({
+            tenantId: request.tenantId as never,
+            payload: {
+              eventType: "twin.visited",
+              ownerUserId: profile.ownerUserId,
+              characterId: profile.characterId,
+              customerUserId: request.userId,
+              referenceId: request.characterSessionId,
+              visibility: "owner",
+              occurredAt: new Date().toISOString() as never,
+              amountCredits: null,
+              status: "observed",
+            },
+          });
+        },
+        async completed(request) {
+          const profile = await database.twinProfiles!.readForCharacter({
+            tenantId: request.tenantId as never,
+            characterId: request.characterId as never,
+          });
+          if (!profile) return;
+          await database.twinEvents!.append({
+            tenantId: request.tenantId as never,
+            payload: {
+              eventType: "twin.conversation.observed",
+              ownerUserId: profile.ownerUserId,
+              characterId: profile.characterId,
+              customerUserId: request.userId,
+              referenceId: request.referenceId,
+              visibility: "owner",
+              occurredAt: new Date().toISOString() as never,
+              amountCredits: null,
+              status: "observed",
+            },
+          });
         },
       });
     }
@@ -1213,6 +1282,7 @@ export async function startGatewayService(
           strategy,
           ...(nativeAudio ? { nativeAudio } : {}),
           ...(database.mobileShell ? { mobileShell: database.mobileShell } : {}),
+          ...(twinConversationObserver ? { twinObserver: twinConversationObserver } : {}),
           sessionDurationMs: 24 * 60 * 60 * 1000,
         })
       : undefined);
