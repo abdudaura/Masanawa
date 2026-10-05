@@ -36,4 +36,27 @@ Show only:
 
 Never expose Agent Float, fulfillment reserve or provider settlement accounts.
 
-Status: implementation started 2026-10-05.
+Status: isolated Wallet presentation complete; financial/shared integration pending.
+
+Implemented:
+- simple WalletView projection model;
+- Spendable Credits / Pending earnings / Available earnings only;
+- unified history kinds for funding, transfers, purchases, commissions, gifts, voice,
+  owner sessions, refunds and withdrawals;
+- Wallet Riverpod state/transport seam;
+- Wallet primary screen;
+- Add money / Send / Withdraw actions;
+- optional Bills / Crypto shortcuts;
+- reusable Send Credits sheet;
+- reusable Gift sheet;
+- tests proving Agent Float metadata is ignored by the consumer model.
+
+Not yet integrated:
+- canonical Wallet Gateway projection;
+- transfer/gift backend commands and provenance;
+- billing/crypto projections;
+- authenticated mobile transport/provider;
+- shared router/four-tab navigation;
+- creator economy migration/deprecation.
+
+No Commerce, billing, crypto, existing creator-economy or shared router/transport file was modified.
