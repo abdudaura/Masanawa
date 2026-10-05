@@ -21,6 +21,7 @@ export type TwinEconomyActivityEventType =
 
 export interface TwinEconomyActivityEvent {
   readonly eventId: string;
+  readonly referenceId: string;
   readonly tenantId: string;
   readonly characterId: string;
   readonly eventType: TwinEconomyActivityEventType;
@@ -47,6 +48,7 @@ function mapEvent(event: TwinEconomyActivityEvent): TwinActivityRecord | null {
     case "twin.visited":
       return {
         eventId: event.eventId,
+        referenceId: event.referenceId,
         tenantId: event.tenantId as never,
         characterId: event.characterId as never,
         kind: "visit",
@@ -58,6 +60,7 @@ function mapEvent(event: TwinEconomyActivityEvent): TwinActivityRecord | null {
     case "twin.conversation.observed":
       return {
         eventId: event.eventId,
+        referenceId: event.referenceId,
         tenantId: event.tenantId as never,
         characterId: event.characterId as never,
         kind: "conversation",
@@ -70,6 +73,7 @@ function mapEvent(event: TwinEconomyActivityEvent): TwinActivityRecord | null {
     case "twin.purchase.refunded":
       return {
         eventId: event.eventId,
+        referenceId: event.referenceId,
         tenantId: event.tenantId as never,
         characterId: event.characterId as never,
         kind: "purchase",
@@ -84,6 +88,7 @@ function mapEvent(event: TwinEconomyActivityEvent): TwinActivityRecord | null {
     case "twin.gift.completed":
       return {
         eventId: event.eventId,
+        referenceId: event.referenceId,
         tenantId: event.tenantId as never,
         characterId: event.characterId as never,
         kind: "gift",
@@ -96,6 +101,7 @@ function mapEvent(event: TwinEconomyActivityEvent): TwinActivityRecord | null {
     case "twin.voice.refunded":
       return {
         eventId: event.eventId,
+        referenceId: event.referenceId,
         tenantId: event.tenantId as never,
         characterId: event.characterId as never,
         kind: "voice",
@@ -114,6 +120,7 @@ function mapEvent(event: TwinEconomyActivityEvent): TwinActivityRecord | null {
     case "twin.owner-access.refunded":
       return {
         eventId: event.eventId,
+        referenceId: event.referenceId,
         tenantId: event.tenantId as never,
         characterId: event.characterId as never,
         kind: "owner-request",
@@ -133,6 +140,7 @@ function mapEvent(event: TwinEconomyActivityEvent): TwinActivityRecord | null {
     case "twin.earning.reversed":
       return {
         eventId: event.eventId,
+        referenceId: event.referenceId,
         tenantId: event.tenantId as never,
         characterId: event.characterId as never,
         kind: "earning",
