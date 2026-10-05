@@ -173,7 +173,7 @@ class RecordingAdapter implements HttpClientAdapter {
 }
 
 class RotatingAuthAdapter implements HttpClientAdapter {
-  final requests = <RequestOptions>[];
+  final authorizations = <String?>[];
 
   @override
   Future<ResponseBody> fetch(
@@ -181,8 +181,8 @@ class RotatingAuthAdapter implements HttpClientAdapter {
     Stream<Uint8List>? stream,
     Future<void>? cancelFuture,
   ) async {
-    requests.add(options);
-    final authorization = options.headers['Authorization'];
+    final authorization = options.headers['Authorization'] as String?;
+    authorizations.add(authorization);
     if (authorization == 'Bearer expired-token') {
       return ResponseBody.fromString(
         jsonEncode({'code': 'UNAUTHORIZED', 'message': 'expired'}),
@@ -427,9 +427,10 @@ void main() {
 
     expect(refreshes, 1);
     expect(agents.single.displayName, 'Amina');
-    expect(adapter.requests, hasLength(2));
-    expect(adapter.requests.first.headers['Authorization'], 'Bearer expired-token');
-    expect(adapter.requests.last.headers['Authorization'], 'Bearer fresh-token');
+    expect(adapter.authorizations, [
+      'Bearer expired-token',
+      'Bearer fresh-token',
+    ]);
   });
 
   test('creator transports use the canonical Gateway route namespace', () async {
