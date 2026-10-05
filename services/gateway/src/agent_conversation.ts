@@ -5,9 +5,11 @@ import {
   parseCanonicalId,
 } from "@masanawa/contracts";
 import type {
+  AgentHarness,
   AgentRunRepository,
   AgentStrategy,
   CharacterSessionRepository,
+  createStrategyAgentHarness,
   MobileShellRepository,
   MobileTurnCommand,
 } from "@masanawa/agents";
@@ -16,6 +18,7 @@ import type {
   AgentConversationService,
 } from "./agent_conversation_contract.js";
 import type { NativeAudioRenderer } from "./native_audio.js";
+import { createAgentHarnessProgressReporter } from "./agent_harness_progress.js";
 
 function hashTurnPayload(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex");
@@ -54,10 +57,13 @@ export function createAgentConversationService(input: {
   readonly runs: AgentRunRepository;
   readonly authorizer: AgentConversationAuthorizer;
   readonly strategy: AgentStrategy;
+  readonly harness?: AgentHarness;
   readonly nativeAudio?: NativeAudioRenderer;
   readonly mobileShell?: MobileShellRepository;
   readonly sessionDurationMs: number;
 }): AgentConversationService {
+  const harness = input.harness ?? createStrategyAgentHarness(input.strategy);
+
   if (
     !Number.isSafeInteger(input.sessionDurationMs) ||
     input.sessionDurationMs < 60_000
@@ -165,11 +171,22 @@ export function createAgentConversationService(input: {
       });
 
       try {
-        const result = await input.strategy.execute({
+        const result = await harness.execute({
           agentRunId,
           characterSessionId,
           characterVersionId: session.characterVersionId,
           skillVersionIds: session.bindings.skillVersionIds,
+          taskId: null,
+          workflowRunId: null,
+          ...(input.mobileShell
+            ? {
+                onProgress: createAgentHarnessProgressReporter({
+                  repository: input.mobileShell,
+                  scope: admission.scope,
+                  characterSessionId,
+                }),
+              }
+            : {}),
           presentation: admission.presentation,
           ...(request.signal ? { signal: request.signal } : {}),
           ...(request.onTextDelta
@@ -331,11 +348,22 @@ export function createAgentConversationService(input: {
       });
 
       try {
-        const result = await input.strategy.execute({
+        const result = await harness.execute({
           agentRunId,
           characterSessionId,
           characterVersionId: session.characterVersionId,
           skillVersionIds: session.bindings.skillVersionIds,
+          taskId: null,
+          workflowRunId: null,
+          ...(input.mobileShell
+            ? {
+                onProgress: createAgentHarnessProgressReporter({
+                  repository: input.mobileShell,
+                  scope: admission.scope,
+                  characterSessionId,
+                }),
+              }
+            : {}),
           presentation: admission.presentation,
           ...(request.signal ? { signal: request.signal } : {}),
           input: Object.freeze({
@@ -508,11 +536,22 @@ export function createAgentConversationService(input: {
       });
 
       try {
-        const result = await input.strategy.execute({
+        const result = await harness.execute({
           agentRunId,
           characterSessionId,
           characterVersionId: session.characterVersionId,
           skillVersionIds: session.bindings.skillVersionIds,
+          taskId: null,
+          workflowRunId: null,
+          ...(input.mobileShell
+            ? {
+                onProgress: createAgentHarnessProgressReporter({
+                  repository: input.mobileShell,
+                  scope: admission.scope,
+                  characterSessionId,
+                }),
+              }
+            : {}),
           presentation: admission.presentation,
           ...(request.signal ? { signal: request.signal } : {}),
           input: Object.freeze({
