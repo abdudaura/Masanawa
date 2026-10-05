@@ -261,11 +261,12 @@ describeDatabase("billing NGN funding PostgreSQL acceptance", () => {
       quoteRevision: quote.revision,
       txRef,
       checkoutUrl: "https://checkout.flutterwave.com/v3/hosted/pay/test",
-      boundAt: "2026-10-04T20:00:30.000Z",
+      boundAt: "2026-10-04T20:02:00.000Z",
     });
 
-    // Payment evidence can arrive after the short quote TTL because checkout
-    // was already created while terms were live.
+    // Both the provider's checkout response and later payment evidence may
+    // arrive after the short quote TTL because external dispatch was atomically
+    // admitted while terms were still live.
     await repository.recordVerifiedPayment({
       tenantId,
       userId,
@@ -276,7 +277,7 @@ describeDatabase("billing NGN funding PostgreSQL acceptance", () => {
       providerReference: `FLW-LATE-${quote.quoteId}`,
       amountKobo: quote.totalAmountKobo,
       currency: "NGN",
-      verifiedAt: "2026-10-04T20:02:00.000Z",
+      verifiedAt: "2026-10-04T20:02:30.000Z",
     });
 
     const fulfillmentReference = `bill-${quote.quoteId}`;
@@ -301,7 +302,7 @@ describeDatabase("billing NGN funding PostgreSQL acceptance", () => {
     })).resolves.toMatchObject({
       state: "reserved",
       fulfillmentReference,
-      paymentVerifiedAt: "2026-10-04T20:02:00.000Z",
+      paymentVerifiedAt: "2026-10-04T20:02:30.000Z",
     });
   });
 
