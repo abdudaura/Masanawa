@@ -29,7 +29,32 @@ export interface PlatformAdminCharacter {
   readonly visibleInUserApp: boolean | null;
   readonly displayName: string | null;
   readonly roleLabel: string | null;
+  readonly ownershipKind: "platform" | "personal-clone" | "business" | null;
   readonly updatedAt: string;
+}
+
+export interface PlatformAdminRelationship {
+  readonly relationshipId: string;
+  readonly userId: string;
+  readonly characterId: string;
+  readonly state: "active" | "archived";
+  readonly revision: number;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface PlatformAdminRelationshipReader {
+  list(input: {
+    readonly tenantId: TenantId;
+    readonly userId: string;
+  }): Promise<readonly PlatformAdminRelationship[]>;
+}
+
+export interface PlatformAdminCharacterOwnershipReader {
+  read(input: {
+    readonly tenantId: TenantId;
+    readonly characterId: string;
+  }): Promise<"platform" | "personal-clone" | "business" | null>;
 }
 
 export interface PlatformAdminUser {
@@ -204,6 +229,10 @@ export interface PlatformAdminService {
     readonly limit?: number;
     readonly state?: PlatformAdminUser["state"];
   }): Promise<readonly PlatformAdminUser[]>;
+  listUserRelationships(input: {
+    readonly authorizationHeader: string | undefined;
+    readonly userId: string;
+  }): Promise<readonly PlatformAdminRelationship[]>;
   listAgentRuns(input: {
     readonly authorizationHeader: string | undefined;
     readonly limit?: number;
@@ -309,6 +338,8 @@ export function createPlatformAdminService(input: {
   readonly offerCommands?: PlatformAdminOfferCommands;
   readonly credentialCommands?: PlatformAdminCredentialCommands;
   readonly receiptReader?: PlatformAdminReceiptReader;
+  readonly relationshipReader?: PlatformAdminRelationshipReader;
+  readonly ownershipReader?: PlatformAdminCharacterOwnershipReader;
 }): PlatformAdminService {
   const authorize = async (
     authorizationHeader: string | undefined,
@@ -395,7 +426,7 @@ export function createPlatformAdminService(input: {
           LIMIT $2`,
         [tenant(authority), boundedLimit(request.limit)],
       );
-      return result.rows.map((row) => ({
+      return Promise.all(result.rows.map(async (row) => ({
         characterId: row.character_id,
         state: row.state,
         activeCharacterVersionId: row.active_character_version_id,
@@ -404,8 +435,14 @@ export function createPlatformAdminService(input: {
         visibleInUserApp: row.visible_in_user_app,
         displayName: row.display_name,
         roleLabel: row.role_label,
+        ownershipKind: input.ownershipReader
+          ? await input.ownershipReader.read({
+              tenantId: tenant(authority),
+              characterId: row.character_id,
+            })
+          : null,
         updatedAt: iso(row.updated_at),
-      }));
+      })));
     },
 
     async listUsers(request) {
@@ -449,6 +486,20 @@ export function createPlatformAdminService(input: {
         identityCount: numberValue(row.identity_count),
         relationshipCount: numberValue(row.relationship_count),
       }));
+    },
+
+    async listUserRelationships(request) {
+      const authority = await authorize(
+        request.authorizationHeader,
+        "identity.users.read",
+      );
+      if (!input.relationshipReader) {
+        throw new Error("Relationship administration is unavailable");
+      }
+      return input.relationshipReader.list({
+        tenantId: tenant(authority),
+        userId: request.userId,
+      });
     },
 
     async listAgentRuns(request) {
