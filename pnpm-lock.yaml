@@ -229,6 +229,9 @@ importers:
       '@masanawa/tools':
         specifier: workspace:*
         version: link:../../../packages/tools
+      '@masanawa/workflows':
+        specifier: workspace:*
+        version: link:../../../packages/workflows
       '@masanawa/world':
         specifier: workspace:*
         version: link:../../../packages/world
@@ -438,6 +441,19 @@ importers:
       '@masanawa/providers':
         specifier: workspace:*
         version: link:../providers
+      '@masanawa/security':
+        specifier: workspace:*
+        version: link:../security
+    devDependencies:
+      vitest:
+        specifier: 5.0.3
+        version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
+
+  packages/workflows:
+    dependencies:
+      '@masanawa/contracts':
+        specifier: workspace:*
+        version: link:../contracts
       '@masanawa/security':
         specifier: workspace:*
         version: link:../security
