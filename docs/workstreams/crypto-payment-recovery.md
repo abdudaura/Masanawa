@@ -101,3 +101,29 @@ NOWPayments payout/custody operations require IP-whitelisted egress. Railway doe
 The relay must use a fixed NOWPayments upstream, a strict method/path allowlist, HTTPS at the public edge, a dedicated `x-masanawa-relay-token` credential, bounded bodies/timeouts, no request-body logging, and must preserve NOWPayments `x-api-key` plus provider JWT `Authorization` headers upstream. It is intended to run on the existing `masanawa-relay-bridge` DigitalOcean droplet (public IP 209.38.107.173), not on a second server.
 
 Deployment/Caddy/systemd changes remain runtime-owned because the connected DigitalOcean capability does not expose SSH command execution. Production must remain fail-closed until the relay is deployed and 209.38.107.173 is whitelisted in NOWPayments.
+
+## Fiat Buy reconciliation checkpoint — 2026-10-05
+
+Hosted fiat Buy is now durable across a missed first callback. `NowPaymentsCustodyClient.findPaymentEvidence` authenticates server-side and reads at
+most 100 recent provider payments through the existing NOWPayments base/relay,
+requiring one exact `order_id` + `invoice_id` match. No match leaves the
+canonical Buy pending; more than one match fails closed as ambiguous. The fixed-egress
+relay allowlist now admits only the authenticated GET `/v1/payment/` list path
+in addition to the previously allowed exact payment identity endpoint, and preserves
+query parameters. This continues to target the existing 209.38.107.173 relay only.
+
+`refreshFiatPurchase` uses that lookup only when an admitted hosted invoice has
+no known provider payment id (the missed-IPN case). Any recovered row is passed through
+the same exact fiat invoice/order/amount/currency and final `outcome_amount` /
+`outcome_currency` admission before the repository can credit customer crypto.
+Once a payment id is known, reconciliation remains payment-id-bound and rejects a
+changed provider identity.
+
+Focused tests were added for exact recovery, absent evidence and ambiguous evidence.
+GitHub Foundation CI run 1867 on commit
+`e61ed2c60f7ac006547f2b7a5f6256197cc1f382` failed before executing any
+steps (the job reports an empty step list and exposes no log blob), so it is not
+application verification. Runtime/Gateway route composition remains owned by PR #100;
+production session authority remains owned by PR #128. Those owners must wire the
+published Buy routes/capability and normal production-session FinancialAuthorizer.
+
