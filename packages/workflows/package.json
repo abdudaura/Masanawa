@@ -15,7 +15,8 @@
     "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
-    "@masanawa/contracts": "workspace:*"
+    "@masanawa/contracts": "workspace:*",
+    "@masanawa/security": "workspace:*"
   },
   "devDependencies": {
     "vitest": "5.0.3"
