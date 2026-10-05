@@ -66,7 +66,29 @@ export interface TwinSafetyBlock {
   readonly blockedAt: string;
 }
 
+export interface TwinLedgerPlanEntry {
+  readonly ledgerEntryId: LedgerEntryId;
+  readonly role: string;
+  readonly amountCredits: number;
+}
+
+export interface TwinLedgerPlan {
+  readonly planKey: string;
+  readonly entries: readonly TwinLedgerPlanEntry[];
+  readonly createdAt: string;
+}
+
 export interface TwinRuntimeRepository {
+  readLedgerPlan(input: {
+    readonly tenantId: TenantId;
+    readonly planKey: string;
+  }): Promise<TwinLedgerPlan | null>;
+
+  putLedgerPlan(input: {
+    readonly tenantId: TenantId;
+    readonly plan: TwinLedgerPlan;
+  }): Promise<TwinLedgerPlan>;
+
   resolveUserByRecipient(input: {
     readonly tenantId: TenantId;
     readonly recipient: string;
