@@ -59,6 +59,7 @@ CREATE TABLE commerce.twin_commission_settlements (
   base_credits bigint NOT NULL CHECK (base_credits >= 0),
   commission_credits bigint NOT NULL CHECK (commission_credits >= 0),
   policy_revision bigint NOT NULL CHECK (policy_revision > 0),
+  ledger_entry_id text NOT NULL CHECK (ledger_entry_id ~ '^ledger-entry_'),
   reversed_credits bigint NOT NULL DEFAULT 0 CHECK (reversed_credits >= 0 AND reversed_credits <= commission_credits),
   settled_at timestamptz NOT NULL,
   PRIMARY KEY (tenant_id,settlement_id),
@@ -71,6 +72,7 @@ CREATE TABLE commerce.twin_commission_reversals (
   reversal_id text NOT NULL,
   operation_id text NOT NULL,
   amount_credits bigint NOT NULL CHECK (amount_credits > 0),
+  ledger_entry_id text NOT NULL CHECK (ledger_entry_id ~ '^ledger-entry_'),
   reversed_at timestamptz NOT NULL,
   PRIMARY KEY (tenant_id,reversal_id)
 );
