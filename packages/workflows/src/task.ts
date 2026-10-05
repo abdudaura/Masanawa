@@ -204,9 +204,11 @@ export function assertTaskAccess(
   action: TaskAction,
   at: Instant,
 ): void {
+  const taskScope = authority.resourceScope.taskIds;
   const scopedTask =
     action === "create" ||
-    authority.resourceScope.taskIds?.includes(task.taskId) === true;
+    taskScope === undefined ||
+    taskScope.includes(task.taskId);
   const valid =
     authority.tenantId === task.tenantId &&
     authority.capabilities.includes(`workflows.task.${action}`) &&
