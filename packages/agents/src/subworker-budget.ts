@@ -32,16 +32,27 @@ export interface BudgetedSubworkerAdmissionResult extends SubworkerAdmission {
   readonly parentUsageAfterAdmission: AgentExecutionUsage;
 }
 
+export interface AgentExecutionBudgetReservationPort {
+  reserveChildAdmission(input: {
+    readonly parentAgentRunId: AgentRunId;
+    readonly childAgentRunId: AgentRunId;
+    readonly budget: AgentExecutionBudget;
+    readonly expectedUsage: AgentExecutionUsage;
+    readonly nextUsage: AgentExecutionUsage;
+  }): Promise<AgentExecutionUsage>;
+}
+
 /**
  * Budget-aware wrapper around the canonical bounded subworker admission.
  *
- * This is intentionally persistence-neutral. The caller must durably compare-and-set
- * parentUsageAfterAdmission before allowing the returned child to execute. The child
- * budget is a local ceiling only; all real child activity must also charge the shared
- * parent/root meter.
+ * Parent usage is reserved durably before child AgentRun creation. A failed child
+ * creation may conservatively consume one child slot, but an unbudgeted child can never
+ * exist. The child budget is a local ceiling only; all real child activity must also
+ * charge the shared parent/root meter.
  */
 export function createBudgetedSubworkerAdmissionService(input: {
   readonly subworkers: BudgetedSubworkerAdmissionService;
+  readonly reservations: AgentExecutionBudgetReservationPort;
 }) {
   return Object.freeze({
     async admit(request: {
@@ -85,6 +96,29 @@ export function createBudgetedSubworkerAdmissionService(input: {
         observedAt: request.childBudget.at,
       });
 
+      const reservedUsage = await input.reservations.reserveChildAdmission({
+        parentAgentRunId: request.parentAgentRunId,
+        childAgentRunId: request.childAgentRunId,
+        budget: request.parentBudget,
+        expectedUsage: request.parentUsage,
+        nextUsage: parentUsageAfterAdmission,
+      });
+
+      if (
+        reservedUsage.agentRunId !== request.parentAgentRunId ||
+        reservedUsage.childRuns !== parentUsageAfterAdmission.childRuns ||
+        reservedUsage.inputTokens !== parentUsageAfterAdmission.inputTokens ||
+        reservedUsage.outputTokens !== parentUsageAfterAdmission.outputTokens ||
+        reservedUsage.toolCalls !== parentUsageAfterAdmission.toolCalls ||
+        reservedUsage.providerCostMicros !==
+          parentUsageAfterAdmission.providerCostMicros ||
+        reservedUsage.observedAt !== parentUsageAfterAdmission.observedAt
+      ) {
+        throw new TypeError(
+          "Budget reservation did not persist the expected parent usage",
+        );
+      }
+
       const admitted = await input.subworkers.admit({
         parentAuthority: request.parentAuthority,
         scope: request.scope,
@@ -108,7 +142,7 @@ export function createBudgetedSubworkerAdmissionService(input: {
       return Object.freeze({
         ...admitted,
         childBudget: grant.childBudget,
-        parentUsageAfterAdmission,
+        parentUsageAfterAdmission: reservedUsage,
       });
     },
   });
