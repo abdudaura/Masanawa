@@ -198,6 +198,10 @@ export interface TwinProductionRuntime {
       readonly characterId: CharacterId;
       readonly admissionId: string | null;
     }): Promise<void>;
+    mediaStarted(input: {
+      readonly authorizationHeader: string | undefined;
+      readonly admissionId: string;
+    }): Promise<Readonly<Record<string, unknown>>>;
     complete(input: {
       readonly authorizationHeader: string | undefined;
       readonly admissionId: string;
@@ -1909,16 +1913,50 @@ export function createTwinProductionRuntime(input: {
       readonly characterId: CharacterId;
       readonly admissionId: string | null;
     }) {
+      // Minting a Live token proves authorization, not media usage. Billing
+      // starts only after the connected client reports Gemini setup complete
+      // through mediaStarted below.
       const owner = await input.economy.readOwnerForCharacter({
         tenantId: request.tenantId,
         characterId: request.characterId,
       });
       if (!owner || owner === request.userId) return;
-      if (!request.admissionId) throw new Error("Paid Twin voice admission is required");
-      await input.economy.markVoiceStarted({
-        tenantId: request.tenantId,
+      if (!request.admissionId) {
+        throw new Error("Paid Twin voice admission is required");
+      }
+    },
+
+    async mediaStarted(request: {
+      readonly authorizationHeader: string | undefined;
+      readonly admissionId: string;
+    }) {
+      const identity = await customer.authorize({
+        authorizationHeader: request.authorizationHeader,
+      });
+      const admission = await input.economy.readVoiceAdmission({
+        tenantId: identity.tenantId,
         admissionId: request.admissionId,
-        startedAt: at(),
+      });
+      if (
+        !admission ||
+        admission.userId !== identity.userId ||
+        admission.settledAt !== null ||
+        Date.parse(admission.expiresAt) <= Date.now()
+      ) {
+        throw new Error("Paid Twin voice admission is unavailable");
+      }
+      const started =
+        admission.startedAt === null
+          ? await input.economy.markVoiceStarted({
+              tenantId: identity.tenantId,
+              admissionId: admission.admissionId,
+              startedAt: at(),
+            })
+          : admission;
+      return Object.freeze({
+        started: true,
+        admissionId: started.admissionId,
+        startedAt: started.startedAt,
       });
     },
 
