@@ -87,7 +87,39 @@ export function createPostgresTwinProfileRepository(
 
     async readForOwner(input) {
       const result = await pool.query<TwinProfileRow>(
-        `SELECT *
+        `WITH seeded AS (
+           INSERT INTO identity.twin_public_profiles(
+             tenant_id, character_id, owner_user_id, public_id, display_name, bio,
+             interests, languages, avatar_url, discoverable, revision, created_at, updated_at
+           )
+           SELECT
+             s.tenant_id,
+             s.result->>'characterId',
+             s.user_id,
+             'twin_' || substr(md5(s.result->>'characterId'), 1, 20),
+             left(btrim(s.profile->>'displayName'), 80),
+             left(coalesce(s.profile->>'biography', ''), 500),
+             coalesce(s.profile->'expertise', '[]'::jsonb),
+             s.profile->'languages',
+             NULL,
+             false,
+             1,
+             s.created_at,
+             s.updated_at
+           FROM identity.clone_setups s
+           JOIN identity.character_ownership o
+             ON o.tenant_id=s.tenant_id
+            AND o.character_id=s.result->>'characterId'
+            AND o.owner_user_id=s.user_id
+            AND o.kind='personal-clone'
+           WHERE s.tenant_id=$1
+             AND s.user_id=$2
+             AND s.state='ready'
+             AND s.result IS NOT NULL
+           ON CONFLICT DO NOTHING
+           RETURNING *
+         )
+         SELECT *
            FROM identity.twin_public_profiles
           WHERE tenant_id=$1 AND owner_user_id=$2`,
         [input.tenantId, input.ownerUserId],
