@@ -6,6 +6,7 @@ import 'package:masanawa/src/chat/chat_format.dart';
 import 'package:masanawa/src/core/network/api_client.dart';
 import 'package:masanawa/src/core/providers.dart';
 import 'package:masanawa/src/state/ai_chat_state.dart';
+import 'package:masanawa/src/state/session_state.dart';
 
 class _FailingClient extends ApiClient {
   _FailingClient()
@@ -17,8 +18,16 @@ class _FailingClient extends ApiClient {
   }
 }
 
+class _SignedOutSessionController extends SessionController {
+  @override
+  SessionState build() => const SessionSignedOut();
+}
+
 ProviderContainer _container() => ProviderContainer(
-  overrides: [apiClientProvider.overrideWithValue(_FailingClient())],
+  overrides: [
+    apiClientProvider.overrideWithValue(_FailingClient()),
+    sessionProvider.overrideWith(_SignedOutSessionController.new),
+  ],
 );
 
 void main() {
