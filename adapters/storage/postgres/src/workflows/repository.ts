@@ -921,6 +921,179 @@ export function createPostgresWorkflowRunRepository(
       });
     },
 
+    async commitCheckpoint(raw) {
+      const authority = captureAuthority(raw.authority);
+      const scope = normalizeWorkflowRunScope(raw.scope);
+      const checkpoint = normalizeWorkflowCheckpoint(raw.checkpoint);
+      if (
+        !Number.isSafeInteger(raw.expectedRunRevision) ||
+        raw.expectedRunRevision < 1
+      ) {
+        throw new RangeError("WorkflowRun expectedRunRevision is invalid");
+      }
+
+      return withTransaction(pool, async (client) => {
+        await currentAuthority(client, authority);
+        const current = await loadRun(
+          client,
+          scope,
+          checkpoint.workflowRunId,
+          true,
+        );
+        const at = await currentAuthority(client, authority);
+        assertWorkflowRunAccess(authority, current, "checkpoint", at);
+        assertWorkflowRunAccess(
+          authority,
+          current,
+          raw.transition.to === "cancelled" ? "cancel" : "update",
+          at,
+        );
+
+        const prior = await client.query<CheckpointRow>(
+          `SELECT workflow_run_id, checkpoint_revision, graph_signature,
+                  committed_state, executor_state, edge_state,
+                  pending_approval_ids, created_at
+             FROM workflows.workflow_checkpoints
+            WHERE tenant_id = $1
+              AND workflow_run_id = $2
+              AND checkpoint_revision = $3
+            FOR SHARE`,
+          [
+            scope.tenantId,
+            checkpoint.workflowRunId,
+            checkpoint.checkpointRevision,
+          ],
+        );
+        if (prior.rows[0]) {
+          const existing = checkpointFromRow(prior.rows[0]);
+          if (!sameCheckpoint(existing, checkpoint)) {
+            throw conflict(
+              "workflows.checkpoint_conflict",
+              "Checkpoint revision is already bound to different state",
+            );
+          }
+          return current;
+        }
+
+        if (
+          current.revision !== raw.expectedRunRevision ||
+          checkpoint.checkpointRevision !== current.checkpointRevision + 1 ||
+          runTerminal(current.state)
+        ) {
+          throw conflict(
+            "workflows.checkpoint_conflict",
+            "WorkflowRun cannot accept this checkpoint transition",
+          );
+        }
+        assertWorkflowRunTransition(current.state, raw.transition.to);
+
+        const pendingApprovalIds = checkpoint.pendingApprovalIds;
+        if (
+          raw.transition.to === "waiting_approval" &&
+          pendingApprovalIds.length === 0
+        ) {
+          throw new TypeError(
+            "waiting_approval checkpoint requires pending approvals",
+          );
+        }
+        if (
+          raw.transition.to !== "waiting_approval" &&
+          pendingApprovalIds.length > 0
+        ) {
+          throw new TypeError(
+            "Only waiting_approval may retain pending approvals",
+          );
+        }
+        if (
+          raw.transition.pendingApprovalIds !== undefined &&
+          canonicalJson(raw.transition.pendingApprovalIds) !==
+            canonicalJson(pendingApprovalIds)
+        ) {
+          throw conflict(
+            "workflows.checkpoint_approval_mismatch",
+            "Transition approvals do not match checkpoint state",
+          );
+        }
+
+        const failureCode =
+          raw.transition.to === "failed"
+            ? raw.transition.failureCode?.trim().toLowerCase()
+            : null;
+        if (raw.transition.to === "failed" && !failureCode) {
+          throw new TypeError("Failed WorkflowRun requires failureCode");
+        }
+        if (
+          raw.transition.to !== "failed" &&
+          raw.transition.failureCode !== undefined
+        ) {
+          throw new TypeError(
+            "failureCode is only valid for failed WorkflowRun",
+          );
+        }
+
+        await client.query(
+          `INSERT INTO workflows.workflow_checkpoints(
+             tenant_id, workflow_run_id, checkpoint_revision,
+             graph_signature, committed_state, executor_state, edge_state,
+             pending_approval_ids, created_at
+           )
+           VALUES($1,$2,$3,$4,$5::jsonb,$6::jsonb,$7::jsonb,$8::jsonb,$9)`,
+          [
+            scope.tenantId,
+            checkpoint.workflowRunId,
+            checkpoint.checkpointRevision,
+            checkpoint.graphSignature,
+            canonicalJson(checkpoint.committedState),
+            canonicalJson(checkpoint.executorState),
+            canonicalJson(checkpoint.edgeState),
+            canonicalJson(pendingApprovalIds),
+            checkpoint.createdAt,
+          ],
+        );
+
+        const completedAt = runTerminal(raw.transition.to) ? at : null;
+        const result = await client.query<WorkflowRunRow>(
+          `UPDATE workflows.workflow_runs
+              SET state = $4,
+                  checkpoint_revision = $5,
+                  revision = revision + 1,
+                  pending_approval_ids = $6::jsonb,
+                  updated_at = $7,
+                  completed_at = $8,
+                  failure_code = $9
+            WHERE tenant_id = $1
+              AND workflow_run_id = $2
+              AND revision = $3
+            RETURNING *`,
+          [
+            scope.tenantId,
+            checkpoint.workflowRunId,
+            raw.expectedRunRevision,
+            raw.transition.to,
+            checkpoint.checkpointRevision,
+            canonicalJson(pendingApprovalIds),
+            at,
+            completedAt,
+            failureCode,
+          ],
+        );
+        if (!result.rows[0]) {
+          throw conflict(
+            "workflows.checkpoint_conflict",
+            "WorkflowRun changed before checkpoint transition commit",
+          );
+        }
+        const updated = runFromRow(result.rows[0]);
+        assertWorkflowRunAccess(
+          authority,
+          updated,
+          "checkpoint",
+          await currentAuthority(client, authority),
+        );
+        return updated;
+      });
+    },
+
     async readLatestCheckpoint(raw) {
       const authority = captureAuthority(raw.authority);
       const scope = normalizeWorkflowRunScope(raw.scope);
