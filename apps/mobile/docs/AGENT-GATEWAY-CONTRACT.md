@@ -1,69 +1,63 @@
-# Agent Gateway Contract (draft v0 — PLANNED)
+# Agent Gateway Contract — mobile production surface
 
-Status: draft for Masanawa Task 099 (CharacterSession command/streaming
-gateway APIs). The gateway does not expose these endpoints yet. The shell
-ships against this draft so it lights up the moment the server lands it —
-no app changes required. Until then every turn stays on preview.
+Status: active mobile shell contract.
 
-## Endpoints
+The app authenticates once through `/auth/**`. The returned bearer session is
+attached automatically to Agent and creator requests; users never enter a Gateway
+token manually.
 
-### Open (or resume) a session
+## Core endpoints
+
+- `GET /agent/directory`
+- `PUT /agent/preferences/default`
+- `POST /agent/sessions/open`
+- `POST /agent/sessions/{characterSessionId}/turn`
+- `POST /agent/sessions/{characterSessionId}/turn-stream`
+- `POST /agent/sessions/{characterSessionId}/media-turn`
+- `POST /agent/sessions/{characterSessionId}/media-set-turn`
+- `POST /agent/sessions/{characterSessionId}/close`
+- `GET /agent/shell/config`
+- `GET /agent/history`
+- `GET /agent/events/stream`
+- `POST /agent/live/token`
+- `POST /agent/push/register`
+- `POST /agent/push/unregister`
+- `GET/PUT /creator/skills`
+- `GET /creator/economy`
+- `POST /creator/float`
+- `POST /creator/clone`
+
+## Session opening
 
 `POST /agent/sessions/open`
 
-Request:
-
 ```json
-{ "masanaId": "labari" }
+{ "characterId": "character_…" }
 ```
 
-Response:
+The response carries the canonical `characterSessionId`. The server authorizes
+the signed-in User, Character visibility/relationship and current tenant scope
+before admission.
 
-```json
-{ "characterSessionId": "sess_…", "agentRunId": "run_… (optional)" }
-```
+## Turns
 
-Rules: idempotent per caller + masana. Returns the existing open session
-when one is already active (resume). Auth: shell session bearer token.
+Text and media turns bind the canonical Character, CharacterSession and request
+identity. Streaming text/audio is a transport projection only; AgentRun/session
+truth remains server-side. A client timeout, retry or reconnect must not invent
+success.
 
-### Send one turn
+## Authorization and isolation
 
-`POST /agent/sessions/{characterSessionId}/turn`
+- A bearer session is the normal user session issued by production auth.
+- Directory visibility is an authorized projection, not a capability grant.
+- Platform support Characters may be admitted for the signed-in user.
+- Personal clones are relationship/owner scoped; another user's clone is not
+  exposed merely because its presentation is visible.
+- Skills, Tools, provider access and financial authority are decided server-side.
+- Client display names, role labels and cached session IDs never grant authority.
 
-Request:
+## Build behavior
 
-```json
-{ "text": "…" }
-```
-
-Response:
-
-```json
-{ "reply": "…", "agentRunId": "run_… (optional)" }
-```
-
-Rules: `reply` is required and non-empty. `agentRunId` carries the Task 072
-run reference when the runtime returns one. Missing/empty `reply` is a
-transport failure — the shell falls back honestly, never fakes text.
-
-### Close (advisory)
-
-`POST /agent/sessions/{characterSessionId}/close`
-
-Request: `{}`. Always best-effort. Server sessions are durable; a lost
-close never strands the Character.
-
-## Thread bindings
-
-`characterSessionId` / `agentRunId` on a thread are last-known server refs.
-They are null on preview-only threads. Older caches without these keys load
-normally.
-
-## Cutover checklist (staging)
-
-- [ ] Gateway serves the three endpoints behind auth.
-- [ ] Staging build sets `AGENT_RUNTIME_ENABLED=true` + `AGENT_BASE_URL=…`.
-- [ ] Session IDs persist across restarts (server resume, not phone storage).
-- [ ] Airplane-mode turn shows the honest offline reply, never fake success.
-- [ ] Revoked device blocked server-side.
-- [ ] Preview fallback removed only after a green staging week.
+Production Gateway origins are compiled as non-secret defaults. A staging build
+may override `API_BASE_URL` and `AGENT_BASE_URL`; there is no
+`AGENT_RUNTIME_ENABLED` switch and no Alpha/Developer access-token define.
