@@ -262,6 +262,48 @@ async function generateOnce(input: {
   return Object.freeze({ text });
 }
 
+export async function verifyGeminiCredentialPool(input: {
+  readonly pool: GeminiCredentialPool;
+  readonly fetchImpl?: typeof fetch;
+  readonly timeoutMs?: number;
+}): Promise<{
+  readonly checked: number;
+  readonly authenticated: number;
+  readonly model: string;
+}> {
+  const model = input.pool.models[0];
+  if (!model) throw new TypeError("Gemini pool has no model to verify");
+  const fetchImpl = input.fetchImpl ?? fetch;
+  const timeoutMs = Math.max(1_000, Math.min(20_000, input.timeoutMs ?? 10_000));
+  let authenticated = 0;
+
+  for (const apiKey of input.pool.apiKeys) {
+    try {
+      const response = await fetchImpl(
+        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}`,
+        {
+          headers: { "x-goog-api-key": apiKey },
+          redirect: "error",
+          signal: AbortSignal.timeout(timeoutMs),
+        },
+      );
+      if (response.ok) authenticated += 1;
+    } catch {
+      // Verification is bounded metadata only. Individual failures are counted.
+    }
+  }
+
+  if (authenticated < 1) {
+    throw new Error("No Gemini credential authenticated successfully");
+  }
+
+  return Object.freeze({
+    checked: input.pool.apiKeys.length,
+    authenticated,
+    model,
+  });
+}
+
 export function createGeminiCredentialPoolInferenceProvider(input: {
   readonly pool: GeminiCredentialPool;
   readonly fetchImpl?: typeof fetch;
