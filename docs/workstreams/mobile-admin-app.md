@@ -38,14 +38,14 @@ Implemented:
 - audit metadata;
 - Memory lifecycle/extraction and inbox/outbox recovery health;
 - World status/generation diagnostics plus canonical pause/recover;
-- approval metadata plus canonical approve/deny using the signed-in operator Principal; Gwani governed write proposals now create/reuse an idempotent Operation and exact-bound one-time approval, but approved-action replay/consumption remains the next execution boundary;
+- approval metadata plus canonical approve/deny using the signed-in operator Principal; Gwani governed write proposals create/reuse an idempotent Operation and exact-bound one-time approval, and exact approved replay now consumes that allow-once approval, progresses the same Operation through canonical execution states, invokes the existing Offer/credential/World command, and records ambiguous dispatch failures as `unknown` rather than blindly retrying;
 - Modules readiness view for Channels, Devices, Workflows, Social/Studio, Plugins and Agent Phone;
 - tenant/capability authorization on every new Ops projection;
 - cross-capability same-tenant enforcement in System diagnostics;
 - regression coverage for tenant-scoped reads, rejection of direct-SQL user lifecycle mutation, authorization-before-storage and secret-safe credential projection.
 
 Intentionally gated:
-- approved Gwani write replay still requires exact approval consumption plus valid Operation state progression before canonical command execution; approve/deny itself is now implemented for PlatformSession operators;
+- the remaining conversational-admin integration is the Gateway Tool adapter that lets Gwani invoke the Ops broker from a real AgentRun; the Ops broker now supports exact approved replay/consumption and canonical Offer, credential-revocation and World pause/resume execution, but shared Gateway wiring remains owned by the active production integration lane;
 - User lifecycle transition, provider rotation, reconciliation commands, Memory correction/purge and policy/role administration require canonical command/use-case contracts rather than direct SQL shortcuts; provider revocation, Offer enable/disable and World pause/resume already bind canonical storage/domain commands;
 - Channels, Devices, Workflows, billing/crypto administration and later Social/Studio/Plugins/Agent Phone controls integrate as their active platform contracts land.
 
@@ -55,6 +55,8 @@ Verification:
 - PR #129 Foundation CI is currently failing before checkout with zero steps and runner_id 0; this is runner allocation failure, not test evidence;
 - Flutter/Dart SDK is unavailable in this execution environment, so physical Flutter analyze/APK build is not claimed;
 - TypeScript/API source shapes were audited against current schemas and existing domain/storage semantics.
+- approved replay regression coverage now proves the broker does not execute before approval, executes a canonical write after exact approved replay, returns already-succeeded replays without a second mutation, and marks ambiguous write failures for reconciliation.
+- the latest Foundation CI attempt still terminates before checkout with `steps: []` and `runner_id: 0`; this remains runner-allocation failure rather than executed test evidence.
 
 Canonical capability map: `docs/ADMIN-CONTROL-PLANE.md`.
 
