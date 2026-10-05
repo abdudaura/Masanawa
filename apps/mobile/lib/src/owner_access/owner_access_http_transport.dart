@@ -121,16 +121,15 @@ class GatewayOwnerAccessOfferingTransport {
     }
     final parsedModalities = <OwnerAccessModality>{};
     for (final raw in modalities) {
-      switch (raw) {
-        case 'text':
-          parsedModalities.add(OwnerAccessModality.text);
-        case 'voice':
-          parsedModalities.add(OwnerAccessModality.voice);
-        case 'video':
-          parsedModalities.add(OwnerAccessModality.video);
-        default:
-          throw const FormatException('Invalid owner access offering modality');
-      }
+      final modality = switch (raw) {
+        'text' => OwnerAccessModality.text,
+        'voice' => OwnerAccessModality.voice,
+        'video' => OwnerAccessModality.video,
+        _ => throw const FormatException(
+            'Invalid owner access offering modality',
+          ),
+      };
+      parsedModalities.add(modality);
     }
     final parsedDurations = <int>[];
     for (final raw in durations) {
