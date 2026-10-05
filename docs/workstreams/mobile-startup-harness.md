@@ -15,6 +15,8 @@ Owned paths:
 - `apps/mobile/test/session_state_test.dart`
 - new focused mobile startup tests if needed
 - `docs/AGENT-HARNESS.md`
+- `packages/agents/src/harness.ts`
+- `packages/agents/src/index.ts` only to export the new harness seam
 - this claim file
 
 Boundaries:
@@ -33,4 +35,4 @@ Acceptance:
   channels and progress events as composition around existing authorities;
 - relevant tests are updated and executable when Flutter is available.
 
-Status: active.
+Status: active. The new harness seam is provider-neutral and must not execute or bypass domain authorities itself.
