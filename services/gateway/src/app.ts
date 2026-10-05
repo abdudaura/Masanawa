@@ -15,9 +15,9 @@ import type {
 import { registerAgentShellRoutes } from "./agent_shell_routes.js";
 import type { MobilePushRegistrationService } from "./mobile_push.js";
 import {
-  ProductionAuthError,
-  type ProductionAuthService,
-} from "./production_auth.js";
+  CustomerAuthError,
+  type CustomerAuthService,
+} from "./customer_auth.js";
 import {
   admitTelemetryCorrelation,
   injectCorrelationHeaders,
@@ -44,7 +44,7 @@ export interface GatewayAppOptions {
   readonly agentShell?: AgentShellService;
   readonly liveVoiceTokens?: LiveVoiceTokenService;
   readonly mobilePush?: MobilePushRegistrationService;
-  readonly productionAuth?: ProductionAuthService;
+  readonly customerAuth?: CustomerAuthService;
 }
 
 const HealthResponseSchema = Type.Object(
@@ -206,93 +206,112 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
   });
 
 
-  if (options.productionAuth) {
-    const auth = options.productionAuth;
-    const fail = (reply: { code(status: number): unknown }, error: unknown) => {
-      if (error instanceof ProductionAuthError) {
-        (reply.code(error.statusCode) as { send(body: unknown): unknown }).send({
-          code: error.code,
-          message: error.message,
-        });
-        return;
+  if (options.customerAuth) {
+    const auth = options.customerAuth;
+    const authError = (
+      error: unknown,
+      reply: { code(statusCode: number): unknown },
+    ) => {
+      if (error instanceof CustomerAuthError) {
+        reply.code(error.statusCode);
+        return { code: error.code, message: error.code };
       }
-      (reply.code(503) as { send(body: unknown): unknown }).send({
-        code: "AUTH_UNAVAILABLE",
-        message: "Authentication is temporarily unavailable.",
-      });
+      reply.code(503);
+      return { code: "AUTH_UNAVAILABLE", message: "AUTH_UNAVAILABLE" };
     };
 
-    app.post("/auth/otp", async (request, reply) => {
-      try {
-        const body = request.body as { phone?: unknown; email?: unknown };
-        return await auth.sendOtp({
-          ...(typeof body?.phone === "string" ? { phone: body.phone } : {}),
-          ...(typeof body?.email === "string" ? { email: body.email } : {}),
-        });
-      } catch (error) {
-        fail(reply, error);
-      }
-    });
+    app.get("/auth/capabilities", async () => auth.capabilities());
 
-    app.post("/auth/verify", async (request, reply) => {
-      try {
-        const body = request.body as {
-          phone?: unknown;
-          email?: unknown;
-          code?: unknown;
-        };
-        if (typeof body?.code !== "string") {
-          throw new ProductionAuthError("VALIDATION_FAILED", 400, "Verification code is required");
+    app.post(
+      "/auth/otp",
+      {
+        schema: {
+          body: Type.Object(
+            {
+              phone: Type.Optional(Type.String({ minLength: 7, maxLength: 40 })),
+              email: Type.Optional(Type.String({ minLength: 3, maxLength: 320 })),
+            },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request, reply) => {
+        try {
+          return await auth.sendOtp({
+            ...(request.body.phone === undefined
+              ? {}
+              : { phone: request.body.phone }),
+            ...(request.body.email === undefined
+              ? {}
+              : { email: request.body.email }),
+          });
+        } catch (error) {
+          return authError(error, reply);
         }
-        return await auth.verifyOtp({
-          ...(typeof body.phone === "string" ? { phone: body.phone } : {}),
-          ...(typeof body.email === "string" ? { email: body.email } : {}),
-          code: body.code,
-        });
-      } catch (error) {
-        fail(reply, error);
-      }
-    });
+      },
+    );
 
-    app.post("/auth/refresh", async (request, reply) => {
-      try {
-        const body = request.body as { refreshToken?: unknown };
-        if (typeof body?.refreshToken !== "string") {
-          throw new ProductionAuthError("UNAUTHORIZED", 401, "Session is no longer valid");
+    app.post(
+      "/auth/verify",
+      {
+        schema: {
+          body: Type.Object(
+            {
+              phone: Type.Optional(Type.String({ minLength: 7, maxLength: 40 })),
+              email: Type.Optional(Type.String({ minLength: 3, maxLength: 320 })),
+              code: Type.String({ minLength: 6, maxLength: 6 }),
+              name: Type.Optional(Type.String({ minLength: 1, maxLength: 160 })),
+            },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request, reply) => {
+        try {
+          return await auth.verifyOtp({
+            ...(request.body.phone === undefined
+              ? {}
+              : { phone: request.body.phone }),
+            ...(request.body.email === undefined
+              ? {}
+              : { email: request.body.email }),
+            code: request.body.code,
+            ...(request.body.name === undefined
+              ? {}
+              : { name: request.body.name }),
+          });
+        } catch (error) {
+          return authError(error, reply);
         }
-        return await auth.refresh(body.refreshToken);
-      } catch (error) {
-        fail(reply, error);
-      }
-    });
+      },
+    );
 
-    app.patch("/auth/profile", async (request, reply) => {
-      try {
-        const body = request.body as { name?: unknown };
-        if (typeof body?.name !== "string") {
-          throw new ProductionAuthError("VALIDATION_FAILED", 400, "Name is required");
+    app.post(
+      "/auth/refresh",
+      {
+        schema: {
+          body: Type.Object(
+            { refreshToken: Type.String({ minLength: 20, maxLength: 256 }) },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request, reply) => {
+        try {
+          return await auth.refresh({ refreshToken: request.body.refreshToken });
+        } catch (error) {
+          return authError(error, reply);
         }
-        return {
-          user: await auth.updateProfile({
-            authorizationHeader: request.headers.authorization,
-            name: body.name,
-          }),
-        };
-      } catch (error) {
-        fail(reply, error);
-      }
-    });
+      },
+    );
 
-    app.post("/auth/logout", async (request, reply) => {
-      try {
-        await auth.logout(request.headers.authorization);
-        return { ok: true };
-      } catch (error) {
-        fail(reply, error);
-      }
+    app.post("/auth/logout", async (request) => {
+      await auth.logout({
+        authorizationHeader: request.headers.authorization,
+      });
+      return { success: true as const };
     });
   }
-
 
   if (options.agentDirectory) {
     const directory = options.agentDirectory;
