@@ -6,8 +6,7 @@ import {
   type BillingFulfillmentStore,
   type FlutterwaveBillsTransport,
 } from "@masanawa/providers";
-import type { ProviderWebhookRepository } from "@masanawa/postgres";
-import { createBillingFinancialService } from "./financial_billing.js";
+import { createBillingFinancialService, type BillingWebhookAdmissionRepository } from "./financial_billing.js";
 import type { FinancialAuthorizer } from "./financial_service.js";
 
 class MemoryStore implements BillingFulfillmentStore {
@@ -43,7 +42,7 @@ describe("BillingFinancialService catalog authority", () => {
         };
       },
     };
-    const webhookRepository: ProviderWebhookRepository = {
+    const webhookRepository: BillingWebhookAdmissionRepository = {
       async admitProviderWebhook() {
         return { duplicate: false };
       },
@@ -157,7 +156,7 @@ describe("BillingFinancialService catalog authority", () => {
         };
       },
     };
-    const webhookRepository: ProviderWebhookRepository = {
+    const webhookRepository: BillingWebhookAdmissionRepository = {
       async admitProviderWebhook() {
         return { duplicate: false };
       },
