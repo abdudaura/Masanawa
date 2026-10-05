@@ -263,7 +263,7 @@ function createDefaultDatabaseDependency(
   return Object.freeze({
     readinessCheck: database.readinessCheck,
     platformAgentIdentity: Object.freeze({
-      async provision(input) {
+      async provision(input: Parameters<PlatformAgentIdentityProvisioner["provision"]>[0]) {
         await withTransaction(database.pool, async (client) => {
           const identity = createPostgresIdentityRepository(client);
           await identity.createCharacter({
