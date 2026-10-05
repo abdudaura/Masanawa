@@ -25,6 +25,7 @@ export interface PostgresPlatformIdentityBridge {
     readonly tenantId: TenantId;
     readonly userId: UserId;
   }): Promise<readonly CharacterId[]>;
+  resolveSingleActiveTenant(): Promise<TenantId>;
 }
 
 function subject(externalUserId: string): ExternalSubjectRef {
@@ -104,6 +105,30 @@ export function createPostgresPlatformIdentityBridge(
             [input.tenantId, input.userId],
           );
           return Object.freeze(result.rows.map((row) => row.character_id));
+        },
+        { isolation: "repeatable read", readOnly: true },
+      );
+    },
+
+    async resolveSingleActiveTenant() {
+      return withTransaction(
+        pool,
+        async (client) => {
+          const result = await client.query<{ tenant_id: TenantId }>(
+            `SELECT tenant_id
+               FROM identity.tenants
+              WHERE state = 'active'
+              ORDER BY created_at
+              LIMIT 2`,
+          );
+          if (result.rowCount !== 1) {
+            throw new Error(
+              result.rowCount === 0
+                ? "No active Masanawa tenant exists"
+                : "Multiple active Masanawa tenants require MASANAWA_PLATFORM_TENANT_ID",
+            );
+          }
+          return result.rows[0]!.tenant_id;
         },
         { isolation: "repeatable read", readOnly: true },
       );
