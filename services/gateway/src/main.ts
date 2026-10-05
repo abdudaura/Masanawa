@@ -83,7 +83,7 @@ import {
 } from "./alpha_dev.js";
 import { createGeminiAlphaInferenceProvider } from "./alpha_executor.js";
 import { createPlatformSessionVerifier, createProductionAuthorizers } from "./production_auth.js";
-import { createGeminiCredentialPoolInferenceProvider, createSupabaseGeminiPoolInferenceProvider, loadSupabaseGeminiCredentialPool, parseGeminiCredentialPool, parseNurainImportedGeminiCredentialPool } from "./production_inference.js";
+import { createGeminiCredentialPoolInferenceProvider, createSupabaseGeminiPoolInferenceProvider, loadSupabaseGeminiCredentialPool, parseGeminiCredentialPool, parseNurainImportedGeminiCredentialPool, verifyGeminiCredentialPool } from "./production_inference.js";
 import { createProductionAgentStrategy } from "./production_strategy.js";
 import { createAlphaInferenceStrategy } from "./alpha_strategy.js";
 import { createGeminiLiveAudioRenderer } from "./native_audio.js";
@@ -489,6 +489,20 @@ export async function startGatewayService(
 
       if (!startupPool) {
         throw new Error("Production Gemini pool failed to initialize");
+      }
+
+      if (env.MASANAWA_GEMINI_VERIFY_ON_START === "true") {
+        const verification = await verifyGeminiCredentialPool({
+          pool: startupPool,
+        });
+        process.stdout.write(
+          `${JSON.stringify({
+            event: "gemini.pool_verified",
+            checked: verification.checked,
+            authenticated: verification.authenticated,
+            model: verification.model,
+          })}\n`,
+        );
       }
 
       if (!liveVoiceApiKey) {
