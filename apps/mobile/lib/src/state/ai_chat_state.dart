@@ -1400,7 +1400,7 @@ class AiChatController extends Notifier<AiChatState> {
         ...state.threads,
         characterId: thread.copyWith(
           messages: messages,
-          unread: isOpen ? 0 : (thread.unread - removed).clamp(0, 1 << 30),
+          unread: isOpen ? 0 : (thread.unread - removed).clamp(0, 1 << 30).toInt(),
         ),
       },
     );
