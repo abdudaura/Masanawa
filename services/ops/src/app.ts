@@ -193,6 +193,53 @@ const PutOfferEnabledBodySchema = Type.Object(
   { additionalProperties: false },
 );
 
+const AdminLimitQuerySchema = Type.Object(
+  {
+    limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 500 })),
+  },
+  { additionalProperties: false },
+);
+
+const AdminUserListQuerySchema = Type.Object(
+  {
+    limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 500 })),
+    state: Type.Optional(Type.Union([
+      Type.Literal("active"),
+      Type.Literal("disabled"),
+      Type.Literal("archived"),
+    ])),
+  },
+  { additionalProperties: false },
+);
+
+const AdminAgentRunListQuerySchema = Type.Object(
+  {
+    limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 500 })),
+    state: Type.Optional(Type.Union([
+      Type.Literal("running"),
+      Type.Literal("completed"),
+      Type.Literal("failed"),
+    ])),
+  },
+  { additionalProperties: false },
+);
+
+const AdminOperationListQuerySchema = Type.Object(
+  {
+    limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 500 })),
+    state: Type.Optional(Type.String({ minLength: 1, maxLength: 100 })),
+  },
+  { additionalProperties: false },
+);
+
+const AdminReconciliationListQuerySchema = Type.Object(
+  {
+    limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 500 })),
+    status: Type.Optional(Type.String({ minLength: 1, maxLength: 100 })),
+  },
+  { additionalProperties: false },
+);
+
 const ReadinessResponseSchema = Type.Object(
   {
     service: Type.Literal("ops"),
@@ -387,30 +434,52 @@ export function createOpsApp(options: OpsAppOptions = {}) {
       }),
     );
 
-    app.get("/v1/admin/characters", async (request) => [
-      ...await platformAdmin.listCharacters({
-        authorizationHeader: request.headers.authorization,
-      }),
-    ]);
+    app.get(
+      "/v1/admin/characters",
+      { schema: { querystring: AdminLimitQuerySchema } },
+      async (request) => [
+        ...await platformAdmin.listCharacters({
+          authorizationHeader: request.headers.authorization,
+          limit: request.query.limit,
+        }),
+      ],
+    );
 
-    app.get("/v1/admin/users", async (request) => [
-      ...await platformAdmin.listUsers({
-        authorizationHeader: request.headers.authorization,
-      }),
-    ]);
+    app.get(
+      "/v1/admin/users",
+      { schema: { querystring: AdminUserListQuerySchema } },
+      async (request) => [
+        ...await platformAdmin.listUsers({
+          authorizationHeader: request.headers.authorization,
+          limit: request.query.limit,
+          state: request.query.state,
+        }),
+      ],
+    );
 
 
-    app.get("/v1/admin/agent-runs", async (request) => [
-      ...await platformAdmin.listAgentRuns({
-        authorizationHeader: request.headers.authorization,
-      }),
-    ]);
+    app.get(
+      "/v1/admin/agent-runs",
+      { schema: { querystring: AdminAgentRunListQuerySchema } },
+      async (request) => [
+        ...await platformAdmin.listAgentRuns({
+          authorizationHeader: request.headers.authorization,
+          limit: request.query.limit,
+          state: request.query.state,
+        }),
+      ],
+    );
 
-    app.get("/v1/admin/offers", async (request) => [
-      ...await platformAdmin.listOffers({
-        authorizationHeader: request.headers.authorization,
-      }),
-    ]);
+    app.get(
+      "/v1/admin/offers",
+      { schema: { querystring: AdminLimitQuerySchema } },
+      async (request) => [
+        ...await platformAdmin.listOffers({
+          authorizationHeader: request.headers.authorization,
+          limit: request.query.limit,
+        }),
+      ],
+    );
 
     app.put(
       "/v1/admin/offers/:offerId/enabled",
@@ -429,35 +498,62 @@ export function createOpsApp(options: OpsAppOptions = {}) {
         }),
     );
 
-    app.get("/v1/admin/fulfillments", async (request) => [
-      ...await platformAdmin.listFulfillments({
-        authorizationHeader: request.headers.authorization,
-      }),
-    ]);
+    app.get(
+      "/v1/admin/fulfillments",
+      { schema: { querystring: AdminLimitQuerySchema } },
+      async (request) => [
+        ...await platformAdmin.listFulfillments({
+          authorizationHeader: request.headers.authorization,
+          limit: request.query.limit,
+        }),
+      ],
+    );
 
-    app.get("/v1/admin/ledger", async (request) => [
-      ...await platformAdmin.listLedger({
-        authorizationHeader: request.headers.authorization,
-      }),
-    ]);
+    app.get(
+      "/v1/admin/ledger",
+      { schema: { querystring: AdminLimitQuerySchema } },
+      async (request) => [
+        ...await platformAdmin.listLedger({
+          authorizationHeader: request.headers.authorization,
+          limit: request.query.limit,
+        }),
+      ],
+    );
 
-    app.get("/v1/admin/operations", async (request) => [
-      ...await platformAdmin.listOperations({
-        authorizationHeader: request.headers.authorization,
-      }),
-    ]);
+    app.get(
+      "/v1/admin/operations",
+      { schema: { querystring: AdminOperationListQuerySchema } },
+      async (request) => [
+        ...await platformAdmin.listOperations({
+          authorizationHeader: request.headers.authorization,
+          limit: request.query.limit,
+          state: request.query.state,
+        }),
+      ],
+    );
 
-    app.get("/v1/admin/reconciliation", async (request) => [
-      ...await platformAdmin.listReconciliation({
-        authorizationHeader: request.headers.authorization,
-      }),
-    ]);
+    app.get(
+      "/v1/admin/reconciliation",
+      { schema: { querystring: AdminReconciliationListQuerySchema } },
+      async (request) => [
+        ...await platformAdmin.listReconciliation({
+          authorizationHeader: request.headers.authorization,
+          limit: request.query.limit,
+          status: request.query.status,
+        }),
+      ],
+    );
 
-    app.get("/v1/admin/provider-credentials", async (request) => [
-      ...await platformAdmin.listCredentialRefs({
-        authorizationHeader: request.headers.authorization,
-      }),
-    ]);
+    app.get(
+      "/v1/admin/provider-credentials",
+      { schema: { querystring: AdminLimitQuerySchema } },
+      async (request) => [
+        ...await platformAdmin.listCredentialRefs({
+          authorizationHeader: request.headers.authorization,
+          limit: request.query.limit,
+        }),
+      ],
+    );
 
     app.post(
       "/v1/admin/provider-credentials/:credentialRefId/revoke",
@@ -476,11 +572,16 @@ export function createOpsApp(options: OpsAppOptions = {}) {
         }),
     );
 
-    app.get("/v1/admin/audit", async (request) => [
-      ...await platformAdmin.listAuditEvents({
-        authorizationHeader: request.headers.authorization,
-      }),
-    ]);
+    app.get(
+      "/v1/admin/audit",
+      { schema: { querystring: AdminLimitQuerySchema } },
+      async (request) => [
+        ...await platformAdmin.listAuditEvents({
+          authorizationHeader: request.headers.authorization,
+          limit: request.query.limit,
+        }),
+      ],
+    );
   }
 
 
