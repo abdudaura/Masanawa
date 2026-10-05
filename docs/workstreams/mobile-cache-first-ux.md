@@ -32,8 +32,10 @@ Implemented:
 - no authority, transport or persistence behavior changed.
 
 Verification:
+- PR #166 merged into `work/billing-main-integration-20261005` at `c878f23ce3f77c68dcfb1f76ecc44561f4702d96`;
+- Foundation CI run 37293538837 and Mobile Build run 37293538755 again ended with `steps: null`, so no application step executed;
 - branch diff is limited to the two owned presentation screens and checkpoint docs;
 - no APK rebuild was performed;
 - hosted Flutter execution remains subject to the repository runner-allocation issue.
 
-Status: implementation checkpoint complete pending PR integration.
+Status: merged implementation checkpoint.
