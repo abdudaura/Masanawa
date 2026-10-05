@@ -952,6 +952,172 @@ export function createFinancialService(input: {
       return depositView(bound);
     },
 
+    async createFiatPurchase(request) {
+      const auth = await authority(request.authorizationHeader);
+      const requestId = parseCanonicalId("request", request.requestId);
+      const fiatAmount = normalizeFiatAmount(request.fiatAmount);
+      const fiatCurrency = normalizeCryptoAsset(request.fiatCurrency);
+      const qualification = await qualifiedFiatOnRamp();
+      if (
+        qualification === null ||
+        !qualification.fiatCurrencies.includes(fiatCurrency)
+      ) {
+        throw new Error("financial.crypto.fiat_onramp_unavailable");
+      }
+      const settlementProviderCode = qualification.settlement.providerCode;
+      const settlement = splitProviderCurrency(settlementProviderCode);
+
+      const existing = await input.crypto.readIntent({
+        tenantId: auth.tenantId,
+        userId: auth.userId,
+        requestId,
+      });
+      const terms: FinancialReplayTerms = {
+        operation: "buy",
+        asset: fiatCurrency,
+        network: null,
+        amount: fiatAmount,
+        destinationAddress: null,
+        targetAsset: settlementProviderCode,
+        targetNetwork: settlement.network,
+      };
+      if (existing) {
+        assertFinancialReplay(existing, terms);
+        return fiatPurchaseView(existing);
+      }
+
+      const createdAt = now();
+      const admitted = await input.crypto.createIntent({
+        schemaVersion: 1,
+        tenantId: auth.tenantId,
+        userId: auth.userId,
+        requestId,
+        operation: "buy",
+        asset: fiatCurrency,
+        network: null,
+        amount: fiatAmount,
+        targetAsset: settlementProviderCode,
+        targetNetwork: settlement.network,
+        destinationAddress: null,
+        provider: "nowpayments",
+        providerPaymentId: null,
+        providerPayoutId: null,
+        providerInvoiceId: null,
+        checkoutUrl: null,
+        providerConversionId: null,
+        providerTargetAmount: null,
+        payAddress: null,
+        providerPayAmount: null,
+        providerDispatchStartedAt: null,
+        status: "quoted",
+        createdAt,
+        updatedAt: createdAt,
+      });
+      assertFinancialReplay(admitted, terms);
+
+      const dispatch = await input.crypto.beginProviderDispatch({
+        tenantId: auth.tenantId,
+        userId: auth.userId,
+        requestId,
+        updatedAt: now(),
+      });
+      assertFinancialReplay(dispatch.intent, terms);
+      if (!dispatch.shouldDispatch) return fiatPurchaseView(dispatch.intent);
+
+      let invoice;
+      try {
+        invoice = await input.nowPayments.createInvoice({
+          priceAmount: fiatAmount,
+          priceCurrency: fiatCurrency,
+          payCurrency: fiatCurrency,
+          ipnCallbackUrl,
+          orderId: providerOrderId(auth.tenantId, requestId),
+          orderDescription: "Masanawa crypto purchase",
+          signal: AbortSignal.timeout(15_000),
+        });
+      } catch (error) {
+        const code = error instanceof Error ? error.message : "";
+        if (
+          code === "nowpayments.invoice.dispatch_rejected" ||
+          code === "nowpayments.credential.unavailable"
+        ) {
+          return fiatPurchaseView(await input.crypto.failProviderDispatch({
+            tenantId: auth.tenantId,
+            userId: auth.userId,
+            requestId,
+            operation: "buy",
+            updatedAt: now(),
+          }));
+        }
+        throw error;
+      }
+
+      return fiatPurchaseView(await input.crypto.bindProviderInvoice({
+        tenantId: auth.tenantId,
+        userId: auth.userId,
+        requestId,
+        providerInvoiceId: invoice.invoiceId,
+        checkoutUrl: invoice.checkoutUrl,
+        updatedAt: now(),
+      }));
+    },
+
+    async refreshFiatPurchase(request) {
+      const auth = await authority(request.authorizationHeader);
+      const requestId = parseCanonicalId("request", request.requestId);
+      const intent = await input.crypto.readIntent({
+        tenantId: auth.tenantId,
+        userId: auth.userId,
+        requestId,
+      });
+      if (!intent || intent.operation !== "buy" || intent.targetAsset === null) {
+        throw new Error("financial.crypto.fiat_onramp_unavailable");
+      }
+      if (
+        ["succeeded", "failed", "refunded", "expired", "manual_review"].includes(
+          intent.status,
+        ) ||
+        intent.providerPaymentId === null
+      ) {
+        return fiatPurchaseView(intent);
+      }
+
+      const payload = await input.nowPayments.getPaymentEvidence({
+        paymentId: intent.providerPaymentId,
+        signal: AbortSignal.timeout(15_000),
+      });
+      if ((intent.providerInvoiceId ?? null) === null) {
+        throw new Error("financial.crypto.fiat_onramp_unavailable");
+      }
+      const evidence = admitFiatOnRampEvidence(payload, {
+        invoiceId: intent.providerInvoiceId!,
+        orderId: providerOrderId(intent.tenantId, intent.requestId),
+        fiatAmount: intent.amount,
+        fiatCurrency: intent.asset,
+        settlementAsset: intent.targetAsset,
+      });
+      return fiatPurchaseView(await input.crypto.applyProviderPaymentEvent({
+        tenantId: intent.tenantId,
+        userId: intent.userId,
+        event: {
+          paymentId: evidence.paymentId,
+          invoiceId: evidence.invoiceId,
+          parentPaymentId: evidence.parentPaymentId,
+          orderId: intent.requestId,
+          status: evidence.status,
+          priceAmount: evidence.priceAmount,
+          priceCurrency: evidence.priceCurrency,
+          payAmount: evidence.payAmount,
+          payCurrency: evidence.payCurrency,
+          actuallyPaid: evidence.actuallyPaid,
+          outcomeAmount: evidence.outcomeAmount,
+          outcomeCurrency: evidence.outcomeCurrency,
+          payloadHash: evidence.payloadHash,
+          observedAt: now(),
+        },
+      }));
+    },
+
     async quoteWithdrawal(request) {
       const auth = await authority(request.authorizationHeader);
       const providerCode = normalizeCryptoAsset(request.providerCode);
