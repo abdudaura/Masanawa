@@ -79,3 +79,31 @@ Latest implementation: 3698974204d565a6c6e0fc26505d8d92b4099e26. Additional mobi
 ## User-authorized onboarding integration takeover — 2026-10-05
 
 The user explicitly instructed this window to take over and complete its work. Ownership extends narrowly to services/gateway/src/app.ts and services/gateway/src/main.ts for onboarding options/routes/repository/Core/service wiring, plus services/gateway/src/clone_onboarding_startup.test.ts. Preserve every current unrelated auth, billing, crypto, shell and runtime change. This transfer does not authorize a wholesale replacement of other workstreams. Runtime dependency restoration, if necessary for verification, must use exact inspected upstream source with a separate explicit claim and must not fabricate certification or provider readiness. Complete default startup wiring rather than leave an appFactory-only handoff.
+
+### Minimal build dependency reconciliation
+
+Exact additional paths for the authorized integration takeover:
+- packages/agents/src/inference.ts
+- packages/agents/src/context.ts
+- packages/agents/src/selection.ts
+- packages/agents/src/inference_limits.ts
+- adapters/storage/postgres/src/agents/context.ts
+- adapters/storage/postgres/src/agents/selection.ts
+- services/gateway/src/native_audio.ts
+- packages/skills/src/selection.ts
+- packages/skills/src/index.ts
+- adapters/storage/postgres/src/skills/selection.ts
+- adapters/storage/postgres/src/memory/context.ts
+- adapters/storage/postgres/src/identity/repository.ts
+- adapters/storage/postgres/src/agents/sessions.ts
+- adapters/storage/postgres/src/agents/runs.ts
+- adapters/storage/postgres/src/world/repository.ts
+- adapters/storage/postgres/src/agents/mobile-shell.ts
+- services/gateway/src/agent_conversation.ts
+- services/gateway/src/agent_shell.ts
+- services/gateway/src/agent_shell.test.ts
+- services/gateway/src/alpha_executor.ts
+- services/gateway/src/customer_auth.ts
+- services/gateway/src/live_voice_token.ts
+- services/gateway/src/mobile_push.ts
+Restore only missing imported runtime dependency files from inspected #89 head 98b293b2020668b2123e4e7b9d6baae0ebfc1b88; append the required transaction-local reader functions without dropping current ownership APIs. Add missing contextual types to current merged methods and fix unresolved PlatformFinancialAuthorizer/invalid error-category/test-fixture signatures. No replacement of current auth or runtime behavior with an old branch. These are necessary to compile and verify normal Gateway startup; no unfinished branch is merged wholesale.
