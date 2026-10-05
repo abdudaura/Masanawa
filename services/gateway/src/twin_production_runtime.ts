@@ -1397,6 +1397,67 @@ export function createTwinProductionRuntime(input: {
     return decision;
   }
 
+  async function refreshOwnerAccessLifecycle(
+    tenantId: TenantId,
+    current: NonNullable<
+      Awaited<ReturnType<TwinRuntimeRepository["readOwnerAccessRequest"]>>
+    >,
+  ) {
+    const nowMs = Date.now();
+    const requestedExpired =
+      current.state === "requested" &&
+      Date.parse(current.acceptBy) <= nowMs;
+    const scheduledNoShow =
+      current.state === "scheduled" &&
+      current.scheduledFor !== null &&
+      Date.parse(current.scheduledFor) +
+          ownerPolicy.startGraceMinutes * 60_000 <=
+        nowMs;
+
+    if (!requestedExpired && !scheduledNoShow) return current;
+
+    const terminalState = requestedExpired ? "expired" : "no-show";
+    const closed = {
+      ...current,
+      state: transitionOwnerAccess(current.state, terminalState),
+    };
+    await settleOwnerRequest(
+      tenantId,
+      closed,
+      terminalState,
+    );
+    const updated = await input.economy.updateOwnerAccessRequest({
+      tenantId,
+      request: closed,
+      reservationId: current.reservationId,
+      reservedCredits: current.reservedCredits,
+    });
+    await input.events.append({
+      tenantId,
+      payload: {
+        eventType: "twin.owner-access.refunded",
+        ownerUserId: current.ownerUserId,
+        characterId: current.originatingCharacterId,
+        customerUserId: current.requesterUserId,
+        referenceId: current.requestId,
+        visibility: "participant",
+        occurredAt: at(),
+        amountCredits: current.reservedCredits,
+        status: "refunded",
+      },
+    });
+    await notifyUser(
+      tenantId,
+      current.requesterUserId as UserId,
+      requestedExpired ? "Talk request expired" : "Talk session missed",
+      requestedExpired
+        ? "The owner did not accept in time. Any eligible held Credits were released."
+        : "The scheduled session did not start in time. Any eligible held Credits were released.",
+      `masanawa://chat/${encodeURIComponent(current.originatingCharacterId)}`,
+    );
+    return updated;
+  }
+
   const ownerAccess = createOwnerAccessService({
     authorizer: customerAuthority,
     quotes: {
@@ -1721,60 +1782,24 @@ export function createTwinProductionRuntime(input: {
         ) {
           throw Object.assign(new Error("Owner access request is private"), { statusCode: 403 });
         }
-        const nowMs = Date.now();
-        const requestedExpired =
-          current.state === "requested" &&
-          Date.parse(current.acceptBy) <= nowMs;
-        const scheduledNoShow =
-          current.state === "scheduled" &&
-          current.scheduledFor !== null &&
-          Date.parse(current.scheduledFor) +
-              ownerPolicy.startGraceMinutes * 60_000 <=
-            nowMs;
+        return refreshOwnerAccessLifecycle(request.tenantId, current);
+      },
 
-        if (requestedExpired || scheduledNoShow) {
-          const terminalState = requestedExpired ? "expired" : "no-show";
-          const closed = {
-            ...current,
-            state: transitionOwnerAccess(current.state, terminalState),
-          };
-          await settleOwnerRequest(
-            request.tenantId,
-            closed,
-            terminalState,
-          );
-          const updated = await input.economy.updateOwnerAccessRequest({
+      async latestForRequester(request) {
+        const current =
+          await input.economy.readLatestOwnerAccessRequestForRequester({
             tenantId: request.tenantId,
-            request: closed,
-            reservationId: current.reservationId,
-            reservedCredits: current.reservedCredits,
+            requesterUserId: request.requesterUserId,
+            characterId: request.characterId,
           });
-          await input.events.append({
-            tenantId: request.tenantId,
-            payload: {
-              eventType: "twin.owner-access.refunded",
-              ownerUserId: current.ownerUserId,
-              characterId: current.originatingCharacterId,
-              customerUserId: current.requesterUserId,
-              referenceId: current.requestId,
-              visibility: "participant",
-              occurredAt: at(),
-              amountCredits: current.reservedCredits,
-              status: "refunded",
-            },
-          });
-          await notifyUser(
-            request.tenantId,
-            current.requesterUserId as UserId,
-            requestedExpired ? "Talk request expired" : "Talk session missed",
-            requestedExpired
-              ? "The owner did not accept in time. Any eligible held Credits were released."
-              : "The scheduled session did not start in time. Any eligible held Credits were released.",
-            `masanawa://chat/${encodeURIComponent(current.originatingCharacterId)}`,
-          );
-          return updated;
+        if (!current) return null;
+        if (
+          current.requesterUserId !== request.requesterUserId ||
+          current.originatingCharacterId !== request.characterId
+        ) {
+          throw new Error("Owner access latest-request scope violation");
         }
-        return current;
+        return refreshOwnerAccessLifecycle(request.tenantId, current);
       },
     },
   });
