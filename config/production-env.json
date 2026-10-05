@@ -2,41 +2,18 @@
   "schemaVersion": 1,
   "variables": [
     {
-      "name": "NODE_ENV",
-      "owner": "runtime",
-      "classification": "public",
-      "requiredIn": [],
-      "description": "Node runtime environment selector."
-    },
-    {
-      "name": "HOST",
-      "owner": "runtime",
-      "classification": "public",
-      "requiredIn": [],
-      "description": "Deployment-host compatibility bind address."
-    },
-    {
-      "name": "PORT",
-      "owner": "runtime",
-      "classification": "public",
-      "requiredIn": [],
-      "description": "Deployment-host compatibility listen port."
-    },
-    {
-      "name": "MASANAWA_SHUTDOWN_TIMEOUT_MS",
-      "owner": "runtime",
-      "classification": "public",
-      "requiredIn": [],
-      "description": "Bounded graceful shutdown timeout."
-    },
-    {
-      "name": "MASANAWA_DATABASE_URL",
+      "name": "CREDENTIAL_ENCRYPTION_KEY",
       "owner": "security/bootstrap",
       "classification": "secret",
-      "requiredIn": [
-        "production"
-      ],
-      "description": "Canonical PostgreSQL bootstrap connection secret for deployable services."
+      "requiredIn": [],
+      "description": "Production configuration for CREDENTIAL_ENCRYPTION_KEY."
+    },
+    {
+      "name": "CREDENTIAL_ENCRYPTION_KEY_PREVIOUS",
+      "owner": "security/bootstrap",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Production configuration for CREDENTIAL_ENCRYPTION_KEY_PREVIOUS."
     },
     {
       "name": "DATABASE_URL",
@@ -46,62 +23,60 @@
       "description": "Deployment-host compatibility alias for MASANAWA_DATABASE_URL."
     },
     {
-      "name": "MASANAWA_GATEWAY_HOST",
-      "owner": "gateway",
+      "name": "FLUTTERWAVE_BILLS_ENABLED",
+      "owner": "gateway/billing",
       "classification": "public",
       "requiredIn": [],
-      "description": "Gateway bind address override."
+      "description": "Production configuration for FLUTTERWAVE_BILLS_ENABLED."
     },
     {
-      "name": "MASANAWA_GATEWAY_PORT",
-      "owner": "gateway",
+      "name": "FLUTTERWAVE_RELAY_PROTOCOL",
+      "owner": "gateway/billing",
       "classification": "public",
       "requiredIn": [],
-      "description": "Gateway listen port override."
+      "description": "Production configuration for FLUTTERWAVE_RELAY_PROTOCOL."
     },
     {
-      "name": "MASANAWA_WORKER_HOST",
-      "owner": "worker",
+      "name": "FLUTTERWAVE_RELAY_URL",
+      "owner": "gateway/billing",
       "classification": "public",
       "requiredIn": [],
-      "description": "Worker bind address override."
+      "description": "Production configuration for FLUTTERWAVE_RELAY_URL."
     },
     {
-      "name": "MASANAWA_WORKER_PORT",
-      "owner": "worker",
-      "classification": "public",
-      "requiredIn": [],
-      "description": "Worker listen port override."
-    },
-    {
-      "name": "MASANAWA_OPS_HOST",
-      "owner": "ops",
-      "classification": "public",
-      "requiredIn": [],
-      "description": "Ops bind address override."
-    },
-    {
-      "name": "MASANAWA_OPS_PORT",
-      "owner": "ops",
-      "classification": "public",
-      "requiredIn": [],
-      "description": "Ops listen port override."
-    },
-    {
-      "name": "MASANAWA_TEST_DATABASE_URL",
-      "owner": "test",
+      "name": "FLUTTERWAVE_SECRET_KEY",
+      "owner": "gateway/billing",
       "classification": "secret",
-      "requiredIn": [
-        "test"
-      ],
-      "description": "Test-only PostgreSQL connection used by integration acceptance."
+      "requiredIn": [],
+      "description": "Production configuration for FLUTTERWAVE_SECRET_KEY."
     },
     {
-      "name": "MASANAWA_ALPHA_ENABLED",
-      "owner": "gateway/alpha",
+      "name": "FLUTTERWAVE_WEBHOOK_SECRET_HASH",
+      "owner": "gateway/billing",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Production configuration for FLUTTERWAVE_WEBHOOK_SECRET_HASH."
+    },
+    {
+      "name": "FLUTTERWAVE_WEBHOOK_URL",
+      "owner": "gateway/billing",
       "classification": "public",
       "requiredIn": [],
-      "description": "Explicit development-only switch enabling the bounded mobile Alpha runtime."
+      "description": "Production configuration for FLUTTERWAVE_WEBHOOK_URL."
+    },
+    {
+      "name": "GEMINI_REPLY_MODELS",
+      "owner": "gateway/inference",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Production configuration for GEMINI_REPLY_MODELS."
+    },
+    {
+      "name": "HOST",
+      "owner": "runtime",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Deployment-host compatibility bind address."
     },
     {
       "name": "MASANAWA_ALPHA_DEV_TOKEN",
@@ -111,32 +86,11 @@
       "description": "Development-only bearer secret for the mobile Alpha user; never a production user credential."
     },
     {
-      "name": "MASANAWA_ALPHA_TENANT_ID",
+      "name": "MASANAWA_ALPHA_ENABLED",
       "owner": "gateway/alpha",
       "classification": "public",
       "requiredIn": [],
-      "description": "Development-only canonical TenantId used by the Alpha bootstrap/runtime."
-    },
-    {
-      "name": "MASANAWA_ALPHA_USER_ID",
-      "owner": "gateway/alpha",
-      "classification": "public",
-      "requiredIn": [],
-      "description": "Development-only canonical UserId used by the Alpha bootstrap/runtime."
-    },
-    {
-      "name": "MASANAWA_ALPHA_POLICY_REVISION",
-      "owner": "security/bootstrap",
-      "classification": "public",
-      "requiredIn": [],
-      "description": "Development Alpha authority policy revision seeded into the canonical Security store."
-    },
-    {
-      "name": "MASANAWA_ALPHA_RELATIONSHIPS_JSON",
-      "owner": "security/bootstrap",
-      "classification": "secret",
-      "requiredIn": [],
-      "description": "Development-only Character-to-Relationship admission mapping for the Alpha user."
+      "description": "Explicit development-only switch enabling the bounded mobile Alpha runtime."
     },
     {
       "name": "MASANAWA_ALPHA_GEMINI_API_KEY",
@@ -146,11 +100,18 @@
       "description": "Development-only Gemini bootstrap credential for the replaceable Alpha inference executor."
     },
     {
-      "name": "MASANAWA_ALPHA_GEMINI_MODEL",
-      "owner": "gateway/alpha",
-      "classification": "public",
+      "name": "MASANAWA_ALPHA_GEMINI_API_KEYS_JSON",
+      "owner": "security/bootstrap",
+      "classification": "secret",
       "requiredIn": [],
-      "description": "Development-only Gemini model name used by the replaceable Alpha inference executor."
+      "description": "Injected Alpha inference credential pool."
+    },
+    {
+      "name": "MASANAWA_ALPHA_GEMINI_IMPORTED_CREDENTIALS_JSON",
+      "owner": "gateway/inference",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Production configuration for MASANAWA_ALPHA_GEMINI_IMPORTED_CREDENTIALS_JSON."
     },
     {
       "name": "MASANAWA_ALPHA_GEMINI_LIVE_MODEL",
@@ -167,6 +128,41 @@
       "description": "Alpha live audio voice."
     },
     {
+      "name": "MASANAWA_ALPHA_GEMINI_MODEL",
+      "owner": "gateway/alpha",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Development-only Gemini model name used by the replaceable Alpha inference executor."
+    },
+    {
+      "name": "MASANAWA_ALPHA_POLICY_REVISION",
+      "owner": "security/bootstrap",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Development Alpha authority policy revision seeded into the canonical Security store."
+    },
+    {
+      "name": "MASANAWA_ALPHA_RELATIONSHIPS_JSON",
+      "owner": "security/bootstrap",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Development-only Character-to-Relationship admission mapping for the Alpha user."
+    },
+    {
+      "name": "MASANAWA_ALPHA_TENANT_ID",
+      "owner": "gateway/alpha",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Development-only canonical TenantId used by the Alpha bootstrap/runtime."
+    },
+    {
+      "name": "MASANAWA_ALPHA_USER_ID",
+      "owner": "gateway/alpha",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Development-only canonical UserId used by the Alpha bootstrap/runtime."
+    },
+    {
       "name": "MASANAWA_AUTH_EMAIL_FROM",
       "owner": "gateway",
       "classification": "public",
@@ -174,11 +170,118 @@
       "description": "Verified OTP sender address."
     },
     {
+      "name": "MASANAWA_AUTH_OTP_PEPPER",
+      "owner": "security/bootstrap",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "OTP and session digest secret."
+    },
+    {
       "name": "MASANAWA_AUTH_SMS_ENDPOINT",
       "owner": "gateway",
       "classification": "public",
       "requiredIn": [],
       "description": "Configured HTTPS OTP delivery endpoint."
+    },
+    {
+      "name": "MASANAWA_AUTH_SMS_TOKEN",
+      "owner": "security/bootstrap",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "OTP delivery authorization secret."
+    },
+    {
+      "name": "MASANAWA_BILLING_ACTION_SECRET",
+      "owner": "gateway/billing",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Production configuration for MASANAWA_BILLING_ACTION_SECRET."
+    },
+    {
+      "name": "MASANAWA_BILLING_FEE_BPS",
+      "owner": "gateway/billing",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Production configuration for MASANAWA_BILLING_FEE_BPS."
+    },
+    {
+      "name": "MASANAWA_BILLING_FEE_FIXED_KOBO",
+      "owner": "gateway/billing",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Production configuration for MASANAWA_BILLING_FEE_FIXED_KOBO."
+    },
+    {
+      "name": "MASANAWA_BILLING_REDIRECT_URL",
+      "owner": "gateway/billing",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Production configuration for MASANAWA_BILLING_REDIRECT_URL."
+    },
+    {
+      "name": "MASANAWA_BOOTSTRAP_PLATFORM_AGENTS",
+      "owner": "gateway",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Production configuration for MASANAWA_BOOTSTRAP_PLATFORM_AGENTS."
+    },
+    {
+      "name": "MASANAWA_DATABASE_URL",
+      "owner": "security/bootstrap",
+      "classification": "secret",
+      "requiredIn": [
+        "production"
+      ],
+      "description": "Canonical PostgreSQL bootstrap connection secret for deployable services."
+    },
+    {
+      "name": "MASANAWA_FIREBASE_SERVICE_ACCOUNT_JSON",
+      "owner": "security/bootstrap",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Push delivery service account credential."
+    },
+    {
+      "name": "MASANAWA_FLUTTERWAVE_RELAY_TOKEN",
+      "owner": "gateway/billing",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Production configuration for MASANAWA_FLUTTERWAVE_RELAY_TOKEN."
+    },
+    {
+      "name": "MASANAWA_GATEWAY_HOST",
+      "owner": "gateway",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Gateway bind address override."
+    },
+    {
+      "name": "MASANAWA_GATEWAY_PORT",
+      "owner": "gateway",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Gateway listen port override."
+    },
+    {
+      "name": "MASANAWA_GEMINI_API_KEY",
+      "owner": "security/bootstrap",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Production inference credential."
+    },
+    {
+      "name": "MASANAWA_GEMINI_API_KEYS_JSON",
+      "owner": "security/bootstrap",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Production inference credential pool."
+    },
+    {
+      "name": "MASANAWA_GEMINI_CREDENTIALS_JSON",
+      "owner": "gateway/inference",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Production configuration for MASANAWA_GEMINI_CREDENTIALS_JSON."
     },
     {
       "name": "MASANAWA_GEMINI_LIVE_MODEL",
@@ -202,6 +305,20 @@
       "description": "Production inference model."
     },
     {
+      "name": "MASANAWA_GEMINI_REPLY_MODELS",
+      "owner": "gateway/inference",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Production configuration for MASANAWA_GEMINI_REPLY_MODELS."
+    },
+    {
+      "name": "MASANAWA_GEMINI_VERIFY_ON_START",
+      "owner": "gateway/inference",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Production configuration for MASANAWA_GEMINI_VERIFY_ON_START."
+    },
+    {
       "name": "MASANAWA_MOBILE_MIN_VERSION",
       "owner": "gateway",
       "classification": "public",
@@ -214,6 +331,27 @@
       "classification": "public",
       "requiredIn": [],
       "description": "Recommended mobile application version."
+    },
+    {
+      "name": "MASANAWA_NOWPAYMENTS_RELAY_TOKEN",
+      "owner": "gateway/crypto",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Production configuration for MASANAWA_NOWPAYMENTS_RELAY_TOKEN."
+    },
+    {
+      "name": "MASANAWA_OPS_HOST",
+      "owner": "ops",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Ops bind address override."
+    },
+    {
+      "name": "MASANAWA_OPS_PORT",
+      "owner": "ops",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Ops listen port override."
     },
     {
       "name": "MASANAWA_PLATFORM_POLICY_REVISION",
@@ -230,6 +368,43 @@
       "description": "Canonical platform tenant identity."
     },
     {
+      "name": "MASANAWA_PUBLIC_BASE_URL",
+      "owner": "gateway",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Production configuration for MASANAWA_PUBLIC_BASE_URL."
+    },
+    {
+      "name": "MASANAWA_SHUTDOWN_TIMEOUT_MS",
+      "owner": "runtime",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Bounded graceful shutdown timeout."
+    },
+    {
+      "name": "MASANAWA_TEST_DATABASE_URL",
+      "owner": "test",
+      "classification": "secret",
+      "requiredIn": [
+        "test"
+      ],
+      "description": "Test-only PostgreSQL connection used by integration acceptance."
+    },
+    {
+      "name": "MASANAWA_WORKER_HOST",
+      "owner": "worker",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Worker bind address override."
+    },
+    {
+      "name": "MASANAWA_WORKER_PORT",
+      "owner": "worker",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Worker listen port override."
+    },
+    {
       "name": "NEXT_PUBLIC_OPS_API_BASE_URL",
       "owner": "ops",
       "classification": "public",
@@ -237,46 +412,186 @@
       "description": "Public Ops API origin."
     },
     {
-      "name": "MASANAWA_ALPHA_GEMINI_API_KEYS_JSON",
-      "owner": "security/bootstrap",
-      "classification": "secret",
+      "name": "NODE_ENV",
+      "owner": "runtime",
+      "classification": "public",
       "requiredIn": [],
-      "description": "Injected Alpha inference credential pool."
+      "description": "Node runtime environment selector."
     },
     {
-      "name": "MASANAWA_AUTH_OTP_PEPPER",
-      "owner": "security/bootstrap",
+      "name": "NOWPAYMENTS_API_KEY",
+      "owner": "gateway/crypto",
       "classification": "secret",
       "requiredIn": [],
-      "description": "OTP and session digest secret."
+      "description": "Production configuration for NOWPAYMENTS_API_KEY."
     },
     {
-      "name": "MASANAWA_AUTH_SMS_TOKEN",
-      "owner": "security/bootstrap",
-      "classification": "secret",
+      "name": "NOWPAYMENTS_CONVERSION_ENABLED",
+      "owner": "gateway/crypto",
+      "classification": "public",
       "requiredIn": [],
-      "description": "OTP delivery authorization secret."
+      "description": "Production configuration for NOWPAYMENTS_CONVERSION_ENABLED."
     },
     {
-      "name": "MASANAWA_FIREBASE_SERVICE_ACCOUNT_JSON",
-      "owner": "security/bootstrap",
-      "classification": "secret",
+      "name": "NOWPAYMENTS_CONVERSION_PROVIDER_CODES",
+      "owner": "gateway/crypto",
+      "classification": "public",
       "requiredIn": [],
-      "description": "Push delivery service account credential."
+      "description": "Production configuration for NOWPAYMENTS_CONVERSION_PROVIDER_CODES."
     },
     {
-      "name": "MASANAWA_GEMINI_API_KEY",
-      "owner": "security/bootstrap",
-      "classification": "secret",
+      "name": "NOWPAYMENTS_CONVERSIONS_ENABLED",
+      "owner": "gateway/crypto",
+      "classification": "public",
       "requiredIn": [],
-      "description": "Production inference credential."
+      "description": "Production configuration for NOWPAYMENTS_CONVERSIONS_ENABLED."
     },
     {
-      "name": "MASANAWA_GEMINI_API_KEYS_JSON",
-      "owner": "security/bootstrap",
+      "name": "NOWPAYMENTS_CUSTODY_ENABLED",
+      "owner": "gateway/crypto",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Production configuration for NOWPAYMENTS_CUSTODY_ENABLED."
+    },
+    {
+      "name": "NOWPAYMENTS_DESTINATION_WHITELIST_CONFIRMED",
+      "owner": "gateway/crypto",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Production configuration for NOWPAYMENTS_DESTINATION_WHITELIST_CONFIRMED."
+    },
+    {
+      "name": "NOWPAYMENTS_FIAT_CURRENCIES",
+      "owner": "gateway/crypto",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Production configuration for NOWPAYMENTS_FIAT_CURRENCIES."
+    },
+    {
+      "name": "NOWPAYMENTS_FIAT_ONRAMP_ENABLED",
+      "owner": "gateway/crypto",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Production configuration for NOWPAYMENTS_FIAT_ONRAMP_ENABLED."
+    },
+    {
+      "name": "NOWPAYMENTS_FIAT_SETTLEMENT_PROVIDER_CODE",
+      "owner": "gateway/crypto",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Production configuration for NOWPAYMENTS_FIAT_SETTLEMENT_PROVIDER_CODE."
+    },
+    {
+      "name": "NOWPAYMENTS_FIXED_EGRESS_CONFIRMED",
+      "owner": "gateway/crypto",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Production configuration for NOWPAYMENTS_FIXED_EGRESS_CONFIRMED."
+    },
+    {
+      "name": "NOWPAYMENTS_IPN_SECRET",
+      "owner": "gateway/crypto",
       "classification": "secret",
       "requiredIn": [],
-      "description": "Production inference credential pool."
+      "description": "Production configuration for NOWPAYMENTS_IPN_SECRET."
+    },
+    {
+      "name": "NOWPAYMENTS_PAYOUT_2FA_READY",
+      "owner": "gateway/crypto",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Production configuration for NOWPAYMENTS_PAYOUT_2FA_READY."
+    },
+    {
+      "name": "NOWPAYMENTS_PAYOUT_DESTINATION_ALLOWLIST_JSON",
+      "owner": "gateway/crypto",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Production configuration for NOWPAYMENTS_PAYOUT_DESTINATION_ALLOWLIST_JSON."
+    },
+    {
+      "name": "NOWPAYMENTS_PAYOUT_EMAIL",
+      "owner": "gateway/crypto",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Production configuration for NOWPAYMENTS_PAYOUT_EMAIL."
+    },
+    {
+      "name": "NOWPAYMENTS_PAYOUT_ENABLED",
+      "owner": "gateway/crypto",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Production configuration for NOWPAYMENTS_PAYOUT_ENABLED."
+    },
+    {
+      "name": "NOWPAYMENTS_PAYOUT_FEE_MODE",
+      "owner": "gateway/crypto",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Production configuration for NOWPAYMENTS_PAYOUT_FEE_MODE."
+    },
+    {
+      "name": "NOWPAYMENTS_PAYOUT_PASSWORD",
+      "owner": "gateway/crypto",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Production configuration for NOWPAYMENTS_PAYOUT_PASSWORD."
+    },
+    {
+      "name": "NOWPAYMENTS_PAYOUT_VERIFICATION_CODE",
+      "owner": "gateway/crypto",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Production configuration for NOWPAYMENTS_PAYOUT_VERIFICATION_CODE."
+    },
+    {
+      "name": "NOWPAYMENTS_PAYOUTS_ENABLED",
+      "owner": "gateway/crypto",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Production configuration for NOWPAYMENTS_PAYOUTS_ENABLED."
+    },
+    {
+      "name": "NOWPAYMENTS_RELAY_URL",
+      "owner": "gateway/crypto",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Production configuration for NOWPAYMENTS_RELAY_URL."
+    },
+    {
+      "name": "NOWPAYMENTS_WITHDRAWAL_ALLOWLIST_JSON",
+      "owner": "gateway/crypto",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Production configuration for NOWPAYMENTS_WITHDRAWAL_ALLOWLIST_JSON."
+    },
+    {
+      "name": "NOWPAYMENTS_WITHDRAWAL_PROVIDER_CODES",
+      "owner": "gateway/crypto",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Production configuration for NOWPAYMENTS_WITHDRAWAL_PROVIDER_CODES."
+    },
+    {
+      "name": "PORT",
+      "owner": "runtime",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Deployment-host compatibility listen port."
+    },
+    {
+      "name": "RAILWAY_PUBLIC_DOMAIN",
+      "owner": "runtime",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Production configuration for RAILWAY_PUBLIC_DOMAIN."
+    },
+    {
+      "name": "RAILWAY_STATIC_URL",
+      "owner": "runtime",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Production configuration for RAILWAY_STATIC_URL."
     },
     {
       "name": "RESEND_API_KEY",
@@ -284,6 +599,20 @@
       "classification": "secret",
       "requiredIn": [],
       "description": "OTP email provider credential."
+    },
+    {
+      "name": "SUPABASE_SERVICE_ROLE_KEY",
+      "owner": "gateway/storage",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Production configuration for SUPABASE_SERVICE_ROLE_KEY."
+    },
+    {
+      "name": "SUPABASE_URL",
+      "owner": "gateway/storage",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Production configuration for SUPABASE_URL."
     }
   ]
 }
