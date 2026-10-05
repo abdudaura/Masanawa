@@ -89,7 +89,7 @@ describe("My Twin economy performance reader", () => {
     ).rejects.toThrow("out-of-scope");
   });
 
-  it("removes accepted owner requests from the pending count by shared reference", async () => {
+  it("keeps accepted owner requests pending until scheduling", async () => {
     const events: MyTwinEconomySummaryEventReader = {
       async listForOwnerTwin() {
         return [
@@ -107,7 +107,7 @@ describe("My Twin economy performance reader", () => {
             tenantId: "tenant-1",
             ownerUserId: "user-owner",
             characterId: "character-1",
-            eventType: "twin.owner-access.accepted",
+            eventType: "twin.owner-access.scheduled",
             referenceId: "owner-request-42",
             amountCredits: null,
           },
@@ -121,7 +121,7 @@ describe("My Twin economy performance reader", () => {
       characterId: "character-1",
     });
 
-    expect(summary.pendingOwnerRequests).toBe(0);
+    expect(summary.pendingOwnerRequests).toBe(1);
   });
 
 
