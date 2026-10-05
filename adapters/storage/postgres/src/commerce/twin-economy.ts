@@ -53,6 +53,35 @@ export function createPostgresTwinRuntimeRepository(
   pool: Pool,
 ): TwinRuntimeRepository {
   return Object.freeze<TwinRuntimeRepository>({
+    async readLedgerPlan(input) {
+      const result = await pool.query<{ definition: import("@masanawa/commerce").TwinLedgerPlan }>(
+        `SELECT definition FROM commerce.twin_ledger_plans
+          WHERE tenant_id=$1 AND plan_key=$2`,
+        [input.tenantId, input.planKey],
+      );
+      return result.rows[0] ? Object.freeze(result.rows[0].definition) : null;
+    },
+
+    async putLedgerPlan(input) {
+      await pool.query(
+        `INSERT INTO commerce.twin_ledger_plans(tenant_id,plan_key,definition,created_at)
+         VALUES ($1,$2,$3::jsonb,$4)
+         ON CONFLICT DO NOTHING`,
+        [
+          input.tenantId,
+          input.plan.planKey,
+          canonicalJson(input.plan),
+          input.plan.createdAt,
+        ],
+      );
+      const current = await this.readLedgerPlan({
+        tenantId: input.tenantId,
+        planKey: input.plan.planKey,
+      });
+      if (!current) throw new Error("Twin ledger plan persistence failed");
+      return current;
+    },
+
     async resolveUserByRecipient(input) {
       const recipient = input.recipient.trim();
       if (!recipient) return null;
