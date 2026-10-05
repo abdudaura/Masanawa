@@ -29,6 +29,20 @@ export interface OwnerAccessReservationPort {
   }): Promise<void>;
 }
 
+export interface OwnerAccessTrialUsagePort {
+  /**
+   * Must be idempotent by requestId + policyRevision. A replay after a
+   * persistence failure must return success without consuming a second unit.
+   */
+  consume(input: {
+    readonly requestId: string;
+    readonly requesterUserId: string;
+    readonly feature: "owner-access";
+    readonly policyRevision: number;
+    readonly units: number;
+  }): Promise<void>;
+}
+
 export interface OwnerAccessNotificationPort {
   emit(input: {
     readonly requestId: string;
@@ -82,6 +96,7 @@ function addMinutes(at: string, minutes: number): string {
 export function createOwnerAccessRuntime(input: {
   readonly repository: OwnerAccessRequestRepository;
   readonly reservations: OwnerAccessReservationPort;
+  readonly trialUsage: OwnerAccessTrialUsagePort;
   readonly notifications?: OwnerAccessNotificationPort;
   readonly acceptWithinMinutes: number;
   readonly now?: () => Date;
@@ -144,6 +159,55 @@ export function createOwnerAccessRuntime(input: {
       const next = transitionOwnerAccess(current.state, request.next);
       const at = now().toISOString();
 
+      const settlement = decideOwnerAccessSettlement({
+        state: next,
+        chargeMode: current.chargeMode,
+        reservedCredits: current.reservedCredits,
+        ownerEarningCredits: current.ownerEarningCredits,
+        platformFeeCredits: current.platformFeeCredits,
+        attendanceVerified: request.attendanceVerified === true,
+        completionVerified: request.completionVerified === true,
+      });
+
+      // Economic ports are required to be replay-safe by requestId. Execute
+      // them before the state write so a persistence failure can retry the same
+      // legal transition without duplicating money or trial consumption.
+      if (
+        settlement.disposition === "refund" &&
+        current.reservationId !== null
+      ) {
+        await input.reservations.release({
+          requestId: current.requestId,
+          reservationId: current.reservationId,
+          refundCredits: settlement.refundCredits,
+        });
+      } else if (
+        settlement.disposition === "settle" &&
+        current.chargeMode === "paid" &&
+        current.reservationId !== null
+      ) {
+        await input.reservations.settle({
+          requestId: current.requestId,
+          reservationId: current.reservationId,
+          customerChargeCredits: settlement.customerChargeCredits,
+          ownerUserId: current.ownerUserId,
+          ownerEarningCredits: settlement.ownerEarningCredits,
+          platformRevenueCredits: settlement.platformRevenueCredits,
+        });
+      } else if (
+        settlement.disposition === "settle" &&
+        current.chargeMode === "trial" &&
+        settlement.trialUnitsConsumed > 0
+      ) {
+        await input.trialUsage.consume({
+          requestId: current.requestId,
+          requesterUserId: current.requesterUserId,
+          feature: "owner-access",
+          policyRevision: current.trialPolicyRevision,
+          units: settlement.trialUnitsConsumed,
+        });
+      }
+
       const updated = await input.repository.update({
         ...current,
         state: next,
@@ -155,42 +219,12 @@ export function createOwnerAccessRuntime(input: {
         completedAt: next === "completed" ? at : current.completedAt,
       });
 
-      const settlement = decideOwnerAccessSettlement({
-        state: next,
-        chargeMode: current.chargeMode,
-        reservedCredits: current.reservedCredits,
-        ownerEarningCredits: current.ownerEarningCredits,
-        platformFeeCredits: current.platformFeeCredits,
-        attendanceVerified: request.attendanceVerified === true,
-        completionVerified: request.completionVerified === true,
-      });
-
-      if (
-        settlement.disposition === "refund" &&
-        current.reservationId !== null
-      ) {
-        await input.reservations.release({
-          requestId: current.requestId,
-          reservationId: current.reservationId,
-          refundCredits: settlement.refundCredits,
-        });
+      if (settlement.disposition === "refund") {
         await input.notifications?.emit({
           requestId: current.requestId,
           recipientUserId: current.requesterUserId,
           event: "refunded",
           scheduledFor: updated.scheduledFor,
-        });
-      } else if (
-        settlement.disposition === "settle" &&
-        current.reservationId !== null
-      ) {
-        await input.reservations.settle({
-          requestId: current.requestId,
-          reservationId: current.reservationId,
-          customerChargeCredits: settlement.customerChargeCredits,
-          ownerUserId: current.ownerUserId,
-          ownerEarningCredits: settlement.ownerEarningCredits,
-          platformRevenueCredits: settlement.platformRevenueCredits,
         });
       }
 
