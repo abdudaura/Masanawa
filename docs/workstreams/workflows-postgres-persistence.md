@@ -40,4 +40,20 @@ Acceptance:
 - tests cover persistence/recovery/conflict/isolation/checkpoint behavior;
 - checkpoint docs reconciled before handoff.
 
-Status: active.
+Implemented:
+- dedicated `workflows/0001_work_runtime.sql` migration;
+- PostgreSQL Task and WorkflowRun repositories with scoped reads/lists and optimistic transitions;
+- immutable, monotonic WorkflowCheckpoint persistence;
+- exact replay-safe checkpoint append;
+- DB-level legal transition guards in addition to domain guards;
+- transaction-local current-authority policy/revocation revalidation;
+- migration owner wired into `platformProductMigrationRoots()`;
+- Postgres adapter exports/dependency and frozen pnpm lock updated;
+- integration tests cover fresh-repository restart recovery, stale revisions, terminal restart
+  rejection, checkpoint replay/conflict and stale-policy rejection;
+- relationship scope defaults to relationship-owned Work and optional Task/Workflow ID arrays narrow it;
+- Foundation CI on the first PR head failed before any steps ran (empty step list), so no executable
+  CI pass is claimed.
+
+Status: persistence implementation complete for this slice. Concrete graph resume/executor and
+side-effect reconciliation remain the next dependency.
