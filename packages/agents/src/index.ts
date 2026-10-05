@@ -18,3 +18,4 @@ export * from "./subworker.js";
 export * from "./execution-budget.js";
 export * from "./execution-budget-partition.js";
 export * from "./subworker-budget.js";
+export * from "./execution-control.js";
