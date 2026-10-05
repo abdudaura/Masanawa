@@ -81,7 +81,8 @@ export function createAgentDirectoryService(input: {
           allowed === null || allowed.has(presentation.characterId),
       );
 
-      const [preference, profiles] = await Promise.all([
+      const characterIds = visible.map((item) => item.characterId);
+      const [preference, profiles, activity] = await Promise.all([
         input.userPreferences?.readForUser({
           tenantId: authority.tenantId,
           userId: authority.userId,
@@ -96,17 +97,17 @@ export function createAgentDirectoryService(input: {
               })) ?? null,
           })),
         ),
+        input.activity
+          ? input.activity.list({
+              tenantId: authority.tenantId,
+              userId: authority.userId,
+              characterIds,
+            })
+          : Promise.resolve([]),
       ]);
       const profileByCharacter = new Map(
         profiles.map(({ characterId, profile }) => [characterId, profile]),
       );
-      const activity = input.activity
-        ? await input.activity.list({
-            tenantId: authority.tenantId,
-            userId: authority.userId,
-            characterIds: visible.map((item) => item.characterId),
-          })
-        : [];
       const activityByCharacter = new Map(
         activity.map((item) => [item.characterId, item] as const),
       );
