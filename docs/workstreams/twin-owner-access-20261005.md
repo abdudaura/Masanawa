@@ -40,4 +40,49 @@ Owner access reuses the canonical paid-feature trial policy. Initial default is 
 from first qualifying use. Admin may change enablement, duration and optional usage cap.
 No charge may settle while an admitted trial covers the qualifying owner-access session.
 
-Status: implementation started 2026-10-05.
+Status: isolated feature implementation complete; persistence/shared integration pending.
+
+Implemented:
+- bounded owner-access policy and per-owner offering contracts;
+- text/voice/video modality support;
+- owner-selected duration options and price-per-minute within platform bounds;
+- trial-aware quote shape; canonical default remains 7 days;
+- owner-access default trial cap clarified as one completed human session;
+- deterministic lifecycle: requested -> accepted -> scheduled -> active -> completed -> settled;
+- terminal decline/expiry/cancel/no-show/refund/dispute paths;
+- canonical payment reservation port;
+- paid requests reserve exact quoted amount;
+- trial requests reserve zero;
+- decline/expiry refunds exact reservation;
+- settlement only after verified attendance/completion;
+- opaque quote-id request flow so client cannot resubmit price/fees as financial truth;
+- request expiry/refund support;
+- notification port for requester/owner lifecycle events;
+- attendance evidence contract requiring both participants plus verified duration;
+- Gateway quote/request/action/read service and isolated route registrar;
+- requester Request Owner sheet;
+- owner accept/decline/schedule sheet;
+- owner-request status card;
+- mobile DTO/state/transport seams and parsing tests;
+- focused Commerce/Gateway tests.
+
+Not yet integrated:
+- append-only persistence/migrations and repository adapter;
+- canonical quote store/policy adapter;
+- canonical Commerce reservation/ledger adapter;
+- worker timer scheduling for automatic expiry/no-show scans;
+- actual session evidence adapter for text/voice/video;
+- push/in-app notification adapter;
+- Gateway app/main composition;
+- authenticated mobile transport/provider;
+- ai_chat and Activity wiring;
+- admin/owner settings UI for offering configuration.
+
+CI:
+GitHub Actions remains affected by the repository zero-step runner failure; no runner-based
+compile/test success is claimed.
+
+Security invariant:
+the client submits only an opaque quoteId when creating the paid request. Price, owner
+earning, platform fee, trial eligibility and reservation amount must be reloaded from
+server-side canonical quote/policy truth.
