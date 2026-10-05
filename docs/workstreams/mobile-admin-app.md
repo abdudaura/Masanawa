@@ -23,8 +23,8 @@ Implemented:
 - explicit Ops endpoint requirement; no accidental customer-Gateway default;
 - secure bootstrap operator credential storage and protected-route validation;
 - platform Overview/readiness;
-- Users/Identity list and relationship/identity counts; lifecycle state mutation is intentionally read-only because current Identity exposes no canonical state-transition command;
-- complete Character discovery including unconfigured Characters;
+- Users/Identity list, bounded lifecycle filters, identity/relationship counts, and privacy-safe canonical relationship drill-downs; lifecycle state mutation is intentionally read-only because current Identity exposes no canonical state-transition command;
+- complete Character discovery including unconfigured Characters and privacy-safe canonical ownership kind;
 - first-time Agent presentation configuration plus presentation/visibility/order editing;
 - per-Agent Skill assignment and Skill readiness catalog;
 - AgentRun diagnostics with bounded state filtering;
