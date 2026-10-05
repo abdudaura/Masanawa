@@ -1,10 +1,34 @@
-/// Maps a navigation hint to an existing route. The Gateway still authorizes
-/// the conversation and every action; links never carry execution authority.
+/// Maps an incoming navigation hint to an existing app route. The Gateway still
+/// authorizes the conversation and every action; links never carry execution
+/// authority.
+///
+/// Public Twin links deliberately resolve through `/twin/:publicId` first. That
+/// route performs an authenticated, privacy-aware Gateway lookup before opening
+/// the canonical Character conversation.
 String? shellDeepLinkRoute(Uri uri) {
-  if (uri.scheme != 'masanawa' || uri.userInfo.isNotEmpty || uri.hasPort ||
-      !{'chat', 'work', 'approval', 'artifact'}.contains(uri.host)) {
+  if (uri.userInfo.isNotEmpty || uri.hasPort) return null;
+
+  if (uri.scheme == 'https' && uri.host.toLowerCase() == 'masanawa.com') {
+    if (uri.pathSegments.length != 2 || uri.pathSegments.first != 'twin') {
+      return null;
+    }
+    final publicId = uri.pathSegments[1];
+    if (!_validPublicTwinId(publicId)) return null;
+    return '/twin/${Uri.encodeComponent(publicId)}';
+  }
+
+  if (uri.scheme != 'masanawa' ||
+      !{'chat', 'work', 'approval', 'artifact', 'twin'}.contains(uri.host)) {
     return null;
   }
+
+  if (uri.host == 'twin') {
+    if (uri.pathSegments.length != 1) return null;
+    final publicId = uri.pathSegments.single;
+    if (!_validPublicTwinId(publicId)) return null;
+    return '/twin/${Uri.encodeComponent(publicId)}';
+  }
+
   final String? characterId;
   if (uri.host == 'chat') {
     if (uri.pathSegments.length != 1) return null;
@@ -19,3 +43,6 @@ String? shellDeepLinkRoute(Uri uri) {
   }
   return '/chat/${Uri.encodeComponent(characterId)}';
 }
+
+bool _validPublicTwinId(String value) =>
+    RegExp(r'^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$').hasMatch(value);
