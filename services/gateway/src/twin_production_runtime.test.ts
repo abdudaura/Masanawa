@@ -389,7 +389,14 @@ function ownerLifecycleHarness(input: {
     | "requested"
     | "accepted"
     | "scheduled"
-    | "active";
+    | "active"
+    | "completed"
+    | "declined"
+    | "expired"
+    | "cancelled"
+    | "no-show"
+    | "refunded"
+    | "settled";
   readonly chargeMode?: "trial" | "paid";
   readonly acceptBy?: string;
   readonly scheduledFor?: string | null;
@@ -464,6 +471,25 @@ function ownerLifecycleHarness(input: {
           reservedCredits: update.reservedCredits,
         };
         return current;
+      },
+      async transitionOwnerAccessRequest(update: {
+        readonly expectedState: string;
+        readonly request: Record<string, unknown>;
+        readonly reservationId: string | null;
+        readonly reservedCredits: number;
+      }) {
+        if (current.state !== update.expectedState) {
+          return { applied: false, request: current };
+        }
+        current = {
+          ...update.request,
+          reservationId: update.reservationId,
+          reservedCredits: update.reservedCredits,
+        };
+        return { applied: true, request: current };
+      },
+      async listOwnerAccessLifecycleCandidates() {
+        return [current];
       },
       async readLedgerPlan() { return null; },
       async putLedgerPlan(plan: { readonly plan: unknown }) {
@@ -653,6 +679,7 @@ describe("Twin production runtime composition", () => {
       "monetization",
       "myTwin",
       "ownerAccess",
+      "ownerAccessMaintenance",
       "ownerAccessOffering",
       "paidFeatureTrialAdmin",
       "paidVoice",
@@ -772,7 +799,7 @@ describe("Twin production runtime composition", () => {
       requestId: "request_lifecycle_123",
     });
 
-    expect(request?.state).toBe("expired");
+    expect(request?.state).toBe("refunded");
     expect(harness.transfers).toHaveLength(1);
     expect(harness.events.at(-1)).toEqual(
       expect.objectContaining({
@@ -798,7 +825,7 @@ describe("Twin production runtime composition", () => {
       requestId: "request_lifecycle_123",
     });
 
-    expect(request?.state).toBe("no-show");
+    expect(request?.state).toBe("refunded");
     expect(harness.transfers).toHaveLength(1);
     expect(harness.events.at(-1)).toEqual(
       expect.objectContaining({
@@ -824,7 +851,78 @@ describe("Twin production runtime composition", () => {
 
     expect(request?.state).toBe("accepted");
     expect(harness.transfers).toHaveLength(0);
-    expect(harness.events).toHaveLength(0);
+    expect(harness.events.at(-1)).toEqual(
+      expect.objectContaining({
+        eventType: "twin.owner-access.accepted",
+        status: "pending",
+      }),
+    );
+  });
+
+  it("periodic maintenance refunds an expired request without a participant read", async () => {
+    const harness = ownerLifecycleHarness({
+      actorUserId: requesterUserId,
+      state: "requested",
+      acceptBy: new Date(Date.now() - 60_000).toISOString(),
+      reservedCredits: 100,
+    });
+
+    const result = await harness.runtime.ownerAccessMaintenance.sweep({
+      tenantId,
+      limit: 10,
+    });
+
+    expect(result).toEqual({
+      scanned: 1,
+      advanced: 1,
+      failed: 0,
+    });
+    expect(harness.current().state).toBe("refunded");
+    expect(harness.transfers).toHaveLength(1);
+  });
+
+  it("repairs an intermediate expired request after a crash before settlement", async () => {
+    const harness = ownerLifecycleHarness({
+      actorUserId: requesterUserId,
+      state: "expired",
+      reservedCredits: 100,
+    });
+
+    const result = await harness.runtime.ownerAccessMaintenance.sweep({
+      tenantId,
+      limit: 10,
+    });
+
+    expect(result.failed).toBe(0);
+    expect(harness.current().state).toBe("refunded");
+    expect(harness.transfers).toHaveLength(1);
+  });
+
+  it("rejects an owner action when another transition wins the CAS", async () => {
+    const harness = ownerLifecycleHarness({
+      actorUserId: ownerUserId,
+      state: "requested",
+      reservedCredits: 100,
+    });
+    const economy = (harness.runtime as any);
+    void economy;
+    // Simulate the request expiring between the authenticated read and the
+    // action CAS by forcing the in-memory repository state through a lifecycle
+    // sweep first.
+    await harness.runtime.ownerAccessMaintenance.sweep({
+      tenantId,
+      limit: 10,
+    });
+
+    await expect(
+      harness.runtime.ownerAccess.act({
+        authorizationHeader: "Bearer owner",
+        characterId,
+        requestId: "request_lifecycle_123",
+        action: "accept",
+      }),
+    ).rejects.toThrow();
+    expect(harness.current().state).not.toBe("accepted");
   });
 
   it("closes a declined trial request in Activity even when no Credits were held", async () => {
@@ -842,7 +940,7 @@ describe("Twin production runtime composition", () => {
       action: "decline",
     });
 
-    expect(request.state).toBe("declined");
+    expect(request.state).toBe("refunded");
     expect(harness.transfers).toHaveLength(0);
     expect(harness.events.at(-1)).toEqual(
       expect.objectContaining({
