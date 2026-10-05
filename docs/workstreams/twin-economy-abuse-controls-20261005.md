@@ -35,4 +35,33 @@ billing, crypto, shared Gateway composition or mobile router files.
 - block/report/discoverability policy contract;
 - launch-age/identity policy seam without embedding legal guesses in UI.
 
-Status: implementation started 2026-10-05.
+Status: isolated abuse/security policy implementation complete; feature integration pending.
+
+Implemented:
+- configurable per-operation amount/hour/day guard policy;
+- self-transfer rejection;
+- self-gift rejection;
+- self-attribution rejection for funding/purchase commission;
+- direct return-loop, three-user short-cycle and repeated-pair detection;
+- chargeback/refund-aware earning withdrawal holds;
+- account restriction handling;
+- block/suspension/discoverability/owner-access safety decisions;
+- normalized twin report reasons without pretending report == moderation outcome;
+- launch eligibility seam that preserves basic use while gating withdrawal/owner access;
+- isolated Gateway preflight service combining active policy + recent operation counts;
+- Security package exports;
+- focused tests.
+
+Not yet integrated:
+- policy persistence/admin configuration;
+- real transfer/gift/attribution history adapter;
+- actual block/report repository;
+- Commerce command admission hooks;
+- withdrawal admission hook;
+- Explore/chat filtering;
+- moderation pipeline and operator review;
+- age/identity source adapter.
+
+CI:
+Foundation CI run 37289723507 failed before execution with zero job steps; no test result
+is claimed from that runner.
