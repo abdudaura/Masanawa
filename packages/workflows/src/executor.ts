@@ -155,6 +155,9 @@ export function normalizeWorkflowGraph(
     ) {
       throw new TypeError("Workflow graph node is invalid");
     }
+    if (raw.terminal !== undefined && typeof raw.terminal !== "boolean") {
+      throw new TypeError("Workflow node terminal flag is invalid");
+    }
     const nodeId = boundedNodeId(raw.nodeId, "nodeId");
     if (mutable.has(nodeId)) {
       throw new TypeError("Workflow graph node IDs must be unique");
@@ -285,7 +288,6 @@ function nextAllowed(
 function checkpointFor(input: {
   readonly run: WorkflowRun;
   readonly graph: NormalizedWorkflowGraph;
-  readonly prior: WorkflowCheckpoint | null;
   readonly currentNodeId: string | null;
   readonly stepCount: number;
   readonly committedState: Readonly<Record<string, JsonValue>>;
@@ -447,7 +449,6 @@ export function createWorkflowExecutor(input: {
           const nextCheckpoint = checkpointFor({
             run,
             graph,
-            prior: checkpoint,
             currentNodeId: nextNodeId,
             stepCount: persistedStepCount,
             committedState,
@@ -481,7 +482,6 @@ export function createWorkflowExecutor(input: {
           const nextCheckpoint = checkpointFor({
             run,
             graph,
-            prior: checkpoint,
             currentNodeId: resumeNodeId,
             stepCount: persistedStepCount,
             committedState,
@@ -518,7 +518,6 @@ export function createWorkflowExecutor(input: {
           const nextCheckpoint = checkpointFor({
             run,
             graph,
-            prior: checkpoint,
             currentNodeId: resumeNodeId,
             stepCount: persistedStepCount,
             committedState,
@@ -551,7 +550,6 @@ export function createWorkflowExecutor(input: {
           const nextCheckpoint = checkpointFor({
             run,
             graph,
-            prior: checkpoint,
             currentNodeId: null,
             stepCount: persistedStepCount,
             committedState,
@@ -578,7 +576,6 @@ export function createWorkflowExecutor(input: {
         const nextCheckpoint = checkpointFor({
           run,
           graph,
-          prior: checkpoint,
           currentNodeId: null,
           stepCount: persistedStepCount,
           committedState,
