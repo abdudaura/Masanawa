@@ -91,6 +91,10 @@ abstract class TwinDirectoryTransport {
     String? cursor,
     int limit = 30,
   });
+
+  Future<TwinDirectoryEntry?> resolve({
+    required String publicId,
+  });
 }
 
 class UnavailableTwinDirectoryTransport implements TwinDirectoryTransport {
@@ -101,6 +105,13 @@ class UnavailableTwinDirectoryTransport implements TwinDirectoryTransport {
     required String query,
     String? cursor,
     int limit = 30,
+  }) {
+    throw StateError('Explore is not connected to the Gateway yet');
+  }
+
+  @override
+  Future<TwinDirectoryEntry?> resolve({
+    required String publicId,
   }) {
     throw StateError('Explore is not connected to the Gateway yet');
   }
