@@ -44,8 +44,10 @@ Implemented:
   auth denial and presentation serialization.
 
 Verification:
+- PR #164 merged into `work/billing-main-integration-20261005` at `e46dc62de6599d0ea5010855dc03a3aa1df285e9`;
+- GitHub Mobile Build run 37293232633 and Foundation CI run 37293232571 failed before executing any steps (`steps: null`), so they are runner-allocation failures rather than code-test failures;
 - changed-path audit is limited to claimed mobile presentation/cache/test/docs paths;
 - no APK rebuild was performed;
 - executable Flutter tests still require an available runner.
 
-Status: implementation checkpoint complete pending PR/runner verification.
+Status: merged implementation checkpoint. Executable Flutter verification remains pending an available runner.
