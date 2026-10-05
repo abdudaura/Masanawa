@@ -211,7 +211,6 @@ function billing(quotes: MemoryQuotes): BillingFinancialService {
       });
       return {
         fulfillmentReference: request.requestId,
-        categoryCode: request.categoryCode ?? null,
         billerCode: request.billerCode,
         itemCode: request.itemCode,
         itemName: request.itemName,
@@ -524,6 +523,7 @@ describe("billing checkout", () => {
             quoteId: request.quoteId!,
             quoteRevision: request.quoteRevision!,
             fulfillmentReference: request.requestId,
+            categoryCode: request.categoryCode ?? null,
             billerCode: request.billerCode,
             itemCode: request.itemCode,
             customerId: request.customerId,
