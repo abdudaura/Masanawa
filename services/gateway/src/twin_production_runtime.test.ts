@@ -513,7 +513,9 @@ function ownerLifecycleHarness(input: {
 }
 
 
-function voiceLifecycleHarness() {
+function voiceLifecycleHarness(options: {
+  readonly startedAt?: string | null;
+} = {}) {
   const transfers: Array<Record<string, unknown>> = [];
   const events: Array<Record<string, unknown>> = [];
   let markStartedCalls = 0;
@@ -526,7 +528,7 @@ function voiceLifecycleHarness() {
     characterId,
     chargeMode: "paid",
     admittedAt: new Date(Date.now() - 30_000).toISOString(),
-    startedAt: null,
+    startedAt: options.startedAt ?? null,
     expiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
     spendCapCredits: 50,
     reservationLedgerEntryId: "ledger-entry_voice_reserve_123",
@@ -910,6 +912,22 @@ describe("Twin production runtime composition", () => {
         status: "refunded",
       }),
     );
+  });
+
+  it("caps paid voice settlement to the accepted quote duration", async () => {
+    const harness = voiceLifecycleHarness({
+      startedAt: new Date(Date.now() - 10 * 60_000).toISOString(),
+    });
+
+    const decision = await harness.runtime.voiceAdmissionGate.complete({
+      authorizationHeader: "Bearer requester",
+      admissionId: "operation_voice_lifecycle_123",
+      outcome: "completed",
+    });
+
+    expect(decision.customerChargeCredits).toBe(50);
+    expect(decision.refundCredits).toBe(0);
+    expect(decision.disposition).toBe("settle");
   });
 
   it("wires authenticated public discovery, My Twin and Wallet projections through canonical sources", async () => {
