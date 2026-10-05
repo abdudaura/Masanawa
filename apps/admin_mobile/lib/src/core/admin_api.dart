@@ -752,8 +752,12 @@ class AdminApproval {
 }
 
 class AdminApi {
-  AdminApi({required this.token, Dio? dio})
-      : _dio = dio ??
+  AdminApi({
+    required String token,
+    this.refreshAccessToken,
+    Dio? dio,
+  })  : _token = token,
+        _dio = dio ??
             Dio(BaseOptions(
               baseUrl: requireAdminBaseUrl(),
               connectTimeout: const Duration(seconds: 10),
@@ -761,10 +765,11 @@ class AdminApi {
               headers: {'Accept': 'application/json'},
             ));
 
-  final String token;
+  String _token;
+  final Future<String?> Function()? refreshAccessToken;
   final Dio _dio;
 
-  Options get _auth => Options(headers: {'Authorization': 'Bearer $token'});
+  Options get _auth => Options(headers: {'Authorization': 'Bearer $_token'});
 
   Future<void> health() async {
     await _request(() => _dio.get<dynamic>('/healthz', options: _auth));
@@ -1241,12 +1246,24 @@ class AdminApi {
     try {
       return await call();
     } on DioException catch (error) {
-      final status = error.response?.statusCode;
+      var resolved = error;
+      if (error.response?.statusCode == 401 && refreshAccessToken != null) {
+        final refreshed = await refreshAccessToken!();
+        if (refreshed != null && refreshed.trim().isNotEmpty) {
+          _token = refreshed.trim();
+          try {
+            return await call();
+          } on DioException catch (retryError) {
+            resolved = retryError;
+          }
+        }
+      }
+      final status = resolved.response?.statusCode;
       final message = switch (status) {
-        401 || 403 => 'This credential is not authorized for Masanawa Ops.',
+        401 || 403 => 'This account is not authorized for Masanawa Ops.',
         404 => 'The configured server does not expose the Ops admin contract yet.',
         409 => 'This record changed on the server. Reload it before saving again.',
-        _ => error.message ?? 'Admin request failed.',
+        _ => resolved.message ?? 'Admin request failed.',
       };
       throw AdminApiException(message, status);
     }
