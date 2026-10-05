@@ -1,4 +1,5 @@
 import { assertPayoutEvidence, parseVerifiedPayoutIpn } from "./financial_payout_evidence.js";
+import { admitFiatOnRampEvidence } from "./financial_onramp_evidence.js";
 import { admitPaymentEvidence } from "./financial_payment_evidence.js";
 import { assertFinancialReplay, type FinancialReplayTerms } from "./financial_replay.js";
 import {
@@ -105,8 +106,26 @@ export interface FinancialCapabilities {
   readonly deposits: boolean;
   readonly withdrawals: boolean;
   readonly conversions: boolean;
+  readonly fiatOnRamp: boolean;
+  readonly fiatCurrencies: readonly string[];
+  readonly fiatSettlementProviderCode: string | null;
   readonly payoutReason: string | null;
   readonly conversionReason: string | null;
+  readonly fiatOnRampReason: string | null;
+}
+
+export interface FinancialFiatPurchaseView {
+  readonly requestId: RequestId;
+  readonly fiatAmount: string;
+  readonly fiatCurrency: string;
+  readonly settlementAsset: string;
+  readonly settlementNetwork: string | null;
+  readonly cryptoAmount: string | null;
+  readonly status: CryptoIntent["status"];
+  readonly providerInvoiceId: string | null;
+  readonly providerPaymentId: string | null;
+  readonly checkoutUrl: string | null;
+  readonly outcomeUnknown: boolean;
 }
 
 export interface FinancialService {
@@ -125,6 +144,16 @@ export interface FinancialService {
     readonly providerCode: string;
     readonly amount: string;
   }): Promise<FinancialDepositView>;
+  createFiatPurchase(input: {
+    readonly authorizationHeader: string | undefined;
+    readonly requestId: string;
+    readonly fiatAmount: string;
+    readonly fiatCurrency: string;
+  }): Promise<FinancialFiatPurchaseView>;
+  refreshFiatPurchase(input: {
+    readonly authorizationHeader: string | undefined;
+    readonly requestId: string;
+  }): Promise<FinancialFiatPurchaseView>;
   quoteWithdrawal(input: {
     readonly authorizationHeader: string | undefined;
     readonly providerCode: string;
@@ -360,6 +389,15 @@ export function createFinancialService(input: {
    * Omission fails withdrawal capability closed.
    */
   readonly withdrawalNetworkFeeMode?: FinancialWithdrawalNetworkFeeMode;
+  readonly fiatOnRamp?: {
+    readonly enabled: true;
+    readonly fiatCurrencies: readonly string[];
+    /**
+     * Must match the merchant's NOWPayments fiat on-ramp crypto settlement
+     * currency / first payout-wallet currency and a live custody balance key.
+     */
+    readonly settlementProviderCode: string;
+  };
   /**
    * Standard NOWPayments wallet payouts are whitelist-controlled. This callback
    * must prove that the exact destination, not merely its syntax, is approved
