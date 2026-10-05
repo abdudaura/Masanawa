@@ -6,6 +6,7 @@ import 'package:masanawa/src/agents/agent_directory.dart';
 import 'package:masanawa/src/agents/agent_directory_cache.dart';
 import 'package:masanawa/src/core/api/models.dart';
 import 'package:masanawa/src/core/providers.dart';
+import 'package:masanawa/src/core/network/api_client.dart';
 import 'package:masanawa/src/state/agent_directory_state.dart';
 import 'package:masanawa/src/state/session_state.dart';
 
