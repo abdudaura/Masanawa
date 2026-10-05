@@ -1,3 +1,4 @@
+import { createCanonicalId } from "@masanawa/contracts";
 import { describe, expect, it } from "vitest";
 import {
   createOwnerAccessService,
@@ -6,9 +7,9 @@ import {
   type OwnerAccessRequestPort,
 } from "./owner_access.js";
 
-const tenantId = "tenant_00000000-0000-4000-8000-000000000001" as never;
-const requesterUserId = "user_00000000-0000-4000-8000-000000000002" as never;
-const characterId = "character_00000000-0000-4000-8000-000000000003" as never;
+const tenantId = createCanonicalId("tenant");
+const requesterUserId = createCanonicalId("user");
+const characterId = createCanonicalId("character");
 
 function build() {
   const authorizer: OwnerAccessAuthorizer = {
