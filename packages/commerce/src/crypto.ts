@@ -352,6 +352,13 @@ export interface CryptoRepository {
     readonly requestId: RequestId;
     readonly updatedAt: Instant;
   }): Promise<{ readonly intent: CryptoIntent; readonly shouldDispatch: boolean }>;
+  failProviderDispatch(input: {
+    readonly tenantId: TenantId;
+    readonly userId: UserId;
+    readonly requestId: RequestId;
+    readonly operation: CryptoOperation;
+    readonly updatedAt: Instant;
+  }): Promise<CryptoIntent>;
   bindProviderInvoice(input: {
     readonly tenantId: TenantId;
     readonly userId: UserId;
