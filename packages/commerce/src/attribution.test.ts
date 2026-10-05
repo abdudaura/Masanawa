@@ -89,9 +89,31 @@ describe("twin attribution and commission", () => {
   it("creates an offsetting reversal amount instead of mutating history", () => {
     expect(
       reverseCommission({
+        originalBaseCredits: 10000,
         originalCommissionCredits: 100,
-        reversalBaseCredits: 40,
+        reversalBaseCredits: 4000,
       }),
     ).toBe(-40);
   });
+
+  it("fully reverses the original commission when the full attributed base is refunded", () => {
+    expect(
+      reverseCommission({
+        originalBaseCredits: 10000,
+        originalCommissionCredits: 100,
+        reversalBaseCredits: 10000,
+      }),
+    ).toBe(-100);
+  });
+
+  it("never reverses more than the original commission if reversal base exceeds the original", () => {
+    expect(
+      reverseCommission({
+        originalBaseCredits: 10000,
+        originalCommissionCredits: 100,
+        reversalBaseCredits: 50000,
+      }),
+    ).toBe(-100);
+  });
+
 });
