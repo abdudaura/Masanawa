@@ -11,6 +11,7 @@ Purpose:
 
 Owned paths:
 - new `packages/workflows/migrations/**`
+- `packages/workflows/src/task.ts`, `workflow-run.ts` + focused tests only for storage-required authority-scope semantics
 - new `adapters/storage/postgres/src/workflows/**`
 - `adapters/storage/postgres/src/index.ts` export seam
 - `adapters/storage/postgres/package.json` workflows dependency
