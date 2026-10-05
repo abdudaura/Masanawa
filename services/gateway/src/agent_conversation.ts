@@ -4,12 +4,12 @@ import {
   createCanonicalId,
   parseCanonicalId,
 } from "@masanawa/contracts";
+import { createStrategyAgentHarness } from "@masanawa/agents";
 import type {
   AgentHarness,
   AgentRunRepository,
   AgentStrategy,
   CharacterSessionRepository,
-  createStrategyAgentHarness,
   MobileShellRepository,
   MobileTurnCommand,
 } from "@masanawa/agents";
