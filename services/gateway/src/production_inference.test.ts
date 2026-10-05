@@ -2,6 +2,7 @@ import { createCipheriv, createHash, randomBytes } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
   parseNurainImportedGeminiCredentialPool,
+  verifyGeminiCredentialPool,
 } from "./production_inference.js";
 
 function encrypt(secret: string, root: string): string {
@@ -64,5 +65,27 @@ describe("production Gemini imported credential bridge", () => {
         fallbackModel: "gemini-3.8-flash",
       }),
     ).toThrow("fingerprint mismatch");
+  });
+  it("requires at least one credential to authenticate", async () => {
+    const seen: string[] = [];
+    const result = await verifyGeminiCredentialPool({
+      pool: {
+        apiKeys: ["key-one", "key-two"],
+        models: ["gemini-test-model"],
+      },
+      fetchImpl: (async (_url, init) => {
+        const headers = new Headers(init?.headers);
+        const key = headers.get("x-goog-api-key") ?? "";
+        seen.push(key);
+        return new Response(null, { status: key === "key-two" ? 200 : 401 });
+      }) as typeof fetch,
+    });
+
+    expect(seen).toEqual(["key-one", "key-two"]);
+    expect(result).toEqual({
+      checked: 2,
+      authenticated: 1,
+      model: "gemini-test-model",
+    });
   });
 });
