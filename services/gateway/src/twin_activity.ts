@@ -1,3 +1,4 @@
+import type { CharacterId, TenantId, UserId } from "@masanawa/contracts";
 import type { PersonalCloneProvisioningRepository } from "@masanawa/identity";
 export type TwinActivityKind =
   | "visit"
@@ -18,8 +19,8 @@ export type TwinActivityStatus =
 
 export interface TwinActivityRecord {
   readonly eventId: string;
-  readonly tenantId: string;
-  readonly characterId: string;
+  readonly tenantId: TenantId;
+  readonly characterId: CharacterId;
   readonly kind: TwinActivityKind;
   readonly status: TwinActivityStatus;
   readonly occurredAt: string;
@@ -27,8 +28,8 @@ export interface TwinActivityRecord {
 }
 
 export interface TwinActivityAuthority {
-  readonly tenantId: string;
-  readonly userId: string;
+  readonly tenantId: TenantId;
+  readonly userId: UserId;
 }
 
 export interface TwinActivityAuthorizer {
@@ -40,8 +41,8 @@ export interface TwinActivityAuthorizer {
 
 export interface TwinActivitySource {
   listForTwin(input: {
-    readonly tenantId: string;
-    readonly characterId: string;
+    readonly tenantId: TenantId;
+    readonly characterId: CharacterId;
     readonly limit: number;
   }): Promise<readonly TwinActivityRecord[]>;
 }
