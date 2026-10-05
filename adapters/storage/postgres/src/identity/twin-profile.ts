@@ -73,6 +73,11 @@ function deterministicPublicId(characterId: CharacterId): string {
 }
 
 export interface PostgresTwinProfileRepository extends TwinProfileRepository {
+  readForCharacter(input: {
+    readonly tenantId: TenantId;
+    readonly characterId: CharacterId;
+  }): Promise<TwinPublicProfile | null>;
+
   ensureForOwner(input: {
     readonly tenantId: TenantId;
     readonly ownerUserId: UserId;
@@ -144,6 +149,18 @@ export function createPostgresTwinProfileRepository(
     },
 
     readForOwner,
+
+    async readForCharacter(input) {
+      const result = await pool.query<TwinProfileRow>(
+        `SELECT tenant_id, character_id, owner_user_id, public_id,
+                display_name, bio, interests, languages, avatar_url,
+                discoverable, revision::text, created_at, updated_at
+           FROM identity.twin_profiles
+          WHERE tenant_id=$1 AND character_id=$2`,
+        [input.tenantId, input.characterId],
+      );
+      return result.rows[0] ? fromRow(result.rows[0]) : null;
+    },
 
     async readPublicById(input) {
       const result = await pool.query<TwinProfileRow>(
