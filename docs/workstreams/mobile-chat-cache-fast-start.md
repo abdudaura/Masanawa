@@ -28,4 +28,16 @@ Acceptance:
 - corrupt/missing local cache remains fail-open;
 - docs updated before merge.
 
-Status: active.
+Implemented:
+- AiChatController memoizes its application-documents directory lookup;
+- initial current-account chat cache hydration begins immediately instead of waiting for a scheduled microtask;
+- connectivity monitoring starts after the first local cache attempt;
+- retired global cache deletion is unawaited and no longer blocks current-account hydration;
+- later cache saves/deletes reuse the same resolved documents directory.
+
+Verification:
+- changed paths are limited to AiChat local-cache/startup scheduling and checkpoint docs;
+- no Gateway, auth, workflow, finance, provider or APK changes;
+- executable Flutter verification remains subject to the repository hosted-runner allocation issue.
+
+Status: implementation checkpoint complete pending PR integration.
