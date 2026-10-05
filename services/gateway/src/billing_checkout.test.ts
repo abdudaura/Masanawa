@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createCanonicalId } from "@masanawa/contracts";
 import { formatNgnKobo, type BillingQuote, type BillingQuoteRepository } from "@masanawa/commerce";
 import {
+  BillingCommerceError,
   FlutterwaveBillsClient,
   FlutterwaveFundingClient,
   type FlutterwaveBillsTransport,
@@ -342,6 +343,190 @@ describe("billing checkout", () => {
       quoteRevision: 1,
     })).rejects.toThrow("payment_amount_mismatch");
     expect(purchases).toBe(0);
+  });
+
+  it("refunds verified funds after a definitive pre-dispatch failure", async () => {
+    const owner = identity();
+    const quotes = new MemoryQuotes();
+    const base = providerTransport("100");
+    let refundPosts = 0;
+    const transport: FlutterwaveBillsTransport = {
+      async request(request) {
+        if (
+          request.method === "POST" &&
+          request.path === "/v3/transactions/44/refund"
+        ) {
+          refundPosts += 1;
+          return {
+            status: 200,
+            body: {
+              status: "success",
+              data: {
+                id: "refund-44",
+                flw_ref: "REFUND-44",
+                status: "successful",
+                amount_refunded: "100",
+              },
+            },
+          };
+        }
+        return base.request(request);
+      },
+    };
+    const billingService = billing(quotes);
+    const service = createBillingCheckoutService({
+      sessions: { async authorize() { return owner; } },
+      quotes,
+      catalog: new FlutterwaveBillsClient({ secretKey: "secret", transport, country: "NG" }),
+      funding: new FlutterwaveFundingClient({ secretKey: "secret", transport }),
+      billing: {
+        ...billingService,
+        async purchase() {
+          throw new BillingCommerceError(
+            "recipient_invalid",
+            "Provider definitively rejected the recipient",
+          );
+        },
+      },
+      actionSecret: "a".repeat(48),
+      redirectUrl: "https://app.masanawa.com/billing/return",
+    });
+
+    const quoted = await service.createQuote({
+      authorizationHeader: "Bearer session",
+      categoryCode: "AIRTIME",
+      billerCode: "BIL102",
+      itemCode: "AT102",
+      customerId: "+2348012345678",
+      amount: "100",
+    });
+    await service.startCheckout({
+      authorizationHeader: "Bearer session",
+      quoteId: quoted.quote.quoteId,
+      quoteRevision: 1,
+    });
+
+    const result = await service.verifyAndPurchase({
+      authorizationHeader: "Bearer session",
+      quoteId: quoted.quote.quoteId,
+      quoteRevision: 1,
+    });
+
+    expect(result.phase).toBe("refunded");
+    expect(result.quote).toMatchObject({
+      state: "refunded",
+      providerTransactionId: "44",
+      refundReference: "REFUND-44",
+    });
+    expect(refundPosts).toBe(1);
+  });
+
+  it("reconciles an uncertain reserved bill to success without another purchase dispatch", async () => {
+    const owner = identity();
+    const quotes = new MemoryQuotes();
+    const transport = providerTransport("100");
+    const billingService = billing(quotes);
+    let purchaseCalls = 0;
+    let reconcileCalls = 0;
+    const service = createBillingCheckoutService({
+      sessions: { async authorize() { return owner; } },
+      quotes,
+      catalog: new FlutterwaveBillsClient({ secretKey: "secret", transport, country: "NG" }),
+      funding: new FlutterwaveFundingClient({ secretKey: "secret", transport }),
+      billing: {
+        ...billingService,
+        async purchase(request) {
+          purchaseCalls += 1;
+          await quotes.reserveConfirmedBill({
+            tenantId: owner.tenantId,
+            userId: owner.userId,
+            quoteId: request.quoteId!,
+            quoteRevision: request.quoteRevision!,
+            fulfillmentReference: request.requestId,
+            billerCode: request.billerCode,
+            itemCode: request.itemCode,
+            customerId: request.customerId,
+            amount: request.amount,
+            currency: "NGN",
+          });
+          return {
+            fulfillmentReference: request.requestId,
+            billerCode: request.billerCode,
+            itemCode: request.itemCode,
+            itemName: request.itemName,
+            customerId: request.customerId,
+            customerName: null,
+            amount: request.amount,
+            currency: "NGN",
+            revision: 2,
+            state: "checking",
+            providerReference: null,
+            providerStatus: "outcome_unknown",
+            lastEvidenceAt: "2026-10-04T20:02:00.000Z",
+          };
+        },
+        async reconcileOwnedPurchase(request) {
+          reconcileCalls += 1;
+          await quotes.settleBill({
+            tenantId: owner.tenantId,
+            userId: owner.userId,
+            fulfillmentReference: request.reference,
+            state: "succeeded",
+            providerReference: "BILL-RECOVERED-1",
+          });
+          return {
+            fulfillmentReference: request.reference,
+            billerCode: quotes.quote!.billerCode,
+            itemCode: quotes.quote!.itemCode,
+            itemName: quotes.quote!.itemName,
+            customerId: quotes.quote!.customerId,
+            customerName: null,
+            amount: formatNgnKobo(quotes.quote!.serviceAmountKobo),
+            currency: "NGN",
+            revision: 3,
+            state: "succeeded",
+            providerReference: "BILL-RECOVERED-1",
+            providerStatus: "successful",
+            lastEvidenceAt: "2026-10-04T20:03:00.000Z",
+          };
+        },
+      },
+      actionSecret: "a".repeat(48),
+      redirectUrl: "https://app.masanawa.com/billing/return",
+    });
+
+    const quoted = await service.createQuote({
+      authorizationHeader: "Bearer session",
+      categoryCode: "AIRTIME",
+      billerCode: "BIL102",
+      itemCode: "AT102",
+      customerId: "+2348012345678",
+      amount: "100",
+    });
+    await service.startCheckout({
+      authorizationHeader: "Bearer session",
+      quoteId: quoted.quote.quoteId,
+      quoteRevision: 1,
+    });
+    const uncertain = await service.verifyAndPurchase({
+      authorizationHeader: "Bearer session",
+      quoteId: quoted.quote.quoteId,
+      quoteRevision: 1,
+    });
+    expect(uncertain.quote.state).toBe("reserved");
+    expect(purchaseCalls).toBe(1);
+
+    const recovered = await service.read({
+      authorizationHeader: "Bearer session",
+      quoteId: quoted.quote.quoteId,
+    });
+    expect(recovered.phase).toBe("fulfilled");
+    expect(recovered.quote).toMatchObject({
+      state: "succeeded",
+      billProviderReference: "BILL-RECOVERED-1",
+    });
+    expect(reconcileCalls).toBe(1);
+    expect(purchaseCalls).toBe(1);
   });
 });
 
