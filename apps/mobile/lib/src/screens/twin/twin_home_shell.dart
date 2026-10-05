@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../agents/twin_directory.dart';
 import '../../agents/twin_profile.dart';
 import '../../state/wallet_state.dart';
+import '../../state/agent_directory_state.dart';
 import '../activity/activity_screen.dart';
 import '../explore/explore_screen.dart';
 import '../wallet/send_credits_sheet.dart';
@@ -30,6 +31,7 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
   late int _index = widget.initialIndex.clamp(0, 3).toInt();
 
   void _openTwin(TwinDirectoryEntry twin) {
+    ref.read(agentDirectoryProvider.notifier).primeTwin(twin);
     context.push('/chat/${Uri.encodeComponent(twin.characterId)}');
   }
 
