@@ -214,21 +214,43 @@ export function decideTwinCommission(input: {
 }
 
 export function reverseCommission(input: {
+  readonly originalBaseCredits: number;
   readonly originalCommissionCredits: number;
   readonly reversalBaseCredits: number;
 }): number {
-  const original = integer(
+  const originalBase = integer(
+    input.originalBaseCredits,
+    "originalBaseCredits",
+    0,
+    1_000_000_000_000,
+  );
+  const originalCommission = integer(
     input.originalCommissionCredits,
     "originalCommissionCredits",
     0,
     1_000_000_000_000,
   );
-  const reversal = integer(
+  const reversalBase = integer(
     input.reversalBaseCredits,
     "reversalBaseCredits",
     0,
     1_000_000_000_000,
   );
-  if (reversal === 0 || original === 0) return 0;
-  return -Math.min(original, reversal);
+
+  if (originalBase === 0 || originalCommission === 0 || reversalBase === 0) {
+    return 0;
+  }
+
+  const boundedReversalBase = Math.min(originalBase, reversalBase);
+  if (boundedReversalBase === originalBase) {
+    return -originalCommission;
+  }
+
+  // Reverse the same fraction of the original settled commission. Floor keeps
+  // partial reversals from clawing back more than was economically attributed;
+  // a later full reversal still removes the entire remainder.
+  const proportional = Math.floor(
+    (originalCommission * boundedReversalBase) / originalBase,
+  );
+  return -Math.min(originalCommission, proportional);
 }
