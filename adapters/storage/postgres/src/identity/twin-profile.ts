@@ -47,7 +47,7 @@ function fromRow(row: TwinProfileRow): TwinPublicProfile {
   if (!Number.isSafeInteger(revision) || revision < 1) {
     throw new Error("Stored Twin profile revision is invalid");
   }
-  const repository: PostgresTwinProfileRepository = {
+  return Object.freeze({
     tenantId: row.tenant_id as TenantId,
     characterId: row.character_id as CharacterId,
     ownerUserId: row.owner_user_id as UserId,
@@ -103,7 +103,7 @@ export function createPostgresTwinProfileRepository(
     return result.rows[0] ? fromRow(result.rows[0]) : null;
   }
 
-  return Object.freeze({
+  const repository: PostgresTwinProfileRepository = {
     async create(input) {
       return withTransaction(pool, async (client) => {
         const inserted = await client.query<TwinProfileRow>(
