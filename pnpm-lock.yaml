@@ -5,6 +5,10 @@ importers:
 
   .:
     configDependencies: {}
+    devDependencies:
+      '@masanawa/identity':
+        specifier: workspace:*
+        version: link:packages/identity
     packageManagerDependencies:
       pnpm:
         specifier: 12.8.2
