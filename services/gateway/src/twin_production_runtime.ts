@@ -327,7 +327,7 @@ export function createTwinProductionRuntime(input: {
   readonly commerce: CommerceRepository;
   readonly personalClones: PersonalCloneProvisioningRepository;
   readonly publicTwinBaseUrl: string;
-  readonly adminUserIds: ReadonlySet<string>;
+  readonly adminPrincipals: ReadonlySet<string>;
   readonly voice: {
     readonly unitSeconds: number;
     readonly priceCreditsPerUnit: number;
@@ -354,7 +354,12 @@ export function createTwinProductionRuntime(input: {
   const adminAuthority = {
     async authorize(request: { readonly authorizationHeader: string | undefined }) {
       const identity = await customer.authorize(request);
-      if (!input.adminUserIds.has(String(identity.userId))) {
+      const principals = [
+        String(identity.userId),
+        identity.profile.email?.trim().toLowerCase() ?? "",
+        identity.profile.phone?.trim() ?? "",
+      ].filter(Boolean);
+      if (!principals.some((value) => input.adminPrincipals.has(value))) {
         throw Object.assign(new Error("Admin capability required"), { statusCode: 403 });
       }
       return Object.freeze({ tenantId: identity.tenantId });
