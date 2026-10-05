@@ -18,7 +18,7 @@ class FileAgentDirectoryCache implements AgentDirectoryCache {
 
   Future<File> _file() async {
     final directory = await getApplicationSupportDirectory();
-    return File('\${directory.path}\${Platform.pathSeparator}\$_fileName');
+    return File('${directory.path}${Platform.pathSeparator}$_fileName');
   }
 
   @override
@@ -27,11 +27,11 @@ class FileAgentDirectoryCache implements AgentDirectoryCache {
     try {
       final file = await _file();
       if (!await file.exists()) return null;
-      final raw = jsonDecode(await file.readAsString());
-      if (raw is! Map<String, dynamic> || raw['ownerId'] != ownerId) {
+      final decoded = jsonDecode(await file.readAsString());
+      if (decoded is! Map<String, dynamic> || decoded['ownerId'] != ownerId) {
         return null;
       }
-      final values = raw['agents'];
+      final values = decoded['agents'];
       if (values is! List) return null;
       final agents = <AgentDirectoryEntry>[];
       for (final value in values) {
@@ -51,7 +51,7 @@ class FileAgentDirectoryCache implements AgentDirectoryCache {
     if (ownerId.isEmpty) return;
     try {
       final file = await _file();
-      final temp = File('\${file.path}.tmp');
+      final temp = File('${file.path}.tmp');
       await temp.writeAsString(
         jsonEncode({
           'ownerId': ownerId,
@@ -71,7 +71,7 @@ class FileAgentDirectoryCache implements AgentDirectoryCache {
     try {
       final file = await _file();
       if (await file.exists()) await file.delete();
-      final temp = File('\${file.path}.tmp');
+      final temp = File('${file.path}.tmp');
       if (await temp.exists()) await temp.delete();
     } catch (_) {
       // Cache cleanup must not block sign-out or authentication recovery.
