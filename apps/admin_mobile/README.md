@@ -7,8 +7,8 @@ Android application id: `ng.masanawa.admin`.
 ## Current control areas
 
 - Overview — Ops readiness plus platform-wide operational counts.
-- Users — tenant-scoped identity/relationship counts; lifecycle mutation is intentionally read-only until Identity exposes a canonical state-transition command.
-- Agents — discover all canonical Characters, configure first presentation, edit presentation/visibility/order and assign Skills.
+- Users — tenant-scoped identity/relationship counts, lifecycle filters and privacy-safe relationship drill-downs; lifecycle mutation is intentionally read-only until Identity exposes a canonical state-transition command.
+- Agents — discover all canonical Characters, show ownership kind, configure first presentation, edit presentation/visibility/order and assign Skills.
 - Skills — catalog and readiness.
 - Runtime — recent AgentRuns, failures, trace correlation and bounded state filtering.
 - Commerce — full immutable-revision Offer create/edit/enable administration with SkillVersion, pricing, commission and region validation; fulfillments and immutable ledger activity.
