@@ -63,12 +63,26 @@ describe("admin Agent action broker", () => {
     const platformAdmin = {
       setOfferEnabled,
     } as unknown as PlatformAdminService;
-    const broker = createAdminAgentActionBroker({ config, authorizer, platformAdmin });
+    const approvalCommands = {
+      prepare: vi.fn(async () => ({
+        approvalId: "approval_00000000-0000-4000-8000-000000000003",
+        operationId: "operation_00000000-0000-4000-8000-000000000004",
+        reused: false,
+      })),
+    };
+    const broker = createAdminAgentActionBroker({
+      config,
+      authorizer,
+      platformAdmin,
+      approvalCommands,
+    });
 
     await expect(broker.execute({
       authorizationHeader: "Bearer operator",
       characterId: gwaniId,
       action: "offer.set-enabled",
+      agentRunId: "agent-run_00000000-0000-4000-8000-000000000002",
+      idempotencyKey: "gwani-write-1",
       arguments: {
         offerId: "offer_00000000-0000-4000-8000-000000000001",
         expectedRevision: 1,
@@ -79,9 +93,34 @@ describe("admin Agent action broker", () => {
       action: "offer.set-enabled",
       capability: "commerce.write",
       reason: "governed-write",
+      approvalId: "approval_00000000-0000-4000-8000-000000000003",
+      operationId: "operation_00000000-0000-4000-8000-000000000004",
+      reused: false,
     });
 
     expect(setOfferEnabled).not.toHaveBeenCalled();
+  });
+
+  it("requires AgentRun and idempotency identity for governed writes", async () => {
+    const platformAdmin = {} as PlatformAdminService;
+    const approvalCommands = {
+      prepare: vi.fn(),
+    };
+    const broker = createAdminAgentActionBroker({
+      config,
+      authorizer,
+      platformAdmin,
+      approvalCommands,
+    });
+
+    await expect(broker.execute({
+      authorizationHeader: "Bearer operator",
+      characterId: gwaniId,
+      action: "offer.set-enabled",
+    })).rejects.toThrow(
+      "Governed admin writes require agentRunId and idempotencyKey",
+    );
+    expect(approvalCommands.prepare).not.toHaveBeenCalled();
   });
 
   it("intersects Gwani delegation with operator authority", async () => {
