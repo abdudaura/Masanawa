@@ -293,6 +293,8 @@ function setup(
     }),
     readAggregateLiability: vi.fn(async () =>
       pooledCustodyLiabilityCoverageSatisfied === false ? "101" : "0"),
+    readPlatformAggregateLiability: vi.fn(async () =>
+      pooledCustodyLiabilityCoverageSatisfied === false ? "101" : "0"),
   } as unknown as CryptoRepository;
   const service = createFinancialService({
     authorizer: createFixedFinancialAuthorizer({ token: "fixture-token", tenantId, userId }),
