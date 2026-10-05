@@ -87,9 +87,23 @@ The acceptance path now crosses the same shapes used by the active UI/channel wo
 - a valid callback cannot be substituted onto another valid action;
 - aggregate ShellDocument text/node/depth bounds are checked server-side before emission.
 
-Current app/channel executable projection is single-select. Multi-select deliberately fails closed until
-#91/#92 have a bounded staged-selection/commit contract rather than independent buttons pretending to be
-one multi-answer submission.
+Multi-select now has a bounded staged-selection/commit contract instead of treating independent buttons
+as a complete multi-answer submission.
+
+The contract harness proves:
+- server-owned multi-select state is bound to the exact Teaching action binding and expiry;
+- every toggle advances a monotonic stage revision and refreshes the stage hash;
+- stale Shell actions and stale WhatsApp/Telegram callbacks fail closed after any stage change;
+- clients see only option labels, selected/not-selected state and opaque action/callback identifiers;
+- the hidden rubric, canonical RequestId, RelationshipId and SkillVersion authority remain server-side;
+- commit is refused while the staged set is empty;
+- a committed stage cannot be mutated and exact re-commit is idempotent;
+- the committed option set is handed to the existing replay-safe Teaching selection path.
+
+A cross-channel contract journey starts the staged answer in the app, toggles another answer through
+WhatsApp, commits the refreshed stage through Telegram, and verifies the same canonical Teaching
+RequestId advances durable progress exactly once. This is still contract-level evidence; real
+Gateway/state persistence and physical channel rendering remain owner integration work.
 
 
 ## Free-response acceptance
