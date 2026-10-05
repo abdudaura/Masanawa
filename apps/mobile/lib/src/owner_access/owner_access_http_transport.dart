@@ -87,3 +87,85 @@ class GatewayOwnerAccessTransport implements OwnerAccessTransport {
     return OwnerAccessRequest.fromJson(_map(response.data));
   }
 }
+
+
+class GatewayOwnerAccessOfferingTransport {
+  GatewayOwnerAccessOfferingTransport({required this.api});
+
+  final ApiClient api;
+
+  Map<String, dynamic> _map(dynamic value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) return value.cast<String, dynamic>();
+    throw const FormatException('Invalid owner access offering response');
+  }
+
+  String _modality(OwnerAccessModality value) {
+    return switch (value) {
+      OwnerAccessModality.text => 'text',
+      OwnerAccessModality.voice => 'voice',
+      OwnerAccessModality.video => 'video',
+    };
+  }
+
+  OwnerAccessOffering _offering(dynamic value) {
+    final json = _map(value);
+    final modalities = json['modalities'];
+    final durations = json['durationOptionsMinutes'];
+    final price = json['priceCreditsPerMinute'];
+    if (modalities is! List ||
+        durations is! List ||
+        price is! num ||
+        json['enabled'] is! bool) {
+      throw const FormatException('Invalid owner access offering response');
+    }
+    final parsedModalities = <OwnerAccessModality>{};
+    for (final raw in modalities) {
+      switch (raw) {
+        case 'text':
+          parsedModalities.add(OwnerAccessModality.text);
+        case 'voice':
+          parsedModalities.add(OwnerAccessModality.voice);
+        case 'video':
+          parsedModalities.add(OwnerAccessModality.video);
+        default:
+          throw const FormatException('Invalid owner access offering modality');
+      }
+    }
+    final parsedDurations = <int>[];
+    for (final raw in durations) {
+      if (raw is! num || raw.toInt() < 1) {
+        throw const FormatException('Invalid owner access offering duration');
+      }
+      parsedDurations.add(raw.toInt());
+    }
+    return OwnerAccessOffering(
+      enabled: json['enabled'] as bool,
+      modalities: Set.unmodifiable(parsedModalities),
+      durationOptionsMinutes: List.unmodifiable(parsedDurations),
+      priceCreditsPerMinute: price.toInt(),
+    );
+  }
+
+  Future<OwnerAccessOffering> read() async {
+    final response = await api.dio.get<dynamic>(
+      '/v1/twin/owner-access/offering',
+    );
+    return _offering(response.data);
+  }
+
+  Future<OwnerAccessOffering> update(OwnerAccessOffering offering) async {
+    final response = await api.dio.put<dynamic>(
+      '/v1/twin/owner-access/offering',
+      data: {
+        'enabled': offering.enabled,
+        'modalities': [
+          for (final value in offering.modalities) _modality(value),
+        ],
+        'durationOptionsMinutes': offering.durationOptionsMinutes,
+        'priceCreditsPerMinute': offering.priceCreditsPerMinute,
+      },
+    );
+    return _offering(response.data);
+  }
+}
