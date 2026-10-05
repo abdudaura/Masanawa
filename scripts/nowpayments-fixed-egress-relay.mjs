@@ -12,6 +12,7 @@ const ALLOWED = Object.freeze([
   ["GET", /^\/v1\/currencies$/u],
   ["GET", /^\/v1\/min-amount$/u],
   ["GET", /^\/v1\/estimate$/u],
+  ["POST", /^\/v1\/invoice$/u],
   ["POST", /^\/v1\/payment$/u],
   ["GET", /^\/v1\/payment\/[A-Za-z0-9_-]{1,128}$/u],
   ["POST", /^\/v1\/auth$/u],
