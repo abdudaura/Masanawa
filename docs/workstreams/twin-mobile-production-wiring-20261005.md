@@ -14,6 +14,7 @@ Owned paths:
 - `apps/mobile/lib/src/state/wallet_state.dart`
 - `apps/mobile/lib/src/router/app_router.dart`
 - `apps/mobile/lib/src/screens/twin/twin_home_shell.dart`
+- `apps/mobile/test/twin_home_shell_test.dart`
 - this claim file only
 
 Scope:
