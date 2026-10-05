@@ -5,20 +5,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/mobile_push.dart';
-import '../../owner_access/owner_access.dart';
-import '../../owner_access/owner_access_state.dart';
 import '../../state/agent_directory_state.dart';
 import '../../state/ai_chat_state.dart';
-import '../../state/my_twin_state.dart';
 import '../../state/session_state.dart';
 import '../../theme/masanawa_theme.dart';
 import '../../tokens/masanawa_tokens.dart';
 
 /// Secondary account settings for the Twin-first product.
 ///
-/// Runtime concepts such as Agent Float, Skills and provider configuration stay
-/// out of the ordinary customer surface. The user's own Twin and human-access
-/// availability are the only Twin configuration exposed here.
+/// Twin identity, discovery and human-access configuration live in My Twin.
+/// Runtime concepts such as Agent Float, Skills and provider configuration are
+/// intentionally absent from the ordinary customer settings surface.
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
@@ -41,143 +38,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (mounted) setState(() => _notifications = enabled);
   }
 
-  Future<int?> _askHumanAccessPrice(
-    BuildContext context,
-    int current,
-  ) async {
-    final controller = TextEditingController(
-      text: current > 0 ? current.toString() : '',
-    );
-    final result = await showDialog<int>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Human access price'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Set the price per minute after the customer\'s trial. '
-              'Masanawa holds paid requests until the session is completed.',
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: controller,
-              autofocus: true,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Credits per minute',
-                hintText: '10',
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final value = int.tryParse(controller.text.trim());
-              if (value == null || value < 1 || value > 1000000) return;
-              Navigator.of(dialogContext).pop(value);
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-    controller.dispose();
-    return result;
-  }
-
-  Future<List<int>?> _askHumanAccessDurations(
-    BuildContext context,
-    List<int> current,
-  ) async {
-    const presets = <int>{15, 30, 60};
-    final selected = <int>{
-      ...current.where(presets.contains),
-    };
-    if (selected.isEmpty) selected.add(15);
-
-    return showDialog<List<int>>(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Session lengths'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (final minutes in const [15, 30, 60])
-                CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  value: selected.contains(minutes),
-                  title: Text('$minutes minutes'),
-                  onChanged: (enabled) {
-                    setDialogState(() {
-                      if (enabled == true) {
-                        selected.add(minutes);
-                      } else if (selected.length > 1) {
-                        selected.remove(minutes);
-                      }
-                    });
-                  },
-                ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final values = selected.toList()..sort();
-                Navigator.of(dialogContext).pop(values);
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _saveHumanAccess(
-    BuildContext context,
-    OwnerAccessOffering offering,
-  ) async {
-    final saved =
-        await ref.read(ownerAccessOfferingProvider.notifier).save(offering);
-    if (!context.mounted) return;
-    if (saved == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not update human access. Please try again.'),
-        ),
-      );
-      return;
-    }
-    unawaited(ref.read(myTwinProvider.notifier).refresh());
-  }
-
-  Future<void> _toggleHumanAccess(
-    BuildContext context,
-    OwnerAccessOffering offering,
-    bool enabled,
-  ) async {
-    var next = offering;
-    if (enabled && offering.priceCreditsPerMinute < 1) {
-      final price =
-          await _askHumanAccessPrice(context, offering.priceCreditsPerMinute);
-      if (price == null || !context.mounted) return;
-      next = next.copyWith(priceCreditsPerMinute: price);
-    }
-    await _saveHumanAccess(context, next.copyWith(enabled: enabled));
-  }
-
   @override
   Widget build(BuildContext context) {
     final u = context.masanawa;
@@ -185,16 +45,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final user = session is SessionSignedIn ? session.user : null;
     final name = user?.name ?? 'Citizen';
     final contact = user?.phone ?? user?.email ?? 'No contact saved';
-
-    final myTwin = ref.watch(myTwinProvider);
-    final twin = myTwin.valueOrNull;
-    final hasTwin = twin?.hasTwin == true && twin?.characterId != null;
-    final humanAccess = ref.watch(ownerAccessOfferingProvider);
-
     final directory = ref.watch(agentDirectoryProvider);
     final supportAgents = directory.agents
         .where((agent) => agent.supportAgent)
         .toList(growable: false);
+
     String? selectedSupportAgentId;
     for (final agent in supportAgents) {
       if (agent.defaultPlatformAgent) {
@@ -271,121 +126,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          _Card(
-            children: [
-              ListTile(
-                leading: Icon(Icons.auto_awesome_outlined, color: u.brand),
-                title: const Text('My Twin'),
-                subtitle: Text(
-                  hasTwin
-                      ? 'Open your Twin'
-                      : 'Create your personal AI Twin',
-                ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  final characterId = twin?.characterId;
-                  if (hasTwin && characterId != null) {
-                    context.push('/chat/${Uri.encodeComponent(characterId)}');
-                  } else {
-                    context.push('/clone');
-                  }
-                },
-              ),
-            ],
-          ),
-          if (hasTwin) ...[
-            const SizedBox(height: 16),
-            humanAccess.when(
-              loading: () => _Card(
-                children: const [
-                  ListTile(
-                    leading: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                    title: Text('Loading human access…'),
-                  ),
-                ],
-              ),
-              error: (_, __) => _Card(
-                children: [
-                  ListTile(
-                    leading: Icon(Icons.sync_problem_outlined, color: u.brand),
-                    title: const Text('Human access unavailable'),
-                    subtitle: const Text('Tap to try again'),
-                    onTap: () => ref
-                        .read(ownerAccessOfferingProvider.notifier)
-                        .refresh(),
-                  ),
-                ],
-              ),
-              data: (offering) {
-                if (offering == null) return const SizedBox.shrink();
-                return _Card(
-                  children: [
-                    SwitchListTile(
-                      secondary: Icon(Icons.person_pin_outlined, color: u.brand),
-                      title: const Text('Talk to me'),
-                      subtitle: Text(
-                        offering.enabled
-                            ? 'People can request a paid session with the real you'
-                            : 'Keep real-person requests off until you are ready',
-                      ),
-                      value: offering.enabled,
-                      onChanged: (enabled) =>
-                          _toggleHumanAccess(context, offering, enabled),
-                    ),
-                    const Divider(height: 1),
-                    ListTile(
-                      title: const Text('Price after trial'),
-                      subtitle: const Text('Credits per minute'),
-                      trailing: Text(
-                        offering.priceCreditsPerMinute < 1
-                            ? 'Set price'
-                            : '${offering.priceCreditsPerMinute} Cr/min',
-                      ),
-                      onTap: () async {
-                        final price = await _askHumanAccessPrice(
-                          context,
-                          offering.priceCreditsPerMinute,
-                        );
-                        if (price == null || !context.mounted) return;
-                        await _saveHumanAccess(
-                          context,
-                          offering.copyWith(priceCreditsPerMinute: price),
-                        );
-                      },
-                    ),
-                    const Divider(height: 1),
-                    ListTile(
-                      title: const Text('Session lengths'),
-                      subtitle: Text(
-                        offering.durationOptionsMinutes
-                            .map((value) => '$value min')
-                            .join(' · '),
-                      ),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () async {
-                        final durations = await _askHumanAccessDurations(
-                          context,
-                          offering.durationOptionsMinutes,
-                        );
-                        if (durations == null || !context.mounted) return;
-                        await _saveHumanAccess(
-                          context,
-                          offering.copyWith(
-                            durationOptionsMinutes: durations,
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                );
-              },
-            ),
-          ],
           if (supportAgents.isNotEmpty) ...[
             const SizedBox(height: 16),
             _Card(
