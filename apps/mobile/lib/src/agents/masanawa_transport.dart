@@ -6,39 +6,61 @@ import 'package:dio/dio.dart';
 import '../chat/message_parts.dart';
 import '../core/network/api_client.dart';
 import 'agent_directory.dart';
-import 'creator_clone.dart';
-import 'creator_economy.dart';
 import 'creator_skills.dart';
+import 'creator_economy.dart';
+import 'creator_clone.dart';
 import 'agent_session.dart';
+import 'agent_shell.dart';
+import '../chat/shell_document.dart';
 
 const String kAgentBaseUrl = String.fromEnvironment(
   'AGENT_BASE_URL',
-  defaultValue: '',
+  defaultValue: 'https://nurainworker-production.up.railway.app',
 );
-
-const bool kAgentRuntimeEnabled = bool.fromEnvironment(
-  'AGENT_RUNTIME_ENABLED',
-  defaultValue: false,
-);
-
-bool get isAgentRuntimeConfigured =>
-    kAgentRuntimeEnabled && kAgentBaseUrl.isNotEmpty;
 
 class _GatewayClient {
   _GatewayClient({
     required Dio dio,
     required this.baseUrl,
     this.readAccessToken,
+    this.refreshAccessToken,
   }) : dio = Dio(dio.options.copyWith(baseUrl: baseUrl)) {
-    // Keep injected adapters available for tests; never copy legacy interceptors.
+    // Keep injected adapters available for tests; never copy unrelated
+    // interceptors from the civic client.
     this.dio.httpClientAdapter = dio.httpClientAdapter;
+    this.dio.interceptors.add(
+      QueuedInterceptorsWrapper(
+        onError: (error, handler) async {
+          if (error.response?.statusCode == 401 &&
+              refreshAccessToken != null &&
+              error.requestOptions.extra['masanawaAuthRetried'] != true) {
+            try {
+              final token = await refreshAccessToken!();
+              if (token != null && token.isNotEmpty) {
+                final options = error.requestOptions;
+                options.headers['Authorization'] = 'Bearer $token';
+                options.extra['masanawaAuthRetried'] = true;
+                final response = await this.dio.fetch(options);
+                handler.resolve(response);
+                return;
+              }
+            } catch (_) {
+              // The normal 401 path below signs the user out only when session
+              // rotation genuinely failed.
+            }
+          }
+          handler.next(error);
+        },
+      ),
+    );
   }
 
   final Dio dio;
   final String baseUrl;
   final String? Function()? readAccessToken;
+  final Future<String?> Function()? refreshAccessToken;
 
-  Options options({bool turn = false}) {
+  Options options({bool turn = false, String? requestId}) {
     final token = readAccessToken?.call();
     return Options(
       followRedirects: false,
@@ -47,6 +69,7 @@ class _GatewayClient {
           : const Duration(seconds: 15),
       headers: {
         if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+        if (requestId != null && requestId.isNotEmpty) 'x-request-id': requestId,
       },
     );
   }
@@ -56,6 +79,7 @@ class _GatewayClient {
     Map<String, dynamic> body, {
     CancelToken? cancelToken,
     void Function(int sent, int total)? onSendProgress,
+    String? requestId,
   }) async {
     try {
       final res = await dio.post<Map<String, dynamic>>(
@@ -65,6 +89,7 @@ class _GatewayClient {
           turn: path.endsWith('/turn') ||
               path.endsWith('/media-turn') ||
               path.endsWith('/media-set-turn'),
+          requestId: requestId,
         ),
         cancelToken: cancelToken,
         onSendProgress: onSendProgress,
@@ -99,12 +124,13 @@ class _GatewayClient {
     String path,
     Map<String, dynamic> body, {
     CancelToken? cancelToken,
+    String? requestId,
   }) async* {
     try {
       final res = await dio.post<ResponseBody>(
         '$baseUrl$path',
         data: body,
-        options: options(turn: true).copyWith(
+        options: options(turn: true, requestId: requestId).copyWith(
           responseType: ResponseType.stream,
         ),
         cancelToken: cancelToken,
@@ -130,6 +156,29 @@ class _GatewayClient {
     }
   }
 
+  Stream<Map<String, dynamic>> getStream(String path) async* {
+    try {
+      final res = await dio.get<ResponseBody>(
+        '$baseUrl$path',
+        options: options(turn: true).copyWith(responseType: ResponseType.stream),
+      );
+      final bodyStream = res.data?.stream;
+      if (bodyStream == null) throw const ApiException('Empty response from server');
+      await for (final line in bodyStream
+          .transform(utf8.decoder)
+          .transform(const LineSplitter())) {
+        final value = line.trim();
+        if (value.isEmpty) continue;
+        final decoded = jsonDecode(value);
+        if (decoded is Map) yield decoded.cast<String, dynamic>();
+      }
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    } on FormatException {
+      throw const ApiException('Invalid event stream');
+    }
+  }
+
   Future<Map<String, dynamic>> get(String path) async {
     try {
       final res = await dio.get<Map<String, dynamic>>(
@@ -152,17 +201,19 @@ class MasanawaAgentDirectoryTransport implements AgentDirectoryTransport {
     required Dio dio,
     required String baseUrl,
     String? Function()? readAccessToken,
+    Future<String?> Function()? refreshAccessToken,
   }) : _client = _GatewayClient(
          dio: dio,
          baseUrl: baseUrl,
          readAccessToken: readAccessToken,
+         refreshAccessToken: refreshAccessToken,
        );
 
   final _GatewayClient _client;
 
   @override
   Future<List<AgentDirectoryEntry>> loadDirectory() async {
-    final data = await _client.get('/v1/agent/directory');
+    final data = await _client.get('/agent/directory');
     final raw = data['agents'];
     if (raw is! List) throw const ApiException('Invalid agent directory');
     return [
@@ -171,27 +222,25 @@ class MasanawaAgentDirectoryTransport implements AgentDirectoryTransport {
           AgentDirectoryEntry.fromJson(item.cast<String, dynamic>()),
     ];
   }
-
   @override
   Future<void> setDefaultPlatformAgent(String characterId) async {
-    await _client.put('/v1/agent/preferences/default', {
+    await _client.put('/agent/preferences/default', {
       'characterId': characterId,
     });
   }
 }
-
-
-
 
 class MasanawaCreatorSkillTransport implements CreatorSkillTransport {
   MasanawaCreatorSkillTransport({
     required Dio dio,
     required String baseUrl,
     String? Function()? readAccessToken,
+    Future<String?> Function()? refreshAccessToken,
   }) : _client = _GatewayClient(
          dio: dio,
          baseUrl: baseUrl,
          readAccessToken: readAccessToken,
+         refreshAccessToken: refreshAccessToken,
        );
 
   final _GatewayClient _client;
@@ -208,7 +257,7 @@ class MasanawaCreatorSkillTransport implements CreatorSkillTransport {
 
   @override
   Future<List<CreatorSkillEntry>> load() async {
-    return _parse(await _client.get('/v1/creator/skills'));
+    return _parse(await _client.get('/creator/skills'));
   }
 
   @override
@@ -216,7 +265,7 @@ class MasanawaCreatorSkillTransport implements CreatorSkillTransport {
     String skillVersionId,
     bool enabled,
   ) async {
-    return _parse(await _client.put('/v1/creator/skills', {
+    return _parse(await _client.put('/creator/skills', {
       'skillVersionId': skillVersionId,
       'enabled': enabled,
     }));
@@ -228,23 +277,25 @@ class MasanawaCreatorEconomyTransport implements CreatorEconomyTransport {
     required Dio dio,
     required String baseUrl,
     String? Function()? readAccessToken,
+    Future<String?> Function()? refreshAccessToken,
   }) : _client = _GatewayClient(
          dio: dio,
          baseUrl: baseUrl,
          readAccessToken: readAccessToken,
+         refreshAccessToken: refreshAccessToken,
        );
 
   final _GatewayClient _client;
 
   @override
   Future<CreatorEconomySnapshot> load() async {
-    final data = await _client.get('/v1/creator/economy');
+    final data = await _client.get('/creator/economy');
     return CreatorEconomySnapshot.fromJson(data);
   }
 
   @override
   Future<CreatorEconomySnapshot> allocateFloat(int amountCredits) async {
-    final data = await _client.post('/v1/creator/float', {
+    final data = await _client.post('/creator/float', {
       'amountCredits': amountCredits,
     });
     return CreatorEconomySnapshot.fromJson(data);
@@ -256,10 +307,12 @@ class MasanawaCreatorCloneTransport implements CreatorCloneTransport {
     required Dio dio,
     required String baseUrl,
     String? Function()? readAccessToken,
+    Future<String?> Function()? refreshAccessToken,
   }) : _client = _GatewayClient(
          dio: dio,
          baseUrl: baseUrl,
          readAccessToken: readAccessToken,
+         refreshAccessToken: refreshAccessToken,
        );
 
   final _GatewayClient _client;
@@ -272,7 +325,7 @@ class MasanawaCreatorCloneTransport implements CreatorCloneTransport {
     required List<String> personality,
     required List<String> expertise,
   }) async {
-    final data = await _client.post('/v1/creator/clone', {
+    final data = await _client.post('/creator/clone', {
       'displayName': displayName,
       'biography': biography,
       'languages': languages,
@@ -283,15 +336,17 @@ class MasanawaCreatorCloneTransport implements CreatorCloneTransport {
   }
 }
 
-class MasanawaAgentTransport implements AgentTransport {
+class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
   MasanawaAgentTransport({
     required Dio dio,
     required String baseUrl,
     String? Function()? readAccessToken,
+    Future<String?> Function()? refreshAccessToken,
   }) : _client = _GatewayClient(
          dio: dio,
          baseUrl: baseUrl,
          readAccessToken: readAccessToken,
+         refreshAccessToken: refreshAccessToken,
        );
 
   final _GatewayClient _client;
@@ -299,7 +354,7 @@ class MasanawaAgentTransport implements AgentTransport {
 
   @override
   Future<AgentSessionBinding> openSession(String characterId) async {
-    final data = await _client.post('/v1/agent/sessions/open', {
+    final data = await _client.post('/agent/sessions/open', {
       'characterId': characterId,
     });
     final id = data['characterSessionId'];
@@ -320,6 +375,7 @@ class MasanawaAgentTransport implements AgentTransport {
     required String text,
     void Function(String delta)? onTextDelta,
     Future<void> Function(Uint8List pcmChunk)? onAudioPcmChunk,
+    String? requestId,
   }) async {
     final token = CancelToken();
     _turnTokens[binding.characterId]?.cancel('Superseded by a new turn');
@@ -330,9 +386,10 @@ class MasanawaAgentTransport implements AgentTransport {
         var streamedText = '';
         Map<String, dynamic>? done;
         await for (final event in _client.postStream(
-          '/v1/agent/sessions/${binding.characterSessionId}/turn-stream',
+          '/agent/sessions/${binding.characterSessionId}/turn-stream',
           {'characterId': binding.characterId, 'text': text},
           cancelToken: token,
+          requestId: requestId,
         )) {
           final type = event['type'];
           if (type == 'delta') {
@@ -370,9 +427,10 @@ class MasanawaAgentTransport implements AgentTransport {
       }
 
       final data = await _client.post(
-        '/v1/agent/sessions/${binding.characterSessionId}/turn',
+        '/agent/sessions/${binding.characterSessionId}/turn',
         {'characterId': binding.characterId, 'text': text},
         cancelToken: token,
+        requestId: requestId,
       );
       final reply = data['reply'];
       if (reply is! String || reply.isEmpty) {
@@ -424,6 +482,7 @@ class MasanawaAgentTransport implements AgentTransport {
     required String mimeType,
     required String caption,
     void Function(int sent, int total)? onUploadProgress,
+    String? requestId,
   }) async {
     final token = CancelToken();
     _turnTokens[binding.characterId]?.cancel('Superseded by a new turn');
@@ -431,7 +490,7 @@ class MasanawaAgentTransport implements AgentTransport {
     late final Map<String, dynamic> data;
     try {
       data = await _client.post(
-        '/v1/agent/sessions/${binding.characterSessionId}/media-turn',
+        '/agent/sessions/${binding.characterSessionId}/media-turn',
         {
           'characterId': binding.characterId,
           'caption': caption,
@@ -440,6 +499,7 @@ class MasanawaAgentTransport implements AgentTransport {
         },
         cancelToken: token,
         onSendProgress: onUploadProgress,
+        requestId: requestId,
       );
     } finally {
       if (identical(_turnTokens[binding.characterId], token)) {
@@ -483,6 +543,7 @@ class MasanawaAgentTransport implements AgentTransport {
     required List<AgentMediaInput> media,
     required String caption,
     void Function(int sent, int total)? onUploadProgress,
+    String? requestId,
   }) async {
     if (media.isEmpty || media.length > 8) {
       throw const ApiException('Invalid attachment set');
@@ -492,7 +553,7 @@ class MasanawaAgentTransport implements AgentTransport {
     _turnTokens[binding.characterId] = token;
     try {
       final data = await _client.post(
-        '/v1/agent/sessions/${binding.characterSessionId}/media-set-turn',
+        '/agent/sessions/${binding.characterSessionId}/media-set-turn',
         {
           'characterId': binding.characterId,
           'caption': caption,
@@ -507,6 +568,7 @@ class MasanawaAgentTransport implements AgentTransport {
         },
         cancelToken: token,
         onSendProgress: onUploadProgress,
+        requestId: requestId,
       );
       final reply = data['reply'];
       if (reply is! String || reply.isEmpty) {
@@ -526,10 +588,189 @@ class MasanawaAgentTransport implements AgentTransport {
   }
 
   @override
+  Future<AgentShellConfig> loadShellConfig(String characterId) async {
+    final query = <String, String>{
+      'characterId': characterId,
+      'clientVersion': kMasanawaShellVersion,
+      'capabilities': jsonEncode(ShellDocument.capabilities),
+    };
+    final path = '/agent/shell/config?${Uri(queryParameters: query).query}';
+    return AgentShellConfig.fromJson(await _client.get(path));
+  }
+
+  @override
+  Future<List<AgentHistoryMessage>> loadHistory(
+    String characterId, {
+    int limit = 100,
+    String? before,
+  }) async {
+    final query = <String, String>{
+      'characterId': characterId,
+      'limit': '$limit',
+      if (before != null && before.isNotEmpty) 'before': before,
+    };
+    final path = '/agent/history?${Uri(queryParameters: query).query}';
+    final data = await _client.get(path);
+    final raw = data['messages'];
+    if (raw is! List) throw const ApiException('Invalid conversation history');
+    return [
+      for (final item in raw)
+        if (item is Map)
+          AgentHistoryMessage.fromJson(item.cast<String, dynamic>()),
+    ];
+  }
+
+  @override
+  Future<AgentTurnStatus> turnStatus(
+    String characterId,
+    String requestId,
+  ) async {
+    final path =
+        '/agent/turns/${Uri.encodeComponent(requestId)}/status'
+        '?characterId=${Uri.encodeQueryComponent(characterId)}';
+    final data = await _client.get(path);
+    return AgentTurnStatus(
+      state: data['state'] as String? ?? 'missing',
+      reply: data['reply'] as String?,
+      parts: [
+        for (final raw in (data['parts'] as List? ?? const []))
+          if (raw is Map) raw.cast<String, dynamic>(),
+      ],
+      agentRunId: data['agentRunId'] as String?,
+      failureCode: data['failureCode'] as String?,
+    );
+  }
+
+  @override
+  Stream<AgentShellEvent> events(
+    String characterId, {
+    String? after,
+  }) async* {
+    var cursor = after;
+    while (true) {
+      final query = <String, String>{
+        'characterId': characterId,
+        if (cursor != null && cursor.isNotEmpty) 'after': cursor,
+        'limit': '100',
+      };
+      final path = '/agent/events/stream?${Uri(queryParameters: query).query}';
+      await for (final raw in _client.getStream(path)) {
+        final parsed = AgentShellEvent.fromJson(raw);
+        if (parsed.cursor.isNotEmpty) cursor = parsed.cursor;
+        yield parsed;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+    }
+  }
+
+  @override
+  Future<void> dispatchAction({
+    required String characterId,
+    required String characterSessionId,
+    required ShellAction action,
+  }) async {
+    await _client.post(
+      '/agent/sessions/${Uri.encodeComponent(characterSessionId)}/actions',
+      {
+        'characterId': characterId,
+        'documentId': action.documentId,
+        'revision': action.revision,
+        'nodeId': action.nodeId,
+        'actionId': action.actionId,
+        'token': action.token,
+        'values': action.values,
+      },
+    );
+  }
+
+  @override
+  Future<bool> actionAccepted({
+    required String characterId,
+    required ShellAction action,
+  }) async {
+    final query = <String, String>{
+      'characterId': characterId,
+      'documentId': action.documentId,
+      'revision': '${action.revision}',
+    };
+    final data = await _client.get(
+      '/agent/actions/status?${Uri(queryParameters: query).query}',
+    );
+    final record = data['record'];
+    return record is Map && record['state'] == 'accepted';
+  }
+
+  @override
+  Future<AgentLiveVoiceGrant> mintLiveVoiceGrant(String characterId) async {
+    final data = await _client.post(
+      '/agent/live/token',
+      {'characterId': characterId},
+    );
+    final expiresAt = DateTime.tryParse(data['expiresAt'] as String? ?? '');
+    final token = data['token'];
+    final websocketUrl = data['websocketUrl'];
+    final model = data['model'];
+    final voiceName = data['voiceName'];
+    if (token is! String ||
+        websocketUrl is! String ||
+        model is! String ||
+        voiceName is! String ||
+        expiresAt == null) {
+      throw const ApiException('Invalid live voice grant');
+    }
+    return AgentLiveVoiceGrant(
+      token: token,
+      websocketUrl: websocketUrl,
+      model: model,
+      voiceName: voiceName,
+      expiresAt: expiresAt,
+    );
+  }
+
+  @override
+  Future<void> setPresence({
+    required String characterId,
+    required String state,
+    int durationMs = 60000,
+  }) async {
+    await _client.post('/agent/presence', {
+      'characterId': characterId,
+      'state': state,
+      'durationMs': durationMs,
+    });
+  }
+
+  @override
+  Future<void> registerPush({
+    required String characterId,
+    required String installationId,
+    required String platform,
+    required String token,
+  }) async {
+    await _client.post('/agent/push/register', {
+      'characterId': characterId,
+      'installationId': installationId,
+      'platform': platform,
+      'token': token,
+    });
+  }
+
+  @override
+  Future<void> unregisterPush({
+    required String characterId,
+    required String installationId,
+  }) async {
+    await _client.post('/agent/push/unregister', {
+      'characterId': characterId,
+      'installationId': installationId,
+    });
+  }
+
+  @override
   Future<void> closeSession(AgentSessionBinding binding) async {
     try {
       await _client.post(
-        '/v1/agent/sessions/${binding.characterSessionId}/close',
+        '/agent/sessions/${binding.characterSessionId}/close',
         {'characterId': binding.characterId},
       );
     } catch (_) {

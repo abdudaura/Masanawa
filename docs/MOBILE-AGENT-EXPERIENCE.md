@@ -4,27 +4,42 @@ Status: canonical product direction for `apps/mobile`.
 
 ## Goal
 
-The Masanawa user app is a very simple, voice-first window into persistent Masanawa Characters that can converse, work, create files, operate Tools and optionally inhabit phones/devices.
+The Masanawa user app is a simple home for a person's digital twin and the economy around
+it. The user creates one twin, teaches it about themselves, shares it, discovers other
+twins and sees money/activity generated through real value flowing through the twin.
 
-The mobile app is not an admin dashboard and never becomes another runtime brain.
+The mobile app is not an admin dashboard, social-post feed or second runtime brain.
 
-## Product model
+## Product model — 2026-10-05
 
 The primary user mental model is:
 
-> Talk to capable AI people who can actually work for you.
+> My digital twin represents me on Masanawa. Anyone can text it free. Paid voice,
+> purchases, gifts and paid access to me can generate earnings.
 
-The ordinary navigation stays intentionally small:
+The ordinary primary navigation is exactly:
 
-- Conversations
-- Agents
-- Settings/profile
+- **My Twin**
+- **Explore**
+- **Activity**
+- **Wallet**
 
-Gwani and Gwana are peer Masanawa platform/support Characters with the same product role.
-Gwani is the default for new users. A user may choose Gwana instead (or switch back) in
-Settings without changing account authority, Skills or platform behavior.
+Settings/profile is secondary and reached from the account/avatar menu.
 
-Workflows, AgentRuns, Skills, Tools, Providers, Devices and Operations remain platform concepts. They appear in chat only when the user needs a useful status, result, approval or receipt.
+The existing Character/Agent architecture remains internal. Ordinary users should not
+need to understand platform Characters, Skill assignments, Workflows, AgentRuns,
+providers, Agent Float or execution routing.
+
+Public twin text chat is free. Voice can be paid only after explicit quote/consent.
+Masanawa commerce may be initiated from any eligible twin conversation. A visitor may
+gift the owner or request a paid scheduled conversation with the real owner.
+
+Gwani/Gwana may continue as platform-support Characters internally/where useful, but
+support-agent selection must not compete with My Twin as the main product identity.
+
+Workflows, AgentRuns, Skills, Tools, Providers, Devices and Operations remain platform
+concepts. They appear only when the user needs a useful result, approval, receipt or
+support diagnostic.
 
 ## Dynamic agent roster
 

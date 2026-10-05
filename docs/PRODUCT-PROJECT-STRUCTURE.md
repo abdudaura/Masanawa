@@ -1,5 +1,17 @@
 # Production Project Structure Audit
 
+## Twin transformation structure overlay — 2026-10-05
+
+The simplified consumer twin economy does not change the repository topology.
+It explicitly reinforces the existing rule: no separate clone runtime, wallet service,
+marketplace service, social-feed package or monetization microservice.
+
+Use existing Identity/Memory/Agents/Commerce ownership. New public twin profile,
+Credit transfer/gift, attribution, paid voice and owner-access logic belongs inside the
+existing canonical packages/services described in
+`docs/TWIN-TRANSFORMATION-MASTER-PLAN.md` and
+`docs/TWIN-ECONOMY-CONTRACTS.md`.
+
 Status: canonical structure guidance for the production build.
 
 ## Decision
@@ -73,10 +85,11 @@ owning packages/services.
 
 See `docs/MOBILE-AGENT-EXPERIENCE.md` and `docs/AGENT-GATEWAY-CONTRACT.md`.
 
-### 11. Keep creator/reseller economics in canonical owners
+### 11. Keep Twin economics in canonical owners
 
-The digital-twin/reseller product does not justify a separate marketplace service,
-wallet service or clone runtime.
+The consumer Twin product does not justify a separate marketplace service, wallet
+service, monetization service or Twin runtime. Ordinary users see My Twin, Explore,
+Activity and Wallet; internal commerce/execution custody remains behind those surfaces.
 
 - `packages/identity` owns canonical User/Character identity and the durable basis for
   platform/personal-clone/business ownership classification.
@@ -85,17 +98,19 @@ wallet service or clone runtime.
   does not own money or Skill definitions.
 - `packages/skills` continues to own Skill/SkillVersion truth, certification, readiness
   and execution composition. Retail price is not Skill truth.
-- `packages/commerce` owns Offer/pricing revisions, Customer Credits, Agent Float,
-  fulfillment reservations, reseller attribution, commissions, settlement, refunds and
-  receipts once those contracts are implemented.
+- `packages/commerce` owns product/Offer pricing revisions, Customer Credits,
+  internal execution reserves/Agent Float, fulfillment reservations, originating-Twin
+  attribution, commissions, settlement, refunds and receipts once those contracts are
+  implemented. Agent Float and provider reserves are internal concepts, not ordinary
+  Wallet fields.
 - `packages/workflows` owns durable multi-step fulfillment state.
 - Gateway/Worker compose selection and execution but do not invent another ledger or
   catalog.
 
-The originating Character and fulfillment executor are separate facts. A personal clone
-may keep the customer relationship while another eligible executor fulfills the work.
-Insufficient Agent Float may trigger deterministic fallback without changing the visible
-conversation.
+The originating Twin/Character and fulfillment executor are separate facts. A personal
+Twin keeps the customer relationship and eligible attribution while Masanawa may select
+another executor internally. Reserve or capacity fallback must not change the visible
+conversation or require the customer to understand Agent Float.
 
 Gwani and Gwana are normal platform Characters composed from these same canonical
 systems. Both have the same platform/support product role. Gwani is the default
@@ -125,8 +140,9 @@ See `docs/CREATOR-CLONE-ECONOMY.md`.
 - Provider is not Tool.
 - Skill is not Provider-specific implementation.
 - Skill is not a retail price or creator commission.
-- Customer Credit, Agent Float and withdrawable earnings are distinct ledger concepts.
-- Originating/reseller Character is not necessarily the fulfillment executor.
+- Customer Credit, internal Agent Float/reserves and withdrawable earnings are distinct
+  ledger concepts; only user-relevant balances belong in the ordinary Wallet.
+- Originating Twin/Character is not necessarily the fulfillment executor.
 - Gwani/Gwana product defaults do not create privileged runtime classes.
 - Apps do not query domain repositories directly.
 - Services compose domain packages; they do not redefine domain truth.

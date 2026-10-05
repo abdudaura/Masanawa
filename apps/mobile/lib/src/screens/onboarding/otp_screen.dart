@@ -113,7 +113,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   Widget build(BuildContext context) {
     ref.listen(sessionProvider, (previous, next) {
       if (next is SessionSignedIn) {
-        context.go(next.user.isNewUser ? '/name' : '/chats');
+        context.go('/chats');
       } else if (next is SessionNameRequired) {
         context.go('/name');
       } else if (next is SessionAwaitingOtp) {

@@ -1,5 +1,18 @@
 # Multi-window Work Coordination
 
+## Twin transformation overlay — 2026-10-05
+
+For digital-twin transformation work, also read:
+`docs/PRODUCT-TWIN-ECONOMY.md`,
+`docs/TWIN-TRANSFORMATION-MASTER-PLAN.md`,
+`docs/TWIN-TRANSFORMATION-TASKS.md`, and
+`docs/TWIN-MULTI-WINDOW-EXECUTION.md`.
+
+The TWIN lane map is an additional collision-prevention overlay. It does not replace
+existing billing/crypto/channel ownership. New twin work must not steal paths from active
+PRs. In particular, shared Gateway composition, mobile router/chat, Commerce model/
+repository and migration numbering require explicit ownership before edits.
+
 Status: mandatory implementation coordination guidance, 2026-10-04.
 
 ## Read and recover before editing

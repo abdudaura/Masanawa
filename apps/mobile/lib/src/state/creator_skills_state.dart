@@ -2,17 +2,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../agents/creator_skills.dart';
 import '../core/providers.dart';
-import 'agent_connection_state.dart';
+import 'session_state.dart';
 import 'creator_economy_state.dart';
 
 class CreatorSkillsController
     extends AsyncNotifier<List<CreatorSkillEntry>> {
   @override
   Future<List<CreatorSkillEntry>> build() async {
-    final connection = ref.watch(agentConnectionProvider);
+    final signedIn = ref.watch(isSignedInProvider);
     ref.watch(creatorSkillTransportProvider);
     final economy = ref.watch(creatorEconomyProvider).asData?.value;
-    if (!connection.configured || economy?.hasClone != true) {
+    if (!signedIn || economy?.hasClone != true) {
       return const [];
     }
     return ref.read(creatorSkillTransportProvider).load();

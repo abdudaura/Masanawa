@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../agents/agent_directory.dart';
 import '../agents/agent_feedback.dart';
+import '../agents/agent_shell.dart';
+import '../core/mobile_push.dart';
 import '../core/providers.dart';
 import '../core/network/api_client.dart';
 import 'session_state.dart';
@@ -76,6 +78,16 @@ class AgentDirectoryController extends Notifier<AgentDirectoryState> {
         agents: List.unmodifiable(agents),
         loading: false,
       );
+      if (agents.isNotEmpty) {
+        final transport = ref.read(agentTransportProvider);
+        if (transport is AgentShellTransport) {
+          unawaited(
+            MobilePushService.instance
+                .registerForCharacter(transport, agents.first.characterId)
+                .catchError((_) {}),
+          );
+        }
+      }
     } catch (error) {
       if (_disposed || request != _request) return;
       final feedback = AgentFeedback.fromError(error);

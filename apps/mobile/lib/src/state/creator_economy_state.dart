@@ -2,15 +2,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../agents/creator_economy.dart';
 import '../core/providers.dart';
-import 'agent_connection_state.dart';
+import 'session_state.dart';
 
 class CreatorEconomyController
     extends AsyncNotifier<CreatorEconomySnapshot?> {
   @override
   Future<CreatorEconomySnapshot?> build() async {
-    final connection = ref.watch(agentConnectionProvider);
+    final signedIn = ref.watch(isSignedInProvider);
     ref.watch(creatorEconomyTransportProvider);
-    if (!connection.configured) return null;
+    if (!signedIn) return null;
     return ref.read(creatorEconomyTransportProvider).load();
   }
 
