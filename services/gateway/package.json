@@ -22,7 +22,8 @@
     "@masanawa/agents": "workspace:*",
     "@masanawa/security": "workspace:*",
     "@masanawa/skills": "workspace:*",
-    "@masanawa/nowpayments": "workspace:*"
+    "@masanawa/nowpayments": "workspace:*",
+    "@masanawa/providers": "workspace:*"
   },
   "devDependencies": {
     "vitest": "5.0.3"
