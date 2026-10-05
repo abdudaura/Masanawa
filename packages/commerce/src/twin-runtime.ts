@@ -217,6 +217,20 @@ export interface TwinRuntimeRepository {
     readonly settledAt: string;
   }): Promise<{ readonly duplicate: boolean }>;
 
+  putOwnerAccessQuote(input: {
+    readonly tenantId: TenantId;
+    readonly requesterUserId: UserId;
+    readonly quote: import("./owner-access.js").OwnerAccessQuote;
+    readonly createdAt: string;
+  }): Promise<import("./owner-access.js").OwnerAccessQuote>;
+
+  readOwnerAccessQuote(input: {
+    readonly tenantId: TenantId;
+    readonly quoteId: string;
+  }): Promise<(import("./owner-access.js").OwnerAccessQuote & {
+    readonly requesterUserId: UserId;
+  }) | null>;
+
   readOwnerAccessOffering(input: {
     readonly tenantId: TenantId;
     readonly ownerUserId: UserId;
