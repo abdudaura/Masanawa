@@ -155,6 +155,11 @@ export function createAdminAgentActionBroker(input: {
         throw forbidden(`Delegated admin action denied: ${decision.reason}`);
       }
       if (decision.requiresApproval) {
+        if (!operator.operatorUserId) {
+          throw forbidden(
+            "A canonical operator PlatformSession is required for governed admin writes",
+          );
+        }
         return Object.freeze({
           status: "approval-required" as const,
           action: request.action,
