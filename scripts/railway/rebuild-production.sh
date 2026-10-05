@@ -88,9 +88,10 @@ do
   set_secret masanawa-worker "$key"
 done
 
-# Gemini credential pool is needed by agent/live-audio execution.
-set_secret masanawa-gateway MASANAWA_ALPHA_GEMINI_IMPORTED_CREDENTIALS_JSON
-set_secret masanawa-worker MASANAWA_ALPHA_GEMINI_IMPORTED_CREDENTIALS_JSON
+# Gemini credential pool is needed by agent/live-audio execution. Production
+# Gateway uses the canonical name; worker compatibility may keep its own
+# provider-specific import contract independently.
+set_secret masanawa-gateway MASANAWA_GEMINI_CREDENTIALS_JSON
 
 for service in masanawa-gateway masanawa-worker masanawa-ops; do
   railway variable set \
