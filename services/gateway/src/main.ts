@@ -446,6 +446,9 @@ export async function startGatewayService(
     liveVoiceTokens = createGeminiLiveTokenService({
       apiKey: liveVoiceApiKey,
       authorizer: conversationAuthorizer,
+      ...(database.platformAgentProfiles
+        ? { platformProfiles: database.platformAgentProfiles }
+        : {}),
       model: liveVoiceModel,
       voiceName: liveVoiceName,
     });
