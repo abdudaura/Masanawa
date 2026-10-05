@@ -172,6 +172,56 @@ class RecordingAdapter implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
+class RotatingAuthAdapter implements HttpClientAdapter {
+  final requests = <RequestOptions>[];
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? stream,
+    Future<void>? cancelFuture,
+  ) async {
+    requests.add(options);
+    final authorization = options.headers['Authorization'];
+    if (authorization == 'Bearer expired-token') {
+      return ResponseBody.fromString(
+        jsonEncode({'code': 'UNAUTHORIZED', 'message': 'expired'}),
+        401,
+        headers: {
+          Headers.contentTypeHeader: ['application/json'],
+        },
+      );
+    }
+    return ResponseBody.fromString(
+      jsonEncode({
+        'agents': [
+          {
+            'characterId': 'character-1',
+            'characterVersionId': 'version-1',
+            'displayName': 'Amina',
+            'roleLabel': 'Assistant',
+            'about': '',
+            'greeting': null,
+            'presence': 'available',
+            'activeWorkCount': 0,
+            'supportAgent': true,
+            'defaultPlatformAgent': true,
+            'voiceProvider': 'gemini',
+            'voiceName': 'Bodi',
+          },
+        ],
+      }),
+      200,
+      headers: {
+        Headers.contentTypeHeader: ['application/json'],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -355,6 +405,33 @@ void main() {
     );
   });
 
+  test('Agent transport refreshes an expired production session and retries once',
+      () async {
+    final adapter = RotatingAuthAdapter();
+    final dio = Dio();
+    dio.httpClientAdapter = adapter;
+    var token = 'expired-token';
+    var refreshes = 0;
+    final transport = MasanawaAgentDirectoryTransport(
+      dio: dio,
+      baseUrl: 'https://gateway.test',
+      readAccessToken: () => token,
+      refreshAccessToken: () async {
+        refreshes += 1;
+        token = 'fresh-token';
+        return token;
+      },
+    );
+
+    final agents = await transport.loadDirectory();
+
+    expect(refreshes, 1);
+    expect(agents.single.displayName, 'Amina');
+    expect(adapter.requests, hasLength(2));
+    expect(adapter.requests.first.headers['Authorization'], 'Bearer expired-token');
+    expect(adapter.requests.last.headers['Authorization'], 'Bearer fresh-token');
+  });
+
   test('creator transports use the canonical Gateway route namespace', () async {
     final adapter = GatewayContractAdapter();
     final dio = Dio();
@@ -406,7 +483,7 @@ void main() {
   });
 
   test(
-    'chat transport keeps Alpha authorization and waits for server deadline',
+    'chat transport keeps production authorization and waits for server deadline',
     () async {
       final adapter = RecordingAdapter();
       final dio = Dio(BaseOptions(receiveTimeout: const Duration(seconds: 15)));
