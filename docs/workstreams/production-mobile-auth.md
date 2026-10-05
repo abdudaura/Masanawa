@@ -34,4 +34,10 @@ External/runtime dependency:
 - add a Supabase publishable key and a non-Alpha platform tenant reference to the runtime; the existing canonical tenant/agent identities are reused.
 - live Railway runtime currently uses the older /v1/agent/** namespace, so deployment integration must preserve compatibility aliases while the merged app uses /agent/**.
 
-Status: claim published before implementation.
+Status:
+- implementation complete on PR #131;
+- GitHub reports the PR mergeable;
+- PR workflow runs 37249010653 (Mobile Build) and 37249010586 (Foundation CI) both ended with jobs whose `steps` are null and no logs, the repository's known runner-allocation failure; no executable check ran;
+- source-level review found and fixed Agent-token refresh/retry, concurrent refresh sharing, profile-save session preservation, obsolete Alpha build tooling/docs, and production Gateway defaults;
+- local APK compilation/device testing remains explicitly owned by the user;
+- production Railway runtime integration remains the next step and must preserve the newer billing/crypto lineage rather than replacing it with main.
