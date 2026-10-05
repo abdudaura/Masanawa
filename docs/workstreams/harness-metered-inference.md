@@ -72,9 +72,41 @@ prompts, secrets or credentials into the budget contract.
   `platform-metered` only with an explicit pricing revision;
 - preflight estimates continue to use #184 inference-budget preflight only;
 - post-inference actual consumption uses this evidence seam;
-- durable budget storage must key/idempotently reconcile actual usage using evidenceRef
-  before an inference result is treated as fully accounted;
+- durable execution storage must first claim a stable `agentRunId + attemptKey` dispatch
+  identity before provider inference; exact replay must not redispatch;
+- durable budget storage must then key/idempotently reconcile actual usage using the
+  same attempt identity plus `evidenceRef` before an inference result is treated as
+  fully accounted;
 - mobile/WhatsApp/Telegram never report trusted token/cost usage.
 
-Implementation: evidence contract complete; durable accounting-before-result acceptance is in progress.
-Deployment: not claimed.
+## Ambiguous retry hardening
+
+The stale handoff status above understated what this branch already contained:
+`createBudgetAccountedMeteredInference()` was already rejecting a provider result until
+verified usage had been durably reserved. The remaining safety gap was retry behavior
+after provider success but accounting failure: a caller could invoke `generate()` again
+and spend tokens/cost a second time.
+
+That gap is now closed at the provider-neutral contract boundary:
+
+1. a stable opaque `attemptKey` and request fingerprint are required;
+2. a durable dispatch port must claim that exact attempt before provider execution;
+3. budget preflight runs before the dispatch claim;
+4. only a newly admitted attempt may call the provider;
+5. exact replay of an already admitted attempt fails with
+   `agents.inference_dispatch_replay_blocked` before provider execution;
+6. ambiguous dispatch-reservation failure fails closed with
+   `agents.inference_dispatch_uncommitted`;
+7. verified usage reservation is bound to the same attempt key and request fingerprint;
+8. accounting failure reports both the evidence reference and attempt key so recovery can
+   reconcile the existing attempt rather than redispatch it.
+
+Focused regression coverage now includes dispatch-before-provider ordering, no dispatch
+claim on failed preflight, ambiguous dispatch admission, already-admitted replay blocking,
+and the critical provider-success/accounting-failure retry case proving provider inference
+is called only once.
+
+Implementation: provider-neutral metering, accounting-before-result acceptance and
+no-blind-redispatch contracts are complete in this isolated Agents slice.
+Persistence/deployment: a durable adapter for the dispatch + usage reservation ports is
+still required before production enablement; no migration slot is guessed here.
