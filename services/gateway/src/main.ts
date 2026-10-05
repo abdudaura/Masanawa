@@ -82,7 +82,7 @@ import {
   parseAlphaRelationshipMap,
 } from "./alpha_dev.js";
 import { createGeminiAlphaInferenceProvider } from "./alpha_executor.js";
-import { createPlatformSessionVerifier, createProductionAuthorizers } from "./production_auth.js";
+import { createPlatformSessionVerifier, createProductionAuthorizers, verifyPlatformAuthOrigin } from "./production_auth.js";
 import { createGeminiCredentialPoolInferenceProvider, createSupabaseGeminiPoolInferenceProvider, loadSupabaseGeminiCredentialPool, parseGeminiCredentialPool, parseNurainImportedGeminiCredentialPool, verifyGeminiCredentialPool } from "./production_inference.js";
 import { createProductionAgentStrategy } from "./production_strategy.js";
 import { createAlphaInferenceStrategy } from "./alpha_strategy.js";
@@ -367,9 +367,25 @@ export async function startGatewayService(
     const tenantId = configuredTenantId
       ? parseCanonicalId("tenant", configuredTenantId)
       : await database.platformIdentity.resolveSingleActiveTenant();
+    const platformAuthBaseUrl = requiredPlatformEnv(
+      env,
+      "MASANAWA_PLATFORM_AUTH_BASE_URL",
+    );
+    if (env.MASANAWA_PLATFORM_AUTH_VERIFY_ON_START === "true") {
+      const verification = await verifyPlatformAuthOrigin({
+        baseUrl: platformAuthBaseUrl,
+      });
+      process.stdout.write(
+        `${JSON.stringify({
+          event: "platform_auth.origin_verified",
+          status: verification.status,
+        })}\n`,
+      );
+    }
+
     const production = createProductionAuthorizers({
       verifier: createPlatformSessionVerifier({
-        baseUrl: requiredPlatformEnv(env, "MASANAWA_PLATFORM_AUTH_BASE_URL"),
+        baseUrl: platformAuthBaseUrl,
       }),
       identities: database.platformIdentity,
       tenantId,
