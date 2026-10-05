@@ -300,7 +300,12 @@ export function createPostgresBillingQuoteRepository(pool: Pool): BillingQuoteRe
       await withTransaction(pool, async (client) => {
         const row = await locked(client, { tenantId,userId,quoteId });
         assertRevision(row, input.quoteRevision);
-        assertNotExpired(row, new Date().toISOString());
+        // Quote expiry prevents a customer from starting/confirming a new
+        // checkout. Once Flutterwave payment has been independently verified,
+        // fulfillment may happen later because live catalog/recipient terms are
+        // re-derived again immediately before dispatch. A changed fixed-price
+        // item therefore fails safely into refund custody instead of stranding
+        // paid funds solely because the hosted checkout crossed the quote TTL.
         if (!row.confirmed_at || !row.payment_verified_at || !row.provider_transaction_id) {
           throw new Error("financial.billing.funds_unverified");
         }
