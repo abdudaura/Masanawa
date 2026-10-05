@@ -82,7 +82,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path: '/phone-login', builder: (_, _) => const PhoneLoginScreen()),
       GoRoute(path: '/otp', builder: (_, _) => const OtpScreen()),
       GoRoute(path: '/name', builder: (_, _) => const NameScreen()),
-      GoRoute(path: '/home', builder: (_, _) => const TwinHomeShell()),
+      GoRoute(
+        path: '/home',
+        builder: (_, state) {
+          final index = switch (state.uri.queryParameters['tab']) {
+            'explore' => 1,
+            'activity' => 2,
+            'wallet' => 3,
+            _ => 0,
+          };
+          return TwinHomeShell(initialIndex: index);
+        },
+      ),
       GoRoute(path: '/chats', redirect: (_, __) => '/home'),
       GoRoute(
         path: '/chat/:id',
