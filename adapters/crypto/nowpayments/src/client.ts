@@ -145,6 +145,7 @@ export class NowPaymentsClient {
       priceAmount: input.priceAmount,
       priceCurrency: input.priceCurrency,
       payCurrency: input.payCurrency,
+      payoutCurrency: input.payoutCurrency,
     });
   }
 
