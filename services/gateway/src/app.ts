@@ -16,6 +16,19 @@ import type {
 } from "./agent_shell_contract.js";
 import { registerAgentShellRoutes } from "./agent_shell_routes.js";
 import { registerBillingRoutes } from "./billing_routes.js";
+import type { TwinProductionRuntime } from "./twin_production_runtime.js";
+import { registerTwinProfileRoutes } from "./twin_profile_routes.js";
+import { registerTwinDirectoryRoutes } from "./twin_directory_routes.js";
+import { registerMyTwinProjectionRoutes } from "./my_twin_projection_routes.js";
+import { registerTwinActivityRoutes } from "./twin_activity_routes.js";
+import { registerWalletProjectionRoutes } from "./wallet_projection_routes.js";
+import { registerCreditTransferRoutes, registerGiftRoutes } from "./credit_transfer_routes.js";
+import { registerTwinAttributionRoutes, registerCommissionPolicyAdminRoutes } from "./twin_attribution_routes.js";
+import { registerPaidVoiceRoutes, registerPaidVoiceSettlementRoutes } from "./paid_voice_routes.js";
+import { registerPaidFeatureTrialAdminRoutes } from "./paid_feature_trial_admin_routes.js";
+import { registerOwnerAccessRoutes } from "./owner_access_routes.js";
+import { registerOwnerAccessOfferingRoutes } from "./owner_access_offering_routes.js";
+import { registerTwinSafetyRoutes } from "./twin_safety_routes.js";
 import type { BillingCheckoutService } from "./billing_checkout.js";
 import type { BillingFinancialService } from "./financial_billing.js";
 import type { MobilePushRegistrationService } from "./mobile_push.js";
@@ -55,6 +68,7 @@ export interface GatewayAppOptions {
   readonly billingCheckout?: BillingCheckoutService;
   readonly billingFinancial?: BillingFinancialService;
   readonly financial?: FinancialService;
+  readonly twinProduction?: TwinProductionRuntime;
 }
 
 const HealthResponseSchema = Type.Object(
@@ -1160,6 +1174,25 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     ...(options.billingCheckout ? { billingCheckout: options.billingCheckout } : {}),
     ...(options.billingFinancial ? { billingFinancial: options.billingFinancial } : {}),
   });
+
+  if (options.twinProduction) {
+    const twin = options.twinProduction;
+    registerTwinProfileRoutes(app, twin.twinProfile);
+    registerTwinDirectoryRoutes(app, twin.twinDirectory);
+    registerMyTwinProjectionRoutes(app, twin.myTwin);
+    registerTwinActivityRoutes(app, twin.twinActivity);
+    registerWalletProjectionRoutes(app, twin.wallet);
+    registerCreditTransferRoutes(app, twin.creditTransfer);
+    registerGiftRoutes(app, twin.gifts);
+    registerTwinAttributionRoutes(app, twin.twinAttribution);
+    registerCommissionPolicyAdminRoutes(app, twin.commissionAdmin);
+    registerPaidVoiceRoutes(app, twin.paidVoice);
+    registerPaidVoiceSettlementRoutes(app, twin.voiceAdmissionGate);
+    registerPaidFeatureTrialAdminRoutes(app, twin.paidFeatureTrialAdmin);
+    registerOwnerAccessRoutes(app, twin.ownerAccess);
+    registerOwnerAccessOfferingRoutes(app, twin.ownerAccessOffering);
+    registerTwinSafetyRoutes(app, twin.twinSafety);
+  }
 
   app.get(
     "/healthz",
