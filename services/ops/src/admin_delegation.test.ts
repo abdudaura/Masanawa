@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   createAdminAgentDelegationService,
+  evaluateAdminAgentDelegation,
   readAdminAgentDelegationConfig,
 } from "./admin_delegation.js";
 
@@ -76,5 +77,62 @@ describe("Ops admin agent delegation", () => {
       ]),
     })!;
     expect(config.delegates[0]?.approvalRequiredForWrites).toBe(true);
+  });
+});
+
+
+describe("admin agent delegated action policy", () => {
+  const delegate = {
+    characterId: gwaniId,
+    label: "Gwani",
+    purpose: "Primary conversational administrator",
+    autonomy: "confirm-writes",
+    capabilities: ["platform.summary.read", "commerce.write"],
+    enabled: true,
+    approvalRequiredForWrites: true,
+  } as const;
+
+  it("allows delegated reads without a second approval", () => {
+    expect(evaluateAdminAgentDelegation({
+      delegate,
+      capability: "platform.summary.read",
+      risk: "read-only",
+    })).toEqual({
+      allowed: true,
+      requiresApproval: false,
+      reason: "delegated-read",
+    });
+  });
+
+  it("allows delegated writes only behind approval", () => {
+    expect(evaluateAdminAgentDelegation({
+      delegate,
+      capability: "commerce.write",
+      risk: "consequential",
+    })).toEqual({
+      allowed: true,
+      requiresApproval: true,
+      reason: "governed-write",
+    });
+  });
+
+  it("cannot use an undelegated capability", () => {
+    expect(evaluateAdminAgentDelegation({
+      delegate,
+      capability: "world.admin.write",
+      risk: "consequential",
+    }).allowed).toBe(false);
+  });
+
+  it("keeps read-autonomous delegates from performing writes", () => {
+    expect(evaluateAdminAgentDelegation({
+      delegate: { ...delegate, autonomy: "read-autonomous" },
+      capability: "commerce.write",
+      risk: "low",
+    })).toEqual({
+      allowed: false,
+      requiresApproval: false,
+      reason: "writes-not-delegated",
+    });
   });
 });
