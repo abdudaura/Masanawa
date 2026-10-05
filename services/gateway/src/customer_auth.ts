@@ -300,7 +300,7 @@ export function createCustomerAuthService(input: Readonly<{
       }
       return issueTokens(
         Object.freeze({ tenantId: profile.tenantId, userId: profile.userId, profile }),
-        isNewUser,
+        false,
       );
     },
 
