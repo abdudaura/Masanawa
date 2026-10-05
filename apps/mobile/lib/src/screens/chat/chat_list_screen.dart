@@ -530,7 +530,7 @@ class _EmptyChats extends StatelessWidget {
             Icon(Icons.mic_none_outlined, size: 58, color: u.brand),
             const SizedBox(height: 18),
             Text(
-              loading
+              loading && !hasAgents
                   ? 'Loading your agents…'
                   : error ??
                         (hasAgents
@@ -550,7 +550,7 @@ class _EmptyChats extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             FilledButton.icon(
-              onPressed: loading ? null : onStart,
+              onPressed: loading && !hasAgents ? null : onStart,
               icon: const Icon(Icons.groups_outlined),
               label: Text(hasAgents ? 'Choose an agent' : 'View agents'),
             ),
