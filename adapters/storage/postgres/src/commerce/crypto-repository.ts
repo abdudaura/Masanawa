@@ -425,6 +425,49 @@ export function createPostgresCryptoRepository(pool: Pool): CryptoRepository {
       });
     },
 
+    async bindProviderInvoice(input) {
+      return withTransaction(pool, async (client) => {
+        const key = {
+          tenantId: parseCanonicalId("tenant", input.tenantId),
+          userId: parseCanonicalId("user", input.userId),
+          requestId: parseCanonicalId("request", input.requestId),
+        };
+        const current = await readIntentWithClient(client, key, true);
+        if (!current || current.operation !== "buy") {
+          throw new Error("crypto.buy.intent_unavailable");
+        }
+        const providerInvoiceId = String(input.providerInvoiceId).trim();
+        if (!/^[A-Za-z0-9_-]{1,128}$/u.test(providerInvoiceId)) {
+          throw new Error("crypto.provider_invoice.invalid");
+        }
+        let checkout: URL;
+        try {
+          checkout = new URL(input.checkoutUrl);
+        } catch {
+          throw new Error("crypto.checkout_url.invalid");
+        }
+        if (checkout.protocol !== "https:") {
+          throw new Error("crypto.checkout_url.insecure");
+        }
+        if (
+          current.providerInvoiceId &&
+          current.providerInvoiceId !== providerInvoiceId
+        ) {
+          throw new Error("crypto.provider_invoice.replay_conflict");
+        }
+        if (current.checkoutUrl && current.checkoutUrl !== checkout.toString()) {
+          throw new Error("crypto.checkout_url.replay_conflict");
+        }
+        return updateIntentWithClient(client, {
+          ...current,
+          providerInvoiceId,
+          checkoutUrl: checkout.toString(),
+          status: "awaiting_payment",
+          updatedAt: input.updatedAt,
+        });
+      });
+    },
+
     async bindProviderPayment(input) {
       return withTransaction(pool, async (client) => {
         const key = {
@@ -454,11 +497,16 @@ export function createPostgresCryptoRepository(pool: Pool): CryptoRepository {
         const tenantId = parseCanonicalId("tenant", input.tenantId);
         const userId = parseCanonicalId("user", input.userId);
         const requestId = parseCanonicalId("request", event.orderId);
-        const current = await readIntentWithClient(client, { tenantId, userId, requestId }, true);
-        if (!current || current.operation !== "deposit") throw new Error("crypto.intent.unavailable");
-
-        if (current.providerPaymentId !== event.paymentId) {
-          throw new Error("crypto.provider_payment.intent_mismatch");
+        const current = await readIntentWithClient(
+          client,
+          { tenantId, userId, requestId },
+          true,
+        );
+        if (
+          !current ||
+          (current.operation !== "deposit" && current.operation !== "buy")
+        ) {
+          throw new Error("crypto.intent.unavailable");
         }
 
         const existingEvent = await client.query(
@@ -467,6 +515,77 @@ export function createPostgresCryptoRepository(pool: Pool): CryptoRepository {
           [tenantId, event.payloadHash],
         );
         if (existingEvent.rows[0]) return current;
+
+        if (current.operation === "deposit") {
+          if (current.providerPaymentId !== event.paymentId) {
+            throw new Error("crypto.provider_payment.intent_mismatch");
+          }
+
+          await client.query(
+            `INSERT INTO commerce.crypto_provider_events(
+               tenant_id,payload_hash,user_id,request_id,provider_payment_id,
+               parent_payment_id,status,observed_at,definition
+             ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb)`,
+            [
+              tenantId,event.payloadHash,userId,requestId,event.paymentId,event.parentPaymentId,
+              event.status,event.observedAt,canonicalJson(event),
+            ],
+          );
+
+          const payCurrency = normalizeCryptoAsset(event.payCurrency);
+          const currencyMatches = payCurrency === current.asset;
+          let nextStatus = mappedStatus(event.status);
+          if (!currencyMatches && event.status === "finished") {
+            nextStatus = "manual_review";
+          }
+
+          if (event.status === "finished" && currencyMatches) {
+            await postLedger(client, {
+              tenantId,userId,requestId,asset:current.asset,network:current.network,
+              amount:decimal(event.actuallyPaid),direction:"credit",reason:"provider-deposit",
+              providerReference:event.paymentId,createdAt:event.observedAt,
+            });
+          }
+
+          if (event.status === "refunded") {
+            const creditedReference = event.paymentId;
+            const credited = await client.query<{ amount: string }>(
+              `SELECT amount::text AS amount FROM commerce.crypto_ledger_entries
+                WHERE tenant_id=$1 AND user_id=$2 AND provider_reference=$3
+                  AND reason='provider-deposit' LIMIT 1`,
+              [tenantId,userId,creditedReference],
+            );
+            if (credited.rows[0]) {
+              await postLedger(client, {
+                tenantId,userId,requestId,asset:current.asset,network:current.network,
+                amount:credited.rows[0].amount,direction:"debit",reason:"provider-refund",
+                providerReference:`refund:${creditedReference}`,createdAt:event.observedAt,
+              });
+            }
+          }
+
+          const nextIntentStatus =
+            current.status === "refunded"
+              ? "refunded"
+              : current.status === "succeeded" && nextStatus !== "refunded"
+                ? "succeeded"
+                : nextStatus;
+          return updateIntentWithClient(client, {
+            ...current,
+            status: nextIntentStatus,
+            updatedAt: event.observedAt,
+          });
+        }
+
+        if (
+          current.providerInvoiceId === null ||
+          current.providerInvoiceId === undefined ||
+          current.checkoutUrl === null ||
+          current.checkoutUrl === undefined ||
+          current.targetAsset === null
+        ) {
+          throw new Error("crypto.buy.intent_unavailable");
+        }
 
         await client.query(
           `INSERT INTO commerce.crypto_provider_events(
@@ -479,34 +598,80 @@ export function createPostgresCryptoRepository(pool: Pool): CryptoRepository {
           ],
         );
 
-        const payCurrency = normalizeCryptoAsset(event.payCurrency);
-        const currencyMatches = payCurrency === current.asset;
-        let nextStatus = mappedStatus(event.status);
-        if (!currencyMatches && event.status === "finished") nextStatus = "manual_review";
+        const invoiceMatches =
+          event.invoiceId !== undefined &&
+          event.invoiceId !== null &&
+          event.invoiceId === current.providerInvoiceId;
+        const priceMatches =
+          normalizeCryptoAsset(event.priceCurrency) === current.asset &&
+          decimal(event.priceAmount) === current.amount;
+        const samePayment =
+          current.providerPaymentId === null ||
+          current.providerPaymentId === event.paymentId;
 
-        if (event.status === "finished" && currencyMatches) {
-          await postLedger(client, {
-            tenantId,userId,requestId,asset:current.asset,network:current.network,
-            amount: decimal(event.actuallyPaid),direction:"credit",reason:"provider-deposit",
-            providerReference:event.paymentId,createdAt:event.observedAt,
+        if (!invoiceMatches || !priceMatches || !samePayment) {
+          return updateIntentWithClient(client, {
+            ...current,
+            status: "manual_review",
+            updatedAt: event.observedAt,
           });
         }
 
+        let nextStatus = mappedStatus(event.status);
+        let targetAmount = current.providerTargetAmount ?? null;
+        const targetCurrency =
+          event.outcomeCurrency === undefined || event.outcomeCurrency === null
+            ? null
+            : normalizeCryptoAsset(event.outcomeCurrency);
+        const exactOutcome =
+          event.outcomeAmount === undefined || event.outcomeAmount === null
+            ? null
+            : decimal(event.outcomeAmount);
+
+        if (event.status === "finished") {
+          if (targetCurrency !== current.targetAsset || exactOutcome === null) {
+            nextStatus = "manual_review";
+          } else {
+            await postLedger(client, {
+              tenantId,
+              userId,
+              requestId,
+              asset: current.targetAsset,
+              network: current.targetNetwork ?? null,
+              amount: exactOutcome,
+              direction: "credit",
+              reason: "fiat-purchase-credit",
+              providerReference: event.paymentId,
+              createdAt: event.observedAt,
+            });
+            targetAmount = exactOutcome;
+          }
+        }
+
         if (event.status === "refunded") {
-          const creditedReference = event.paymentId;
           const credited = await client.query<{ amount: string }>(
-            `SELECT amount::text AS amount FROM commerce.crypto_ledger_entries
-              WHERE tenant_id=$1 AND user_id=$2 AND provider_reference=$3
-                AND reason='provider-deposit' LIMIT 1`,
-            [tenantId,userId,creditedReference],
+            `SELECT amount::text AS amount
+               FROM commerce.crypto_ledger_entries
+              WHERE tenant_id=$1 AND user_id=$2 AND request_id=$3
+                AND reason='fiat-purchase-credit'
+              LIMIT 1`,
+            [tenantId, userId, requestId],
           );
           if (credited.rows[0]) {
             await postLedger(client, {
-              tenantId,userId,requestId,asset:current.asset,network:current.network,
-              amount:credited.rows[0].amount,direction:"debit",reason:"provider-refund",
-              providerReference:`refund:${creditedReference}`,createdAt:event.observedAt,
+              tenantId,
+              userId,
+              requestId,
+              asset: current.targetAsset,
+              network: current.targetNetwork ?? null,
+              amount: credited.rows[0].amount,
+              direction: "debit",
+              reason: "fiat-purchase-refund",
+              providerReference: `refund:${event.paymentId}`,
+              createdAt: event.observedAt,
             });
           }
+          targetAmount = null;
         }
 
         const nextIntentStatus =
@@ -517,6 +682,9 @@ export function createPostgresCryptoRepository(pool: Pool): CryptoRepository {
               : nextStatus;
         return updateIntentWithClient(client, {
           ...current,
+          providerPaymentId: current.providerPaymentId ?? event.paymentId,
+          providerTargetAmount:
+            nextIntentStatus === "succeeded" ? targetAmount : null,
           status: nextIntentStatus,
           updatedAt: event.observedAt,
         });
