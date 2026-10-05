@@ -5,7 +5,7 @@ The existing live NGN100 Airtel test succeeded through the fixed-IP DigitalOcean
 one funded airtime path; it does not by itself prove customer checkout or every account-enabled
 biller.
 
-## Implemented on PR #126
+## Implemented on the clean current-main billing integration
 
 ### Customer NGN funding and custody
 
@@ -47,8 +47,9 @@ biller.
   returns `NAME_REQUIRED_ON_SIGNUP`; it is consumed only when sign-in can complete.
 - Access and refresh tokens are opaque random credentials stored only as SHA-256 hashes. Refresh
   rotates both credentials and logout revokes the access session.
-- Per-customer platform sessions now provide financial authority. The Alpha shared token remains a
-  development fallback and is not the intended public billing authority.
+- The same durable per-customer PlatformSession used by the production app and Agents provides
+  billing financial authority. Alpha credentials remain development-only and are not a public
+  billing fallback.
 - Resend delivery is implemented for email OTP. The connected Resend account currently has
   `masanawa.com` verified with sending enabled. SMS is intentionally a pluggable HTTPS provider
   and requires a real SMS provider endpoint/token before SMS login may be advertised as available.
@@ -65,12 +66,16 @@ biller.
 - Economic quote revision remains immutable while shell presentation revisions advance monotonically
   through checkout-dispatch, checkout, funding, reservation, fulfillment and refund states. Clients
   must treat presentation revision as opaque/monotonic rather than hard-code stage numbers.
-- PRs #104/#125 are now merged into `main`. Inspection of the merged shell confirms document
-  replacement works, but `shell.action.updated` currently drops `result.message`; therefore the
-  secure hosted-checkout URL is not yet surfaced by that action path. The merged agent conversation
-  authorizer is also still Alpha-token based, while billing uses per-customer platform sessions.
-  These are integration gaps to reconcile on current `main`, not reasons to duplicate financial
-  authority in Flutter.
+- Canonical customer-auth reconciliation from PR #132 is preserved: OTP/profile/access/refresh
+  state is owned by PlatformSession, and Agent/directory/creator/commerce/billing all resolve the
+  same customer session identity.
+- The mobile app now has a protected `/billing` screen using that same rotating access token.
+  It supports live catalog discovery, recipient/amount entry, quote review, explicit trusted
+  Flutterwave checkout, independent server verification, status refresh, durable history, refunds,
+  and recovered prepaid electricity tokens/codes.
+- Generic ShellDocument HTTPS detail values are rendered as explicit external-link buttons. The
+  client never auto-opens server-authored links and never infers financial success from browser
+  return state.
 
 ### Bill-service policy
 
@@ -121,26 +126,23 @@ this branch has not been deployed into that unrelated runtime as a release.
 
 ## Remaining release evidence — not implementation claims
 
-1. **Current-main integration:** rebuild/reconcile this billing slice onto current `main` without
-   reintroducing the historical branch's unrelated mobile/Gateway changes. The merged shell must
-   surface the trusted HTTPS checkout result on explicit user tap, consume auth capabilities, and
-   authorize agent/shell actions from the same per-customer platform session identity that owns the
-   billing quote.
+1. **CI/build evidence:** run the clean current-main integration through TypeScript, Flutter and
+   PostgreSQL checks. Earlier hosted GitHub runs failed before step 1 with no logs, so passing CI
+   must be evidenced by an actual executing runner rather than inferred from source review.
 2. **Live account catalog qualification:** run read-only catalog/biller/item discovery through the
    whitelisted relay and record which categories are actually enabled for this Flutterwave account.
    Do not publish a biller merely because it appears in Flutterwave documentation.
 3. **Recipient acceptance evidence:** cable/internet/utility live validation needs real non-secret
    customer identifiers suitable for acceptance testing. No real bill should be purchased merely to
    prove validation.
-4. **CI/build evidence:** the latest GitHub Actions runs are currently failing before runner
-   assignment: the `check` job has no steps or logs and finishes within seconds. Therefore the new
-   commits are **not** being represented as CI-passing yet. The prior PR handoff had 162 passing
-   tests and three package typechecks before this implementation batch.
+4. **Dedicated Gateway deployment evidence:** deploy the integrated Gateway on the intended
+   Masanawa runtime with billing still disabled, apply migrations, verify readiness/auth/catalog
+   routes, and do not treat variables found on the unrelated Nurain worker as deployment evidence.
 5. **Final deployment/device acceptance:** apply migrations, deploy the final integrated Gateway with
    billing still disabled, exercise email OTP + hosted checkout in test/controlled conditions, then
    enable billing only after final APK/device acceptance. No new live financial purchase was made in
    this implementation batch.
 
-Customer billing should remain disabled until items 1–5 have concrete evidence. The code is now
-fail-closed when those dependencies are absent rather than silently falling back to an unsafe
-customer path.
+Customer billing should remain disabled until items 1–5 have concrete evidence. The clean branch
+is reconciled onto the canonical customer-auth architecture and is fail-closed when dependencies are
+absent; it is not yet a deployment or live all-service qualification claim.
