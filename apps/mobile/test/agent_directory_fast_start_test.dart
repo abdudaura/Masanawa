@@ -156,10 +156,9 @@ void main() {
     await settleMicrotasks();
     expect(transport.requests, hasLength(1));
 
-    container
-        .read(sessionProvider.notifier)
-        .let((controller) => (controller as MutableSignedInSessionController)
-            .rotate('access-2'));
+    final session =
+        container.read(sessionProvider.notifier) as MutableSignedInSessionController;
+    session.rotate('access-2');
     await settleMicrotasks();
 
     expect(transport.requests, hasLength(1));
@@ -190,9 +189,73 @@ void main() {
 
     expect(cache.clears, greaterThanOrEqualTo(1));
     expect(container.read(agentDirectoryProvider).agents, isEmpty);
+    if (!transport.requests.single.isCompleted) {
+      transport.requests.single.complete(const []);
+    }
   });
-}
 
-extension _Let<T> on T {
-  R let<R>(R Function(T value) action) => action(this);
+  test('cache from another account is never rendered', () async {
+    final cache = MemoryDirectoryCache(
+      ownerId: 'user-other',
+      agents: const [cachedAgent],
+    );
+    final transport = PendingDirectoryTransport();
+    final container = ProviderContainer(
+      overrides: [
+        agentDirectoryCacheProvider.overrideWithValue(cache),
+        agentDirectoryTransportProvider.overrideWithValue(transport),
+        sessionProvider.overrideWith(MutableSignedInSessionController.new),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    container.read(agentDirectoryProvider);
+    await settleMicrotasks();
+
+    final state = container.read(agentDirectoryProvider);
+    expect(state.agents, isEmpty);
+    expect(state.loading, isTrue);
+    expect(cache.reads, 1);
+    expect(transport.requests, hasLength(1));
+
+    transport.requests.single.complete(const []);
+    await settleMicrotasks();
+  });
+
+  test('authorization denial clears both cached and visible roster', () async {
+    final cache = MemoryDirectoryCache(
+      ownerId: user.id,
+      agents: const [cachedAgent],
+    );
+    final transport = PendingDirectoryTransport();
+    final container = ProviderContainer(
+      overrides: [
+        agentDirectoryCacheProvider.overrideWithValue(cache),
+        agentDirectoryTransportProvider.overrideWithValue(transport),
+        sessionProvider.overrideWith(MutableSignedInSessionController.new),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    container.read(agentDirectoryProvider);
+    await settleMicrotasks();
+    expect(container.read(agentDirectoryProvider).agents, isNotEmpty);
+
+    transport.requests.single.completeError(
+      const ApiException('denied', statusCode: 401),
+    );
+    await settleMicrotasks();
+
+    expect(cache.clears, 1);
+    expect(cache.agents, isNull);
+    expect(container.read(agentDirectoryProvider).agents, isEmpty);
+  });
+
+  test('directory presentation round-trips through cache JSON shape', () {
+    final restored = AgentDirectoryEntry.fromJson(cachedAgent.toJson());
+    expect(restored.characterId, cachedAgent.characterId);
+    expect(restored.displayName, 'Gwani');
+    expect(restored.defaultPlatformAgent, isTrue);
+    expect(restored.voiceName, 'Bodi');
+  });
 }
