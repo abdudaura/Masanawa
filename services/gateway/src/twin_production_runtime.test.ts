@@ -383,6 +383,134 @@ function commissionOrderingHarness(order: string[], options: {
   });
 }
 
+
+function ownerLifecycleHarness(input: {
+  readonly actorUserId: typeof ownerUserId | typeof requesterUserId;
+  readonly state:
+    | "requested"
+    | "accepted"
+    | "scheduled"
+    | "active";
+  readonly chargeMode?: "trial" | "paid";
+  readonly acceptBy?: string;
+  readonly scheduledFor?: string | null;
+  readonly startedAt?: string | null;
+  readonly reservedCredits?: number;
+}) {
+  const events: Array<Record<string, unknown>> = [];
+  const transfers: Array<Record<string, unknown>> = [];
+  const chargeMode = input.chargeMode ?? "paid";
+  const reservedCredits = input.reservedCredits ??
+    (chargeMode === "paid" ? 100 : 0);
+  let current: any = {
+    requestId: "request_lifecycle_123",
+    requesterUserId,
+    ownerUserId,
+    originatingCharacterId: characterId,
+    modality: "voice",
+    durationMinutes: 15,
+    priceCredits: chargeMode === "paid" ? 100 : 0,
+    platformFeeCredits: chargeMode === "paid" ? 20 : 0,
+    ownerEarningCredits: chargeMode === "paid" ? 80 : 0,
+    chargeMode,
+    trialPolicyRevision: 1,
+    state: input.state,
+    requestedAt: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+    acceptBy: input.acceptBy ??
+      new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+    scheduledFor: input.scheduledFor ?? null,
+    startedAt: input.startedAt ?? null,
+    completedAt: null,
+    reservationId: reservedCredits > 0
+      ? "ledger-entry_reservation_lifecycle"
+      : null,
+    reservedCredits,
+  };
+
+  const runtime = createTwinProductionRuntime({
+    sessions: {
+      async authorize() {
+        return {
+          tenantId,
+          userId: input.actorUserId,
+          profile: {
+            userId: input.actorUserId,
+            name: "Lifecycle actor",
+            email: "actor@example.com",
+            phone: null,
+            locale: "en",
+            createdAt: "2026-10-05T15:00:00.000Z",
+          },
+        } as never;
+      },
+    },
+    profiles: {
+      async ensureForOwner() { return null; },
+      async update() { throw new Error("unused"); },
+      async searchPublic() { return []; },
+      async readPublicById() { return null; },
+    } as never,
+    economy: {
+      async readOwnerAccessRequest() {
+        return current;
+      },
+      async updateOwnerAccessRequest(update: {
+        readonly request: Record<string, unknown>;
+        readonly reservationId: string | null;
+        readonly reservedCredits: number;
+      }) {
+        current = {
+          ...update.request,
+          reservationId: update.reservationId,
+          reservedCredits: update.reservedCredits,
+        };
+        return current;
+      },
+      async readLedgerPlan() { return null; },
+      async putLedgerPlan(plan: { readonly plan: unknown }) {
+        return plan.plan;
+      },
+      async consumeTrialUsage() {},
+    } as never,
+    events: {
+      async append(event: { readonly payload: Record<string, unknown> }) {
+        events.push(event.payload);
+        return `event-${events.length}`;
+      },
+      async listForCharacter() { return []; },
+      async listForUser() { return []; },
+    } as never,
+    commerce: {
+      async postTransfer(transfer: Record<string, unknown>) {
+        transfers.push(transfer);
+        return transfer;
+      },
+    } as never,
+    personalClones: {
+      async readPersonalClone() { return null; },
+    } as never,
+    publicTwinBaseUrl: "https://masanawa.com/twin",
+    adminPrincipals: new Set<string>(),
+    voice: {
+      unitSeconds: 60,
+      priceCreditsPerUnit: 10,
+      ownerShareBasisPoints: 8000,
+    },
+    ownerAccess: {
+      platformFeeBasisPoints: 2000,
+      acceptWithinMinutes: 60,
+      startGraceMinutes: 15,
+    },
+  });
+
+  return {
+    runtime,
+    events,
+    transfers,
+    current: () => current,
+  };
+}
+
 describe("Twin production runtime composition", () => {
   it("exposes the complete canonical Twin production surface as one frozen runtime", () => {
     const runtime = harness();
@@ -476,6 +604,123 @@ describe("Twin production runtime composition", () => {
       .toBeGreaterThan(order.indexOf("reverse-ledger"));
     expect(order.indexOf("event"))
       .toBeGreaterThan(order.indexOf("persist-reversal"));
+  });
+
+
+  it("does not persist completion before attendance evidence is verified", async () => {
+    const harness = ownerLifecycleHarness({
+      actorUserId: ownerUserId,
+      state: "active",
+      startedAt: new Date(Date.now() - 30_000).toISOString(),
+    });
+
+    await expect(
+      harness.runtime.ownerAccess.act({
+        authorizationHeader: "Bearer owner",
+        characterId,
+        requestId: "request_lifecycle_123",
+        action: "complete",
+      }),
+    ).rejects.toThrow("verified attendance");
+
+    expect(harness.current().state).toBe("active");
+    expect(harness.transfers).toHaveLength(0);
+    expect(harness.events).toHaveLength(0);
+  });
+
+  it("expires an unanswered owner request and releases held Credits", async () => {
+    const harness = ownerLifecycleHarness({
+      actorUserId: requesterUserId,
+      state: "requested",
+      acceptBy: new Date(Date.now() - 60_000).toISOString(),
+      reservedCredits: 100,
+    });
+
+    const request = await harness.runtime.ownerAccess.read({
+      authorizationHeader: "Bearer requester",
+      characterId,
+      requestId: "request_lifecycle_123",
+    });
+
+    expect(request?.state).toBe("expired");
+    expect(harness.transfers).toHaveLength(1);
+    expect(harness.events.at(-1)).toEqual(
+      expect.objectContaining({
+        eventType: "twin.owner-access.refunded",
+        referenceId: "request_lifecycle_123",
+        amountCredits: 100,
+        status: "refunded",
+      }),
+    );
+  });
+
+  it("turns an unstarted scheduled session into a no-show refund after grace", async () => {
+    const harness = ownerLifecycleHarness({
+      actorUserId: requesterUserId,
+      state: "scheduled",
+      scheduledFor: new Date(Date.now() - 16 * 60_000).toISOString(),
+      reservedCredits: 100,
+    });
+
+    const request = await harness.runtime.ownerAccess.read({
+      authorizationHeader: "Bearer requester",
+      characterId,
+      requestId: "request_lifecycle_123",
+    });
+
+    expect(request?.state).toBe("no-show");
+    expect(harness.transfers).toHaveLength(1);
+    expect(harness.events.at(-1)).toEqual(
+      expect.objectContaining({
+        eventType: "twin.owner-access.refunded",
+        amountCredits: 100,
+      }),
+    );
+  });
+
+  it("does not expire an already accepted request at the old acceptance deadline", async () => {
+    const harness = ownerLifecycleHarness({
+      actorUserId: ownerUserId,
+      state: "accepted",
+      acceptBy: new Date(Date.now() - 60_000).toISOString(),
+      reservedCredits: 100,
+    });
+
+    const request = await harness.runtime.ownerAccess.read({
+      authorizationHeader: "Bearer owner",
+      characterId,
+      requestId: "request_lifecycle_123",
+    });
+
+    expect(request?.state).toBe("accepted");
+    expect(harness.transfers).toHaveLength(0);
+    expect(harness.events).toHaveLength(0);
+  });
+
+  it("closes a declined trial request in Activity even when no Credits were held", async () => {
+    const harness = ownerLifecycleHarness({
+      actorUserId: ownerUserId,
+      state: "requested",
+      chargeMode: "trial",
+      reservedCredits: 0,
+    });
+
+    const request = await harness.runtime.ownerAccess.act({
+      authorizationHeader: "Bearer owner",
+      characterId,
+      requestId: "request_lifecycle_123",
+      action: "decline",
+    });
+
+    expect(request.state).toBe("declined");
+    expect(harness.transfers).toHaveLength(0);
+    expect(harness.events.at(-1)).toEqual(
+      expect.objectContaining({
+        eventType: "twin.owner-access.refunded",
+        amountCredits: 0,
+        status: "refunded",
+      }),
+    );
   });
 
   it("wires authenticated public discovery, My Twin and Wallet projections through canonical sources", async () => {
