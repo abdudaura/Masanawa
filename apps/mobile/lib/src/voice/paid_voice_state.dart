@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/providers.dart';
 import 'paid_voice.dart';
+import 'paid_voice_http_transport.dart';
 
 final paidVoiceTransportProvider = Provider<PaidVoiceTransport>(
-  (ref) => const UnavailablePaidVoiceTransport(),
+  (ref) => GatewayPaidVoiceTransport(api: ref.watch(apiClientProvider)),
 );
 
 class PaidVoiceState {
@@ -72,6 +74,17 @@ class PaidVoiceController extends StateNotifier<PaidVoiceState> {
       );
       return null;
     }
+  }
+
+  Future<void> complete({
+    required String admissionId,
+    required String outcome,
+  }) async {
+    await _transport.complete(
+      admissionId: admissionId,
+      outcome: outcome,
+    );
+    state = const PaidVoiceState();
   }
 }
 
