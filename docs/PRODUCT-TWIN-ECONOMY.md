@@ -107,6 +107,10 @@ This applies first to paid twin voice and should also be reusable by paid owner 
 and future premium twin features. Trial usage is never charged while an admitted trial
 covers it. After expiry/exhaustion, the normal quote/consent path applies.
 
+Feature-specific caps are allowed. Initial owner-access policy is **one completed human
+session within the 7-day trial window** so a free trial cannot become unlimited free
+access to the real owner. Admin may change that cap later.
+
 ## Economy
 
 ### Free
