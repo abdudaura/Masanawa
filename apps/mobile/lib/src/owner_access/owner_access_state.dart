@@ -63,7 +63,7 @@ class OwnerAccessController extends StateNotifier<OwnerAccessUiState> {
     try {
       final request = await _transport.request(
         characterId: characterId,
-        quote: quote,
+        quoteId: quote.requestId,
       );
       state = OwnerAccessUiState(quote: quote, request: request);
       return request;
