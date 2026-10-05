@@ -1,22 +1,75 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PROJECT_NAME="${1:-empowering-education}"
+PROJECT_NAME="${1:-masanawa}"
 : "${RAILWAY_TOKEN:?RAILWAY_TOKEN is required}"
 
-# This script intentionally owns only reconstructible infrastructure.
-# It must never contain plaintext application secrets.
+command -v railway >/dev/null || { echo "railway CLI is required" >&2; exit 69; }
+command -v openssl >/dev/null || { echo "openssl is required" >&2; exit 69; }
+
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+SAFE_IAC="$ROOT/.railway/railway.ts"
+REBUILD_IAC="$ROOT/.railway/rebuild.template.ts"
+BACKUP_IAC="$(mktemp)"
+cp "$SAFE_IAC" "$BACKUP_IAC"
+cleanup() {
+  cp "$BACKUP_IAC" "$SAFE_IAC" 2>/dev/null || true
+  rm -f "$BACKUP_IAC"
+}
+trap cleanup EXIT
+
 if ! railway status --json >/dev/null 2>&1; then
   railway init --name "$PROJECT_NAME"
 fi
 
-# Deploy the repo first. Railway creates/links the app service in the selected project.
-railway up -y --detach
+DB_PASSWORD="$(openssl rand -hex 32)"
+node - "$REBUILD_IAC" "$SAFE_IAC" "$DB_PASSWORD" <<'NODE'
+import { readFile, writeFile } from "node:fs/promises";
+const [templatePath, targetPath, password] = process.argv.slice(2);
+const template = await readFile(templatePath, "utf8");
+if (!template.includes("__MASANAWA_DB_PASSWORD__")) {
+  throw new Error("Railway rebuild template is missing DB password placeholder");
+}
+await writeFile(
+  targetPath,
+  template.replaceAll("__MASANAWA_DB_PASSWORD__", password),
+  { mode: 0o600 },
+);
+NODE
+unset DB_PASSWORD
 
-# Secret values come from GitHub Environment secrets, not from this file.
+set +e
+railway config plan --detailed-exit-code
+PLAN_STATUS=$?
+set -e
+if [[ "$PLAN_STATUS" -ne 0 && "$PLAN_STATUS" -ne 2 ]]; then
+  echo "Railway IaC plan failed" >&2
+  exit "$PLAN_STATUS"
+fi
+if [[ "$PLAN_STATUS" -eq 2 ]]; then
+  railway config apply --yes
+fi
+
+set_secret() {
+  local service="$1"
+  local key="$2"
+  local value="${!key:-}"
+  [[ -n "$value" ]] || { echo "missing required portable secret: $key" >&2; exit 1; }
+  railway variable set "$key=$value" --service "$service" >/dev/null
+}
+
+# Shared runtime cryptography.
+for service in masanawa-gateway masanawa-worker masanawa-ops; do
+  set_secret "$service" CREDENTIAL_ENCRYPTION_KEY
+done
+
+# Provider/billing/messaging credentials belong to the worker until those
+# capabilities are split into dedicated main-branch services.
 for key in \
-  CREDENTIAL_ENCRYPTION_KEY \
+  AGENT_TOKEN \
+  CALL_GATEWAY_TOKEN \
   FLUTTERWAVE_ENCRYPTION_KEY \
+  FLUTTERWAVE_OPERATOR_TEST_TOKEN \
   FLUTTERWAVE_PUBLIC_KEY \
   FLUTTERWAVE_SECRET_KEY \
   FLUTTERWAVE_WEBHOOK_SECRET_HASH \
@@ -32,15 +85,37 @@ for key in \
   SUPABASE_URL \
   WPP_SESSION
 do
-  value="${!key:-}"
-  [[ -n "$value" ]] || { echo "missing required secret: $key" >&2; exit 1; }
-  railway variable set "$key=$value"
+  set_secret masanawa-worker "$key"
+done
+
+# Gemini credential pool is needed by agent/live-audio execution.
+set_secret masanawa-gateway MASANAWA_ALPHA_GEMINI_IMPORTED_CREDENTIALS_JSON
+set_secret masanawa-worker MASANAWA_ALPHA_GEMINI_IMPORTED_CREDENTIALS_JSON
+
+for service in masanawa-gateway masanawa-worker masanawa-ops; do
+  railway variable set \
+    NODE_ENV=production \
+    HOST=0.0.0.0 \
+    --service "$service" >/dev/null
 done
 
 railway variable set \
-  NODE_ENV=production \
   MASANAWA_PUBLIC_BASE_URL=https://api.masanawa.com \
-  MASANAWA_PLATFORM_AUTH_BASE_URL=https://api.masanawa.com \
-  MASANAWA_PLATFORM_AUTH_POLICY_REVISION=mobile-platform-session-v1
+  --service masanawa-worker >/dev/null
 
-echo "Base runtime reconstructed. Database provisioning/restoration and custom-domain attachment remain explicit provider operations; application code continues to use only *.masanawa.com endpoints."
+# A restored production database is the source of truth for the canonical tenant.
+# If the tenant cannot be resolved yet, infrastructure is still reconstructed,
+# but production auth is deliberately not enabled until data restore/bootstrap.
+if TENANT_ID="$(railway run --service masanawa-gateway -- node scripts/database/resolve-platform-tenant.mjs 2>/dev/null)" && [[ -n "$TENANT_ID" ]]; then
+  railway variable set \
+    "MASANAWA_PLATFORM_TENANT_ID=$TENANT_ID" \
+    MASANAWA_PLATFORM_AUTH_BASE_URL=https://api.masanawa.com \
+    MASANAWA_PLATFORM_AUTH_POLICY_REVISION=mobile-platform-session-v1 \
+    --service masanawa-gateway >/dev/null
+  echo "Canonical platform tenant resolved from database."
+else
+  echo "Infrastructure and secrets reconstructed, but no unique active tenant was resolved." >&2
+  echo "Restore the production dump (or bootstrap a new platform) before enabling production auth." >&2
+fi
+
+echo "Railway reconstruction completed from repository contracts."
