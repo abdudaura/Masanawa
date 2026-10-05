@@ -90,3 +90,8 @@ Security invariant:
 the client submits only an opaque quoteId when creating the paid request. Price, owner
 earning, platform fee, trial eligibility and reservation amount must be reloaded from
 server-side canonical quote/policy truth.
+
+
+## Local verification
+
+Local strict TypeScript verification: `owner-access.ts`, `owner-access-offering.ts`, and `owner-access-evidence.ts` compile cleanly with `tsc --strict --noEmit` in isolation.
