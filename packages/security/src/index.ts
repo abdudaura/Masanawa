@@ -5,3 +5,5 @@ export * from "./canonical-json.js";
 export * from "./principal.js";
 export * from "./service-auth.js";
 export * from "./credentials.js";
+
+export * from "./platform-session.js";
