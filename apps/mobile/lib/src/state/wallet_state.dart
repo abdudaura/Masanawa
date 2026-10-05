@@ -1,10 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../commerce/wallet_http_transport.dart';
 import '../commerce/wallet_models.dart';
+import '../core/providers.dart';
 import 'session_state.dart';
 
 final walletTransportProvider = Provider<WalletTransport>(
-  (ref) => const UnavailableWalletTransport(),
+  (ref) => GatewayWalletTransport(api: ref.watch(apiClientProvider)),
 );
 
 class WalletController extends AsyncNotifier<WalletView?> {
