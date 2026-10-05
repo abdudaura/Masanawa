@@ -255,7 +255,7 @@ function productionGeminiApiKey(
     env.MASANAWA_ALPHA_GEMINI_API_KEY?.trim();
   if (direct) return direct;
   const raw =
-    env.MASANAWA_GEMINI_API_KEYS_JSON?.trim() ??
+    env.MASANAWA_GEMINI_API_KEYS_JSON?.trim() ||
     env.MASANAWA_ALPHA_GEMINI_API_KEYS_JSON?.trim();
   if (raw) {
     try {
