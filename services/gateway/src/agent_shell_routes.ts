@@ -204,6 +204,9 @@ export function registerAgentShellRoutes(app: FastifyInstance, options: ShellOpt
       return options.liveVoiceTokens!.mint({
         authorizationHeader: request.headers.authorization,
         characterId: text(body.characterId, "characterId", 160),
+        ...(body.admissionId == null
+          ? {}
+          : { admissionId: text(body.admissionId, "admissionId", 256) }),
       });
     });
   }
