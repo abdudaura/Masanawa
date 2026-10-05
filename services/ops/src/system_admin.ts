@@ -71,6 +71,15 @@ export interface SystemAdminQueueIssue {
   readonly updatedAt: string;
 }
 
+export interface SystemAdminApprovalCommands {
+  decide(input: {
+    readonly tenantId: TenantId;
+    readonly approvalId: string;
+    readonly decision: "approved" | "denied";
+    readonly approverUserId: import("@masanawa/contracts").UserId;
+  }): Promise<SystemAdminApproval>;
+}
+
 export interface SystemAdminWorldCommands {
   pause(input: {
     readonly tenantId: TenantId;
@@ -110,6 +119,11 @@ export interface SystemAdminService {
   listApprovals(input: {
     readonly authorizationHeader: string | undefined;
   }): Promise<readonly SystemAdminApproval[]>;
+  decideApproval(input: {
+    readonly authorizationHeader: string | undefined;
+    readonly approvalId: string;
+    readonly decision: "approved" | "denied";
+  }): Promise<SystemAdminApproval>;
 }
 
 function count(value: unknown): number {
@@ -131,6 +145,7 @@ export function createSystemAdminService(input: {
   readonly database: PlatformAdminQuery;
   readonly authorizer: AgentAdminAuthorizer;
   readonly worldCommands?: SystemAdminWorldCommands;
+  readonly approvalCommands?: SystemAdminApprovalCommands;
 }): SystemAdminService {
   return Object.freeze<SystemAdminService>({
     async snapshot(request) {
@@ -351,6 +366,29 @@ export function createSystemAdminService(input: {
         tenantId: tenant(authority),
         worldId: request.worldId,
         expectedRevision: request.expectedRevision,
+      });
+    },
+
+    async decideApproval(request) {
+      const authority = await input.authorizer.authorize({
+        authorizationHeader: request.authorizationHeader,
+        capability: "approvals.admin.write",
+      });
+      if (!authority.operatorUserId) {
+        const error = new Error(
+          "A canonical operator PlatformSession is required to decide approvals",
+        ) as Error & { statusCode: number };
+        error.statusCode = 403;
+        throw error;
+      }
+      if (!input.approvalCommands) {
+        throw new Error("Approval decisions are unavailable");
+      }
+      return input.approvalCommands.decide({
+        tenantId: tenant(authority),
+        approvalId: request.approvalId,
+        decision: request.decision,
+        approverUserId: authority.operatorUserId,
       });
     },
 
