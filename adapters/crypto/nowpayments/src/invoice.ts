@@ -7,6 +7,7 @@ export interface CreateNowPaymentsInvoiceInput {
    * verified later from outcome_currency before Masanawa credits the user.
    */
   readonly payCurrency: string;
+  readonly payoutCurrency: string;
   readonly ipnCallbackUrl: string;
   readonly orderId: string;
   readonly orderDescription?: string;
@@ -20,6 +21,7 @@ export interface NowPaymentsCreatedInvoice {
   readonly priceAmount: string;
   readonly priceCurrency: string;
   readonly payCurrency: string;
+  readonly payoutCurrency: string;
 }
 
 function bounded(value: unknown, code: string, max: number): string {
@@ -92,6 +94,7 @@ export function normalizeCreateInvoiceInput(
     price_amount: Number(priceAmount),
     price_currency: currency(input.priceCurrency).toLowerCase(),
     pay_currency: currency(input.payCurrency).toLowerCase(),
+    payout_currency: currency(input.payoutCurrency).toLowerCase(),
     ipn_callback_url: callback,
     order_id: orderId,
   };
@@ -112,6 +115,7 @@ export function parseCreatedInvoice(
     readonly priceAmount: string;
     readonly priceCurrency: string;
     readonly payCurrency: string;
+    readonly payoutCurrency: string;
   },
 ): NowPaymentsCreatedInvoice {
   if (!body || typeof body !== "object" || Array.isArray(body)) {
@@ -134,11 +138,13 @@ export function parseCreatedInvoice(
   const priceAmount = exactAmount(record.price_amount);
   const priceCurrency = currency(record.price_currency);
   const payCurrency = currency(record.pay_currency);
+  const payoutCurrency = currency(record.payout_currency);
   if (
     orderId !== expected.orderId ||
     priceAmount !== exactAmount(expected.priceAmount) ||
     priceCurrency !== currency(expected.priceCurrency) ||
-    payCurrency !== currency(expected.payCurrency)
+    payCurrency !== currency(expected.payCurrency) ||
+    payoutCurrency !== currency(expected.payoutCurrency)
   ) {
     throw new Error("nowpayments.invoice.evidence_mismatch");
   }
@@ -149,5 +155,6 @@ export function parseCreatedInvoice(
     priceAmount,
     priceCurrency,
     payCurrency,
+    payoutCurrency,
   });
 }
