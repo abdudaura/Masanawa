@@ -109,6 +109,11 @@ class ApiClient {
 
   // ---- Auth (U-p2-01) ----
 
+  Future<AuthCapabilities> authCapabilities() async {
+    final data = await _get('/auth/capabilities');
+    return AuthCapabilities.fromJson(data);
+  }
+
   Future<OtpSendResponse> otpSend({String? phone, String? email}) async {
     final data = await _post(
       '/auth/otp',
