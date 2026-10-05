@@ -36,4 +36,33 @@ editing active billing/funding/settlement files.
 - reversal creates negative/offsetting settlement intent, never edits history;
 - fulfillment executor and originating twin are separate facts.
 
-Status: implementation started 2026-10-05.
+Status: isolated attribution/commission contracts complete; persistence/shared integration pending.
+
+Implemented:
+- originating-twin attribution event model;
+- qualifying event types: external funding and eligible commerce purchase;
+- explicit non-qualifying internal transfer/gift/refund/reversal/test/admin events;
+- configurable CommissionPolicy with basis-points rate;
+- initial default policy = 100 basis points (1%);
+- admin read/update service allowing percentage changes without app release;
+- minimum/maximum commission bounds;
+- self-attribution exclusion;
+- expiry exclusion;
+- zero-base exclusion;
+- append-only commission reversal helper;
+- authenticated attribution quote service;
+- isolated Gateway route registrar;
+- focused tests for default 1%, admin override, self-attribution, transfer/gift exclusion and reversal.
+
+Not yet integrated:
+- attribution persistence/migrations;
+- public twin/share/session origin capture;
+- funding/billing/crypto operation hooks;
+- canonical commission ledger posting;
+- refund/chargeback reversal posting;
+- admin-app UI;
+- packages/commerce export wiring;
+- Gateway app/main composition;
+- Activity emission.
+
+No active billing/funding/settlement/crypto files or migrations were modified.
