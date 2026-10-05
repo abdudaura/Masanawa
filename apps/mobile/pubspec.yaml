@@ -53,6 +53,10 @@ dependencies:
   connectivity_plus: ^7.3.2
   flutter_markdown_plus: ^1.0.12
   audio_session: ^0.2.4
+  firebase_core: ^4.15.0
+  firebase_messaging: ^16.7.0
+  flutter_local_notifications: ^22.3.1
+  permission_handler: ^13.0.2
 
 dev_dependencies:
   flutter_test:

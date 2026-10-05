@@ -1,5 +1,31 @@
 # Creator Clone and Reseller Economy
 
+## 2026-10-05 simplified twin economy overlay
+
+`docs/PRODUCT-TWIN-ECONOMY.md` supersedes the earlier user-facing reseller/work framing
+where the two conflict. The canonical commerce, ledger, attribution, settlement and
+runtime invariants in this document remain valid implementation foundations.
+
+The simplified product decisions are:
+
+- twins share Masanawa's underlying AI engine and broadly available Skills;
+- text chat with public twins is free;
+- twin voice/live voice is paid;
+- any eligible Masanawa product/service can be purchased from any twin conversation;
+- the originating twin can earn configured commission on qualifying external inflow and
+  real purchases;
+- users can gift/bless twin owners;
+- Credits can transfer between users, but internal transfers never create acquisition
+  commission or new value;
+- visitors can request a paid conversation with the real owner; funds are held until the
+  qualifying scheduled session occurs, otherwise refunded according to policy;
+- normal users should see a simple Wallet, not Agent Float/reserve machinery;
+- the owner's incentive is to customize and promote a useful, distinctive twin, not to
+  pretend the shared AI performs scarce work unavailable to other twins.
+
+Percentages, including the discussed 1% acquisition commission, must remain configurable
+commercial policy rather than hard-coded constants.
+
 Status: canonical product-direction document.
 
 ## Product decision

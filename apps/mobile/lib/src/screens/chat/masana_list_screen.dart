@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -102,9 +101,6 @@ class AgentListScreen extends ConsumerWidget {
                 onPressed: () async {
                   if (directory.recovery == AgentRecovery.signIn) {
                     await ref.read(sessionProvider.notifier).logout();
-                  } else if (kDebugMode &&
-                      directory.recovery == AgentRecovery.reconnect) {
-                    if (context.mounted) context.push('/developer');
                   } else {
                     await ref.read(agentDirectoryProvider.notifier).refresh();
                   }
@@ -113,20 +109,12 @@ class AgentListScreen extends ConsumerWidget {
                 label: Text(
                   directory.error == null
                       ? 'Refresh'
-                      : (directory.recovery == AgentRecovery.reconnect &&
-                                !kDebugMode
-                            ? 'Try again'
-                            : AgentFeedback(
-                                directory.error!,
-                                recovery: directory.recovery,
-                              ).actionLabel),
+                      : AgentFeedback(
+                          directory.error!,
+                          recovery: directory.recovery,
+                        ).actionLabel,
                 ),
               ),
-              if (kDebugMode && directory.error != null)
-                TextButton(
-                  onPressed: () => context.push('/developer'),
-                  child: const Text('Connection settings'),
-                ),
             ],
           ),
         ),

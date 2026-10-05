@@ -4,11 +4,14 @@ import 'package:url_launcher/url_launcher.dart';
 import '../theme/masanawa_theme.dart';
 import 'chat_format.dart';
 import 'message_parts.dart';
+import 'shell_document.dart';
+import 'shell_document_view.dart';
 
 class MessagePartsView extends StatelessWidget {
-  const MessagePartsView({super.key, required this.parts});
+  const MessagePartsView({super.key, required this.parts, this.onAction});
 
   final List<AgentMessagePart> parts;
+  final ShellActionHandler? onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +20,14 @@ class MessagePartsView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (final part in parts) ...[
-          _PartCard(part: part),
+          if (part.document != null)
+            ShellDocumentView(
+              key: ValueKey(part.document!.id),
+              document: part.document!,
+              onAction: onAction,
+            )
+          else
+            _PartCard(part: part),
           if (part != parts.last) const SizedBox(height: 7),
         ],
       ],
@@ -31,28 +41,28 @@ class _PartCard extends StatelessWidget {
   final AgentMessagePart part;
 
   IconData get icon => switch (part.kind) {
-        AgentMessagePartKind.audio => Icons.graphic_eq,
-        AgentMessagePartKind.image => Icons.image_outlined,
-        AgentMessagePartKind.file => Icons.insert_drive_file_outlined,
-        AgentMessagePartKind.artifact => Icons.auto_awesome_outlined,
-        AgentMessagePartKind.work => Icons.work_outline,
-        AgentMessagePartKind.approval => Icons.approval_outlined,
-        AgentMessagePartKind.operation => Icons.sync_alt,
-        AgentMessagePartKind.callResult => Icons.call_outlined,
-        AgentMessagePartKind.status => Icons.info_outline,
-      };
+    AgentMessagePartKind.audio => Icons.graphic_eq,
+    AgentMessagePartKind.image => Icons.image_outlined,
+    AgentMessagePartKind.file => Icons.insert_drive_file_outlined,
+    AgentMessagePartKind.artifact => Icons.auto_awesome_outlined,
+    AgentMessagePartKind.work => Icons.work_outline,
+    AgentMessagePartKind.approval => Icons.approval_outlined,
+    AgentMessagePartKind.operation => Icons.sync_alt,
+    AgentMessagePartKind.callResult => Icons.call_outlined,
+    AgentMessagePartKind.status => Icons.info_outline,
+  };
 
   String get fallbackTitle => switch (part.kind) {
-        AgentMessagePartKind.audio => 'Voice response',
-        AgentMessagePartKind.image => 'Image',
-        AgentMessagePartKind.file => 'File',
-        AgentMessagePartKind.artifact => 'Work result',
-        AgentMessagePartKind.work => 'Work update',
-        AgentMessagePartKind.approval => 'Approval needed',
-        AgentMessagePartKind.operation => 'Action update',
-        AgentMessagePartKind.callResult => 'Call result',
-        AgentMessagePartKind.status => 'Status',
-      };
+    AgentMessagePartKind.audio => 'Voice response',
+    AgentMessagePartKind.image => 'Image',
+    AgentMessagePartKind.file => 'File',
+    AgentMessagePartKind.artifact => 'Work result',
+    AgentMessagePartKind.work => 'Work update',
+    AgentMessagePartKind.approval => 'Approval needed',
+    AgentMessagePartKind.operation => 'Action update',
+    AgentMessagePartKind.callResult => 'Call result',
+    AgentMessagePartKind.status => 'Status',
+  };
 
   Future<void> _openFile() async {
     final value = part.file?.previewUrl ?? part.file?.downloadUrl;
