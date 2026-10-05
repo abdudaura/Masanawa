@@ -156,6 +156,56 @@ class _CommerceAdminPageState extends State<CommerceAdminPage> {
         ledger: await widget.api.ledger(),
       );
 
+  Future<void> _editOffer([AdminOffer? offer]) async {
+    try {
+      final skills = await widget.api.skills();
+      if (!mounted) return;
+      if (skills.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Create a SkillVersion before creating an Offer.')),
+        );
+        return;
+      }
+      final draft = await showDialog<_OfferDraft>(
+        context: context,
+        builder: (context) => _OfferEditorDialog(
+          current: offer,
+          skills: skills,
+        ),
+      );
+      if (draft == null) return;
+      await widget.api.saveOffer(
+        current: offer,
+        key: draft.key,
+        title: draft.title,
+        description: draft.description,
+        skillVersionId: draft.skillVersionId,
+        priceCredits: draft.priceCredits,
+        fulfillmentReserveCredits: draft.fulfillmentReserveCredits,
+        creatorCommissionCredits: draft.creatorCommissionCredits,
+        fallbackCommissionCredits: draft.fallbackCommissionCredits,
+        platformMarginCredits: draft.platformMarginCredits,
+        regions: draft.regions,
+        enabled: draft.enabled,
+      );
+      if (!mounted) return;
+      setState(() => _future = _load());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(offer == null
+              ? 'Offer created.'
+              : 'Offer saved as revision ${offer.revision + 1}.'),
+        ),
+      );
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error.toString())),
+        );
+      }
+    }
+  }
+
   Future<void> _toggleOffer(AdminOffer offer, bool enabled) async {
     try {
       await widget.api.setOfferEnabled(offer, enabled);
@@ -194,20 +244,41 @@ class _CommerceAdminPageState extends State<CommerceAdminPage> {
                 child: TabBarView(children: [
                   ListView(
                     padding: const EdgeInsets.all(16),
-                    children: data.offers.map((offer) => Card(
-                      child: ListTile(
-                        leading: Icon(Icons.sell_outlined,
-                            color: context.masanawa.brand),
-                        title: Text(offer.key),
-                        subtitle: Text(
-                          '${shortId(offer.offerId)} · rev ${offer.revision}',
-                        ),
-                        trailing: Switch(
-                          value: offer.enabled,
-                          onChanged: (value) => _toggleOffer(offer, value),
+                    children: [
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: FilledButton.icon(
+                          onPressed: () => _editOffer(),
+                          icon: const Icon(Icons.add),
+                          label: const Text('New offer'),
                         ),
                       ),
-                    )).toList(growable: false),
+                      const SizedBox(height: 12),
+                      if (data.offers.isEmpty)
+                        const Card(
+                          child: ListTile(title: Text('No Offers configured')),
+                        )
+                      else
+                        ...data.offers.map((offer) => Card(
+                          child: ListTile(
+                            onTap: () => _editOffer(offer),
+                            leading: Icon(Icons.sell_outlined,
+                                color: context.masanawa.brand),
+                            title: Text(offer.title),
+                            subtitle: Text(
+                              '${offer.key} · ${offer.priceCredits} credits · '
+                              'rev ${offer.revision}\n'
+                              'Skill ${shortId(offer.skillVersionId)}'
+                              '${offer.regions.isEmpty ? ' · all regions' : ' · ${offer.regions.join(', ')}'}',
+                            ),
+                            isThreeLine: true,
+                            trailing: Switch(
+                              value: offer.enabled,
+                              onChanged: (value) => _toggleOffer(offer, value),
+                            ),
+                          ),
+                        )),
+                    ],
                   ),
                   ListView(
                     padding: const EdgeInsets.all(16),
@@ -241,6 +312,271 @@ class _CommerceAdminPageState extends State<CommerceAdminPage> {
             ],
           ),
         ),
+      );
+}
+
+class _OfferDraft {
+  const _OfferDraft({
+    required this.key,
+    required this.title,
+    required this.description,
+    required this.skillVersionId,
+    required this.priceCredits,
+    required this.fulfillmentReserveCredits,
+    required this.creatorCommissionCredits,
+    required this.fallbackCommissionCredits,
+    required this.platformMarginCredits,
+    required this.regions,
+    required this.enabled,
+  });
+
+  final String key;
+  final String title;
+  final String description;
+  final String skillVersionId;
+  final int priceCredits;
+  final int fulfillmentReserveCredits;
+  final int creatorCommissionCredits;
+  final int fallbackCommissionCredits;
+  final int platformMarginCredits;
+  final List<String> regions;
+  final bool enabled;
+}
+
+class _OfferEditorDialog extends StatefulWidget {
+  const _OfferEditorDialog({
+    required this.current,
+    required this.skills,
+  });
+
+  final AdminOffer? current;
+  final List<AdminSkill> skills;
+
+  @override
+  State<_OfferEditorDialog> createState() => _OfferEditorDialogState();
+}
+
+class _OfferEditorDialogState extends State<_OfferEditorDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _key;
+  late final TextEditingController _title;
+  late final TextEditingController _description;
+  late final TextEditingController _price;
+  late final TextEditingController _reserve;
+  late final TextEditingController _creator;
+  late final TextEditingController _fallback;
+  late final TextEditingController _margin;
+  late final TextEditingController _regions;
+  late String _skillVersionId;
+  late bool _enabled;
+
+  @override
+  void initState() {
+    super.initState();
+    final current = widget.current;
+    _key = TextEditingController(text: current?.key ?? '');
+    _title = TextEditingController(text: current?.title ?? '');
+    _description = TextEditingController(text: current?.description ?? '');
+    _price = TextEditingController(text: current?.priceCredits.toString() ?? '');
+    _reserve = TextEditingController(
+      text: current?.fulfillmentReserveCredits.toString() ?? '0',
+    );
+    _creator = TextEditingController(
+      text: current?.creatorCommissionCredits.toString() ?? '0',
+    );
+    _fallback = TextEditingController(
+      text: current?.fallbackCommissionCredits.toString() ?? '0',
+    );
+    _margin = TextEditingController(
+      text: current?.platformMarginCredits.toString() ?? '0',
+    );
+    _regions = TextEditingController(text: current?.regions.join(', ') ?? '');
+    _skillVersionId = current?.skillVersionId ?? widget.skills.first.skillVersionId;
+    _enabled = current?.enabled ?? true;
+  }
+
+  @override
+  void dispose() {
+    for (final controller in [
+      _key,
+      _title,
+      _description,
+      _price,
+      _reserve,
+      _creator,
+      _fallback,
+      _margin,
+      _regions,
+    ]) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  int? _credits(TextEditingController controller) =>
+      int.tryParse(controller.text.trim());
+
+  String? _required(String? value) =>
+      value == null || value.trim().isEmpty ? 'Required' : null;
+
+  String? _nonNegativeCredits(String? value) {
+    final parsed = int.tryParse(value?.trim() ?? '');
+    return parsed == null || parsed < 0 ? 'Enter zero or more credits' : null;
+  }
+
+  void _submit() {
+    if (!_formKey.currentState!.validate()) return;
+    final price = _credits(_price)!;
+    final reserve = _credits(_reserve)!;
+    final creator = _credits(_creator)!;
+    final fallback = _credits(_fallback)!;
+    final margin = _credits(_margin)!;
+    if (price < 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Price must be at least 1 credit.')),
+      );
+      return;
+    }
+    if (fallback > creator) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Fallback commission cannot exceed creator commission.')),
+      );
+      return;
+    }
+    if (reserve + creator + margin != price) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Price must equal reserve + creator commission + platform margin.'),
+        ),
+      );
+      return;
+    }
+    final regions = _regions.text
+        .split(',')
+        .map((value) => value.trim().toUpperCase())
+        .where((value) => value.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
+    Navigator.of(context).pop(
+      _OfferDraft(
+        key: _key.text.trim(),
+        title: _title.text.trim(),
+        description: _description.text.trim(),
+        skillVersionId: _skillVersionId,
+        priceCredits: price,
+        fulfillmentReserveCredits: reserve,
+        creatorCommissionCredits: creator,
+        fallbackCommissionCredits: fallback,
+        platformMarginCredits: margin,
+        regions: regions,
+        enabled: _enabled,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+        title: Text(widget.current == null ? 'New Offer' : 'Revise Offer'),
+        content: SizedBox(
+          width: 560,
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: _key,
+                    enabled: widget.current == null,
+                    decoration: const InputDecoration(labelText: 'Key'),
+                    validator: _required,
+                  ),
+                  TextFormField(
+                    controller: _title,
+                    decoration: const InputDecoration(labelText: 'Title'),
+                    validator: _required,
+                  ),
+                  TextFormField(
+                    controller: _description,
+                    decoration: const InputDecoration(labelText: 'Description'),
+                    minLines: 2,
+                    maxLines: 4,
+                    validator: _required,
+                  ),
+                  DropdownButtonFormField<String>(
+                    initialValue: _skillVersionId,
+                    decoration: const InputDecoration(labelText: 'Skill version'),
+                    items: widget.skills
+                        .map((skill) => DropdownMenuItem(
+                              value: skill.skillVersionId,
+                              child: Text('${skill.displayName} · ${skill.version}'),
+                            ))
+                        .toList(growable: false),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() => _skillVersionId = value);
+                      }
+                    },
+                  ),
+                  TextFormField(
+                    controller: _price,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'Price credits'),
+                    validator: _nonNegativeCredits,
+                  ),
+                  TextFormField(
+                    controller: _reserve,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'Fulfillment reserve'),
+                    validator: _nonNegativeCredits,
+                  ),
+                  TextFormField(
+                    controller: _creator,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'Creator commission'),
+                    validator: _nonNegativeCredits,
+                  ),
+                  TextFormField(
+                    controller: _fallback,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'Fallback commission'),
+                    validator: _nonNegativeCredits,
+                  ),
+                  TextFormField(
+                    controller: _margin,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'Platform margin'),
+                    validator: _nonNegativeCredits,
+                  ),
+                  TextFormField(
+                    controller: _regions,
+                    decoration: const InputDecoration(
+                      labelText: 'Regions',
+                      helperText: 'Comma-separated ISO/market codes; blank means all regions.',
+                    ),
+                  ),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Enabled'),
+                    value: _enabled,
+                    onChanged: (value) => setState(() => _enabled = value),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: _submit,
+            child: const Text('Save revision'),
+          ),
+        ],
       );
 }
 
