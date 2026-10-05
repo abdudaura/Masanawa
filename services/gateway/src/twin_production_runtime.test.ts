@@ -242,6 +242,147 @@ function paidOrderingHarness(order: string[]) {
   });
 }
 
+
+function commissionOrderingHarness(order: string[], options: {
+  readonly recoveredReversal?: boolean;
+} = {}) {
+  let settlement: Record<string, unknown> | null = options.recoveredReversal
+    ? {
+        settlementId: "operation_settlement_123",
+        ownerUserId,
+        characterId,
+        baseCredits: 1000,
+        commissionCredits: 100,
+        policyRevision: 1,
+        ledgerEntryId: "ledger-entry_settlement_123",
+        reversedCredits: 100,
+      }
+    : null;
+
+  const reversalPlan = {
+    planKey: "commission-reversal:reversal_full_123",
+    entries: [{
+      role: "reversal",
+      amountCredits: 100,
+      ledgerEntryId: "ledger-entry_reversal_123",
+    }],
+    createdAt: "2026-10-05T16:00:00.000Z",
+  };
+
+  return createTwinProductionRuntime({
+    sessions: {
+      async authorize() {
+        return {
+          tenantId,
+          userId: requesterUserId,
+          profile: {
+            userId: requesterUserId,
+            name: "Requester",
+            email: "requester@example.com",
+            phone: null,
+            locale: "en",
+            createdAt: "2026-10-05T15:00:00.000Z",
+          },
+        } as never;
+      },
+    },
+    profiles: {
+      async ensureForOwner() { return null; },
+      async update() { throw new Error("unused"); },
+      async searchPublic() { return []; },
+      async readPublicById() { return null; },
+    } as never,
+    economy: {
+      async readAttributionForOperation() {
+        return {
+          attributionId: "operation_attribution_123",
+          ownerUserId,
+          characterId,
+          customerUserId: requesterUserId,
+          eventType: "commerce-purchase",
+          operationId: "purchase_123",
+          policyRevision: 1,
+          attributedAt: "2026-10-05T16:00:00.000Z",
+          expiresAt: "2099-10-05T16:00:00.000Z",
+          selfAttribution: false,
+        };
+      },
+      async readCommissionPolicy() {
+        return {
+          schemaVersion: 1,
+          revision: 1,
+          enabled: true,
+          eventType: "commerce-purchase",
+          rateBasisPoints: 1000,
+          minimumCommissionCredits: 0,
+          maximumCommissionCredits: 1000000,
+          effectiveAt: "2026-10-05T00:00:00.000Z",
+        };
+      },
+      async readCommissionForOperation() {
+        return settlement;
+      },
+      async readLedgerPlan(input: { readonly planKey: string }) {
+        if (options.recoveredReversal &&
+            input.planKey === reversalPlan.planKey) {
+          return reversalPlan;
+        }
+        return null;
+      },
+      async putLedgerPlan(input: { readonly plan: unknown }) {
+        order.push("plan");
+        return input.plan;
+      },
+      async recordCommissionSettlement(input: Record<string, unknown>) {
+        order.push("persist-settlement");
+        settlement = {
+          settlementId: input.settlementId,
+          ownerUserId: input.ownerUserId,
+          characterId: input.characterId,
+          baseCredits: input.baseCredits,
+          commissionCredits: input.commissionCredits,
+          policyRevision: input.policyRevision,
+          ledgerEntryId: input.ledgerEntryId,
+          reversedCredits: 0,
+        };
+        return { duplicate: false };
+      },
+      async recordCommissionReversal() {
+        order.push("persist-reversal");
+        return { duplicate: options.recoveredReversal === true };
+      },
+    } as never,
+    events: {
+      async append() {
+        order.push("event");
+        return "event-1";
+      },
+      async listForCharacter() { return []; },
+      async listForUser() { return []; },
+    },
+    commerce: {
+      async postTransfer() {
+        order.push(options.recoveredReversal ? "reverse-ledger" : "settle-ledger");
+      },
+    } as never,
+    personalClones: {
+      async readPersonalClone() { return null; },
+    } as never,
+    publicTwinBaseUrl: "https://masanawa.com/twin",
+    adminPrincipals: new Set<string>(),
+    voice: {
+      unitSeconds: 60,
+      priceCreditsPerUnit: 10,
+      ownerShareBasisPoints: 8000,
+    },
+    ownerAccess: {
+      platformFeeBasisPoints: 2000,
+      acceptWithinMinutes: 60,
+      startGraceMinutes: 15,
+    },
+  });
+}
+
 describe("Twin production runtime composition", () => {
   it("exposes the complete canonical Twin production surface as one frozen runtime", () => {
     const runtime = harness();
@@ -296,6 +437,45 @@ describe("Twin production runtime composition", () => {
     expect(order.indexOf("reserve")).toBeGreaterThanOrEqual(0);
     expect(order.indexOf("persist-owner")).toBeGreaterThan(order.indexOf("reserve"));
     expect(order.indexOf("event")).toBeGreaterThan(order.indexOf("persist-owner"));
+  });
+
+
+  it("posts commission value before persisting the settlement projection", async () => {
+    const order: string[] = [];
+    const runtime = commissionOrderingHarness(order);
+
+    await runtime.monetization.settle({
+      tenantId,
+      eventType: "commerce-purchase",
+      operationId: "purchase_123",
+      baseCredits: 1000,
+    });
+
+    expect(order.indexOf("settle-ledger")).toBeGreaterThanOrEqual(0);
+    expect(order.indexOf("persist-settlement"))
+      .toBeGreaterThan(order.indexOf("settle-ledger"));
+    expect(order.indexOf("event"))
+      .toBeGreaterThan(order.indexOf("persist-settlement"));
+  });
+
+  it("repairs a recorded commission reversal whose ledger post was interrupted", async () => {
+    const order: string[] = [];
+    const runtime = commissionOrderingHarness(order, {
+      recoveredReversal: true,
+    });
+
+    await runtime.monetization.reverse({
+      tenantId,
+      operationId: "purchase_123",
+      reversalId: "reversal_full_123",
+      reversalBaseCredits: 1000,
+    });
+
+    expect(order.indexOf("reverse-ledger")).toBeGreaterThanOrEqual(0);
+    expect(order.indexOf("persist-reversal"))
+      .toBeGreaterThan(order.indexOf("reverse-ledger"));
+    expect(order.indexOf("event"))
+      .toBeGreaterThan(order.indexOf("persist-reversal"));
   });
 
   it("wires authenticated public discovery, My Twin and Wallet projections through canonical sources", async () => {
