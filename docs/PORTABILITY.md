@@ -45,7 +45,7 @@ The script reads the approved secret names from Railway and sends their values d
 
 ## PostgreSQL portability
 
-Masanawa uses ordinary PostgreSQL migrations and connection strings. Provider-specific database APIs are not a dependency.
+Masanawa uses PostgreSQL 18 with pgvector capability, ordinary PostgreSQL migrations, and standard connection strings. Provider-specific database APIs are not an application dependency.
 
 Export:
 
@@ -66,13 +66,21 @@ After restore, application migrations remain authoritative and should be run bef
 ## Moving to a new Railway account
 
 1. Create/obtain one Railway account token and update GitHub secret `RAILWAY_TOKEN`.
-2. Run the **Rebuild Railway Production** GitHub workflow.
-3. The workflow creates/connects infrastructure, sets portable variables/secrets, and deploys from this repository.
-4. Restore the latest Postgres dump if this is a migration rather than a new blank environment.
-5. Point the stable Cloudflare CNAMEs to the new runtime.
-6. Verify health/readiness and then retire the old account.
+2. Ensure the application/provider credentials have been migrated once into GitHub's encrypted `production` secrets.
+3. Run the **Rebuild Railway Production** GitHub workflow and type `REBUILD` in its confirmation input.
+4. The workflow generates a fresh PostgreSQL password, applies the pgvector + volume + core-service graph, and injects the portable application secrets.
+5. Restore the latest Postgres dump when moving existing production data. Database passwords are intentionally regenerated; they are not part of data portability.
+6. The Gateway automatically derives the platform tenant from PostgreSQL when exactly one active tenant exists. Multi-tenant deployments set `MASANAWA_PLATFORM_TENANT_ID` explicitly.
+7. Point the stable Cloudflare CNAMEs to the new runtime.
+8. Verify health/readiness and then retire the old account.
 
 No APK rebuild is required when only the hosting provider/account changes.
+
+### Current reconstruction boundary
+
+The source-controlled core graph currently covers `masanawa-db`, `masanawa-gateway`, `masanawa-worker`, and `masanawa-ops`.
+
+The current billing proxy, call/APK-builder service, and ChatWithStars-sourced dashboard are legacy deployment arrangements. They are deliberately not declared as permanent portable services until their actual Masanawa `main`-branch entrypoints are ready. This prevents temporary infrastructure from becoming architectural debt.
 
 ## Rule for future development
 
@@ -82,3 +90,7 @@ Any new external service must:
 3. add secret names to the secret manifest;
 4. add schema changes as migrations;
 5. avoid embedding Railway/Render/DigitalOcean URLs in application code.
+
+## ORM policy
+
+Prisma is optional at the application-query layer only. It is not the portability or infrastructure contract. Existing SQL migrations remain authoritative because Masanawa uses PostgreSQL-specific constraints, triggers, indexes, advisory locking, and other behavior that should not be weakened merely to fit an ORM schema. New CRUD-heavy modules may adopt Prisma Client later if it materially improves developer productivity without taking ownership away from the canonical SQL migrations.
