@@ -1829,20 +1829,42 @@ export function createTwinProductionRuntime(input: {
       },
 
       async act(request) {
-        const current = await input.economy.readOwnerAccessRequest({
+        let current = await input.economy.readOwnerAccessRequest({
           tenantId: request.tenantId,
           requestId: request.requestId,
         });
         if (!current || current.originatingCharacterId !== request.characterId) {
           throw new Error("Owner access request not found");
         }
-        const ownerAction = ["accept", "decline", "schedule", "start", "complete"].includes(request.action);
+        const ownerAction = [
+          "accept",
+          "decline",
+          "schedule",
+          "start",
+          "complete",
+        ].includes(request.action);
         if (ownerAction && current.ownerUserId !== request.actorUserId) {
-          throw Object.assign(new Error("Owner action required"), { statusCode: 403 });
+          throw Object.assign(new Error("Owner action required"), {
+            statusCode: 403,
+          });
         }
-        if (request.action === "cancel" && current.requesterUserId !== request.actorUserId) {
-          throw Object.assign(new Error("Requester action required"), { statusCode: 403 });
+        if (
+          request.action === "cancel" &&
+          current.requesterUserId !== request.actorUserId
+        ) {
+          throw Object.assign(new Error("Requester action required"), {
+            statusCode: 403,
+          });
         }
+
+        // Resolve any already-due lifecycle transition before accepting a user
+        // action. This prevents an owner from accepting after the acceptance
+        // deadline simply because the periodic sweep has not run yet.
+        current = await refreshOwnerAccessLifecycle(
+          request.tenantId,
+          current,
+        );
+
         if (request.action === "complete") {
           const startedMs = current.startedAt
             ? Date.parse(current.startedAt)
@@ -1865,10 +1887,12 @@ export function createTwinProductionRuntime(input: {
         transitionOwnerAccess(current.state, next);
         if (
           request.action === "schedule" &&
-          (!request.scheduledFor || Date.parse(request.scheduledFor) <= Date.now())
+          (!request.scheduledFor ||
+            Date.parse(request.scheduledFor) <= Date.now())
         ) {
           throw new Error("scheduledFor must be in the future");
         }
+
         const changed = {
           ...current,
           state: next,
@@ -1877,53 +1901,40 @@ export function createTwinProductionRuntime(input: {
               ? new Date(request.scheduledFor!).toISOString()
               : current.scheduledFor,
           startedAt: request.action === "start" ? at() : current.startedAt,
-          completedAt: request.action === "complete" ? at() : current.completedAt,
+          completedAt:
+            request.action === "complete" ? at() : current.completedAt,
         };
-        const decision = await settleOwnerRequest(
-          request.tenantId,
-          changed,
-          next,
-        );
-        const updated = await input.economy.updateOwnerAccessRequest({
+        const claimed = await input.economy.transitionOwnerAccessRequest({
           tenantId: request.tenantId,
+          expectedState: current.state,
           request: changed,
           reservationId: current.reservationId,
           reservedCredits: current.reservedCredits,
         });
-        const eventType =
-          next === "accepted" ? "twin.owner-access.accepted" :
-          next === "scheduled" ? "twin.owner-access.scheduled" :
-          next === "completed" ? "twin.owner-access.completed" :
-          next === "declined" || next === "cancelled" ||
-          decision.disposition === "refund"
-            ? "twin.owner-access.refunded"
-            : null;
-        if (eventType) {
-          await input.events.append({
-            tenantId: request.tenantId,
-            payload: {
-              eventType,
-              ownerUserId: current.ownerUserId,
-              characterId: current.originatingCharacterId,
-              customerUserId: current.requesterUserId,
-              referenceId: current.requestId,
-              visibility: "participant",
-              occurredAt: at(),
-              amountCredits:
-                eventType === "twin.owner-access.completed"
-                  ? current.ownerEarningCredits
-                  : eventType === "twin.owner-access.refunded"
-                    ? current.reservedCredits
-                    : null,
-              status:
-                eventType === "twin.owner-access.completed"
-                  ? "completed"
-                  : eventType === "twin.owner-access.refunded"
-                    ? "refunded"
-                    : "pending",
-            },
-          });
+        if (!claimed.applied) {
+          throw Object.assign(
+            new Error("Owner access request changed; refresh and try again"),
+            { statusCode: 409 },
+          );
         }
+
+        let updated = claimed.request;
+        if (
+          next === "declined" ||
+          next === "cancelled" ||
+          next === "completed"
+        ) {
+          updated = await finalizeOwnerAccessState(
+            request.tenantId,
+            claimed.request,
+          );
+        } else {
+          await appendOwnerAccessProjectionEvent(
+            request.tenantId,
+            claimed.request,
+          );
+        }
+
         if (request.action === "cancel") {
           await notifyUser(
             request.tenantId,
@@ -2514,6 +2525,7 @@ export function createTwinProductionRuntime(input: {
     paidFeatureTrialAdmin,
     ownerAccess,
     ownerAccessOffering,
+    ownerAccessMaintenance,
     twinSafety,
     voiceAdmissionGate,
     monetization,
