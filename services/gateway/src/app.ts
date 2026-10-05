@@ -209,6 +209,8 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       return { code: "AUTH_UNAVAILABLE", message: "AUTH_UNAVAILABLE" };
     };
 
+    app.get("/auth/capabilities", async () => auth.capabilities());
+
     app.post(
       "/auth/otp",
       {
