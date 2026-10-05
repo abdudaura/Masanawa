@@ -12,6 +12,7 @@ export interface BillingFundingAuthority {
     quoteId: string;
     quoteRevision: number;
     fulfillmentReference: string;
+    categoryCode: string | null;
     billerCode: string;
     itemCode: string;
     customerId: string;
