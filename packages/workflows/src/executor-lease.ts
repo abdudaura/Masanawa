@@ -16,9 +16,11 @@ export interface WorkflowExecutorLease {
   readonly workflowRunId: WorkflowRunId;
   readonly holderId: string;
   readonly fence: number;
+  readonly state: "held" | "released";
   readonly acquiredAt: Instant;
   readonly renewedAt: Instant;
   readonly expiresAt: Instant;
+  readonly releasedAt: Instant | null;
 }
 
 export interface WorkflowExecutorLeaseRepository {
@@ -51,7 +53,7 @@ export interface WorkflowExecutorLeaseRepository {
     readonly holderId: string;
     readonly fence: number;
     readonly now: Instant;
-  }): Promise<void>;
+  }): Promise<WorkflowExecutorLease>;
 }
 
 function conflict(code: string, message: string): PlatformError {
@@ -126,9 +128,15 @@ export function normalizeWorkflowExecutorLease(
   const acquiredAt = toInstant(input.acquiredAt);
   const renewedAt = toInstant(input.renewedAt);
   const expiresAt = toInstant(input.expiresAt);
+  const releasedAt =
+    input.releasedAt === null ? null : toInstant(input.releasedAt);
   if (
+    (input.state !== "held" && input.state !== "released") ||
     renewedAt < acquiredAt ||
-    expiresAt <= renewedAt
+    expiresAt <= renewedAt ||
+    (input.state === "held" && releasedAt !== null) ||
+    (input.state === "released" &&
+      (releasedAt === null || releasedAt < renewedAt))
   ) {
     throw new TypeError("WorkflowExecutorLease lifecycle is invalid");
   }
@@ -138,9 +146,11 @@ export function normalizeWorkflowExecutorLease(
     workflowRunId,
     holderId: holderId(input.holderId),
     fence: fence(input.fence),
+    state: input.state,
     acquiredAt,
     renewedAt,
     expiresAt,
+    releasedAt,
   });
 }
 
@@ -173,9 +183,11 @@ export function planWorkflowExecutorLeaseAcquire(input: {
       workflowRunId,
       holderId: requestedHolderId,
       fence: 1,
+      state: "held",
       acquiredAt: now,
       renewedAt: now,
       expiresAt: addMs(now, durationMs),
+      releasedAt: null,
     });
   }
 
@@ -190,7 +202,7 @@ export function planWorkflowExecutorLeaseAcquire(input: {
     );
   }
 
-  if (current.expiresAt > now) {
+  if (current.state === "held" && current.expiresAt > now) {
     if (current.holderId === requestedHolderId) {
       return current;
     }
@@ -213,9 +225,11 @@ export function planWorkflowExecutorLeaseAcquire(input: {
     workflowRunId,
     holderId: requestedHolderId,
     fence: current.fence + 1,
+    state: "held",
     acquiredAt: now,
     renewedAt: now,
     expiresAt: addMs(now, durationMs),
+    releasedAt: null,
   });
 }
 
@@ -233,6 +247,7 @@ export function planWorkflowExecutorLeaseRenew(input: {
   const durationMs = duration(input.durationMs);
 
   if (
+    current.state !== "held" ||
     current.holderId !== requestedHolderId ||
     current.fence !== requestedFence
   ) {
@@ -272,6 +287,7 @@ export function assertWorkflowExecutorLeaseHeld(input: {
   const lease = normalizeWorkflowExecutorLease(input.lease);
   const at = toInstant(input.at);
   if (
+    lease.state !== "held" ||
     lease.tenantId !== parseCanonicalId("tenant", input.tenantId) ||
     lease.workflowRunId !==
       parseCanonicalId("workflow-run", input.workflowRunId) ||
@@ -297,15 +313,16 @@ export function assertWorkflowExecutorLeaseHeld(input: {
   }
 }
 
-export function assertWorkflowExecutorLeaseRelease(input: {
+export function planWorkflowExecutorLeaseRelease(input: {
   readonly lease: WorkflowExecutorLease;
   readonly holderId: string;
   readonly fence: number;
   readonly at: Instant;
-}): void {
+}): WorkflowExecutorLease {
   const lease = normalizeWorkflowExecutorLease(input.lease);
   const at = toInstant(input.at);
   if (
+    lease.state !== "held" ||
     lease.holderId !== holderId(input.holderId) ||
     lease.fence !== fence(input.fence)
   ) {
@@ -320,4 +337,9 @@ export function assertWorkflowExecutorLeaseRelease(input: {
       "WorkflowRun executor lease release time moved backwards",
     );
   }
+  return normalizeWorkflowExecutorLease({
+    ...lease,
+    state: "released",
+    releasedAt: at,
+  });
 }
