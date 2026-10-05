@@ -31,7 +31,7 @@ export interface ChildExecutionBudgetGrant {
    * This local grant is not an independent pool of spendable execution budget.
    */
   readonly childBudget: AgentExecutionBudget;
-  readonly rootAgentRunId: AgentRunId;
+  readonly parentAgentRunId: AgentRunId;
   readonly grantedAt: Instant;
   readonly parentObservedAt: Instant;
 }
@@ -216,7 +216,7 @@ export function deriveChildExecutionBudget(input: {
 
   return Object.freeze({
     childBudget,
-    rootAgentRunId: parentBudget.agentRunId,
+    parentAgentRunId: parentBudget.agentRunId,
     grantedAt: at,
     parentObservedAt: parentUsage.observedAt,
   });
