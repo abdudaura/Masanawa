@@ -827,9 +827,16 @@ class AdminApi {
     return AgentPresentation.fromJson(_map(response.data));
   }
 
-  Future<List<AdminUser>> users() async {
+  Future<List<AdminUser>> users({String? state, int limit = 100}) async {
     final response = await _request(
-      () => _dio.get<dynamic>('/v1/admin/users', options: _auth),
+      () => _dio.get<dynamic>(
+        '/v1/admin/users',
+        options: _auth,
+        queryParameters: {
+          'limit': limit,
+          if (state != null) 'state': state,
+        },
+      ),
     );
     return _list(response.data)
         .map((item) => AdminUser.fromJson(_map(item)))
@@ -837,18 +844,29 @@ class AdminApi {
   }
 
 
-  Future<List<AdminAgentRun>> agentRuns() async {
+  Future<List<AdminAgentRun>> agentRuns({String? state, int limit = 100}) async {
     final response = await _request(
-      () => _dio.get<dynamic>('/v1/admin/agent-runs', options: _auth),
+      () => _dio.get<dynamic>(
+        '/v1/admin/agent-runs',
+        options: _auth,
+        queryParameters: {
+          'limit': limit,
+          if (state != null) 'state': state,
+        },
+      ),
     );
     return _list(response.data)
         .map((item) => AdminAgentRun.fromJson(_map(item)))
         .toList(growable: false);
   }
 
-  Future<List<AdminOffer>> offers() async {
+  Future<List<AdminOffer>> offers({int limit = 100}) async {
     final response = await _request(
-      () => _dio.get<dynamic>('/v1/admin/offers', options: _auth),
+      () => _dio.get<dynamic>(
+        '/v1/admin/offers',
+        options: _auth,
+        queryParameters: {'limit': limit},
+      ),
     );
     return _list(response.data)
         .map((item) => AdminOffer.fromJson(_map(item)))
@@ -873,45 +891,74 @@ class AdminApi {
     return AdminOffer.fromJson(_map(response.data));
   }
 
-  Future<List<AdminFulfillment>> fulfillments() async {
+  Future<List<AdminFulfillment>> fulfillments({int limit = 100}) async {
     final response = await _request(
-      () => _dio.get<dynamic>('/v1/admin/fulfillments', options: _auth),
+      () => _dio.get<dynamic>(
+        '/v1/admin/fulfillments',
+        options: _auth,
+        queryParameters: {'limit': limit},
+      ),
     );
     return _list(response.data)
         .map((item) => AdminFulfillment.fromJson(_map(item)))
         .toList(growable: false);
   }
 
-  Future<List<AdminLedgerEntry>> ledger() async {
+  Future<List<AdminLedgerEntry>> ledger({int limit = 100}) async {
     final response = await _request(
-      () => _dio.get<dynamic>('/v1/admin/ledger', options: _auth),
+      () => _dio.get<dynamic>(
+        '/v1/admin/ledger',
+        options: _auth,
+        queryParameters: {'limit': limit},
+      ),
     );
     return _list(response.data)
         .map((item) => AdminLedgerEntry.fromJson(_map(item)))
         .toList(growable: false);
   }
 
-  Future<List<AdminOperation>> operations() async {
+  Future<List<AdminOperation>> operations({String? state, int limit = 100}) async {
     final response = await _request(
-      () => _dio.get<dynamic>('/v1/admin/operations', options: _auth),
+      () => _dio.get<dynamic>(
+        '/v1/admin/operations',
+        options: _auth,
+        queryParameters: {
+          'limit': limit,
+          if (state != null) 'state': state,
+        },
+      ),
     );
     return _list(response.data)
         .map((item) => AdminOperation.fromJson(_map(item)))
         .toList(growable: false);
   }
 
-  Future<List<AdminReconciliationCase>> reconciliationCases() async {
+  Future<List<AdminReconciliationCase>> reconciliationCases({
+    String? status,
+    int limit = 100,
+  }) async {
     final response = await _request(
-      () => _dio.get<dynamic>('/v1/admin/reconciliation', options: _auth),
+      () => _dio.get<dynamic>(
+        '/v1/admin/reconciliation',
+        options: _auth,
+        queryParameters: {
+          'limit': limit,
+          if (status != null) 'status': status,
+        },
+      ),
     );
     return _list(response.data)
         .map((item) => AdminReconciliationCase.fromJson(_map(item)))
         .toList(growable: false);
   }
 
-  Future<List<AdminCredentialRef>> providerCredentials() async {
+  Future<List<AdminCredentialRef>> providerCredentials({int limit = 100}) async {
     final response = await _request(
-      () => _dio.get<dynamic>('/v1/admin/provider-credentials', options: _auth),
+      () => _dio.get<dynamic>(
+        '/v1/admin/provider-credentials',
+        options: _auth,
+        queryParameters: {'limit': limit},
+      ),
     );
     return _list(response.data)
         .map((item) => AdminCredentialRef.fromJson(_map(item)))
@@ -935,9 +982,13 @@ class AdminApi {
     return data['revoked'] as bool? ?? false;
   }
 
-  Future<List<AdminAuditEvent>> auditEvents() async {
+  Future<List<AdminAuditEvent>> auditEvents({int limit = 100}) async {
     final response = await _request(
-      () => _dio.get<dynamic>('/v1/admin/audit', options: _auth),
+      () => _dio.get<dynamic>(
+        '/v1/admin/audit',
+        options: _auth,
+        queryParameters: {'limit': limit},
+      ),
     );
     return _list(response.data)
         .map((item) => AdminAuditEvent.fromJson(_map(item)))
