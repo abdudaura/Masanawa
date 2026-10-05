@@ -102,6 +102,19 @@ class MemorySessions implements PlatformSessionRepository {
 }
 
 describe("customer authentication", () => {
+  it("advertises only OTP channels that are actually configured", () => {
+    const repository = new MemorySessions();
+    const service = createCustomerAuthService({
+      repository,
+      tenantId: createCanonicalId("tenant"),
+      otpPepper: "p".repeat(48),
+      emailDelivery: { async send() {} },
+    });
+    expect(service.capabilities()).toEqual({
+      otpChannels: ["email"],
+    });
+  });
+
   it("keeps a verified OTP usable for the mobile name-capture retry", async () => {
     const repository = new MemorySessions();
     let code = "";
