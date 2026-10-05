@@ -28,6 +28,8 @@ The admin app is intended to replace the need for a desktop-only control surface
 
 The UI uses a responsive NavigationRail on wide/tablet screens and a NavigationDrawer on narrow phones.
 
+Admin authentication now reuses canonical PlatformSession OTP/access/refresh tokens. Ops then applies a separate tenant-scoped capability grant keyed by canonical User ID or verified email/phone, so authenticating as a normal Masanawa customer never implies administrative authority.
+
 ## Next safe write controls
 
 These are legitimate admin features, but they require a canonical command/use-case contract rather than a direct SQL mutation:
@@ -54,9 +56,9 @@ These must use their canonical contracts as they merge; the admin app must not d
 
 ## Production prerequisites
 
-1. Production admin identity/session contract. The bootstrap bearer credential screen is temporary.
-2. Role/capability policy for multiple operators and least-privilege administration.
-3. Public/reachable Ops deployment configured separately from customer Gateway traffic.
+1. Persisted admin role/policy administration beyond the current explicit server-side `MASANAWA_OPS_ADMIN_GRANTS_JSON` mapping.
+2. Operator Principal/AuthorityContext binding for approval decisions and other governed actions.
+3. Public/reachable Ops deployment configured separately from customer Gateway traffic, with the Gateway retained for OTP/session issuance.
 4. Audit evidence for every consequential admin mutation.
 5. Cursor pagination/search contracts where bounded state/status filtering is insufficient for very large collections.
 6. Real Flutter analyze/build/device verification.
