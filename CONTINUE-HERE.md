@@ -1,5 +1,44 @@
 # Continue Here
 
+## Mobile startup + agent harness checkpoint — 2026-10-05
+
+This checkpoint is mandatory for all new Masanawa implementation windows.
+
+Read `docs/AGENT-HARNESS.md` before changing Agent execution, Tasks/WorkflowRuns,
+mobile progress UX, subagents/subworkers, channel resumability or long-running work.
+
+Implemented and merged into `work/billing-main-integration-20261005`:
+- Android/Flutter launch no longer enforces the old 1.2-second minimum Flutter splash delay;
+- returning-user auth restore prefers one encrypted `auth_session_v2` record instead of
+  four sequential secure-storage reads;
+- legacy four-key sessions are read in parallel and migrated asynchronously;
+- logout clears both new and legacy auth records;
+- provider-neutral `AgentHarness` contract added under `packages/agents/src/harness.ts`;
+- user-visible **Work** is a projection of existing Task/WorkflowRun identities, never
+  a new work database or parallel authority;
+- progress phases must represent real state transitions, not simulated "thinking";
+- internal subworkers remain bounded child AgentRuns and are not new user-facing agents.
+
+Preserve these architectural rules:
+- Character/CharacterVersion = agent identity/version;
+- Relationship + CharacterSession = user/agent continuity;
+- AgentRun = one execution attempt;
+- Task = durable user-visible work;
+- WorkflowRun = multi-step orchestration/checkpoints;
+- existing SkillVersion, Tool/domain, Security, Commerce, approval and channel authorities
+  remain canonical and must not be bypassed by the harness;
+- Android, WhatsApp and Telegram should reconnect to the same durable work identity;
+- clients should render useful local UI first and hydrate directory/wallet/billing/
+  notifications/network-dependent data afterward.
+
+Current integration checkpoint after PR #143:
+`da527038304080ede9bb247e4735b0779738730f`.
+
+Do not reintroduce a timed Flutter splash, serial four-key session restore, a second
+work/task store, or user-visible "research/billing/document subagents" in place of the
+single Gwani/Gwana/twin relationship.
+
+
 ## Core teaching and ownership checkpoint — 2026-10-04
 
 Teaching is required Core: detailed adaptive lessons across topics, worked examples,
@@ -95,8 +134,13 @@ a vivid cobalt-to-cyan rounded-square mark with a white conversation bubble
 wrapped by a fluid blue/cyan agent ribbon. Do not replace it with a gold M,
 lettermark, map pin, location motif, or the retired UNigeria symbol.
 
-Canonical asset:
-- `apps/mobile/assets/brand/masanawa_agent_logo.png`
+Canonical visual identity:
+- approved cobalt-to-cyan conversation/agent mark;
+- Android launcher source of truth: `apps/mobile/android/app/src/main/res/drawable/masanawa_launcher.xml`;
+- Android splash source of truth: `apps/mobile/android/app/src/main/res/drawable/masanawa_splash_mark.xml`.
+
+The deprecated raster `assets/brand/masanawa_agent_logo.png` must not be used to
+regenerate Android launcher/splash assets.
 
 Brand palette is now Agent Blue, not green:
 - primary `#0A6FFA`
@@ -110,13 +154,13 @@ must not be reinterpreted as brand colors.
 
 Implemented:
 - Flutter semantic tokens and Material theme surfaces use Agent Blue;
-- in-app logo widgets render the approved artwork;
-- Android launcher and round icon reference the approved drawable directly;
-- pre-Android-12 and Android-12 native splash screens use the approved mark;
-- launcher/native-splash generator config points to the approved asset;
-- web/PWA theme metadata, favicon and 192/512 icons use the new identity;
-- the old procedural UNigeria map-pin asset generator was retired and now only
-  resizes the approved artwork.
+- in-app logo widgets use the blue agent/chat identity and no longer depend on the stale raster fallback;
+- Android launcher and round icon use `@drawable/masanawa_launcher`;
+- pre-Android-12 and Android-12 splash screens use `@drawable/masanawa_splash_mark`;
+- Android splash background is Agent Blue;
+- Android launcher/splash generator blocks were removed from `pubspec.yaml` so the retired
+  raster artwork cannot silently overwrite checked-in native branding;
+- web/PWA branding remains blue and should be reconciled separately when touched.
 
 The Android namespace/applicationId remains `ng.unigeria.unigeria` strictly as
 an internal installed-app identity for upgrade compatibility. It is not visible
