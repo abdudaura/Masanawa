@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  createCanonicalMyTwinProfileSource,
   createMyTwinFeatureSource,
   createMyTwinPerformanceSource,
   createOfferingBackedOwnerAccessAvailability,
@@ -132,6 +133,53 @@ describe("My Twin projection source adapters", () => {
         characterId: "character-1",
       }),
     ).resolves.toEqual({ enabled: true });
+  });
+
+
+  it("uses revision-safe canonical profile updates for discoverability", async () => {
+    let expectedRevision = 0;
+    const source = createCanonicalMyTwinProfileSource({
+      store: {
+        async readForOwner(input) {
+          return {
+            tenantId: input.tenantId,
+            ownerUserId: input.ownerUserId,
+            characterId: "character-1",
+            publicId: "amina",
+            displayName: "Amina",
+            bio: "Technology",
+            languages: ["Hausa"],
+            discoverable: true,
+            revision: 4,
+          };
+        },
+        async update(input) {
+          expectedRevision = input.expectedRevision;
+          return {
+            tenantId: input.tenantId,
+            ownerUserId: input.ownerUserId,
+            characterId: input.characterId,
+            publicId: "amina",
+            displayName: "Amina",
+            bio: "Technology",
+            languages: ["Hausa"],
+            discoverable: input.patch.discoverable,
+            revision: 5,
+          };
+        },
+      },
+      now: () => "2026-10-05T10:00:00Z",
+    });
+
+    const updated = await source.setDiscoverable({
+      tenantId: "tenant-1",
+      ownerUserId: "user-owner",
+      discoverable: false,
+    });
+
+    expect(expectedRevision).toBe(4);
+    expect(updated.discoverable).toBe(false);
+    expect(updated.revision).toBe(5);
   });
 
 });
