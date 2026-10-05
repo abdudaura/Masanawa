@@ -67,14 +67,20 @@ class AgentDirectoryController extends Notifier<AgentDirectoryState> {
     _disposed = false;
     _ownerId = ownerId;
     final request = ++_request;
+    final cache = ref.read(agentDirectoryCacheProvider);
 
     ref.onDispose(() {
       _disposed = true;
       _request++;
     });
 
+    if (ownerId == null || ownerId.isEmpty) {
+      unawaited(cache.clear().catchError((_) {}));
+      return const AgentDirectoryState(loading: false);
+    }
+
     scheduleMicrotask(() => _restoreThenRefresh(ownerId, request));
-    return AgentDirectoryState(loading: ownerId != null);
+    return const AgentDirectoryState(loading: true);
   }
 
   Future<void> _restoreThenRefresh(String? ownerId, int request) async {
