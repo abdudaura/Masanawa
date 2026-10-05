@@ -220,3 +220,20 @@ file reference + MIME type; the channel adapter does not fetch or own media byte
 
 Remaining implementation is concrete provider sender translation/HTTP edges, durable
 outbox persistence, delivery-status reconciliation and Gateway composition.
+
+
+## Delivery-status custody
+
+`createChannelDeliveryReconciler()` binds normalized provider delivery statuses back to
+the exact canonical outbound RequestId without treating delivery as business settlement.
+
+The durable store resolves provider message ID within the verified channel account and
+the reconciler additionally checks exact recipient identity. The delivery observation is
+persisted using the ingress dedupe/evidence identity while the outbound binding revision
+is still current. Exact webhook replay returns `replay: true`; provider-message or
+recipient substitution, unknown messages and binding revision races fail closed.
+
+`sent`, `delivered`, `read` and `failed` remain transport evidence. They do not
+prove payment, fulfillment, Teaching progress, approval execution or any other domain
+success. Domain owners may use this evidence only through their own reconciliation
+policies.
