@@ -47,6 +47,12 @@ after implementation and relevant acceptance evidence are merged to `main`.
 - [ ] **TWIN-037** Implement refund/reversal/chargeback commission reversal.
 - [ ] **TWIN-038** Build Wallet mobile screen and reusable Send/Gift sheet.
 
+## Paid feature trials
+
+- [ ] **TWIN-039** Implement reusable admin-configurable paid-feature trials;
+  initial default is 7 days from first qualifying use, with versioned duration/enablement/
+  optional usage-cap policy and zero-charge settlement while eligible.
+
 ## Paid twin voice
 
 - [ ] **TWIN-040** Define voice product/pricing/metering contract.

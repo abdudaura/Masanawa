@@ -91,6 +91,22 @@ not occur, the held amount returns to the requester according to the published p
 Human-session pricing may be owner-configurable within platform bounds. Masanawa owns
 escrow/hold truth, expiry, refund, evidence and settlement.
 
+## Paid feature trials
+
+Every consumer paid feature should support an admin-configurable trial policy unless
+explicitly exempted for legal/provider reasons.
+
+Initial default policy:
+- enabled;
+- **7 calendar days** from first qualifying use;
+- no permanent hard-coded duration;
+- optional usage cap configurable by admin;
+- policy revisions are versioned and historical admissions keep the revision used.
+
+This applies first to paid twin voice and should also be reusable by paid owner access
+and future premium twin features. Trial usage is never charged while an admitted trial
+covers it. After expiry/exhaustion, the normal quote/consent path applies.
+
 ## Economy
 
 ### Free
