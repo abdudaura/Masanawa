@@ -23,4 +23,16 @@ Acceptance:
 - a configured build keeps the existing permission/register/unregister behavior unchanged;
 - missing production Firebase inputs are recorded explicitly for operator completion.
 
-Status: active.
+Implemented:
+- the Notifications switch is disabled when the APK has no Firebase client configuration;
+- the subtitle now says "Not available in this build" instead of misleading users toward Android system settings;
+- configured builds preserve the existing request/register/unregister behavior unchanged.
+
+Still operator-blocked:
+- mobile build must receive `FIREBASE_API_KEY`, `FIREBASE_APP_ID`,
+  `FIREBASE_MESSAGING_SENDER_ID`, and `FIREBASE_PROJECT_ID` as Dart defines;
+- production Gateway must receive `MASANAWA_FIREBASE_SERVICE_ACCOUNT_JSON`;
+- no Firebase credentials/config currently exist in the production Railway variable inventory inspected in this workstream;
+- the active APK verifier path is owned by another production-build continuation and was deliberately not edited here.
+
+Status: implementation checkpoint complete pending PR integration.
