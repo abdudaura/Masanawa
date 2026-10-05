@@ -5,7 +5,7 @@ Status: mandatory implementation coordination guidance, 2026-10-04.
 ## Read and recover before editing
 
 1. Read CONTINUE-HERE.md, including newer checkpoints.
-2. Read docs/DIGITAL-COMMERCE-LAUNCH.md and docs/CREATOR-CLONE-ECONOMY.md.
+2. Read docs/AGENT-HARNESS.md, docs/DIGITAL-COMMERCE-LAUNCH.md and docs/CREATOR-CLONE-ECONOMY.md.
 3. Follow the handoff's canonical architecture/task read order.
 4. Inspect current main HEAD, relevant active branches/PRs and CI.
 5. Inspect docs/workstreams/ claims before selecting a workstream.
@@ -44,7 +44,9 @@ Claims are coordination records, not an automatic distributed lock.
 
 Shared contract changes land first or are explicitly referenced by dependent branches.
 Do not invent duplicate IDs, wallet systems, action protocols, transaction state machines,
-Skill registries or channel-specific financial logic.
+Skill registries, work/task stores or channel-specific financial logic. User-visible **Work**
+must project existing Task/WorkflowRun state, and subworkers must remain bounded AgentRun
+lineage under the canonical harness rather than becoming parallel user-facing agents.
 
 ## Collision prevention
 
@@ -74,7 +76,9 @@ These procedures reduce collisions; documentation alone cannot guarantee race-fr
 ## Completion/handoff
 
 Update the claim and relevant handoff: changed paths, exact HEAD, checks run/results,
-known gaps, next step and dependencies. Distinguish implemented, verified and deployed.
+known gaps, next step and dependencies. At every meaningful checkpoint, also reconcile
+CONTINUE-HERE.md and any governing architecture docs touched by the change so a new window
+cannot legally resume from superseded behavior. Distinguish implemented, verified and deployed.
 Release claims only with complete evidence or an explicit handoff.
 Do not mark roadmap gates complete merely because development code or mock results exist.
 
