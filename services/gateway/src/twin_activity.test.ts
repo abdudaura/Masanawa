@@ -118,7 +118,7 @@ describe("twin activity projection", () => {
         eventId: "evt-bad",
         referenceId: "visit-bad",
         tenantId,
-        characterId: "character_00000000-0000-4000-8000-000000000999",
+        characterId: "character_00000000-0000-4000-8000-000000000999" as never,
         kind: "visit",
         status: "observed",
         occurredAt: "2026-10-05T08:00:00Z",
