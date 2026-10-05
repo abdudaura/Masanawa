@@ -66,3 +66,8 @@ Not yet integrated:
 - Activity emission.
 
 No active billing/funding/settlement/crypto files or migrations were modified.
+
+
+## Local verification
+
+Local strict TypeScript verification: `attribution.ts` compiles cleanly with `tsc --strict --noEmit` in isolation.
