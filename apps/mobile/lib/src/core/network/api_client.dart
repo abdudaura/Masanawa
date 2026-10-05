@@ -54,14 +54,16 @@ class ApiClient {
               !path.contains('/auth/refresh') &&
               !path.contains('/auth/otp') &&
               !path.contains('/auth/verify');
-          if (e.response?.statusCode == 401 && canRefresh && !_refreshing) {
-            _refreshing = true;
+          if (e.response?.statusCode == 401 &&
+              canRefresh &&
+              e.requestOptions.extra['masanawaAuthRetried'] != true) {
             try {
-              final newToken = await onUnauthorized!();
+              final newToken = await refreshAuthorization();
               if (newToken != null && newToken.isNotEmpty) {
                 accessToken = newToken;
                 final opts = e.requestOptions;
                 opts.headers['Authorization'] = 'Bearer $newToken';
+                opts.extra['masanawaAuthRetried'] = true;
                 final retried = await dio.fetch(opts);
                 handler.resolve(retried);
                 return;
@@ -69,8 +71,6 @@ class ApiClient {
             } catch (_) {
               // Refresh failed → the original 401 propagates (the session
               // controller already cleared the session on its side).
-            } finally {
-              _refreshing = false;
             }
           }
           handler.next(e);
@@ -80,7 +80,7 @@ class ApiClient {
   }
 
   final Dio dio;
-  bool _refreshing = false;
+  Future<String?>? _authorizationRefresh;
 
   /// Access token attached to protected requests by the session controller.
   String? accessToken;
@@ -89,6 +89,23 @@ class ApiClient {
   /// access token or null when rotation fails (sign-out). Wired by the session
   /// controller — never set by API surfaces.
   Future<String?> Function()? onUnauthorized;
+
+  /// Rotates the current session once and shares that in-flight refresh across
+  /// API + Agent transports. Supabase refresh tokens rotate, so concurrent 401s
+  /// must never race separate refresh calls.
+  Future<String?> refreshAuthorization() {
+    final active = _authorizationRefresh;
+    if (active != null) return active;
+    final callback = onUnauthorized;
+    if (callback == null) return Future<String?>.value(null);
+    final future = callback();
+    _authorizationRefresh = future;
+    return future.whenComplete(() {
+      if (identical(_authorizationRefresh, future)) {
+        _authorizationRefresh = null;
+      }
+    });
+  }
 
   // ---- Auth (U-p2-01) ----
 
