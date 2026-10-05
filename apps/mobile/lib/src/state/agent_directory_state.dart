@@ -69,6 +69,15 @@ class AgentDirectoryController extends Notifier<AgentDirectoryState> {
     final request = ++_request;
     final cache = ref.read(agentDirectoryCacheProvider);
 
+    ref.listen<SessionState>(sessionProvider, (previous, next) {
+      if (previous is SessionSignedIn && next is! SessionSignedIn) {
+        _ownerId = null;
+        _request++;
+        state = const AgentDirectoryState(loading: false);
+        unawaited(cache.clear().catchError((_) {}));
+      }
+    });
+
     ref.onDispose(() {
       _disposed = true;
       _request++;
