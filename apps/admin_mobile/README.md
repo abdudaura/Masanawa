@@ -62,7 +62,9 @@ The intended control path is:
 3. JEV may classify bounded questions such as ambiguity, risk, escalation or evidence need, but it does not authorize anything;
 4. Ops intersects the operator's capability with Gwani's delegated capability and the action risk class;
 5. delegated read-only actions may execute through the canonical admin service;
-6. writes return `approval-required` and do not execute until the governed approval path is satisfied;
-7. canonical command/Operation/provider/reconciliation evidence is returned to Gwani for explanation.
+6. writes create/reuse an exact-bound prepared Operation plus one-time pending approval tied to the Gwani AgentRun and arguments fingerprint;
+7. the signed-in operator can approve or deny that approval in the System → Approvals tab;
+8. approval does not itself execute the action; approved replay must consume the exact approval and continue the same Operation through the canonical write command;
+9. canonical command/Operation/provider/reconciliation evidence is returned to Gwani for explanation.
 
 The current branch includes the Ops admin-action broker for safe read actions and write proposals. A Gateway Tool adapter still needs to be wired after the canonical Decisions/JEV and approval contracts are integrated; the model is never allowed to bypass this broker.
