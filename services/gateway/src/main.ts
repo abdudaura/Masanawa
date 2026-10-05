@@ -258,7 +258,7 @@ function productionGeminiApiKey(
   env: Readonly<Record<string, string | undefined>>,
 ): string {
   const direct =
-    env.MASANAWA_GEMINI_API_KEY?.trim() ??
+    env.MASANAWA_GEMINI_API_KEY?.trim() ||
     env.MASANAWA_ALPHA_GEMINI_API_KEY?.trim();
   if (direct) return direct;
   const raw =
