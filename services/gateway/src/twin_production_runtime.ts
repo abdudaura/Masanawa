@@ -1983,7 +1983,15 @@ export function createTwinProductionRuntime(input: {
       const seconds =
         admission.startedAt === null
           ? 0
-          : Math.max(0, Math.min(86_400, Math.ceil((Date.now() - Date.parse(admission.startedAt)) / 1000)));
+          : Math.max(
+              0,
+              Math.min(
+                quote.estimatedSeconds,
+                Math.ceil(
+                  (Date.now() - Date.parse(admission.startedAt)) / 1000,
+                ),
+              ),
+            );
       const decision = settleVerifiedTwinVoiceUsage({
         admissionId: admission.admissionId,
         outcome:
