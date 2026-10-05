@@ -13,22 +13,6 @@ class UsersAdminPage extends StatefulWidget {
 class _UsersAdminPageState extends State<UsersAdminPage> {
   late Future<List<AdminUser>> _future = widget.api.users();
 
-  Future<void> _changeState(AdminUser user, String state) async {
-    try {
-      await widget.api.setUserState(user, state);
-      if (!mounted) return;
-      setState(() => _future = widget.api.users());
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('User is now $state.')),
-      );
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error.toString())),
-        );
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) => AdminFuture<List<AdminUser>>(
@@ -36,7 +20,7 @@ class _UsersAdminPageState extends State<UsersAdminPage> {
         retry: () => setState(() => _future = widget.api.users()),
         builder: (users) => AdminPageList(
           title: 'Users & identity',
-          subtitle: 'Tenant users, linked identities and relationship counts.',
+          subtitle: 'Tenant users, linked identities and relationship counts. Lifecycle changes stay read-only until Identity exposes a canonical state-transition command.',
           children: users.map((user) => Card(
             child: ListTile(
               leading: CircleAvatar(
@@ -49,16 +33,7 @@ class _UsersAdminPageState extends State<UsersAdminPage> {
                 '${user.identityCount} identities · '
                 '${user.relationshipCount} relationships · rev ${user.revision}',
               ),
-              trailing: PopupMenuButton<String>(
-                initialValue: user.state,
-                onSelected: (state) => _changeState(user, state),
-                itemBuilder: (_) => const [
-                  PopupMenuItem(value: 'active', child: Text('Active')),
-                  PopupMenuItem(value: 'disabled', child: Text('Disabled')),
-                  PopupMenuItem(value: 'archived', child: Text('Archived')),
-                ],
-                child: Chip(label: Text(user.state)),
-              ),
+              trailing: Chip(label: Text(user.state)),
             ),
           )).toList(growable: false),
         ),
