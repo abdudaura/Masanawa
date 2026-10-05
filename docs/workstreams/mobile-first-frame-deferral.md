@@ -25,4 +25,16 @@ Acceptance:
 - initial deep links remain queued/delivered through the existing PendingDeepLink path;
 - docs updated before merge.
 
-Status: active.
+Implemented:
+- MobilePushService deep-link stream subscription remains installed during app init;
+- Firebase/push/native initial-link initialization now starts in a post-frame callback;
+- router/theme/session first-frame startup no longer competes with that noncritical initialization;
+- existing PendingDeepLink draining behavior is unchanged.
+
+Verification:
+- MainActivity contains no eager Firebase/audio/network initialization;
+- branch diff is limited to main startup scheduling and checkpoint docs;
+- no APK rebuild was performed;
+- executable Flutter checks remain subject to the hosted runner-allocation issue.
+
+Status: implementation checkpoint complete pending PR integration.
