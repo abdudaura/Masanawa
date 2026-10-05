@@ -141,4 +141,33 @@ Immediate continuation order:
 6. enable billing only after checkout/refund/device acceptance is evidenced.
 
 
+## Current-main integration checkpoint — 2026-10-05
+
+PR #126 remains draft/mergeable, but its historical branch is heavily diverged from current
+`main`. PRs #104/#125 are confirmed merged. Do not blindly merge or force-rebase the old tree;
+construct a clean integration branch from current `main` and carry only this workstream's billing,
+auth, provider and storage changes plus narrowly reconciled shared Gateway/mobile seams.
+
+Additional safety work now present on #126:
+- exact BigInt-backed NGN parsing/fees;
+- category-bound funding reserve;
+- durable `checkout-dispatching` pre-provider claim (one hosted checkout under concurrency);
+- atomic refund-dispatch claimant (one refund POST under concurrency);
+- exact full-refund amount evidence; partial refunds remain processing;
+- paid hosted checkout may bind/verify after TTL when dispatch was admitted before expiry;
+- manual-review read-only recovery without redispatch;
+- durable bill history and prepaid token/code recovery;
+- GET `/auth/capabilities` for actually configured OTP channels.
+
+Merged-main inspection found two real integration gaps: shell action events replace
+`result.document` but drop `result.message` (so checkout URL is not surfaced), and agent
+conversation authorization remains Alpha-token based rather than per-customer platform-session
+based. Resolve these only on a current-main integration branch after publishing a non-overlapping
+claim.
+
+Railway note: `@nurain/worker` currently lists Masanawa/Flutterwave/auth variable names,
+including platform-tenant and Resend names, but it is still the Nurain worker and values are
+redacted. Do not treat those names as Masanawa deployment evidence or deploy this branch into it.
+
+
 Last update: 2026-10-05.
