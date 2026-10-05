@@ -12,6 +12,7 @@ Preserve this startup behavior:
 - cached presentation never grants Character/Skill/Tool/financial authority and the server
   remains canonical for every admission and consequential operation;
 - do not solve startup speed by hard-coding Gwani, Gwana or any Character in the APK.
+- Cached agents are immediately actionable while the live directory refreshes; only a true empty/no-cache state should show a blocking loading message.
 
 Implementation paths:
 `apps/mobile/lib/src/agents/agent_directory_cache.dart`,
