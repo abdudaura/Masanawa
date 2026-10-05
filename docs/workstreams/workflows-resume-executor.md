@@ -14,7 +14,7 @@ Owned paths:
 - `packages/workflows/src/executor.ts` and focused tests
 - `packages/workflows/src/workflow-run.ts` and tests only for atomic checkpoint/state commit
 - `packages/workflows/src/index.ts`
-- `adapters/storage/postgres/src/workflows/repository.ts` and focused persistence tests
+- `adapters/storage/postgres/src/workflows/repository.ts`, `authority-gate.ts` and focused persistence tests
 - `docs/AGENT-HARNESS.md`
 - this claim file
 - mandatory checkpoint docs after merge
