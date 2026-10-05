@@ -90,9 +90,13 @@ function instant(value: string, label: string): string {
 export function parseNgnKobo(value: string): number {
   const match = /^(0|[1-9]\d*)(?:\.(\d{1,2}))?$/u.exec(value.trim());
   if (!match) throw new TypeError("NGN amount is invalid");
-  const amount = Number(match[1]) * 100 + Number((match[2] ?? "").padEnd(2, "0") || "0");
-  if (!Number.isSafeInteger(amount)) throw new RangeError("NGN amount exceeds safe range");
-  return amount;
+  const whole = BigInt(match[1]!);
+  const fraction = BigInt((match[2] ?? "").padEnd(2, "0") || "0");
+  const amount = whole * 100n + fraction;
+  if (amount > BigInt(Number.MAX_SAFE_INTEGER)) {
+    throw new RangeError("NGN amount exceeds safe range");
+  }
+  return Number(amount);
 }
 export function formatNgnKobo(value: number): string {
   if (!Number.isSafeInteger(value) || value < 0) throw new TypeError("NGN kobo amount is invalid");
@@ -107,9 +111,15 @@ export function calculateBillingFeeKobo(
   if (!Number.isSafeInteger(serviceAmountKobo) || serviceAmountKobo <= 0) throw new TypeError("Billing service amount is invalid");
   if (!Number.isSafeInteger(policy.basisPoints) || policy.basisPoints < 0 || policy.basisPoints > 10_000) throw new TypeError("Billing fee basis points are invalid");
   if (!Number.isSafeInteger(policy.fixedKobo) || policy.fixedKobo < 0) throw new TypeError("Billing fixed fee is invalid");
-  const fee = Math.ceil((serviceAmountKobo * policy.basisPoints) / 10_000) + policy.fixedKobo;
-  if (!Number.isSafeInteger(fee)) throw new RangeError("Billing fee exceeds safe range");
-  return fee;
+  const percentageNumerator =
+    BigInt(serviceAmountKobo) * BigInt(policy.basisPoints);
+  const percentageFee =
+    (percentageNumerator + 9_999n) / 10_000n;
+  const fee = percentageFee + BigInt(policy.fixedKobo);
+  if (fee > BigInt(Number.MAX_SAFE_INTEGER)) {
+    throw new RangeError("Billing fee exceeds safe range");
+  }
+  return Number(fee);
 }
 export function createBillingQuote(input: Readonly<{
   tenantId: TenantId; userId: UserId; categoryCode?: string | null; billerCode: string;
@@ -118,8 +128,10 @@ export function createBillingQuote(input: Readonly<{
 }>): BillingQuote {
   if (!Number.isSafeInteger(input.serviceAmountKobo) || input.serviceAmountKobo <= 0) throw new TypeError("Billing service amount is invalid");
   if (!Number.isSafeInteger(input.feeAmountKobo) || input.feeAmountKobo < 0) throw new TypeError("Billing fee is invalid");
+  if (input.serviceAmountKobo > Number.MAX_SAFE_INTEGER - input.feeAmountKobo) {
+    throw new RangeError("Billing total exceeds safe range");
+  }
   const totalAmountKobo = input.serviceAmountKobo + input.feeAmountKobo;
-  if (!Number.isSafeInteger(totalAmountKobo)) throw new RangeError("Billing total exceeds safe range");
   const createdAt = instant(input.createdAt, "createdAt");
   const expiresAt = instant(input.expiresAt, "expiresAt");
   if (Date.parse(expiresAt) <= Date.parse(createdAt)) throw new RangeError("Billing quote expiry is invalid");
