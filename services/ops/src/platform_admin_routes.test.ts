@@ -55,6 +55,58 @@ describe("Ops platform admin routes", () => {
     expect(calls).toBe(0);
   });
 
+  it("forwards canonical Offer creation payloads", async () => {
+    const calls: unknown[] = [];
+    const service = {
+      async saveOfferRevision(input: unknown) {
+        calls.push(input);
+        return {};
+      },
+    } as unknown as PlatformAdminService;
+    const app = createOpsApp({ platformAdmin: service });
+    apps.push(app);
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/v1/admin/offers",
+      headers: { authorization: "Bearer operator" },
+      payload: {
+        key: "airtime.ng",
+        title: "Airtime",
+        description: "Buy airtime",
+        skillVersionId:
+          "skill-version_00000000-0000-4000-8000-000000000011",
+        priceCredits: 100,
+        fulfillmentReserveCredits: 70,
+        creatorCommissionCredits: 20,
+        fallbackCommissionCredits: 10,
+        platformMarginCredits: 10,
+        regions: ["NG"],
+        enabled: true,
+        expectedRevision: null,
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(calls).toEqual([{
+      authorizationHeader: "Bearer operator",
+      offerId: null,
+      expectedRevision: null,
+      key: "airtime.ng",
+      title: "Airtime",
+      description: "Buy airtime",
+      skillVersionId:
+        "skill-version_00000000-0000-4000-8000-000000000011",
+      priceCredits: 100,
+      fulfillmentReserveCredits: 70,
+      creatorCommissionCredits: 20,
+      fallbackCommissionCredits: 10,
+      platformMarginCredits: 10,
+      regions: ["NG"],
+      enabled: true,
+    }]);
+  });
+
   it("forwards canonical Operation receipt drill-downs", async () => {
     const calls: unknown[] = [];
     const service = {
