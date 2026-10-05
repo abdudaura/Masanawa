@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 import '../core/admin_agent_chat_api.dart';
@@ -214,6 +216,41 @@ class _AdminAgentChatScreenState extends State<AdminAgentChatScreen> {
     return created;
   }
 
+  Future<void> _runReadAction(
+    String action,
+    String label,
+  ) async {
+    if (_busy) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final result = await widget.api.runDelegatedAdminAction(
+        characterId: widget.delegate.characterId,
+        action: action,
+      );
+      final body = result.completed
+          ? const JsonEncoder.withIndent('  ').convert(result.data)
+          : 'Approval required: ${result.reason ?? result.capability ?? 'unknown'}';
+      if (mounted) {
+        setState(() {
+          _messages.add(
+            _ChatMessage(
+              text: 'Verified admin tool · $label\n$body',
+              fromAgent: true,
+            ),
+          );
+        });
+        _scrollToEnd();
+      }
+    } catch (error) {
+      if (mounted) setState(() => _error = error.toString());
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _send() async {
     final text = _composer.text.trim();
     if (text.isEmpty || _busy) return;
@@ -303,6 +340,64 @@ class _AdminAgentChatScreenState extends State<AdminAgentChatScreen> {
                     ),
                   ],
                 ),
+              ),
+            ),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+              child: Row(
+                children: [
+                  if (widget.delegate.capabilities
+                      .contains('platform.summary.read'))
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ActionChip(
+                        avatar: const Icon(Icons.dashboard_outlined, size: 18),
+                        label: const Text('Inspect platform'),
+                        onPressed: _busy
+                            ? null
+                            : () => _runReadAction(
+                                  'platform.summary',
+                                  'Platform summary',
+                                ),
+                      ),
+                    ),
+                  if (widget.delegate.capabilities
+                      .contains('identity.users.read'))
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ActionChip(
+                        avatar: const Icon(Icons.people_outline, size: 18),
+                        label: const Text('Inspect users'),
+                        onPressed: _busy
+                            ? null
+                            : () => _runReadAction('users.list', 'Users'),
+                      ),
+                    ),
+                  if (widget.delegate.capabilities
+                      .contains('operations.read'))
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ActionChip(
+                        avatar: const Icon(Icons.rule_outlined, size: 18),
+                        label: const Text('Inspect operations'),
+                        onPressed: _busy
+                            ? null
+                            : () => _runReadAction(
+                                  'operations.list',
+                                  'Operations',
+                                ),
+                      ),
+                    ),
+                  if (widget.delegate.capabilities.contains('audit.read'))
+                    ActionChip(
+                      avatar: const Icon(Icons.fact_check_outlined, size: 18),
+                      label: const Text('Inspect audit'),
+                      onPressed: _busy
+                          ? null
+                          : () => _runReadAction('audit.list', 'Audit'),
+                    ),
+                ],
               ),
             ),
             Expanded(
