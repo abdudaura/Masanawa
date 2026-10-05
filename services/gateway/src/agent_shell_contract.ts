@@ -108,6 +108,7 @@ export interface LiveVoiceTokenService {
   mint(input: {
     readonly authorizationHeader: string | undefined;
     readonly characterId: string;
+    readonly admissionId?: string | null;
   }): Promise<{
     readonly token: string;
     readonly websocketUrl: string;
