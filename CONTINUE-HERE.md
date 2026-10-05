@@ -17,6 +17,9 @@ Implementation paths:
 `apps/mobile/lib/src/agents/agent_directory_cache.dart`,
 `apps/mobile/lib/src/state/agent_directory_state.dart`.
 
+PR #164 merged this checkpoint at `e46dc62de6599d0ea5010855dc03a3aa1df285e9`.
+Hosted GitHub jobs again failed before any step was allocated; do not interpret those runs as application test failures or passes.
+
 ## Mobile startup + agent harness checkpoint — 2026-10-05
 
 This checkpoint is mandatory for all new Masanawa implementation windows.
