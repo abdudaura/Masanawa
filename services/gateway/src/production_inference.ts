@@ -1,3 +1,4 @@
+import { createDecipheriv, createHash } from "node:crypto";
 import type {
   AgentInferenceControls,
   AgentInferenceProvider,
@@ -284,6 +285,236 @@ export function createGeminiCredentialPoolInferenceProvider(input: {
       throw lastError instanceof Error
         ? lastError
         : new Error("Gemini credential pool exhausted");
+    },
+  };
+  return Object.freeze(provider);
+}
+
+
+interface SupabaseGeminiCredentialRow {
+  readonly encrypted_secret?: unknown;
+  readonly fingerprint?: unknown;
+  readonly cooldown_until?: unknown;
+  readonly last_used_at?: unknown;
+  readonly gemini_credential_health?:
+    | readonly {
+        readonly health_score?: unknown;
+        readonly ema_latency_ms?: unknown;
+      }[]
+    | {
+        readonly health_score?: unknown;
+        readonly ema_latency_ms?: unknown;
+      }
+    | null;
+}
+
+function credentialKeyMaterial(secret: string): Buffer {
+  return createHash("sha256").update(secret).digest();
+}
+
+function decryptNurainCredential(
+  encrypted: string,
+  secrets: readonly string[],
+): string {
+  const parts = encrypted.split(".");
+  if (parts.length !== 4) throw new Error("Unsupported encrypted Gemini credential");
+  const [version, ivB64, tagB64, cipherB64] = parts;
+  if (version !== "v1" || !ivB64 || !tagB64 || !cipherB64) {
+    throw new Error("Unsupported encrypted Gemini credential");
+  }
+  const iv = Buffer.from(ivB64, "base64url");
+  const tag = Buffer.from(tagB64, "base64url");
+  const ciphertext = Buffer.from(cipherB64, "base64url");
+  if (iv.length !== 12 || tag.length !== 16 || ciphertext.length === 0) {
+    throw new Error("Unsupported encrypted Gemini credential");
+  }
+
+  let lastError: unknown;
+  for (const secret of secrets) {
+    try {
+      const decipher = createDecipheriv(
+        "aes-256-gcm",
+        credentialKeyMaterial(secret),
+        iv,
+      );
+      decipher.setAuthTag(tag);
+      return Buffer.concat([
+        decipher.update(ciphertext),
+        decipher.final(),
+      ]).toString("utf8");
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("Unable to decrypt Gemini credential");
+}
+
+function supabaseOrigin(value: string): string {
+  const url = new URL(value);
+  if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash) {
+    throw new TypeError("Supabase URL must be an HTTPS origin");
+  }
+  return url.origin;
+}
+
+function healthMetric(row: SupabaseGeminiCredentialRow) {
+  const relation = row.gemini_credential_health;
+  return Array.isArray(relation) ? relation[0] : relation;
+}
+
+export async function loadSupabaseGeminiCredentialPool(input: {
+  readonly supabaseUrl: string;
+  readonly serviceRoleKey: string;
+  readonly encryptionKey: string;
+  readonly encryptionKeyPrevious?: string;
+  readonly models?: string;
+  readonly fallbackModel?: string;
+  readonly fetchImpl?: typeof fetch;
+  readonly now?: () => Date;
+}): Promise<GeminiCredentialPool> {
+  const baseUrl = supabaseOrigin(input.supabaseUrl);
+  const serviceRoleKey = input.serviceRoleKey.trim();
+  const encryptionKeys = [
+    input.encryptionKey,
+    ...(input.encryptionKeyPrevious?.split(",") ?? []),
+  ]
+    .map((value) => value.trim())
+    .filter((value) => value.length >= 32);
+  if (serviceRoleKey.length < 20) {
+    throw new TypeError("Supabase service role key is invalid");
+  }
+  if (encryptionKeys.length === 0) {
+    throw new TypeError("Credential encryption key is invalid");
+  }
+
+  const params = new URLSearchParams({
+    select:
+      "encrypted_secret,fingerprint,cooldown_until,last_used_at,gemini_credential_health(health_score,ema_latency_ms)",
+    enabled: "eq.true",
+    limit: "5000",
+  });
+  const fetchImpl = input.fetchImpl ?? fetch;
+  const response = await fetchImpl(
+    `${baseUrl}/rest/v1/gemini_credentials?${params.toString()}`,
+    {
+      headers: {
+        apikey: serviceRoleKey,
+        authorization: `Bearer ${serviceRoleKey}`,
+        accept: "application/json",
+      },
+      signal: AbortSignal.timeout(10_000),
+    },
+  );
+  if (!response.ok) {
+    throw new Error(`Gemini credential pool lookup failed with ${response.status}`);
+  }
+
+  const now = (input.now ?? (() => new Date()))().getTime();
+  const rows = (await response.json()) as SupabaseGeminiCredentialRow[];
+  const candidates = rows
+    .filter((row) => {
+      const cooldown = row.cooldown_until;
+      return (
+        typeof cooldown !== "string" ||
+        !cooldown ||
+        !Number.isFinite(Date.parse(cooldown)) ||
+        Date.parse(cooldown) <= now
+      );
+    })
+    .map((row) => {
+      const metric = healthMetric(row);
+      return {
+        row,
+        healthScore:
+          metric && typeof metric.health_score === "number"
+            ? metric.health_score
+            : Number(metric?.health_score ?? 0.85),
+        latency:
+          metric?.ema_latency_ms == null
+            ? Number.POSITIVE_INFINITY
+            : Number(metric.ema_latency_ms),
+        lastUsed:
+          typeof row.last_used_at === "string"
+            ? Date.parse(row.last_used_at)
+            : 0,
+      };
+    })
+    .sort((left, right) => {
+      if (right.healthScore !== left.healthScore) {
+        return right.healthScore - left.healthScore;
+      }
+      if (left.latency !== right.latency) return left.latency - right.latency;
+      return left.lastUsed - right.lastUsed;
+    });
+
+  const apiKeys: string[] = [];
+  for (const candidate of candidates) {
+    const encrypted = candidate.row.encrypted_secret;
+    if (typeof encrypted !== "string" || !encrypted) continue;
+    try {
+      const key = decryptNurainCredential(encrypted, encryptionKeys).trim();
+      if (normalizeSecret(key)) apiKeys.push(key);
+    } catch {
+      // One stale envelope must not disable the rest of the pool.
+    }
+  }
+
+  return parseGeminiCredentialPool({
+    credentialsJson: JSON.stringify(apiKeys),
+    ...(input.models ? { models: input.models } : {}),
+    ...(input.fallbackModel ? { fallbackModel: input.fallbackModel } : {}),
+  });
+}
+
+export function createSupabaseGeminiPoolInferenceProvider(input: {
+  readonly supabaseUrl: string;
+  readonly serviceRoleKey: string;
+  readonly encryptionKey: string;
+  readonly encryptionKeyPrevious?: string;
+  readonly models?: string;
+  readonly fallbackModel?: string;
+  readonly fetchImpl?: typeof fetch;
+  readonly cacheTtlMs?: number;
+}): AgentInferenceProvider {
+  const fetchImpl = input.fetchImpl ?? fetch;
+  const cacheTtlMs = Math.max(5_000, Math.min(60_000, input.cacheTtlMs ?? 15_000));
+  let cached:
+    | {
+        readonly expiresAt: number;
+        readonly pool: GeminiCredentialPool;
+      }
+    | undefined;
+
+  async function pool(): Promise<GeminiCredentialPool> {
+    const now = Date.now();
+    if (cached && cached.expiresAt > now) return cached.pool;
+    const next = await loadSupabaseGeminiCredentialPool({
+      supabaseUrl: input.supabaseUrl,
+      serviceRoleKey: input.serviceRoleKey,
+      encryptionKey: input.encryptionKey,
+      ...(input.encryptionKeyPrevious
+        ? { encryptionKeyPrevious: input.encryptionKeyPrevious }
+        : {}),
+      ...(input.models ? { models: input.models } : {}),
+      ...(input.fallbackModel ? { fallbackModel: input.fallbackModel } : {}),
+      fetchImpl,
+    });
+    cached = Object.freeze({
+      expiresAt: now + cacheTtlMs,
+      pool: next,
+    });
+    return next;
+  }
+
+  const provider: AgentInferenceProvider = {
+    async generate(request, controls) {
+      const resolved = await pool();
+      return createGeminiCredentialPoolInferenceProvider({
+        pool: resolved,
+        fetchImpl,
+      }).generate(request, controls);
     },
   };
   return Object.freeze(provider);
