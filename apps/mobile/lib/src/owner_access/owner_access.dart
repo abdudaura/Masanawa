@@ -201,6 +201,18 @@ abstract class OwnerAccessTransport {
     required String characterId,
     required OwnerAccessQuote quote,
   });
+
+  Future<OwnerAccessRequest?> read({
+    required String characterId,
+    required String requestId,
+  });
+
+  Future<OwnerAccessRequest> act({
+    required String characterId,
+    required String requestId,
+    required String action,
+    DateTime? scheduledFor,
+  });
 }
 
 class UnavailableOwnerAccessTransport implements OwnerAccessTransport {
@@ -219,6 +231,24 @@ class UnavailableOwnerAccessTransport implements OwnerAccessTransport {
   Future<OwnerAccessRequest> request({
     required String characterId,
     required OwnerAccessQuote quote,
+  }) {
+    throw StateError('Owner access is not connected to the Gateway yet');
+  }
+
+  @override
+  Future<OwnerAccessRequest?> read({
+    required String characterId,
+    required String requestId,
+  }) {
+    throw StateError('Owner access is not connected to the Gateway yet');
+  }
+
+  @override
+  Future<OwnerAccessRequest> act({
+    required String characterId,
+    required String requestId,
+    required String action,
+    DateTime? scheduledFor,
   }) {
     throw StateError('Owner access is not connected to the Gateway yet');
   }
