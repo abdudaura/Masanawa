@@ -47,7 +47,7 @@ function subject(externalUserId: string): ExternalSubjectRef {
 export function createPostgresPlatformIdentityBridge(
   pool: Pool,
 ): PostgresPlatformIdentityBridge {
-  return Object.freeze({
+  const bridge: PostgresPlatformIdentityBridge = {
     async resolveOrCreateUser(input) {
       return withTransaction(pool, async (client) => {
         const externalSubject = subject(input.externalUserId);
@@ -133,5 +133,6 @@ export function createPostgresPlatformIdentityBridge(
         { isolation: "repeatable read", readOnly: true },
       );
     },
-  });
+  };
+  return Object.freeze(bridge);
 }
