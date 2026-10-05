@@ -206,6 +206,49 @@ void main() {
     expect(api.accessToken, 'a3');
   });
 
+  test('profile save failure preserves the verified production session',
+      () async {
+    adapter.respond('/auth/verify', {
+      'accessToken': 'a4',
+      'refreshToken': 'r4',
+      'accessExpiresIn': 3600,
+      'user': AuthUser(
+        id: 'user_profile_retry',
+        name: '',
+        email: email,
+        locale: 'en',
+        status: 'ACTIVE',
+        role: 'USER',
+        isNewUser: true,
+        createdAt: '2026-10-04T00:00:00Z',
+      ).toJson(),
+    });
+    final container = makeContainer();
+    final controller = container.read(sessionProvider.notifier);
+    await Future.delayed(Duration.zero);
+    await controller.verifyOtp(code, email: email);
+
+    adapter.respond(
+      '/auth/profile',
+      {
+        'error': {'code': 'AUTH_UNAVAILABLE', 'message': 'temporary'}
+      },
+      statusCode: 503,
+    );
+
+    await expectLater(
+      controller.updateProfile(name: 'Ada Obi'),
+      throwsA(isA<ApiException>()),
+    );
+
+    final state = container.read(sessionProvider);
+    expect(state, isA<SessionSignedIn>());
+    final signedIn = state as SessionSignedIn;
+    expect(signedIn.user.isNewUser, isTrue);
+    expect(signedIn.tokens.accessToken, 'a4');
+    expect(api.accessToken, 'a4');
+  });
+
   test('network failure on sendOtp lands in SessionError', () async {
     adapter.respond(
       '/auth/otp',
