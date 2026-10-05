@@ -1,5 +1,22 @@
 # Continue Here
 
+## Mobile directory fast-start checkpoint — 2026-10-05
+
+Preserve this startup behavior:
+- signed-in users may render the last authorized AgentDirectory presentation immediately from
+  an account-scoped local cache while the live Gateway directory refreshes;
+- cache ownership is keyed by canonical User ID, never by access token;
+- access-token rotation must not blank/restart the directory UI;
+- another account must never see the previous account's cached roster;
+- transient network failure may preserve cached presentation, but 401/403 clears it;
+- cached presentation never grants Character/Skill/Tool/financial authority and the server
+  remains canonical for every admission and consequential operation;
+- do not solve startup speed by hard-coding Gwani, Gwana or any Character in the APK.
+
+Implementation paths:
+`apps/mobile/lib/src/agents/agent_directory_cache.dart`,
+`apps/mobile/lib/src/state/agent_directory_state.dart`.
+
 ## Mobile startup + agent harness checkpoint — 2026-10-05
 
 This checkpoint is mandatory for all new Masanawa implementation windows.

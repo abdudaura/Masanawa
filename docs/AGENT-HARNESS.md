@@ -199,3 +199,21 @@ persistence means Work state survives process/service restart, but there is not 
 graph executor that automatically resumes execution. The next slice must validate graph
 signature compatibility, restore checkpoint state, and revalidate current authority immediately
 before resumed consequential mutations.
+
+
+## Mobile directory fast-start checkpoint — 2026-10-05
+
+The fast-client principle now also applies to the server-driven agent roster.
+
+Implemented:
+- the last successfully authorized AgentDirectory projection is cached locally as presentation data;
+- the cache is keyed by the canonical signed-in User ID and is never used for another account;
+- returning users can render cached agents and their cached conversations before the live directory HTTP request completes;
+- the live Gateway directory remains canonical and replaces the cached presentation when it arrives;
+- transient network failures preserve the last cached roster, while 401/403 authorization failures clear it;
+- access-token rotation alone does not rebuild the directory state because cache ownership follows User identity, not token value.
+
+Security boundary:
+cached agent presentation never grants Character admission, Skills, Tools, billing, wallet,
+or any other authority. Every consequential/current operation remains server-authorized.
+Do not hard-code Gwani/Gwana into the client as a startup shortcut.
