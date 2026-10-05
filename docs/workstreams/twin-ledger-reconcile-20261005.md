@@ -38,7 +38,8 @@ All open Twin feature PR tasks remain unchecked.
 ## Verification
 
 - exactly TWIN-001, TWIN-002 and TWIN-004 were changed from unchecked to checked;
-- TWIN-003 remains unchecked because its cleanup is still open in PR #180;
-- TWIN-085 and TWIN-086 remain unchecked because PRs #178 and #179 are still open;
-- all feature/integration/acceptance tasks remain unchanged;
+- TWIN-003 is now checked after PR #180 merged as `9077e90bd7d06ed64182492b9c208743a710a6dc`;
+- TWIN-085 is now checked after PR #178 merged as `9bb73ef141697285dcf457773ce61c05989919bf`;
+- TWIN-086 is now checked after PR #179 merged as `6def6d87aaebb71dc26e76f6f5fdf9316e0a6e7f`;
+- all other feature/integration/acceptance tasks remain unchanged;
 - branch diff is confined to this claim and the canonical supplemental task ledger.
