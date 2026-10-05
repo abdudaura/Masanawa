@@ -1,3 +1,11 @@
+CREATE TABLE commerce.twin_ledger_plans (
+  tenant_id text NOT NULL,
+  plan_key text NOT NULL CHECK (length(plan_key) BETWEEN 1 AND 512),
+  definition jsonb NOT NULL CHECK (jsonb_typeof(definition)='object'),
+  created_at timestamptz NOT NULL,
+  PRIMARY KEY (tenant_id,plan_key)
+);
+
 CREATE TABLE commerce.twin_credit_operations (
   tenant_id text NOT NULL,
   request_id text NOT NULL CHECK (length(request_id) BETWEEN 1 AND 256),
@@ -224,6 +232,9 @@ BEGIN
 END;
 $$;
 
+CREATE TRIGGER twin_ledger_plan_immutable
+BEFORE UPDATE OR DELETE ON commerce.twin_ledger_plans
+FOR EACH ROW EXECUTE FUNCTION commerce.reject_twin_immutable_mutation();
 CREATE TRIGGER twin_credit_operation_immutable
 BEFORE UPDATE OR DELETE ON commerce.twin_credit_operations
 FOR EACH ROW EXECUTE FUNCTION commerce.reject_twin_immutable_mutation();
