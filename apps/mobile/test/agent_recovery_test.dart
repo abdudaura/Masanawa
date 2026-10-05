@@ -12,7 +12,6 @@ import 'package:masanawa/src/agents/agent_session.dart';
 import 'package:masanawa/src/agents/masanawa_transport.dart';
 import 'package:masanawa/src/core/network/api_client.dart';
 import 'package:masanawa/src/core/providers.dart';
-import 'package:masanawa/src/state/agent_connection_state.dart';
 import 'package:masanawa/src/state/agent_directory_state.dart';
 import 'package:masanawa/src/state/ai_chat_state.dart';
 import 'package:masanawa/src/screens/chat/masana_list_screen.dart';
@@ -47,23 +46,9 @@ class RetryDirectory implements AgentDirectoryTransport {
   }
 }
 
-class MemoryConnectionStore implements AgentConnectionStore {
-  String? value;
-  @override
-  Future<String?> read() async => value;
-  @override
-  Future<void> write(String value) async {
-    this.value = value;
-  }
-
-  @override
-  Future<void> clear() async {
-    value = null;
-  }
-}
-
 class RecoveringTransport implements AgentTransport {
   int turns = 0;
+  int closedSessions = 0;
   final Completer<AgentTurnResult>? pending;
   RecoveringTransport({this.pending});
   @override
@@ -75,6 +60,7 @@ class RecoveringTransport implements AgentTransport {
     required String text,
     void Function(String delta)? onTextDelta,
     Future<void> Function(Uint8List pcmChunk)? onAudioPcmChunk,
+    String? requestId,
   }) async {
     turns++;
     if (pending != null) return pending!.future;
@@ -94,6 +80,7 @@ class RecoveringTransport implements AgentTransport {
     required String mimeType,
     required String caption,
     void Function(int sent, int total)? onUploadProgress,
+    String? requestId,
   }) async {
     onUploadProgress?.call(bytes.length, bytes.length);
     return const AgentTurnResult(text: 'Media reply');
@@ -104,6 +91,7 @@ class RecoveringTransport implements AgentTransport {
     required List<AgentMediaInput> media,
     required String caption,
     void Function(int sent, int total)? onUploadProgress,
+    String? requestId,
   }) async {
     final total = media.fold<int>(0, (sum, item) => sum + item.bytes.length);
     onUploadProgress?.call(total, total);
@@ -114,7 +102,52 @@ class RecoveringTransport implements AgentTransport {
   void cancelTurn(String characterId) {}
 
   @override
-  Future<void> closeSession(AgentSessionBinding binding) async {}
+  Future<void> closeSession(AgentSessionBinding binding) async {
+    closedSessions++;
+  }
+}
+
+class GatewayContractAdapter implements HttpClientAdapter {
+  final requests = <RequestOptions>[];
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? stream,
+    Future<void>? cancelFuture,
+  ) async {
+    requests.add(options);
+    final path = options.uri.path;
+    final Map<String, dynamic> body = switch (path) {
+      '/creator/skills' => {'skills': <Object>[]},
+      '/creator/economy' || '/creator/float' => {
+          'hasClone': false,
+          'characterId': null,
+          'customerCredits': 0,
+          'agentFloatCredits': 0,
+          'pendingEarningsCredits': 0,
+          'availableEarningsCredits': 0,
+        },
+      '/creator/clone' => {
+          'created': true,
+          'characterId': 'character-clone',
+          'characterVersionId': 'version-clone',
+          'relationshipId': 'relationship-clone',
+          'displayName': 'Clone',
+        },
+      _ => <String, dynamic>{},
+    };
+    return ResponseBody.fromString(
+      jsonEncode(body),
+      200,
+      headers: {
+        Headers.contentTypeHeader: ['application/json'],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
 }
 
 class RecordingAdapter implements HttpClientAdapter {
@@ -128,6 +161,56 @@ class RecordingAdapter implements HttpClientAdapter {
     request = options;
     return ResponseBody.fromString(
       jsonEncode({'reply': 'hello', 'agentRunId': 'run-1'}),
+      200,
+      headers: {
+        Headers.contentTypeHeader: ['application/json'],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
+class RotatingAuthAdapter implements HttpClientAdapter {
+  final authorizations = <String?>[];
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? stream,
+    Future<void>? cancelFuture,
+  ) async {
+    final authorization = options.headers['Authorization'] as String?;
+    authorizations.add(authorization);
+    if (authorization == 'Bearer expired-token') {
+      return ResponseBody.fromString(
+        jsonEncode({'code': 'UNAUTHORIZED', 'message': 'expired'}),
+        401,
+        headers: {
+          Headers.contentTypeHeader: ['application/json'],
+        },
+      );
+    }
+    return ResponseBody.fromString(
+      jsonEncode({
+        'agents': [
+          {
+            'characterId': 'character-1',
+            'characterVersionId': 'version-1',
+            'displayName': 'Amina',
+            'roleLabel': 'Assistant',
+            'about': '',
+            'greeting': null,
+            'presence': 'available',
+            'activeWorkCount': 0,
+            'supportAgent': true,
+            'defaultPlatformAgent': true,
+            'voiceProvider': 'gemini',
+            'voiceName': 'Bodi',
+          },
+        ],
+      }),
       200,
       headers: {
         Headers.contentTypeHeader: ['application/json'],
@@ -199,74 +282,6 @@ void main() {
       'This agent isn’t available right now.',
     );
   });
-
-  test(
-    'Gateway settings reject credentials, paths, query strings and remote HTTP',
-    () {
-      for (final url in [
-        'http://example.test',
-        'https://user:pass@example.test',
-        'https://example.test/api',
-        'https://example.test?token=secret',
-        'https://example.test#token',
-      ]) {
-        expect(() => normalizeAgentGatewayUrl(url), throwsFormatException);
-      }
-      expect(
-        normalizeAgentGatewayUrl(' https://example.test/ '),
-        'https://example.test',
-      );
-      expect(
-        normalizeAgentGatewayUrl('http://127.0.0.1:3000'),
-        'http://127.0.0.1:3000',
-      );
-    },
-  );
-
-  test(
-    'failed connection verification preserves existing secure settings',
-    () async {
-      final store = MemoryConnectionStore();
-      final c = ProviderContainer(
-        overrides: [agentConnectionStoreProvider.overrideWithValue(store)],
-      );
-      addTearDown(c.dispose);
-      final controller = c.read(agentConnectionProvider.notifier);
-      await Future<void>.delayed(Duration.zero);
-      await controller.connect(
-        baseUrl: 'https://one.test',
-        token: 'private-token',
-        verify: (_, __) async => [agent],
-      );
-      final saved = store.value;
-      await expectLater(
-        controller.connect(
-          baseUrl: 'https://two.test',
-          token: 'wrong',
-          verify: (_, __) async =>
-              throw const ApiException('hidden', statusCode: 401),
-        ),
-        throwsA(isA<ApiException>()),
-      );
-      expect(c.read(agentConnectionProvider).baseUrl, 'https://one.test');
-      expect(store.value, saved);
-      expect(
-        c.read(agentConnectionProvider).toString(),
-        isNot(contains('private-token')),
-      );
-      final restored = ProviderContainer(
-        overrides: [agentConnectionStoreProvider.overrideWithValue(store)],
-      );
-      addTearDown(restored.dispose);
-      restored.read(agentConnectionProvider);
-      await Future<void>.delayed(Duration.zero);
-      expect(
-        restored.read(agentConnectionProvider).baseUrl,
-        'https://one.test',
-      );
-      expect(restored.read(agentConnectionProvider).token, 'private-token');
-    },
-  );
 
   test(
     'directory keeps roster on transient failure and clears it on 401',
@@ -366,8 +381,110 @@ void main() {
     expect(c.read(aiChatProvider).sendingIn, isEmpty);
   });
 
+  test('clear all closes canonical CharacterSessions before dropping local state', () async {
+    final transport = RecoveringTransport();
+    final c = ProviderContainer(
+      overrides: [agentTransportProvider.overrideWithValue(transport)],
+    );
+    addTearDown(c.dispose);
+    final controller = c.read(aiChatProvider.notifier);
+    await Future<void>.delayed(Duration.zero);
+    await controller.sendText('character-1', 'hello');
+    expect(c.read(aiChatProvider).threads, isNotEmpty);
+
+    await controller.clearAll();
+
+    expect(transport.closedSessions, 1);
+    expect(c.read(aiChatProvider).threads, isEmpty);
+  });
+
+  test('hosted Gateway is the default local connection address', () {
+    expect(
+      kAgentBaseUrl,
+      'https://nurainworker-production.up.railway.app',
+    );
+  });
+
+  test('Agent transport refreshes an expired production session and retries once',
+      () async {
+    final adapter = RotatingAuthAdapter();
+    final dio = Dio();
+    dio.httpClientAdapter = adapter;
+    var token = 'expired-token';
+    var refreshes = 0;
+    final transport = MasanawaAgentDirectoryTransport(
+      dio: dio,
+      baseUrl: 'https://gateway.test',
+      readAccessToken: () => token,
+      refreshAccessToken: () async {
+        refreshes += 1;
+        token = 'fresh-token';
+        return token;
+      },
+    );
+
+    final agents = await transport.loadDirectory();
+
+    expect(refreshes, 1);
+    expect(agents.single.displayName, 'Amina');
+    expect(adapter.authorizations, [
+      'Bearer expired-token',
+      'Bearer fresh-token',
+    ]);
+  });
+
+  test('creator transports use the canonical Gateway route namespace', () async {
+    final adapter = GatewayContractAdapter();
+    final dio = Dio();
+    dio.httpClientAdapter = adapter;
+
+    final skills = MasanawaCreatorSkillTransport(
+      dio: dio,
+      baseUrl: 'https://gateway.test',
+      readAccessToken: () => 'private-token',
+    );
+    await skills.load();
+    await skills.setEnabled('skill-version-1', true);
+
+    final economy = MasanawaCreatorEconomyTransport(
+      dio: dio,
+      baseUrl: 'https://gateway.test',
+      readAccessToken: () => 'private-token',
+    );
+    await economy.load();
+    await economy.allocateFloat(10);
+
+    final clone = MasanawaCreatorCloneTransport(
+      dio: dio,
+      baseUrl: 'https://gateway.test',
+      readAccessToken: () => 'private-token',
+    );
+    await clone.create(
+      displayName: 'Clone',
+      biography: 'Helpful assistant',
+      languages: const ['English'],
+      personality: const ['Calm'],
+      expertise: const ['General'],
+    );
+
+    expect(
+      adapter.requests.map((request) => request.uri.path).toList(),
+      [
+        '/creator/skills',
+        '/creator/skills',
+        '/creator/economy',
+        '/creator/float',
+        '/creator/clone',
+      ],
+    );
+    for (final request in adapter.requests) {
+      expect(request.headers['Authorization'], 'Bearer private-token');
+      expect(request.uri.path, isNot(startsWith('/v1/creator/')));
+    }
+  });
+
   test(
-    'chat transport keeps Alpha authorization and waits for server deadline',
+    'chat transport keeps production authorization and waits for server deadline',
     () async {
       final adapter = RecordingAdapter();
       final dio = Dio(BaseOptions(receiveTimeout: const Duration(seconds: 15)));
@@ -386,7 +503,7 @@ void main() {
       );
       expect(
         adapter.request!.path,
-        'https://gateway.test/v1/agent/sessions/session-1/turn',
+        'https://gateway.test/agent/sessions/session-1/turn',
       );
       expect(adapter.request!.headers['Authorization'], 'Bearer private-token');
       expect(adapter.request!.receiveTimeout, const Duration(seconds: 75));

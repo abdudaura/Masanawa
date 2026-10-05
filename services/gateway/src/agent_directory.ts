@@ -2,6 +2,7 @@ import type {
   AgentPresentationRepository,
   PlatformAgentProfileRepository,
   UserAgentPreferenceRepository,
+  MobileAgentActivityRepository,
 } from "@masanawa/agents";
 import type { CharacterId, TenantId, UserId } from "@masanawa/contracts";
 import { parseCanonicalId } from "@masanawa/contracts";
@@ -26,8 +27,8 @@ export interface MobileAgentDirectoryEntry {
   readonly roleLabel: string;
   readonly about: string;
   readonly greeting: string | null;
-  readonly presence: "available";
-  readonly activeWorkCount: 0;
+  readonly presence: "available" | "listening" | "working" | "on_call" | "offline";
+  readonly activeWorkCount: number;
   readonly supportAgent: boolean;
   readonly defaultPlatformAgent: boolean;
   readonly voiceProvider: string | null;
@@ -59,6 +60,7 @@ export function createAgentDirectoryService(input: {
   readonly authorizer: AgentDirectoryAuthorizer;
   readonly platformProfiles?: PlatformAgentProfileRepository;
   readonly userPreferences?: UserAgentPreferenceRepository;
+  readonly activity?: MobileAgentActivityRepository;
 }): AgentDirectoryService {
   return Object.freeze<AgentDirectoryService>({
     async list(
@@ -98,11 +100,23 @@ export function createAgentDirectoryService(input: {
       const profileByCharacter = new Map(
         profiles.map(({ characterId, profile }) => [characterId, profile]),
       );
+      const activity = input.activity
+        ? await input.activity.list({
+            tenantId: authority.tenantId,
+            userId: authority.userId,
+            characterIds: visible.map((item) => item.characterId),
+          })
+        : [];
+      const activityByCharacter = new Map(
+        activity.map((item) => [item.characterId, item] as const),
+      );
 
       return Object.freeze(
         visible.map((presentation) => {
           const profile =
             profileByCharacter.get(presentation.characterId) ?? null;
+          const currentActivity =
+            activityByCharacter.get(presentation.characterId) ?? null;
           const defaultPlatformAgent =
             profile?.supportAgent === true &&
             (preference
@@ -117,8 +131,8 @@ export function createAgentDirectoryService(input: {
             roleLabel: presentation.roleLabel,
             about: presentation.about,
             greeting: presentation.greeting,
-            presence: "available" as const,
-            activeWorkCount: 0 as const,
+            presence: currentActivity?.presence ?? ("available" as const),
+            activeWorkCount: currentActivity?.activeWorkCount ?? 0,
             supportAgent: profile?.supportAgent ?? false,
             defaultPlatformAgent,
             voiceProvider: profile?.voiceProvider ?? null,
