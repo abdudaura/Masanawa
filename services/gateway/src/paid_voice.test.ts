@@ -1,3 +1,4 @@
+import { createCanonicalId } from "@masanawa/contracts";
 import { describe, expect, it } from "vitest";
 import {
   createPaidVoiceService,
@@ -6,9 +7,9 @@ import {
   type PaidVoicePricingPort,
 } from "./paid_voice.js";
 
-const tenantId = "tenant_00000000-0000-4000-8000-000000000001" as never;
-const userId = "user_00000000-0000-4000-8000-000000000002" as never;
-const characterId = "character_00000000-0000-4000-8000-000000000003" as never;
+const tenantId = createCanonicalId("tenant");
+const userId = createCanonicalId("user");
+const characterId = createCanonicalId("character");
 
 function service(overrides?: {
   pricing?: PaidVoicePricingPort;
@@ -79,7 +80,7 @@ describe("paid twin voice service", () => {
   });
 
   it("fails closed when a pricing adapter crosses twin scope", async () => {
-    const wrong = "character_00000000-0000-4000-8000-000000000099" as never;
+    const wrong = createCanonicalId("character");
     await expect(
       service({
         pricing: {
