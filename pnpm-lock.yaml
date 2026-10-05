@@ -197,6 +197,8 @@ importers:
         specifier: 5.0.3
         version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
 
+  adapters/crypto/nowpayments: {}
+
   adapters/storage/postgres:
     dependencies:
       '@masanawa/agents':
@@ -479,6 +481,9 @@ importers:
       '@masanawa/node-runtime':
         specifier: workspace:*
         version: link:../../infra/runtime/node
+      '@masanawa/nowpayments':
+        specifier: workspace:*
+        version: link:../../adapters/crypto/nowpayments
       '@masanawa/postgres':
         specifier: workspace:*
         version: link:../../adapters/storage/postgres
