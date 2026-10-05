@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { PersonalCloneProvisioningRepository } from "@masanawa/identity";
-import type { CreatorAuthorizer } from "./creator_clone.js";
 import {
   createTwinActivityService,
+  type TwinActivityAuthorizer,
   type TwinActivitySource,
 } from "./twin_activity.js";
 
@@ -11,7 +11,7 @@ const userId = "user_00000000-0000-4000-8000-000000000002" as never;
 const characterId = "character_00000000-0000-4000-8000-000000000003" as never;
 
 function dependencies(records: Awaited<ReturnType<TwinActivitySource["listForTwin"]>>) {
-  const authorizer: CreatorAuthorizer = {
+  const authorizer: TwinActivityAuthorizer = {
     async authorize(input) {
       expect(input.capability).toBe("creator.activity.read");
       return { tenantId, userId };
