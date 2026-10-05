@@ -214,6 +214,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ]),
           const SizedBox(height: 16),
+          _Card(children: [
+            ListTile(
+              leading: Icon(Icons.receipt_long_outlined, color: u.brand),
+              title: const Text('Bills & payments'),
+              subtitle: const Text(
+                'Airtime, data, electricity, TV and other qualified services',
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/billing'),
+            ),
+          ]),
+          const SizedBox(height: 16),
           economy.when(
             data: (snapshot) {
               if (snapshot == null) return const SizedBox.shrink();
