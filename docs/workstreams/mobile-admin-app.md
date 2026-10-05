@@ -23,7 +23,8 @@ Implemented:
 - responsive desktop-style NavigationRail on wide screens and NavigationDrawer on phones;
 - explicit Ops endpoint requirement; no accidental customer-Gateway default;
 - canonical PlatformSession admin login via Gateway email/phone OTP, secure access/refresh storage, startup/automatic refresh and logout revocation; Ops requires separate tenant-scoped per-capability grants by User ID or verified email/phone; legacy bootstrap token is fallback only;
-- conversational admin delegation foundation: Gwani/other explicitly delegated Characters can appear in the admin app and open real Gateway CharacterSessions, while Ops owns the delegation envelope and write-approval requirement;
+- conversational admin delegation foundation: Gwani/other explicitly delegated Characters can appear in the admin app and open real Gateway CharacterSessions, while Ops owns the Character/tenant/capability/risk envelope;
+- canonical admin-action broker: bounded delegated reads execute through existing PlatformAdminService contracts; write actions return `approval-required` and cannot execute yet; operator authority is intersected with Gwani delegation before either outcome;
 - Jev architecture corrected: Jev is a TypeSafe System One decision model, not a Character. It belongs between Gwani's proposed admin actions and deterministic policy/execution as a typed probabilistic routing/verification/escalation layer; it never receives authority or bypasses capability/approval checks;
 - platform Overview/readiness;
 - Users/Identity list, bounded lifecycle filters, identity/relationship counts, and privacy-safe canonical relationship drill-downs; lifecycle state mutation is intentionally read-only because current Identity exposes no canonical state-transition command;
