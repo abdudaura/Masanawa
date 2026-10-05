@@ -30,4 +30,16 @@ Acceptance:
 - Wallet keeps Bills and Crypto as capabilities;
 - Settings remains accessible from My Twin.
 
-Status: active.
+Implemented:
+- My Twin, Explore, Activity and Wallet providers now use the authenticated production ApiClient transports;
+- signed-in /home is the four-tab Twin shell;
+- legacy /chats, /agents and /masana entry points converge on /home;
+- direct /chat/:id, /billing, /crypto, /settings and /clone routes remain available;
+- Wallet exposes Bills/Crypto and Send Credits without resurfacing Agent Float;
+- focused widget coverage asserts the four-tab product model and absence of legacy runtime labels.
+
+Verification pending:
+- full Flutter compile/test on the external Android builder;
+- backend Twin routes still require production Gateway composition before the screens return live data.
+
+Status: implementation checkpoint complete pending integration.
