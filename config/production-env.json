@@ -79,6 +79,27 @@
       "description": "Deployment-host compatibility bind address."
     },
     {
+      "name": "MASANAWA_ADMIN_EMAILS",
+      "owner": "gateway/security",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Configured administrator email principals for production capability checks."
+    },
+    {
+      "name": "MASANAWA_ADMIN_PRINCIPALS",
+      "owner": "gateway/security",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Configured administrator principals for production capability checks."
+    },
+    {
+      "name": "MASANAWA_ADMIN_USER_IDS",
+      "owner": "gateway/security",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Configured administrator user identities for production capability checks."
+    },
+    {
       "name": "MASANAWA_ALPHA_DEV_TOKEN",
       "owner": "security/bootstrap",
       "classification": "secret",
@@ -354,6 +375,27 @@
       "description": "Ops listen port override."
     },
     {
+      "name": "MASANAWA_OWNER_ACCESS_ACCEPT_WITHIN_MINUTES",
+      "owner": "gateway/twin-economy",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Owner-access request acceptance deadline policy in minutes."
+    },
+    {
+      "name": "MASANAWA_OWNER_ACCESS_PLATFORM_FEE_BPS",
+      "owner": "gateway/twin-economy",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Owner-access platform fee policy in basis points."
+    },
+    {
+      "name": "MASANAWA_OWNER_ACCESS_START_GRACE_MINUTES",
+      "owner": "gateway/twin-economy",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Owner-access scheduled-session start grace policy in minutes."
+    },
+    {
       "name": "MASANAWA_PLATFORM_POLICY_REVISION",
       "owner": "gateway",
       "classification": "public",
@@ -389,6 +431,34 @@
         "test"
       ],
       "description": "Test-only PostgreSQL connection used by integration acceptance."
+    },
+    {
+      "name": "MASANAWA_TWIN_PUBLIC_BASE_URL",
+      "owner": "gateway/twin",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Public HTTPS base URL used to construct shareable Twin links."
+    },
+    {
+      "name": "MASANAWA_TWIN_VOICE_OWNER_SHARE_BPS",
+      "owner": "gateway/twin-economy",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Twin paid-voice owner revenue share in basis points."
+    },
+    {
+      "name": "MASANAWA_TWIN_VOICE_PRICE_CREDITS_PER_UNIT",
+      "owner": "gateway/twin-economy",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Twin paid-voice price in Credits per metering unit."
+    },
+    {
+      "name": "MASANAWA_TWIN_VOICE_UNIT_SECONDS",
+      "owner": "gateway/twin-economy",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Twin paid-voice metering unit duration in seconds."
     },
     {
       "name": "MASANAWA_WORKER_HOST",
