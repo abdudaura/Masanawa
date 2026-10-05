@@ -345,6 +345,56 @@ describe("BillingCommerceOrchestrator", () => {
     });
   });
 
+  it("recovers manual review when a later read-only status check returns exact evidence", async () => {
+    let dispatches = 0;
+    let checks = 0;
+    const store = new MemoryStore();
+    const orchestrator = new BillingCommerceOrchestrator({
+      store,
+      provider: provider({
+        async createPayment(input) {
+          dispatches += 1;
+          return {
+            reference: input.reference,
+            providerReference: "BP-BAD-FIRST",
+            status: "successful",
+            amount: "1.00",
+            currency: "NGN",
+            customerId: input.customerId,
+            product: input.itemCode,
+            productName: "Electricity",
+            extra: null,
+          };
+        },
+        async getStatus(reference) {
+          checks += 1;
+          return {
+            reference,
+            providerReference: "BP-CORRECTED",
+            status: "successful",
+            amount: purchase.amount,
+            currency: "NGN",
+            customerId: purchase.customerId,
+            product: purchase.itemCode,
+            productName: "Electricity",
+            extra: null,
+          };
+        },
+      }),
+    });
+    await orchestrator.prepare(purchase);
+    await expect(orchestrator.dispatch(purchase.fulfillmentReference))
+      .resolves.toMatchObject({ state: "manual_review" });
+
+    await expect(orchestrator.reconcile(purchase.fulfillmentReference))
+      .resolves.toMatchObject({
+        state: "succeeded",
+        providerReference: "BP-CORRECTED",
+      });
+    expect(dispatches).toBe(1);
+    expect(checks).toBe(1);
+  });
+
   it("does not treat a provider 404 during reconciliation as permission to redispatch", async () => {
     let dispatches = 0;
     const store = new MemoryStore();
