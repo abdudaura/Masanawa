@@ -117,7 +117,6 @@ function presentationRevision(quote: BillingQuote): number {
 function documentFor(quote: BillingQuote, actionSecret: string, requireEmail = false): unknown {
   const phase = quotePhase(quote);
   const documentId = `billing:${quote.quoteId}`;
-  const expiry = quote.expiresAt;
   const base = [
     { type: "heading", text: quote.itemName },
     { type: "detail", text: "Recipient", value: quote.customerId },
