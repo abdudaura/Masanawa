@@ -30,6 +30,8 @@ final agentDirectoryTransportProvider = Provider<AgentDirectoryTransport>((ref) 
     dio: ref.watch(dioProvider),
     baseUrl: kAgentBaseUrl,
     readAccessToken: () => ref.read(apiClientProvider).accessToken,
+    refreshAccessToken: () =>
+        ref.read(apiClientProvider).refreshAuthorization(),
   );
 });
 
@@ -38,6 +40,8 @@ final agentTransportProvider = Provider<AgentTransport>((ref) {
     dio: ref.watch(dioProvider),
     baseUrl: kAgentBaseUrl,
     readAccessToken: () => ref.read(apiClientProvider).accessToken,
+    refreshAccessToken: () =>
+        ref.read(apiClientProvider).refreshAuthorization(),
   );
 });
 
@@ -46,6 +50,8 @@ final creatorCloneTransportProvider = Provider<CreatorCloneTransport>((ref) {
     dio: ref.watch(dioProvider),
     baseUrl: kAgentBaseUrl,
     readAccessToken: () => ref.read(apiClientProvider).accessToken,
+    refreshAccessToken: () =>
+        ref.read(apiClientProvider).refreshAuthorization(),
   );
 });
 
@@ -54,6 +60,8 @@ final creatorEconomyTransportProvider = Provider<CreatorEconomyTransport>((ref) 
     dio: ref.watch(dioProvider),
     baseUrl: kAgentBaseUrl,
     readAccessToken: () => ref.read(apiClientProvider).accessToken,
+    refreshAccessToken: () =>
+        ref.read(apiClientProvider).refreshAuthorization(),
   );
 });
 
@@ -62,5 +70,7 @@ final creatorSkillTransportProvider = Provider<CreatorSkillTransport>((ref) {
     dio: ref.watch(dioProvider),
     baseUrl: kAgentBaseUrl,
     readAccessToken: () => ref.read(apiClientProvider).accessToken,
+    refreshAccessToken: () =>
+        ref.read(apiClientProvider).refreshAuthorization(),
   );
 });
