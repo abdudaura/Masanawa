@@ -32,3 +32,17 @@ Handoff: docs/CHANNEL-WEBHOOK-INGRESS.md records exact adoption steps and limita
 Implementation commit: 157a45f54048d2be7b234df285db8912acd4a075. Source publication preserved the exact base-main tree plus the initial claim and only these 13 owned files. PR #92 remains draft for Gateway/lockfile integration and live channel evidence.
 
 Publication verified: handoff commit 9def03b0a63916efb9f9a0c29064605a83c60b5a compares ahead of main with zero behind and exactly 13 owned paths. Foundation CI run 863 failed before checkout with zero steps and runner_id=0; no code was tested by that run. This is not a passing CI gate. Local adapter checks above remain the verification evidence.
+
+
+## Reconciliation checkpoint — 2026-10-05
+
+The branch was merged forward onto current `main`
+`b8d415f09424ddf3e1a90a578f54c5792668bc3b` via
+`5b27d53614c6fbbd5287288d5e9d91e8161098ed`.
+The 182 mainline commits since the original base had no overlap with this workstream's
+owned adapter/docs paths. After reconciliation the branch is zero commits behind
+`main` and remains mergeable.
+
+Foundation CI run `37384359289` again terminated before checkout; its only job has
+`steps: []` and `runner_id: 0`. No test result is inferred from that infrastructure
+failure.
