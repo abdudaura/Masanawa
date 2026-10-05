@@ -128,7 +128,7 @@ function mapEvent(event: TwinEconomyWalletEvent): WalletHistoryRecord {
 export function createTwinEconomyWalletHistorySource(input: {
   readonly events: TwinEconomyWalletEventReader;
 }): WalletHistorySubsource {
-  return Object.freeze({
+  return Object.freeze<WalletHistorySubsource>({
     async list(request) {
       const events = await input.events.listForOwner({
         tenantId: request.tenantId,
