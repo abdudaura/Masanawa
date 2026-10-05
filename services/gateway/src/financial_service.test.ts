@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { createHmac } from "node:crypto";
 import { createCanonicalId, toInstant } from "@masanawa/contracts";
-import type { CryptoIntent, CryptoRepository } from "@masanawa/commerce";
+import type { CryptoIntent, CryptoProviderPaymentEvent, CryptoRepository } from "@masanawa/commerce";
 import { canonicalizeIpnPayload, NowPaymentsClient, NowPaymentsCustodyClient, NowPaymentsPayoutClient, type NowPaymentsAccountEvidence } from "@masanawa/nowpayments";
 import { createFinancialService, createFixedFinancialAuthorizer } from "./financial_service.js";
 
