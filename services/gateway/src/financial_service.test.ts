@@ -114,6 +114,7 @@ function setup(
         price_amount: 1500,
         price_currency: "ngn",
         pay_currency: "ngn",
+        payout_currency: "usdttrc20",
         invoice_url: "https://nowpayments.io/payment/?iid=invoice-1",
       }), { status: 201 });
     }
@@ -387,6 +388,7 @@ describe("financial service recovery and admission", () => {
       price_amount: 1500,
       price_currency: "ngn",
       pay_currency: "ngn",
+      payout_currency: "usdttrc20",
       order_id: tenantId+"."+requestId,
     });
   });
