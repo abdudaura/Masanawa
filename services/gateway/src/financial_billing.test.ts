@@ -199,6 +199,95 @@ describe("BillingFinancialService catalog authority", () => {
       reference: "billing-request-123",
     });
   });
+  it("reconciles a trusted owner-scoped uncertain purchase and settles exact funding", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const userId = createCanonicalId("user");
+    const reference = "billing-request-reconcile";
+    const store = new MemoryStore();
+    await store.createIfAbsent({
+      fulfillmentReference: reference,
+      billerCode: "BIL119",
+      itemCode: "AIRTIME",
+      itemName: "Airtel Airtime",
+      customerId: "07010102053",
+      customerName: null,
+      amount: "100",
+      currency: "NGN",
+      revision: 2,
+      state: "checking",
+      providerReference: null,
+      providerStatus: "outcome_unknown",
+      lastEvidenceAt: "2026-10-04T20:00:00.000Z",
+    });
+    const settled: unknown[] = [];
+    const transport: FlutterwaveBillsTransport = {
+      async request(request) {
+        if (
+          request.method === "GET" &&
+          request.path === `/v3/bills/${reference}`
+        ) {
+          return {
+            status: 200,
+            body: {
+              status: "success",
+              data: {
+                customer_reference: reference,
+                flw_ref: "BP-RECOVERED-1",
+                status: "successful",
+                amount: "100",
+                currency: "NGN",
+                customer_id: "07010102053",
+                product: "AIRTIME",
+                product_name: "Airtel Airtime",
+              },
+            },
+          };
+        }
+        throw new Error(`unexpected request: ${request.method} ${request.path}`);
+      },
+    };
+    const service = createBillingFinancialService({
+      billingStore: () => store,
+      webhookRepository: { async admitProviderWebhook() { return { duplicate: false }; } },
+      authorizer: {
+        async authorize() {
+          throw new Error("public authorizer must not be used for trusted internal reconciliation");
+        },
+      },
+      flutterwaveSecretKey: "test-secret",
+      flutterwaveWebhookHash: "test-hash",
+      flutterwaveWebhookUrl: "https://example.com/webhooks/flutterwave",
+      providerClient: new FlutterwaveBillsClient({
+        secretKey: "test-secret",
+        transport,
+        country: "NG",
+      }),
+      billingFunding: {
+        async reserveConfirmedBill() {},
+        async settleBill(input) { settled.push(input); },
+      },
+    });
+
+    const result = await service.reconcileOwnedPurchase({
+      tenantId,
+      userId,
+      reference,
+    });
+
+    expect(result).toMatchObject({
+      state: "succeeded",
+      providerReference: "BP-RECOVERED-1",
+      providerStatus: "successful",
+    });
+    expect(settled).toEqual([{
+      tenantId,
+      userId,
+      fulfillmentReference: reference,
+      state: "succeeded",
+      providerReference: "BP-RECOVERED-1",
+    }]);
+  });
+
   it("never calls a provider without canonical verified funding and a confirmed quote", async () => {
     let calls = 0;
     const identity = {tenantId: createCanonicalId("tenant"), userId: createCanonicalId("user")};
