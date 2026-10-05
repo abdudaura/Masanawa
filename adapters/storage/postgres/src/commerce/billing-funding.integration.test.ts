@@ -166,6 +166,82 @@ describeDatabase("billing NGN funding PostgreSQL acceptance", () => {
     });
   });
 
+  it("allows an already-paid hosted checkout to reserve after the short quote TTL", async () => {
+    const repository = createPostgresBillingQuoteRepository(pool);
+    const tenantId = createCanonicalId("tenant");
+    const userId = createCanonicalId("user");
+    const quote = createBillingQuote({
+      tenantId,
+      userId,
+      categoryCode: "AIRTIME",
+      billerCode: "BIL102",
+      itemCode: "AT102",
+      itemName: "MTN Airtime",
+      customerId: "+2348012345678",
+      serviceAmountKobo: 10_000,
+      feeAmountKobo: 0,
+      createdAt: "2026-10-04T20:00:00.000Z",
+      expiresAt: "2026-10-04T20:01:00.000Z",
+    });
+    await repository.createQuote(quote);
+    await repository.confirmQuote({
+      tenantId,
+      userId,
+      quoteId: quote.quoteId,
+      quoteRevision: quote.revision,
+      confirmedAt: "2026-10-04T20:00:20.000Z",
+    });
+    await repository.bindCheckout({
+      tenantId,
+      userId,
+      quoteId: quote.quoteId,
+      quoteRevision: quote.revision,
+      txRef: `bill-${quote.quoteId}-r1`,
+      checkoutUrl: "https://checkout.flutterwave.com/v3/hosted/pay/test",
+      boundAt: "2026-10-04T20:00:30.000Z",
+    });
+
+    // Payment evidence can arrive after the short quote TTL because checkout
+    // was already created while terms were live.
+    await repository.recordVerifiedPayment({
+      tenantId,
+      userId,
+      quoteId: quote.quoteId,
+      quoteRevision: quote.revision,
+      txRef: `bill-${quote.quoteId}-r1`,
+      providerTransactionId: `99${quote.quoteId.replace(/\D/gu, "").slice(-8) || "12345678"}`,
+      providerReference: `FLW-LATE-${quote.quoteId}`,
+      amountKobo: quote.totalAmountKobo,
+      currency: "NGN",
+      verifiedAt: "2026-10-04T20:02:00.000Z",
+    });
+
+    const fulfillmentReference = `bill-${quote.quoteId}`;
+    await expect(repository.reserveConfirmedBill({
+      tenantId,
+      userId,
+      quoteId: quote.quoteId,
+      quoteRevision: quote.revision,
+      fulfillmentReference,
+      categoryCode: quote.categoryCode,
+      billerCode: quote.billerCode,
+      itemCode: quote.itemCode,
+      customerId: quote.customerId,
+      amount: formatNgnKobo(quote.serviceAmountKobo),
+      currency: "NGN",
+    })).resolves.toBeUndefined();
+
+    await expect(repository.readQuote({
+      tenantId,
+      userId,
+      quoteId: quote.quoteId,
+    })).resolves.toMatchObject({
+      state: "reserved",
+      fulfillmentReference,
+      paymentVerifiedAt: "2026-10-04T20:02:00.000Z",
+    });
+  });
+
   it("moves verified unreserved funds into refund custody idempotently", async () => {
     const f = await funded();
     const first = await f.repository.requestFundedRefund({
