@@ -1579,7 +1579,7 @@ export function createTwinProductionRuntime(input: {
         tenantId: request.tenantId,
         characterId: request.characterId,
       });
-      if (!owner) return;
+      if (!owner || owner === request.userId) return;
       if (!request.admissionId) throw new Error("Paid Twin voice admission is required");
       const admission = await input.economy.readVoiceAdmission({
         tenantId: request.tenantId,
@@ -1606,7 +1606,7 @@ export function createTwinProductionRuntime(input: {
         tenantId: request.tenantId,
         characterId: request.characterId,
       });
-      if (!owner) return;
+      if (!owner || owner === request.userId) return;
       if (!request.admissionId) throw new Error("Paid Twin voice admission is required");
       await input.economy.markVoiceStarted({
         tenantId: request.tenantId,
