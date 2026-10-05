@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/network/api_client.dart';
 import '../../state/session_state.dart';
 import '../../tokens/masanawa_tokens.dart';
 import '../../ui/components/onboarding_scaffold.dart';
@@ -50,6 +51,10 @@ class _NameScreenState extends ConsumerState<NameScreen> {
     setState(() => _saving = true);
     try {
       await ref.read(sessionProvider.notifier).updateProfile(name: name);
+    } on ApiException catch (error) {
+      if (mounted) _snack(error.message);
+    } catch (_) {
+      if (mounted) _snack('Could not save your profile. Please try again.');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
