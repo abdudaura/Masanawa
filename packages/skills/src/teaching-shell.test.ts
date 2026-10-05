@@ -3,10 +3,17 @@ import {
   createCanonicalId,
   toInstant,
 } from "@masanawa/contracts";
-import type { TeachingRuntimeProjection } from "./teaching-runtime.js";
+import {
+  createTeachingMultiSelectStage,
+  createTeachingRuntimeBinding,
+  createTeachingSelectionActionBinding,
+  type TeachingRuntimeProjection,
+} from "./teaching-runtime.js";
 import {
   projectTeachingToShellDocument,
   resolveTeachingShellAction,
+  projectTeachingMultiSelectToShellDocument,
+  applyTeachingMultiSelectShellAction,
 } from "./teaching-shell.js";
 
 function scope() {
@@ -354,5 +361,245 @@ describe("Teaching ShellDocument parser-compatible bounds", () => {
         revision: 0,
       }),
     ).toThrow(/exceeds text budget/);
+  });
+});
+
+
+describe("Teaching staged multi-select Shell protocol", () => {
+  function fixture() {
+    const ids = scope();
+    const runtimeBinding = createTeachingRuntimeBinding({
+      ...ids,
+      skillKey: "core.teaching",
+      guideContentHash: `sha256:${"a".repeat(64)}`,
+    });
+    const action = createTeachingSelectionActionBinding({
+      binding: runtimeBinding,
+      actionKey: "teach.action.fractions.multi-stage",
+      requestId: createCanonicalId("request"),
+      rubric: {
+        ...ids,
+        lessonStepKey: "fractions",
+        exerciseKey: "choose-equivalent",
+        kind: "multi-select",
+        allowedOptionKeys: ["two-fourths", "three-sixths", "two-thirds"],
+        correctOptionKeys: ["two-fourths", "three-sixths"],
+        correctFeedback: "Correct.",
+        retryFeedback: "Try again.",
+        alternativeExplanation: null,
+      },
+      expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
+    });
+    const projection: Extract<
+      TeachingRuntimeProjection,
+      { kind: "exercise" }
+    > = {
+      kind: "exercise",
+      ...ids,
+      actionKey: action.actionKey,
+      actionExpiresAt: action.expiresAt,
+      card: {
+        ...ids,
+        lessonStepKey: "fractions",
+        exerciseKey: "choose-equivalent",
+        prompt: "Choose all fractions equivalent to 1/2.",
+        kind: "multi-select",
+        options: [
+          { optionKey: "two-fourths", label: "2/4" },
+          { optionKey: "three-sixths", label: "3/6" },
+          { optionKey: "two-thirds", label: "2/3" },
+        ],
+      },
+    };
+    return {
+      ids,
+      runtimeBinding,
+      action,
+      projection,
+      stage: createTeachingMultiSelectStage({
+        binding: runtimeBinding,
+        action,
+      }),
+    };
+  }
+
+  it("projects toggle and commit buttons without exposing the hidden rubric", () => {
+    const f = fixture();
+    const document = projectTeachingMultiSelectToShellDocument({
+      runtimeBinding: f.runtimeBinding,
+      action: f.action,
+      stage: f.stage,
+      projection: f.projection,
+      options: {
+        documentId: "teaching.fractions.multi-stage",
+        revision: 0,
+      },
+    });
+
+    expect(document).toMatchObject({
+      revision: 0,
+      expiresAt: "2099-01-01T00:00:00.000Z",
+      nodes: [
+        { type: "heading", text: "Choose all that apply" },
+        { type: "text" },
+        {
+          type: "options",
+          children: [
+            {
+              id: "two-fourths",
+              action: "teaching.multiselect.toggle",
+              token: f.action.actionKey,
+            },
+            {
+              id: "three-sixths",
+              action: "teaching.multiselect.toggle",
+              token: f.action.actionKey,
+            },
+            {
+              id: "two-thirds",
+              action: "teaching.multiselect.toggle",
+              token: f.action.actionKey,
+            },
+          ],
+        },
+        { type: "notice" },
+        {
+          id: "commit",
+          action: "teaching.multiselect.commit",
+          token: f.action.actionKey,
+        },
+      ],
+    });
+    expect(JSON.stringify(document)).not.toContain("correctOptionKeys");
+    expect(JSON.stringify(document)).not.toContain("rubric");
+    expect(JSON.stringify(document)).not.toContain(f.ids.relationshipId);
+    expect(JSON.stringify(document)).not.toContain(f.ids.skillVersionId);
+  });
+
+  it("uses the server stage revision to reject stale UI actions and commits the staged set", () => {
+    const f = fixture();
+    const first = applyTeachingMultiSelectShellAction({
+      action: {
+        documentId: "teaching.fractions.multi-stage",
+        revision: 0,
+        nodeId: "two-fourths",
+        actionId: "teaching.multiselect.toggle",
+        token: f.action.actionKey,
+        values: {},
+      },
+      runtimeBinding: f.runtimeBinding,
+      actionBinding: f.action,
+      stage: f.stage,
+      now: toInstant("2026-10-05T20:00:00.000Z"),
+    });
+    expect(first).toMatchObject({
+      kind: "staged",
+      stage: { revision: 1, selectedOptionKeys: ["two-fourths"] },
+    });
+    if (first.kind !== "staged") throw new Error("expected staged result");
+
+    expect(() =>
+      applyTeachingMultiSelectShellAction({
+        action: {
+          documentId: "teaching.fractions.multi-stage",
+          revision: 0,
+          nodeId: "three-sixths",
+          actionId: "teaching.multiselect.toggle",
+          token: f.action.actionKey,
+          values: {},
+        },
+        runtimeBinding: f.runtimeBinding,
+        actionBinding: f.action,
+        stage: first.stage,
+        now: toInstant("2026-10-05T20:00:01.000Z"),
+      }),
+    ).toThrow(/stale document scope/);
+
+    const refreshed = projectTeachingMultiSelectToShellDocument({
+      runtimeBinding: f.runtimeBinding,
+      action: f.action,
+      stage: first.stage,
+      projection: f.projection,
+      options: {
+        documentId: "teaching.fractions.multi-stage",
+        revision: 1,
+      },
+    });
+    expect(JSON.stringify(refreshed)).toContain("✓ 2/4");
+
+    const second = applyTeachingMultiSelectShellAction({
+      action: {
+        documentId: "teaching.fractions.multi-stage",
+        revision: 1,
+        nodeId: "three-sixths",
+        actionId: "teaching.multiselect.toggle",
+        token: f.action.actionKey,
+        values: {},
+      },
+      runtimeBinding: f.runtimeBinding,
+      actionBinding: f.action,
+      stage: first.stage,
+      now: toInstant("2026-10-05T20:00:02.000Z"),
+    });
+    if (second.kind !== "staged") throw new Error("expected staged result");
+
+    const committed = applyTeachingMultiSelectShellAction({
+      action: {
+        documentId: "teaching.fractions.multi-stage",
+        revision: 2,
+        nodeId: "commit",
+        actionId: "teaching.multiselect.commit",
+        token: f.action.actionKey,
+        values: {},
+      },
+      runtimeBinding: f.runtimeBinding,
+      actionBinding: f.action,
+      stage: second.stage,
+      now: toInstant("2026-10-05T20:00:03.000Z"),
+    });
+    expect(committed).toMatchObject({
+      kind: "committed",
+      selection: {
+        actionKey: f.action.actionKey,
+        selectedOptionKeys: ["three-sixths", "two-fourths"],
+      },
+    });
+  });
+
+  it("rejects injected values and a commit before any option is selected", () => {
+    const f = fixture();
+    expect(() =>
+      applyTeachingMultiSelectShellAction({
+        action: {
+          documentId: "teaching.fractions.multi-stage",
+          revision: 0,
+          nodeId: "two-fourths",
+          actionId: "teaching.multiselect.toggle",
+          token: f.action.actionKey,
+          values: { relationshipId: "forged" },
+        },
+        runtimeBinding: f.runtimeBinding,
+        actionBinding: f.action,
+        stage: f.stage,
+        now: toInstant("2026-10-05T20:00:00.000Z"),
+      }),
+    ).toThrow(/payload is invalid/);
+
+    expect(() =>
+      applyTeachingMultiSelectShellAction({
+        action: {
+          documentId: "teaching.fractions.multi-stage",
+          revision: 0,
+          nodeId: "commit",
+          actionId: "teaching.multiselect.commit",
+          token: f.action.actionKey,
+          values: {},
+        },
+        runtimeBinding: f.runtimeBinding,
+        actionBinding: f.action,
+        stage: f.stage,
+        now: toInstant("2026-10-05T20:00:00.000Z"),
+      }),
+    ).toThrow(/at least one selected option/);
   });
 });
