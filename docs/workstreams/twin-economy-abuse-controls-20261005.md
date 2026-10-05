@@ -15,6 +15,9 @@ billing, crypto, shared Gateway composition or mobile router files.
 - new `packages/security/src/twin-economy-*.ts`
 - narrow export additions to `packages/security/src/index.ts`
 - new `services/gateway/src/twin_economy_guard*.ts`
+- new `apps/mobile/lib/src/safety/twin_safety*.dart`
+- new `apps/mobile/lib/src/screens/chat/components/twin_safety*.dart`
+- focused mobile tests
 - focused tests
 - this claim file
 
