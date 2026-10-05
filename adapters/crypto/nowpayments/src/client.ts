@@ -137,6 +137,7 @@ export class NowPaymentsClient {
     const response = await this.#request("/invoice", {
       method: "POST",
       body: JSON.stringify(requestBody),
+      badRequestCode: "nowpayments.invoice.dispatch_rejected",
       ...(input.signal === undefined ? {} : { signal: input.signal }),
     });
     return parseCreatedInvoice(await response.json(), {
@@ -239,6 +240,7 @@ export class NowPaymentsClient {
       readonly method: "GET" | "POST";
       readonly body?: string;
       readonly signal?: AbortSignal;
+      readonly badRequestCode?: string;
     },
   ): Promise<Response> {
     let response: Response;
@@ -259,6 +261,12 @@ export class NowPaymentsClient {
       throw new Error("nowpayments.transport.unavailable");
     }
     if (!response.ok) {
+      if (
+        input.badRequestCode !== undefined &&
+        (response.status === 400 || response.status === 422)
+      ) {
+        throw new Error(input.badRequestCode);
+      }
       throw new Error(
         response.status === 401 || response.status === 403
           ? "nowpayments.credential.unavailable"
