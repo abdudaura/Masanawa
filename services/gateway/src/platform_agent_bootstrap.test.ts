@@ -8,13 +8,15 @@ import type {
   PlatformAgentProfileRepository,
 } from "@masanawa/agents";
 import { createCanonicalId, nowInstant } from "@masanawa/contracts";
-import type { IdentityRepository } from "@masanawa/identity";
 import type {
   SkillDistributionProfile,
   SkillDistributionRepository,
 } from "@masanawa/skills";
 
-import { ensureDefaultPlatformAgents } from "./platform_agent_bootstrap.js";
+import {
+  ensureDefaultPlatformAgents,
+  type PlatformAgentIdentityProvisioner,
+} from "./platform_agent_bootstrap.js";
 
 function fixture() {
   const presentations: AgentPresentation[] = [];
@@ -30,12 +32,8 @@ function fixture() {
   };
 
   const identity = {
-    createCharacter: vi.fn(async () => ({})),
-    assignCharacterOwnership: vi.fn(async () => ({})),
-    createCharacterVersion: vi.fn(async () => ({})),
-    publishCharacterVersion: vi.fn(async () => ({})),
-    activateCharacterVersion: vi.fn(async () => ({})),
-  } as unknown as IdentityRepository;
+    provision: vi.fn(async () => undefined),
+  } satisfies PlatformAgentIdentityProvisioner;
 
   const presentationRepository = {
     async readForCharacter(input: { characterId: string }) {
@@ -155,7 +153,7 @@ describe("production platform Agent bootstrap", () => {
     });
     expect(f.presentations).toHaveLength(2);
     expect(f.profiles).toHaveLength(2);
-    expect(f.identity.createCharacter).toHaveBeenCalledTimes(2);
+    expect(f.identity.provision).toHaveBeenCalledTimes(2);
   });
 
   it("does not modify an existing admin-managed support roster", async () => {
@@ -184,7 +182,7 @@ describe("production platform Agent bootstrap", () => {
 
     expect(result.changed).toBe(false);
     expect(result.supportAgentCount).toBe(1);
-    expect(f.identity.createCharacter).not.toHaveBeenCalled();
+    expect(f.identity.provision).not.toHaveBeenCalled();
     expect(f.presentations).toHaveLength(0);
   });
 });
