@@ -660,14 +660,17 @@ class AiChatController extends Notifier<AiChatState> {
       if (rawPart is! Map || referenceId is! String || referenceId.isEmpty) {
         return;
       }
+
       AgentMessagePart part;
       try {
         part = AgentMessagePart.fromJson(rawPart.cast<String, dynamic>());
       } catch (_) {
         return;
       }
+
       final thread = threadOf(characterId);
       var changed = false;
+      var createdProjection = false;
       final messages = [
         for (final message in thread.messages)
           message.copyWith(
@@ -683,6 +686,7 @@ class AiChatController extends Notifier<AiChatState> {
             ],
           ),
       ];
+
       if (!changed) {
         final index = messages.lastIndexWhere((message) => !message.isUser);
         if (index >= 0) {
@@ -692,13 +696,40 @@ class AiChatController extends Notifier<AiChatState> {
           changed = true;
         }
       }
+
+      // Durable Work must survive reconnects even when the associated assistant
+      // narration is not present locally. Create one stable projection bubble
+      // instead of dropping the event. Replays then update by referenceId.
+      if (!changed && event.type == 'work.updated') {
+        messages.add(
+          AiChatMessage(
+            id: 'work-$referenceId',
+            isUser: false,
+            text: '',
+            createdAt: event.createdAt,
+            parts: [part],
+            deliveryStatus: 'delivered',
+          ),
+        );
+        changed = true;
+        createdProjection = true;
+      }
+
       if (changed) {
+        messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+        final eventTime = event.createdAt.isAfter(thread.updatedAt)
+            ? event.createdAt
+            : thread.updatedAt;
+        final unread = createdProjection && state.openThreadId != characterId
+            ? thread.unread + 1
+            : thread.unread;
         state = state.copyWith(
           threads: {
             ...state.threads,
             characterId: thread.copyWith(
-              messages: messages,
-              updatedAt: DateTime.now(),
+              messages: List.unmodifiable(messages),
+              unread: unread,
+              updatedAt: eventTime,
             ),
           },
         );
