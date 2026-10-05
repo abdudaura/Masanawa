@@ -18,6 +18,10 @@ import {
   createTeachingChannelSelectionBinding,
   createTeachingChannelSingleSelectProjection,
   resolveTeachingChannelSelection,
+  createTeachingMultiSelectStage,
+  applyTeachingMultiSelectStageCommand,
+  createTeachingChannelMultiSelectProjection,
+  resolveTeachingChannelMultiSelectCommand,
   fingerprintTeachingLessonPlan,
   fingerprintTeachingSelectionAttempt,
   resolveTeachingOpaqueSelection,
@@ -1530,5 +1534,299 @@ describe("Teaching durable free-response flow", () => {
         now: toInstant("2026-10-04T18:53:00.000Z"),
       }),
     ).rejects.toThrow(/must match the admitted Relationship and SkillVersion/);
+  });
+});
+
+
+describe("Core Teaching staged multi-select", () => {
+  function multiRubric(active: TeachingLessonPlan): TeachingSelectableExerciseRubric {
+    return {
+      relationshipId: active.learner.relationshipId,
+      skillVersionId: active.skillVersionId,
+      lessonStepKey: "common-denominator",
+      exerciseKey: "equivalent-fractions",
+      kind: "multi-select",
+      allowedOptionKeys: ["two-fourths", "three-sixths", "two-thirds"],
+      correctOptionKeys: ["two-fourths", "three-sixths"],
+      correctFeedback: "Correct. Both are equivalent to one half.",
+      retryFeedback: "Choose every fraction equivalent to one half.",
+      alternativeExplanation:
+        "Simplify each candidate fraction before comparing it with one half.",
+    };
+  }
+
+  function multiCard(active: TeachingLessonPlan) {
+    return {
+      relationshipId: active.learner.relationshipId,
+      skillVersionId: active.skillVersionId,
+      lessonStepKey: "common-denominator",
+      exerciseKey: "equivalent-fractions",
+      prompt: "Choose all fractions equivalent to 1/2.",
+      kind: "multi-select" as const,
+      options: [
+        { optionKey: "two-fourths", label: "2/4" },
+        { optionKey: "three-sixths", label: "3/6" },
+        { optionKey: "two-thirds", label: "2/3" },
+      ],
+    };
+  }
+
+  it("stages bounded toggles and commits once into the existing replay-safe selection path", async () => {
+    const active = lesson();
+    const admitted = binding(active);
+    const action = createTeachingSelectionActionBinding({
+      binding: admitted,
+      actionKey: "teach.action.multi.1",
+      requestId: createCanonicalId("request"),
+      rubric: multiRubric(active),
+      expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
+    });
+
+    const initial = createTeachingMultiSelectStage({
+      binding: admitted,
+      action,
+    });
+    expect(initial).toMatchObject({
+      state: "collecting",
+      selectedOptionKeys: [],
+      revision: 0,
+    });
+
+    const first = applyTeachingMultiSelectStageCommand({
+      binding: admitted,
+      action,
+      stage: initial,
+      command: { kind: "toggle", optionKey: "three-sixths" },
+      now: toInstant("2026-10-05T20:00:00.000Z"),
+    });
+    expect(first).toMatchObject({
+      kind: "staged",
+      stage: {
+        revision: 1,
+        selectedOptionKeys: ["three-sixths"],
+      },
+    });
+    if (first.kind !== "staged") throw new Error("expected staged result");
+
+    const second = applyTeachingMultiSelectStageCommand({
+      binding: admitted,
+      action,
+      stage: first.stage,
+      command: { kind: "toggle", optionKey: "two-fourths" },
+      now: toInstant("2026-10-05T20:00:01.000Z"),
+    });
+    expect(second).toMatchObject({
+      kind: "staged",
+      stage: {
+        revision: 2,
+        selectedOptionKeys: ["three-sixths", "two-fourths"],
+      },
+    });
+    if (second.kind !== "staged") throw new Error("expected staged result");
+
+    const committed = applyTeachingMultiSelectStageCommand({
+      binding: admitted,
+      action,
+      stage: second.stage,
+      command: { kind: "commit" },
+      now: toInstant("2026-10-05T20:00:02.000Z"),
+    });
+    expect(committed).toMatchObject({
+      kind: "committed",
+      stage: { state: "committed", revision: 3 },
+      selection: {
+        actionKey: "teach.action.multi.1",
+        selectedOptionKeys: ["three-sixths", "two-fourths"],
+      },
+    });
+    if (committed.kind !== "committed") {
+      throw new Error("expected committed result");
+    }
+
+    const replay = applyTeachingMultiSelectStageCommand({
+      binding: admitted,
+      action,
+      stage: committed.stage,
+      command: { kind: "commit" },
+      now: toInstant("2026-10-05T20:00:03.000Z"),
+    });
+    expect(replay).toEqual(committed);
+
+    const progress = new MemoryProgressPort();
+    const coordinator = new TeachingRuntimeCoordinator({ progress });
+    const feedback = await coordinator.submitOpaqueSelection({
+      binding: admitted,
+      action,
+      selection: committed.selection,
+      plan: active,
+      now: toInstant("2026-10-05T20:00:04.000Z"),
+    });
+    expect(feedback).toMatchObject({
+      kind: "feedback",
+      persistence: "stored",
+      evaluation: { correct: true },
+    });
+    expect(progress.attempts).toHaveLength(1);
+  });
+
+  it("uses compact stage-bound channel callbacks and rejects stale callbacks after a toggle", () => {
+    const active = lesson();
+    const admitted = binding(active);
+    const action = createTeachingSelectionActionBinding({
+      binding: admitted,
+      actionKey: "teach.action.multi.2",
+      requestId: createCanonicalId("request"),
+      rubric: multiRubric(active),
+      expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
+    });
+    const stage = createTeachingMultiSelectStage({
+      binding: admitted,
+      action,
+    });
+    const projection = createTeachingChannelMultiSelectProjection({
+      binding: admitted,
+      card: multiCard(active),
+      action,
+      stage,
+      callbackTokens: {
+        "two-fourths": "ms_two_fourths",
+        "three-sixths": "ms_three_sixths",
+        "two-thirds": "ms_two_thirds",
+      },
+      commitToken: "ms_commit_answers",
+    });
+
+    expect(projection.bindings).toHaveLength(4);
+    expect(
+      projection.bindings.every((item) => item.callbackToken.length <= 64),
+    ).toBe(true);
+    expect(JSON.stringify(projection)).not.toContain("correctOptionKeys");
+
+    const firstBinding = projection.bindings.find(
+      (item) => item.optionKey === "two-fourths",
+    )!;
+    const command = resolveTeachingChannelMultiSelectCommand({
+      selectionId: firstBinding.callbackToken,
+      binding: firstBinding,
+      runtimeBinding: admitted,
+      action,
+      stage,
+      now: toInstant("2026-10-05T20:10:00.000Z"),
+    });
+    expect(command).toEqual({
+      kind: "toggle",
+      optionKey: "two-fourths",
+    });
+
+    const next = applyTeachingMultiSelectStageCommand({
+      binding: admitted,
+      action,
+      stage,
+      command,
+      now: toInstant("2026-10-05T20:10:00.000Z"),
+    });
+    if (next.kind !== "staged") throw new Error("expected staged result");
+
+    expect(() =>
+      resolveTeachingChannelMultiSelectCommand({
+        selectionId: firstBinding.callbackToken,
+        binding: firstBinding,
+        runtimeBinding: admitted,
+        action,
+        stage: next.stage,
+        now: toInstant("2026-10-05T20:10:01.000Z"),
+      }),
+    ).toThrow(/stale or mismatched/);
+
+    const refreshed = createTeachingChannelMultiSelectProjection({
+      binding: admitted,
+      card: multiCard(active),
+      action,
+      stage: next.stage,
+      callbackTokens: {
+        "two-fourths": "ms2_two_fourths",
+        "three-sixths": "ms2_three_sixths",
+        "two-thirds": "ms2_two_thirds",
+      },
+      commitToken: "ms2_commit_answers",
+    });
+    expect(
+      refreshed.options.find((item) => item.optionKey === "two-fourths"),
+    ).toMatchObject({ selected: true });
+  });
+
+  it("rejects empty commit, forged options, expiry and mutation after commit", () => {
+    const active = lesson();
+    const admitted = binding(active);
+    const action = createTeachingSelectionActionBinding({
+      binding: admitted,
+      actionKey: "teach.action.multi.3",
+      requestId: createCanonicalId("request"),
+      rubric: multiRubric(active),
+      expiresAt: toInstant("2026-10-05T21:00:00.000Z"),
+    });
+    const initial = createTeachingMultiSelectStage({
+      binding: admitted,
+      action,
+    });
+
+    expect(() =>
+      applyTeachingMultiSelectStageCommand({
+        binding: admitted,
+        action,
+        stage: initial,
+        command: { kind: "commit" },
+        now: toInstant("2026-10-05T20:59:00.000Z"),
+      }),
+    ).toThrow(/at least one selected option/);
+
+    expect(() =>
+      applyTeachingMultiSelectStageCommand({
+        binding: admitted,
+        action,
+        stage: initial,
+        command: { kind: "toggle", optionKey: "forged" },
+        now: toInstant("2026-10-05T20:59:00.000Z"),
+      }),
+    ).toThrow(/not allowed/);
+
+    expect(() =>
+      applyTeachingMultiSelectStageCommand({
+        binding: admitted,
+        action,
+        stage: initial,
+        command: { kind: "toggle", optionKey: "two-fourths" },
+        now: toInstant("2026-10-05T21:00:01.000Z"),
+      }),
+    ).toThrow(/expired/);
+
+    const staged = applyTeachingMultiSelectStageCommand({
+      binding: admitted,
+      action,
+      stage: initial,
+      command: { kind: "toggle", optionKey: "two-fourths" },
+      now: toInstant("2026-10-05T20:59:10.000Z"),
+    });
+    if (staged.kind !== "staged") throw new Error("expected staged result");
+    const committed = applyTeachingMultiSelectStageCommand({
+      binding: admitted,
+      action,
+      stage: staged.stage,
+      command: { kind: "commit" },
+      now: toInstant("2026-10-05T20:59:20.000Z"),
+    });
+    if (committed.kind !== "committed") {
+      throw new Error("expected committed result");
+    }
+
+    expect(() =>
+      applyTeachingMultiSelectStageCommand({
+        binding: admitted,
+        action,
+        stage: committed.stage,
+        command: { kind: "toggle", optionKey: "three-sixths" },
+        now: toInstant("2026-10-05T20:59:30.000Z"),
+      }),
+    ).toThrow(/cannot be changed/);
   });
 });
