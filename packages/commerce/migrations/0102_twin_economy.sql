@@ -155,6 +155,19 @@ CREATE TABLE commerce.twin_voice_settlements (
   FOREIGN KEY (tenant_id,admission_id) REFERENCES commerce.twin_voice_admissions(tenant_id,admission_id)
 );
 
+CREATE TABLE commerce.owner_access_quotes (
+  tenant_id text NOT NULL,
+  quote_id text NOT NULL,
+  requester_user_id text NOT NULL,
+  owner_user_id text NOT NULL,
+  character_id text NOT NULL,
+  definition jsonb NOT NULL CHECK (jsonb_typeof(definition)='object'),
+  created_at timestamptz NOT NULL,
+  expires_at timestamptz NOT NULL,
+  PRIMARY KEY (tenant_id,quote_id),
+  CHECK (expires_at > created_at)
+);
+
 CREATE TABLE commerce.owner_access_offerings (
   tenant_id text NOT NULL,
   owner_user_id text NOT NULL,
@@ -231,6 +244,9 @@ BEFORE UPDATE OR DELETE ON commerce.twin_voice_quotes
 FOR EACH ROW EXECUTE FUNCTION commerce.reject_twin_immutable_mutation();
 CREATE TRIGGER twin_voice_settlement_immutable
 BEFORE UPDATE OR DELETE ON commerce.twin_voice_settlements
+FOR EACH ROW EXECUTE FUNCTION commerce.reject_twin_immutable_mutation();
+CREATE TRIGGER owner_access_quote_immutable
+BEFORE UPDATE OR DELETE ON commerce.owner_access_quotes
 FOR EACH ROW EXECUTE FUNCTION commerce.reject_twin_immutable_mutation();
 CREATE TRIGGER twin_safety_report_immutable
 BEFORE UPDATE OR DELETE ON commerce.twin_safety_reports
