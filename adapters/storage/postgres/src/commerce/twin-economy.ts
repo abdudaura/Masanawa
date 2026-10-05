@@ -316,8 +316,8 @@ export function createPostgresTwinRuntimeRepository(
         `INSERT INTO commerce.twin_commission_settlements(
            tenant_id,settlement_id,attribution_id,operation_id,event_type,
            owner_user_id,character_id,base_credits,commission_credits,
-           policy_revision,settled_at
-         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+           policy_revision,ledger_entry_id,settled_at
+         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
          ON CONFLICT (tenant_id,operation_id) DO NOTHING`,
         [
           input.tenantId,
@@ -330,6 +330,7 @@ export function createPostgresTwinRuntimeRepository(
           input.baseCredits,
           input.commissionCredits,
           input.policyRevision,
+          input.ledgerEntryId,
           input.settledAt,
         ],
       );
@@ -344,10 +345,11 @@ export function createPostgresTwinRuntimeRepository(
         base_credits: string;
         commission_credits: string;
         policy_revision: string;
+        ledger_entry_id: string;
         reversed_credits: string;
       }>(
         `SELECT settlement_id,owner_user_id,character_id,base_credits::text,
-                commission_credits::text,policy_revision::text,reversed_credits::text
+                commission_credits::text,policy_revision::text,ledger_entry_id,reversed_credits::text
            FROM commerce.twin_commission_settlements
           WHERE tenant_id=$1 AND operation_id=$2`,
         [input.tenantId, input.operationId],
@@ -361,6 +363,7 @@ export function createPostgresTwinRuntimeRepository(
             baseCredits: Number(row.base_credits),
             commissionCredits: Number(row.commission_credits),
             policyRevision: Number(row.policy_revision),
+            ledgerEntryId: row.ledger_entry_id as LedgerEntryId,
             reversedCredits: Number(row.reversed_credits),
           })
         : null;
@@ -370,14 +373,15 @@ export function createPostgresTwinRuntimeRepository(
       return withTransaction(pool, async (client) => {
         const inserted = await client.query(
           `INSERT INTO commerce.twin_commission_reversals(
-             tenant_id,reversal_id,operation_id,amount_credits,reversed_at
-           ) VALUES ($1,$2,$3,$4,$5)
+             tenant_id,reversal_id,operation_id,amount_credits,ledger_entry_id,reversed_at
+           ) VALUES ($1,$2,$3,$4,$5,$6)
            ON CONFLICT DO NOTHING`,
           [
             input.tenantId,
             input.reversalId,
             input.operationId,
             input.amountCredits,
+            input.ledgerEntryId,
             input.reversedAt,
           ],
         );
