@@ -157,6 +157,11 @@ const CharacterParamsSchema = Type.Object(
 
 
 
+const OperationParamsSchema = Type.Object(
+  { operationId: Type.String() },
+  { additionalProperties: false },
+);
+
 const CredentialParamsSchema = Type.Object(
   { credentialRefId: Type.String() },
   { additionalProperties: false },
@@ -528,6 +533,17 @@ export function createOpsApp(options: OpsAppOptions = {}) {
           authorizationHeader: request.headers.authorization,
           ...(request.query.limit !== undefined ? { limit: request.query.limit } : {}),
           ...(request.query.state !== undefined ? { state: request.query.state } : {}),
+        }),
+      ],
+    );
+
+    app.get(
+      "/v1/admin/operations/:operationId/receipts",
+      { schema: { params: OperationParamsSchema } },
+      async (request) => [
+        ...await platformAdmin.listOperationReceipts({
+          authorizationHeader: request.headers.authorization,
+          operationId: parseCanonicalId("operation", request.params.operationId),
         }),
       ],
     );
