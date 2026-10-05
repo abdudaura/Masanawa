@@ -5,6 +5,7 @@ import type { AgentAdminService } from "./agent_admin.js";
 import type { PlatformAdminService } from "./platform_admin.js";
 import type { SystemAdminService } from "./system_admin.js";
 import type { AdminAgentDelegationService } from "./admin_delegation.js";
+import type { AdminAgentActionBroker } from "./admin_agent_actions.js";
 import {
   admitTelemetryCorrelation,
   injectCorrelationHeaders,
@@ -25,8 +26,48 @@ export interface OpsAppOptions {
   readonly platformAdmin?: PlatformAdminService;
   readonly systemAdmin?: SystemAdminService;
   readonly adminAgentDelegation?: AdminAgentDelegationService;
+  readonly adminAgentActions?: AdminAgentActionBroker;
 }
 
+
+const AdminAgentActionParamsSchema = Type.Object(
+  { characterId: Type.String() },
+  { additionalProperties: false },
+);
+
+const AdminAgentActionBodySchema = Type.Object(
+  {
+    action: Type.Union([
+      Type.Literal("platform.summary"),
+      Type.Literal("users.list"),
+      Type.Literal("agent-runs.list"),
+      Type.Literal("offers.list"),
+      Type.Literal("operations.list"),
+      Type.Literal("reconciliation.list"),
+      Type.Literal("audit.list"),
+      Type.Literal("offer.set-enabled"),
+      Type.Literal("credential.revoke"),
+      Type.Literal("world.pause"),
+      Type.Literal("world.resume"),
+    ]),
+    arguments: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
+  },
+  { additionalProperties: false },
+);
+
+const AdminAgentActionResultSchema = Type.Object(
+  {
+    status: Type.Union([
+      Type.Literal("completed"),
+      Type.Literal("approval-required"),
+    ]),
+    action: Type.String(),
+    data: Type.Optional(Type.Unknown()),
+    capability: Type.Optional(Type.String()),
+    reason: Type.Optional(Type.String()),
+  },
+  { additionalProperties: false },
+);
 
 const AdminAgentDelegateSchema = Type.Object(
   {
@@ -486,6 +527,29 @@ export function createOpsApp(options: OpsAppOptions = {}) {
   }
 
 
+
+  if (options.adminAgentActions) {
+    const adminAgentActions = options.adminAgentActions;
+    app.post(
+      "/v1/admin/delegates/:characterId/actions",
+      {
+        schema: {
+          params: AdminAgentActionParamsSchema,
+          body: AdminAgentActionBodySchema,
+          response: { 200: AdminAgentActionResultSchema },
+        },
+      },
+      async (request) =>
+        adminAgentActions.execute({
+          authorizationHeader: request.headers.authorization,
+          characterId: request.params.characterId,
+          action: request.body.action,
+          ...(request.body.arguments
+            ? { arguments: request.body.arguments }
+            : {}),
+        }),
+    );
+  }
 
   if (options.adminAgentDelegation) {
     const delegation = options.adminAgentDelegation;
