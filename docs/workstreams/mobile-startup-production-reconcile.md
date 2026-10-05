@@ -38,4 +38,27 @@ Acceptance:
 - cached conversation hydration precedes Connectivity platform monitoring and reuses the resolved documents directory;
 - production-only mobile functionality remains intact.
 
-Status: active.
+Implemented:
+- ported the single-record auth-session fast path and one-call legacy fallback;
+- ported account-scoped AgentDirectory presentation caching and token-rotation-stable ownership;
+- cached agents are immediately actionable while the live directory refreshes;
+- deferred push/Firebase/native initial-link initialization until after first Flutter frame;
+- production chat cache now hydrates before Connectivity monitoring, memoizes the documents directory,
+  and keeps retired unscoped-cache cleanup off the critical path;
+- preserved production-only Wallet/crypto chat-list UI and all newer production integration code;
+- added focused session and agent-directory startup coverage.
+
+Infrastructure observation:
+- the live Railway Gateway returned authenticated `/agent/directory` HTTP 200 responses but recent
+  request durations were roughly 3.2–4.7 seconds while Gateway ran in San Francisco and PostgreSQL
+  ran in Amsterdam;
+- Gateway production placement has been changed to Amsterdam to colocate it with PostgreSQL;
+- no post-move authenticated latency result is claimed until a new real request is observed.
+
+Verification:
+- reconciliation is file/path-scoped; no production crypto, billing, onboarding, workflow or provider
+  implementation was replaced;
+- no APK rebuild was performed in this slice;
+- executable hosted Flutter verification remains subject to the repository runner-allocation issue.
+
+Status: implementation complete pending PR integration.
