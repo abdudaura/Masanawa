@@ -107,3 +107,9 @@ Exact additional paths for the authorized integration takeover:
 - services/gateway/src/live_voice_token.ts
 - services/gateway/src/mobile_push.ts
 Restore only missing imported runtime dependency files from inspected #89 head 98b293b2020668b2123e4e7b9d6baae0ebfc1b88; append the required transaction-local reader functions without dropping current ownership APIs. Add missing contextual types to current merged methods and fix unresolved PlatformFinancialAuthorizer/invalid error-category/test-fixture signatures. No replacement of current auth or runtime behavior with an old branch. These are necessary to compile and verify normal Gateway startup; no unfinished branch is merged wholesale.
+
+Required transitive owner read ports (append-only reconciliation):
+- packages/identity/src/repository.ts
+- packages/memory/src/context.ts
+- packages/world/src/context.ts
+- packages/world/src/index.ts
