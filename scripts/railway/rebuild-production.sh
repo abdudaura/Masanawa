@@ -103,19 +103,12 @@ railway variable set \
   MASANAWA_PUBLIC_BASE_URL=https://api.masanawa.com \
   --service masanawa-worker >/dev/null
 
-# A restored production database is the source of truth for the canonical tenant.
-# If the tenant cannot be resolved yet, infrastructure is still reconstructed,
-# but production auth is deliberately not enabled until data restore/bootstrap.
-if TENANT_ID="$(railway run --service masanawa-gateway -- node scripts/database/resolve-platform-tenant.mjs 2>/dev/null)" && [[ -n "$TENANT_ID" ]]; then
-  railway variable set \
-    "MASANAWA_PLATFORM_TENANT_ID=$TENANT_ID" \
-    MASANAWA_PLATFORM_AUTH_BASE_URL=https://api.masanawa.com \
-    MASANAWA_PLATFORM_AUTH_POLICY_REVISION=mobile-platform-session-v1 \
-    --service masanawa-gateway >/dev/null
-  echo "Canonical platform tenant resolved from database."
-else
-  echo "Infrastructure and secrets reconstructed, but no unique active tenant was resolved." >&2
-  echo "Restore the production dump (or bootstrap a new platform) before enabling production auth." >&2
-fi
+# Production auth derives the tenant from PostgreSQL automatically when exactly
+# one active tenant exists. Multi-tenant deployments can still set
+# MASANAWA_PLATFORM_TENANT_ID explicitly.
+railway variable set \
+  MASANAWA_PLATFORM_AUTH_BASE_URL=https://api.masanawa.com \
+  MASANAWA_PLATFORM_AUTH_POLICY_REVISION=mobile-platform-session-v1 \
+  --service masanawa-gateway >/dev/null
 
 echo "Railway reconstruction completed from repository contracts."
