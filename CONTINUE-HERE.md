@@ -63,6 +63,31 @@ canonical runtime and PostgreSQL persistence are implemented and verified.
 Next dependency: implement `@masanawa/workflows` canonical Task/WorkflowRun lifecycle and
 repository boundary, then durable PostgreSQL checkpoints and resume/revalidation.
 
+
+### Canonical Task/WorkflowRun runtime — merged 2026-10-05
+
+PR #153 merged at `dd356256029918607f11e60f3bda6be885738e4f`.
+
+Implemented:
+- `@masanawa/workflows` is now a real package rather than an empty placeholder;
+- strict Task lifecycle: queued, running, waiting_approval, waiting_external,
+  completed, failed, cancelled;
+- strict WorkflowRun lifecycle with terminal-state protection;
+- Workflow checkpoints carry graph signature, committed state, executor state, edge state,
+  pending approvals and monotonic checkpoint revision;
+- checkpoint state accepts bounded plain JSON only;
+- scoped present-authority access guards exist for Task and WorkflowRun operations;
+- repository ports exist for create/read/list/transition and checkpoint append/read;
+- focused lifecycle/checkpoint tests are checked in.
+
+Critical remaining boundary:
+this is the canonical domain/repository contract, not yet PostgreSQL persistence.
+Do not claim Work survives Gateway/service restart until Task/WorkflowRun/checkpoint
+storage, restore compatibility and resumed authority revalidation are implemented
+and verified.
+
+Next workstream: PostgreSQL Workflows persistence and recovery semantics.
+
 ## Core teaching and ownership checkpoint — 2026-10-04
 
 Teaching is required Core: detailed adaptive lessons across topics, worked examples,
