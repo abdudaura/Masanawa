@@ -114,8 +114,11 @@ class GatewayOwnerAccessOfferingTransport {
     final durations = json['durationOptionsMinutes'];
     final price = json['priceCreditsPerMinute'];
     if (modalities is! List ||
+        modalities.isEmpty ||
         durations is! List ||
+        durations.isEmpty ||
         price is! num ||
+        price.toInt() < 0 ||
         json['enabled'] is! bool) {
       throw const FormatException('Invalid owner access offering response');
     }
