@@ -37,4 +37,27 @@ Implement Lane G from `docs/TWIN-MULTI-WINDOW-EXECUTION.md`:
 Integration lane must later compose the route, transport provider and router.
 Activity remains a derived read model and never owns financial truth.
 
-Status: implementation started 2026-10-05.
+Status: feature lane implementation complete; shared integration pending.
+
+Implemented:
+- privacy-safe TwinActivity service projection;
+- strict tenant/twin scope checks;
+- safe event presentation with no transcript/message payload surface;
+- isolated Gateway route registrar for GET /agent/twin/activity;
+- backend service + route unit tests;
+- mobile TwinActivity models/parser;
+- Riverpod Activity state/controller with integration-owned transport seam;
+- new Activity screen with Visitors / Chats / Earned summary, Needs You card and recent events;
+- mobile model tests.
+
+Verification:
+- GitHub Foundation CI run 37279313865 and Mobile Build run 37279314068 both failed before execution with zero job steps; this is the repository's known runner-allocation failure and is not a code-test result.
+- compile/test execution remains required on a functioning runner.
+
+Integration handoff:
+- compose TwinActivityAuthorizer and TwinActivitySource in Gateway;
+- register twin_activity_routes from shared app/main integration;
+- implement authenticated TwinActivityTransport and override/provide twinActivityTransportProvider;
+- add Activity to the four-tab router/root shell;
+- feed canonical activity records from later attribution/gift/voice/owner-access lanes.
+- do not use Activity as financial truth.
