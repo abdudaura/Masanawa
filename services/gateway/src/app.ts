@@ -16,6 +16,14 @@ import type {
 } from "./agent_shell_contract.js";
 import { registerAgentShellRoutes } from "./agent_shell_routes.js";
 import { registerBillingRoutes } from "./billing_routes.js";
+import { registerMyTwinProjectionRoutes } from "./my_twin_projection_routes.js";
+import type { MyTwinProjectionService } from "./my_twin_projection.js";
+import { registerTwinDirectoryRoutes } from "./twin_directory_routes.js";
+import type { TwinDirectoryService } from "./twin_directory.js";
+import { registerTwinActivityRoutes } from "./twin_activity_routes.js";
+import type { TwinActivityService } from "./twin_activity.js";
+import { registerWalletProjectionRoutes } from "./wallet_projection_routes.js";
+import type { WalletProjectionService } from "./wallet_projection.js";
 import type { BillingCheckoutService } from "./billing_checkout.js";
 import type { BillingFinancialService } from "./financial_billing.js";
 import type { MobilePushRegistrationService } from "./mobile_push.js";
@@ -55,6 +63,10 @@ export interface GatewayAppOptions {
   readonly billingCheckout?: BillingCheckoutService;
   readonly billingFinancial?: BillingFinancialService;
   readonly financial?: FinancialService;
+  readonly myTwin?: MyTwinProjectionService;
+  readonly twinDirectory?: TwinDirectoryService;
+  readonly twinActivity?: TwinActivityService;
+  readonly walletProjection?: WalletProjectionService;
 }
 
 const HealthResponseSchema = Type.Object(
@@ -194,6 +206,19 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
   const checks = options.readinessChecks ?? [];
 
   app.setErrorHandler((error, request, reply) => {
+    if (error instanceof CustomerAuthError) {
+      void reply.code(error.statusCode).send({
+        error: {
+          code: error.code,
+          message: error.statusCode === 401
+            ? "Authentication required"
+            : error.statusCode === 403
+              ? "Request rejected"
+              : "Service temporarily unavailable",
+        },
+      });
+      return;
+    }
     if (error instanceof Error && error.message === "financial.auth.unauthorized") {
       void reply.code(401).send({
         error: {
@@ -356,6 +381,22 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       });
       return { success: true as const };
     });
+  }
+
+  if (options.myTwin) {
+    registerMyTwinProjectionRoutes(app, options.myTwin);
+  }
+
+  if (options.twinDirectory) {
+    registerTwinDirectoryRoutes(app, options.twinDirectory);
+  }
+
+  if (options.twinActivity) {
+    registerTwinActivityRoutes(app, options.twinActivity);
+  }
+
+  if (options.walletProjection) {
+    registerWalletProjectionRoutes(app, options.walletProjection);
   }
 
   if (options.agentDirectory) {
