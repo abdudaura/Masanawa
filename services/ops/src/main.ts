@@ -496,6 +496,7 @@ export async function startOpsService(
     (adminAgentDelegationConfig && composedPlatformAdmin
       ? createAdminAgentActionBroker({
           config: adminAgentDelegationConfig,
+          authorizer: adminAuthorizer!,
           platformAdmin: composedPlatformAdmin,
         })
       : undefined);
