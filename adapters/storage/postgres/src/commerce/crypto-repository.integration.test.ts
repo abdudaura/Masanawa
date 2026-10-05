@@ -703,6 +703,30 @@ describeDatabase("crypto conversion and payout fee PostgreSQL acceptance", () =>
     })).toBe("30");
   });
 
+  it("aggregates shared custody liability across separate tenants", async () => {
+    const repository = createPostgresCryptoRepository(pool);
+    const before = Number(await repository.readPlatformAggregateLiability({
+      asset: "USDTTRC20",
+      network: "tron",
+    }));
+    const first = await fundedFixture("11");
+    await fundedFixture("13");
+    const afterFunding = Number(await repository.readPlatformAggregateLiability({
+      asset: "USDTTRC20",
+      network: "tron",
+    }));
+    expect(afterFunding - before).toBe(24);
+
+    await first.repository.reserveWithdrawal(
+      withdrawalIntent(first.tenantId, first.userId, "5"),
+    );
+    const afterReserve = Number(await repository.readPlatformAggregateLiability({
+      asset: "USDTTRC20",
+      network: "tron",
+    }));
+    expect(afterFunding - afterReserve).toBe(5);
+  });
+
   it("reports aggregate liability for pooled-custody reconciliation", async () => {
     const f = await fundedFixture("75");
     expect(await f.repository.readAggregateLiability({
