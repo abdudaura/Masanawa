@@ -17,6 +17,14 @@ abstract interface class CryptoWalletTransport {
     required String amount,
   });
 
+  Future<CryptoFiatPurchase> createFiatPurchase({
+    required String requestId,
+    required String fiatAmount,
+    required String fiatCurrency,
+  });
+
+  Future<CryptoFiatPurchase> refreshFiatPurchase(String requestId);
+
   Future<CryptoWithdrawalQuote> quoteWithdrawal({
     required String providerCode,
     required String amount,
@@ -190,6 +198,33 @@ class MasanawaCryptoWalletTransport implements CryptoWalletTransport {
         'providerCode': providerCode,
         'amount': amount,
       }),
+    );
+  }
+
+  @override
+  Future<CryptoFiatPurchase> createFiatPurchase({
+    required String requestId,
+    required String fiatAmount,
+    required String fiatCurrency,
+  }) async {
+    return CryptoFiatPurchase.fromJson(
+      await _post('/v1/financial/crypto/purchases', {
+        'requestId': requestId,
+        'fiatAmount': fiatAmount,
+        'fiatCurrency': fiatCurrency,
+      }),
+    );
+  }
+
+  @override
+  Future<CryptoFiatPurchase> refreshFiatPurchase(String requestId) async {
+    final id = Uri.encodeComponent(requestId.trim());
+    if (id.isEmpty) throw const FormatException('Missing request id');
+    return CryptoFiatPurchase.fromJson(
+      await _post(
+        '/v1/financial/crypto/purchases/$id/refresh',
+        const {},
+      ),
     );
   }
 
