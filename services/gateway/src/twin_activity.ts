@@ -177,6 +177,9 @@ export function createTwinActivityService(input: {
         limit: boundedLimit(request.limit),
       });
 
+      const ordered = [...records].sort((a, b) =>
+        b.occurredAt.localeCompare(a.occurredAt),
+      );
       let visitors = 0;
       let conversations = 0;
       let earningsCredits = 0;
@@ -184,7 +187,7 @@ export function createTwinActivityService(input: {
       const seenOwnerRequests = new Set<string>();
       const items: TwinActivityItem[] = [];
 
-      for (const record of records) {
+      for (const record of ordered) {
         if (record.tenantId !== authority.tenantId || record.characterId !== clone.characterId) {
           throw new Error("Twin activity source returned an out-of-scope record");
         }
