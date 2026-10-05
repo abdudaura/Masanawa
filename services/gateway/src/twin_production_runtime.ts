@@ -184,6 +184,16 @@ export interface TwinProductionRuntime {
   readonly paidFeatureTrialAdmin: PaidFeatureTrialAdminService;
   readonly ownerAccess: OwnerAccessService;
   readonly ownerAccessOffering: ReturnType<typeof createOwnerAccessOfferingService>;
+  readonly ownerAccessMaintenance: {
+    sweep(input: {
+      readonly tenantId: TenantId;
+      readonly limit?: number;
+    }): Promise<Readonly<{
+      scanned: number;
+      advanced: number;
+      failed: number;
+    }>>;
+  };
   readonly twinSafety: TwinSafetyService;
   readonly voiceAdmissionGate: {
     validate(input: {
@@ -1356,7 +1366,7 @@ export function createTwinProductionRuntime(input: {
         reason: "refund",
         quoteId: null,
         fulfillmentId: null,
-        createdAt: at() as never,
+        createdAt: plan.createdAt as never,
       });
     }
     if (
@@ -1383,7 +1393,7 @@ export function createTwinProductionRuntime(input: {
           reason: "creator-earning",
           quoteId: null,
           fulfillmentId: null,
-          createdAt: at() as never,
+          createdAt: plan.createdAt as never,
         });
       }
       if (decision.platformRevenueCredits > 0) {
@@ -1397,7 +1407,7 @@ export function createTwinProductionRuntime(input: {
           reason: "platform-margin",
           quoteId: null,
           fulfillmentId: null,
-          createdAt: at() as never,
+          createdAt: plan.createdAt as never,
         });
       }
     }
@@ -1419,12 +1429,124 @@ export function createTwinProductionRuntime(input: {
     return decision;
   }
 
+  type PersistedOwnerAccessRequest = NonNullable<
+    Awaited<ReturnType<TwinRuntimeRepository["readOwnerAccessRequest"]>>
+  >;
+
+  async function appendOwnerAccessProjectionEvent(
+    tenantId: TenantId,
+    current: PersistedOwnerAccessRequest,
+  ): Promise<void> {
+    const event =
+      current.state === "accepted"
+        ? {
+            eventType: "twin.owner-access.accepted" as const,
+            amountCredits: null,
+            status: "pending" as const,
+          }
+        : current.state === "scheduled"
+          ? {
+              eventType: "twin.owner-access.scheduled" as const,
+              amountCredits: null,
+              status: "pending" as const,
+            }
+          : current.state === "settled"
+            ? {
+                eventType: "twin.owner-access.completed" as const,
+                amountCredits: current.ownerEarningCredits,
+                status: "completed" as const,
+              }
+            : current.state === "refunded"
+              ? {
+                  eventType: "twin.owner-access.refunded" as const,
+                  amountCredits: current.reservedCredits,
+                  status: "refunded" as const,
+                }
+              : null;
+    if (!event) return;
+    await input.events.append({
+      tenantId,
+      payload: {
+        eventType: event.eventType,
+        ownerUserId: current.ownerUserId,
+        characterId: current.originatingCharacterId,
+        customerUserId: current.requesterUserId,
+        referenceId: current.requestId,
+        visibility: "participant",
+        occurredAt: at(),
+        amountCredits: event.amountCredits,
+        status: event.status,
+      },
+    });
+  }
+
+  async function finalizeOwnerAccessState(
+    tenantId: TenantId,
+    current: PersistedOwnerAccessRequest,
+  ): Promise<PersistedOwnerAccessRequest> {
+    const refundable = new Set([
+      "declined",
+      "expired",
+      "cancelled",
+      "no-show",
+    ]);
+    const isRefund = refundable.has(current.state);
+    const isSettlement = current.state === "completed";
+    if (!isRefund && !isSettlement) {
+      await appendOwnerAccessProjectionEvent(tenantId, current);
+      return current;
+    }
+
+    await settleOwnerRequest(tenantId, current, current.state);
+    const finalState = isSettlement ? "settled" : "refunded";
+    const finalized = {
+      ...current,
+      state: transitionOwnerAccess(current.state, finalState),
+    };
+    // Append before the final CAS. The event store is idempotent by
+    // eventType/reference/Character, so a crash can safely retry this step.
+    await input.events.append({
+      tenantId,
+      payload: {
+        eventType: isSettlement
+          ? "twin.owner-access.completed"
+          : "twin.owner-access.refunded",
+        ownerUserId: current.ownerUserId,
+        characterId: current.originatingCharacterId,
+        customerUserId: current.requesterUserId,
+        referenceId: current.requestId,
+        visibility: "participant",
+        occurredAt: at(),
+        amountCredits: isSettlement
+          ? current.ownerEarningCredits
+          : current.reservedCredits,
+        status: isSettlement ? "completed" : "refunded",
+      },
+    });
+    const result = await input.economy.transitionOwnerAccessRequest({
+      tenantId,
+      expectedState: current.state,
+      request: finalized,
+      reservationId: current.reservationId,
+      reservedCredits: current.reservedCredits,
+    });
+    return result.request;
+  }
+
   async function refreshOwnerAccessLifecycle(
     tenantId: TenantId,
-    current: NonNullable<
-      Awaited<ReturnType<TwinRuntimeRepository["readOwnerAccessRequest"]>>
-    >,
-  ) {
+    current: PersistedOwnerAccessRequest,
+  ): Promise<PersistedOwnerAccessRequest> {
+    if (
+      current.state === "declined" ||
+      current.state === "expired" ||
+      current.state === "cancelled" ||
+      current.state === "no-show" ||
+      current.state === "completed"
+    ) {
+      return finalizeOwnerAccessState(tenantId, current);
+    }
+
     const nowMs = Date.now();
     const requestedExpired =
       current.state === "requested" &&
@@ -1436,38 +1558,31 @@ export function createTwinProductionRuntime(input: {
           ownerPolicy.startGraceMinutes * 60_000 <=
         nowMs;
 
-    if (!requestedExpired && !scheduledNoShow) return current;
+    if (!requestedExpired && !scheduledNoShow) {
+      await appendOwnerAccessProjectionEvent(tenantId, current);
+      return current;
+    }
 
     const terminalState = requestedExpired ? "expired" : "no-show";
-    const closed = {
+    const intermediate = {
       ...current,
       state: transitionOwnerAccess(current.state, terminalState),
     };
-    await settleOwnerRequest(
+    const claimed = await input.economy.transitionOwnerAccessRequest({
       tenantId,
-      closed,
-      terminalState,
-    );
-    const updated = await input.economy.updateOwnerAccessRequest({
-      tenantId,
-      request: closed,
+      expectedState: current.state,
+      request: intermediate,
       reservationId: current.reservationId,
       reservedCredits: current.reservedCredits,
     });
-    await input.events.append({
+    if (!claimed.applied) {
+      return refreshOwnerAccessLifecycle(tenantId, claimed.request);
+    }
+
+    const finalized = await finalizeOwnerAccessState(
       tenantId,
-      payload: {
-        eventType: "twin.owner-access.refunded",
-        ownerUserId: current.ownerUserId,
-        characterId: current.originatingCharacterId,
-        customerUserId: current.requesterUserId,
-        referenceId: current.requestId,
-        visibility: "participant",
-        occurredAt: at(),
-        amountCredits: current.reservedCredits,
-        status: "refunded",
-      },
-    });
+      claimed.request,
+    );
     await notifyUser(
       tenantId,
       current.requesterUserId as UserId,
@@ -1477,8 +1592,45 @@ export function createTwinProductionRuntime(input: {
         : "The scheduled session did not start in time. Any eligible held Credits were released.",
       `masanawa://chat/${encodeURIComponent(current.originatingCharacterId)}`,
     );
-    return updated;
+    return finalized;
   }
+
+  const ownerAccessMaintenance = Object.freeze({
+    async sweep(request: {
+      readonly tenantId: TenantId;
+      readonly limit?: number;
+    }) {
+      const limit = Math.max(1, Math.min(200, request.limit ?? 100));
+      const candidates =
+        await input.economy.listOwnerAccessLifecycleCandidates({
+          tenantId: request.tenantId,
+          at: at(),
+          startGraceMinutes: ownerPolicy.startGraceMinutes,
+          limit,
+        });
+      let advanced = 0;
+      let failed = 0;
+      for (const candidate of candidates) {
+        try {
+          const before = candidate.state;
+          const after = await refreshOwnerAccessLifecycle(
+            request.tenantId,
+            candidate,
+          );
+          if (after.state !== before) advanced += 1;
+        } catch {
+          // One malformed/reconciling request must not starve the bounded batch.
+          failed += 1;
+        }
+      }
+      return Object.freeze({
+        scanned: candidates.length,
+        advanced,
+        failed,
+      });
+    },
+  });
+
 
   const ownerAccess = createOwnerAccessService({
     authorizer: customerAuthority,
