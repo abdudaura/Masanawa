@@ -195,7 +195,7 @@ export function createPostgresBillingQuoteRepository(pool: Pool): BillingQuoteRe
         const row = await locked(client, input);
         assertRevision(row, input.quoteRevision);
         assertNotExpired(row, input.confirmedAt);
-        if (!["quoted","confirmed","checkout-created","funded","reserved"].includes(row.state)) {
+        if (!["quoted","confirmed","checkout-dispatching","checkout-created","funded","reserved"].includes(row.state)) {
           throw new Error("financial.billing.quote_not_confirmable");
         }
         if (row.confirmed_at) return quote(row);
@@ -209,24 +209,56 @@ export function createPostgresBillingQuoteRepository(pool: Pool): BillingQuoteRe
       });
     },
 
+    async claimCheckoutDispatch(input) {
+      return withTransaction(pool, async (client) => {
+        const row = await locked(client,input);
+        assertRevision(row,input.quoteRevision);
+        assertNotExpired(row,input.claimedAt);
+        if (!row.confirmed_at) {
+          throw new Error("financial.billing.quote_not_confirmed");
+        }
+        if (row.checkout_tx_ref) {
+          if (row.checkout_tx_ref !== input.txRef) {
+            throw new Error("financial.billing.checkout_replay_conflict");
+          }
+          return Object.freeze({ quote: quote(row), claimed: false });
+        }
+        if (row.state !== "confirmed") {
+          throw new Error("financial.billing.checkout_not_allowed");
+        }
+        const result = await client.query<BillingQuoteRow>(
+          `UPDATE commerce.billing_quotes
+              SET checkout_tx_ref=$4,state='checkout-dispatching',updated_at=$5
+            WHERE tenant_id=$1 AND user_id=$2 AND quote_id=$3 RETURNING *`,
+          [input.tenantId,input.userId,input.quoteId,input.txRef,input.claimedAt],
+        );
+        return Object.freeze({ quote: quote(result.rows[0]!), claimed: true });
+      });
+    },
+
     async bindCheckout(input) {
       return withTransaction(pool, async (client) => {
         const row = await locked(client, input);
         assertRevision(row, input.quoteRevision);
         assertNotExpired(row, input.boundAt);
         if (!row.confirmed_at) throw new Error("financial.billing.quote_not_confirmed");
-        if (row.checkout_tx_ref) {
-          if (row.checkout_tx_ref !== input.txRef || row.checkout_url !== input.checkoutUrl) {
+        if (row.checkout_tx_ref !== input.txRef) {
+          throw new Error("financial.billing.checkout_replay_conflict");
+        }
+        if (row.checkout_url) {
+          if (row.checkout_url !== input.checkoutUrl) {
             throw new Error("financial.billing.checkout_replay_conflict");
           }
           return quote(row);
         }
-        if (row.state !== "confirmed") throw new Error("financial.billing.checkout_not_allowed");
+        if (row.state !== "checkout-dispatching") {
+          throw new Error("financial.billing.checkout_not_allowed");
+        }
         const result = await client.query<BillingQuoteRow>(
           `UPDATE commerce.billing_quotes
-              SET checkout_tx_ref=$4,checkout_url=$5,state='checkout-created',updated_at=$6
+              SET checkout_url=$4,state='checkout-created',updated_at=$5
             WHERE tenant_id=$1 AND user_id=$2 AND quote_id=$3 RETURNING *`,
-          [input.tenantId,input.userId,input.quoteId,input.txRef,input.checkoutUrl,input.boundAt],
+          [input.tenantId,input.userId,input.quoteId,input.checkoutUrl,input.boundAt],
         );
         return quote(result.rows[0]!);
       });
