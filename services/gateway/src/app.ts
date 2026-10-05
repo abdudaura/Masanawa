@@ -13,6 +13,9 @@ import type {
   LiveVoiceTokenService,
 } from "./agent_shell_contract.js";
 import { registerAgentShellRoutes } from "./agent_shell_routes.js";
+import { registerBillingRoutes } from "./billing_routes.js";
+import type { BillingCheckoutService } from "./billing_checkout.js";
+import type { BillingFinancialService } from "./financial_billing.js";
 import type { MobilePushRegistrationService } from "./mobile_push.js";
 import {
   CustomerAuthError,
@@ -45,6 +48,8 @@ export interface GatewayAppOptions {
   readonly liveVoiceTokens?: LiveVoiceTokenService;
   readonly mobilePush?: MobilePushRegistrationService;
   readonly customerAuth?: CustomerAuthService;
+  readonly billingCheckout?: BillingCheckoutService;
+  readonly billingFinancial?: BillingFinancialService;
 }
 
 const HealthResponseSchema = Type.Object(
@@ -885,6 +890,15 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       ? { liveVoiceTokens: options.liveVoiceTokens }
       : {}),
     ...(options.mobilePush ? { mobilePush: options.mobilePush } : {}),
+  });
+
+  registerBillingRoutes(app, {
+    ...(options.billingCheckout
+      ? { billingCheckout: options.billingCheckout }
+      : {}),
+    ...(options.billingFinancial
+      ? { billingFinancial: options.billingFinancial }
+      : {}),
   });
 
   app.get(
