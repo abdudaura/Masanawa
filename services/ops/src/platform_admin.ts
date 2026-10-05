@@ -59,6 +59,15 @@ export interface PlatformAdminOffer {
   readonly offerId: string;
   readonly key: string;
   readonly revision: number;
+  readonly title: string;
+  readonly description: string;
+  readonly skillVersionId: string;
+  readonly priceCredits: number;
+  readonly fulfillmentReserveCredits: number;
+  readonly creatorCommissionCredits: number;
+  readonly fallbackCommissionCredits: number;
+  readonly platformMarginCredits: number;
+  readonly regions: readonly string[];
   readonly enabled: boolean;
   readonly updatedAt: string;
 }
@@ -166,6 +175,22 @@ export interface PlatformAdminOfferCommands {
     readonly expectedRevision: number;
     readonly enabled: boolean;
   }): Promise<PlatformAdminOffer>;
+  saveRevision(input: {
+    readonly tenantId: TenantId;
+    readonly offerId: string | null;
+    readonly expectedRevision: number | null;
+    readonly key: string;
+    readonly title: string;
+    readonly description: string;
+    readonly skillVersionId: string;
+    readonly priceCredits: number;
+    readonly fulfillmentReserveCredits: number;
+    readonly creatorCommissionCredits: number;
+    readonly fallbackCommissionCredits: number;
+    readonly platformMarginCredits: number;
+    readonly regions: readonly string[];
+    readonly enabled: boolean;
+  }): Promise<PlatformAdminOffer>;
 }
 
 export interface PlatformAdminService {
@@ -188,6 +213,22 @@ export interface PlatformAdminService {
     readonly authorizationHeader: string | undefined;
     readonly limit?: number;
   }): Promise<readonly PlatformAdminOffer[]>;
+  saveOfferRevision(input: {
+    readonly authorizationHeader: string | undefined;
+    readonly offerId: string | null;
+    readonly expectedRevision: number | null;
+    readonly key: string;
+    readonly title: string;
+    readonly description: string;
+    readonly skillVersionId: string;
+    readonly priceCredits: number;
+    readonly fulfillmentReserveCredits: number;
+    readonly creatorCommissionCredits: number;
+    readonly fallbackCommissionCredits: number;
+    readonly platformMarginCredits: number;
+    readonly regions: readonly string[];
+    readonly enabled: boolean;
+  }): Promise<PlatformAdminOffer>;
   setOfferEnabled(input: {
     readonly authorizationHeader: string | undefined;
     readonly offerId: string;
@@ -464,13 +505,28 @@ export function createPlatformAdminService(input: {
         key: string;
         revision: string | number;
         enabled: boolean;
+        definition: {
+          title: string;
+          description: string;
+          skillVersionId: string;
+          priceCredits: number;
+          fulfillmentReserveCredits: number;
+          creatorCommissionCredits: number;
+          fallbackCommissionCredits: number;
+          platformMarginCredits: number;
+          regions: string[];
+        };
         updated_at: Date | string;
       }>(
         `SELECT o.offer_id, o.key, h.current_revision AS revision,
-                h.enabled, h.updated_at
+                h.enabled, r.definition, h.updated_at
            FROM commerce.offers o
            JOIN commerce.offer_heads h
              ON h.tenant_id = o.tenant_id AND h.offer_id = o.offer_id
+           JOIN commerce.offer_revisions r
+             ON r.tenant_id = h.tenant_id
+            AND r.offer_id = h.offer_id
+            AND r.revision = h.current_revision
           WHERE o.tenant_id = $1
           ORDER BY h.updated_at DESC
           LIMIT $2`,
@@ -480,9 +536,44 @@ export function createPlatformAdminService(input: {
         offerId: row.offer_id,
         key: row.key,
         revision: numberValue(row.revision),
+        title: row.definition.title,
+        description: row.definition.description,
+        skillVersionId: row.definition.skillVersionId,
+        priceCredits: row.definition.priceCredits,
+        fulfillmentReserveCredits: row.definition.fulfillmentReserveCredits,
+        creatorCommissionCredits: row.definition.creatorCommissionCredits,
+        fallbackCommissionCredits: row.definition.fallbackCommissionCredits,
+        platformMarginCredits: row.definition.platformMarginCredits,
+        regions: Object.freeze([...row.definition.regions]),
         enabled: row.enabled,
         updatedAt: iso(row.updated_at),
       }));
+    },
+
+    async saveOfferRevision(request) {
+      const authority = await authorize(
+        request.authorizationHeader,
+        "commerce.write",
+      );
+      if (!input.offerCommands) {
+        throw new Error("Commerce administration is unavailable");
+      }
+      return input.offerCommands.saveRevision({
+        tenantId: tenant(authority),
+        offerId: request.offerId,
+        expectedRevision: request.expectedRevision,
+        key: request.key,
+        title: request.title,
+        description: request.description,
+        skillVersionId: request.skillVersionId,
+        priceCredits: request.priceCredits,
+        fulfillmentReserveCredits: request.fulfillmentReserveCredits,
+        creatorCommissionCredits: request.creatorCommissionCredits,
+        fallbackCommissionCredits: request.fallbackCommissionCredits,
+        platformMarginCredits: request.platformMarginCredits,
+        regions: request.regions,
+        enabled: request.enabled,
+      });
     },
 
     async setOfferEnabled(request) {
