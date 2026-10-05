@@ -493,7 +493,25 @@ export function createTwinProductionRuntime(input: {
   });
 
   const myTwinProfile = createCanonicalMyTwinProfileSource({
-    store: profileStore,
+    store: {
+      async readForOwner(request) {
+        return input.profiles.ensureForOwner({
+          tenantId: request.tenantId as TenantId,
+          ownerUserId: request.ownerUserId as UserId,
+          at: at(),
+        });
+      },
+      async update(request) {
+        return input.profiles.update({
+          tenantId: request.tenantId as TenantId,
+          ownerUserId: request.ownerUserId as UserId,
+          characterId: request.characterId as CharacterId,
+          expectedRevision: request.expectedRevision,
+          patch: request.patch,
+          updatedAt: request.updatedAt as never,
+        });
+      },
+    },
     now: at,
   });
 
@@ -1682,7 +1700,7 @@ export function createTwinProductionRuntime(input: {
             );
           }
         }
-        const next =
+        const next: import("@masanawa/commerce").OwnerAccessRequest["state"] =
           request.action === "accept" ? "accepted" :
           request.action === "decline" ? "declined" :
           request.action === "schedule" ? "scheduled" :
@@ -2012,7 +2030,7 @@ export function createTwinProductionRuntime(input: {
         admissionId: admission.admissionId,
         outcome: admission.startedAt === null ? "failed-before-media" : request.outcome,
         verifiedSeconds: seconds,
-        settlement: decision,
+        settlement: Object.freeze({ ...decision }),
         settledAt: at(),
       });
       await input.events.append({
