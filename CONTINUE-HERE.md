@@ -1,5 +1,15 @@
 # Continue Here
 
+## Mobile first-frame deferral checkpoint — 2026-10-05
+
+Preserve this startup rule:
+- push/Firebase/native initial-link initialization is noncritical startup work and begins
+  immediately after Flutter's first frame;
+- the deep-link stream subscription is installed before that deferral so initial links are
+  still queued/delivered through the existing PendingDeepLink path;
+- do not move notification setup, token registration or Firebase initialization back into
+  pre-first-frame startup unless a measured correctness requirement demands it.
+
 ## Mobile directory fast-start checkpoint — 2026-10-05
 
 Preserve this startup behavior:
