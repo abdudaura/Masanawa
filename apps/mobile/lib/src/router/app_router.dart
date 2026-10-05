@@ -15,8 +15,9 @@ import '../state/session_state.dart';
 /// Stripped router — auth (splash → phone → OTP → name), the chat list, one
 /// thread per configured Character, the agent list, and settings. Nothing else.
 ///
-/// Auth rule: OTP proves ownership. First-time verified users complete their
-/// profile at `/name`; all protected Agent surfaces require a signed-in session.
+/// Auth rule: OTP proves ownership. A first signup may pause at `/name`
+/// after successful OTP proof but before the session is issued. All Agent
+/// surfaces require the resulting signed-in platform session.
 final appRouterProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
     initialLocation: '/splash',
@@ -44,6 +45,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       // /name is first-signup only.
       if (path == '/name') {
+        if (session is SessionNameRequired) return null;
         if (isSignedIn) {
           final user = (session as SessionSignedIn).user;
           return user.isNewUser ? null : '/chats';
