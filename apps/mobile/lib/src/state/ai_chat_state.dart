@@ -374,22 +374,16 @@ class AiChatController extends Notifier<AiChatState> {
         initialSession is SessionSignedIn ? initialSession.user.id : null;
     final initialOwner = _cacheOwnerId;
     if (initialOwner != null && initialOwner.isNotEmpty) {
-      scheduleMicrotask(() => _load(initialOwner, _cacheGeneration));
-    }
-    try {
-      _connectivitySub = Connectivity().onConnectivityChanged.listen(
-        (results) {
-          final online = !results.contains(ConnectivityResult.none);
-          if (!_disposed) state = state.copyWith(online: online);
-          if (online) {
-            unawaited(_flushQueuedMessages());
-            final open = state.openThreadId;
-            if (open != null) unawaited(syncFromServer(open));
-          }
-        },
-        onError: (_) {},
+      // Hydrate local conversations before starting another platform-channel
+      // dependency. Connectivity is useful for reconciliation, but it should
+      // not compete with the first useful cached chat list.
+      unawaited(
+        _load(initialOwner, _cacheGeneration)
+            .whenComplete(_startConnectivityMonitoring),
       );
-    } catch (_) {}
+    } else {
+      scheduleMicrotask(_startConnectivityMonitoring);
+    }
     ref.onDispose(() {
       _disposed = true;
       _connectivitySub?.cancel();
@@ -424,6 +418,24 @@ class AiChatController extends Notifier<AiChatState> {
       state = state.copyWith(shellConfigs: {});
     });
     return const AiChatState();
+  }
+
+  void _startConnectivityMonitoring() {
+    if (_disposed || _connectivitySub != null) return;
+    try {
+      _connectivitySub = Connectivity().onConnectivityChanged.listen(
+        (results) {
+          final online = !results.contains(ConnectivityResult.none);
+          if (!_disposed) state = state.copyWith(online: online);
+          if (online) {
+            unawaited(_flushQueuedMessages());
+            final open = state.openThreadId;
+            if (open != null) unawaited(syncFromServer(open));
+          }
+        },
+        onError: (_) {},
+      );
+    } catch (_) {}
   }
 
   ChatThread threadOf(String characterId) =>
