@@ -217,3 +217,14 @@ Security boundary:
 cached agent presentation never grants Character admission, Skills, Tools, billing, wallet,
 or any other authority. Every consequential/current operation remains server-authorized.
 Do not hard-code Gwani/Gwana into the client as a startup shortcut.
+
+
+### Cache-first startup presentation polish
+
+When an account-scoped cached AgentDirectory is available, mobile surfaces must treat it
+as immediately usable presentation while the canonical live directory refreshes.
+
+- Chats with no prior thread may still open the cached Agents roster immediately.
+- Agent-list copy should say the roster is refreshing rather than implying it is unavailable.
+- Only the true no-cache/no-roster state should block on "Loading your agents…".
+- This changes presentation latency only; server admission and authority are unchanged.
