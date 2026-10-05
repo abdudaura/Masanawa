@@ -813,9 +813,13 @@ export function createFinancialService(input: {
       let deposits = false;
       let withdrawals = false;
       let conversions = false;
+      let qualifiedOnRamp: Awaited<ReturnType<typeof qualifiedFiatOnRamp>> = null;
       try {
         deposits = (await qualifiedDepositRoutes()).length > 0;
       } catch { /* Unknown custody evidence denies admission. */ }
+      try {
+        qualifiedOnRamp = await qualifiedFiatOnRamp();
+      } catch { /* Unknown on-ramp/custody evidence denies admission. */ }
       try {
         const routes = await qualifiedWithdrawalRoutes(auth);
         withdrawals = routes !== null && routes.length > 0;
@@ -828,6 +832,11 @@ export function createFinancialService(input: {
         deposits,
         withdrawals,
         conversions,
+        fiatOnRamp: qualifiedOnRamp !== null,
+        fiatCurrencies:
+          qualifiedOnRamp === null ? Object.freeze([]) : qualifiedOnRamp.fiatCurrencies,
+        fiatSettlementProviderCode:
+          qualifiedOnRamp?.settlement.providerCode ?? null,
         payoutReason:
           !withdrawals
             ? "nowpayments_payout_credentials_or_account_capability_unavailable"
@@ -835,6 +844,10 @@ export function createFinancialService(input: {
         conversionReason:
           !conversions
             ? "nowpayments_conversion_account_or_route_capability_unavailable"
+            : null,
+        fiatOnRampReason:
+          qualifiedOnRamp === null
+            ? "nowpayments_fiat_onramp_not_activated_or_settlement_unavailable"
             : null,
       });
     },
