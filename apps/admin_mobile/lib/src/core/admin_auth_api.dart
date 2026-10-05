@@ -54,7 +54,7 @@ class AdminAuthApi {
       : _dio = dio ??
             Dio(
               BaseOptions(
-                baseUrl: requireAdminAuthBaseUrl(),
+                baseUrl: adminAuthBaseUrl.trim(),
                 connectTimeout: const Duration(seconds: 10),
                 receiveTimeout: const Duration(seconds: 20),
                 headers: {'Accept': 'application/json'},
@@ -63,6 +63,10 @@ class AdminAuthApi {
 
   final Dio _dio;
 
+  void _ensureConfigured() {
+    requireAdminAuthBaseUrl();
+  }
+
   Map<String, dynamic> _identity(String identifier) {
     final value = identifier.trim();
     if (value.contains('@')) return {'email': value.toLowerCase()};
@@ -70,6 +74,7 @@ class AdminAuthApi {
   }
 
   Future<int> sendOtp(String identifier) async {
+    _ensureConfigured();
     try {
       final response = await _dio.post<dynamic>(
         '/auth/otp',
@@ -87,6 +92,7 @@ class AdminAuthApi {
     required String code,
     String? name,
   }) async {
+    _ensureConfigured();
     try {
       final response = await _dio.post<dynamic>(
         '/auth/verify',
@@ -105,6 +111,7 @@ class AdminAuthApi {
   }
 
   Future<AdminAuthTokens> refresh(String refreshToken) async {
+    _ensureConfigured();
     try {
       final response = await _dio.post<dynamic>(
         '/auth/refresh',
@@ -119,6 +126,7 @@ class AdminAuthApi {
   }
 
   Future<void> logout(String accessToken) async {
+    _ensureConfigured();
     try {
       await _dio.post<dynamic>(
         '/auth/logout',
