@@ -518,6 +518,13 @@ export function createPlatformCustomerAuthorizers(input: Readonly<{
   relationshipProvisioner: UserRelationshipProvisioner;
   platformProfiles: PlatformAgentProfileRepository;
   policyRevision: string;
+  publicTwinAdmission?: {
+    canChat(input: Readonly<{
+      tenantId: TenantId;
+      userId: UserId;
+      characterId: CharacterId;
+    }>): Promise<boolean>;
+  };
 }>): Readonly<{
   directory: AgentDirectoryAuthorizer;
   conversation: AgentConversationAuthorizer;
@@ -592,7 +599,17 @@ export function createPlatformCustomerAuthorizers(input: Readonly<{
           characterId,
         });
         if (!platform?.supportAgent) {
-          throw new CustomerAuthError("FORBIDDEN", 403);
+          const publicTwinAllowed =
+            input.publicTwinAdmission
+              ? await input.publicTwinAdmission.canChat({
+                  tenantId: identity.tenantId,
+                  userId: identity.userId,
+                  characterId,
+                })
+              : false;
+          if (!publicTwinAllowed) {
+            throw new CustomerAuthError("FORBIDDEN", 403);
+          }
         }
         relationship = await input.relationshipProvisioner.getOrCreateForUserCharacter({
           tenantId: identity.tenantId,
