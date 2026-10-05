@@ -17,7 +17,6 @@ export type AgentAdminCapability =
   | "skills.catalog.write"
   | "platform.summary.read"
   | "identity.users.read"
-  | "identity.users.write"
   | "agents.runs.read"
   | "commerce.read"
   | "commerce.write"
