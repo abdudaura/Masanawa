@@ -703,10 +703,17 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
   }
 
   @override
-  Future<AgentLiveVoiceGrant> mintLiveVoiceGrant(String characterId) async {
+  Future<AgentLiveVoiceGrant> mintLiveVoiceGrant(
+    String characterId, {
+    String? admissionId,
+  }) async {
     final data = await _client.post(
       '/agent/live/token',
-      {'characterId': characterId},
+      {
+        'characterId': characterId,
+        if (admissionId != null && admissionId.isNotEmpty)
+          'admissionId': admissionId,
+      },
     );
     final expiresAt = DateTime.tryParse(data['expiresAt'] as String? ?? '');
     final token = data['token'];
