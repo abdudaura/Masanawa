@@ -1750,15 +1750,25 @@ export function createTwinProductionRuntime(input: {
             },
           });
         }
-        if (request.action !== "cancel") {
+        if (request.action === "cancel") {
+          await notifyUser(
+            request.tenantId,
+            current.ownerUserId as UserId,
+            "Talk request cancelled",
+            "The requester cancelled this talk request.",
+            "masanawa://activity",
+          );
+        } else {
           const message =
             next === "accepted"
               ? "Your request was accepted."
               : next === "scheduled"
                 ? `Your session was scheduled for ${changed.scheduledFor ?? "the agreed time"}.`
-                : next === "completed"
-                  ? "Your talk session was completed."
-                  : "Your request ended and any eligible held Credits were released.";
+                : next === "active"
+                  ? "Your talk session has started."
+                  : next === "completed"
+                    ? "Your talk session was completed."
+                    : "Your request ended and any eligible held Credits were released.";
           await notifyUser(
             request.tenantId,
             current.requesterUserId as UserId,
