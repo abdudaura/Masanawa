@@ -1,5 +1,16 @@
 # Continue Here
 
+## Cached conversation first-start checkpoint — 2026-10-05
+
+Preserve this mobile startup behavior:
+- resolve the application-documents directory once per AiChatController lifetime;
+- hydrate the current User's account-scoped chat cache before starting
+  Connectivity platform monitoring;
+- retired global chat-cache cleanup must stay best-effort and off the critical
+  current-account hydration path;
+- local chat caches remain scoped by canonical User ID; server history remains
+  canonical and may reconcile after the cached shell is already visible.
+
 ## Fresh-install session restore checkpoint — 2026-10-05
 
 Preserve the auth startup optimization:

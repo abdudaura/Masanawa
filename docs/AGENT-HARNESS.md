@@ -250,3 +250,19 @@ than four additional key-by-key calls.
 This means a fresh signed-out install performs two secure-storage platform calls for session
 discovery instead of up to five, while legacy installs still migrate asynchronously to the
 single-record format. Do not remove legacy migration until upgrade support is explicitly retired.
+
+
+### Cached conversation first-start optimization
+
+The signed-in chat shell now prioritizes local conversation hydration ahead of
+connectivity monitoring and reuses one resolved application-documents directory
+for the controller lifetime.
+
+- current-account thread cache lookup resolves the documents directory once;
+- cleanup of the retired unscoped thread cache is best-effort and no longer
+  blocks current-account cache hydration;
+- connectivity monitoring starts only after the initial local cache attempt, so
+  a platform-channel connectivity subscription cannot delay cached chats;
+- later saves/deletes reuse the resolved directory instead of repeating
+  PathProvider calls;
+- all cache files remain canonical-User-scoped and server history remains truth.
