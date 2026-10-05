@@ -1,9 +1,10 @@
+import { createCanonicalId } from "@masanawa/contracts";
 import { describe, expect, it } from "vitest";
 import { createTwinProductionRuntime } from "./twin_production_runtime.js";
 
-const tenantId = "tenant_00000000-0000-4000-8000-000000000001" as never;
-const ownerUserId = "user_00000000-0000-4000-8000-000000000002" as never;
-const characterId = "character_00000000-0000-4000-8000-000000000003" as never;
+const tenantId = createCanonicalId("tenant");
+const ownerUserId = createCanonicalId("user");
+const characterId = createCanonicalId("character");
 
 const profile = Object.freeze({
   tenantId,
@@ -115,7 +116,7 @@ function harness() {
 }
 
 
-const requesterUserId = "user_00000000-0000-4000-8000-000000000006" as never;
+const requesterUserId = createCanonicalId("user");
 
 function paidOrderingHarness(order: string[]) {
   const ledgerPlan = (input: { readonly plan: unknown }) => {
