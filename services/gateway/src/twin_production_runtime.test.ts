@@ -114,6 +114,134 @@ function harness() {
   return runtime;
 }
 
+
+const requesterUserId = "user_00000000-0000-4000-8000-000000000006" as never;
+
+function paidOrderingHarness(order: string[]) {
+  const ledgerPlan = (input: { readonly plan: unknown }) => {
+    order.push("plan");
+    return input.plan;
+  };
+
+  return createTwinProductionRuntime({
+    sessions: {
+      async authorize() {
+        return {
+          tenantId,
+          userId: requesterUserId,
+          profile: {
+            userId: requesterUserId,
+            name: "Requester",
+            email: "requester@example.com",
+            phone: null,
+            locale: "en",
+            createdAt: "2026-10-05T15:00:00.000Z",
+          },
+        } as never;
+      },
+    },
+    profiles: {
+      async ensureForOwner() { return null; },
+      async update() { throw new Error("unused"); },
+      async searchPublic() { return []; },
+      async readPublicById() { return null; },
+    } as never,
+    economy: {
+      async readVoiceQuote() {
+        return {
+          tenantId,
+          userId: requesterUserId,
+          ownerUserId,
+          quoteId: "quote_paid_123",
+          characterId,
+          policyRevision: 1,
+          trialPolicyRevision: 1,
+          chargeMode: "paid",
+          trialDurationDays: 7,
+          trialStartsAt: null,
+          trialExpiresAt: null,
+          estimatedSeconds: 300,
+          estimatedPriceCredits: 50,
+          spendCapCredits: 50,
+          ownerShareBasisPoints: 8000,
+          unitSeconds: 60,
+          priceCreditsPerUnit: 10,
+          quoteExpiresAt: "2099-10-05T16:10:00.000Z",
+          createdAt: "2026-10-05T16:00:00.000Z",
+        };
+      },
+      async readVoiceAdmissionByQuote() { return null; },
+      async readLedgerPlan() { return null; },
+      async putLedgerPlan(input: { readonly plan: unknown }) {
+        return ledgerPlan(input);
+      },
+      async putVoiceAdmission(input: unknown) {
+        order.push("persist-voice");
+        return input;
+      },
+      async readOwnerAccessQuote() {
+        return {
+          requestId: "request_paid_123",
+          requesterUserId,
+          ownerUserId,
+          originatingCharacterId: characterId,
+          modality: "voice",
+          durationMinutes: 15,
+          priceCredits: 150,
+          platformFeeCredits: 30,
+          ownerEarningCredits: 120,
+          chargeMode: "paid",
+          trialDurationDays: 7,
+          policyRevision: 1,
+          trialPolicyRevision: 1,
+          quoteExpiresAt: "2099-10-05T16:10:00.000Z",
+        };
+      },
+      async readOwnerAccessRequest() { return null; },
+      async putOwnerAccessRequest(input: {
+        readonly request: unknown;
+        readonly reservationId: unknown;
+        readonly reservedCredits: number;
+      }) {
+        order.push("persist-owner");
+        return {
+          ...(input.request as Record<string, unknown>),
+          reservationId: input.reservationId,
+          reservedCredits: input.reservedCredits,
+        };
+      },
+    } as never,
+    events: {
+      async append() {
+        order.push("event");
+        return "event-1";
+      },
+      async listForCharacter() { return []; },
+      async listForUser() { return []; },
+    },
+    commerce: {
+      async postTransfer() {
+        order.push("reserve");
+      },
+    } as never,
+    personalClones: {
+      async readPersonalClone() { return null; },
+    } as never,
+    publicTwinBaseUrl: "https://masanawa.com/twin",
+    adminPrincipals: new Set<string>(),
+    voice: {
+      unitSeconds: 60,
+      priceCreditsPerUnit: 10,
+      ownerShareBasisPoints: 8000,
+    },
+    ownerAccess: {
+      platformFeeBasisPoints: 2000,
+      acceptWithinMinutes: 60,
+      startGraceMinutes: 15,
+    },
+  });
+}
+
 describe("Twin production runtime composition", () => {
   it("exposes the complete canonical Twin production surface as one frozen runtime", () => {
     const runtime = harness();
@@ -137,6 +265,37 @@ describe("Twin production runtime composition", () => {
       "voiceAdmissionGate",
       "wallet",
     ].sort());
+  });
+
+
+  it("reserves paid Twin voice before persisting the admission", async () => {
+    const order: string[] = [];
+    const runtime = paidOrderingHarness(order);
+
+    await runtime.paidVoice.start({
+      authorizationHeader: "Bearer requester",
+      characterId,
+      quoteId: "quote_paid_123",
+      accepted: true,
+    });
+
+    expect(order.indexOf("reserve")).toBeGreaterThanOrEqual(0);
+    expect(order.indexOf("persist-voice")).toBeGreaterThan(order.indexOf("reserve"));
+  });
+
+  it("reserves paid owner access before persisting the request and event", async () => {
+    const order: string[] = [];
+    const runtime = paidOrderingHarness(order);
+
+    await runtime.ownerAccess.request({
+      authorizationHeader: "Bearer requester",
+      characterId,
+      quoteId: "request_paid_123",
+    });
+
+    expect(order.indexOf("reserve")).toBeGreaterThanOrEqual(0);
+    expect(order.indexOf("persist-owner")).toBeGreaterThan(order.indexOf("reserve"));
+    expect(order.indexOf("event")).toBeGreaterThan(order.indexOf("persist-owner"));
   });
 
   it("wires authenticated public discovery, My Twin and Wallet projections through canonical sources", async () => {
