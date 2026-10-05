@@ -11,7 +11,9 @@ Purpose: separate presentation/channel cancellation from durable execution cance
 - `docs/workstreams/harness-signal-routing.md`
 - `packages/agents/src/harness-signals.ts`
 - `packages/agents/src/harness-signals.test.ts`
-- append-only export in `packages/agents/src/index.ts`
+- `packages/agents/src/controlled-harness.ts`
+- `packages/agents/src/controlled-harness.test.ts`
+- append-only exports in `packages/agents/src/index.ts`
 
 ## Boundaries
 
@@ -29,6 +31,8 @@ Purpose: separate presentation/channel cancellation from durable execution cance
 - first abort propagates once;
 - no listener leak after combined signal aborts;
 - already-aborted signals produce immediately aborted combined signal;
-- null request signal is supported.
+- null request signal is supported;
+- AgentHarness wrapper routes the selected signal into real execution and disposes combined listeners;
+- durable execution re-checks server execution control before accepting a returned result.
 
 Status: active.
