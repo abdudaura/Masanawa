@@ -9,7 +9,30 @@ import {
   type PlatformSessionIdentity,
   type PlatformSessionRepository,
 } from "@masanawa/security";
-import type { TenantId } from "@masanawa/contracts";
+import {
+  createCanonicalId,
+  nowInstant,
+  parseCanonicalId,
+  type CharacterId,
+  type TenantId,
+} from "@masanawa/contracts";
+import type {
+  AgentPresentationRepository,
+  CharacterSkillAssignmentRepository,
+  PlatformAgentProfileRepository,
+} from "@masanawa/agents";
+import type {
+  UserRelationshipProvisioner,
+  UserRelationshipReader,
+} from "@masanawa/identity";
+import { createAuthorityContext } from "@masanawa/security";
+import type {
+  AgentConversationAdmission,
+  AgentConversationAuthorizer,
+} from "./agent_conversation_contract.js";
+import type { AgentDirectoryAuthorizer } from "./agent_directory.js";
+import type { CreatorCloneAuthorizer } from "./creator_clone.js";
+import type { CommerceUserAuthorizer } from "./commerce_catalog.js";
 import type { FinancialAuthorizer } from "./financial_service.js";
 
 export class CustomerAuthError extends Error {
@@ -425,4 +448,174 @@ export function createHttpSmsOtpDelivery(input: Readonly<{
       if (!response.ok) throw new Error("auth.sms_delivery_failed");
     },
   });
+}
+
+
+export function createPlatformCustomerAuthorizers(input: Readonly<{
+  sessions: PlatformCustomerSessionAuthorizer;
+  presentations: AgentPresentationRepository;
+  skillAssignments: CharacterSkillAssignmentRepository;
+  relationships: UserRelationshipReader;
+  relationshipProvisioner: UserRelationshipProvisioner;
+  platformProfiles: PlatformAgentProfileRepository;
+  policyRevision: string;
+}>): Readonly<{
+  directory: AgentDirectoryAuthorizer;
+  conversation: AgentConversationAuthorizer;
+  creator: CreatorCloneAuthorizer;
+  commerce: CommerceUserAuthorizer;
+}> {
+  const policyRevision = input.policyRevision.trim();
+  if (!policyRevision || policyRevision.length > 160) {
+    throw new TypeError("Platform policy revision is invalid");
+  }
+
+  async function session(authorizationHeader: string | undefined) {
+    try {
+      return await input.sessions.authorize({ authorizationHeader });
+    } catch {
+      throw new CustomerAuthError("UNAUTHORIZED", 401);
+    }
+  }
+
+  async function admittedCharacterIds(
+    tenantId: Parameters<UserRelationshipReader["listForUser"]>[0]["tenantId"],
+    userId: Parameters<UserRelationshipReader["listForUser"]>[0]["userId"],
+  ): Promise<readonly CharacterId[]> {
+    const [relationships, supportAgents] = await Promise.all([
+      input.relationships.listForUser({ tenantId, userId }),
+      input.platformProfiles.listSupportAgents({ tenantId }),
+    ]);
+    const characterIds = new Set<CharacterId>();
+    for (const relationship of relationships) {
+      characterIds.add(relationship.characterId);
+    }
+    for (const profile of supportAgents) {
+      characterIds.add(profile.characterId);
+    }
+    return Object.freeze([...characterIds]);
+  }
+
+  const directory: AgentDirectoryAuthorizer = Object.freeze({
+    async authorize(request) {
+      const identity = await session(request.authorizationHeader);
+      return Object.freeze({
+        tenantId: identity.tenantId,
+        userId: identity.userId,
+        characterIds: await admittedCharacterIds(
+          identity.tenantId,
+          identity.userId,
+        ),
+      });
+    },
+  });
+
+  const conversation: AgentConversationAuthorizer = Object.freeze({
+    async authorize(request): Promise<AgentConversationAdmission> {
+      const identity = await session(request.authorizationHeader);
+      const characterId = parseCanonicalId("character", request.characterId);
+      const presentation = await input.presentations.readForCharacter({
+        tenantId: identity.tenantId,
+        characterId,
+      });
+      if (!presentation?.visibleInUserApp) {
+        throw new CustomerAuthError("FORBIDDEN", 403);
+      }
+
+      let relationship = await input.relationships.readForUserCharacter({
+        tenantId: identity.tenantId,
+        userId: identity.userId,
+        characterId,
+      });
+      if (!relationship) {
+        const platform = await input.platformProfiles.readForCharacter({
+          tenantId: identity.tenantId,
+          characterId,
+        });
+        if (!platform?.supportAgent) {
+          throw new CustomerAuthError("FORBIDDEN", 403);
+        }
+        relationship = await input.relationshipProvisioner.getOrCreateForUserCharacter({
+          tenantId: identity.tenantId,
+          userId: identity.userId,
+          characterId,
+          createdAt: nowInstant(),
+        });
+      }
+
+      const assignment = await input.skillAssignments.readForCharacter({
+        tenantId: identity.tenantId,
+        characterId,
+      });
+      const requestId = createCanonicalId("request");
+      const correlationId = createCanonicalId("correlation");
+      return Object.freeze({
+        scope: Object.freeze({
+          tenantId: identity.tenantId,
+          userId: identity.userId,
+          characterId,
+          relationshipId: relationship.relationshipId,
+        }),
+        characterVersionId: presentation.characterVersionId,
+        bindings: Object.freeze({
+          channelSessionId: null,
+          presenceSessionId: null,
+          skillVersionIds: Object.freeze([...(assignment?.skillVersionIds ?? [])]),
+          taskIds: Object.freeze([]),
+          workflowRunIds: Object.freeze([]),
+        }),
+        presentation: Object.freeze({
+          displayName: presentation.displayName,
+          roleLabel: presentation.roleLabel,
+          about: presentation.about,
+        }),
+        authority: createAuthorityContext({
+          tenantId: identity.tenantId,
+          principal: Object.freeze({
+            kind: "user" as const,
+            userId: identity.userId,
+          }),
+          scopes: Object.freeze(["mobile.production"]),
+          capabilities: Object.freeze([
+            "agents.session.create",
+            "agents.session.read",
+            "agents.session.close",
+            "agents.run.create",
+            "agents.run.read",
+            "agents.run.finish",
+          ]),
+          resourceScope: Object.freeze({
+            relationshipIds: Object.freeze([relationship.relationshipId]),
+          }),
+          policyRevision,
+          approvalIds: Object.freeze([]),
+          delegationChain: Object.freeze([]),
+          requestId,
+          correlationId,
+        }),
+      });
+    },
+  });
+
+  const creator: CreatorCloneAuthorizer = Object.freeze({
+    async authorize(request) {
+      const identity = await session(request.authorizationHeader);
+      return Object.freeze({
+        tenantId: identity.tenantId,
+        userId: identity.userId,
+      });
+    },
+  });
+
+  const commerce: CommerceUserAuthorizer = Object.freeze({
+    async authorize(request) {
+      const identity = await session(request.authorizationHeader);
+      return Object.freeze({
+        tenantId: identity.tenantId,
+        userId: identity.userId,
+      });
+    },
+  });
+
+  return Object.freeze({ directory, conversation, creator, commerce });
 }
