@@ -136,6 +136,7 @@ export interface TwinRuntimeRepository {
     readonly baseCredits: number;
     readonly commissionCredits: number;
     readonly policyRevision: number;
+    readonly ledgerEntryId: LedgerEntryId;
     readonly settledAt: string;
   }): Promise<{ readonly duplicate: boolean }>;
 
@@ -149,6 +150,7 @@ export interface TwinRuntimeRepository {
     readonly baseCredits: number;
     readonly commissionCredits: number;
     readonly policyRevision: number;
+    readonly ledgerEntryId: LedgerEntryId;
     readonly reversedCredits: number;
   } | null>;
 
@@ -157,6 +159,7 @@ export interface TwinRuntimeRepository {
     readonly operationId: string;
     readonly reversalId: string;
     readonly amountCredits: number;
+    readonly ledgerEntryId: LedgerEntryId;
     readonly reversedAt: string;
   }): Promise<{ readonly duplicate: boolean }>;
 
