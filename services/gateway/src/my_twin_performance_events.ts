@@ -86,9 +86,9 @@ export function createMyTwinEconomyPerformanceReader(input: {
             reversedEarningsCredits += amount(event.amountCredits);
             break;
           case "twin.owner-access.requested":
+          case "twin.owner-access.accepted":
             requestedOwnerRequestIds.add(event.referenceId);
             break;
-          case "twin.owner-access.accepted":
           case "twin.owner-access.scheduled":
           case "twin.owner-access.completed":
           case "twin.owner-access.refunded":
