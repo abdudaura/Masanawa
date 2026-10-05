@@ -1,4 +1,7 @@
-import type { AgentAdminCapability } from "./agent_admin.js";
+import type {
+  AgentAdminAuthorizer,
+  AgentAdminCapability,
+} from "./agent_admin.js";
 import {
   evaluateAdminAgentDelegation,
   type AdminAgentDelegationConfig,
@@ -124,6 +127,7 @@ function forbidden(message: string): Error & { statusCode: number } {
 
 export function createAdminAgentActionBroker(input: {
   readonly config: AdminAgentDelegationConfig;
+  readonly authorizer: AgentAdminAuthorizer;
   readonly platformAdmin: PlatformAdminService;
 }): AdminAgentActionBroker {
   return Object.freeze({
@@ -135,6 +139,13 @@ export function createAdminAgentActionBroker(input: {
       if (!delegate) throw forbidden("Character is not an enabled admin delegate");
 
       const definition = actions[request.action];
+      const operator = await input.authorizer.authorize({
+        authorizationHeader: request.authorizationHeader,
+        capability: definition.capability,
+      });
+      if (operator.tenantId !== input.config.tenantId) {
+        throw forbidden("Operator and admin delegate tenant mismatch");
+      }
       const decision = evaluateAdminAgentDelegation({
         delegate,
         capability: definition.capability,
