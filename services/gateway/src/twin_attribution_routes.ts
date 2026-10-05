@@ -3,6 +3,7 @@ import type {
   TwinAttributionEventType,
   TwinAttributionInput,
   TwinAttributionService,
+  createCommissionPolicyAdminService,
 } from "./twin_attribution.js";
 
 function text(value: unknown, name: string, max = 256): string {
@@ -63,6 +64,52 @@ export function registerTwinAttributionRoutes(
       authorizationHeader: request.headers.authorization,
       attribution,
       baseCredits: amount(body.baseCredits),
+    });
+  });
+}
+
+
+type CommissionPolicyAdminService = ReturnType<typeof createCommissionPolicyAdminService>;
+
+function commissionEventType(value: unknown): "external-funding" | "commerce-purchase" {
+  if (value !== "external-funding" && value !== "commerce-purchase") {
+    throw new TypeError("Invalid commission eventType");
+  }
+  return value;
+}
+
+export function registerCommissionPolicyAdminRoutes(
+  app: FastifyInstance,
+  service: CommissionPolicyAdminService,
+): void {
+  app.get("/v1/admin/monetization/commission/:eventType", async (request) => {
+    const params = request.params as Record<string, unknown>;
+    return service.read({
+      authorizationHeader: request.headers.authorization,
+      eventType: commissionEventType(params.eventType),
+    });
+  });
+
+  app.put("/v1/admin/monetization/commission/:eventType", async (request) => {
+    const params = request.params as Record<string, unknown>;
+    const body = request.body as Record<string, unknown>;
+    const maximum =
+      body.maximumCommissionCredits === null ||
+      body.maximumCommissionCredits === undefined
+        ? null
+        : amount(body.maximumCommissionCredits);
+    const effectiveAt =
+      typeof body.effectiveAt === "string"
+        ? body.effectiveAt
+        : new Date().toISOString();
+    return service.update({
+      authorizationHeader: request.headers.authorization,
+      eventType: commissionEventType(params.eventType),
+      enabled: body.enabled === true,
+      rateBasisPoints: amount(body.rateBasisPoints),
+      minimumCommissionCredits: amount(body.minimumCommissionCredits),
+      maximumCommissionCredits: maximum,
+      effectiveAt,
     });
   });
 }
