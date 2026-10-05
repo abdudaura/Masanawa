@@ -208,8 +208,9 @@ void main() {
 
     final signedIn = container.read(sessionProvider);
     expect(signedIn, isA<SessionSignedIn>());
-    expect((signedIn as SessionSignedIn).user.name, 'Ada Obi');
-    expect(signedIn.user.isNewUser, isFalse);
+    final completedState = signedIn as SessionSignedIn;
+    expect(completedState.user.name, 'Ada Obi');
+    expect(completedState.user.isNewUser, isFalse);
     expect(api.accessToken, 'a3');
   });
 
