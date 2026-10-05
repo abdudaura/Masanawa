@@ -17,6 +17,7 @@ export interface MyTwinProfileRecord {
   readonly bio: string;
   readonly languages: readonly string[];
   readonly discoverable: boolean;
+  readonly revision: number;
 }
 
 export interface MyTwinProfileSource {
