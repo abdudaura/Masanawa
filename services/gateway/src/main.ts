@@ -468,6 +468,10 @@ export async function startGatewayService(
         });
       }
 
+      if (!startupPool) {
+        throw new Error("Production Gemini pool failed to initialize");
+      }
+
       if (!liveVoiceApiKey) {
         liveVoiceApiKey = startupPool.apiKeys[0];
         liveVoiceModel =
