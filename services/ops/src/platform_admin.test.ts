@@ -74,6 +74,32 @@ describe("platform admin projections", () => {
     expect("setUserState" in service).toBe(false);
   });
 
+  it("tenant-scopes safe User relationship metadata", async () => {
+    const seen: string[] = [];
+    const calls: unknown[] = [];
+    const service = createPlatformAdminService({
+      database: { async query() { return { rows: [] }; } } as unknown as PlatformAdminQuery,
+      authorizer: authorizer(seen),
+      relationshipReader: {
+        async list(input) {
+          calls.push(input);
+          return [];
+        },
+      },
+    });
+
+    await service.listUserRelationships({
+      authorizationHeader: "Bearer operator",
+      userId: "user_00000000-0000-4000-8000-000000000012",
+    });
+
+    expect(seen).toEqual(["identity.users.read"]);
+    expect(calls).toEqual([{
+      tenantId,
+      userId: "user_00000000-0000-4000-8000-000000000012",
+    }]);
+  });
+
   it("tenant-scopes canonical Offer revisions and preserves preconditions", async () => {
     const seen: string[] = [];
     const calls: unknown[] = [];
