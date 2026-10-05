@@ -1,5 +1,16 @@
 # Masanawa Production Master Task Ledger
 
+## Twin transformation supplemental ledger — 2026-10-05
+
+The historical 150-task numbering remains stable. The approved digital-twin product
+transformation is tracked separately in `docs/TWIN-TRANSFORMATION-TASKS.md` using
+TWIN-xxx IDs. Those tasks cover My Twin, Explore, Activity, Wallet, Credit transfers,
+gifts, twin-attributed commerce, paid twin voice and paid owner access.
+
+TWIN tasks do not become complete because a plan exists; implementation/evidence must
+merge to `main`. When a TWIN task depends on one of the original 150 tasks, both
+acceptance gates remain applicable.
+
 Status: canonical progress ledger.
 
 ## Tracking rule
