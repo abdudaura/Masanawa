@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../agents/twin_directory.dart';
+import '../agents/twin_directory_http_transport.dart';
+import '../core/providers.dart';
 
 final twinDirectoryTransportProvider = Provider<TwinDirectoryTransport>(
-  (ref) => const UnavailableTwinDirectoryTransport(),
+  (ref) => GatewayTwinDirectoryTransport(api: ref.watch(apiClientProvider)),
 );
 
 class TwinDirectoryState {
