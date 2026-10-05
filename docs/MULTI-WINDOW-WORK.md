@@ -21,6 +21,7 @@ Status: mandatory implementation coordination guidance, 2026-10-04.
 | chat-actions | selectable cards, action protocol, app renderers, voice selection | message contracts and apps/mobile |
 | channels | mandatory WhatsApp and Telegram ingress, identity linking, options and receipts | channel adapters and Gateway routing |
 | skills-clones | Core teaching/provisioning, enrollment, certification, support/clone configuration | Skills/Agents/Identity boundaries |
+| workflows-runtime | canonical Task/WorkflowRun lifecycle, checkpoints, restart/resume semantics | packages/workflows, workflow storage/adapters |
 | integration | composition, migrations, evidence, cross-stream contracts and guiding docs | shared integration points |
 
 These are ownership categories, not separate runtime authorities or new numbered milestones.
