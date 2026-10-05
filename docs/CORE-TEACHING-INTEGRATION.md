@@ -362,3 +362,25 @@ Concurrent/stale updates must use compare-and-set or equivalent serialization so
 surfaces cannot both mutate the same stage revision. A stage mutation is presentation
 state only; durable learner progress changes only after commit flows through the
 canonical RequestId selection attempt.
+
+
+## Durable staged-state CAS port
+
+`TeachingMultiSelectStagePort` is the storage boundary for the server-held staged
+selection. It deliberately does not prescribe a Teaching-specific table.
+
+`createTeachingMultiSelectStageCoordinator()` now enforces the persistence protocol:
+- `open()` creates the exact initial stage idempotently and rejects a different existing
+  stage for the same action;
+- `load()` revalidates the stored action binding, stage hash, canonical selected set and
+  expiry;
+- every mutation uses `compareAndSet()` with both expected revision and expected stage
+  hash;
+- the adapter must reject stale/concurrent writers;
+- the coordinator verifies the adapter returned exactly the requested next stage;
+- exact re-commit of a committed stage performs no second storage mutation.
+
+Focused tests include two concurrent surfaces racing one stage revision; exactly one
+wins and the other fails stale. Production composition should implement this port using
+the existing authenticated session/Workflow custody chosen by the runtime owner. No new
+Teaching learner-progress database is authorized by this contract.
