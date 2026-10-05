@@ -339,6 +339,17 @@ export function createTwinProductionRuntime(input: {
     readonly acceptWithinMinutes: number;
     readonly startGraceMinutes: number;
   };
+  readonly notifications?: {
+    send(input: {
+      readonly scope: {
+        readonly tenantId: TenantId;
+        readonly userId: UserId;
+      };
+      readonly title: string;
+      readonly body: string;
+      readonly data?: Readonly<Record<string, string>>;
+    }): Promise<unknown>;
+  };
 }): TwinProductionRuntime {
   const customer = sessionAuthorizer(input.sessions);
 
@@ -351,6 +362,22 @@ export function createTwinProductionRuntime(input: {
       });
     },
   };
+
+  async function notifyUser(
+    tenantId: TenantId,
+    userId: UserId,
+    title: string,
+    body: string,
+    deepLink: string,
+  ): Promise<void> {
+    if (!input.notifications) return;
+    await input.notifications.send({
+      scope: { tenantId, userId },
+      title,
+      body,
+      data: { deepLink },
+    }).catch(() => undefined);
+  }
 
   const adminAuthority = {
     async authorize(request: { readonly authorizationHeader: string | undefined }) {
@@ -1556,6 +1583,13 @@ export function createTwinProductionRuntime(input: {
             status: "pending",
           },
         });
+        await notifyUser(
+          request.tenantId,
+          stored.ownerUserId as UserId,
+          "New talk request",
+          `Someone wants to talk with you for ${stored.durationMinutes} minutes.`,
+          "masanawa://activity",
+        );
         return record;
       },
 
@@ -1655,6 +1689,23 @@ export function createTwinProductionRuntime(input: {
             },
           });
         }
+        if (request.action !== "cancel") {
+          const message =
+            next === "accepted"
+              ? "Your request was accepted."
+              : next === "scheduled"
+                ? `Your session was scheduled for ${changed.scheduledFor ?? "the agreed time"}.`
+                : next === "completed"
+                  ? "Your talk session was completed."
+                  : "Your request ended and any eligible held Credits were released.";
+          await notifyUser(
+            request.tenantId,
+            current.requesterUserId as UserId,
+            "Talk request update",
+            message,
+            `masanawa://chat/${encodeURIComponent(current.originatingCharacterId)}`,
+          );
+        }
         return updated;
       },
 
@@ -1712,6 +1763,15 @@ export function createTwinProductionRuntime(input: {
               status: "refunded",
             },
           });
+          await notifyUser(
+            request.tenantId,
+            current.requesterUserId as UserId,
+            requestedExpired ? "Talk request expired" : "Talk session missed",
+            requestedExpired
+              ? "The owner did not accept in time. Any eligible held Credits were released."
+              : "The scheduled session did not start in time. Any eligible held Credits were released.",
+            `masanawa://chat/${encodeURIComponent(current.originatingCharacterId)}`,
+          );
           return updated;
         }
         return current;
