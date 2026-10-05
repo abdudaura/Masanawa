@@ -833,6 +833,31 @@ export function createPostgresTwinRuntimeRepository(
         : null;
     },
 
+    async readLatestOwnerAccessRequestForRequester(input) {
+      const result = await pool.query<{
+        definition: OwnerAccessRequest;
+        reservation_id: string | null;
+        reserved_credits: string;
+      }>(
+        `SELECT definition,reservation_id,reserved_credits::text
+           FROM commerce.owner_access_requests
+          WHERE tenant_id=$1
+            AND requester_user_id=$2
+            AND character_id=$3
+          ORDER BY updated_at DESC,request_id DESC
+          LIMIT 1`,
+        [input.tenantId, input.requesterUserId, input.characterId],
+      );
+      const row = result.rows[0];
+      return row
+        ? requestDefinition(
+            row.definition,
+            row.reservation_id,
+            Number(row.reserved_credits),
+          )
+        : null;
+    },
+
     async updateOwnerAccessRequest(input) {
       const updated = await pool.query<{
         definition: OwnerAccessRequest;
