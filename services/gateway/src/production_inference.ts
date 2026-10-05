@@ -17,44 +17,47 @@ export interface GeminiCredentialPool {
   readonly models: readonly string[];
 }
 
+const GOOGLE_GEMINI_KEY_RE = /^AIza[0-9A-Za-z_-]{30,80}$/u;
+
 function normalizeSecret(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const normalized = value.trim();
-  if (normalized.length < 16 || normalized.length > 512 || /[\r\n\0]/u.test(normalized)) {
-    return null;
-  }
-  return normalized;
+  return GOOGLE_GEMINI_KEY_RE.test(normalized) ? normalized : null;
 }
 
-function credentialValues(value: unknown): string[] {
-  if (Array.isArray(value)) {
-    return value.flatMap((item) => {
-      const direct = normalizeSecret(item);
-      if (direct) return [direct];
-      if (item && typeof item === "object") {
-        const object = item as GeminiCredentialObject;
-        return [object.apiKey, object.key, object.value]
-          .map(normalizeSecret)
-          .filter((candidate): candidate is string => candidate !== null);
-      }
-      return [];
-    });
-  }
-  if (value && typeof value === "object") {
-    const object = value as Record<string, unknown>;
-    for (const field of ["credentials", "keys", "apiKeys"]) {
-      if (field in object) {
-        const values = credentialValues(object[field]);
-        if (values.length > 0) return values;
+function credentialValues(value: unknown, depth = 0): string[] {
+  if (depth > 8 || value == null) return [];
+
+  const direct = normalizeSecret(value);
+  if (direct) return [direct];
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (
+      trimmed.length > 1 &&
+      trimmed.length < 1_000_000 &&
+      (trimmed.startsWith("[") || trimmed.startsWith("{"))
+    ) {
+      try {
+        return credentialValues(JSON.parse(trimmed) as unknown, depth + 1);
+      } catch {
+        return [];
       }
     }
-    const direct = [object.apiKey, object.key, object.value]
-      .map(normalizeSecret)
-      .filter((candidate): candidate is string => candidate !== null);
-    if (direct.length > 0) return direct;
+    return [];
   }
-  const direct = normalizeSecret(value);
-  return direct ? [direct] : [];
+
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => credentialValues(item, depth + 1));
+  }
+
+  if (typeof value === "object") {
+    return Object.values(value as Record<string, unknown>).flatMap((item) =>
+      credentialValues(item, depth + 1),
+    );
+  }
+
+  return [];
 }
 
 function modelValues(value: string | undefined): string[] {
