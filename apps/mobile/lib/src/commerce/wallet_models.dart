@@ -108,12 +108,12 @@ class WalletView {
 abstract class WalletTransport {
   Future<WalletView> load();
 
-  Future<void> sendCredits({
+  Future<CreditTransferReceipt> sendCredits({
     required String recipient,
     required int amountCredits,
   });
 
-  Future<void> sendGift({
+  Future<GiftReceipt> sendGift({
     required String recipientCharacterId,
     required int amountCredits,
   });
@@ -128,7 +128,7 @@ class UnavailableWalletTransport implements WalletTransport {
   }
 
   @override
-  Future<void> sendCredits({
+  Future<CreditTransferReceipt> sendCredits({
     required String recipient,
     required int amountCredits,
   }) {
@@ -136,10 +136,84 @@ class UnavailableWalletTransport implements WalletTransport {
   }
 
   @override
-  Future<void> sendGift({
+  Future<GiftReceipt> sendGift({
     required String recipientCharacterId,
     required int amountCredits,
   }) {
     throw StateError('Wallet is not connected to the Gateway yet');
+  }
+}
+
+
+class CreditTransferReceipt {
+  const CreditTransferReceipt({
+    required this.transferId,
+    required this.recipientUserId,
+    required this.amountCredits,
+    required this.completedAt,
+  });
+
+  final String transferId;
+  final String recipientUserId;
+  final int amountCredits;
+  final DateTime completedAt;
+
+  factory CreditTransferReceipt.fromJson(Map<String, dynamic> json) {
+    final transferId = json['transferId'];
+    final recipientUserId = json['recipientUserId'];
+    final amount = json['amountCredits'];
+    final completedAt = json['completedAt'];
+    if (transferId is! String ||
+        recipientUserId is! String ||
+        amount is! num ||
+        amount < 1 ||
+        completedAt is! String) {
+      throw const FormatException('Invalid Credit transfer receipt');
+    }
+    return CreditTransferReceipt(
+      transferId: transferId,
+      recipientUserId: recipientUserId,
+      amountCredits: amount.toInt(),
+      completedAt: DateTime.parse(completedAt).toLocal(),
+    );
+  }
+}
+
+class GiftReceipt {
+  const GiftReceipt({
+    required this.giftId,
+    required this.recipientUserId,
+    required this.characterId,
+    required this.amountCredits,
+    required this.completedAt,
+  });
+
+  final String giftId;
+  final String recipientUserId;
+  final String characterId;
+  final int amountCredits;
+  final DateTime completedAt;
+
+  factory GiftReceipt.fromJson(Map<String, dynamic> json) {
+    final giftId = json['giftId'];
+    final recipientUserId = json['recipientUserId'];
+    final characterId = json['characterId'];
+    final amount = json['amountCredits'];
+    final completedAt = json['completedAt'];
+    if (giftId is! String ||
+        recipientUserId is! String ||
+        characterId is! String ||
+        amount is! num ||
+        amount < 1 ||
+        completedAt is! String) {
+      throw const FormatException('Invalid gift receipt');
+    }
+    return GiftReceipt(
+      giftId: giftId,
+      recipientUserId: recipientUserId,
+      characterId: characterId,
+      amountCredits: amount.toInt(),
+      completedAt: DateTime.parse(completedAt).toLocal(),
+    );
   }
 }
