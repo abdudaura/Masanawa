@@ -280,6 +280,29 @@ function requiredProductionEnv(
   return value;
 }
 
+function productionOtpChannels(
+  env: Readonly<Record<string, string | undefined>>,
+): readonly ("email" | "sms")[] {
+  const raw = env.MASANAWA_AUTH_OTP_CHANNELS?.trim();
+  if (!raw) return Object.freeze(["email"] as const);
+  const channels = [
+    ...new Set(
+      raw
+        .split(",")
+        .map((value) => value.trim().toLowerCase())
+        .filter((value): value is "email" | "sms" =>
+          value === "email" || value === "sms",
+        ),
+    ),
+  ];
+  if (channels.length === 0) {
+    throw new TypeError(
+      "MASANAWA_AUTH_OTP_CHANNELS must contain email and/or sms",
+    );
+  }
+  return Object.freeze(channels);
+}
+
 function productionGeminiApiKey(
   env: Readonly<Record<string, string | undefined>>,
 ): string {
@@ -431,6 +454,7 @@ export async function startGatewayService(
       publishableKey: requiredProductionEnv(env, "SUPABASE_PUBLISHABLE_KEY"),
       tenantId,
       identities: database.productionUsers,
+      otpChannels: productionOtpChannels(env),
     });
     const productionAuthorizers = createProductionAuthorizers({
       auth: productionAuth,
