@@ -366,17 +366,20 @@ export function parseNurainImportedGeminiCredentialPool(input: {
     !input.importedCredentialsJson.trim() ||
     input.importedCredentialsJson.length > 65_536
   ) {
-    throw new TypeError("Imported Gemini credential configuration is invalid");
+    throw new TypeError("Imported Gemini configuration size is invalid");
   }
 
   let rows: unknown;
   try {
     rows = JSON.parse(input.importedCredentialsJson);
   } catch {
-    throw new TypeError("Imported Gemini credential configuration is invalid");
+    throw new TypeError("Imported Gemini configuration is not valid JSON");
   }
-  if (!Array.isArray(rows) || rows.length < 1 || rows.length > 32) {
-    throw new TypeError("Imported Gemini credential configuration is invalid");
+  if (!Array.isArray(rows)) {
+    throw new TypeError("Imported Gemini configuration must be an array");
+  }
+  if (rows.length < 1 || rows.length > 32) {
+    throw new TypeError("Imported Gemini configuration has invalid row count");
   }
 
   const encryptionSecrets = [
@@ -386,7 +389,7 @@ export function parseNurainImportedGeminiCredentialPool(input: {
     .map((value) => value.trim())
     .filter((value) => value.length >= 32);
   if (encryptionSecrets.length < 1 || encryptionSecrets.length > 8) {
-    throw new TypeError("Credential encryption key configuration is invalid");
+    throw new TypeError("Imported Gemini encryption key configuration is invalid");
   }
 
   const apiKeys = rows.map((row) => {
@@ -396,17 +399,17 @@ export function parseNurainImportedGeminiCredentialPool(input: {
       typeof (row as { encrypted_secret?: unknown }).encrypted_secret !== "string" ||
       typeof (row as { fingerprint?: unknown }).fingerprint !== "string"
     ) {
-      throw new TypeError("Imported Gemini credential configuration is invalid");
+      throw new TypeError("Imported Gemini row shape is invalid");
     }
     const encrypted = (row as { encrypted_secret: string }).encrypted_secret;
     const fingerprint = (row as { fingerprint: string }).fingerprint;
     if (encrypted.length > 2048 || !/^[0-9a-f]{20}$/u.test(fingerprint)) {
-      throw new TypeError("Imported Gemini credential configuration is invalid");
+      throw new TypeError("Imported Gemini envelope metadata is invalid");
     }
     const plain = decryptNurainCredential(encrypted, encryptionSecrets).trim();
     const normalized = normalizeSecret(plain);
     if (!normalized) {
-      throw new TypeError("Imported Gemini credential configuration is invalid");
+      throw new TypeError("Imported Gemini decrypted key is invalid");
     }
     const actualFingerprint = createHash("sha256")
       .update(normalized)
