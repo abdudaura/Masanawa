@@ -408,37 +408,7 @@ export async function startGatewayService(
       const apiKey = env.MASANAWA_GEMINI_API_KEY;
 
       let startupPool;
-      if (
-        supabaseUrl &&
-        supabaseServiceRoleKey &&
-        credentialEncryptionKey
-      ) {
-        const loaderInput = {
-          supabaseUrl,
-          serviceRoleKey: supabaseServiceRoleKey,
-          encryptionKey: credentialEncryptionKey,
-          ...(env.CREDENTIAL_ENCRYPTION_KEY_PREVIOUS?.trim()
-            ? {
-                encryptionKeyPrevious:
-                  env.CREDENTIAL_ENCRYPTION_KEY_PREVIOUS.trim(),
-              }
-            : {}),
-          ...(models ? { models } : {}),
-          fallbackModel,
-        };
-        try {
-          startupPool = await loadSupabaseGeminiCredentialPool(loaderInput);
-          strategy = createProductionAgentStrategy({
-            inference: createSupabaseGeminiPoolInferenceProvider(loaderInput),
-            skills: database.skills,
-            guides: database.skillGuides,
-          });
-        } catch (error) {
-          if (!credentialsJson?.trim() && !apiKey?.trim()) throw error;
-        }
-      }
-
-      if (!strategy) {
+      if (credentialsJson?.trim() || apiKey?.trim()) {
         let importedBridgeFailure: string | undefined;
         if (credentialsJson?.trim() && credentialEncryptionKey) {
           try {
@@ -482,6 +452,30 @@ export async function startGatewayService(
           inference: createGeminiCredentialPoolInferenceProvider({
             pool: startupPool,
           }),
+          skills: database.skills,
+          guides: database.skillGuides,
+        });
+      } else if (
+        supabaseUrl &&
+        supabaseServiceRoleKey &&
+        credentialEncryptionKey
+      ) {
+        const loaderInput = {
+          supabaseUrl,
+          serviceRoleKey: supabaseServiceRoleKey,
+          encryptionKey: credentialEncryptionKey,
+          ...(env.CREDENTIAL_ENCRYPTION_KEY_PREVIOUS?.trim()
+            ? {
+                encryptionKeyPrevious:
+                  env.CREDENTIAL_ENCRYPTION_KEY_PREVIOUS.trim(),
+              }
+            : {}),
+          ...(models ? { models } : {}),
+          fallbackModel,
+        };
+        startupPool = await loadSupabaseGeminiCredentialPool(loaderInput);
+        strategy = createProductionAgentStrategy({
+          inference: createSupabaseGeminiPoolInferenceProvider(loaderInput),
           skills: database.skills,
           guides: database.skillGuides,
         });
