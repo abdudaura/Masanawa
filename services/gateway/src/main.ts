@@ -24,7 +24,11 @@ import type {
   UserRelationshipReader,
 } from "@masanawa/identity";
 import type { BillingQuoteRepository, CommerceRepository, CryptoRepository } from "@masanawa/commerce";
-import { parseCanonicalId, readRequiredEnv } from "@masanawa/contracts";
+import {
+  parseCanonicalId,
+  readRequiredEnv,
+  type TenantId,
+} from "@masanawa/contracts";
 import type { PlatformSessionRepository } from "@masanawa/security";
 import {
   FlutterwaveBillsClient,
@@ -473,6 +477,9 @@ export async function startGatewayService(
   let twinProduction: TwinProductionRuntime | undefined =
     options.appOptions?.twinProduction;
   let pushSender: MobilePushSender | undefined;
+  let ownerAccessSweepTenantId: TenantId | undefined;
+  let ownerAccessSweepTimer: ReturnType<typeof setInterval> | undefined;
+  let ownerAccessSweepRunning = false;
   let customerAuth: CustomerAuthService | undefined =
     options.appOptions?.customerAuth;
   let billingCustomerAuthorizer:
@@ -772,6 +779,9 @@ export async function startGatewayService(
           ),
         },
       });
+    }
+    if (twinProduction?.ownerAccessMaintenance) {
+      ownerAccessSweepTenantId = platformTenantId;
     }
 
     if (database.twinProfiles && database.twinEvents) {
@@ -1391,12 +1401,55 @@ export async function startGatewayService(
     config,
     signals: processRef,
     ...(options.logger ? { logger: options.logger } : {}),
-    onDraining: drain.beginDraining,
-    onAfterClose: database.close,
+    onDraining: () => {
+      drain.beginDraining();
+      if (ownerAccessSweepTimer) {
+        clearInterval(ownerAccessSweepTimer);
+        ownerAccessSweepTimer = undefined;
+      }
+    },
+    onAfterClose: async () => {
+      if (ownerAccessSweepTimer) {
+        clearInterval(ownerAccessSweepTimer);
+        ownerAccessSweepTimer = undefined;
+      }
+      await database.close();
+    },
     onFatalShutdown: () => {
       processRef.exitCode = 1;
     },
   });
+
+  const runOwnerAccessSweep = async () => {
+    if (
+      ownerAccessSweepRunning ||
+      drain.isDraining() ||
+      !ownerAccessSweepTenantId ||
+      !twinProduction?.ownerAccessMaintenance
+    ) {
+      return;
+    }
+    ownerAccessSweepRunning = true;
+    try {
+      await twinProduction.ownerAccessMaintenance.sweep({
+        tenantId: ownerAccessSweepTenantId,
+        limit: 100,
+      });
+    } catch {
+      // Lifecycle maintenance is retryable and must never crash the customer
+      // Gateway. Individual request settlement remains durable/idempotent.
+    } finally {
+      ownerAccessSweepRunning = false;
+    }
+  };
+
+  if (ownerAccessSweepTenantId && twinProduction?.ownerAccessMaintenance) {
+    ownerAccessSweepTimer = setInterval(() => {
+      void runOwnerAccessSweep();
+    }, 60_000);
+    ownerAccessSweepTimer.unref();
+    void runOwnerAccessSweep();
+  }
 
   return Object.freeze({
     config,
