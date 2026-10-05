@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,6 +14,7 @@ const _storage = FlutterSecureStorage(
     accessibility: KeychainAccessibility.first_unlock_this_device,
   ),
 );
+const _kSession = 'auth_session_v2';
 const _kAccess = 'auth_access_token';
 const _kRefresh = 'auth_refresh_token';
 const _kUser = 'auth_user';
@@ -224,35 +226,92 @@ class SessionController extends Notifier<SessionState> {
     final client = ref.read(apiClientProvider);
     client.accessToken = tokens.accessToken;
     client.onUnauthorized = _rotateOn401;
-    await _storage.write(key: _kAccess, value: tokens.accessToken);
-    await _storage.write(key: _kRefresh, value: tokens.refreshToken);
+
+    // One encrypted record replaces four sequential keystore writes/reads on
+    // normal startup. Legacy keys remain readable for seamless upgrades.
     await _storage.write(
-      key: _kExpiry,
-      value: tokens.accessExpiresIn.toString(),
-    );
-    await _storage.write(
-      key: _kUser,
-      value: jsonEncode(tokens.user.toJson()),
+      key: _kSession,
+      value: jsonEncode({
+        'accessToken': tokens.accessToken,
+        'refreshToken': tokens.refreshToken,
+        'accessExpiresIn': tokens.accessExpiresIn,
+        'user': tokens.user.toJson(),
+      }),
     );
   }
 
-  Future<AuthTokens?> _readPersisted() async {
-    final access = await _storage.read(key: _kAccess);
-    final refresh = await _storage.read(key: _kRefresh);
-    final userRaw = await _storage.read(key: _kUser);
-    if (access == null || refresh == null || userRaw == null) return null;
-    if (access.isEmpty || refresh.isEmpty) return null;
+  AuthTokens? _decodeSessionBlob(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
     try {
-      final user =
-          AuthUser.fromJson(jsonDecode(userRaw) as Map<String, dynamic>);
-      final expiryRaw = await _storage.read(key: _kExpiry);
-      final expiry = int.tryParse(expiryRaw ?? '') ?? 900;
+      final value = jsonDecode(raw);
+      if (value is! Map<String, dynamic>) return null;
+      final access = value['accessToken'];
+      final refresh = value['refreshToken'];
+      final expiry = value['accessExpiresIn'];
+      final userRaw = value['user'];
+      if (access is! String ||
+          access.isEmpty ||
+          refresh is! String ||
+          refresh.isEmpty ||
+          userRaw is! Map<String, dynamic>) {
+        return null;
+      }
       return AuthTokens(
         accessToken: access,
         refreshToken: refresh,
-        accessExpiresIn: expiry,
-        user: user,
+        accessExpiresIn: expiry is int ? expiry : 900,
+        user: AuthUser.fromJson(userRaw),
       );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<AuthTokens?> _readPersisted() async {
+    // Fast path: current installs require one encrypted read.
+    final current = _decodeSessionBlob(await _storage.read(key: _kSession));
+    if (current != null) return current;
+
+    // Backward-compatible migration for APKs that stored four independent keys.
+    // Parallel reads avoid the old serial keystore latency.
+    final legacy = await Future.wait<String?>([
+      _storage.read(key: _kAccess),
+      _storage.read(key: _kRefresh),
+      _storage.read(key: _kUser),
+      _storage.read(key: _kExpiry),
+    ]);
+    final access = legacy[0];
+    final refresh = legacy[1];
+    final userRaw = legacy[2];
+    final expiryRaw = legacy[3];
+    if (access == null || refresh == null || userRaw == null) return null;
+    if (access.isEmpty || refresh.isEmpty) return null;
+
+    try {
+      final tokens = AuthTokens(
+        accessToken: access,
+        refreshToken: refresh,
+        accessExpiresIn: int.tryParse(expiryRaw ?? '') ?? 900,
+        user: AuthUser.fromJson(
+          jsonDecode(userRaw) as Map<String, dynamic>,
+        ),
+      );
+
+      // Migration must never delay the first useful screen.
+      unawaited(
+        _storage
+            .write(
+              key: _kSession,
+              value: jsonEncode({
+                'accessToken': tokens.accessToken,
+                'refreshToken': tokens.refreshToken,
+                'accessExpiresIn': tokens.accessExpiresIn,
+                'user': tokens.user.toJson(),
+              }),
+            )
+            .catchError((_) {}),
+      );
+      return tokens;
     } catch (_) {
       return null;
     }
@@ -262,10 +321,13 @@ class SessionController extends Notifier<SessionState> {
     final client = ref.read(apiClientProvider);
     client.accessToken = null;
     client.onUnauthorized = null;
-    await _storage.delete(key: _kAccess);
-    await _storage.delete(key: _kRefresh);
-    await _storage.delete(key: _kExpiry);
-    await _storage.delete(key: _kUser);
+    await Future.wait<void>([
+      _storage.delete(key: _kSession),
+      _storage.delete(key: _kAccess),
+      _storage.delete(key: _kRefresh),
+      _storage.delete(key: _kExpiry),
+      _storage.delete(key: _kUser),
+    ]);
   }
 }
 
