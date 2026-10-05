@@ -83,6 +83,8 @@ import {
 } from "./alpha_dev.js";
 import { createGeminiAlphaInferenceProvider } from "./alpha_executor.js";
 import { createPlatformSessionVerifier, createProductionAuthorizers } from "./production_auth.js";
+import { createGeminiCredentialPoolInferenceProvider, parseGeminiCredentialPool } from "./production_inference.js";
+import { createProductionAgentStrategy } from "./production_strategy.js";
 import { createAlphaInferenceStrategy } from "./alpha_strategy.js";
 import { createGeminiLiveAudioRenderer } from "./native_audio.js";
 import { createAgentShellService } from "./agent_shell.js";
@@ -398,6 +400,43 @@ export async function startGatewayService(
     conversationAuthorizer = fallbackAuthorizer(production.conversation, conversationAuthorizer);
     creatorCloneAuthorizer = fallbackAuthorizer(production.creator, creatorCloneAuthorizer);
     commerceAuthorizer = fallbackAuthorizer(production.commerce, commerceAuthorizer);
+
+    if (!strategy) {
+      if (!database.skills || !database.skillGuides) {
+        await database.close().catch(() => undefined);
+        throw new Error("Platform auth requires Skill repositories for production inference");
+      }
+      const pool = parseGeminiCredentialPool({
+        credentialsJson:
+          env.MASANAWA_GEMINI_CREDENTIALS_JSON ??
+          env.MASANAWA_ALPHA_GEMINI_IMPORTED_CREDENTIALS_JSON,
+        apiKey: env.MASANAWA_GEMINI_API_KEY,
+        models:
+          env.MASANAWA_GEMINI_REPLY_MODELS ??
+          env.GEMINI_REPLY_MODELS,
+        fallbackModel:
+          env.MASANAWA_GEMINI_MODEL ??
+          env.MASANAWA_ALPHA_GEMINI_MODEL ??
+          "gemini-3.8-flash",
+      });
+      strategy = createProductionAgentStrategy({
+        inference: createGeminiCredentialPoolInferenceProvider({ pool }),
+        skills: database.skills,
+        guides: database.skillGuides,
+      });
+
+      if (!liveVoiceApiKey) {
+        liveVoiceApiKey = pool.apiKeys[0];
+        liveVoiceModel =
+          env.MASANAWA_GEMINI_LIVE_MODEL ??
+          env.MASANAWA_ALPHA_GEMINI_LIVE_MODEL ??
+          "gemini-3.8-live";
+        liveVoiceName =
+          env.MASANAWA_GEMINI_LIVE_VOICE ??
+          env.MASANAWA_ALPHA_GEMINI_LIVE_VOICE ??
+          "Bodi";
+      }
+    }
   }
 
   if (liveVoiceApiKey && liveVoiceModel && liveVoiceName && conversationAuthorizer) {
