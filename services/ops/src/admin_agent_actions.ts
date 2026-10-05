@@ -7,6 +7,7 @@ import {
   type AdminAgentDelegationConfig,
 } from "./admin_delegation.js";
 import type { PlatformAdminService } from "./platform_admin.js";
+import type { SystemAdminService } from "./system_admin.js";
 
 export type AdminAgentActionKey =
   | "platform.summary"
@@ -21,22 +22,37 @@ export type AdminAgentActionKey =
   | "world.pause"
   | "world.resume";
 
+export interface AdminAgentGovernedWriteInput {
+  readonly tenantId: import("@masanawa/contracts").TenantId;
+  readonly operatorUserId: import("@masanawa/contracts").UserId;
+  readonly characterId: string;
+  readonly agentRunId: string;
+  readonly action: AdminAgentActionKey;
+  readonly capability: AgentAdminCapability;
+  readonly risk: "low" | "consequential" | "restricted";
+  readonly arguments: Readonly<Record<string, unknown>>;
+  readonly idempotencyKey: string;
+}
+
 export interface AdminAgentApprovalCommands {
-  prepare(input: {
-    readonly tenantId: import("@masanawa/contracts").TenantId;
-    readonly operatorUserId: import("@masanawa/contracts").UserId;
-    readonly characterId: string;
-    readonly agentRunId: string;
-    readonly action: AdminAgentActionKey;
-    readonly capability: AgentAdminCapability;
-    readonly risk: "low" | "consequential" | "restricted";
-    readonly arguments: Readonly<Record<string, unknown>>;
-    readonly idempotencyKey: string;
-  }): Promise<{
+  admit(input: AdminAgentGovernedWriteInput): Promise<{
     readonly approvalId: string;
     readonly operationId: string;
     readonly reused: boolean;
+    readonly execution: "awaiting-approval" | "authorized" | "succeeded";
   }>;
+  beginExecution(input: {
+    readonly tenantId: import("@masanawa/contracts").TenantId;
+    readonly operationId: string;
+  }): Promise<void>;
+  completeExecution(input: {
+    readonly tenantId: import("@masanawa/contracts").TenantId;
+    readonly operationId: string;
+  }): Promise<void>;
+  markExecutionUnknown(input: {
+    readonly tenantId: import("@masanawa/contracts").TenantId;
+    readonly operationId: string;
+  }): Promise<void>;
 }
 
 export type AdminAgentActionResult =
@@ -44,6 +60,8 @@ export type AdminAgentActionResult =
       readonly status: "completed";
       readonly action: AdminAgentActionKey;
       readonly data: unknown;
+      readonly operationId?: string;
+      readonly replayed?: boolean;
     }
   | {
       readonly status: "approval-required";
@@ -148,10 +166,30 @@ function forbidden(message: string): Error & { statusCode: number } {
   return error;
 }
 
+function requiredString(value: unknown, name: string, max = 256): string {
+  if (typeof value !== "string" || value.trim().length < 1 || value.length > max) {
+    throw new TypeError(`${name} is invalid`);
+  }
+  return value.trim();
+}
+
+function requiredInteger(value: unknown, name: string, min = 0): number {
+  if (!Number.isSafeInteger(value) || (value as number) < min) {
+    throw new TypeError(`${name} is invalid`);
+  }
+  return value as number;
+}
+
+function requiredBoolean(value: unknown, name: string): boolean {
+  if (typeof value !== "boolean") throw new TypeError(`${name} is invalid`);
+  return value;
+}
+
 export function createAdminAgentActionBroker(input: {
   readonly config: AdminAgentDelegationConfig;
   readonly authorizer: AgentAdminAuthorizer;
   readonly platformAdmin: PlatformAdminService;
+  readonly systemAdmin?: SystemAdminService;
   readonly approvalCommands?: AdminAgentApprovalCommands;
 }): AdminAgentActionBroker {
   return Object.freeze({
@@ -179,6 +217,7 @@ export function createAdminAgentActionBroker(input: {
         throw forbidden(`Delegated admin action denied: ${decision.reason}`);
       }
       const args = request.arguments ?? {};
+      const authorizationHeader = request.authorizationHeader;
       if (decision.requiresApproval) {
         if (!operator.operatorUserId) {
           throw forbidden(
@@ -198,7 +237,8 @@ export function createAdminAgentActionBroker(input: {
             "Governed admin writes require agentRunId and idempotencyKey",
           );
         }
-        const prepared = await input.approvalCommands.prepare({
+
+        const admitted = await input.approvalCommands.admit({
           tenantId: operator.tenantId,
           operatorUserId: operator.operatorUserId,
           characterId: request.characterId,
@@ -209,16 +249,114 @@ export function createAdminAgentActionBroker(input: {
           arguments: args,
           idempotencyKey,
         });
-        return Object.freeze({
-          status: "approval-required" as const,
-          action: request.action,
-          capability: definition.capability,
-          reason: decision.reason,
-          ...prepared,
-        });
-      }
 
-      const authorizationHeader = request.authorizationHeader;
+        if (admitted.execution === "awaiting-approval") {
+          return Object.freeze({
+            status: "approval-required" as const,
+            action: request.action,
+            capability: definition.capability,
+            reason: decision.reason,
+            approvalId: admitted.approvalId,
+            operationId: admitted.operationId,
+            reused: admitted.reused,
+          });
+        }
+
+        if (admitted.execution === "succeeded") {
+          return Object.freeze({
+            status: "completed" as const,
+            action: request.action,
+            operationId: admitted.operationId,
+            replayed: true,
+            data: Object.freeze({
+              operationId: admitted.operationId,
+              replayed: true,
+            }),
+          });
+        }
+
+        await input.approvalCommands.beginExecution({
+          tenantId: operator.tenantId,
+          operationId: admitted.operationId,
+        });
+
+        try {
+          let data: unknown;
+          switch (request.action) {
+            case "offer.set-enabled":
+              data = await input.platformAdmin.setOfferEnabled({
+                authorizationHeader,
+                offerId: requiredString(args.offerId, "offerId"),
+                expectedRevision: requiredInteger(
+                  args.expectedRevision,
+                  "expectedRevision",
+                  1,
+                ),
+                enabled: requiredBoolean(args.enabled, "enabled"),
+              });
+              break;
+
+            case "credential.revoke":
+              data = await input.platformAdmin.revokeCredentialRef({
+                authorizationHeader,
+                credentialRefId: requiredString(
+                  args.credentialRefId,
+                  "credentialRefId",
+                ),
+                providerId: requiredString(args.providerId, "providerId"),
+                slotKey: requiredString(args.slotKey, "slotKey"),
+              });
+              break;
+
+            case "world.pause":
+            case "world.resume": {
+              if (!input.systemAdmin) {
+                throw new Error("World administration is unavailable");
+              }
+              const worldInput = {
+                authorizationHeader,
+                worldId: requiredString(args.worldId, "worldId"),
+                expectedRevision: requiredInteger(
+                  args.expectedRevision,
+                  "expectedRevision",
+                  1,
+                ),
+              };
+              data = request.action === "world.pause"
+                ? await input.systemAdmin.pauseWorld(worldInput)
+                : await input.systemAdmin.resumeWorld(worldInput);
+              break;
+            }
+
+            case "platform.summary":
+            case "users.list":
+            case "agent-runs.list":
+            case "offers.list":
+            case "operations.list":
+            case "reconciliation.list":
+            case "audit.list":
+              throw new Error("Read action unexpectedly entered governed write execution");
+          }
+
+          await input.approvalCommands.completeExecution({
+            tenantId: operator.tenantId,
+            operationId: admitted.operationId,
+          });
+          return Object.freeze({
+            status: "completed" as const,
+            action: request.action,
+            operationId: admitted.operationId,
+            replayed: false,
+            data,
+          });
+        } catch (error) {
+          await input.approvalCommands.markExecutionUnknown({
+            tenantId: operator.tenantId,
+            operationId: admitted.operationId,
+          }).catch(() => undefined);
+          throw error;
+        }
+      }
 
       switch (request.action) {
         case "platform.summary":
