@@ -1574,6 +1574,19 @@ export function createTwinProductionRuntime(input: {
         if (request.action === "cancel" && current.requesterUserId !== request.actorUserId) {
           throw Object.assign(new Error("Requester action required"), { statusCode: 403 });
         }
+        if (request.action === "complete") {
+          const startedMs = current.startedAt
+            ? Date.parse(current.startedAt)
+            : Number.NaN;
+          if (
+            !Number.isFinite(startedMs) ||
+            Date.now() - startedMs < 60_000
+          ) {
+            throw new Error(
+              "Owner access cannot complete before verified attendance",
+            );
+          }
+        }
         const next =
           request.action === "accept" ? "accepted" :
           request.action === "decline" ? "declined" :
@@ -1612,7 +1625,10 @@ export function createTwinProductionRuntime(input: {
           next === "accepted" ? "twin.owner-access.accepted" :
           next === "scheduled" ? "twin.owner-access.scheduled" :
           next === "completed" ? "twin.owner-access.completed" :
-          decision.disposition === "refund" ? "twin.owner-access.refunded" : null;
+          next === "declined" || next === "cancelled" ||
+          decision.disposition === "refund"
+            ? "twin.owner-access.refunded"
+            : null;
         if (eventType) {
           await input.events.append({
             tenantId: request.tenantId,
@@ -1654,18 +1670,49 @@ export function createTwinProductionRuntime(input: {
         ) {
           throw Object.assign(new Error("Owner access request is private"), { statusCode: 403 });
         }
-        if (
-          (current.state === "requested" || current.state === "accepted") &&
-          Date.parse(current.acceptBy) <= Date.now()
-        ) {
-          const expired = { ...current, state: transitionOwnerAccess(current.state, "expired") };
-          await settleOwnerRequest(request.tenantId, expired, "expired");
-          return input.economy.updateOwnerAccessRequest({
+        const nowMs = Date.now();
+        const requestedExpired =
+          current.state === "requested" &&
+          Date.parse(current.acceptBy) <= nowMs;
+        const scheduledNoShow =
+          current.state === "scheduled" &&
+          current.scheduledFor !== null &&
+          Date.parse(current.scheduledFor) +
+              ownerPolicy.startGraceMinutes * 60_000 <=
+            nowMs;
+
+        if (requestedExpired || scheduledNoShow) {
+          const terminalState = requestedExpired ? "expired" : "no-show";
+          const closed = {
+            ...current,
+            state: transitionOwnerAccess(current.state, terminalState),
+          };
+          await settleOwnerRequest(
+            request.tenantId,
+            closed,
+            terminalState,
+          );
+          const updated = await input.economy.updateOwnerAccessRequest({
             tenantId: request.tenantId,
-            request: expired,
+            request: closed,
             reservationId: current.reservationId,
             reservedCredits: current.reservedCredits,
           });
+          await input.events.append({
+            tenantId: request.tenantId,
+            payload: {
+              eventType: "twin.owner-access.refunded",
+              ownerUserId: current.ownerUserId,
+              characterId: current.originatingCharacterId,
+              customerUserId: current.requesterUserId,
+              referenceId: current.requestId,
+              visibility: "participant",
+              occurredAt: at(),
+              amountCredits: current.reservedCredits,
+              status: "refunded",
+            },
+          });
+          return updated;
         }
         return current;
       },
