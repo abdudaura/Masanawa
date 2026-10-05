@@ -23,6 +23,7 @@ function build(options?: { hasTwin?: boolean }) {
         bio: "Technology and business",
         languages: ["English", "Hausa"],
         discoverable: true,
+        revision: 1,
       };
     },
     async setDiscoverable(input) {
@@ -33,6 +34,7 @@ function build(options?: { hasTwin?: boolean }) {
         bio: "Technology and business",
         languages: ["English", "Hausa"],
         discoverable: input.discoverable,
+        revision: 2,
       };
     },
   };
