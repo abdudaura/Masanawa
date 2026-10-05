@@ -17,6 +17,9 @@ for the shared integration/deployment paths below.
 
 - `services/gateway/src/app.ts`
 - `services/gateway/src/main.ts`
+- `services/gateway/src/agent_conversation_contract.ts`
+- `services/gateway/src/agent_conversation.ts`
+- `services/gateway/src/customer_auth.ts`
 - `services/gateway/src/live_voice_token.ts`
 - `services/gateway/src/agent_shell_contract.ts`
 - `services/gateway/src/agent_shell_routes.ts`
