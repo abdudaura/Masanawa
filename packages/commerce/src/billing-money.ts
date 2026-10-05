@@ -2,8 +2,9 @@ import { createCanonicalId, type QuoteId, type TenantId, type UserId } from "@ma
 import type { BillingFundingAuthority } from "./billing-funding.js";
 
 export type BillingQuoteState =
-  | "quoted" | "confirmed" | "checkout-created" | "funded" | "reserved"
-  | "succeeded" | "refund-pending" | "refund-dispatching" | "refund-submitted" | "refunded" | "expired";
+  | "quoted" | "confirmed" | "checkout-dispatching" | "checkout-created"
+  | "funded" | "reserved" | "succeeded" | "refund-pending"
+  | "refund-dispatching" | "refund-submitted" | "refunded" | "expired";
 
 export interface BillingQuote {
   readonly schemaVersion: 1;
@@ -48,6 +49,10 @@ export interface BillingQuoteRepository extends BillingFundingAuthority {
   confirmQuote(input: Readonly<{
     tenantId: TenantId; userId: UserId; quoteId: QuoteId; quoteRevision: number; confirmedAt: string;
   }>): Promise<BillingQuote>;
+  claimCheckoutDispatch(input: Readonly<{
+    tenantId: TenantId; userId: UserId; quoteId: QuoteId; quoteRevision: number;
+    txRef: string; claimedAt: string;
+  }>): Promise<Readonly<{ quote: BillingQuote; claimed: boolean }>>;
   bindCheckout(input: Readonly<{
     tenantId: TenantId; userId: UserId; quoteId: QuoteId; quoteRevision: number;
     txRef: string; checkoutUrl: string; boundAt: string;
