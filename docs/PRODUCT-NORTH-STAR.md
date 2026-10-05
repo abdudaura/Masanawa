@@ -1,5 +1,27 @@
 # Masanawa Product North Star
 
+## 2026-10-05 consumer-product simplification
+
+For the ordinary-user product, `docs/PRODUCT-TWIN-ECONOMY.md` is now the canonical
+user-facing overlay. Preserve the deeper Character/Agent/runtime architecture below,
+but do not expose it as product complexity.
+
+The consumer mental model is intentionally small:
+
+- one Masanawa engine;
+- one personal digital twin per ordinary user;
+- free text chat with public twins;
+- paid twin voice/live voice;
+- Masanawa commerce available inside any twin conversation;
+- gifts/blessings to owners;
+- transferable Credits without circular commission creation;
+- paid escrowed requests to speak with the real owner;
+- four primary app surfaces: My Twin, Explore, Activity and Wallet.
+
+The consumer product is not a human social-post feed and should not require users to
+understand Skills, Workflows, AgentRuns, providers, CharacterVersions or execution
+reserves. Platform capabilities remain reusable internals shared by all twins.
+
 Status: canonical product-direction document.
 
 This document answers four questions that every implementation phase must be judged against:

@@ -1,5 +1,20 @@
 # Data Architecture and Persistence Boundaries
 
+## Twin economy persistence overlay — 2026-10-05
+
+The simplified twin economy reuses existing canonical owners.
+
+Identity owns public twin profile/discoverability/share identity.
+Memory keeps private owner memory separate from representational/public twin memory.
+Commerce owns Credit transfers, gift monetary truth, attribution/commission policy,
+paid voice financial truth, owner-access payment holds/settlement and their append-only
+ledger evidence. Activity is a derived projection, not financial truth.
+
+Likely additive durable entities are documented in
+`docs/TWIN-ECONOMY-CONTRACTS.md`. Do not create another wallet database, referral
+ledger, marketplace store or twin-specific runtime store. Never edit applied migrations;
+all changes are append-only new migrations in the owning package.
+
 Status: Phase 1 canonical draft.
 
 ## Canonical store

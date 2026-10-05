@@ -1,5 +1,17 @@
 # Production Project Structure Audit
 
+## Twin transformation structure overlay — 2026-10-05
+
+The simplified consumer twin economy does not change the repository topology.
+It explicitly reinforces the existing rule: no separate clone runtime, wallet service,
+marketplace service, social-feed package or monetization microservice.
+
+Use existing Identity/Memory/Agents/Commerce ownership. New public twin profile,
+Credit transfer/gift, attribution, paid voice and owner-access logic belongs inside the
+existing canonical packages/services described in
+`docs/TWIN-TRANSFORMATION-MASTER-PLAN.md` and
+`docs/TWIN-ECONOMY-CONTRACTS.md`.
+
 Status: canonical structure guidance for the production build.
 
 ## Decision
