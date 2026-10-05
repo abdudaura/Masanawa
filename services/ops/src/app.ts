@@ -198,18 +198,6 @@ const UserParamsSchema = Type.Object(
   { additionalProperties: false },
 );
 
-const PutUserStateBodySchema = Type.Object(
-  {
-    state: Type.Union([
-      Type.Literal("active"),
-      Type.Literal("disabled"),
-      Type.Literal("archived"),
-    ]),
-    expectedRevision: Type.Integer({ minimum: 1 }),
-  },
-  { additionalProperties: false },
-);
-
 const ReadinessResponseSchema = Type.Object(
   {
     service: Type.Literal("ops"),
@@ -416,22 +404,6 @@ export function createOpsApp(options: OpsAppOptions = {}) {
       }),
     ]);
 
-    app.put(
-      "/v1/admin/users/:userId/state",
-      {
-        schema: {
-          params: UserParamsSchema,
-          body: PutUserStateBodySchema,
-        },
-      },
-      async (request) =>
-        platformAdmin.setUserState({
-          authorizationHeader: request.headers.authorization,
-          userId: parseCanonicalId("user", request.params.userId),
-          state: request.body.state,
-          expectedRevision: request.body.expectedRevision,
-        }),
-    );
 
     app.get("/v1/admin/agent-runs", async (request) => [
       ...await platformAdmin.listAgentRuns({
