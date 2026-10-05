@@ -40,6 +40,9 @@ describe("owner access routes", () => {
       async read() {
         return null;
       },
+      async latest() {
+        return null;
+      },
     };
     const app = Fastify();
     apps.push(app);
