@@ -30,6 +30,23 @@ The UI uses a responsive NavigationRail on wide/tablet screens and a NavigationD
 
 Admin authentication now reuses canonical PlatformSession OTP/access/refresh tokens. Ops then applies a separate tenant-scoped capability grant keyed by canonical User ID or verified email/phone, so authenticating as a normal Masanawa customer never implies administrative authority.
 
+### Conversational administration and Jev
+
+Gwani is the conversational administrative Character. Other Characters may be delegated explicitly, but JEV is **not** an Agent/Character and must never be presented as one.
+
+Jev (TypeSafe AI System One) is the decision-model layer for machine-readable judgments around proposed admin work. Its role is to consume structured platform state plus predefined questions and return typed decisions/probabilities used for routing, ambiguity detection, escalation, verification and confidence thresholds.
+
+Jev never owns authority. Exact tenant/capability checks, immutable domain invariants, approval requirements, idempotency, reconciliation and execution remain enforced by Masanawa code. A Jev decision can recommend or gate a path, but cannot grant a capability that the operator/Character delegation does not already possess.
+
+Initial decision flow:
+1. operator tells Gwani what to do;
+2. Gwani interprets and proposes one or more canonical admin actions;
+3. Jev evaluates bounded questions such as intent match, ambiguity, escalation need and confidence;
+4. deterministic policy code intersects operator authority, Character delegation and action risk;
+5. read-only work may execute automatically when admitted;
+6. writes require the configured approval path before canonical command execution;
+7. results and evidence return to Gwani for explanation to the operator.
+
 ## Next safe write controls
 
 These are legitimate admin features, but they require a canonical command/use-case contract rather than a direct SQL mutation:
