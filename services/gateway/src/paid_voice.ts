@@ -93,7 +93,7 @@ export function createPaidVoiceService(input: {
   readonly pricing: PaidVoicePricingPort;
   readonly admissions: PaidVoiceAdmissionPort;
 }): PaidVoiceService {
-  return Object.freeze({
+  return Object.freeze<PaidVoiceService>({
     async quote(request) {
       const characterId = parseCanonicalId("character", request.characterId);
       const authority = await input.authorizer.authorize({
