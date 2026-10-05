@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../core/network/api_client.dart';
 import '../core/request_id.dart';
@@ -20,6 +21,8 @@ class CryptoWalletScreen extends ConsumerWidget {
         return 'Withdrawal';
       case 'convert':
         return 'Conversion';
+      case 'buy':
+        return 'Buy';
       default:
         return 'Crypto operation';
     }
@@ -40,6 +43,70 @@ class CryptoWalletScreen extends ConsumerWidget {
               ? 'Please check the amount and details you entered.'
               : 'Crypto service is temporarily unavailable. Please try again.',
     );
+  }
+
+  Future<void> _buy(
+    BuildContext context,
+    WidgetRef ref,
+    CryptoWalletSnapshot wallet,
+  ) async {
+    final capabilities = wallet.capabilities;
+    final settlement = capabilities.fiatSettlementProviderCode;
+    if (
+      !capabilities.fiatOnRamp ||
+      capabilities.fiatCurrencies.isEmpty ||
+      settlement == null
+    ) {
+      return;
+    }
+
+    final input = await showModalBottomSheet<_BuyInput>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => _BuySheet(
+        fiatCurrencies: capabilities.fiatCurrencies,
+        settlementAsset: settlement,
+      ),
+    );
+    if (input == null || !context.mounted) return;
+
+    try {
+      final purchase =
+          await ref.read(cryptoWalletProvider.notifier).createFiatPurchase(
+                requestId: createRequestId(),
+                fiatAmount: input.amount,
+                fiatCurrency: input.currency,
+              );
+      final checkout = purchase.checkoutUrl == null
+          ? null
+          : Uri.tryParse(purchase.checkoutUrl!);
+      if (
+        checkout == null ||
+        checkout.scheme != 'https' ||
+        checkout.host.isEmpty
+      ) {
+        throw const FormatException('Secure checkout is unavailable');
+      }
+      final opened = await launchUrl(
+        checkout,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!context.mounted) return;
+      if (!opened) {
+        _message(
+          context,
+          'The secure checkout could not be opened. Your purchase was not duplicated; open Wallet activity to try status refresh.',
+        );
+        return;
+      }
+      _message(
+        context,
+        'Secure checkout opened. Complete it there, then return to Wallet and refresh the purchase status.',
+      );
+    } catch (error) {
+      if (context.mounted) _error(context, error);
+    }
   }
 
   Future<void> _receive(
@@ -188,12 +255,19 @@ class CryptoWalletScreen extends ConsumerWidget {
                 value: '${quote.amount} ${quote.providerCode}',
               ),
               _SummaryRow(
-                label: 'Network fee',
+                label: 'Network fee estimate',
                 value: '${quote.networkFee} ${quote.providerCode}',
               ),
               _SummaryRow(
-                label: 'Fee paid by',
-                value: quote.feePayer == 'platform' ? 'Masanawa' : 'You',
+                label: 'Estimated receive',
+                value:
+                    '${quote.estimatedReceiveAmount} ${quote.providerCode}',
+              ),
+              _SummaryRow(
+                label: 'Fee handling',
+                value: quote.networkFeeMode == 'sender'
+                    ? 'Masanawa pays the network fee'
+                    : 'Fee is deducted from the payout',
               ),
               _SummaryRow(
                 label: 'Provider minimum',
@@ -253,6 +327,12 @@ class CryptoWalletScreen extends ConsumerWidget {
         intent.providerTargetAmount == null
             ? 'Conversion completed'
             : 'Conversion completed: ${intent.providerTargetAmount} ${intent.targetAsset}',
+      'succeeded' when intent.operation == 'buy' =>
+        intent.providerTargetAmount == null
+            ? 'Crypto purchase completed'
+            : 'Purchase completed: ${intent.providerTargetAmount} ${intent.targetAsset}',
+      'manual_review' =>
+        'This transaction needs verification before any balance change is accepted.',
       'succeeded' => '${operationTitle(intent.operation)} completed',
       'failed' =>
         '${operationTitle(intent.operation)} failed. Reserved funds were released when applicable.',
@@ -307,6 +387,15 @@ class CryptoWalletScreen extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: _ActionButton(
+                      icon: Icons.add_card_rounded,
+                      label: 'Buy',
+                      enabled: data.capabilities.fiatOnRamp,
+                      onTap: () => _buy(context, ref, data),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _ActionButton(
                       icon: Icons.call_received_rounded,
                       label: 'Receive',
                       enabled:
@@ -314,7 +403,11 @@ class CryptoWalletScreen extends ConsumerWidget {
                       onTap: () => _receive(context, ref, data),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
                   Expanded(
                     child: _ActionButton(
                       icon: Icons.swap_horiz_rounded,
@@ -336,7 +429,8 @@ class CryptoWalletScreen extends ConsumerWidget {
                   ),
                 ],
               ),
-              if (!data.capabilities.conversions ||
+              if (!data.capabilities.fiatOnRamp ||
+                  !data.capabilities.conversions ||
                   !data.capabilities.withdrawals) ...[
                 const SizedBox(height: 14),
                 _CapabilityNotice(capabilities: data.capabilities),
@@ -506,6 +600,8 @@ class _CapabilityNotice extends StatelessWidget {
   Widget build(BuildContext context) {
     final u = context.masanawa;
     final messages = <String>[
+      if (!capabilities.fiatOnRamp)
+        'Buy with fiat is not available until the provider on-ramp is activated.',
       if (!capabilities.conversions)
         'Conversions are not currently qualified for this account.',
       if (!capabilities.withdrawals)
@@ -579,9 +675,13 @@ class _HistoryTile extends StatelessWidget {
       'deposit' => Icons.call_received_rounded,
       'withdraw' => Icons.call_made_rounded,
       'convert' => Icons.swap_horiz_rounded,
+      'buy' => Icons.add_card_rounded,
       _ => Icons.currency_bitcoin,
     };
-    final amount = intent.operation == 'convert' && intent.targetAsset != null
+    final showsTarget =
+        (intent.operation == 'convert' || intent.operation == 'buy') &&
+        intent.targetAsset != null;
+    final amount = showsTarget
         ? intent.providerTargetAmount == null
             ? '${intent.amount} ${intent.asset} → ${intent.targetAsset}'
             : '${intent.amount} ${intent.asset} → ${intent.providerTargetAmount} ${intent.targetAsset}'
@@ -602,7 +702,9 @@ class _HistoryTile extends StatelessWidget {
       ),
       isThreeLine: true,
       trailing: intent.pending &&
-              (intent.operation == 'withdraw' || intent.operation == 'convert')
+              (intent.operation == 'withdraw' ||
+                  intent.operation == 'convert' ||
+                  intent.operation == 'buy')
           ? IconButton(
               tooltip: 'Check status',
               onPressed: () => onRefresh(intent),
@@ -704,6 +806,81 @@ class _DepositDialog extends StatelessWidget {
         FilledButton(
           onPressed: () => Navigator.pop(context),
           child: const Text('Done'),
+        ),
+      ],
+    );
+  }
+}
+
+class _BuySheet extends StatefulWidget {
+  const _BuySheet({
+    required this.fiatCurrencies,
+    required this.settlementAsset,
+  });
+
+  final List<String> fiatCurrencies;
+  final String settlementAsset;
+
+  @override
+  State<_BuySheet> createState() => _BuySheetState();
+}
+
+class _BuySheetState extends State<_BuySheet> {
+  final _amount = TextEditingController();
+  late String _currency;
+
+  @override
+  void initState() {
+    super.initState();
+    _currency = widget.fiatCurrencies.first;
+  }
+
+  @override
+  void dispose() {
+    _amount.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _SheetScaffold(
+      title: 'Buy crypto',
+      children: [
+        DropdownButtonFormField<String>(
+          value: _currency,
+          decoration: const InputDecoration(labelText: 'Pay with'),
+          items: [
+            for (final currency in widget.fiatCurrencies)
+              DropdownMenuItem(value: currency, child: Text(currency)),
+          ],
+          onChanged: (value) {
+            if (value != null) setState(() => _currency = value);
+          },
+        ),
+        const SizedBox(height: 12),
+        _AmountField(
+          controller: _amount,
+          maxDecimals: 2,
+          label: 'Fiat amount',
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Your purchase settles as ${widget.settlementAsset} in your Masanawa wallet. You can convert it after settlement.',
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'The secure payment partner may require identity verification before accepting a fiat purchase.',
+        ),
+        const SizedBox(height: 16),
+        FilledButton.icon(
+          onPressed: () {
+            final amount = _validAmount(_amount.text, maxDecimals: 2);
+            if (amount != null) {
+              Navigator.pop(context, _BuyInput(_currency, amount));
+            }
+          },
+          icon: const Icon(Icons.open_in_new),
+          label: const Text('Continue to secure checkout'),
         ),
       ],
     );
@@ -888,8 +1065,14 @@ class _SheetScaffold extends StatelessWidget {
 }
 
 class _AmountField extends StatelessWidget {
-  const _AmountField({required this.controller});
+  const _AmountField({
+    required this.controller,
+    this.maxDecimals = 18,
+    this.label = 'Amount',
+  });
   final TextEditingController controller;
+  final int maxDecimals;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -899,7 +1082,7 @@ class _AmountField extends StatelessWidget {
       inputFormatters: [
         FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
       ],
-      decoration: const InputDecoration(labelText: 'Amount', hintText: '0.00'),
+      decoration: InputDecoration(labelText: label, hintText: '0.00'),
     );
   }
 }
@@ -935,9 +1118,34 @@ class _SummaryRow extends StatelessWidget {
   }
 }
 
-String? _validAmount(String raw) {
+String? _validAmount(String raw, {int maxDecimals = 18}) {
   final value = raw.trim();
-  if (!RegExp(r'^(?:0|[1-9]\d*)(?:\.\d{1,18})?$').hasMatch(value)) {
+  final match = RegExp(r'^(?:0|[1-9]\d*)(?:\.(\d+))?
+
+class _BuyInput {
+  const _BuyInput(this.currency, this.amount);
+  final String currency;
+  final String amount;
+}
+
+class _ReceiveInput {
+  const _ReceiveInput(this.amount);
+  final String amount;
+}
+
+class _ConvertInput {
+  const _ConvertInput(this.targetProviderCode, this.amount);
+  final String targetProviderCode;
+  final String amount;
+}
+
+class _WithdrawInput {
+  const _WithdrawInput(this.amount, this.address);
+  final String amount;
+  final String address;
+}
+).firstMatch(value);
+  if (match == null || (match.group(1)?.length ?? 0) > maxDecimals) {
     return null;
   }
   final number = num.tryParse(value);
