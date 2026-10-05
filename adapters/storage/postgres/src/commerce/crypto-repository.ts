@@ -671,6 +671,12 @@ export function createPostgresCryptoRepository(pool: Pool): CryptoRepository {
           if (targetCurrency !== current.targetAsset || exactOutcome === null) {
             nextStatus = "manual_review";
           } else {
+            if (
+              current.status === "succeeded" &&
+              (current.providerTargetAmount ?? null) !== exactOutcome
+            ) {
+              throw new Error("crypto.buy.terminal_conflict");
+            }
             await postLedger(client, {
               tenantId,
               userId,
