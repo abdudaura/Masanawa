@@ -9,6 +9,7 @@ import {
   createBudgetedSubworkerAdmissionService,
   type AgentExecutionBudgetReservationPort,
 } from "./subworker-budget.js";
+import { createAgentExecutionControl } from "./execution-control.js";
 
 const tenantId = "tenant_00000000-0000-4000-8000-000000000001" as never;
 const userId = "user_00000000-0000-4000-8000-000000000002" as never;
@@ -53,29 +54,32 @@ function admittedRun(): AgentRun {
   } as AgentRun;
 }
 
-const common = {
-  parentAuthority: {} as AuthorityContext,
-  scope: { tenantId, userId, characterId, relationshipId },
-  parentAgentRunId,
-  childAgentRunId,
-  parentSkillVersionIds: [skillVersionId],
-  requestedSkillVersionIds: [skillVersionId],
-  requestedCapabilities: ["research.read"],
-  parentBudget: budget,
-  childBudget: {
-    at,
-    maxWallClockMs: 30_000,
-    maxInputTokens: 300,
-    maxOutputTokens: 200,
-    maxTotalTokens: 450,
-    maxToolCalls: 2,
-    maxChildRuns: 0,
-    maxProviderCostMicros: 4_000,
-  },
-};
+function common(parentExecutionControl = createAgentExecutionControl()) {
+  return {
+    parentAuthority: {} as AuthorityContext,
+    scope: { tenantId, userId, characterId, relationshipId },
+    parentAgentRunId,
+    childAgentRunId,
+    parentSkillVersionIds: [skillVersionId],
+    requestedSkillVersionIds: [skillVersionId],
+    requestedCapabilities: ["research.read"],
+    parentExecutionControl,
+    parentBudget: budget,
+    childBudget: {
+      at,
+      maxWallClockMs: 30_000,
+      maxInputTokens: 300,
+      maxOutputTokens: 200,
+      maxTotalTokens: 450,
+      maxToolCalls: 2,
+      maxChildRuns: 0,
+      maxProviderCostMicros: 4_000,
+    },
+  };
+}
 
 describe("budgeted subworker admission", () => {
-  it("returns bounded child budget and advances parent child-run usage", async () => {
+  it("returns bounded child budget, child control and advances parent child-run usage", async () => {
     const admit = vi.fn(async () => ({
       run: admittedRun(),
       authority: {} as AuthorityContext,
@@ -88,22 +92,28 @@ describe("budgeted subworker admission", () => {
       reservations: { reserveChildAdmission },
     });
 
+    const request = common();
     const result = await service.admit({
-      ...common,
+      ...request,
       parentUsage: usage(),
     });
 
     expect(result.childBudget.agentRunId).toBe(childAgentRunId);
     expect(result.childBudget.maxTotalTokens).toBe(450);
     expect(result.parentUsageAfterAdmission.childRuns).toBe(1);
+    expect(result.executionControl.signal.aborted).toBe(false);
     expect(reserveChildAdmission).toHaveBeenCalledTimes(1);
     expect(admit).toHaveBeenCalledTimes(1);
     expect(reserveChildAdmission.mock.invocationCallOrder[0]).toBeLessThan(
       admit.mock.invocationCallOrder[0]!,
     );
+
+    request.parentExecutionControl.stop({ reason: "lease-lost" });
+    expect(result.executionControl.signal.aborted).toBe(true);
+    expect(result.executionControl.snapshot().reason).toBe("lease-lost");
   });
 
-  it("rejects a child budget that exceeds parent remaining capacity before child creation", async () => {
+  it("rejects a child budget that exceeds parent remaining capacity before reservation or child creation", async () => {
     const admit = vi.fn();
     const reserveChildAdmission: AgentExecutionBudgetReservationPort["reserveChildAdmission"] =
       vi.fn(async (input) => input.nextUsage);
@@ -111,12 +121,13 @@ describe("budgeted subworker admission", () => {
       subworkers: { admit: admit as never },
       reservations: { reserveChildAdmission },
     });
+    const request = common();
 
     await expect(service.admit({
-      ...common,
+      ...request,
       parentUsage: usage(),
       childBudget: {
-        ...common.childBudget,
+        ...request.childBudget,
         maxInputTokens: 1_001,
       },
     })).rejects.toThrow("maxInputTokens exceeds");
@@ -135,7 +146,7 @@ describe("budgeted subworker admission", () => {
     });
 
     await expect(service.admit({
-      ...common,
+      ...common(),
       parentUsage: usage(),
       parentBudget: {
         ...budget,
@@ -170,7 +181,7 @@ describe("budgeted subworker admission", () => {
     });
 
     await expect(service.admit({
-      ...common,
+      ...common(),
       parentUsage: usage(),
     })).rejects.toThrow("mismatched child custody");
   });
@@ -187,7 +198,7 @@ describe("budgeted subworker admission", () => {
     });
 
     await expect(service.admit({
-      ...common,
+      ...common(),
       parentUsage: usage(),
     })).rejects.toThrow("usage revision conflict");
 
@@ -209,9 +220,63 @@ describe("budgeted subworker admission", () => {
     });
 
     await expect(service.admit({
-      ...common,
+      ...common(),
       parentUsage: usage(),
     })).rejects.toThrow("did not persist the expected parent usage");
+
+    expect(admit).not.toHaveBeenCalled();
+  });
+
+  it("stops before budget reservation when parent execution is already stopped", async () => {
+    const parentExecutionControl = createAgentExecutionControl();
+    parentExecutionControl.stop({
+      reason: "authority-revoked",
+      detail: "policy changed",
+    });
+    const reserveChildAdmission = vi.fn();
+    const admit = vi.fn();
+    const service = createBudgetedSubworkerAdmissionService({
+      reservations: {
+        reserveChildAdmission: reserveChildAdmission as never,
+      },
+      subworkers: { admit: admit as never },
+    });
+
+    await expect(service.admit({
+      ...common(parentExecutionControl),
+      parentUsage: usage(),
+    })).rejects.toMatchObject({
+      code: "agents.execution_stopped",
+      details: { reason: "authority-revoked" },
+    });
+
+    expect(reserveChildAdmission).not.toHaveBeenCalled();
+    expect(admit).not.toHaveBeenCalled();
+  });
+
+  it("does not create a child when parent stops during budget reservation", async () => {
+    const parentExecutionControl = createAgentExecutionControl();
+    const admit = vi.fn();
+    const service = createBudgetedSubworkerAdmissionService({
+      reservations: {
+        async reserveChildAdmission(input) {
+          parentExecutionControl.stop({
+            reason: "lease-lost",
+            detail: "workflow task fence changed",
+          });
+          return input.nextUsage;
+        },
+      },
+      subworkers: { admit: admit as never },
+    });
+
+    await expect(service.admit({
+      ...common(parentExecutionControl),
+      parentUsage: usage(),
+    })).rejects.toMatchObject({
+      code: "agents.execution_stopped",
+      details: { reason: "lease-lost" },
+    });
 
     expect(admit).not.toHaveBeenCalled();
   });
