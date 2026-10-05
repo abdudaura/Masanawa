@@ -14,15 +14,15 @@ The admin app is intended to replace the need for a desktop-only control surface
 | Users & Identity | list users and identity/relationship counts; lifecycle changes are intentionally read-only until Identity exposes a canonical state-transition command | `identity.users.read` |
 | Agents | list and edit presentation, visibility, sort order | existing Agent admin capabilities |
 | Skills | catalog/readiness and per-Agent assignment | existing Skill admin capabilities |
-| Runtime | recent AgentRuns, state, failure and correlation trace | `agents.runs.read` |
-| Commerce | Offers, fulfillments and immutable ledger activity | `commerce.read` |
-| Operations | consequential Operation state and provider outcome | `operations.read` |
+| Runtime | recent AgentRuns, bounded state filtering, failure and correlation trace | `agents.runs.read` |
+| Commerce | Offers, fulfillments and immutable ledger activity; Offer enable/disable creates a canonical new Offer revision | `commerce.read/write` |
+| Operations | consequential Operation state/provider outcome plus safe external-receipt drill-down with payload material excluded | `operations.read` |
 | Reconciliation | unresolved/active reconciliation cases and safe-retry metadata | `reconciliation.read` |
-| Providers | encrypted credential reference metadata only; never ciphertext/plaintext | `providers.credentials.read` |
+| Providers | encrypted credential reference metadata plus canonical revocation; never ciphertext/plaintext | `providers.credentials.read/write` |
 | Audit | audit event identity, aggregate, correlation and sensitivity metadata | `audit.read` |
 | Memory | record lifecycle and extraction queue health counts | `memory.admin.read` |
 | Queues | inbox/outbox pending/retry/failure/dead-letter counts | `queues.admin.read` |
-| Worlds | world status/generation/policy revision diagnostics | `world.admin.read` |
+| Worlds | world status/generation/policy revision diagnostics plus canonical pause/recover | `world.admin.read/write` |
 | Approvals | approval request/status metadata | `approvals.admin.read` |
 | Modules | visible readiness map for domains still being implemented | local projection of canonical roadmap |
 
@@ -33,14 +33,14 @@ The UI uses a responsive NavigationRail on wide/tablet screens and a NavigationD
 These are legitimate admin features, but they require a canonical command/use-case contract rather than a direct SQL mutation:
 
 - approval approve/deny/revoke, with a real operator Principal/approver identity;
-- Offer create/revise/enable/disable through Commerce commands;
+- Offer create/revise and richer catalog administration; enable/disable is already implemented through canonical Commerce revisions;
 - reconciliation check/retry/resolve actions through Operation/Reconciliation APIs;
-- provider credential rotate/revoke/health-test without exposing credential material;
-- World pause/resume/restart and governed canon-event administration;
+- provider credential rotate/health-test without exposing credential material; revocation is already implemented canonically;
+- World restart and governed canon-event administration; pause/recover is already implemented canonically;
 - Memory correction/tombstone/purge tools with scope/privacy authorization;
 - canonical User lifecycle transition command (activate/disable/archive), then external identity/account linking and relationship administration;
 - policy revision, authority revocation and operator role/capability administration;
-- searchable/paginated detail views for receipts, inbox/outbox items and correlations.
+- cursor pagination/search for very large collections plus inbox/outbox/correlation drill-downs; bounded filters and safe Operation receipt drill-downs are already implemented.
 
 ## Domains integrating from active workstreams
 
@@ -59,7 +59,7 @@ These must use their canonical contracts as they merge; the admin app must not d
 2. Role/capability policy for multiple operators and least-privilege administration.
 3. Public/reachable Ops deployment configured separately from customer Gateway traffic.
 4. Audit evidence for every consequential admin mutation.
-5. Pagination/search/filter contracts for high-volume collections.
+5. Cursor pagination/search contracts where bounded state/status filtering is insufficient for very large collections.
 6. Real Flutter analyze/build/device verification.
 7. CI runner availability; current GitHub Foundation CI may terminate before checkout with zero steps.
 
