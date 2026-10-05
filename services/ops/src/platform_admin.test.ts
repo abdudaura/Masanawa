@@ -74,6 +74,32 @@ describe("platform admin projections", () => {
     expect("setUserState" in service).toBe(false);
   });
 
+  it("tenant-scopes canonical external receipt drill-downs", async () => {
+    const seen: string[] = [];
+    const receiptCalls: Array<{ tenantId: TenantId; operationId: string }> = [];
+    const service = createPlatformAdminService({
+      database: { async query() { return { rows: [] }; } } as unknown as PlatformAdminQuery,
+      authorizer: authorizer(seen),
+      receiptReader: {
+        async list(input) {
+          receiptCalls.push(input);
+          return [];
+        },
+      },
+    });
+
+    await service.listOperationReceipts({
+      authorizationHeader: "Bearer operator",
+      operationId: "operation_00000000-0000-4000-8000-000000000009",
+    });
+
+    expect(seen).toEqual(["operations.read"]);
+    expect(receiptCalls).toEqual([{
+      tenantId,
+      operationId: "operation_00000000-0000-4000-8000-000000000009",
+    }]);
+  });
+
   it("never selects encrypted credential material for the mobile admin", async () => {
     const seen: string[] = [];
     let queryText = "";
