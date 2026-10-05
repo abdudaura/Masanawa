@@ -576,7 +576,8 @@ export async function startGatewayService(
     env.NOWPAYMENTS_WITHDRAWAL_PROVIDER_CODES,
   );
   const withdrawalAllowlist = readWithdrawalAllowlist(
-    env.NOWPAYMENTS_WITHDRAWAL_ALLOWLIST_JSON,
+    env.NOWPAYMENTS_WITHDRAWAL_ALLOWLIST_JSON ??
+      env.NOWPAYMENTS_PAYOUT_DESTINATION_ALLOWLIST_JSON,
   );
   const payoutFeeMode =
     env.NOWPAYMENTS_PAYOUT_FEE_MODE === "sender" ||
@@ -620,9 +621,13 @@ export async function startGatewayService(
         payout,
         config: {
           conversionEnabled:
-            env.NOWPAYMENTS_CONVERSIONS_ENABLED === "true",
+            (env.NOWPAYMENTS_CONVERSIONS_ENABLED === "true" ||
+              env.NOWPAYMENTS_CONVERSION_ENABLED === "true") &&
+            env.NOWPAYMENTS_CUSTODY_ENABLED === "true",
           payoutEnabled:
-            env.NOWPAYMENTS_PAYOUTS_ENABLED === "true" &&
+            (env.NOWPAYMENTS_PAYOUTS_ENABLED === "true" ||
+              env.NOWPAYMENTS_PAYOUT_ENABLED === "true") &&
+            env.NOWPAYMENTS_CUSTODY_ENABLED === "true" &&
             env.NOWPAYMENTS_PAYOUT_2FA_READY === "true",
           ipWhitelistSatisfied:
             env.NOWPAYMENTS_FIXED_EGRESS_CONFIRMED === "true",
@@ -645,13 +650,17 @@ export async function startGatewayService(
       nowPaymentsCustody: custody,
       nowPaymentsPayout: payout,
       withdrawalEvidence:
-        env.NOWPAYMENTS_PAYOUTS_ENABLED === "true" &&
+        (env.NOWPAYMENTS_PAYOUTS_ENABLED === "true" ||
+          env.NOWPAYMENTS_PAYOUT_ENABLED === "true") &&
+        env.NOWPAYMENTS_CUSTODY_ENABLED === "true" &&
         env.NOWPAYMENTS_PAYOUT_2FA_READY === "true" &&
         payoutFeeMode !== undefined
           ? runtimeEvidence
           : undefined,
       conversionEvidence:
-        env.NOWPAYMENTS_CONVERSIONS_ENABLED === "true"
+        (env.NOWPAYMENTS_CONVERSIONS_ENABLED === "true" ||
+          env.NOWPAYMENTS_CONVERSION_ENABLED === "true") &&
+        env.NOWPAYMENTS_CUSTODY_ENABLED === "true"
           ? runtimeEvidence
           : undefined,
       ...(payoutFeeMode === undefined
