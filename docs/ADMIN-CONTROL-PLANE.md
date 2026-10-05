@@ -11,7 +11,7 @@ The admin app is intended to replace the need for a desktop-only control surface
 | Area | Mobile admin capability | Server authority |
 | --- | --- | --- |
 | Overview | Ops health/readiness and tenant-wide counts | `platform.summary.read` |
-| Users & Identity | list users, identity/relationship counts, activate/disable/archive with optimistic revision | `identity.users.read/write` |
+| Users & Identity | list users and identity/relationship counts; lifecycle changes are intentionally read-only until Identity exposes a canonical state-transition command | `identity.users.read` |
 | Agents | list and edit presentation, visibility, sort order | existing Agent admin capabilities |
 | Skills | catalog/readiness and per-Agent assignment | existing Skill admin capabilities |
 | Runtime | recent AgentRuns, state, failure and correlation trace | `agents.runs.read` |
@@ -38,7 +38,7 @@ These are legitimate admin features, but they require a canonical command/use-ca
 - provider credential rotate/revoke/health-test without exposing credential material;
 - World pause/resume/restart and governed canon-event administration;
 - Memory correction/tombstone/purge tools with scope/privacy authorization;
-- external identity/account linking and relationship administration;
+- canonical User lifecycle transition command (activate/disable/archive), then external identity/account linking and relationship administration;
 - policy revision, authority revocation and operator role/capability administration;
 - searchable/paginated detail views for receipts, inbox/outbox items and correlations.
 
@@ -65,7 +65,7 @@ These must use their canonical contracts as they merge; the admin app must not d
 
 ## Completion rule
 
-The admin app is considered a full platform control plane only when every production domain has one of:
+The current-main admin surface is complete only when every currently implemented production domain has one of:
 
 - a live authorized read/write administration surface; or
 - an explicit immutable/no-admin-action status where platform architecture intentionally forbids mutation.
