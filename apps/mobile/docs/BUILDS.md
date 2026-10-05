@@ -6,13 +6,13 @@ All commands run from `apps/mobile`.
 
 | Flag | Default | Meaning |
 | --- | --- | --- |
-| `API_BASE_URL` | `https://nurainworker-production.up.railway.app` | Masanawa API and OTP/session Gateway. |
-| `AGENT_BASE_URL` | `https://nurainworker-production.up.railway.app` | Masanawa Agent/creator Gateway. |
+| `API_BASE_URL` | `https://masanawa-gateway-production.up.railway.app` | Masanawa API and OTP/session Gateway. |
+| `AGENT_BASE_URL` | `https://masanawa-gateway-production.up.railway.app` | Masanawa Agent/creator Gateway. |
 
 Example:
 
 ```sh
-# Production defaults need no Dart defines.
+# Production defaults use the verified Railway Gateway and need no Dart defines.
 flutter run
 
 # Optional staging-origin override:
