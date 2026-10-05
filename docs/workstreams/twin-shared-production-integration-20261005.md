@@ -98,8 +98,49 @@ for the shared integration/deployment paths below.
 - production auth uses canonical platform sessions, never developer tokens;
 - existing billing/crypto recovery/reconciliation remains authoritative.
 
-## Current step
+## Current checkpoint
 
-Audit complete. Implement the canonical Twin profile store + Twin economy persistence,
-compose existing Twin services into Gateway, then bind chat/Live/provider-success hooks
-and run focused TypeScript/PostgreSQL/Flutter verification without rewriting old migrations.
+Shared Twin production integration is substantially implemented on this branch. The
+current production line now includes canonical Twin profile/directory/My Twin/Activity/
+Wallet composition, Credit transfer/gift persistence, attribution/commission hooks,
+paid-voice admission and settlement, owner-access flows, safety/block enforcement,
+four-tab mobile wiring, chat actions, and native public Twin deep-link delivery.
+
+Qualification coverage added after the implementation audit:
+
+- `services/gateway/src/twin_production_runtime.test.ts` verifies the composed production
+  runtime exposes one canonical Twin surface and drives authenticated Explore, My Twin
+  and Wallet projections without surfacing Agent Float.
+- `adapters/storage/postgres/src/commerce/twin-economy.integration.test.ts` verifies
+  durable Credit-operation replay, tenant isolation, immutable financial history and
+  concurrent exact-replay convergence.
+- `apps/mobile/test/twin_production_integration_test.dart` verifies the production
+  Riverpod providers use the authenticated Gateway transports for My Twin, Explore,
+  Activity and Wallet.
+
+The public Twin deep-link slice also landed on this branch after the qualification tests:
+HTTPS share links are recognized, resolved through the Twin directory, routed into chat,
+registered as Android app links and delivered from the Android activity into Flutter.
+
+## Verification status
+
+Repository implementation is ahead of the last physically verified release APK. The old
+release-build evidence therefore does not qualify this current Twin-integrated head.
+
+GitHub Actions checks on the latest production branch are still terminating before useful
+build/test execution, consistent with the existing runner-infrastructure failure already
+recorded in the Twin integration matrix. Treat those red checks as no verification
+evidence, not as an application test failure.
+
+Still required before marking TWIN production tasks complete or merging this vehicle:
+
+1. run Gateway/package TypeScript typecheck + focused Twin tests on a working runner;
+2. run PostgreSQL acceptance with `MASANAWA_TEST_DATABASE_URL`, including the new Twin
+   replay/immutability test;
+3. run Flutter analyze/tests, including the new production-transport and deep-link tests;
+4. build `assembleRelease` from the exact qualified head and record APK checksum/artifact;
+5. install on a real Android device and exercise create/share/free-text, paid voice,
+   transfer/gift, owner access, Wallet/Activity and restart/retry acceptance;
+6. qualify production deployment/readiness/rollback evidence before merge.
+
+Do not rewrite applied migrations or mark TWIN-100..109 complete from code presence alone.
