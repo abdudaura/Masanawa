@@ -460,7 +460,7 @@ function assertMultiSelectAction(
   }
 }
 
-function validateTeachingMultiSelectStage(input: {
+export function validateTeachingMultiSelectStage(input: {
   readonly binding: TeachingRuntimeBinding;
   readonly action: TeachingSelectionActionBinding;
   readonly stage: TeachingMultiSelectStage;
