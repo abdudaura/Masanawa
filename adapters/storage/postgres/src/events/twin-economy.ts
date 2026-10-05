@@ -37,7 +37,7 @@ export interface TwinEconomyEventStore {
 export function createPostgresTwinEconomyEventStore(
   pool: Pool,
 ): TwinEconomyEventStore {
-  return Object.freeze({
+  const repository: TwinEconomyEventStore = {
     async append(input) {
       const payload = createTwinEconomyEvent(input.payload);
       const lockKey = `twin-event:${input.tenantId}:${payload.eventType}:${payload.referenceId}`;
@@ -137,5 +137,6 @@ export function createPostgresTwinEconomyEventStore(
         ),
       );
     },
-  });
+  };
+  return Object.freeze(repository);
 }
