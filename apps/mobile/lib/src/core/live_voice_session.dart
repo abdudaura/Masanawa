@@ -32,6 +32,7 @@ class LiveVoiceSession with WidgetsBindingObserver {
   final AudioRecorder _recorder;
   final _state = StreamController<LiveVoiceState>.broadcast(sync: true);
   final _errors = StreamController<String>.broadcast(sync: true);
+  final Completer<void> _ready = Completer<void>();
   WebSocket? _socket;
   StreamSubscription<Uint8List>? _micSub;
   StreamSubscription<dynamic>? _socketSub;
@@ -50,6 +51,7 @@ class LiveVoiceSession with WidgetsBindingObserver {
 
   Stream<LiveVoiceState> get states => _state.stream;
   Stream<String> get errors => _errors.stream;
+  Future<void> get ready => _ready.future;
   bool get speakerEnabled => _speaker;
   bool get muted => _muted;
 
@@ -252,6 +254,9 @@ class LiveVoiceSession with WidgetsBindingObserver {
         }
         if (_closed) return;
         await _beginMicrophone();
+        if (!_ready.isCompleted && !_closed) {
+          _ready.complete();
+        }
         return;
       }
       if (message.containsKey('error') || message.containsKey('goAway')) {
@@ -337,6 +342,9 @@ class LiveVoiceSession with WidgetsBindingObserver {
 
   void _fail(String message) {
     if (_closed) return;
+    if (!_ready.isCompleted) {
+      _ready.completeError(StateError(message));
+    }
     _errors.add(message);
     _state.add(LiveVoiceState.failed);
   }
@@ -352,6 +360,11 @@ class LiveVoiceSession with WidgetsBindingObserver {
   Future<void> _close() async {
     if (_closed) return;
     _closed = true;
+    if (!_ready.isCompleted) {
+      _ready.completeError(
+        StateError('Live voice ended before media setup completed.'),
+      );
+    }
     _setupTimer?.cancel();
     if (_observing) {
       WidgetsBinding.instance.removeObserver(this);
