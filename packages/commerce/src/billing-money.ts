@@ -65,7 +65,7 @@ export interface BillingQuoteRepository extends BillingFundingAuthority {
   claimRefundDispatch(input: Readonly<{
     tenantId: TenantId; userId: UserId; quoteId: QuoteId; providerTransactionId: string;
     claimedAt: string;
-  }>): Promise<BillingQuote>;
+  }>): Promise<Readonly<{ quote: BillingQuote; claimed: boolean }>>;
   recordRefundInitiated(input: Readonly<{
     tenantId: TenantId; userId: UserId; quoteId: QuoteId; providerTransactionId: string;
     refundReference: string; initiatedAt: string;
