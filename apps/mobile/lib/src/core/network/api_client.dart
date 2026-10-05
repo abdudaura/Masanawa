@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../api/models.dart';
+import '../api/billing_models.dart';
 
 /// Masanawa production Gateway. A build may override this for staging, but
 /// users never configure runtime URLs or credentials inside the app.
@@ -154,6 +155,96 @@ class ApiClient {
 
   Future<Map<String, dynamic>> logout() async {
     return _post('/auth/logout', const {});
+  }
+
+  // ---- Billing ----
+
+  Future<List<BillCategory>> billingCategories() async {
+    final data = await _get('/v1/commerce/bills/categories');
+    final rows = data['categories'] as List<dynamic>? ?? const [];
+    return rows
+        .map((entry) =>
+            BillCategory.fromJson(entry as Map<String, dynamic>))
+        .toList(growable: false);
+  }
+
+  Future<List<BillBiller>> billingBillers(String categoryCode) async {
+    final code = Uri.encodeComponent(categoryCode);
+    final data =
+        await _get('/v1/commerce/bills/categories/$code/billers');
+    final rows = data['billers'] as List<dynamic>? ?? const [];
+    return rows
+        .map((entry) => BillBiller.fromJson(entry as Map<String, dynamic>))
+        .toList(growable: false);
+  }
+
+  Future<List<BillItem>> billingItems(String billerCode) async {
+    final code = Uri.encodeComponent(billerCode);
+    final data = await _get('/v1/commerce/bills/billers/$code/items');
+    final rows = data['items'] as List<dynamic>? ?? const [];
+    return rows
+        .map((entry) => BillItem.fromJson(entry as Map<String, dynamic>))
+        .toList(growable: false);
+  }
+
+  Future<BillingCheckoutView> createBillingQuote({
+    required String categoryCode,
+    required String billerCode,
+    required String itemCode,
+    required String customerId,
+    required String amount,
+  }) async {
+    final data = await _post('/v1/commerce/bills/quotes', {
+      'categoryCode': categoryCode,
+      'billerCode': billerCode,
+      'itemCode': itemCode,
+      'customerId': customerId,
+      'amount': amount,
+    });
+    return BillingCheckoutView.fromJson(data);
+  }
+
+  Future<BillingCheckoutView> startBillingCheckout({
+    required String quoteId,
+    required int quoteRevision,
+    String? checkoutEmail,
+  }) async {
+    final id = Uri.encodeComponent(quoteId);
+    final data = await _post('/v1/commerce/bills/quotes/$id/checkout', {
+      'quoteRevision': quoteRevision,
+      if (checkoutEmail != null && checkoutEmail.trim().isNotEmpty)
+        'checkoutEmail': checkoutEmail.trim(),
+    });
+    return BillingCheckoutView.fromJson(data);
+  }
+
+  Future<BillingCheckoutView> verifyBillingPayment({
+    required String quoteId,
+    required int quoteRevision,
+  }) async {
+    final id = Uri.encodeComponent(quoteId);
+    final data = await _post('/v1/commerce/bills/quotes/$id/verify', {
+      'quoteRevision': quoteRevision,
+    });
+    return BillingCheckoutView.fromJson(data);
+  }
+
+  Future<BillingCheckoutView> billingQuote(String quoteId) async {
+    final id = Uri.encodeComponent(quoteId);
+    final data = await _get('/v1/commerce/bills/quotes/$id');
+    return BillingCheckoutView.fromJson(data);
+  }
+
+  Future<List<BillingCheckoutView>> billingHistory({int limit = 50}) async {
+    final data = await _get(
+      '/v1/commerce/bills/quotes',
+      queryParameters: {'limit': limit},
+    );
+    final rows = data['quotes'] as List<dynamic>? ?? const [];
+    return rows
+        .map((entry) =>
+            BillingCheckoutView.fromJson(entry as Map<String, dynamic>))
+        .toList(growable: false);
   }
 
   /// Sends one message to the AI assistant. Expects `{reply: String}`.
