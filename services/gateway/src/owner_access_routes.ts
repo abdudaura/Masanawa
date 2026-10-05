@@ -2,8 +2,8 @@ import type { FastifyInstance } from "fastify";
 import type {
   OwnerAccessModality,
   OwnerAccessQuote,
-} from "@masanawa/commerce";
-import type { OwnerAccessService } from "./owner_access.js";
+  OwnerAccessService,
+} from "./owner_access.js";
 
 function text(value: unknown, name: string, max = 256): string {
   if (typeof value !== "string" || value.length < 1 || value.length > max) {
