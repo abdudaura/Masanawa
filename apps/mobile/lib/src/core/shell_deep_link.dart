@@ -18,7 +18,8 @@ String? shellDeepLinkRoute(Uri uri) {
   }
 
   if (uri.scheme != 'masanawa' ||
-      !{'chat', 'work', 'approval', 'artifact', 'twin'}.contains(uri.host)) {
+      !{'chat', 'work', 'approval', 'artifact', 'twin', 'activity'}
+          .contains(uri.host)) {
     return null;
   }
 
@@ -27,6 +28,13 @@ String? shellDeepLinkRoute(Uri uri) {
     final publicId = uri.pathSegments.single;
     if (!_validPublicTwinId(publicId)) return null;
     return '/twin/${Uri.encodeComponent(publicId)}';
+  }
+
+  if (uri.host == 'activity') {
+    if (uri.pathSegments.isNotEmpty || uri.queryParameters.isNotEmpty) {
+      return null;
+    }
+    return '/home?tab=activity';
   }
 
   final String? characterId;
