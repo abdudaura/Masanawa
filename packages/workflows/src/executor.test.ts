@@ -145,6 +145,12 @@ function fixture(state: WorkflowRun["state"] = "running") {
   return { at, scope, run, authority, graph };
 }
 
+const openGuard = {
+  async acquire() {
+    return { async release() {} };
+  },
+};
+
 describe("Workflow resume executor", () => {
   it("resumes from the persisted node after a process restart", async () => {
     const f = fixture();
@@ -171,6 +177,7 @@ describe("Workflow resume executor", () => {
       runs,
       authorityGate,
       nodeExecutor: firstNode,
+      executionGuard: openGuard,
       maxStepsPerResume: 1,
       now: () => f.at,
     });
@@ -196,6 +203,7 @@ describe("Workflow resume executor", () => {
       runs,
       authorityGate,
       nodeExecutor: secondNode,
+      executionGuard: openGuard,
       maxStepsPerResume: 4,
       now: () => f.at,
     });
@@ -242,6 +250,7 @@ describe("Workflow resume executor", () => {
           return { kind: "complete" };
         },
       },
+      executionGuard: openGuard,
     });
 
     await expect(
@@ -266,6 +275,7 @@ describe("Workflow resume executor", () => {
           return { kind: "advance", nextNodeId: "start" };
         },
       },
+      executionGuard: openGuard,
     });
 
     await expect(
@@ -296,6 +306,7 @@ describe("Workflow resume executor", () => {
           return { kind: "advance", nextNodeId: "finish" };
         },
       },
+      executionGuard: openGuard,
     });
 
     await expect(
@@ -327,6 +338,7 @@ describe("Workflow resume executor", () => {
           return { kind: "complete" };
         },
       },
+      executionGuard: openGuard,
     });
 
     const result = await executor.resume({
@@ -339,6 +351,34 @@ describe("Workflow resume executor", () => {
     expect(result.disposition).toBe("paused");
     expect(result.stepsExecuted).toBe(0);
     expect(gated).toBe(false);
+    expect(executed).toBe(false);
+  });
+
+  it("does not execute when another worker owns the WorkflowRun", async () => {
+    const f = fixture();
+    const runs = new MemoryRuns(f.run);
+    let executed = false;
+    const executor = createWorkflowExecutor({
+      runs,
+      authorityGate: { async assertCurrent() {} },
+      nodeExecutor: {
+        async execute() {
+          executed = true;
+          return { kind: "advance", nextNodeId: "finish" };
+        },
+      },
+      executionGuard: { async acquire() { return null; } },
+    });
+
+    const result = await executor.resume({
+      authority: f.authority,
+      scope: f.scope,
+      workflowRunId: f.run.workflowRunId,
+      graph: f.graph,
+    });
+
+    expect(result.disposition).toBe("busy");
+    expect(result.stepsExecuted).toBe(0);
     expect(executed).toBe(false);
   });
 
@@ -364,6 +404,7 @@ describe("Workflow resume executor", () => {
           };
         },
       },
+      executionGuard: openGuard,
       maxStepsPerResume: 2,
       now: () => f.at,
     });
