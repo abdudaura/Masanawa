@@ -76,3 +76,13 @@ Not yet integrated:
 CI:
 Foundation CI run 37289723507 failed before execution with zero job steps; no test result
 is claimed from that runner.
+
+
+Architecture protection:
+- added twin-product-simplicity architecture test;
+- forbids parallel wallet/marketplace/social-feed/twin-runtime canonical packages;
+- forbids equivalent standalone services;
+- asserts Commerce/Agents/Identity/Memory/Security remain the shared foundations.
+
+This partially implements TWIN-004 and should be extended, not replaced, by future
+integration work.
