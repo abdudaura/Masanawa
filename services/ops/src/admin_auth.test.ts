@@ -99,7 +99,7 @@ describe("Ops platform-session admin authorization", () => {
       ]),
     })!;
     expect(config.grants[0]?.capabilities.has("commerce.write")).toBe(true);
-    expect(config.grants.size).toBe(1);
+    expect(config.grants.length).toBe(1);
   });
 
   it("authorizes a current canonical session only for granted capabilities", async () => {
