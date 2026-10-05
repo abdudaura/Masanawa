@@ -65,6 +65,51 @@ describe("platform admin projections", () => {
     });
   });
 
+  it("tenant-scopes Character ownership metadata", async () => {
+    const seen: string[] = [];
+    const ownershipCalls: unknown[] = [];
+    const database = {
+      async query() {
+        return {
+          rows: [{
+            character_id:
+              "character_00000000-0000-4000-8000-000000000013",
+            state: "active",
+            active_character_version_id:
+              "character-version_00000000-0000-4000-8000-000000000014",
+            revision: "2",
+            display_name: "Gwani",
+            role_label: "Assistant",
+            visible_in_user_app: true,
+            updated_at: new Date("2026-10-05T00:00:00Z"),
+          }],
+        };
+      },
+    } as unknown as PlatformAdminQuery;
+    const service = createPlatformAdminService({
+      database,
+      authorizer: authorizer(seen),
+      ownershipReader: {
+        async read(input) {
+          ownershipCalls.push(input);
+          return "platform";
+        },
+      },
+    });
+
+    const characters = await service.listCharacters({
+      authorizationHeader: "Bearer operator",
+    });
+
+    expect(seen).toEqual(["agents.presentation.read"]);
+    expect(ownershipCalls).toEqual([{
+      tenantId,
+      characterId:
+        "character_00000000-0000-4000-8000-000000000013",
+    }]);
+    expect(characters[0]?.ownershipKind).toBe("platform");
+  });
+
   it("does not expose a direct-SQL user lifecycle mutation", () => {
     const service = createPlatformAdminService({
       database: { async query() { return { rows: [] }; } } as unknown as PlatformAdminQuery,
