@@ -3,8 +3,10 @@
 Owner/window: ChatGPT harness execution-session continuation.
 Branch: `work/workflow-execution-session-20261005`
 Base: PR #175 head `e82bf047aabd7a2522f5607e49151f5a8542ee83`
+PR: #176
 
-Purpose: provide one server-side lifecycle that turns a resume decision into a fenced execution session.
+Purpose: provide one server-side lifecycle that turns a canonical resume decision into a
+fenced execution session.
 
 ## Exact owned paths
 
@@ -13,24 +15,50 @@ Purpose: provide one server-side lifecycle that turns a resume decision into a f
 - `packages/workflows/src/executor-session.test.ts`
 - append-only export in `packages/workflows/src/index.ts`
 
-## Boundaries
+No Gateway/mobile/channel, persistence/migration, finance or provider files are owned.
 
-- no Gateway/mobile/channel composition;
-- no persistence/migration changes;
-- no finance/provider dispatch;
-- session coordinator grants no new Security authority;
-- it only leases dispositions already returned executable by canonical resume logic;
-- waiting approval, external reconciliation, blocked and terminal dispositions never obtain execution leases.
+## Implemented
 
-## Acceptance
+- canonical resume inspection always happens before lease acquisition;
+- only `execute` dispositions may acquire a WorkflowRun executor lease;
+- `waiting-approval`, `reconcile-external`, `blocked` and `terminal`
+  dispositions are returned unchanged and never acquire execution ownership;
+- executable result preserves exact WorkflowRun, checkpoint and `resumeFrom` data from
+  the resume service;
+- bounded lease duration is configured once for the coordinator;
+- renew always targets the exact tenant/WorkflowRun/holder/fence from the session lease;
+- close releases that exact fence;
+- lease acquire/renew/release failures propagate to the Harness instead of being hidden;
+- coordinator is provider-neutral and channel-neutral;
+- source imports underlying Workflow modules directly, avoiding package self-import cycles.
 
-- executable resume disposition acquires the durable lease;
-- non-executable dispositions never acquire;
-- lease duration is bounded;
-- renewal uses exact holder/fence;
-- close releases exact holder/fence;
-- lease loss/renew failure is surfaced, never hidden;
-- session result preserves run/checkpoint/resumeFrom exactly;
-- coordinator stays provider/channel neutral.
+## Verification
 
-Status: active.
+- Compare against PR #175 head: 5 commits ahead, 0 behind.
+- Exact changed paths are the four claimed paths above.
+- Final implementation head before this handoff update:
+  `80027f7f66a9f18155484486e1d0c17eea8a608b`.
+- GitHub exposes no workflow run for that final head, so no executable hosted CI pass is
+  claimed.
+- Focused tests are checked in for executable lease acquisition, non-executable
+  no-lease behavior, exact renew/release, unsafe duration rejection and surfaced lease loss.
+
+## Integration handoff
+
+Canonical runtime sequence is now:
+
+1. resume/revalidate current Work via #162;
+2. open execution session through #176;
+3. #176 acquires the durable fenced lease from #169/#173 only for executable Work;
+4. executor performs bounded work;
+5. executor-owned state/checkpoint commits go through #175;
+6. renew through #176 while active;
+7. close/release through #176 on clean stop;
+8. any lease loss/fence failure stops execution and returns to resume/reconciliation.
+
+The mobile app, WhatsApp and Telegram only render Work/progress and never receive lease
+holder/fence values.
+
+Implementation: complete within this isolated coordinator slice.
+Verification: source/diff audit complete; executable hosted CI unavailable.
+Deployment: not claimed.
