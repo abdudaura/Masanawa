@@ -4,18 +4,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../state/ai_chat_state.dart';
+import '../../core/mobile_push.dart';
+import '../../owner_access/owner_access.dart';
+import '../../owner_access/owner_access_state.dart';
 import '../../state/agent_directory_state.dart';
-import '../../state/creator_economy_state.dart';
-import '../../state/creator_skills_state.dart';
+import '../../state/ai_chat_state.dart';
+import '../../state/my_twin_state.dart';
 import '../../state/session_state.dart';
-import '../../core/providers.dart';
 import '../../theme/masanawa_theme.dart';
 import '../../tokens/masanawa_tokens.dart';
-import '../../core/mobile_push.dart';
 
-/// Settings + profile. The only secondary screen: account card, two local
-/// toggles, clear-chat, log out. No feature links.
+/// Secondary account settings for the Twin-first product.
+///
+/// Runtime concepts such as Agent Float, Skills and provider configuration stay
+/// out of the ordinary customer surface. The user's own Twin and human-access
+/// availability are the only Twin configuration exposed here.
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
@@ -38,68 +41,140 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (mounted) setState(() => _notifications = enabled);
   }
 
-  Future<void> _addFloat(BuildContext context, int availableCredits) async {
-    final controller = TextEditingController();
-    final amount = await showDialog<int>(
+  Future<int?> _askHumanAccessPrice(
+    BuildContext context,
+    int current,
+  ) async {
+    final controller = TextEditingController(
+      text: current > 0 ? current.toString() : '',
+    );
+    final result = await showDialog<int>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Add Agent Float'),
+        title: const Text('Human access price'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Available Credits: $availableCredits'),
-            const SizedBox(height: 12),
+            const Text(
+              'Set the price per minute after the customer\'s trial. '
+              'Masanawa holds paid requests until the session is completed.',
+            ),
+            const SizedBox(height: 16),
             TextField(
               controller: controller,
-              keyboardType: TextInputType.number,
               autofocus: true,
+              keyboardType: TextInputType.number,
               decoration: const InputDecoration(
-                labelText: 'Credits to allocate',
-                hintText: '100',
+                labelText: 'Credits per minute',
+                hintText: '10',
               ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Agent Float is execution capacity for your clone. It is not withdrawable earnings.',
             ),
           ],
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Cancel'),
           ),
           FilledButton(
             onPressed: () {
               final value = int.tryParse(controller.text.trim());
-              if (value == null || value < 1 || value > availableCredits) {
-                return;
-              }
-              Navigator.pop(dialogContext, value);
+              if (value == null || value < 1 || value > 1000000) return;
+              Navigator.of(dialogContext).pop(value);
             },
-            child: const Text('Add Float'),
+            child: const Text('Save'),
           ),
         ],
       ),
     );
     controller.dispose();
-    if (amount == null || !mounted) return;
+    return result;
+  }
 
-    await ref.read(creatorEconomyProvider.notifier).allocateFloat(amount);
-    if (!mounted) return;
-    final result = ref.read(creatorEconomyProvider);
-    if (result.hasError) {
+  Future<List<int>?> _askHumanAccessDurations(
+    BuildContext context,
+    List<int> current,
+  ) async {
+    final selected = <int>{
+      ...current.where(const {15, 30, 60}.contains),
+    };
+    if (selected.isEmpty) selected.add(15);
+
+    return showDialog<List<int>>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Session lengths'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final minutes in const [15, 30, 60])
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: selected.contains(minutes),
+                  title: Text('$minutes minutes'),
+                  onChanged: (enabled) {
+                    setDialogState(() {
+                      if (enabled == true) {
+                        selected.add(minutes);
+                      } else if (selected.length > 1) {
+                        selected.remove(minutes);
+                      }
+                    });
+                  },
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final values = selected.toList()..sort();
+                Navigator.of(dialogContext).pop(values);
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _saveHumanAccess(
+    BuildContext context,
+    OwnerAccessOffering offering,
+  ) async {
+    final saved =
+        await ref.read(ownerAccessOfferingProvider.notifier).save(offering);
+    if (!context.mounted) return;
+    if (saved == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Could not add Agent Float. Check your Credits and try again.'),
+          content: Text('Could not update human access. Please try again.'),
         ),
       );
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$amount Credits added to Agent Float')),
-    );
+    unawaited(ref.read(myTwinProvider.notifier).refresh());
+  }
+
+  Future<void> _toggleHumanAccess(
+    BuildContext context,
+    OwnerAccessOffering offering,
+    bool enabled,
+  ) async {
+    var next = offering;
+    if (enabled && offering.priceCreditsPerMinute < 1) {
+      final price =
+          await _askHumanAccessPrice(context, offering.priceCreditsPerMinute);
+      if (price == null || !context.mounted) return;
+      next = next.copyWith(priceCreditsPerMinute: price);
+    }
+    await _saveHumanAccess(context, next.copyWith(enabled: enabled));
   }
 
   @override
@@ -109,10 +184,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final user = session is SessionSignedIn ? session.user : null;
     final name = user?.name ?? 'Citizen';
     final contact = user?.phone ?? user?.email ?? 'No contact saved';
+
+    final myTwin = ref.watch(myTwinProvider);
+    final twin = myTwin.valueOrNull;
+    final hasTwin = twin?.hasTwin == true && twin?.characterId != null;
+    final humanAccess = ref.watch(ownerAccessOfferingProvider);
+
     final directory = ref.watch(agentDirectoryProvider);
-    final economy = ref.watch(creatorEconomyProvider);
-    final economySnapshot = economy.asData?.value;
-    final creatorSkills = ref.watch(creatorSkillsProvider);
     final supportAgents = directory.agents
         .where((agent) => agent.supportAgent)
         .toList(growable: false);
@@ -131,10 +209,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.canPop() ? context.pop() : context.go('/chat'),
+          onPressed: () => context.canPop() ? context.pop() : context.go('/home'),
         ),
         title: Text(
-          'Settings & Profile',
+          'Settings',
           style: TextStyle(
             color: u.textPrimary,
             fontSize: MasanawaTokens.fontSize['xl'],
@@ -193,334 +271,309 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          _Card(children: [
-            ListTile(
-              leading: Icon(Icons.person_outline, color: u.brand),
-              title: const Text('Your clone'),
-              subtitle: Text(
-                economySnapshot?.hasClone == true
-                    ? 'Open your personal Masanawa clone'
-                    : 'Create your one personal Masanawa clone',
+          _Card(
+            children: [
+              ListTile(
+                leading: Icon(Icons.auto_awesome_outlined, color: u.brand),
+                title: const Text('My Twin'),
+                subtitle: Text(
+                  hasTwin
+                      ? 'Open your Twin'
+                      : 'Create your personal AI Twin',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  final characterId = twin?.characterId;
+                  if (hasTwin && characterId != null) {
+                    context.push('/chat/${Uri.encodeComponent(characterId)}');
+                  } else {
+                    context.push('/clone');
+                  }
+                },
               ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                final characterId = economySnapshot?.characterId;
-                if (characterId != null && characterId.isNotEmpty) {
-                  context.push('/chat/$characterId');
-                } else {
-                  context.push('/clone');
-                }
-              },
-            ),
-          ]),
-          const SizedBox(height: 16),
-          _Card(children: [
-            ListTile(
-              leading: Icon(Icons.receipt_long_outlined, color: u.brand),
-              title: const Text('Bills & payments'),
-              subtitle: const Text(
-                'Airtime, data, electricity, TV and other qualified services',
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push('/billing'),
-            ),
-          ]),
-          const SizedBox(height: 16),
-          economy.when(
-            data: (snapshot) {
-              if (snapshot == null) return const SizedBox.shrink();
-              return _Card(children: [
-                ListTile(
-                  leading: Icon(Icons.account_balance_wallet_outlined, color: u.brand),
-                  title: const Text('Creator economy'),
-                  subtitle: Text(
-                    snapshot.hasClone
-                        ? 'Credits fund work; earnings are kept separate'
-                        : 'Create your clone to activate Agent Float',
-                  ),
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  title: const Text('Credits'),
-                  trailing: Text('${snapshot.customerCredits}'),
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  title: const Text('Agent Float'),
-                  trailing: Text('${snapshot.agentFloatCredits}'),
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  title: const Text('Earnings'),
-                  subtitle: Text(
-                    '${snapshot.pendingEarningsCredits} pending',
-                  ),
-                  trailing: Text('${snapshot.availableEarningsCredits} available'),
-                ),
-                if (snapshot.hasClone && snapshot.customerCredits > 0) ...[
-                  const Divider(height: 1),
+            ],
+          ),
+          if (hasTwin) ...[
+            const SizedBox(height: 16),
+            humanAccess.when(
+              loading: () => _Card(
+                children: const [
                   ListTile(
-                    leading: Icon(Icons.add_circle_outline, color: u.brand),
-                    title: const Text('Add Agent Float'),
-                    subtitle: const Text('Allocate Credits so your clone can fund eligible work'),
-                    onTap: () => _addFloat(context, snapshot.customerCredits),
+                    leading: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    title: Text('Loading human access…'),
                   ),
                 ],
-              ]);
-            },
-            loading: () => _Card(children: const [
-              ListTile(
-                leading: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-                title: Text('Loading creator economy…'),
               ),
-            ]),
-            error: (_, __) => _Card(children: [
-              ListTile(
-                leading: Icon(Icons.sync_problem_outlined, color: u.brand),
-                title: const Text('Creator economy unavailable'),
-                subtitle: const Text('Tap to try again'),
-                onTap: () => ref.read(creatorEconomyProvider.notifier).refresh(),
-              ),
-            ]),
-          ),
-          const SizedBox(height: 16),
-          if (economySnapshot?.hasClone == true)
-            creatorSkills.when(
-              data: (skills) {
-                if (skills.isEmpty) return const SizedBox.shrink();
-                return _Card(children: [
+              error: (_, __) => _Card(
+                children: [
                   ListTile(
-                    leading: Icon(Icons.extension_outlined, color: u.brand),
-                    title: const Text('Clone Skills'),
-                    subtitle: const Text(
-                      'Add specialist abilities. Masanawa handles the technical setup.',
-                    ),
+                    leading: Icon(Icons.sync_problem_outlined, color: u.brand),
+                    title: const Text('Human access unavailable'),
+                    subtitle: const Text('Tap to try again'),
+                    onTap: () => ref
+                        .read(ownerAccessOfferingProvider.notifier)
+                        .refresh(),
                   ),
-                  const Divider(height: 1),
-                  for (var index = 0; index < skills.length; index++) ...[
-                    Builder(
-                      builder: (context) {
-                        final skill = skills[index];
-                        return SwitchListTile(
-                          value: skill.enabled,
-                          title: Text(skill.displayName),
-                          subtitle: Text(skill.description),
-                          onChanged: (enabled) async {
-                            try {
-                              await ref
-                                  .read(creatorSkillsProvider.notifier)
-                                  .setEnabled(skill, enabled);
-                            } catch (_) {
-                              if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Could not update this Skill. Please try again.',
-                                  ),
-                                ),
-                              );
-                            }
-                          },
+                ],
+              ),
+              data: (offering) {
+                if (offering == null) return const SizedBox.shrink();
+                return _Card(
+                  children: [
+                    SwitchListTile(
+                      secondary: Icon(Icons.person_pin_outlined, color: u.brand),
+                      title: const Text('Talk to me'),
+                      subtitle: Text(
+                        offering.enabled
+                            ? 'People can request a paid session with the real you'
+                            : 'Keep real-person requests off until you are ready',
+                      ),
+                      value: offering.enabled,
+                      onChanged: (enabled) =>
+                          _toggleHumanAccess(context, offering, enabled),
+                    ),
+                    const Divider(height: 1),
+                    ListTile(
+                      title: const Text('Price after trial'),
+                      subtitle: const Text('Credits per minute'),
+                      trailing: Text(
+                        offering.priceCreditsPerMinute < 1
+                            ? 'Set price'
+                            : '${offering.priceCreditsPerMinute} Cr/min',
+                      ),
+                      onTap: () async {
+                        final price = await _askHumanAccessPrice(
+                          context,
+                          offering.priceCreditsPerMinute,
+                        );
+                        if (price == null || !context.mounted) return;
+                        await _saveHumanAccess(
+                          context,
+                          offering.copyWith(priceCreditsPerMinute: price),
                         );
                       },
                     ),
-                    if (index != skills.length - 1)
-                      const Divider(height: 1),
-                  ],
-                ]);
-              },
-              loading: () => _Card(children: const [
-                ListTile(
-                  leading: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  title: Text('Loading clone Skills…'),
-                ),
-              ]),
-              error: (_, __) => _Card(children: [
-                ListTile(
-                  leading: Icon(Icons.sync_problem_outlined, color: u.brand),
-                  title: const Text('Clone Skills unavailable'),
-                  subtitle: const Text('Tap to try again'),
-                  onTap: () =>
-                      ref.read(creatorSkillsProvider.notifier).refresh(),
-                ),
-              ]),
-            ),
-          if (economySnapshot?.hasClone == true)
-            const SizedBox(height: 16),
-          if (supportAgents.isNotEmpty) ...[
-            _Card(children: [
-              ListTile(
-                leading: Icon(Icons.support_agent_outlined, color: u.brand),
-                title: const Text('Default Masanawa agent'),
-                subtitle: const Text(
-                  'Choose who handles support, onboarding and platform guidance',
-                ),
-              ),
-              const Divider(height: 1),
-              for (var index = 0; index < supportAgents.length; index++) ...[
-                Builder(
-                  builder: (context) {
-                    final agent = supportAgents[index];
-                    final selected = agent.defaultPlatformAgent;
-                    final saving = _savingDefaultAgentId == agent.characterId;
-                    final voice = agent.voiceName == null ||
-                            agent.voiceName!.isEmpty
-                        ? null
-                        : agent.voiceName;
-                    return RadioListTile<String>(
-                      value: agent.characterId,
-                      groupValue: selectedSupportAgentId,
-                      onChanged: saving
-                          ? null
-                          : (value) async {
-                              if (value == null || selected) return;
-                              setState(() => _savingDefaultAgentId = value);
-                              try {
-                                await ref
-                                    .read(agentDirectoryTransportProvider)
-                                    .setDefaultPlatformAgent(value);
-                                await ref
-                                    .read(agentDirectoryProvider.notifier)
-                                    .refresh();
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        '${agent.displayName} is now your default Masanawa agent',
-                                      ),
-                                    ),
-                                  );
-                                }
-                              } catch (_) {
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Could not update your default agent. Please try again.',
-                                      ),
-                                    ),
-                                  );
-                                }
-                              } finally {
-                                if (mounted) {
-                                  setState(() => _savingDefaultAgentId = null);
-                                }
-                              }
-                            },
-                      secondary: CircleAvatar(
-                        backgroundColor: u.brand.withValues(alpha: 0.12),
-                        child: Text(
-                          agent.initial,
-                          style: TextStyle(color: u.brand),
-                        ),
-                      ),
-                      title: Text(agent.displayName),
+                    const Divider(height: 1),
+                    ListTile(
+                      title: const Text('Session lengths'),
                       subtitle: Text(
-                        voice == null
-                            ? agent.roleLabel
-                            : '${agent.roleLabel} · Gemini ${voice}',
+                        offering.durationOptionsMinutes
+                            .map((value) => '$value min')
+                            .join(' · '),
                       ),
-                    );
-                  },
-                ),
-                if (index != supportAgents.length - 1)
-                  const Divider(height: 1),
-              ],
-            ]),
-            const SizedBox(height: 16),
-          ],
-          _Card(children: [
-            SwitchListTile(
-              secondary: Icon(Icons.notifications_outlined, color: u.brand),
-              title: const Text('Notifications'),
-              subtitle: Text(
-                MobilePushService.instance.configured
-                    ? 'Replies and updates'
-                    : 'Not available in this build',
-              ),
-              value: MobilePushService.instance.configured && _notifications,
-              onChanged: !MobilePushService.instance.configured
-                  ? null
-                  : (v) async {
-                      if (v) {
-                        final allowed =
-                            await MobilePushService.instance.requestPermission();
-                        if (!mounted) return;
-                        setState(() => _notifications = allowed);
-                        if (allowed) {
-                          await ref
-                              .read(agentDirectoryProvider.notifier)
-                              .refresh();
-                          await _refreshNotificationState();
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Notifications are disabled. You can enable them in system settings.',
-                              ),
-                            ),
-                          );
-                        }
-                      } else {
-                        await MobilePushService.instance.unregister();
-                        if (mounted) setState(() => _notifications = false);
-                      }
-                    },
-            ),
-            const Divider(height: 1),
-            ListTile(
-              leading: Icon(Icons.delete_outline, color: u.brand),
-              title: const Text('Clear all chats'),
-              subtitle: const Text('Remove every conversation on this device'),
-              onTap: () async {
-                await ref.read(aiChatProvider.notifier).clearAll();
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('All chats cleared')),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () async {
+                        final durations = await _askHumanAccessDurations(
+                          context,
+                          offering.durationOptionsMinutes,
+                        );
+                        if (durations == null || !context.mounted) return;
+                        await _saveHumanAccess(
+                          context,
+                          offering.copyWith(
+                            durationOptionsMinutes: durations,
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 );
               },
             ),
-            const Divider(height: 1),
-            ListTile(
-              leading: Icon(Icons.info_outline, color: u.brand),
-              title: const Text('About Masanawa'),
-              subtitle: const Text('Voice-first conversations with your configured AI agents'),
-              onTap: () => showAboutDialog(
-                context: context,
-                applicationName: 'Masanawa Agents',
-                applicationVersion: '1.0.0',
-                children: const [
-                  Text('A clean, WhatsApp-style chat app for Nigerian AI agents.'),
+          ],
+          if (supportAgents.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _Card(
+              children: [
+                ListTile(
+                  leading: Icon(Icons.support_agent_outlined, color: u.brand),
+                  title: const Text('Default Masanawa agent'),
+                  subtitle: const Text(
+                    'Choose who handles support and platform guidance',
+                  ),
+                ),
+                const Divider(height: 1),
+                for (var index = 0; index < supportAgents.length; index++) ...[
+                  Builder(
+                    builder: (context) {
+                      final agent = supportAgents[index];
+                      final selected = agent.defaultPlatformAgent;
+                      final saving =
+                          _savingDefaultAgentId == agent.characterId;
+                      final voice =
+                          agent.voiceName == null || agent.voiceName!.isEmpty
+                              ? null
+                              : agent.voiceName;
+                      return RadioListTile<String>(
+                        value: agent.characterId,
+                        groupValue: selectedSupportAgentId,
+                        onChanged: saving
+                            ? null
+                            : (value) async {
+                                if (value == null || selected) return;
+                                setState(
+                                  () => _savingDefaultAgentId = value,
+                                );
+                                try {
+                                  await ref
+                                      .read(agentDirectoryTransportProvider)
+                                      .setDefaultPlatformAgent(value);
+                                  await ref
+                                      .read(agentDirectoryProvider.notifier)
+                                      .refresh();
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          '${agent.displayName} is now your default Masanawa agent',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                } catch (_) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Could not update your default agent. Please try again.',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                } finally {
+                                  if (mounted) {
+                                    setState(
+                                      () => _savingDefaultAgentId = null,
+                                    );
+                                  }
+                                }
+                              },
+                        secondary: CircleAvatar(
+                          backgroundColor: u.brand.withValues(alpha: 0.12),
+                          child: Text(
+                            agent.initial,
+                            style: TextStyle(color: u.brand),
+                          ),
+                        ),
+                        title: Text(agent.displayName),
+                        subtitle: Text(
+                          voice == null
+                              ? agent.roleLabel
+                              : '${agent.roleLabel} · Gemini $voice',
+                        ),
+                      );
+                    },
+                  ),
+                  if (index != supportAgents.length - 1)
+                    const Divider(height: 1),
                 ],
-              ),
+              ],
             ),
-          ]),
+          ],
           const SizedBox(height: 16),
-          _Card(children: [
-            ListTile(
-              leading: Icon(Icons.logout, color: u.emergency),
-              title: Text(
-                'Log out',
-                style: TextStyle(
-                    color: u.emergency, fontWeight: FontWeight.w600),
+          _Card(
+            children: [
+              SwitchListTile(
+                secondary: Icon(Icons.notifications_outlined, color: u.brand),
+                title: const Text('Notifications'),
+                subtitle: Text(
+                  MobilePushService.instance.configured
+                      ? 'Replies, requests and updates'
+                      : 'Not available in this build',
+                ),
+                value:
+                    MobilePushService.instance.configured && _notifications,
+                onChanged: !MobilePushService.instance.configured
+                    ? null
+                    : (value) async {
+                        if (value) {
+                          final allowed = await MobilePushService.instance
+                              .requestPermission();
+                          if (!mounted) return;
+                          setState(() => _notifications = allowed);
+                          if (allowed) {
+                            await ref
+                                .read(agentDirectoryProvider.notifier)
+                                .refresh();
+                            await _refreshNotificationState();
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Notifications are disabled. You can enable them in system settings.',
+                                ),
+                              ),
+                            );
+                          }
+                        } else {
+                          await MobilePushService.instance.unregister();
+                          if (mounted) {
+                            setState(() => _notifications = false);
+                          }
+                        }
+                      },
               ),
-              onTap: () async {
-                await MobilePushService.instance.unregister();
-                await ref.read(aiChatProvider.notifier).clearSecureShellState();
-                await ref.read(aiChatProvider.notifier).clearAll();
-                await ref.read(sessionProvider.notifier).logout();
-                if (context.mounted) context.go('/phone-login');
-              },
-            ),
-          ]),
+              const Divider(height: 1),
+              ListTile(
+                leading: Icon(Icons.delete_outline, color: u.brand),
+                title: const Text('Clear all chats'),
+                subtitle: const Text(
+                  'Remove every conversation stored on this device',
+                ),
+                onTap: () async {
+                  await ref.read(aiChatProvider.notifier).clearAll();
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('All chats cleared')),
+                  );
+                },
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: Icon(Icons.info_outline, color: u.brand),
+                title: const Text('About Masanawa'),
+                subtitle: const Text('Personal AI Twins and Masanawa services'),
+                onTap: () => showAboutDialog(
+                  context: context,
+                  applicationName: 'Masanawa',
+                  applicationVersion: '1.0.0',
+                  children: const [
+                    Text(
+                      'Create your Twin, explore other Twins and use Masanawa services from one simple app.',
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _Card(
+            children: [
+              ListTile(
+                leading: Icon(Icons.logout, color: u.emergency),
+                title: Text(
+                  'Log out',
+                  style: TextStyle(
+                    color: u.emergency,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                onTap: () async {
+                  await MobilePushService.instance.unregister();
+                  await ref
+                      .read(aiChatProvider.notifier)
+                      .clearSecureShellState();
+                  await ref.read(aiChatProvider.notifier).clearAll();
+                  await ref.read(sessionProvider.notifier).logout();
+                  if (context.mounted) context.go('/phone-login');
+                },
+              ),
+            ],
+          ),
           const SizedBox(height: 24),
           Center(
             child: Text(
@@ -536,6 +589,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
 class _Card extends StatelessWidget {
   const _Card({required this.children});
+
   final List<Widget> children;
 
   @override
