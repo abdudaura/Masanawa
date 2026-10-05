@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   assertWorkflowExecutorLeaseHeld,
-  assertWorkflowExecutorLeaseRelease,
+  planWorkflowExecutorLeaseRelease,
   planWorkflowExecutorLeaseAcquire,
   planWorkflowExecutorLeaseRenew,
 } from "./executor-lease.js";
@@ -191,13 +191,46 @@ describe("WorkflowRun executor leases", () => {
       durationMs: 30_000,
     });
     expect(() =>
-      assertWorkflowExecutorLeaseRelease({
+      planWorkflowExecutorLeaseRelease({
         lease: second,
         holderId: "worker-a",
         fence: 1,
         at: "2026-10-05T10:00:02.000Z" as never,
       }),
     ).toThrow("Stale executor");
+  });
+
+  it("preserves fence history across release so the next holder gets a newer fence", () => {
+    const first = planWorkflowExecutorLeaseAcquire({
+      current: null,
+      tenantId,
+      workflowRunId,
+      holderId: "worker-a",
+      runState: "running",
+      now: t0,
+      durationMs: 30_000,
+    });
+    const released = planWorkflowExecutorLeaseRelease({
+      lease: first,
+      holderId: "worker-a",
+      fence: 1,
+      at: "2026-10-05T10:00:05.000Z" as never,
+    });
+    expect(released.state).toBe("released");
+    expect(released.fence).toBe(1);
+    expect(released.releasedAt).toBe("2026-10-05T10:00:05.000Z");
+
+    const second = planWorkflowExecutorLeaseAcquire({
+      current: released,
+      tenantId,
+      workflowRunId,
+      holderId: "worker-b",
+      runState: "running",
+      now: "2026-10-05T10:00:06.000Z" as never,
+      durationMs: 30_000,
+    });
+    expect(second.fence).toBe(2);
+    expect(second.state).toBe("held");
   });
 
   it.each(["completed", "failed", "cancelled"] as const)(
