@@ -19,6 +19,7 @@ export interface MyTwinEconomySummaryEvent {
   readonly ownerUserId: string;
   readonly characterId: string;
   readonly eventType: MyTwinEconomySummaryEventType;
+  readonly referenceId: string;
   readonly amountCredits: number | null;
 }
 
@@ -86,15 +87,13 @@ export function createMyTwinEconomyPerformanceReader(input: {
             );
             break;
           case "twin.owner-access.requested":
-            pendingOwnerRequestIds.add(event.eventId);
+            pendingOwnerRequestIds.add(event.referenceId);
             break;
           case "twin.owner-access.accepted":
           case "twin.owner-access.scheduled":
           case "twin.owner-access.completed":
           case "twin.owner-access.refunded":
-            // These event IDs are operation-specific. A durable projection may
-            // later carry a shared request reference; until then, only the
-            // requested event contributes to the simple pending count.
+            pendingOwnerRequestIds.delete(event.referenceId);
             break;
         }
       }
