@@ -11,8 +11,17 @@ class UsersAdminPage extends StatefulWidget {
 }
 
 class _UsersAdminPageState extends State<UsersAdminPage> {
-  late Future<List<AdminUser>> _future = widget.api.users();
+  String? _stateFilter;
+  late Future<List<AdminUser>> _future = _load();
 
+  Future<List<AdminUser>> _load() => widget.api.users(state: _stateFilter);
+
+  void _setStateFilter(String? state) {
+    setState(() {
+      _stateFilter = state;
+      _future = _load();
+    });
+  }
 
   @override
   Widget build(BuildContext context) => AdminFuture<List<AdminUser>>(
