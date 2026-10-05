@@ -79,7 +79,7 @@ export function createPlatformSessionVerifier(input: {
 }): PlatformSessionVerifier {
   const baseUrl = normalizeOrigin(input.baseUrl);
   const fetchImpl = input.fetchImpl ?? fetch;
-  return Object.freeze({
+  const verifier: PlatformSessionVerifier = {
     async verify(authorizationHeader) {
       const token = requireBearer(authorizationHeader);
       let response: Response;
@@ -138,7 +138,8 @@ export function createPlatformSessionVerifier(input: {
       }
       return Object.freeze({ externalUserId: id.trim() });
     },
-  });
+  };
+  return Object.freeze(verifier);
 }
 
 export function createProductionAuthorizers(input: {
