@@ -450,6 +450,9 @@ export async function startGatewayService(
   let billingFinancialAuthorizer:
     | ReturnType<typeof createPlatformSessionFinancialAuthorizer>
     | undefined;
+  let twinCustomerAuthorizers:
+    | ReturnType<typeof createTwinCustomerAuthorizers>
+    | undefined;
 
   if (alphaEnabled(env)) {
     if (
@@ -566,6 +569,9 @@ export async function startGatewayService(
       repository: database.platformSessions,
     });
     billingCustomerAuthorizer = customerSessions;
+    twinCustomerAuthorizers = createTwinCustomerAuthorizers({
+      sessions: customerSessions,
+    });
     billingFinancialAuthorizer = createPlatformSessionFinancialAuthorizer({
       repository: database.platformSessions,
     });
