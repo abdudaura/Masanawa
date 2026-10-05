@@ -62,53 +62,13 @@ describe("platform admin projections", () => {
     });
   });
 
-  it("uses optimistic revision for user state mutations", async () => {
-    const seen: string[] = [];
-    const queries: Array<{ text: string; values?: unknown[] }> = [];
-    let call = 0;
-    const database = {
-      async query(text: string, values?: unknown[]) {
-        queries.push({ text, values });
-        call += 1;
-        if (call === 1) {
-          return {
-            rows: [
-              {
-                user_id: "user_00000000-0000-4000-8000-000000000002",
-                state: "disabled",
-                revision: 5,
-                created_at: new Date("2026-10-01T00:00:00Z"),
-                updated_at: new Date("2026-10-03T00:00:00Z"),
-              },
-            ],
-          };
-        }
-        return {
-          rows: [{ identity_count: "1", relationship_count: "2" }],
-        };
-      },
-    } as unknown as PlatformAdminQuery;
+  it("does not expose a direct-SQL user lifecycle mutation", () => {
     const service = createPlatformAdminService({
-      database,
-      authorizer: authorizer(seen),
+      database: { async query() { return { rows: [] }; } } as unknown as PlatformAdminQuery,
+      authorizer: authorizer([]),
     });
 
-    const user = await service.setUserState({
-      authorizationHeader: "Bearer operator",
-      userId: "user_00000000-0000-4000-8000-000000000002",
-      state: "disabled",
-      expectedRevision: 4,
-    });
-
-    expect(seen).toEqual(["identity.users.write"]);
-    expect(queries[0]?.text).toContain("AND revision = $3");
-    expect(queries[0]?.values).toEqual([
-      tenantId,
-      "user_00000000-0000-4000-8000-000000000002",
-      4,
-      "disabled",
-    ]);
-    expect(user.revision).toBe(5);
+    expect("setUserState" in service).toBe(false);
   });
 
   it("never selects encrypted credential material for the mobile admin", async () => {
