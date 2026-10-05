@@ -4,7 +4,8 @@ import {
   nowInstant,
   toInstant,
 } from "@masanawa/contracts";
-import { normalizeTask, assertTaskTransition, type Task } from "./task.js";
+import { createAuthorityContext } from "@masanawa/security";
+import { assertTaskAccess, normalizeTask, assertTaskTransition, type Task } from "./task.js";
 
 function task(state: Task["state"] = "queued"): Task {
   const at = nowInstant();
@@ -56,6 +57,38 @@ describe("Task lifecycle", () => {
       failureCode: "work.failed",
     };
     expect(() => normalizeTask(badRunning)).toThrowError(/lifecycle/u);
+  });
+
+  it("uses relationship scope by default and optional task IDs as a narrowing filter", () => {
+    const value = task("running");
+    const base = createAuthorityContext({
+      tenantId: value.tenantId,
+      principal: { kind: "user", userId: value.userId },
+      scopes: ["workflows"],
+      capabilities: ["workflows.task.read"],
+      resourceScope: { relationshipIds: [value.relationshipId] },
+      policyRevision: "test",
+      approvalIds: [],
+      delegationChain: [],
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+      issuedAt: value.createdAt,
+    });
+
+    expect(() =>
+      assertTaskAccess(base, value, "read", value.createdAt),
+    ).not.toThrow();
+
+    const denied = {
+      ...base,
+      resourceScope: {
+        ...base.resourceScope,
+        taskIds: [createCanonicalId("task")],
+      },
+    };
+    expect(() =>
+      assertTaskAccess(denied, value, "read", value.createdAt),
+    ).toThrowError(/does not allow/u);
   });
 
   it("rejects invalid canonical references", () => {
