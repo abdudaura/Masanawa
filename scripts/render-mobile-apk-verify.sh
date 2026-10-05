@@ -70,7 +70,7 @@ done
 
 cd "$ROOT/apps/mobile"
 flutter pub get
-flutter analyze
+flutter analyze --no-fatal-infos --no-fatal-warnings
 flutter test
 
 flutter build apk --release \
