@@ -11,7 +11,7 @@ export function createCanonicalWalletBalanceSource(input: {
   readonly commerce: CommerceRepository;
   readonly personalClones: PersonalCloneProvisioningRepository;
 }): WalletBalanceSource {
-  return Object.freeze({
+  return Object.freeze<WalletBalanceSource>({
     async readBalances(request): Promise<WalletBalanceSnapshot> {
       const spendableCredits = await input.commerce.readBalance({
         tenantId: request.tenantId as never,
@@ -59,7 +59,7 @@ export interface WalletHistorySubsource {
 export function createMergedWalletHistorySource(input: {
   readonly sources: readonly WalletHistorySubsource[];
 }): WalletHistorySource {
-  return Object.freeze({
+  return Object.freeze<WalletHistorySource>({
     async listHistory(request) {
       if (input.sources.length === 0) return Object.freeze([]);
       const pages = await Promise.all(
