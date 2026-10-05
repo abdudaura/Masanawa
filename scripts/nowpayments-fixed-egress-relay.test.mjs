@@ -17,6 +17,7 @@ test("relay path allowlist excludes arbitrary upstream access", () => {
   assert.equal(isAllowedNowPaymentsRequest("POST", "/v1/auth"), true);
   assert.equal(isAllowedNowPaymentsRequest("POST", "/v1/payout"), true);
   assert.equal(isAllowedNowPaymentsRequest("GET", "/v1/conversion/conversion-1"), true);
+  assert.equal(isAllowedNowPaymentsRequest("GET", "/v1/payment/"), true);
   assert.equal(isAllowedNowPaymentsRequest("DELETE", "/v1/payout"), false);
   assert.equal(isAllowedNowPaymentsRequest("GET", "/v1/users"), false);
   assert.equal(isAllowedNowPaymentsRequest("GET", "/v1/payment/../../secret"), false);
