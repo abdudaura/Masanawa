@@ -19,6 +19,8 @@ void main() {
   late ApiClient api;
   late _FakeAdapter adapter;
   final storageMap = <String, String>{};
+  final storageReads = <String>[];
+  var storageReadAlls = 0;
 
   ProviderContainer makeContainer() {
     final container = ProviderContainer(overrides: [
@@ -31,6 +33,8 @@ void main() {
   setUp(() {
     adapter = _FakeAdapter();
     storageMap.clear();
+    storageReads.clear();
+    storageReadAlls = 0;
     final dio = Dio(BaseOptions(
       baseUrl: 'https://example.test',
       validateStatus: (s) => s != null && s >= 200 && s < 300,
@@ -47,7 +51,12 @@ void main() {
       (call) async {
         switch (call.method) {
           case 'read':
-            return storageMap[call.arguments['key'] as String];
+            final key = call.arguments['key'] as String;
+            storageReads.add(key);
+            return storageMap[key];
+          case 'readAll':
+            storageReadAlls += 1;
+            return Map<String, String>.from(storageMap);
           case 'write':
             storageMap[call.arguments['key'] as String] =
                 call.arguments['value'] as String;
@@ -98,6 +107,56 @@ void main() {
       api.authOtpChannels(),
       throwsA(isA<ApiException>()),
     );
+  });
+
+  test('current persisted session restores with one secure-storage read', () async {
+    storageMap['auth_session_v2'] = jsonEncode({
+      'accessToken': 'fast-access',
+      'refreshToken': 'fast-refresh',
+      'accessExpiresIn': 900,
+      'user': user.toJson(),
+    });
+    final container = makeContainer();
+
+    container.read(sessionProvider);
+    await Future<void>.delayed(Duration.zero);
+
+    final restored = container.read(sessionProvider);
+    expect(restored, isA<SessionSignedIn>());
+    expect(api.accessToken, 'fast-access');
+    expect(storageReads, ['auth_session_v2']);
+    expect(storageReadAlls, 0);
+  });
+
+  test('legacy session restores through one bulk fallback and migrates', () async {
+    storageMap['auth_access_token'] = 'legacy-access';
+    storageMap['auth_refresh_token'] = 'legacy-refresh';
+    storageMap['auth_access_expires_in'] = '900';
+    storageMap['auth_user'] = jsonEncode(user.toJson());
+    final container = makeContainer();
+
+    container.read(sessionProvider);
+    await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(Duration.zero);
+
+    final restored = container.read(sessionProvider);
+    expect(restored, isA<SessionSignedIn>());
+    expect(api.accessToken, 'legacy-access');
+    expect(storageReads, ['auth_session_v2']);
+    expect(storageReadAlls, 1);
+    expect(storageMap['auth_session_v2'], isNotNull);
+  });
+
+  test('fresh signed-out install uses one current read and one bulk fallback', () async {
+    final container = makeContainer();
+
+    container.read(sessionProvider);
+    await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(container.read(sessionProvider), isA<SessionSignedOut>());
+    expect(storageReads, ['auth_session_v2']);
+    expect(storageReadAlls, 1);
   });
 
   test('sendOtp (phone) transitions signedOut → sending → awaitingOtp', () async {
@@ -159,10 +218,14 @@ void main() {
     expect(signedIn.user.name, 'Ada Obi');
     expect(api.accessToken, 'a1');
 
-    // The token pair hit secure storage (mock channel below).
-    final storedAccess = await const FlutterSecureStorage()
-        .read(key: 'auth_access_token');
-    expect(storedAccess, 'a1');
+    // The complete session is persisted as one encrypted record so returning
+    // users avoid four independent keystore reads.
+    final storedSession =
+        await const FlutterSecureStorage().read(key: 'auth_session_v2');
+    expect(storedSession, isNotNull);
+    final persisted = jsonDecode(storedSession!) as Map<String, dynamic>;
+    expect(persisted['accessToken'], 'a1');
+    expect(persisted['refreshToken'], 'r1');
   });
 
   test('verifyOtp (email) verifies the email channel', () async {
