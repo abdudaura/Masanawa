@@ -21,6 +21,7 @@ ProviderContainer _container() => ProviderContainer(
 );
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   test('chat threads are keyed by arbitrary Character IDs', () async {
     final container = _container();
     addTearDown(container.dispose);
