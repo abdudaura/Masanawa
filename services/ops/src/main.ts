@@ -5,7 +5,12 @@ import type {
 } from "@masanawa/agents";
 import type { CharacterVersionReferenceReader } from "@masanawa/identity";
 import type { SkillRepository } from "@masanawa/skills";
-import type { PlatformSessionRepository } from "@masanawa/security";
+import {
+  createApprovalBinding,
+  createPendingApproval,
+  fingerprintCanonicalJson,
+  type PlatformSessionRepository,
+} from "@masanawa/security";
 import {
   createCanonicalId,
   nowInstant,
@@ -32,7 +37,10 @@ import {
   createPostgresWorldRepository,
   createPostgresSkillRepository,
   createPostgresPlatformSessionRepository,
+  getPolicyRevision,
   listExternalReceiptsForOperation,
+  persistPendingApproval,
+  prepareOperation,
   revokeProviderCredentialRef,
   withTransaction,
 } from "@masanawa/postgres";
@@ -63,7 +71,10 @@ import {
   createAdminAgentDelegationService,
   readAdminAgentDelegationConfig,
 } from "./admin_delegation.js";
-import { createAdminAgentActionBroker } from "./admin_agent_actions.js";
+import {
+  createAdminAgentActionBroker,
+  type AdminAgentApprovalCommands,
+} from "./admin_agent_actions.js";
 import {
   createOpsApp,
   type OpsAppOptions,
@@ -351,6 +362,94 @@ function createDefaultDatabaseDependency(
     },
   });
 
+  const adminAgentApprovalCommands: AdminAgentApprovalCommands = Object.freeze({
+    async prepare(input) {
+      const agentRunId = parseCanonicalId("agent-run", input.agentRunId);
+      const requestedAt = nowInstant();
+      const expiresAt = new Date(
+        Date.parse(requestedAt) + 15 * 60 * 1000,
+      ).toISOString();
+
+      return withTransaction(database.pool, async (client) => {
+        const authorityScopeHash = fingerprintCanonicalJson({
+          tenantId: input.tenantId,
+          operatorUserId: input.operatorUserId,
+          characterId: input.characterId,
+          capability: input.capability,
+        });
+        const requestFingerprint = fingerprintCanonicalJson({
+          agentRunId,
+          action: input.action,
+          arguments: input.arguments,
+        });
+        const prepared = await prepareOperation(client, {
+          tenantId: input.tenantId,
+          kind: `admin-agent.${input.action}`,
+          idempotencyKey: input.idempotencyKey,
+          authorityScopeHash,
+          requestFingerprint,
+          expiresAt,
+        });
+
+        await client.query(
+          `SELECT operation_id
+             FROM events.operations
+            WHERE tenant_id = $1 AND operation_id = $2
+            FOR UPDATE`,
+          [input.tenantId, prepared.operation.operationId],
+        );
+
+        const existing = await client.query<{ approval_id: string }>(
+          `SELECT approval_id
+             FROM security.approvals
+            WHERE tenant_id = $1
+              AND operation_id = $2
+            ORDER BY requested_at
+            LIMIT 1`,
+          [input.tenantId, prepared.operation.operationId],
+        );
+        const approvalId = existing.rows[0]?.approval_id;
+        if (approvalId) {
+          return Object.freeze({
+            approvalId,
+            operationId: prepared.operation.operationId,
+            reused: true,
+          });
+        }
+
+        const policyRevision = await getPolicyRevision(client, input.tenantId);
+        const binding = createApprovalBinding({
+          operationId: prepared.operation.operationId,
+          tenantId: input.tenantId,
+          principal: { kind: "agent-run", agentRunId },
+          action: input.action,
+          actionVersion: "v1",
+          resourceKey: `admin-delegate:${input.characterId}`,
+          arguments: {
+            operatorUserId: input.operatorUserId,
+            characterId: input.characterId,
+            capability: input.capability,
+            arguments: input.arguments,
+          },
+          riskClass: input.risk,
+        });
+        const approval = createPendingApproval({
+          kind: "once",
+          binding,
+          policyRevision,
+          requestedAt,
+          expiresAt,
+        });
+        const persisted = await persistPendingApproval(client, approval);
+        return Object.freeze({
+          approvalId: persisted.approvalId,
+          operationId: prepared.operation.operationId,
+          reused: prepared.reused,
+        });
+      });
+    },
+  });
+
   const worldCommands: SystemAdminWorldCommands = Object.freeze({
     async pause(input) {
       const world = await worlds.pauseWorld({
@@ -498,6 +597,9 @@ export async function startOpsService(
           config: adminAgentDelegationConfig,
           authorizer: adminAuthorizer,
           platformAdmin: composedPlatformAdmin,
+          approvalCommands: database.platformAdminDatabase
+            ? adminAgentApprovalCommands
+            : undefined,
         })
       : undefined);
 
