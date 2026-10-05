@@ -20,6 +20,7 @@ export {
   resolveChannelOutboundAmbiguity,
   type ChannelOutboundContent,
   type ChannelOutboundConversation,
+  type ChannelOutboundMediaResolver,
   type ChannelOutboundReceipt,
   type ChannelOutboundRecord,
   type ChannelOutboundRequest,
@@ -37,3 +38,15 @@ export {
   type DurableChannelDeliveryStore,
   type ResolvedChannelDelivery,
 } from "./delivery-reconciliation.js";
+
+export {
+  createTelegramOutboundSender,
+  type TelegramBotApiEdge,
+  type TelegramOutboundSenderConfig,
+} from "./telegram-outbound.js";
+
+export {
+  createWhatsAppOutboundSender,
+  type WhatsAppCloudApiEdge,
+  type WhatsAppOutboundSenderConfig,
+} from "./whatsapp-outbound.js";
