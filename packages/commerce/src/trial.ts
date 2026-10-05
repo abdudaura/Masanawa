@@ -81,7 +81,7 @@ export function defaultPaidFeatureTrialPolicy(
     revision: 1,
     enabled: true,
     durationDays: 7,
-    maxUnits: null,
+    maxUnits: feature === "owner-access" ? 1 : null,
     createdAt,
   });
 }
