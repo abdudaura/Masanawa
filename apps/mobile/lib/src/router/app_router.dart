@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -12,6 +13,7 @@ import '../finance/crypto_wallet_screen.dart';
 import '../screens/settings/clone_setup_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../state/session_state.dart';
+import '../state/twin_directory_state.dart';
 
 /// Production router: auth, the Twin-first consumer shell, direct chat and
 /// focused capability routes. Runtime internals stay behind the four root tabs.
@@ -57,10 +59,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return '/phone-login';
       }
 
-      // Signed-out users can only be in auth.
+      // Signed-out users can only be in auth. Native/public share links are
+      // normally held by PendingDeepLink until a canonical session exists.
       final protected = path == '/home' ||
           path == '/chats' ||
           path.startsWith('/chat/') ||
+          path.startsWith('/twin/') ||
           path == '/agents' ||
           path == '/masana' ||
           path == '/settings' ||
@@ -86,6 +90,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           characterId: state.pathParameters['id']!,
         ),
       ),
+      GoRoute(
+        path: '/twin/:publicId',
+        builder: (context, state) => _TwinLinkResolverScreen(
+          publicId: state.pathParameters['publicId']!,
+        ),
+      ),
       // Backwards-compatible legacy entry points now converge on the Twin shell.
       GoRoute(path: '/agents', redirect: (_, __) => '/home'),
       GoRoute(path: '/masana', redirect: (_, __) => '/home'),
@@ -100,3 +110,95 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   ref.listen(isSignedInProvider, (_, _) => router.refresh());
   return router;
 });
+
+class _TwinLinkResolverScreen extends ConsumerStatefulWidget {
+  const _TwinLinkResolverScreen({required this.publicId});
+
+  final String publicId;
+
+  @override
+  ConsumerState<_TwinLinkResolverScreen> createState() =>
+      _TwinLinkResolverScreenState();
+}
+
+class _TwinLinkResolverScreenState
+    extends ConsumerState<_TwinLinkResolverScreen> {
+  String? _error;
+  bool _resolving = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _resolve());
+  }
+
+  Future<void> _resolve() async {
+    if (!_resolving) {
+      setState(() {
+        _resolving = true;
+        _error = null;
+      });
+    }
+    try {
+      final twin = await ref.read(twinDirectoryTransportProvider).resolve(
+            publicId: widget.publicId,
+          );
+      if (!mounted) return;
+      if (twin == null) {
+        setState(() {
+          _resolving = false;
+          _error = 'This Twin is private or the share link is no longer available.';
+        });
+        return;
+      }
+      context.go('/chat/${Uri.encodeComponent(twin.characterId)}');
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _resolving = false;
+        _error = 'Could not open this Twin right now.';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_resolving) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    return Scaffold(
+      appBar: AppBar(title: const Text('Open Twin')),
+      body: SafeArea(
+        minimum: const EdgeInsets.all(24),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.link_off_outlined, size: 42),
+                const SizedBox(height: 16),
+                Text(
+                  _error ?? 'This Twin link is unavailable.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+                const SizedBox(height: 20),
+                FilledButton(
+                  onPressed: _resolve,
+                  child: const Text('Try again'),
+                ),
+                TextButton(
+                  onPressed: () => context.go('/home'),
+                  child: const Text('Explore other Twins'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
