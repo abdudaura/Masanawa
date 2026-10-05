@@ -292,6 +292,15 @@ export interface TwinRuntimeRepository {
     readonly reservedCredits: number;
   }) | null>;
 
+  readLatestOwnerAccessRequestForRequester(input: {
+    readonly tenantId: TenantId;
+    readonly requesterUserId: UserId;
+    readonly characterId: CharacterId;
+  }): Promise<(OwnerAccessRequest & {
+    readonly reservationId: string | null;
+    readonly reservedCredits: number;
+  }) | null>;
+
   updateOwnerAccessRequest(input: {
     readonly tenantId: TenantId;
     readonly request: OwnerAccessRequest;
