@@ -18,27 +18,47 @@ const String kAgentBaseUrl = String.fromEnvironment(
   defaultValue: 'https://nurainworker-production.up.railway.app',
 );
 
-const bool kAgentRuntimeEnabled = bool.fromEnvironment(
-  'AGENT_RUNTIME_ENABLED',
-  defaultValue: false,
-);
-
-bool get isAgentRuntimeConfigured =>
-    kAgentRuntimeEnabled && kAgentBaseUrl.isNotEmpty;
-
 class _GatewayClient {
   _GatewayClient({
     required Dio dio,
     required this.baseUrl,
     this.readAccessToken,
+    this.refreshAccessToken,
   }) : dio = Dio(dio.options.copyWith(baseUrl: baseUrl)) {
-    // Keep injected adapters available for tests; never copy legacy interceptors.
+    // Keep injected adapters available for tests; never copy unrelated
+    // interceptors from the civic client.
     this.dio.httpClientAdapter = dio.httpClientAdapter;
+    this.dio.interceptors.add(
+      QueuedInterceptorsWrapper(
+        onError: (error, handler) async {
+          if (error.response?.statusCode == 401 &&
+              refreshAccessToken != null &&
+              error.requestOptions.extra['masanawaAuthRetried'] != true) {
+            try {
+              final token = await refreshAccessToken!();
+              if (token != null && token.isNotEmpty) {
+                final options = error.requestOptions;
+                options.headers['Authorization'] = 'Bearer $token';
+                options.extra['masanawaAuthRetried'] = true;
+                final response = await this.dio.fetch(options);
+                handler.resolve(response);
+                return;
+              }
+            } catch (_) {
+              // The normal 401 path below signs the user out only when session
+              // rotation genuinely failed.
+            }
+          }
+          handler.next(error);
+        },
+      ),
+    );
   }
 
   final Dio dio;
   final String baseUrl;
   final String? Function()? readAccessToken;
+  final Future<String?> Function()? refreshAccessToken;
 
   Options options({bool turn = false, String? requestId}) {
     final token = readAccessToken?.call();
@@ -181,10 +201,12 @@ class MasanawaAgentDirectoryTransport implements AgentDirectoryTransport {
     required Dio dio,
     required String baseUrl,
     String? Function()? readAccessToken,
+    Future<String?> Function()? refreshAccessToken,
   }) : _client = _GatewayClient(
          dio: dio,
          baseUrl: baseUrl,
          readAccessToken: readAccessToken,
+         refreshAccessToken: refreshAccessToken,
        );
 
   final _GatewayClient _client;
@@ -213,10 +235,12 @@ class MasanawaCreatorSkillTransport implements CreatorSkillTransport {
     required Dio dio,
     required String baseUrl,
     String? Function()? readAccessToken,
+    Future<String?> Function()? refreshAccessToken,
   }) : _client = _GatewayClient(
          dio: dio,
          baseUrl: baseUrl,
          readAccessToken: readAccessToken,
+         refreshAccessToken: refreshAccessToken,
        );
 
   final _GatewayClient _client;
@@ -253,10 +277,12 @@ class MasanawaCreatorEconomyTransport implements CreatorEconomyTransport {
     required Dio dio,
     required String baseUrl,
     String? Function()? readAccessToken,
+    Future<String?> Function()? refreshAccessToken,
   }) : _client = _GatewayClient(
          dio: dio,
          baseUrl: baseUrl,
          readAccessToken: readAccessToken,
+         refreshAccessToken: refreshAccessToken,
        );
 
   final _GatewayClient _client;
@@ -281,10 +307,12 @@ class MasanawaCreatorCloneTransport implements CreatorCloneTransport {
     required Dio dio,
     required String baseUrl,
     String? Function()? readAccessToken,
+    Future<String?> Function()? refreshAccessToken,
   }) : _client = _GatewayClient(
          dio: dio,
          baseUrl: baseUrl,
          readAccessToken: readAccessToken,
+         refreshAccessToken: refreshAccessToken,
        );
 
   final _GatewayClient _client;
@@ -313,10 +341,12 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
     required Dio dio,
     required String baseUrl,
     String? Function()? readAccessToken,
+    Future<String?> Function()? refreshAccessToken,
   }) : _client = _GatewayClient(
          dio: dio,
          baseUrl: baseUrl,
          readAccessToken: readAccessToken,
+         refreshAccessToken: refreshAccessToken,
        );
 
   final _GatewayClient _client;
