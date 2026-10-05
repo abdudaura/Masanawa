@@ -6,7 +6,7 @@ Branch: work/channels-webhook-ingress-20261004.
 Base main SHA: 3906419669203844018b6687ad06ab2af48654eb.
 Task references: 097–102 and 108, bounded ingress groundwork; no gate completion.
 Last update: 2026-10-04.
-Current step: implementation verified; coordinated Gateway/lockfile integration pending.
+Current step: authenticated ingress plus generic opaque callback action reconciliation implemented; coordinated durable-store/Gateway/lockfile/outbound integration pending.
 
 ## Exact owned paths
 
@@ -27,7 +27,7 @@ New package depends inward only on @masanawa/contracts. Integration must add its
 Implemented: authenticated raw-byte WhatsApp and dedicated-secret Telegram ingress; account-scoped text/media/selection/edit/delivery projections; immutable bounded evidence; stable replay keys/hashes; persist-before-ack seam. No default persistence or runtime.
 Verified: claim published in draft PR #92 and read back before source edits. 48 ingress regressions; 72 targeted ingress/architecture tests; strict adapter typecheck and declaration build; whitespace/file-scope checks. Main remains at the base SHA and PR #89/#90/#91/#44 scopes were rechecked. Full ingress/architecture run: 112 passed, one pre-existing environment-registry failure (NEXT_PUBLIC_OPS_API_BASE_URL missing from config/production-env.json). No frozen-install or full CI success claim.
 Deployed: no.
-Handoff: docs/CHANNEL-WEBHOOK-INGRESS.md records exact adoption steps and limitations. Gateway/integration must add the package lock importer, durable custody/dedupe, current account lifecycle, proof-based linking/routing, action reconciliation and outbound outbox/audio delivery. No edits to those owners' paths. Claim remains active pending coordinated adoption; do not take over without explicit transfer. Keep Tasks 072 and 097–108 open until their actual gates pass.
+Handoff: docs/CHANNEL-WEBHOOK-INGRESS.md records exact adoption steps and limitations. Gateway/integration must add the package lock importer, durable ingress custody/dedupe, current account lifecycle, proof-based linking/routing, a concrete DurableChannelActionStore backed by canonical action state, and outbound outbox/audio delivery. The adapter-side callback reconciliation contract is implemented. No edits to those owners' paths. Claim remains active pending coordinated adoption; do not take over without explicit transfer. Keep Tasks 072 and 097–108 open until their actual gates pass.
 
 Implementation commit: 157a45f54048d2be7b234df285db8912acd4a075. Source publication preserved the exact base-main tree plus the initial claim and only these 13 owned files. PR #92 remains draft for Gateway/lockfile integration and live channel evidence.
 
