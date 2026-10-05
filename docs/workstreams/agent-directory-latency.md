@@ -25,4 +25,18 @@ Acceptance:
 - empty roster remains valid;
 - focused tests prove concurrent launch and unchanged projection.
 
-Status: active.
+Implemented:
+- AgentDirectory resolves the visible Character IDs once;
+- user preference, all visible-Agent platform profiles and activity projection now start in one Promise.all wave;
+- response ordering and default/presence fallbacks are unchanged;
+- focused test holds each independent repository read open and proves all three start before any resolves.
+
+Runtime context:
+- production Gateway has already been moved from SFO to AMS alongside PostgreSQL;
+- this change removes an additional serialized DB wait inside the directory projection after authorization/presentation lookup.
+
+Verification:
+- changed code is limited to AgentDirectory service + focused test + this claim;
+- no auth/bootstrap/repository/mobile/finance/provider contracts changed.
+
+Status: implementation checkpoint complete pending PR integration.
