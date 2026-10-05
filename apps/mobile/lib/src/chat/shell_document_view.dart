@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'shell_document.dart';
 import 'shell_document_session.dart';
@@ -232,7 +233,29 @@ class _ShellDocumentViewState extends State<ShellDocumentView> {
               node.text ?? '',
               style: Theme.of(context).textTheme.bodySmall,
             );
-            final value = SelectableText(node.value ?? '');
+            final rawValue = node.value ?? '';
+            final uri = Uri.tryParse(rawValue);
+            final isHttpsLink = uri != null &&
+                uri.scheme == 'https' &&
+                uri.host.isNotEmpty;
+            final value = isHttpsLink
+                ? Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: () async {
+                        await launchUrl(
+                          uri,
+                          mode: LaunchMode.externalApplication,
+                        );
+                      },
+                      icon: const Icon(Icons.open_in_new, size: 16),
+                      label: Text(
+                        uri.host,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  )
+                : SelectableText(rawValue);
             if (constraints.maxWidth < 280 ||
                 MediaQuery.textScalerOf(context).scale(1) > 1.3) {
               return Column(
