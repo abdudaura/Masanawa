@@ -1,6 +1,6 @@
 # Twin legacy compatibility migration claim
 
-Status: active
+Status: ready for integration
 Owner/window: ChatGPT twin-transformation continuation
 Branch: `work/twin-legacy-compatibility-20261005`
 Base: `2bdd99908d94cc39ada639af1f21ebbdccb6bfe2`
@@ -44,3 +44,36 @@ This claim does not own:
 - migration output contains no wallet, provider reserve or Agent Float concepts;
 - replay of the same legacy snapshot is deterministic;
 - no mutation of source objects.
+
+
+## Implementation handoff
+
+Implemented:
+- `projectLegacyPersonalCloneToTwin()` validates an existing personal clone as a
+  continuity source for the simplified Twin product;
+- preserves the canonical Tenant, owner User, Character, active CharacterVersion and
+  owner Relationship identifiers exactly;
+- rejects non-personal ownership, missing owners, cross-tenant/cross-Character evidence,
+  owner/Relationship mismatch, stale active versions and inactive Character/Relationship
+  state;
+- returns a frozen identity-only projection and never mutates the source;
+- intentionally carries no wallet, Float, reserve, provider, billing, crypto or
+  commission state.
+
+Integration guidance:
+- after PR #148 public Twin profile contracts are reconciled, the shared integration
+  owner may use this projection as the legacy adoption preflight before creating any new
+  profile projection;
+- adoption should be in-place: do not generate a replacement Character, owner
+  Relationship or financial account;
+- discoverability should remain fail-closed until the public Twin profile policy has an
+  explicit value; this compatibility slice does not infer it from legacy clone state;
+- no database migration number is consumed by this branch.
+
+Validation:
+- live branch diff rechecked against current `main`: exactly the three claimed paths,
+  3 commits ahead and 0 behind at verification time;
+- implementation source compiled with global TypeScript 5.8.3 under a strict NodeNext
+  no-emit harness using the canonical Identity shapes fetched from current main;
+- the execution container could not resolve `github.com`, so a full workspace
+  `pnpm`/Vitest checkout could not be run here; no full-suite pass is claimed.
