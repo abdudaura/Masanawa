@@ -2021,7 +2021,7 @@ export function createTwinProductionRuntime(input: {
             reason: "creator-earning",
             quoteId: null,
             fulfillmentId: null,
-            createdAt: at() as never,
+            createdAt: plan.createdAt as never,
           });
         }
         if (decision.platformRevenueCredits > 0) {
@@ -2035,7 +2035,7 @@ export function createTwinProductionRuntime(input: {
             reason: "platform-margin",
             quoteId: null,
             fulfillmentId: null,
-            createdAt: at() as never,
+            createdAt: plan.createdAt as never,
           });
         }
         if (decision.refundCredits > 0) {
@@ -2049,7 +2049,7 @@ export function createTwinProductionRuntime(input: {
             reason: "refund",
             quoteId: null,
             fulfillmentId: null,
-            createdAt: at() as never,
+            createdAt: plan.createdAt as never,
           });
         }
       } else if (decision.trialUnitsConsumed > 0) {
@@ -2071,18 +2071,23 @@ export function createTwinProductionRuntime(input: {
         settlement: Object.freeze({ ...decision }),
         settledAt: at(),
       });
+      const voiceFailedBeforeMedia = admission.startedAt === null;
       await input.events.append({
         tenantId: identity.tenantId,
         payload: {
-          eventType: "twin.voice.completed",
+          eventType: voiceFailedBeforeMedia
+            ? "twin.voice.refunded"
+            : "twin.voice.completed",
           ownerUserId: admission.ownerUserId,
           characterId: admission.characterId,
           customerUserId: identity.userId,
           referenceId: admission.admissionId,
           visibility: "owner",
           occurredAt: at(),
-          amountCredits: decision.ownerEarningCredits,
-          status: "completed",
+          amountCredits: voiceFailedBeforeMedia
+            ? decision.refundCredits
+            : decision.ownerEarningCredits,
+          status: voiceFailedBeforeMedia ? "refunded" : "completed",
         },
       });
       return Object.freeze({ ...decision, verifiedSeconds: seconds });
