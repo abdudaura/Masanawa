@@ -524,6 +524,11 @@ export function createPlatformCustomerAuthorizers(input: Readonly<{
       userId: UserId;
       characterId: CharacterId;
     }>): Promise<boolean>;
+    canContinue?(input: Readonly<{
+      tenantId: TenantId;
+      userId: UserId;
+      characterId: CharacterId;
+    }>): Promise<boolean>;
   };
 }>): Readonly<{
   directory: AgentDirectoryAuthorizer;
@@ -617,6 +622,17 @@ export function createPlatformCustomerAuthorizers(input: Readonly<{
           characterId,
           createdAt: nowInstant(),
         });
+      }
+
+      if (
+        input.publicTwinAdmission?.canContinue &&
+        !(await input.publicTwinAdmission.canContinue({
+          tenantId: identity.tenantId,
+          userId: identity.userId,
+          characterId,
+        }))
+      ) {
+        throw new CustomerAuthError("FORBIDDEN", 403);
       }
 
       const assignment = await input.skillAssignments.readForCharacter({
