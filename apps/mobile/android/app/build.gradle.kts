@@ -17,10 +17,10 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "ng.unigeria.unigeria"
-    // Android API 36 is the highest platform currently available from the
-    // Android SDK repository used by CI/Render. Keep this on an installable
-    // platform level so clean builders can reproduce the APK.
-    compileSdk = 36
+    // Current Android plugins require API 37 at compile time. Runtime support
+    // remains governed by minSdk/targetSdk; compileSdk only exposes newer APIs
+    // to the compiler.
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
