@@ -10,6 +10,10 @@ import {
   createTeachingFreeResponseBinding,
   createTeachingChannelSingleSelectProjection,
   resolveTeachingChannelSelection,
+  createTeachingMultiSelectStage,
+  applyTeachingMultiSelectStageCommand,
+  createTeachingChannelMultiSelectProjection,
+  resolveTeachingChannelMultiSelectCommand,
   TeachingRuntimeCoordinator,
   resolveTeachingShellAction,
   type TeachingProgressKey,
@@ -582,5 +586,168 @@ describe("Core Teaching cross-channel free response", () => {
       continuationReason: "advance",
       step: { stepKey: "add-numerators" },
     });
+  });
+});
+
+
+describe("Core Teaching staged multi-select cross-channel continuity", () => {
+  it("starts in app, toggles on WhatsApp, commits on Telegram and advances once", async () => {
+    const active = plan();
+    const admitted = binding(active);
+    const durable = new DurableTeachingPort();
+    const multiRubric: TeachingSelectableExerciseRubric = {
+      relationshipId: active.learner.relationshipId,
+      skillVersionId: active.skillVersionId,
+      lessonStepKey: "common-denominator",
+      exerciseKey: "equivalent-half",
+      kind: "multi-select",
+      allowedOptionKeys: ["two-fourths", "three-sixths", "two-thirds"],
+      correctOptionKeys: ["two-fourths", "three-sixths"],
+      correctFeedback: "Correct. Both simplify to one half.",
+      retryFeedback: "Simplify each choice and try again.",
+      alternativeExplanation: null,
+    };
+    const card = {
+      relationshipId: active.learner.relationshipId,
+      skillVersionId: active.skillVersionId,
+      lessonStepKey: "common-denominator",
+      exerciseKey: "equivalent-half",
+      prompt: "Choose all fractions equivalent to 1/2.",
+      kind: "multi-select" as const,
+      options: [
+        { optionKey: "two-fourths", label: "2/4" },
+        { optionKey: "three-sixths", label: "3/6" },
+        { optionKey: "two-thirds", label: "2/3" },
+      ],
+    };
+    const action = createTeachingSelectionActionBinding({
+      binding: admitted,
+      actionKey: "teach.action.cross-channel.multi",
+      requestId: createCanonicalId("request"),
+      rubric: multiRubric,
+      expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
+    });
+
+    let stage = createTeachingMultiSelectStage({
+      binding: admitted,
+      action,
+    });
+
+    // App: first selection.
+    const appToggle = applyTeachingMultiSelectStageCommand({
+      binding: admitted,
+      action,
+      stage,
+      command: { kind: "toggle", optionKey: "two-fourths" },
+      now: toInstant("2026-10-05T20:30:00.000Z"),
+    });
+    if (appToggle.kind !== "staged") throw new Error("expected staged result");
+    stage = appToggle.stage;
+
+    // WhatsApp: continue the same server-held stage through a compact callback.
+    const whatsapp = createTeachingChannelMultiSelectProjection({
+      binding: admitted,
+      card,
+      action,
+      stage,
+      callbackTokens: {
+        "two-fourths": "wa_two_fourths",
+        "three-sixths": "wa_three_sixths",
+        "two-thirds": "wa_two_thirds",
+      },
+      commitToken: "wa_commit_answers",
+    });
+    const whatsappBinding = whatsapp.bindings.find(
+      (item) => item.optionKey === "three-sixths",
+    )!;
+    const whatsappCommand = resolveTeachingChannelMultiSelectCommand({
+      selectionId: whatsappBinding.callbackToken,
+      binding: whatsappBinding,
+      runtimeBinding: admitted,
+      action,
+      stage,
+      now: toInstant("2026-10-05T20:31:00.000Z"),
+    });
+    const whatsappToggle = applyTeachingMultiSelectStageCommand({
+      binding: admitted,
+      action,
+      stage,
+      command: whatsappCommand,
+      now: toInstant("2026-10-05T20:31:00.000Z"),
+    });
+    if (whatsappToggle.kind !== "staged") {
+      throw new Error("expected staged result");
+    }
+    stage = whatsappToggle.stage;
+    expect(stage.selectedOptionKeys).toEqual([
+      "three-sixths",
+      "two-fourths",
+    ]);
+
+    // Telegram: re-project the current stage and commit it.
+    const telegram = createTeachingChannelMultiSelectProjection({
+      binding: admitted,
+      card,
+      action,
+      stage,
+      callbackTokens: {
+        "two-fourths": "tg_two_fourths",
+        "three-sixths": "tg_three_sixths",
+        "two-thirds": "tg_two_thirds",
+      },
+      commitToken: "tg_commit_answers",
+    });
+    const commitBinding = telegram.bindings.find(
+      (item) => item.command === "commit",
+    )!;
+    const commitCommand = resolveTeachingChannelMultiSelectCommand({
+      selectionId: commitBinding.callbackToken,
+      binding: commitBinding,
+      runtimeBinding: admitted,
+      action,
+      stage,
+      now: toInstant("2026-10-05T20:32:00.000Z"),
+    });
+    const committed = applyTeachingMultiSelectStageCommand({
+      binding: admitted,
+      action,
+      stage,
+      command: commitCommand,
+      now: toInstant("2026-10-05T20:32:00.000Z"),
+    });
+    if (committed.kind !== "committed") {
+      throw new Error("expected committed result");
+    }
+
+    const coordinator = new TeachingRuntimeCoordinator({ progress: durable });
+    const feedback = await coordinator.submitOpaqueSelection({
+      binding: admitted,
+      action,
+      selection: committed.selection,
+      plan: active,
+      now: toInstant("2026-10-05T20:32:01.000Z"),
+    });
+    expect(feedback).toMatchObject({
+      kind: "feedback",
+      persistence: "stored",
+      evaluation: { correct: true },
+      continuation: {
+        reason: "advance",
+        nextStep: { stepKey: "add-numerators" },
+      },
+    });
+
+    const replay = await coordinator.submitOpaqueSelection({
+      binding: admitted,
+      action,
+      selection: committed.selection,
+      plan: active,
+      now: toInstant("2026-10-05T20:32:02.000Z"),
+    });
+    expect(replay).toMatchObject({
+      kind: "feedback",
+      persistence: "replay",
+    });
+    expect(durable.attempts.size).toBe(1);
   });
 });
