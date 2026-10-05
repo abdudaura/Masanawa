@@ -57,12 +57,22 @@ describeDatabase("billing NGN funding PostgreSQL acceptance", () => {
       quoteRevision: f.quote.revision,
       confirmedAt: new Date().toISOString(),
     });
+    const txRef = `bill-${f.quote.quoteId}-r1`;
+    const checkoutClaim = await f.repository.claimCheckoutDispatch({
+      tenantId: f.tenantId,
+      userId: f.userId,
+      quoteId: f.quote.quoteId,
+      quoteRevision: f.quote.revision,
+      txRef,
+      claimedAt: new Date().toISOString(),
+    });
+    expect(checkoutClaim.claimed).toBe(true);
     await f.repository.bindCheckout({
       tenantId: f.tenantId,
       userId: f.userId,
       quoteId: f.quote.quoteId,
       quoteRevision: f.quote.revision,
-      txRef: `bill-${f.quote.quoteId}-r1`,
+      txRef,
       checkoutUrl: "https://checkout.flutterwave.com/v3/hosted/pay/test",
       boundAt: new Date().toISOString(),
     });
@@ -191,12 +201,21 @@ describeDatabase("billing NGN funding PostgreSQL acceptance", () => {
       quoteRevision: quote.revision,
       confirmedAt: "2026-10-04T20:00:20.000Z",
     });
+    const txRef = `bill-${quote.quoteId}-r1`;
+    await repository.claimCheckoutDispatch({
+      tenantId,
+      userId,
+      quoteId: quote.quoteId,
+      quoteRevision: quote.revision,
+      txRef,
+      claimedAt: "2026-10-04T20:00:25.000Z",
+    });
     await repository.bindCheckout({
       tenantId,
       userId,
       quoteId: quote.quoteId,
       quoteRevision: quote.revision,
-      txRef: `bill-${quote.quoteId}-r1`,
+      txRef,
       checkoutUrl: "https://checkout.flutterwave.com/v3/hosted/pay/test",
       boundAt: "2026-10-04T20:00:30.000Z",
     });
@@ -398,12 +417,21 @@ describeDatabase("billing NGN funding PostgreSQL acceptance", () => {
         quoteRevision: 1,
         confirmedAt: new Date().toISOString(),
       });
+      const txRef = `bill-${f.quote.quoteId}-r1`;
+      await f.repository.claimCheckoutDispatch({
+        tenantId: f.tenantId,
+        userId: f.userId,
+        quoteId: f.quote.quoteId,
+        quoteRevision: 1,
+        txRef,
+        claimedAt: new Date().toISOString(),
+      });
       await f.repository.bindCheckout({
         tenantId: f.tenantId,
         userId: f.userId,
         quoteId: f.quote.quoteId,
         quoteRevision: 1,
-        txRef: `bill-${f.quote.quoteId}-r1`,
+        txRef,
         checkoutUrl: "https://checkout.flutterwave.com/v3/hosted/pay/test",
         boundAt: new Date().toISOString(),
       });
