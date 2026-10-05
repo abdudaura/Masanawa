@@ -206,7 +206,7 @@ export function createTwinProfileService(input: {
     return { authority, record };
   }
 
-  return Object.freeze({
+  return Object.freeze<TwinProfileService>({
     async read(request) {
       const { record } = await current(request.authorizationHeader, "twin.profile.read");
       return record ? view(record) : null;
