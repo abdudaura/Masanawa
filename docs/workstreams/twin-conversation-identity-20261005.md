@@ -30,7 +30,9 @@ Implemented:
 - real Human Owner presence state;
 - explicit explanatory copy in each state;
 - visually distinct AI/Owner badge;
-- widget tests for both identities.
+- widget tests for both identities;
+- compact chat actions sheet for Buy, Gift, Request Owner and View Profile;
+- feature flags hide Gift/Owner actions when unavailable.
 
 Not yet integrated:
 - ai_chat header/composer surface;
