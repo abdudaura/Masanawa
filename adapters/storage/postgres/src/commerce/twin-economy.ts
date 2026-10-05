@@ -639,6 +639,18 @@ export function createPostgresTwinRuntimeRepository(
         : null;
     },
 
+    async readVoiceAdmissionByQuote(input) {
+      const result = await pool.query<{ admission_id: string }>(
+        `SELECT admission_id FROM commerce.twin_voice_admissions
+          WHERE tenant_id=$1 AND quote_id=$2`,
+        [input.tenantId, input.quoteId],
+      );
+      const admissionId = result.rows[0]?.admission_id;
+      return admissionId
+        ? this.readVoiceAdmission({ tenantId: input.tenantId, admissionId })
+        : null;
+    },
+
     async markVoiceStarted(input) {
       const result = await pool.query(
         `UPDATE commerce.twin_voice_admissions
