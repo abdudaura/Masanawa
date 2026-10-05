@@ -121,8 +121,15 @@ describe("production implementation templates", () => {
         expect(manifest.scripts?.typecheck).toBe("tsc -p tsconfig.json");
         expect(manifest.scripts?.build).toBe("tsc -p tsconfig.build.json");
         expect(manifest.scripts?.start).toBe(
-          "node --conditions=production dist/main.js",
+          serviceName === "gateway"
+            ? "pnpm migrate && node --conditions=production dist/main.js"
+            : "node --conditions=production dist/main.js",
         );
+        if (serviceName === "gateway") {
+          expect(manifest.scripts?.migrate).toBe(
+            "node --conditions=production dist/migrate.js",
+          );
+        }
         expectFile(componentRoot, "src/app.ts");
         expectFile(componentRoot, "src/main.ts");
         expectFile(componentRoot, "src/app.test.ts");
