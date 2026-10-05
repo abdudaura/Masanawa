@@ -41,11 +41,13 @@ Jev never owns authority. Exact tenant/capability checks, immutable domain invar
 Initial decision flow:
 1. operator tells Gwani what to do;
 2. Gwani interprets and proposes one or more canonical admin actions;
-3. Jev evaluates bounded questions such as intent match, ambiguity, escalation need and confidence;
+3. JEV evaluates bounded questions such as intent match, ambiguity, escalation need and confidence;
 4. deterministic policy code intersects operator authority, Character delegation and action risk;
-5. read-only work may execute automatically when admitted;
-6. writes require the configured approval path before canonical command execution;
-7. results and evidence return to Gwani for explanation to the operator.
+5. the current Ops admin-action broker can execute a bounded allowlist of admitted read-only actions through canonical admin services;
+6. write requests currently stop at `approval-required`; they do not execute until the governed approval path is integrated;
+7. canonical command/Operation/provider/reconciliation evidence returns to Gwani for explanation to the operator.
+
+The broker never derives authority from JEV output. JEV may influence routing/escalation only; capability admission remains deterministic.
 
 ## Next safe write controls
 
