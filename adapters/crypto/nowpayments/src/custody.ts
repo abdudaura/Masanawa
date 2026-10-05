@@ -233,6 +233,7 @@ export class NowPaymentsCustodyClient {
       page: "0",
       sortBy: "created_at",
       orderBy: "desc",
+      invoiceid: invoiceId,
     });
     const response = await this.#request(`/payment/?${params.toString()}`, {
       method: "GET",
@@ -259,12 +260,22 @@ export class NowPaymentsCustodyClient {
         throw new Error("nowpayments.payment_lookup.invalid_response");
       }
       const record = row as Record<string, unknown>;
-      return String(record.order_id ?? "").trim() === orderId &&
-        String(record.invoice_id ?? "").trim() === invoiceId;
+      const echoedInvoiceId = record.invoice_id ?? record.invoiceId;
+      if (
+        echoedInvoiceId !== undefined &&
+        echoedInvoiceId !== null &&
+        String(echoedInvoiceId).trim() !== invoiceId
+      ) {
+        throw new Error("nowpayments.payment_lookup.invalid_response");
+      }
+      return String(record.order_id ?? "").trim() === orderId;
     });
     if (matches.length === 0) return null;
     if (matches.length !== 1) throw new Error("nowpayments.payment_lookup.ambiguous");
-    return matches[0]!;
+    return Object.freeze({
+      ...(matches[0] as Record<string, unknown>),
+      invoice_id: invoiceId,
+    });
   }
 
   async createConversion(input: {
