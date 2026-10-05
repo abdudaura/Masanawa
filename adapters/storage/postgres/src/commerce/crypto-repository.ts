@@ -80,19 +80,6 @@ function sameConversionTerms(left: CryptoIntent, right: CryptoIntent): boolean {
   );
 }
 
-function sameBuyTerms(left: CryptoIntent, right: CryptoIntent): boolean {
-  return (
-    left.operation === "buy" &&
-    right.operation === "buy" &&
-    left.asset === right.asset &&
-    left.network === null &&
-    right.network === null &&
-    left.amount === right.amount &&
-    left.targetAsset === right.targetAsset &&
-    (left.targetNetwork ?? null) === (right.targetNetwork ?? null)
-  );
-}
-
 async function readIntentWithClient(
   client: PoolClient,
   input: { tenantId: TenantId; userId: UserId; requestId: RequestId },
