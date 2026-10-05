@@ -34,4 +34,24 @@ Explore only:
 - show owner-approved bio/languages and paid voice/owner-access availability;
 - no posts, likes, reposts, comments, follower counts or social feed.
 
-Status: implementation started 2026-10-05.
+Status: isolated new-file Explore surface complete; backend/shared integration pending.
+
+Implemented:
+- public TwinDirectoryEntry/Page models;
+- search/pagination transport seam;
+- Riverpod Explore state with debounced search and deduplicated pagination;
+- Explore screen;
+- compact twin cards with owner-approved bio/languages;
+- Voice / Owner chat availability tags;
+- open-twin callback;
+- tests showing likes/followers/posts are not part of the consumer model.
+
+Not yet integrated:
+- public twin directory Gateway endpoint/projection;
+- discoverability/privacy filtering;
+- deep link/share route;
+- shared transport/provider;
+- router/four-tab navigation;
+- existing agent directory migration/deprecation.
+
+No existing agent directory/router/shared transport file was modified.
