@@ -1,8 +1,9 @@
 import type {
   UserCharacterRelationship,
+  UserRelationshipProvisioner,
   UserRelationshipReader,
 } from "@masanawa/identity";
-import { toInstant } from "@masanawa/contracts";
+import { createCanonicalId, toInstant } from "@masanawa/contracts";
 import type { Pool } from "pg";
 import { withTransaction } from "../transaction.js";
 
@@ -76,6 +77,52 @@ export function createPostgresUserRelationshipReader(
           return Object.freeze(result.rows.map(fromRow));
         },
         { isolation: "repeatable read", readOnly: true },
+      );
+    },
+  });
+}
+
+
+export function createPostgresUserRelationshipProvisioner(
+  pool: Pool,
+): UserRelationshipProvisioner {
+  return Object.freeze<UserRelationshipProvisioner>({
+    async getOrCreateForUserCharacter(input) {
+      return withTransaction(
+        pool,
+        async (client) => {
+          const inserted = await client.query<RelationshipRow>(
+            `INSERT INTO identity.relationships(
+               tenant_id,relationship_id,user_id,character_id,state,stage,tone,
+               preferences,disclosures,permissions,revision,created_at,updated_at
+             )
+             VALUES ($1,$2,$3,$4,'active',NULL,NULL,'{}'::jsonb,'{}'::jsonb,
+                     '{}'::jsonb,1,$5,$5)
+             ON CONFLICT (tenant_id,user_id,character_id) DO NOTHING
+             RETURNING *`,
+            [
+              input.tenantId,
+              createCanonicalId("relationship"),
+              input.userId,
+              input.characterId,
+              input.createdAt,
+            ],
+          );
+          if (inserted.rows[0]) return fromRow(inserted.rows[0]);
+
+          const existing = await client.query<RelationshipRow>(
+            `SELECT * FROM identity.relationships
+              WHERE tenant_id=$1 AND user_id=$2 AND character_id=$3
+                AND state='active'
+              FOR SHARE`,
+            [input.tenantId,input.userId,input.characterId],
+          );
+          if (!existing.rows[0]) {
+            throw new Error("identity.relationship_unavailable");
+          }
+          return fromRow(existing.rows[0]);
+        },
+        { isolation: "serializable" },
       );
     },
   });
