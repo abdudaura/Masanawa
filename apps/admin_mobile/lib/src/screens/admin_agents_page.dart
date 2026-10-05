@@ -150,15 +150,18 @@ class _AdminAgentsPageState extends State<AdminAgentsPage> {
                             FilledButton.icon(
                               onPressed: delegate.ready
                                   ? () => Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) => AdminAgentChatScreen(
-                                    api: widget.api,
-                                    delegate: delegate,
-                                  ),
-                                ),
-                              ),
+                                        MaterialPageRoute<void>(
+                                          builder: (_) => AdminAgentChatScreen(
+                                            api: widget.api,
+                                            delegate: delegate,
+                                          ),
+                                        ),
+                                      )
+                                  : null,
                               icon: const Icon(Icons.chat_bubble_outline),
-                              label: Text('Talk to ${delegate.label}'),
+                              label: Text(
+                                'Talk to ${delegate.displayName ?? delegate.label}',
+                              ),
                             ),
                           ],
                         ),
