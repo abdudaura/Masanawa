@@ -78,7 +78,13 @@ for the shared integration/deployment paths below.
 - `apps/mobile/android/app/src/main/AndroidManifest.xml`
 - `apps/mobile/android/app/src/main/kotlin/ng/unigeria/unigeria/MainActivity.kt`
 - `apps/mobile/test/shell_deep_link_test.dart`
-- `apps/mobile/test/owner_access_offering_test.dart` (new)
+- `apps/mobile/test/owner_access_offering_transport_test.dart` (new)
+- `apps/mobile/test/owner_access_transport_test.dart` (new)
+- `apps/mobile/test/paid_voice_transport_test.dart` (new)
+- `apps/mobile/lib/src/core/live_voice_session.dart`
+- `apps/mobile/lib/src/screens/twin/my_twin_screen.dart`
+- `packages/commerce/src/voice-settlement.ts`
+- `packages/commerce/src/voice-settlement.test.ts`
 - `apps/mobile/lib/src/router/app_router.dart`
 - `apps/mobile/lib/src/agents/masanawa_transport.dart`
 - `apps/mobile/lib/src/voice/paid_voice_http_transport.dart`
@@ -127,6 +133,25 @@ The public Twin deep-link slice also landed on this branch after the qualificati
 HTTPS share links are recognized, resolved through the Twin directory, routed into chat,
 registered as Android app links and delivered from the Android activity into Flutter.
 
+Subsequent production hardening on the same owned branch now also includes:
+
+- ledger-first, durable-plan reservation for paid voice and owner access;
+- crash-safe commission settlement/reversal ordering and stable replay timestamps;
+- actionable owner requests in Activity with durable reference/status deduplication;
+- requester latest-request recovery/cancellation after app restart;
+- owner request expiry/no-show/refund logic plus best-effort FCM lifecycle notifications;
+- Human Access enable/price/duration controls moved into My Twin, with legacy Creator
+  economy/Agent Float/Skill controls removed from ordinary Settings;
+- paid voice media-start evidence moved from token issuance to Gemini setup-complete +
+  microphone readiness, with server timing and quote-duration caps;
+- full paid reservation refund when voice media never starts.
+
+A remaining Phase-3 commercial-contract blocker is now explicit: NGN billing and crypto
+asset quantities are canonically separate from AI Credits. The repository has no approved
+valuation rule that converts provider value into commission Credits. Do not wire real
+Flutterwave/NOWPayments success amounts into `monetization.settle(baseCredits)` until a
+versioned commercial valuation policy exists.
+
 ## Verification status
 
 Repository implementation is ahead of the last physically verified release APK. The old
@@ -139,13 +164,18 @@ evidence, not as an application test failure.
 
 Still required before marking TWIN production tasks complete or merging this vehicle:
 
-1. run Gateway/package TypeScript typecheck + focused Twin tests on a working runner;
-2. run PostgreSQL acceptance with `MASANAWA_TEST_DATABASE_URL`, including the new Twin
-   replay/immutability test;
-3. run Flutter analyze/tests, including the new production-transport and deep-link tests;
-4. build `assembleRelease` from the exact qualified head and record APK checksum/artifact;
-5. install on a real Android device and exercise create/share/free-text, paid voice,
-   transfer/gift, owner access, Wallet/Activity and restart/retry acceptance;
-6. qualify production deployment/readiness/rollback evidence before merge.
+1. add a proactive owner-request expiry/no-show sweeper using an existing bounded runtime
+   scheduling primitive, so refunds/notifications do not depend on a participant read;
+2. define an approved versioned fiat/crypto -> commission-Credit valuation policy before
+   wiring real billing/crypto provider-success commission settlement;
+3. run Gateway/package TypeScript typecheck + focused Twin tests on a working runner;
+4. run PostgreSQL acceptance with `MASANAWA_TEST_DATABASE_URL`, including Twin replay,
+   latest-owner-request and immutability cases;
+5. run Flutter analyze/tests, including owner-access, paid-voice, production transport and
+   deep-link tests;
+6. build `assembleRelease` from the exact qualified head and record APK checksum/artifact;
+7. install on a real Android device and exercise create/share/free-text, paid voice,
+   transfer/gift, owner access, Wallet/Activity, notifications and restart/retry;
+8. qualify production deployment/readiness/rollback evidence before merge.
 
 Do not rewrite applied migrations or mark TWIN-100..109 complete from code presence alone.
