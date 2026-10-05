@@ -97,6 +97,24 @@ export interface PlatformAdminOperation {
   readonly updatedAt: string;
 }
 
+export interface PlatformAdminExternalReceipt {
+  readonly externalReceiptId: string;
+  readonly operationId: string;
+  readonly provider: string;
+  readonly normalizedStatus: string;
+  readonly observedAt: string;
+  readonly verificationMethod: string;
+  readonly providerVersion: string | null;
+  readonly createdAt: string;
+}
+
+export interface PlatformAdminReceiptReader {
+  list(input: {
+    readonly tenantId: TenantId;
+    readonly operationId: string;
+  }): Promise<readonly PlatformAdminExternalReceipt[]>;
+}
+
 export interface PlatformAdminReconciliationCase {
   readonly reconciliationCaseId: string;
   readonly operationId: string;
@@ -189,6 +207,10 @@ export interface PlatformAdminService {
     readonly limit?: number;
     readonly state?: string;
   }): Promise<readonly PlatformAdminOperation[]>;
+  listOperationReceipts(input: {
+    readonly authorizationHeader: string | undefined;
+    readonly operationId: string;
+  }): Promise<readonly PlatformAdminExternalReceipt[]>;
   listReconciliation(input: {
     readonly authorizationHeader: string | undefined;
     readonly limit?: number;
@@ -245,6 +267,7 @@ export function createPlatformAdminService(input: {
   readonly authorizer: AgentAdminAuthorizer;
   readonly offerCommands?: PlatformAdminOfferCommands;
   readonly credentialCommands?: PlatformAdminCredentialCommands;
+  readonly receiptReader?: PlatformAdminReceiptReader;
 }): PlatformAdminService {
   const authorize = async (
     authorizationHeader: string | undefined,
@@ -589,6 +612,20 @@ export function createPlatformAdminService(input: {
         createdAt: iso(row.created_at),
         updatedAt: iso(row.updated_at),
       }));
+    },
+
+    async listOperationReceipts(request) {
+      const authority = await authorize(
+        request.authorizationHeader,
+        "operations.read",
+      );
+      if (!input.receiptReader) {
+        throw new Error("Operation receipt administration is unavailable");
+      }
+      return input.receiptReader.list({
+        tenantId: tenant(authority),
+        operationId: request.operationId,
+      });
     },
 
     async listReconciliation(request) {
