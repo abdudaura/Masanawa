@@ -443,7 +443,9 @@ class AiChatController extends Notifier<AiChatState> {
 
   AgentShellTransport? get _shellTransport {
     final transport = ref.read(agentTransportProvider);
-    return transport is AgentShellTransport ? transport : null;
+    return transport is AgentShellTransport
+        ? transport as AgentShellTransport
+        : null;
   }
 
   Future<void> syncFromServer(String characterId) async {
