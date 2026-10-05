@@ -252,22 +252,6 @@ function requiredPlatformEnv(
   return value;
 }
 
-function fallbackAuthorizer<T extends { authorize(input: any): Promise<any> }>(
-  primary: T,
-  fallback: T | undefined,
-): T {
-  if (!fallback) return primary;
-  return Object.freeze({
-    async authorize(input: any) {
-      try {
-        return await primary.authorize(input);
-      } catch {
-        return fallback.authorize(input);
-      }
-    },
-  }) as T;
-}
-
 export async function startGatewayService(
   options: StartGatewayServiceOptions = {},
 ): Promise<GatewayServiceRuntime> {
@@ -396,10 +380,12 @@ export async function startGatewayService(
       skillAssignments: database.characterSkillAssignments,
       platformProfiles: database.platformAgentProfiles,
     });
-    directoryAuthorizer = fallbackAuthorizer(production.directory, directoryAuthorizer);
-    conversationAuthorizer = fallbackAuthorizer(production.conversation, conversationAuthorizer);
-    creatorCloneAuthorizer = fallbackAuthorizer(production.creator, creatorCloneAuthorizer);
-    commerceAuthorizer = fallbackAuthorizer(production.commerce, commerceAuthorizer);
+    // Production platform sessions are authoritative whenever platform auth is
+    // enabled. Never fall through to an Alpha/dev token after an auth failure.
+    directoryAuthorizer = production.directory;
+    conversationAuthorizer = production.conversation;
+    creatorCloneAuthorizer = production.creator;
+    commerceAuthorizer = production.commerce;
 
     if (!strategy) {
       if (!database.skills || !database.skillGuides) {
