@@ -402,10 +402,12 @@ function ownerLifecycleHarness(input: {
   readonly scheduledFor?: string | null;
   readonly startedAt?: string | null;
   readonly reservedCredits?: number;
+  readonly conflictOnNextTransition?: boolean;
 }) {
   const events: Array<Record<string, unknown>> = [];
   const transfers: Array<Record<string, unknown>> = [];
   const chargeMode = input.chargeMode ?? "paid";
+  let conflictOnNextTransition = input.conflictOnNextTransition === true;
   const reservedCredits = input.reservedCredits ??
     (chargeMode === "paid" ? 100 : 0);
   let current: any = {
@@ -478,6 +480,11 @@ function ownerLifecycleHarness(input: {
         readonly reservationId: string | null;
         readonly reservedCredits: number;
       }) {
+        if (conflictOnNextTransition) {
+          conflictOnNextTransition = false;
+          current = { ...current, state: "cancelled" };
+          return { applied: false, request: current };
+        }
         if (current.state !== update.expectedState) {
           return { applied: false, request: current };
         }
@@ -903,15 +910,7 @@ describe("Twin production runtime composition", () => {
       actorUserId: ownerUserId,
       state: "requested",
       reservedCredits: 100,
-    });
-    const economy = (harness.runtime as any);
-    void economy;
-    // Simulate the request expiring between the authenticated read and the
-    // action CAS by forcing the in-memory repository state through a lifecycle
-    // sweep first.
-    await harness.runtime.ownerAccessMaintenance.sweep({
-      tenantId,
-      limit: 10,
+      conflictOnNextTransition: true,
     });
 
     await expect(
@@ -921,9 +920,12 @@ describe("Twin production runtime composition", () => {
         requestId: "request_lifecycle_123",
         action: "accept",
       }),
-    ).rejects.toThrow();
-    expect(harness.current().state).not.toBe("accepted");
+    ).rejects.toThrow("changed; refresh");
+
+    expect(harness.current().state).toBe("cancelled");
+    expect(harness.transfers).toHaveLength(0);
   });
+
 
   it("closes a declined trial request in Activity even when no Credits were held", async () => {
     const harness = ownerLifecycleHarness({
