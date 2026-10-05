@@ -216,6 +216,57 @@ export class NowPaymentsCustodyClient {
     return Object.freeze(rows);
   }
 
+  async findPaymentEvidence(input: {
+    readonly orderId: string;
+    readonly invoiceId: string;
+    readonly signal?: AbortSignal;
+  }): Promise<unknown | null> {
+    const orderId = nonEmpty(input.orderId, "nowpayments.payment_lookup.order_id.invalid", 256);
+    const invoiceId = nonEmpty(input.invoiceId, "nowpayments.payment_lookup.invoice_id.invalid", 128);
+    if (!/^[A-Za-z0-9_.:-]+$/u.test(orderId) || !/^[A-Za-z0-9_-]+$/u.test(invoiceId)) {
+      throw new Error("nowpayments.payment_lookup.identity.invalid");
+    }
+
+    const token = await this.authenticate(input.signal);
+    const params = new URLSearchParams({
+      limit: "100",
+      page: "0",
+      sortBy: "created_at",
+      orderBy: "desc",
+    });
+    const response = await this.#request(`/payment/?${params.toString()}`, {
+      method: "GET",
+      authenticated: true,
+      token,
+      ...(input.signal === undefined ? {} : { signal: input.signal }),
+    });
+    const body = await response.json();
+    const rows =
+      Array.isArray(body)
+        ? body
+        : body && typeof body === "object" && !Array.isArray(body)
+          ? (() => {
+              const record = body as Record<string, unknown>;
+              if (Array.isArray(record.data)) return record.data;
+              if (Array.isArray(record.payments)) return record.payments;
+              throw new Error("nowpayments.payment_lookup.invalid_response");
+            })()
+          : (() => { throw new Error("nowpayments.payment_lookup.invalid_response"); })();
+
+    if (rows.length > 100) throw new Error("nowpayments.payment_lookup.invalid_response");
+    const matches = rows.filter((row) => {
+      if (!row || typeof row !== "object" || Array.isArray(row)) {
+        throw new Error("nowpayments.payment_lookup.invalid_response");
+      }
+      const record = row as Record<string, unknown>;
+      return String(record.order_id ?? "").trim() === orderId &&
+        String(record.invoice_id ?? "").trim() === invoiceId;
+    });
+    if (matches.length === 0) return null;
+    if (matches.length !== 1) throw new Error("nowpayments.payment_lookup.ambiguous");
+    return matches[0]!;
+  }
+
   async createConversion(input: {
     readonly fromCurrency: string;
     readonly toCurrency: string;
