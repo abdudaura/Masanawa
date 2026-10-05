@@ -8,11 +8,13 @@ import {
   createAuthorityContext,
 } from "@masanawa/security";
 import type {
+  AgentHarness,
   AgentRunRepository,
   AgentStrategy,
   CharacterSession,
   CharacterSessionRepository,
   CharacterSessionScope,
+  MobileShellRepository,
 } from "@masanawa/agents";
 import {
   emptyCharacterSessionBindings,
@@ -222,6 +224,110 @@ describe("Alpha conversation service", () => {
     expect(events.filter((event) => event.startsWith("run:create"))).toHaveLength(3);
     expect(events.filter((event) => event === "run:finish:completed")).toHaveLength(3);
     expect(events).toContain("session:close");
+  });
+
+  it("routes harness progress into the durable shell event stream", async () => {
+    const f = fixture();
+    const session = sessionFor(f);
+    const eventTypes: string[] = [];
+    const workPayloads: Readonly<Record<string, unknown>>[] = [];
+
+    const sessions: CharacterSessionRepository = {
+      async create() { return session; },
+      async read() { return session; },
+      async updateBindings() { throw new Error("not used"); },
+      async close() { return session; },
+      async reset() { throw new Error("not used"); },
+    };
+    const runs: AgentRunRepository = {
+      async create() { return {} as never; },
+      async read() { throw new Error("not used"); },
+      async finish() { return {} as never; },
+    };
+    const authorizer: AgentConversationAuthorizer = {
+      async authorize() { return f.admission; },
+    };
+    const mobileShell = {
+      async claimTurn(input: { requestId: string }) {
+        return {
+          state: "created" as const,
+          command: {
+            scope: f.scope,
+            characterSessionId: session.characterSessionId,
+            requestId: input.requestId,
+            kind: "text" as const,
+            userText: "hello",
+            payloadHash: "hash",
+            state: "pending" as const,
+            agentRunId: null,
+            reply: null,
+            parts: [],
+            failureCode: null,
+            createdAt: f.at,
+            updatedAt: f.at,
+          },
+        };
+      },
+      async completeTurn() { return {} as never; },
+      async appendEvent(input: {
+        type: string;
+        payload: Readonly<Record<string, unknown>>;
+      }) {
+        eventTypes.push(input.type);
+        if (input.type === "work.updated") workPayloads.push(input.payload);
+        return {
+          cursor: String(eventTypes.length),
+          type: input.type,
+          payload: input.payload,
+          createdAt: f.at,
+        };
+      },
+    } as unknown as MobileShellRepository;
+    const strategy: AgentStrategy = {
+      async execute() { throw new Error("strategy fallback should not run"); },
+    };
+    const harness: AgentHarness = {
+      async execute(input) {
+        await input.onProgress?.({
+          phase: "working",
+          message: "Checking the request…",
+          agentRunId: input.agentRunId,
+          taskId: input.taskId,
+          workflowRunId: input.workflowRunId,
+        });
+        return {
+          reply: "Done",
+          parts: [],
+          taskId: input.taskId,
+          workflowRunId: input.workflowRunId,
+        };
+      },
+    };
+
+    const service = createAgentConversationService({
+      sessions,
+      runs,
+      authorizer,
+      strategy,
+      harness,
+      mobileShell,
+      sessionDurationMs: 60_000,
+    });
+
+    const result = await service.turn({
+      authorizationHeader: "Bearer alpha",
+      characterSessionId: session.characterSessionId,
+      characterId: f.scope.characterId,
+      text: "hello",
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+    });
+
+    expect(result.reply).toBe("Done");
+    expect(eventTypes).toContain("work.updated");
+    expect(workPayloads).toHaveLength(1);
+    expect(workPayloads[0]?.phase).toBe("working");
+    expect(workPayloads[0]?.referenceId).toMatch(/^agent-run_/u);
   });
 
   it("records a failed terminal run when inference fails", async () => {
