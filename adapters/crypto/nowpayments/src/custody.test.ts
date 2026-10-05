@@ -27,7 +27,6 @@ describe("NOWPayments custody client", () => {
   it("recovers one hosted-invoice payment by exact order and invoice identity", async () => {
     const payment = {
       payment_id: "payment-1",
-      invoice_id: "invoice-1",
       order_id: "tenant.request",
       payment_status: "finished",
     };
@@ -38,13 +37,17 @@ describe("NOWPayments custody client", () => {
     await expect(client(fetch).findPaymentEvidence({
       orderId: "tenant.request",
       invoiceId: "invoice-1",
-    })).resolves.toEqual(payment);
+    })).resolves.toEqual({
+      ...payment,
+      invoice_id: "invoice-1",
+    });
 
     const request = fetch.mock.calls[1];
     const url = new URL(String(request?.[0]));
     expect(url.pathname).toBe("/v1/payment/");
     expect(url.searchParams.get("limit")).toBe("100");
     expect(url.searchParams.get("page")).toBe("0");
+    expect(url.searchParams.get("invoiceid")).toBe("invoice-1");
     expect((request?.[1]?.headers as Record<string, string>).authorization)
       .toBe("Bearer fixture-jwt");
   });
@@ -53,7 +56,7 @@ describe("NOWPayments custody client", () => {
     const noMatchFetch = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ token: "fixture-jwt" })))
       .mockResolvedValueOnce(new Response(JSON.stringify({
-        data: [{ payment_id: "other", invoice_id: "other", order_id: "tenant.request" }],
+        data: [{ payment_id: "other", order_id: "tenant.other" }],
       })));
     await expect(client(noMatchFetch).findPaymentEvidence({
       orderId: "tenant.request",
@@ -64,8 +67,8 @@ describe("NOWPayments custody client", () => {
       .mockResolvedValueOnce(new Response(JSON.stringify({ token: "fixture-jwt" })))
       .mockResolvedValueOnce(new Response(JSON.stringify({
         data: [
-          { payment_id: "payment-1", invoice_id: "invoice-1", order_id: "tenant.request" },
-          { payment_id: "payment-2", invoice_id: "invoice-1", order_id: "tenant.request" },
+          { payment_id: "payment-1", order_id: "tenant.request" },
+          { payment_id: "payment-2", order_id: "tenant.request" },
         ],
       })));
     await expect(client(ambiguousFetch).findPaymentEvidence({
