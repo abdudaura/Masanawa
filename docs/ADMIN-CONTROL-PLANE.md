@@ -11,8 +11,8 @@ The admin app is intended to replace the need for a desktop-only control surface
 | Area | Mobile admin capability | Server authority |
 | --- | --- | --- |
 | Overview | Ops health/readiness and tenant-wide counts | `platform.summary.read` |
-| Users & Identity | list users and identity/relationship counts; lifecycle changes are intentionally read-only until Identity exposes a canonical state-transition command | `identity.users.read` |
-| Agents | list and edit presentation, visibility, sort order | existing Agent admin capabilities |
+| Users & Identity | list users with bounded lifecycle filtering, identity/relationship counts, and privacy-safe canonical relationship drill-downs; lifecycle changes remain read-only until Identity exposes a canonical state-transition command | `identity.users.read` |
+| Agents | list/configure/edit presentation, visibility and sort order; show canonical Character ownership kind without owner identity | existing Agent admin capabilities |
 | Skills | catalog/readiness and per-Agent assignment | existing Skill admin capabilities |
 | Runtime | recent AgentRuns, bounded state filtering, failure and correlation trace | `agents.runs.read` |
 | Commerce | full Offer create/revise editor with SkillVersion binding, pricing/commission/region invariants and enable state; fulfillments and immutable ledger activity | `commerce.read/write` |
