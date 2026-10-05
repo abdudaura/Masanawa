@@ -113,3 +113,10 @@ Required transitive owner read ports (append-only reconciliation):
 - packages/memory/src/context.ts
 - packages/world/src/context.ts
 - packages/world/src/index.ts
+
+Build-gate reconciliation paths:
+- packages/agents/package.json
+- pnpm-lock.yaml
+- config/production-env.json
+- test/architecture/environment-contracts.test.ts
+Add exact workspace dependencies/importer links required by restored Agents imports. Register already-used Gateway auth/model/mobile configuration names, classifying key/token/pepper/credential JSON values as secrets. Preserve all current lockfile importers and runtime settings; no dependency version upgrade. Extend the environment naming assertion only for the two already-used owner-specific RESEND_API_KEY and NEXT_PUBLIC_OPS_API_BASE_URL names.
