@@ -100,10 +100,38 @@ class CryptoWalletScreen extends ConsumerWidget {
         );
         return;
       }
-      _message(
-        context,
-        'Secure checkout opened. Complete it there, then return to Wallet and refresh the purchase status.',
+      final checkStatus = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Checkout opened'),
+          content: Text(
+            'Complete the secure checkout, then return here. '
+            'Masanawa credits only the exact ${purchase.settlementAsset} amount '
+            'confirmed by the payment provider.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Later'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Check status'),
+            ),
+          ],
+        ),
       );
+      if (checkStatus == true && context.mounted) {
+        final refreshed = await ref
+            .read(cryptoWalletProvider.notifier)
+            .refreshFiatPurchase(purchase.requestId);
+        if (!context.mounted) return;
+        final message = refreshed.status == 'succeeded' &&
+                refreshed.cryptoAmount != null
+            ? 'Purchase completed: ${refreshed.cryptoAmount} ${refreshed.settlementAsset}'
+            : 'Purchase status: ${refreshed.status.replaceAll('_', ' ')}';
+        _message(context, message);
+      }
     } catch (error) {
       if (context.mounted) _error(context, error);
     }
@@ -389,7 +417,9 @@ class CryptoWalletScreen extends ConsumerWidget {
                     child: _ActionButton(
                       icon: Icons.add_card_rounded,
                       label: 'Buy',
-                      enabled: data.capabilities.fiatOnRamp,
+                      enabled: data.capabilities.fiatOnRamp &&
+                          data.capabilities.fiatCurrencies.isNotEmpty &&
+                          data.capabilities.fiatSettlementProviderCode != null,
                       onTap: () => _buy(context, ref, data),
                     ),
                   ),
