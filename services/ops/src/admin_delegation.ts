@@ -1,3 +1,4 @@
+import type { AgentPresentationRepository } from "@masanawa/agents";
 import { parseCanonicalId, type CharacterId, type TenantId } from "@masanawa/contracts";
 import type {
   AgentAdminAuthorizer,
@@ -12,6 +13,9 @@ export type AdminDelegateAutonomy =
 export interface AdminAgentDelegate {
   readonly characterId: CharacterId;
   readonly label: string;
+  readonly displayName: string | null;
+  readonly roleLabel: string | null;
+  readonly ready: boolean;
   readonly purpose: string;
   readonly autonomy: AdminDelegateAutonomy;
   readonly capabilities: readonly AgentAdminCapability[];
@@ -189,6 +193,9 @@ export function readAdminAgentDelegationConfig(
     return Object.freeze<AdminAgentDelegate>({
       characterId,
       label: text(record.label, "label", 120),
+      displayName: null,
+      roleLabel: null,
+      ready: false,
       purpose: text(record.purpose ?? "Platform administration", "purpose", 500),
       autonomy,
       capabilities: parseCapabilities(record.capabilities),
@@ -206,6 +213,7 @@ export function readAdminAgentDelegationConfig(
 export function createAdminAgentDelegationService(input: {
   readonly config: AdminAgentDelegationConfig;
   readonly authorizer: AgentAdminAuthorizer;
+  readonly presentations: AgentPresentationRepository;
 }): AdminAgentDelegationService {
   return Object.freeze({
     async list(request) {
@@ -220,7 +228,19 @@ export function createAdminAgentDelegationService(input: {
         error.statusCode = 403;
         throw error;
       }
-      return input.config.delegates.filter((delegate) => delegate.enabled);
+      const delegates = input.config.delegates.filter((delegate) => delegate.enabled);
+      return Promise.all(delegates.map(async (delegate) => {
+        const presentation = await input.presentations.readForCharacter({
+          tenantId: authority.tenantId,
+          characterId: delegate.characterId,
+        });
+        return Object.freeze({
+          ...delegate,
+          displayName: presentation?.displayName ?? null,
+          roleLabel: presentation?.roleLabel ?? null,
+          ready: presentation !== null,
+        });
+      }));
     },
   });
 }
