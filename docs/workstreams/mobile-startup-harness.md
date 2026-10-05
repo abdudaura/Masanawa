@@ -45,9 +45,16 @@ Implemented:
 - added a provider-neutral `AgentHarness` contract around admitted AgentRuns with truthful progress callbacks and durable Task/WorkflowRun references.
 
 Verification:
-- branch is eight commits ahead of base and zero behind at `0d99b6d436ec37c6fea9b7efa9bc702d58ce90e6`;
+- implementation branch reached `27377e2c564b9e5b761449ea18d9d4e51b04862c`;
+- PR #143 merged into `work/billing-main-integration-20261005` at `da527038304080ede9bb247e4735b0779738730f`;
 - changed-path audit contains only the claimed mobile startup, harness contract/documentation and focused test paths;
 - no APK rebuild was performed, per user instruction;
 - executable Flutter/TypeScript checks still require an available runner.
+
+Checkpoint reconciliation:
+- `CONTINUE-HERE.md` now records the no-timed-splash rule, one-record auth restore,
+  native blue Android branding sources, and canonical harness mapping;
+- `docs/MULTI-WINDOW-WORK.md` now requires reading the harness architecture and updating
+  governing docs at each meaningful checkpoint.
 
 Status: implementation complete for this slice. The new harness seam is provider-neutral and does not execute or bypass domain authorities itself.
