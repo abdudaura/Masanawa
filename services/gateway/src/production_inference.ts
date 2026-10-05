@@ -17,69 +17,6 @@ export interface GeminiCredentialPool {
   readonly models: readonly string[];
 }
 
-export function describeGeminiCredentialJsonShape(raw: string | undefined): Readonly<Record<string, unknown>> {
-  if (!raw?.trim()) return Object.freeze({ present: false });
-  let value: unknown;
-  try {
-    value = JSON.parse(raw);
-  } catch {
-    return Object.freeze({
-      present: true,
-      validJson: false,
-      rawType: "string",
-      rawLength: raw.length,
-    });
-  }
-
-  const describe = (input: unknown, depth = 0): unknown => {
-    if (depth > 3) return "max-depth";
-    if (input === null) return "null";
-    if (Array.isArray(input)) {
-      return Object.freeze({
-        type: "array",
-        length: input.length,
-        itemTypes: Object.freeze([
-          ...new Set(input.slice(0, 20).map((item) =>
-            item === null ? "null" : Array.isArray(item) ? "array" : typeof item,
-          )),
-        ]),
-        sampleShapes: Object.freeze(
-          input.slice(0, 3).map((item) => describe(item, depth + 1)),
-        ),
-      });
-    }
-    if (typeof input === "object") {
-      const object = input as Record<string, unknown>;
-      const keys = Object.keys(object).sort().slice(0, 50);
-      return Object.freeze({
-        type: "object",
-        keys: Object.freeze(keys),
-        valueTypes: Object.freeze(
-          Object.fromEntries(
-            keys.map((key) => [
-              key,
-              object[key] === null
-                ? "null"
-                : Array.isArray(object[key])
-                  ? "array"
-                  : typeof object[key],
-            ]),
-          ),
-        ),
-      });
-    }
-    if (typeof input === "string") {
-      return Object.freeze({ type: "string", length: input.length });
-    }
-    return typeof input;
-  };
-
-  return Object.freeze({
-    present: true,
-    validJson: true,
-    shape: describe(value),
-  });
-}
 
 const GOOGLE_GEMINI_KEY_RE = /^AIza[0-9A-Za-z_-]{30,80}$/u;
 
@@ -416,6 +353,76 @@ function decryptNurainCredential(
   throw lastError instanceof Error
     ? lastError
     : new Error("Unable to decrypt Gemini credential");
+}
+
+export function parseNurainImportedGeminiCredentialPool(input: {
+  readonly importedCredentialsJson: string;
+  readonly encryptionKey: string;
+  readonly encryptionKeyPrevious?: string;
+  readonly models?: string;
+  readonly fallbackModel?: string;
+}): GeminiCredentialPool {
+  if (
+    !input.importedCredentialsJson.trim() ||
+    input.importedCredentialsJson.length > 65_536
+  ) {
+    throw new TypeError("Imported Gemini credential configuration is invalid");
+  }
+
+  let rows: unknown;
+  try {
+    rows = JSON.parse(input.importedCredentialsJson);
+  } catch {
+    throw new TypeError("Imported Gemini credential configuration is invalid");
+  }
+  if (!Array.isArray(rows) || rows.length < 1 || rows.length > 32) {
+    throw new TypeError("Imported Gemini credential configuration is invalid");
+  }
+
+  const encryptionSecrets = [
+    input.encryptionKey,
+    ...(input.encryptionKeyPrevious?.split(",") ?? []),
+  ]
+    .map((value) => value.trim())
+    .filter((value) => value.length >= 32);
+  if (encryptionSecrets.length < 1 || encryptionSecrets.length > 8) {
+    throw new TypeError("Credential encryption key configuration is invalid");
+  }
+
+  const apiKeys = rows.map((row) => {
+    if (
+      !row ||
+      typeof row !== "object" ||
+      typeof (row as { encrypted_secret?: unknown }).encrypted_secret !== "string" ||
+      typeof (row as { fingerprint?: unknown }).fingerprint !== "string"
+    ) {
+      throw new TypeError("Imported Gemini credential configuration is invalid");
+    }
+    const encrypted = (row as { encrypted_secret: string }).encrypted_secret;
+    const fingerprint = (row as { fingerprint: string }).fingerprint;
+    if (encrypted.length > 2048 || !/^[0-9a-f]{20}$/u.test(fingerprint)) {
+      throw new TypeError("Imported Gemini credential configuration is invalid");
+    }
+    const plain = decryptNurainCredential(encrypted, encryptionSecrets).trim();
+    const normalized = normalizeSecret(plain);
+    if (!normalized) {
+      throw new TypeError("Imported Gemini credential configuration is invalid");
+    }
+    const actualFingerprint = createHash("sha256")
+      .update(normalized)
+      .digest("hex")
+      .slice(0, 20);
+    if (actualFingerprint !== fingerprint) {
+      throw new TypeError("Imported Gemini credential fingerprint mismatch");
+    }
+    return normalized;
+  });
+
+  return parseGeminiCredentialPool({
+    credentialsJson: JSON.stringify(apiKeys),
+    ...(input.models ? { models: input.models } : {}),
+    ...(input.fallbackModel ? { fallbackModel: input.fallbackModel } : {}),
+  });
 }
 
 function supabaseOrigin(value: string): string {
