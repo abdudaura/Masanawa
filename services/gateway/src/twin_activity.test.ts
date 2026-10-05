@@ -89,15 +89,6 @@ describe("twin activity projection", () => {
   it("does not count an older pending event after the same request completed", async () => {
     const service = createTwinActivityService(dependencies([
       {
-        eventId: "evt-completed",
-        referenceId: "request-1",
-        tenantId,
-        characterId,
-        kind: "owner-request",
-        status: "completed",
-        occurredAt: "2026-10-05T08:04:00Z",
-      },
-      {
         eventId: "evt-requested",
         referenceId: "request-1",
         tenantId,
@@ -105,6 +96,15 @@ describe("twin activity projection", () => {
         kind: "owner-request",
         status: "pending",
         occurredAt: "2026-10-05T08:02:00Z",
+      },
+      {
+        eventId: "evt-completed",
+        referenceId: "request-1",
+        tenantId,
+        characterId,
+        kind: "owner-request",
+        status: "completed",
+        occurredAt: "2026-10-05T08:04:00Z",
       },
     ]));
 
