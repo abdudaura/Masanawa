@@ -69,3 +69,43 @@ export function createMyTwinFeatureSource(input: {
     },
   });
 }
+
+
+export interface TwinVoicePolicyReader {
+  readActive(input: {
+    readonly tenantId: string;
+    readonly characterId: string;
+  }): Promise<{ readonly active: boolean } | null>;
+}
+
+export function createPolicyBackedVoiceAvailability(input: {
+  readonly policies: TwinVoicePolicyReader;
+}): TwinVoiceAvailabilityReader {
+  return Object.freeze({
+    async isEnabled(request) {
+      const policy = await input.policies.readActive(request);
+      return policy?.active === true;
+    },
+  });
+}
+
+export interface OwnerAccessOfferingReader {
+  readActive(input: {
+    readonly tenantId: string;
+    readonly ownerUserId: string;
+    readonly characterId: string;
+  }): Promise<{ readonly enabled: boolean } | null>;
+}
+
+export function createOfferingBackedOwnerAccessAvailability(input: {
+  readonly offerings: OwnerAccessOfferingReader;
+}): OwnerAccessAvailabilityReader {
+  return Object.freeze({
+    async readOffering(request) {
+      const offering = await input.offerings.readActive(request);
+      return offering
+        ? Object.freeze({ enabled: offering.enabled === true })
+        : null;
+    },
+  });
+}
