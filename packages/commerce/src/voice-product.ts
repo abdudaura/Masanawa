@@ -21,6 +21,7 @@ export interface TwinVoiceQuote {
   readonly unitSeconds: number;
   readonly estimatedUnits: number;
   readonly estimatedPriceCredits: number;
+  readonly trialDurationDays: number;
   readonly trial: PaidFeatureTrialDecision;
   readonly chargeMode: "trial" | "paid";
   readonly ownerShareBasisPoints: number;
@@ -98,6 +99,7 @@ export function quoteTwinVoice(input: {
     estimatedPriceCredits: trial.eligible
       ? 0
       : estimatedUnits * policy.priceCreditsPerUnit,
+    trialDurationDays: policy.trial.durationDays,
     trial,
     chargeMode: trial.eligible ? "trial" : "paid",
     ownerShareBasisPoints: policy.ownerShareBasisPoints,
