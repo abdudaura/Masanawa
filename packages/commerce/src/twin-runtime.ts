@@ -59,6 +59,22 @@ export interface PersistedTwinVoiceAdmission {
   readonly settledAt: string | null;
 }
 
+export interface OwnerAccessSessionMessage {
+  readonly requestId: string;
+  readonly messageId: string;
+  readonly senderUserId: UserId;
+  readonly body: string;
+  readonly sentAt: string;
+}
+
+export interface OwnerAccessParticipantPresence {
+  readonly requestId: string;
+  readonly userId: UserId;
+  readonly firstSeenAt: string;
+  readonly lastSeenAt: string;
+  readonly heartbeatCount: number;
+}
+
 export interface TwinSafetyBlock {
   readonly tenantId: TenantId;
   readonly actorUserId: UserId;
@@ -334,6 +350,29 @@ export interface TwinRuntimeRepository {
     readonly reservationId: string | null;
     readonly reservedCredits: number;
   })[]>;
+
+  touchOwnerAccessPresence(input: {
+    readonly tenantId: TenantId;
+    readonly requestId: string;
+    readonly userId: UserId;
+    readonly seenAt: string;
+  }): Promise<OwnerAccessParticipantPresence>;
+
+  listOwnerAccessPresence(input: {
+    readonly tenantId: TenantId;
+    readonly requestId: string;
+  }): Promise<readonly OwnerAccessParticipantPresence[]>;
+
+  appendOwnerAccessMessage(input: {
+    readonly tenantId: TenantId;
+    readonly message: OwnerAccessSessionMessage;
+  }): Promise<OwnerAccessSessionMessage>;
+
+  listOwnerAccessMessages(input: {
+    readonly tenantId: TenantId;
+    readonly requestId: string;
+    readonly limit: number;
+  }): Promise<readonly OwnerAccessSessionMessage[]>;
 
   blockTwin(input: TwinSafetyBlock): Promise<void>;
   unblockTwin(input: {
