@@ -32,9 +32,11 @@ Implemented:
 - existing PendingDeepLink draining behavior is unchanged.
 
 Verification:
+- PR #168 merged into `work/billing-main-integration-20261005` at `93df1c6bcd29446eb5204ae09e7b5e0685e20486`;
+- Foundation CI run 37293798214 and Mobile Build run 37293798165 both ended before executing any steps (`steps: null`), preserving the known hosted-runner limitation;
 - MainActivity contains no eager Firebase/audio/network initialization;
 - branch diff is limited to main startup scheduling and checkpoint docs;
 - no APK rebuild was performed;
 - executable Flutter checks remain subject to the hosted runner-allocation issue.
 
-Status: implementation checkpoint complete pending PR integration.
+Status: merged implementation checkpoint.
