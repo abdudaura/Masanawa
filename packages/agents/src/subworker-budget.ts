@@ -4,6 +4,10 @@ import type {
 } from "@masanawa/contracts";
 import type { AuthorityContext } from "@masanawa/security";
 import type { AgentRunScope } from "./run.js";
+import {
+  createAgentExecutionControl,
+  type AgentExecutionControl,
+} from "./execution-control.js";
 import type { SubworkerAdmission } from "./subworker.js";
 import {
   deriveChildExecutionBudget,
@@ -30,6 +34,7 @@ export interface BudgetedSubworkerAdmissionService {
 export interface BudgetedSubworkerAdmissionResult extends SubworkerAdmission {
   readonly childBudget: AgentExecutionBudget;
   readonly parentUsageAfterAdmission: AgentExecutionUsage;
+  readonly executionControl: AgentExecutionControl;
 }
 
 export interface AgentExecutionBudgetReservationPort {
@@ -63,6 +68,7 @@ export function createBudgetedSubworkerAdmissionService(input: {
       readonly parentSkillVersionIds: readonly SkillVersionId[];
       readonly requestedSkillVersionIds: readonly SkillVersionId[];
       readonly requestedCapabilities: readonly string[];
+      readonly parentExecutionControl: AgentExecutionControl;
       readonly parentBudget: AgentExecutionBudget;
       readonly parentUsage: AgentExecutionUsage;
       readonly childBudget: Omit<
@@ -70,6 +76,8 @@ export function createBudgetedSubworkerAdmissionService(input: {
         "childAgentRunId"
       >;
     }): Promise<BudgetedSubworkerAdmissionResult> {
+      request.parentExecutionControl.throwIfStopped();
+
       if (request.parentBudget.agentRunId !== request.parentAgentRunId) {
         throw new TypeError(
           "Parent execution budget is not bound to parentAgentRunId",
@@ -95,6 +103,8 @@ export function createBudgetedSubworkerAdmissionService(input: {
         usage: request.parentUsage,
         observedAt: request.childBudget.at,
       });
+
+      request.parentExecutionControl.throwIfStopped();
 
       const reservedUsage = await input.reservations.reserveChildAdmission({
         parentAgentRunId: request.parentAgentRunId,
@@ -123,15 +133,31 @@ export function createBudgetedSubworkerAdmissionService(input: {
         );
       }
 
-      const admitted = await input.subworkers.admit({
+      request.parentExecutionControl.throwIfStopped();
+      const executionControl = createAgentExecutionControl({
+        parent: request.parentExecutionControl,
+      });
+
+      let admitted: SubworkerAdmission;
+      try {
+        admitted = await input.subworkers.admit({
         parentAuthority: request.parentAuthority,
         scope: request.scope,
         parentAgentRunId: request.parentAgentRunId,
         childAgentRunId: request.childAgentRunId,
         parentSkillVersionIds: request.parentSkillVersionIds,
         requestedSkillVersionIds: request.requestedSkillVersionIds,
-        requestedCapabilities: request.requestedCapabilities,
-      });
+          requestedCapabilities: request.requestedCapabilities,
+        });
+      } catch (error) {
+        executionControl.stop({
+          reason: "shutdown",
+          detail: "Subworker admission failed before execution",
+        });
+        throw error;
+      }
+
+      executionControl.throwIfStopped();
 
       if (
         admitted.run.agentRunId !== request.childAgentRunId ||
@@ -147,6 +173,7 @@ export function createBudgetedSubworkerAdmissionService(input: {
         ...admitted,
         childBudget: grant.childBudget,
         parentUsageAfterAdmission: reservedUsage,
+        executionControl,
       });
     },
   });
