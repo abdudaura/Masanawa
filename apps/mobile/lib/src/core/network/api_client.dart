@@ -91,8 +91,8 @@ class ApiClient {
   Future<String?> Function()? onUnauthorized;
 
   /// Rotates the current session once and shares that in-flight refresh across
-  /// API + Agent transports. Supabase refresh tokens rotate, so concurrent 401s
-  /// must never race separate refresh calls.
+  /// API + Agent transports. Platform refresh tokens rotate, so concurrent
+  /// 401s must never race separate refresh calls.
   Future<String?> refreshAuthorization() {
     final active = _authorizationRefresh;
     if (active != null) return active;
