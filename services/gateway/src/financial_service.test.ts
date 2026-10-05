@@ -335,6 +335,190 @@ function setup(
 }
 const authorizationHeader = "Bearer fixture-token";
 describe("financial service recovery and admission", () => {
+  it("keeps fiat Buy disabled until the account is explicitly activated and custody-backed", async () => {
+    await expect(setup(null).service.capabilities({ authorizationHeader }))
+      .resolves.toMatchObject({
+        fiatOnRamp: false,
+        fiatCurrencies: [],
+        fiatSettlementProviderCode: null,
+      });
+    await expect(setup(
+      null, undefined, undefined, undefined, undefined,
+      false, false, true, "receiver", true,
+    ).service.capabilities({ authorizationHeader })).resolves.toMatchObject({
+      fiatOnRamp: true,
+      fiatCurrencies: ["NGN", "USD"],
+      fiatSettlementProviderCode: "USDTTRC20",
+      fiatOnRampReason: null,
+    });
+  });
+
+  it("creates one hosted fiat checkout bound to the canonical request", async () => {
+    const { service, crypto, fetch } = setup(
+      null, undefined, undefined, undefined, undefined,
+      true, false, true, "receiver", true,
+    );
+    await expect(service.createFiatPurchase({
+      authorizationHeader,
+      requestId,
+      fiatAmount: "1500",
+      fiatCurrency: "NGN",
+    })).resolves.toMatchObject({
+      requestId,
+      fiatAmount: "1500",
+      fiatCurrency: "NGN",
+      settlementAsset: "USDTTRC20",
+      settlementNetwork: "tron",
+      status: "awaiting_payment",
+      providerInvoiceId: "invoice-1",
+      checkoutUrl: "https://nowpayments.io/payment/?iid=invoice-1",
+    });
+    expect(crypto.bindProviderInvoice).toHaveBeenCalledWith(expect.objectContaining({
+      requestId,
+      providerInvoiceId: "invoice-1",
+      checkoutUrl: "https://nowpayments.io/payment/?iid=invoice-1",
+    }));
+    const invoiceCalls = fetch.mock.calls.filter((call) =>
+      String(call[0]).endsWith("/invoice"));
+    expect(invoiceCalls).toHaveLength(1);
+    expect(JSON.parse(String(invoiceCalls[0]?.[1]?.body))).toMatchObject({
+      price_amount: 1500,
+      price_currency: "ngn",
+      pay_currency: "ngn",
+      order_id: tenantId+"."+requestId,
+    });
+  });
+
+  it("marks a deterministic hosted-invoice rejection failed without retrying dispatch", async () => {
+    const { service, crypto, fetch } = setup(
+      null, undefined, undefined, undefined, undefined,
+      true, false, true, "receiver", true,
+    );
+    fetch.mockImplementation(async (
+      request: Parameters<typeof globalThis.fetch>[0],
+      init?: Parameters<typeof globalThis.fetch>[1],
+    ) => {
+      const url = String(request);
+      if (url.endsWith("/currencies")) {
+        return new Response(JSON.stringify({ currencies: ["usdttrc20"] }));
+      }
+      if (url.endsWith("/balance")) {
+        return new Response(JSON.stringify({
+          usdttrc20: { amount: "100", pendingAmount: "0" },
+        }));
+      }
+      if (url.endsWith("/invoice") && init?.method === "POST") {
+        return new Response("invalid invoice", { status: 422 });
+      }
+      return new Response("{}");
+    });
+    await expect(service.createFiatPurchase({
+      authorizationHeader,
+      requestId,
+      fiatAmount: "1500",
+      fiatCurrency: "NGN",
+    })).resolves.toMatchObject({ status: "failed" });
+    expect(crypto.failProviderDispatch).toHaveBeenCalledWith(expect.objectContaining({
+      requestId,
+      operation: "buy",
+    }));
+    expect(crypto.bindProviderInvoice).not.toHaveBeenCalled();
+  });
+
+  it("keeps ambiguous hosted-invoice dispatch unresolved instead of creating a second invoice", async () => {
+    const { service, crypto, fetch } = setup(
+      null, undefined, undefined, undefined, undefined,
+      true, false, true, "receiver", true,
+    );
+    fetch.mockImplementation(async (
+      request: Parameters<typeof globalThis.fetch>[0],
+      init?: Parameters<typeof globalThis.fetch>[1],
+    ) => {
+      const url = String(request);
+      if (url.endsWith("/currencies")) {
+        return new Response(JSON.stringify({ currencies: ["usdttrc20"] }));
+      }
+      if (url.endsWith("/balance")) {
+        return new Response(JSON.stringify({
+          usdttrc20: { amount: "100", pendingAmount: "0" },
+        }));
+      }
+      if (url.endsWith("/invoice") && init?.method === "POST") {
+        throw new Error("socket reset");
+      }
+      return new Response("{}");
+    });
+    await expect(service.createFiatPurchase({
+      authorizationHeader,
+      requestId,
+      fiatAmount: "1500",
+      fiatCurrency: "NGN",
+    })).rejects.toThrow("nowpayments.transport.unavailable");
+    expect(crypto.failProviderDispatch).not.toHaveBeenCalled();
+    expect(crypto.bindProviderInvoice).not.toHaveBeenCalled();
+  });
+
+  it("credits only the exact signed fiat on-ramp crypto outcome", async () => {
+    const { service, crypto } = setup(
+      buyIntent, undefined, undefined, undefined, undefined,
+      false, false, true, "receiver", true,
+    );
+    const payload = {
+      payment_id: "fiat-payment-1",
+      invoice_id: "invoice-1",
+      order_id: tenantId+"."+requestId,
+      payment_status: "finished",
+      price_amount: "1500",
+      price_currency: "ngn",
+      pay_amount: "1500",
+      pay_currency: "ngn",
+      actually_paid: "1500",
+      outcome_amount: "1.234567",
+      outcome_currency: "usdttrc20",
+    };
+    const signature = createHmac("sha512", "fixture-ipn")
+      .update(canonicalizeIpnPayload(payload)).digest("hex");
+    await expect(service.handleNowPaymentsIpn({ payload, signature }))
+      .resolves.toEqual({ accepted: true, requestId });
+    expect(crypto.applyProviderPaymentEvent).toHaveBeenCalledWith(expect.objectContaining({
+      tenantId,
+      userId,
+      event: expect.objectContaining({
+        paymentId: "fiat-payment-1",
+        invoiceId: "invoice-1",
+        priceAmount: "1500",
+        priceCurrency: "NGN",
+        outcomeAmount: "1.234567",
+        outcomeCurrency: "USDTTRC20",
+      }),
+    }));
+  });
+
+  it("rejects a signed fiat outcome in the wrong custody asset before ledger settlement", async () => {
+    const { service, crypto } = setup(
+      buyIntent, undefined, undefined, undefined, undefined,
+      false, false, true, "receiver", true,
+    );
+    const payload = {
+      payment_id: "fiat-payment-1",
+      invoice_id: "invoice-1",
+      order_id: tenantId+"."+requestId,
+      payment_status: "finished",
+      price_amount: "1500",
+      price_currency: "ngn",
+      pay_amount: "1500",
+      pay_currency: "ngn",
+      actually_paid: "1500",
+      outcome_amount: "0.00002",
+      outcome_currency: "btc",
+    };
+    const signature = createHmac("sha512", "fixture-ipn")
+      .update(canonicalizeIpnPayload(payload)).digest("hex");
+    await expect(service.handleNowPaymentsIpn({ payload, signature }))
+      .rejects.toThrow("financial.crypto.onramp_evidence_mismatch");
+    expect(crypto.applyProviderPaymentEvent).not.toHaveBeenCalled();
+  });
+
   it("binds a small created deposit using a plain exact provider amount", async () => {
     const { service, crypto, fetch } = setup(
       null, undefined, undefined, undefined, undefined, true,
