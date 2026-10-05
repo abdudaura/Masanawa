@@ -22,6 +22,33 @@ function json(body: unknown, status = 200): Response {
 }
 
 describe("production mobile auth", () => {
+  it("defaults to email-only and rejects unadvertised SMS before provider dispatch", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const userId = createCanonicalId("user");
+    let fetchCalls = 0;
+    const auth = createProductionAuthService({
+      supabaseUrl: "https://projectref.supabase.co",
+      publishableKey: "sb_publishable_test",
+      tenantId,
+      identities: {
+        async resolveOrCreateSupabaseUser() { return userId; },
+        async getOrCreateRelationship() { throw new Error("unused"); },
+      },
+      fetchImpl: async () => {
+        fetchCalls += 1;
+        return json({});
+      },
+    });
+
+    expect(auth.capabilities()).toEqual({ otpChannels: ["email"] });
+    await expect(auth.sendOtp({ phone: "+2348012345678" }))
+      .rejects.toMatchObject({
+        code: "OTP_CHANNEL_UNAVAILABLE",
+        statusCode: 503,
+      });
+    expect(fetchCalls).toBe(0);
+  });
+
   it("uses the verified Supabase subject to resolve one canonical Masanawa user", async () => {
     const tenantId = createCanonicalId("tenant");
     const userId = createCanonicalId("user");
