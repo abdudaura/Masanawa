@@ -262,7 +262,12 @@ export function normalizeWorkflowRun(input: WorkflowRun): WorkflowRun {
     "WorkflowRun checkpointRevision",
     true,
   );
-  const scope = normalizeWorkflowRunScope(input);
+  const scope = normalizeWorkflowRunScope({
+    tenantId: input.tenantId,
+    userId: input.userId,
+    characterId: input.characterId,
+    relationshipId: input.relationshipId,
+  });
   const createdAt = toInstant(input.createdAt);
   const updatedAt = toInstant(input.updatedAt);
   const completedAt =
