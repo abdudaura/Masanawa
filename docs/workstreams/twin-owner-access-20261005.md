@@ -64,6 +64,9 @@ Implemented:
 - owner accept/decline/schedule sheet;
 - owner-request status card;
 - mobile DTO/state/transport seams and parsing tests;
+- owner-side offering settings UI (enable/disable, modalities, session lengths, price/minute);
+- isolated owner offering read/update Gateway service and routes;
+- platform-bound validation for owner-set pricing and durations;
 - focused Commerce/Gateway tests.
 
 Not yet integrated:
@@ -76,7 +79,8 @@ Not yet integrated:
 - Gateway app/main composition;
 - authenticated mobile transport/provider;
 - ai_chat and Activity wiring;
-- admin/owner settings UI for offering configuration.
+- persistence adapter for owner offering revisions;
+- authenticated mobile transport wiring for owner offering settings.
 
 CI:
 GitHub Actions remains affected by the repository zero-step runner failure; no runner-based
