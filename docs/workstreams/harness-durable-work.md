@@ -18,6 +18,7 @@ Owned paths:
 - `apps/mobile/lib/src/chat/message_parts_view.dart` only for Work status presentation
 - focused tests for the above
 - `docs/AGENT-HARNESS.md`
+- canonical workflow foundation under `packages/workflows/**` (new package only; no PostgreSQL composition yet)
 - this claim file
 
 Boundaries:
@@ -50,5 +51,11 @@ Discovered dependency:
   durable Task/Workflow lifecycle/checkpoint persistence does not. This slice must not be
   described as service-restart-safe Work execution.
 
-Status: implementation complete for the projection/execution-seam checkpoint; canonical
-Task/Workflow runtime is the next dependency.
+Continuation ownership:
+- after completing the projection checkpoint, this same window may establish the isolated
+  canonical `@masanawa/workflows` domain/repository contract because that package is still
+  a placeholder and no active workstream claims it;
+- this continuation must not mark roadmap Tasks 084-096 complete, alter shared migration
+  registries or compose production persistence without a fresh checkpoint/claim update.
+
+Status: projection/execution-seam checkpoint complete; canonical Workflow foundation now active.
