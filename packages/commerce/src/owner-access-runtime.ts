@@ -29,6 +29,23 @@ export interface OwnerAccessReservationPort {
   }): Promise<void>;
 }
 
+export interface OwnerAccessNotificationPort {
+  emit(input: {
+    readonly requestId: string;
+    readonly recipientUserId: string;
+    readonly event:
+      | "requested"
+      | "accepted"
+      | "declined"
+      | "scheduled"
+      | "started"
+      | "completed"
+      | "refunded"
+      | "disputed";
+    readonly scheduledFor?: string | null;
+  }): Promise<void>;
+}
+
 export interface OwnerAccessRequestRepository {
   create(input: OwnerAccessRequest & {
     readonly reservationId: string | null;
@@ -65,6 +82,7 @@ function addMinutes(at: string, minutes: number): string {
 export function createOwnerAccessRuntime(input: {
   readonly repository: OwnerAccessRequestRepository;
   readonly reservations: OwnerAccessReservationPort;
+  readonly notifications?: OwnerAccessNotificationPort;
   readonly acceptWithinMinutes: number;
   readonly now?: () => Date;
 }) {
@@ -85,7 +103,7 @@ export function createOwnerAccessRuntime(input: {
             })
           : null;
 
-      return input.repository.create({
+      const created = await input.repository.create({
         requestId: request.quote.requestId,
         requesterUserId: request.requesterUserId,
         ownerUserId: request.quote.ownerUserId,
@@ -106,6 +124,12 @@ export function createOwnerAccessRuntime(input: {
         reservationId: reservation?.reservationId ?? null,
         reservedCredits: reservation?.reservedCredits ?? 0,
       });
+      await input.notifications?.emit({
+        requestId: created.requestId,
+        recipientUserId: created.ownerUserId,
+        event: "requested",
+      });
+      return created;
     },
 
     async transition(request: {
@@ -150,6 +174,12 @@ export function createOwnerAccessRuntime(input: {
           reservationId: current.reservationId,
           refundCredits: settlement.refundCredits,
         });
+        await input.notifications?.emit({
+          requestId: current.requestId,
+          recipientUserId: current.requesterUserId,
+          event: "refunded",
+          scheduledFor: updated.scheduledFor,
+        });
       } else if (
         settlement.disposition === "settle" &&
         current.reservationId !== null
@@ -161,6 +191,32 @@ export function createOwnerAccessRuntime(input: {
           ownerUserId: current.ownerUserId,
           ownerEarningCredits: settlement.ownerEarningCredits,
           platformRevenueCredits: settlement.platformRevenueCredits,
+        });
+      }
+
+      const event =
+        next === "accepted"
+          ? "accepted"
+          : next === "declined"
+            ? "declined"
+            : next === "scheduled"
+              ? "scheduled"
+              : next === "active"
+                ? "started"
+                : next === "completed"
+                  ? "completed"
+                  : next === "disputed"
+                    ? "disputed"
+                    : null;
+      if (event !== null) {
+        await input.notifications?.emit({
+          requestId: updated.requestId,
+          recipientUserId:
+            next === "accepted" || next === "declined" || next === "scheduled"
+              ? updated.requesterUserId
+              : updated.ownerUserId,
+          event,
+          scheduledFor: updated.scheduledFor,
         });
       }
 
