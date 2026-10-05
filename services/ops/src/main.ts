@@ -39,12 +39,16 @@ import {
   createPostgresWorldRepository,
   createPostgresSkillRepository,
   createPostgresPlatformSessionRepository,
+  consumeOnceApproval,
   getPolicyRevision,
   listExternalReceiptsForOperation,
+  loadApproval,
+  loadOperation,
   persistPendingApproval,
   prepareOperation,
   revokeProviderCredentialRef,
   settlePendingApproval,
+  transitionOperation,
   withTransaction,
 } from "@masanawa/postgres";
 import {
@@ -368,7 +372,7 @@ function createDefaultDatabaseDependency(
   });
 
   const adminAgentApprovalCommands: AdminAgentApprovalCommands = Object.freeze({
-    async prepare(input) {
+    async admit(input) {
       const agentRunId = parseCanonicalId("agent-run", input.agentRunId);
       const requestedAt = nowInstant();
       const expiresAt = toInstant(
@@ -404,25 +408,15 @@ function createDefaultDatabaseDependency(
           [input.tenantId, prepared.operation.operationId],
         );
 
-        const existing = await client.query<{ approval_id: string }>(
-          `SELECT approval_id
-             FROM security.approvals
-            WHERE tenant_id = $1
-              AND operation_id = $2
-            ORDER BY requested_at
-            LIMIT 1`,
-          [input.tenantId, prepared.operation.operationId],
+        const operation = await loadOperation(
+          client,
+          input.tenantId,
+          prepared.operation.operationId,
         );
-        const approvalId = existing.rows[0]?.approval_id;
-        if (approvalId) {
-          return Object.freeze({
-            approvalId,
-            operationId: prepared.operation.operationId,
-            reused: true,
-          });
+        if (!operation) {
+          throw new Error("Prepared admin Agent operation disappeared");
         }
 
-        const policyRevision = await getPolicyRevision(client, input.tenantId);
         const binding = createApprovalBinding({
           operationId: prepared.operation.operationId,
           tenantId: input.tenantId,
@@ -438,18 +432,183 @@ function createDefaultDatabaseDependency(
           },
           riskClass: input.risk,
         });
-        const approval = createPendingApproval({
-          kind: "once",
-          binding,
-          policyRevision,
-          requestedAt,
-          expiresAt,
+
+        const existing = await client.query<{ approval_id: string }>(
+          `SELECT approval_id
+             FROM security.approvals
+            WHERE tenant_id = $1
+              AND operation_id = $2
+            ORDER BY requested_at
+            LIMIT 1`,
+          [input.tenantId, prepared.operation.operationId],
+        );
+        const existingApprovalId = existing.rows[0]?.approval_id;
+        if (!existingApprovalId) {
+          const policyRevision = await getPolicyRevision(client, input.tenantId);
+          const approval = createPendingApproval({
+            kind: "once",
+            binding,
+            policyRevision,
+            requestedAt,
+            expiresAt,
+          });
+          const persisted = await persistPendingApproval(client, approval);
+          return Object.freeze({
+            approvalId: persisted.approvalId,
+            operationId: prepared.operation.operationId,
+            reused: prepared.reused,
+            execution: "awaiting-approval" as const,
+          });
+        }
+
+        const approvalId = parseCanonicalId("approval", existingApprovalId);
+        const approval = await loadApproval(
+          client,
+          input.tenantId,
+          approvalId,
+          true,
+        );
+
+        if (approval.state === "pending") {
+          return Object.freeze({
+            approvalId,
+            operationId: operation.operationId,
+            reused: true,
+            execution: "awaiting-approval" as const,
+          });
+        }
+
+        if (approval.state === "approved") {
+          if (operation.state !== "prepared") {
+            const error = new Error(
+              `Approved admin Agent operation is not prepared: ${operation.state}`,
+            ) as Error & { statusCode: number };
+            error.statusCode = 409;
+            throw error;
+          }
+          const currentPolicyRevision = await getPolicyRevision(
+            client,
+            input.tenantId,
+          );
+          await consumeOnceApproval(client, {
+            tenantId: input.tenantId,
+            approvalId,
+            binding,
+            currentPolicyRevision,
+            consumedAt: nowInstant(),
+          });
+          await transitionOperation(client, {
+            tenantId: input.tenantId,
+            operationId: operation.operationId,
+            from: "prepared",
+            to: "authorized",
+          });
+          return Object.freeze({
+            approvalId,
+            operationId: operation.operationId,
+            reused: true,
+            execution: "authorized" as const,
+          });
+        }
+
+        if (approval.state === "consumed") {
+          if (operation.state === "authorized") {
+            return Object.freeze({
+              approvalId,
+              operationId: operation.operationId,
+              reused: true,
+              execution: "authorized" as const,
+            });
+          }
+          if (operation.state === "succeeded") {
+            return Object.freeze({
+              approvalId,
+              operationId: operation.operationId,
+              reused: true,
+              execution: "succeeded" as const,
+            });
+          }
+          const error = new Error(
+            `Admin Agent operation cannot be replayed from state ${operation.state}`,
+          ) as Error & { statusCode: number };
+          error.statusCode = 409;
+          throw error;
+        }
+
+        if (approval.state === "denied" && operation.state === "prepared") {
+          await transitionOperation(client, {
+            tenantId: input.tenantId,
+            operationId: operation.operationId,
+            from: "prepared",
+            to: "rejected",
+          });
+        }
+        const error = new Error(
+          `Admin Agent approval is not executable in state ${approval.state}`,
+        ) as Error & { statusCode: number };
+        error.statusCode = approval.state === "denied" ? 403 : 409;
+        throw error;
+      });
+    },
+
+    async beginExecution(input) {
+      await withTransaction(database.pool, async (client) => {
+        await transitionOperation(client, {
+          tenantId: input.tenantId,
+          operationId: parseCanonicalId("operation", input.operationId),
+          from: "authorized",
+          to: "dispatching",
         });
-        const persisted = await persistPendingApproval(client, approval);
-        return Object.freeze({
-          approvalId: persisted.approvalId,
-          operationId: prepared.operation.operationId,
-          reused: prepared.reused,
+      });
+    },
+
+    async completeExecution(input) {
+      await withTransaction(database.pool, async (client) => {
+        const operationId = parseCanonicalId("operation", input.operationId);
+        const current = await loadOperation(client, input.tenantId, operationId);
+        if (!current) throw new Error("Admin Agent operation was not found");
+        if (current.state === "succeeded") return;
+        if (current.state !== "dispatching") {
+          const error = new Error(
+            `Admin Agent operation cannot complete from state ${current.state}`,
+          ) as Error & { statusCode: number };
+          error.statusCode = 409;
+          throw error;
+        }
+        await transitionOperation(client, {
+          tenantId: input.tenantId,
+          operationId,
+          from: "dispatching",
+          to: "dispatched",
+        });
+        await transitionOperation(client, {
+          tenantId: input.tenantId,
+          operationId,
+          from: "dispatched",
+          to: "accepted",
+        });
+        await transitionOperation(client, {
+          tenantId: input.tenantId,
+          operationId,
+          from: "accepted",
+          to: "succeeded",
+        });
+      });
+    },
+
+    async markExecutionUnknown(input) {
+      await withTransaction(database.pool, async (client) => {
+        const operationId = parseCanonicalId("operation", input.operationId);
+        const current = await loadOperation(client, input.tenantId, operationId);
+        if (!current || current.state === "unknown" || current.state === "succeeded") {
+          return;
+        }
+        if (current.state !== "dispatching") return;
+        await transitionOperation(client, {
+          tenantId: input.tenantId,
+          operationId,
+          from: "dispatching",
+          to: "unknown",
         });
       });
     },
@@ -458,8 +617,8 @@ function createDefaultDatabaseDependency(
   const systemApprovalCommands: SystemAdminApprovalCommands = Object.freeze({
     async decide(input) {
       const approvalId = parseCanonicalId("approval", input.approvalId);
-      const record = await withTransaction(database.pool, (client) =>
-        settlePendingApproval(client, {
+      const record = await withTransaction(database.pool, async (client) => {
+        const settled = await settlePendingApproval(client, {
           tenantId: input.tenantId,
           approvalId,
           decision: input.decision,
@@ -468,8 +627,17 @@ function createDefaultDatabaseDependency(
             userId: input.approverUserId,
           }),
           decidedAt: nowInstant(),
-        }),
-      );
+        });
+        if (input.decision === "denied") {
+          await transitionOperation(client, {
+            tenantId: input.tenantId,
+            operationId: settled.binding.operationId,
+            from: "prepared",
+            to: "rejected",
+          });
+        }
+        return settled;
+      });
       return {
         approvalId: record.approvalId,
         operationId: record.binding.operationId,
@@ -636,6 +804,7 @@ export async function startOpsService(
           config: adminAgentDelegationConfig,
           authorizer: adminAuthorizer,
           platformAdmin: composedPlatformAdmin,
+          ...(composedSystemAdmin ? { systemAdmin: composedSystemAdmin } : {}),
           approvalCommands: database.adminAgentApprovalCommands,
         })
       : undefined);
