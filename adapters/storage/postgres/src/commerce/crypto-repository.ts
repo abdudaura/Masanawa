@@ -425,6 +425,34 @@ export function createPostgresCryptoRepository(pool: Pool): CryptoRepository {
       });
     },
 
+    async failProviderDispatch(input) {
+      return withTransaction(pool, async (client) => {
+        const key = {
+          tenantId: parseCanonicalId("tenant", input.tenantId),
+          userId: parseCanonicalId("user", input.userId),
+          requestId: parseCanonicalId("request", input.requestId),
+        };
+        const current = await readIntentWithClient(client, key, true);
+        if (!current || current.operation !== input.operation) {
+          throw new Error("crypto.intent.unavailable");
+        }
+        if (current.status === "failed") return current;
+        if (
+          current.providerPaymentId !== null ||
+          current.providerPayoutId !== null ||
+          (current.providerInvoiceId ?? null) !== null ||
+          (current.providerConversionId ?? null) !== null
+        ) {
+          throw new Error("crypto.provider_dispatch.outcome_unknown");
+        }
+        return updateIntentWithClient(client, {
+          ...current,
+          status: "failed",
+          updatedAt: input.updatedAt,
+        });
+      });
+    },
+
     async bindProviderInvoice(input) {
       return withTransaction(pool, async (client) => {
         const key = {
