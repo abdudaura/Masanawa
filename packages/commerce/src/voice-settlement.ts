@@ -76,7 +76,7 @@ export function settleVerifiedTwinVoiceUsage(
       customerChargeCredits: 0,
       ownerEarningCredits: 0,
       platformRevenueCredits: 0,
-      refundCredits: 0,
+      refundCredits: input.trialCovered ? 0 : reservedCredits,
     });
   }
 
