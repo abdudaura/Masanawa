@@ -401,6 +401,459 @@ export function resolveTeachingChannelSelection(input: {
   });
 }
 
+
+export interface TeachingMultiSelectStage {
+  readonly actionKey: string;
+  readonly actionBindingHash: string;
+  readonly state: "collecting" | "committed";
+  readonly selectedOptionKeys: readonly string[];
+  readonly revision: number;
+  readonly expiresAt: Instant;
+  readonly stageHash: string;
+}
+
+export type TeachingMultiSelectStageCommand =
+  | Readonly<{ kind: "toggle"; optionKey: string }>
+  | Readonly<{ kind: "commit" }>;
+
+function multiSelectStagePayload(input: {
+  readonly actionKey: string;
+  readonly actionBindingHash: string;
+  readonly state: "collecting" | "committed";
+  readonly selectedOptionKeys: readonly string[];
+  readonly revision: number;
+  readonly expiresAt: Instant;
+}) {
+  return Object.freeze({
+    actionKey: input.actionKey,
+    actionBindingHash: input.actionBindingHash,
+    state: input.state,
+    selectedOptionKeys: Object.freeze([...input.selectedOptionKeys]),
+    revision: input.revision,
+    expiresAt: input.expiresAt,
+  });
+}
+
+function hashMultiSelectStage(input: ReturnType<typeof multiSelectStagePayload>): string {
+  return `sha256:${fingerprintCanonicalJson(
+    JSON.parse(canonicalJson(input)),
+  )}`;
+}
+
+function assertMultiSelectAction(
+  binding: TeachingRuntimeBinding,
+  action: TeachingSelectionActionBinding,
+): void {
+  assertBindingScope(binding, action.relationshipId, action.skillVersionId);
+  if (action.rubric.kind !== "multi-select") {
+    throw new TypeError("Teaching staged selection requires a multi-select rubric");
+  }
+  const expected = createTeachingSelectionActionBinding({
+    binding,
+    actionKey: action.actionKey,
+    requestId: action.requestId,
+    rubric: action.rubric,
+    expiresAt: action.expiresAt,
+  });
+  if (expected.bindingHash !== action.bindingHash) {
+    throw new TypeError("Teaching multi-select action binding hash does not match payload");
+  }
+}
+
+function validateTeachingMultiSelectStage(input: {
+  readonly binding: TeachingRuntimeBinding;
+  readonly action: TeachingSelectionActionBinding;
+  readonly stage: TeachingMultiSelectStage;
+}): TeachingMultiSelectStage {
+  assertMultiSelectAction(input.binding, input.action);
+  const stage = input.stage;
+  if (
+    stage.actionKey !== input.action.actionKey ||
+    stage.actionBindingHash !== input.action.bindingHash ||
+    stage.expiresAt !== input.action.expiresAt
+  ) {
+    throw new TypeError("Teaching multi-select stage does not match the exact action binding");
+  }
+  if (
+    stage.state !== "collecting" &&
+    stage.state !== "committed"
+  ) {
+    throw new TypeError("Teaching multi-select stage state is invalid");
+  }
+  if (
+    !Number.isSafeInteger(stage.revision) ||
+    stage.revision < 0 ||
+    stage.revision > 10_000
+  ) {
+    throw new TypeError("Teaching multi-select stage revision is invalid");
+  }
+  if (
+    !Array.isArray(stage.selectedOptionKeys) ||
+    stage.selectedOptionKeys.length > input.action.rubric.allowedOptionKeys.length
+  ) {
+    throw new TypeError("Teaching multi-select staged options are invalid");
+  }
+
+  const selected = stage.selectedOptionKeys.map((value) =>
+    value.trim().toLowerCase()
+  );
+  if (
+    new Set(selected).size !== selected.length ||
+    selected.some(
+      (optionKey) => !input.action.rubric.allowedOptionKeys.includes(optionKey),
+    )
+  ) {
+    throw new TypeError("Teaching multi-select staged options are invalid");
+  }
+  const canonicalSelected = [...selected].sort();
+  if (
+    selected.some((optionKey, index) => optionKey !== canonicalSelected[index])
+  ) {
+    throw new TypeError("Teaching multi-select staged options must be canonical");
+  }
+  if (stage.state === "committed" && selected.length === 0) {
+    throw new TypeError("Committed Teaching multi-select stage cannot be empty");
+  }
+
+  const payload = multiSelectStagePayload({
+    actionKey: stage.actionKey,
+    actionBindingHash: stage.actionBindingHash,
+    state: stage.state,
+    selectedOptionKeys: canonicalSelected,
+    revision: stage.revision,
+    expiresAt: stage.expiresAt,
+  });
+  if (stage.stageHash !== hashMultiSelectStage(payload)) {
+    throw new TypeError("Teaching multi-select stage hash does not match payload");
+  }
+  return Object.freeze({
+    ...payload,
+    stageHash: stage.stageHash,
+  });
+}
+
+export function createTeachingMultiSelectStage(input: {
+  readonly binding: TeachingRuntimeBinding;
+  readonly action: TeachingSelectionActionBinding;
+}): TeachingMultiSelectStage {
+  assertMultiSelectAction(input.binding, input.action);
+  const payload = multiSelectStagePayload({
+    actionKey: input.action.actionKey,
+    actionBindingHash: input.action.bindingHash,
+    state: "collecting",
+    selectedOptionKeys: Object.freeze([] as string[]),
+    revision: 0,
+    expiresAt: input.action.expiresAt,
+  });
+  return Object.freeze({
+    ...payload,
+    stageHash: hashMultiSelectStage(payload),
+  });
+}
+
+export function applyTeachingMultiSelectStageCommand(input: {
+  readonly binding: TeachingRuntimeBinding;
+  readonly action: TeachingSelectionActionBinding;
+  readonly stage: TeachingMultiSelectStage;
+  readonly command: TeachingMultiSelectStageCommand;
+  readonly now: Instant;
+}):
+  | Readonly<{
+      kind: "staged";
+      stage: TeachingMultiSelectStage;
+    }>
+  | Readonly<{
+      kind: "committed";
+      stage: TeachingMultiSelectStage;
+      selection: TeachingOpaqueSelection;
+    }> {
+  const stage = validateTeachingMultiSelectStage(input);
+  if (Date.parse(toInstant(input.now)) > Date.parse(stage.expiresAt)) {
+    throw new TypeError("Teaching multi-select stage has expired");
+  }
+
+  if (input.command.kind === "commit") {
+    if (stage.selectedOptionKeys.length === 0) {
+      throw new TypeError("Teaching multi-select requires at least one selected option");
+    }
+    if (stage.state === "committed") {
+      return Object.freeze({
+        kind: "committed" as const,
+        stage,
+        selection: Object.freeze({
+          actionKey: stage.actionKey,
+          selectedOptionKeys: Object.freeze([...stage.selectedOptionKeys]),
+        }),
+      });
+    }
+    const payload = multiSelectStagePayload({
+      actionKey: stage.actionKey,
+      actionBindingHash: stage.actionBindingHash,
+      state: "committed",
+      selectedOptionKeys: stage.selectedOptionKeys,
+      revision: stage.revision + 1,
+      expiresAt: stage.expiresAt,
+    });
+    const committed = Object.freeze({
+      ...payload,
+      stageHash: hashMultiSelectStage(payload),
+    });
+    return Object.freeze({
+      kind: "committed" as const,
+      stage: committed,
+      selection: Object.freeze({
+        actionKey: committed.actionKey,
+        selectedOptionKeys: Object.freeze([...committed.selectedOptionKeys]),
+      }),
+    });
+  }
+
+  if (stage.state !== "collecting") {
+    throw new TypeError("Committed Teaching multi-select stage cannot be changed");
+  }
+  const optionKey = input.command.optionKey.trim().toLowerCase();
+  if (!input.action.rubric.allowedOptionKeys.includes(optionKey)) {
+    throw new TypeError("Teaching multi-select toggle option is not allowed");
+  }
+  const selected = new Set(stage.selectedOptionKeys);
+  if (selected.has(optionKey)) selected.delete(optionKey);
+  else selected.add(optionKey);
+  const selectedOptionKeys = Object.freeze([...selected].sort());
+  const payload = multiSelectStagePayload({
+    actionKey: stage.actionKey,
+    actionBindingHash: stage.actionBindingHash,
+    state: "collecting",
+    selectedOptionKeys,
+    revision: stage.revision + 1,
+    expiresAt: stage.expiresAt,
+  });
+  const nextStage = Object.freeze({
+    ...payload,
+    stageHash: hashMultiSelectStage(payload),
+  });
+  return Object.freeze({
+    kind: "staged" as const,
+    stage: nextStage,
+  });
+}
+
+export interface TeachingChannelMultiSelectBinding {
+  readonly callbackToken: string;
+  readonly actionKey: string;
+  readonly actionBindingHash: string;
+  readonly stageHash: string;
+  readonly stageRevision: number;
+  readonly command: "toggle" | "commit";
+  readonly optionKey: string | null;
+  readonly expiresAt: Instant;
+  readonly bindingHash: string;
+}
+
+export interface TeachingChannelMultiSelectOption {
+  readonly optionKey: string;
+  readonly label: string;
+  readonly selected: boolean;
+  readonly selectionId: string;
+}
+
+export interface TeachingChannelMultiSelectProjection {
+  readonly prompt: string;
+  readonly options: readonly TeachingChannelMultiSelectOption[];
+  readonly commitSelectionId: string;
+  readonly selectedOptionKeys: readonly string[];
+  readonly stageRevision: number;
+  readonly bindings: readonly TeachingChannelMultiSelectBinding[];
+  readonly expiresAt: Instant;
+}
+
+function createTeachingChannelMultiSelectBinding(input: {
+  readonly action: TeachingSelectionActionBinding;
+  readonly stage: TeachingMultiSelectStage;
+  readonly callbackToken: string;
+  readonly command: "toggle" | "commit";
+  readonly optionKey: string | null;
+}): TeachingChannelMultiSelectBinding {
+  const callbackToken = input.callbackToken.trim();
+  if (
+    callbackToken.length < 8 ||
+    callbackToken.length > 64 ||
+    !/^[A-Za-z0-9_-]+$/u.test(callbackToken)
+  ) {
+    throw new TypeError("Teaching channel multi-select callback token is invalid");
+  }
+  if (
+    input.command === "toggle" &&
+    (input.optionKey === null ||
+      !input.action.rubric.allowedOptionKeys.includes(input.optionKey))
+  ) {
+    throw new TypeError("Teaching channel multi-select toggle option is invalid");
+  }
+  if (input.command === "commit" && input.optionKey !== null) {
+    throw new TypeError("Teaching channel multi-select commit cannot carry an option");
+  }
+  const payload = Object.freeze({
+    callbackToken,
+    actionKey: input.action.actionKey,
+    actionBindingHash: input.action.bindingHash,
+    stageHash: input.stage.stageHash,
+    stageRevision: input.stage.revision,
+    command: input.command,
+    optionKey: input.optionKey,
+    expiresAt: input.action.expiresAt,
+  });
+  return Object.freeze({
+    ...payload,
+    bindingHash: `sha256:${fingerprintCanonicalJson(
+      JSON.parse(canonicalJson(payload)),
+    )}`,
+  });
+}
+
+export function createTeachingChannelMultiSelectProjection(input: {
+  readonly binding: TeachingRuntimeBinding;
+  readonly card: TeachingExerciseCard;
+  readonly action: TeachingSelectionActionBinding;
+  readonly stage: TeachingMultiSelectStage;
+  readonly callbackTokens: Readonly<Record<string, string>>;
+  readonly commitToken: string;
+}): TeachingChannelMultiSelectProjection {
+  const card = normalizeTeachingExerciseCard(input.card);
+  assertBindingScope(input.binding, card.relationshipId, card.skillVersionId);
+  assertMultiSelectAction(input.binding, input.action);
+  const stage = validateTeachingMultiSelectStage({
+    binding: input.binding,
+    action: input.action,
+    stage: input.stage,
+  });
+  if (stage.state !== "collecting") {
+    throw new TypeError("Committed Teaching multi-select cannot be projected for editing");
+  }
+  if (
+    card.kind !== "multi-select" ||
+    input.action.relationshipId !== card.relationshipId ||
+    input.action.skillVersionId !== card.skillVersionId ||
+    input.action.lessonStepKey !== card.lessonStepKey ||
+    input.action.exerciseKey !== card.exerciseKey
+  ) {
+    throw new TypeError("Teaching channel multi-select card does not match action scope");
+  }
+  const visible = [...card.options.map((option) => option.optionKey)].sort();
+  const allowed = [...input.action.rubric.allowedOptionKeys].sort();
+  if (
+    visible.length !== allowed.length ||
+    visible.some((optionKey, index) => optionKey !== allowed[index])
+  ) {
+    throw new TypeError("Teaching channel multi-select card options must match rubric");
+  }
+  const suppliedKeys = Object.keys(input.callbackTokens).sort();
+  if (
+    suppliedKeys.length !== allowed.length ||
+    suppliedKeys.some((optionKey, index) => optionKey !== allowed[index])
+  ) {
+    throw new TypeError("Teaching channel multi-select callback tokens are incomplete");
+  }
+
+  const bindings = card.options.map((option) =>
+    createTeachingChannelMultiSelectBinding({
+      action: input.action,
+      stage,
+      callbackToken: input.callbackTokens[option.optionKey]!,
+      command: "toggle",
+      optionKey: option.optionKey,
+    })
+  );
+  const commitBinding = createTeachingChannelMultiSelectBinding({
+    action: input.action,
+    stage,
+    callbackToken: input.commitToken,
+    command: "commit",
+    optionKey: null,
+  });
+  const allBindings = Object.freeze([...bindings, commitBinding]);
+  if (new Set(allBindings.map((item) => item.callbackToken)).size !== allBindings.length) {
+    throw new TypeError("Teaching channel multi-select callback tokens must be unique");
+  }
+
+  return Object.freeze({
+    prompt: card.prompt,
+    options: Object.freeze(
+      card.options.map((option, index) =>
+        Object.freeze({
+          optionKey: option.optionKey,
+          label: option.label,
+          selected: stage.selectedOptionKeys.includes(option.optionKey),
+          selectionId: bindings[index]!.callbackToken,
+        }),
+      ),
+    ),
+    commitSelectionId: commitBinding.callbackToken,
+    selectedOptionKeys: Object.freeze([...stage.selectedOptionKeys]),
+    stageRevision: stage.revision,
+    bindings: allBindings,
+    expiresAt: stage.expiresAt,
+  });
+}
+
+export function resolveTeachingChannelMultiSelectCommand(input: {
+  readonly selectionId: string;
+  readonly binding: TeachingChannelMultiSelectBinding;
+  readonly runtimeBinding: TeachingRuntimeBinding;
+  readonly action: TeachingSelectionActionBinding;
+  readonly stage: TeachingMultiSelectStage;
+  readonly now: Instant;
+}): TeachingMultiSelectStageCommand {
+  const stage = validateTeachingMultiSelectStage({
+    binding: input.runtimeBinding,
+    action: input.action,
+    stage: input.stage,
+  });
+  const payload = Object.freeze({
+    callbackToken: input.binding.callbackToken,
+    actionKey: input.binding.actionKey,
+    actionBindingHash: input.binding.actionBindingHash,
+    stageHash: input.binding.stageHash,
+    stageRevision: input.binding.stageRevision,
+    command: input.binding.command,
+    optionKey: input.binding.optionKey,
+    expiresAt: input.binding.expiresAt,
+  });
+  const expectedHash = `sha256:${fingerprintCanonicalJson(
+    JSON.parse(canonicalJson(payload)),
+  )}`;
+  if (input.binding.bindingHash !== expectedHash) {
+    throw new TypeError("Teaching channel multi-select binding hash does not match payload");
+  }
+  if (
+    input.selectionId !== input.binding.callbackToken ||
+    input.binding.actionKey !== input.action.actionKey ||
+    input.binding.actionBindingHash !== input.action.bindingHash ||
+    input.binding.stageHash !== stage.stageHash ||
+    input.binding.stageRevision !== stage.revision ||
+    input.binding.expiresAt !== stage.expiresAt
+  ) {
+    throw new TypeError("Teaching channel multi-select callback is stale or mismatched");
+  }
+  if (Date.parse(toInstant(input.now)) > Date.parse(stage.expiresAt)) {
+    throw new TypeError("Teaching channel multi-select callback has expired");
+  }
+  if (input.binding.command === "commit") {
+    if (input.binding.optionKey !== null) {
+      throw new TypeError("Teaching channel multi-select commit binding is invalid");
+    }
+    return Object.freeze({ kind: "commit" as const });
+  }
+  if (
+    input.binding.optionKey === null ||
+    !input.action.rubric.allowedOptionKeys.includes(input.binding.optionKey)
+  ) {
+    throw new TypeError("Teaching channel multi-select option binding is invalid");
+  }
+  return Object.freeze({
+    kind: "toggle" as const,
+    optionKey: input.binding.optionKey,
+  });
+}
+
 export interface TeachingSelectionAttempt {
   readonly requestId: RequestId;
   readonly payloadHash: string;
