@@ -29,7 +29,10 @@ const config: AdminAgentDelegationConfig = Object.freeze({
 });
 
 const authorizer = {
-  authorize: vi.fn(async () => ({ tenantId })),
+  authorize: vi.fn(async () => ({
+    tenantId,
+    operatorUserId: "user_0199cabc-1234-7abc-8def-1234567890ae",
+  })),
 } as never;
 
 describe("admin Agent action broker", () => {
@@ -98,6 +101,27 @@ describe("admin Agent action broker", () => {
 
     await expect(broker.execute({
       authorizationHeader: "Bearer operator",
+      characterId: gwaniId,
+      action: "offer.set-enabled",
+    })).rejects.toMatchObject({ statusCode: 403 });
+  });
+
+  it("refuses governed writes from anonymous bootstrap authority", async () => {
+    const bootstrapAuthorizer = {
+      authorize: vi.fn(async () => ({
+        tenantId,
+        operatorUserId: null,
+      })),
+    } as never;
+    const platformAdmin = {} as PlatformAdminService;
+    const broker = createAdminAgentActionBroker({
+      config,
+      authorizer: bootstrapAuthorizer,
+      platformAdmin,
+    });
+
+    await expect(broker.execute({
+      authorizationHeader: "Bearer bootstrap",
       characterId: gwaniId,
       action: "offer.set-enabled",
     })).rejects.toMatchObject({ statusCode: 403 });
