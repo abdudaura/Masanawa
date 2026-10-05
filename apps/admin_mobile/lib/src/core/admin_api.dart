@@ -836,19 +836,6 @@ class AdminApi {
         .toList(growable: false);
   }
 
-  Future<AdminUser> setUserState(AdminUser user, String state) async {
-    final response = await _request(
-      () => _dio.put<dynamic>(
-        '/v1/admin/users/${Uri.encodeComponent(user.userId)}/state',
-        options: _auth,
-        data: {
-          'state': state,
-          'expectedRevision': user.revision,
-        },
-      ),
-    );
-    return AdminUser.fromJson(_map(response.data));
-  }
 
   Future<List<AdminAgentRun>> agentRuns() async {
     final response = await _request(
