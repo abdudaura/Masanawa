@@ -28,4 +28,24 @@ compatible event payloads.
 Events contain references, status, amounts and summary metadata only. Raw chat message
 text/transcripts are not part of the event contract.
 
-Status: implementation started 2026-10-05.
+Status: additive event-contract implementation complete; export/persistence integration pending.
+
+Implemented:
+- one twin-economy event vocabulary for visits, conversations, purchases, gifts, paid
+  voice, owner access and earnings;
+- stable summary codes suitable for Activity/Wallet projection;
+- owner/participant/internal visibility marker;
+- reference IDs instead of embedded financial/runtime objects;
+- exact optional/required Credit amount rules by event type;
+- money forbidden on visit/conversation observation events;
+- explicit helper rejecting raw message/text/transcript/prompt/response/content fields;
+- focused privacy and validation tests.
+
+Not yet integrated:
+- packages/events index export;
+- outbox/persistence wiring;
+- emission from transfer/gift/voice/owner-access/attribution features;
+- Activity and Wallet history source adapters;
+- Gateway/mobile composition.
+
+No existing event package files were modified.
