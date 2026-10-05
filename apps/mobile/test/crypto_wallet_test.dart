@@ -22,8 +22,12 @@ class _CryptoGatewayAdapter implements HttpClientAdapter {
           'deposits': true,
           'withdrawals': true,
           'conversions': true,
+          'fiatOnRamp': true,
+          'fiatCurrencies': ['NGN', 'USD'],
+          'fiatSettlementProviderCode': 'USDTTRC20',
           'payoutReason': null,
           'conversionReason': null,
+          'fiatOnRampReason': null,
         },
       ('GET', '/v1/financial/crypto/routes') => {
           'routes': [
@@ -60,13 +64,41 @@ class _CryptoGatewayAdapter implements HttpClientAdapter {
       ('GET', '/v1/financial/crypto/intents/request_missing') => null,
       ('POST', '/v1/financial/crypto/deposits') =>
         _intent(operation: 'deposit', payAddress: 'deposit-address'),
+      ('POST', '/v1/financial/crypto/purchases') => {
+          'requestId': 'request_buy',
+          'fiatAmount': '1500',
+          'fiatCurrency': 'NGN',
+          'settlementAsset': 'USDTTRC20',
+          'settlementNetwork': 'tron',
+          'cryptoAmount': null,
+          'status': 'awaiting_payment',
+          'providerInvoiceId': 'invoice-1',
+          'providerPaymentId': null,
+          'checkoutUrl': 'https://nowpayments.io/payment/?iid=invoice-1',
+          'outcomeUnknown': false,
+        },
+      ('POST', '/v1/financial/crypto/purchases/request_buy/refresh') => {
+          'requestId': 'request_buy',
+          'fiatAmount': '1500',
+          'fiatCurrency': 'NGN',
+          'settlementAsset': 'USDTTRC20',
+          'settlementNetwork': 'tron',
+          'cryptoAmount': '1.234567',
+          'status': 'succeeded',
+          'providerInvoiceId': 'invoice-1',
+          'providerPaymentId': 'payment-1',
+          'checkoutUrl': 'https://nowpayments.io/payment/?iid=invoice-1',
+          'outcomeUnknown': false,
+        },
       ('POST', '/v1/financial/crypto/withdrawals/quote') => {
           'providerCode': 'USDTTRC20',
           'amount': '10',
           'destinationAddress': 'wallet-address',
           'minimumAmount': '1',
           'networkFee': '0.1',
+          'networkFeeMode': 'receiver',
           'feePayer': 'user',
+          'estimatedReceiveAmount': '9.9',
           'quotedAt': '2026-10-05T00:00:00Z',
         },
       ('POST', '/v1/financial/crypto/withdrawals') =>
@@ -210,7 +242,11 @@ void main() {
       readAccessToken: () => 'private-user-token',
     );
 
-    expect((await transport.capabilities()).conversions, isTrue);
+    final capabilities = await transport.capabilities();
+    expect(capabilities.conversions, isTrue);
+    expect(capabilities.fiatOnRamp, isTrue);
+    expect(capabilities.fiatCurrencies, ['NGN', 'USD']);
+    expect(capabilities.fiatSettlementProviderCode, 'USDTTRC20');
     expect((await transport.depositRoutes()).single.providerCode, 'USDTTRC20');
     expect((await transport.conversionRoutes()).length, 2);
     expect((await transport.balance('USDTTRC20')).amount, '12.34');
@@ -224,13 +260,27 @@ void main() {
     );
     expect(deposit.payAddress, 'deposit-address');
 
+    final purchase = await transport.createFiatPurchase(
+      requestId: 'request_buy',
+      fiatAmount: '1500',
+      fiatCurrency: 'NGN',
+    );
+    expect(purchase.providerInvoiceId, 'invoice-1');
+    expect(purchase.checkoutUrl, 'https://nowpayments.io/payment/?iid=invoice-1');
+    expect(purchase.settlementAsset, 'USDTTRC20');
+    final settledPurchase = await transport.refreshFiatPurchase('request_buy');
+    expect(settledPurchase.status, 'succeeded');
+    expect(settledPurchase.cryptoAmount, '1.234567');
+
     final withdrawalQuote = await transport.quoteWithdrawal(
       providerCode: 'USDTTRC20',
       amount: '10',
       destinationAddress: 'wallet-address',
     );
     expect(withdrawalQuote.networkFee, '0.1');
+    expect(withdrawalQuote.networkFeeMode, 'receiver');
     expect(withdrawalQuote.feePayer, 'user');
+    expect(withdrawalQuote.estimatedReceiveAmount, '9.9');
 
     await transport.createWithdrawal(
       requestId: 'request_test',
@@ -258,6 +308,11 @@ void main() {
     expect(conversion.providerTargetAmount, '0.00016');
 
     final paths = adapter.requests.map((request) => request.uri.path).toList();
+    expect(paths, contains('/v1/financial/crypto/purchases'));
+    expect(
+      paths,
+      contains('/v1/financial/crypto/purchases/request_buy/refresh'),
+    );
     expect(paths, contains('/v1/financial/crypto/withdrawals/quote'));
     expect(paths, contains('/v1/financial/crypto/conversions/quote'));
     expect(paths, contains('/v1/financial/crypto/conversion-routes'));
