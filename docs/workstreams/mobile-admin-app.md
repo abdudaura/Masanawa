@@ -4,7 +4,7 @@ Owner/window: ChatGPT mobile admin control-plane implementation, explicitly assi
 
 Branch: `work/mobile-admin-app-20261005`
 Original base: `24c8ed783cc2b4797e2c915a698b69ee997f3995`
-Reconciled with current `main` through `a97df254ff04c717e940a7c86f4b5824dea7629d` via merge commit `c11e6bfd410580ec7afb500a5c4b305273c9aeaa`.
+Reconciled with current `main` through `b8d415f09424ddf3e1a90a578f54c5792668bc3b` via merge commit `ef28e5a80be98e47068b625c04babc07e85bf9b8`.
 
 Owned paths:
 - `apps/admin_mobile/**`
@@ -50,13 +50,13 @@ Intentionally gated:
 - Channels, Devices, Workflows, billing/crypto administration and later Social/Studio/Plugins/Agent Phone controls integrate as their active platform contracts land.
 
 Verification:
-- branch was reconciled with current main after the canonical customer PlatformSession work landed; PR #129 returned to zero commits behind main and mergeable before this handoff update;
+- branch was reconciled again with current `main` after the Twin merge wave; PR #129 is zero commits behind `main` and mergeable at handoff;
 - current branch is isolated from customer `apps/mobile/**`;
 - PR #129 Foundation CI is currently failing before checkout with zero steps and runner_id 0; this is runner allocation failure, not test evidence;
 - Flutter/Dart SDK is unavailable in this execution environment, so physical Flutter analyze/APK build is not claimed;
 - TypeScript/API source shapes were audited against current schemas and existing domain/storage semantics.
 - approved replay regression coverage now proves the broker does not execute before approval, executes a canonical write after exact approved replay, returns already-succeeded replays without a second mutation, and marks ambiguous write failures for reconciliation.
-- the latest Foundation CI attempt still terminates before checkout with `steps: []` and `runner_id: 0`; this remains runner-allocation failure rather than executed test evidence.
+- the latest Foundation CI attempt after reconciliation is run `37379609955`; its only job has `steps: []` and `runner_id: 0`, so this remains runner-allocation failure rather than executed test evidence.
 
 Canonical capability map: `docs/ADMIN-CONTROL-PLANE.md`.
 
