@@ -63,6 +63,10 @@ export function platformProductMigrationRoots(): readonly MigrationRoot[] {
       owner: "commerce",
       directory: packageMigrationDirectory("@masanawa/commerce"),
     }),
+    Object.freeze({
+      owner: "workflows",
+      directory: packageMigrationDirectory("@masanawa/workflows"),
+    }),
   ]);
 }
 

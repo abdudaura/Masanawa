@@ -370,9 +370,11 @@ export function assertWorkflowRunAccess(
   action: WorkflowRunAction,
   at: Instant,
 ): void {
+  const runScope = authority.resourceScope.workflowRunIds;
   const scopedRun =
     action === "create" ||
-    authority.resourceScope.workflowRunIds?.includes(run.workflowRunId) === true;
+    runScope === undefined ||
+    runScope.includes(run.workflowRunId);
   const valid =
     authority.tenantId === run.tenantId &&
     authority.capabilities.includes(`workflows.run.${action}`) &&

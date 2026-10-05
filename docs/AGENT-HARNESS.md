@@ -173,3 +173,29 @@ Implemented:
 This is still a domain-contract checkpoint, not persistence qualification. PostgreSQL storage,
 restore compatibility checks and resumed present-authority revalidation remain the next slice.
 Do not claim service-restart-safe Work until those pieces are implemented and verified.
+
+
+## PostgreSQL Work persistence checkpoint — 2026-10-05
+
+The canonical Work repository is now backed by a dedicated `workflows` PostgreSQL schema.
+
+Implemented:
+- durable Tasks, WorkflowRuns and immutable WorkflowCheckpoints;
+- optimistic revision conflicts fail closed;
+- terminal Work cannot be restarted;
+- legal lifecycle transitions are enforced both in TypeScript and database triggers;
+- checkpoint append is atomic with WorkflowRun checkpoint revision and exact replay is safe;
+- repository operations revalidate current policy/revocation state inside their transactions;
+- platform product migration/readiness now includes the `workflows` migration owner;
+- restart recovery is covered by constructing fresh repository instances against persisted state.
+
+Authority semantics:
+Relationship scope grants access to that relationship's Work when Task/Workflow ID lists are
+omitted. When those ID lists are present, they narrow the scope. This is intentional and must
+not be reverted to "missing list means deny all."
+
+Remaining boundary:
+persistence means Work state survives process/service restart, but there is not yet a concrete
+graph executor that automatically resumes execution. The next slice must validate graph
+signature compatibility, restore checkpoint state, and revalidate current authority immediately
+before resumed consequential mutations.

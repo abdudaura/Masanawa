@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { createAuthorityContext } from "@masanawa/security";
 import {
   createCanonicalId,
   nowInstant,
 } from "@masanawa/contracts";
 import {
+  assertWorkflowRunAccess,
   assertWorkflowRunTransition,
   normalizeWorkflowCheckpoint,
   normalizeWorkflowRun,
@@ -49,6 +51,38 @@ describe("WorkflowRun lifecycle", () => {
     expect(() =>
       assertWorkflowRunTransition("completed", "running"),
     ).toThrowError(/cannot transition/u);
+  });
+
+  it("uses relationship scope by default and optional run IDs as a narrowing filter", () => {
+    const value = run("running");
+    const base = createAuthorityContext({
+      tenantId: value.tenantId,
+      principal: { kind: "user", userId: value.userId },
+      scopes: ["workflows"],
+      capabilities: ["workflows.run.read"],
+      resourceScope: { relationshipIds: [value.relationshipId] },
+      policyRevision: "test",
+      approvalIds: [],
+      delegationChain: [],
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+      issuedAt: value.createdAt,
+    });
+
+    expect(() =>
+      assertWorkflowRunAccess(base, value, "read", value.createdAt),
+    ).not.toThrow();
+
+    const denied = {
+      ...base,
+      resourceScope: {
+        ...base.resourceScope,
+        workflowRunIds: [createCanonicalId("workflow-run")],
+      },
+    };
+    expect(() =>
+      assertWorkflowRunAccess(denied, value, "read", value.createdAt),
+    ).toThrowError(/does not allow/u);
   });
 
   it("requires pending approvals only while waiting for approval", () => {
