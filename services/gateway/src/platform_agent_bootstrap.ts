@@ -8,6 +8,7 @@ import {
   createCanonicalId,
   nowInstant,
   type CharacterId,
+  type CharacterVersionId,
   type Instant,
   type TenantId,
 } from "@masanawa/contracts";
@@ -41,7 +42,7 @@ export interface PlatformAgentIdentityProvisioner {
   provision(input: Readonly<{
     tenantId: TenantId;
     characterId: CharacterId;
-    characterVersionId: ReturnType<typeof createCanonicalId<"character-version">>;
+    characterVersionId: CharacterVersionId;
     constitution: CharacterConstitution;
     createdAt: Instant;
   }>): Promise<void>;
