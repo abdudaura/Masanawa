@@ -125,8 +125,10 @@ Required fields:
 - optional usage cap;
 - effective time.
 
-Initial default: **7 days**, enabled, with no default usage cap. Admin may later change
-duration, enablement or cap without an app release.
+Initial default duration: **7 days**, enabled. Usage caps may differ by paid feature.
+Twin voice begins without a default unit cap; owner access begins with **one completed
+human session** inside the 7-day window. Admin may later change duration, enablement or
+feature-specific caps without an app release.
 
 Trial starts on first qualifying admitted use, not account signup. The server records the
 policy revision, start and expiry. A client timer is not entitlement truth.
