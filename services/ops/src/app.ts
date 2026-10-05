@@ -70,6 +70,7 @@ const AdminAgentActionResultSchema = Type.Object(
     approvalId: Type.Optional(Type.String()),
     operationId: Type.Optional(Type.String()),
     reused: Type.Optional(Type.Boolean()),
+    replayed: Type.Optional(Type.Boolean()),
   },
   { additionalProperties: false },
 );
