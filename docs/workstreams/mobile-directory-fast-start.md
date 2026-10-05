@@ -34,4 +34,18 @@ Acceptance:
 - access-token refresh alone does not reset directory state;
 - docs updated at checkpoint.
 
-Status: active.
+Implemented:
+- AgentDirectoryEntry has a cache-safe presentation JSON projection;
+- account-scoped file cache added under application-support storage;
+- signed-in startup hydrates cached agents first and refreshes live data afterward;
+- provider watches canonical User identity rather than rotating access-token values;
+- 401/403 clears cached + visible roster; transient failures retain it;
+- focused tests cover cache-first render, token rotation, sign-out, cross-account isolation,
+  auth denial and presentation serialization.
+
+Verification:
+- changed-path audit is limited to claimed mobile presentation/cache/test/docs paths;
+- no APK rebuild was performed;
+- executable Flutter tests still require an available runner.
+
+Status: implementation checkpoint complete pending PR/runner verification.
