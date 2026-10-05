@@ -68,6 +68,9 @@ import {
   createPostgresBillingQuoteRepository,
   createPostgresBillingFulfillmentStore,
   createPostgresBillingWebhookRepository,
+  createPostgresTwinProfileRepository,
+  createPostgresTwinRuntimeRepository,
+  createPostgresTwinEconomyEventStore,
   withTransaction,
 } from "@masanawa/postgres";
 import {
@@ -157,6 +160,10 @@ import {
   ensureDefaultPlatformAgents,
   type PlatformAgentIdentityProvisioner,
 } from "./platform_agent_bootstrap.js";
+import {
+  createTwinProductionRuntime,
+  type TwinProductionRuntime,
+} from "./twin_production_runtime.js";
 
 export type ServiceSignal = "SIGINT" | "SIGTERM";
 
@@ -193,6 +200,9 @@ export interface ServiceDatabaseDependency {
     identity: Readonly<{ tenantId: string; userId: string }>,
   ) => BillingFulfillmentStore;
   readonly billingWebhooks?: ReturnType<typeof createPostgresBillingWebhookRepository>;
+  readonly twinProfiles?: ReturnType<typeof createPostgresTwinProfileRepository>;
+  readonly twinEconomy?: ReturnType<typeof createPostgresTwinRuntimeRepository>;
+  readonly twinEvents?: ReturnType<typeof createPostgresTwinEconomyEventStore>;
   close(): Promise<void>;
 }
 
@@ -329,6 +339,9 @@ function createDefaultDatabaseDependency(
     billingStore: (identity: Readonly<{ tenantId: string; userId: string }>) =>
       createPostgresBillingFulfillmentStore(database.pool, identity),
     billingWebhooks: createPostgresBillingWebhookRepository(database.pool),
+    twinProfiles: createPostgresTwinProfileRepository(database.pool),
+    twinEconomy: createPostgresTwinRuntimeRepository(database.pool),
+    twinEvents: createPostgresTwinEconomyEventStore(database.pool),
     close: database.close,
   });
 }
@@ -383,6 +396,31 @@ function readCsvEnv(value: string | undefined): readonly string[] {
   ]);
 }
 
+function readPrincipalSet(value: string | undefined): ReadonlySet<string> {
+  if (!value?.trim()) return new Set();
+  return new Set(
+    value
+      .split(",")
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+      .map((entry) => (entry.includes("@") ? entry.toLowerCase() : entry)),
+  );
+}
+
+function boundedEnvInteger(
+  value: string | undefined,
+  fallback: number,
+  min: number,
+  max: number,
+  name: string,
+): number {
+  const parsed = value?.trim() ? Number(value) : fallback;
+  if (!Number.isSafeInteger(parsed) || parsed < min || parsed > max) {
+    throw new TypeError(`${name} is invalid`);
+  }
+  return parsed;
+}
+
 function readWithdrawalAllowlist(value: string | undefined): ReadonlySet<string> {
   if (!value?.trim()) return new Set();
   let parsed: unknown;
@@ -428,6 +466,8 @@ export async function startGatewayService(
   let strategy = options.agentStrategy;
   let nativeAudio;
   let liveVoiceTokens: LiveVoiceTokenService | undefined;
+  let twinProduction: TwinProductionRuntime | undefined =
+    options.appOptions?.twinProduction;
   let pushSender: MobilePushSender | undefined;
   let customerAuth: CustomerAuthService | undefined =
     options.appOptions?.customerAuth;
@@ -612,6 +652,79 @@ export async function startGatewayService(
       commerceAuthorizer = customerAuthorizers.commerce;
     }
 
+    if (
+      !twinProduction &&
+      database.twinProfiles &&
+      database.twinEconomy &&
+      database.twinEvents &&
+      database.commerce &&
+      database.personalClones
+    ) {
+      const adminPrincipals = readPrincipalSet(
+        env.MASANAWA_ADMIN_PRINCIPALS ??
+          env.MASANAWA_ADMIN_USER_IDS ??
+          env.MASANAWA_ADMIN_EMAILS,
+      );
+      twinProduction = createTwinProductionRuntime({
+        sessions: customerSessions,
+        profiles: database.twinProfiles,
+        economy: database.twinEconomy,
+        events: database.twinEvents,
+        commerce: database.commerce,
+        personalClones: database.personalClones,
+        publicTwinBaseUrl:
+          env.MASANAWA_TWIN_PUBLIC_BASE_URL?.trim() ||
+          "https://masanawa.com/twin",
+        adminPrincipals,
+        voice: {
+          unitSeconds: boundedEnvInteger(
+            env.MASANAWA_TWIN_VOICE_UNIT_SECONDS,
+            60,
+            1,
+            3600,
+            "MASANAWA_TWIN_VOICE_UNIT_SECONDS",
+          ),
+          priceCreditsPerUnit: boundedEnvInteger(
+            env.MASANAWA_TWIN_VOICE_PRICE_CREDITS_PER_UNIT,
+            10,
+            1,
+            1_000_000_000,
+            "MASANAWA_TWIN_VOICE_PRICE_CREDITS_PER_UNIT",
+          ),
+          ownerShareBasisPoints: boundedEnvInteger(
+            env.MASANAWA_TWIN_VOICE_OWNER_SHARE_BPS,
+            8000,
+            0,
+            10_000,
+            "MASANAWA_TWIN_VOICE_OWNER_SHARE_BPS",
+          ),
+        },
+        ownerAccess: {
+          platformFeeBasisPoints: boundedEnvInteger(
+            env.MASANAWA_OWNER_ACCESS_PLATFORM_FEE_BPS,
+            2000,
+            0,
+            10_000,
+            "MASANAWA_OWNER_ACCESS_PLATFORM_FEE_BPS",
+          ),
+          acceptWithinMinutes: boundedEnvInteger(
+            env.MASANAWA_OWNER_ACCESS_ACCEPT_WITHIN_MINUTES,
+            1440,
+            5,
+            7 * 24 * 60,
+            "MASANAWA_OWNER_ACCESS_ACCEPT_WITHIN_MINUTES",
+          ),
+          startGraceMinutes: boundedEnvInteger(
+            env.MASANAWA_OWNER_ACCESS_START_GRACE_MINUTES,
+            15,
+            1,
+            180,
+            "MASANAWA_OWNER_ACCESS_START_GRACE_MINUTES",
+          ),
+        },
+      });
+    }
+
     let productionGeminiPool: GeminiCredentialPool | undefined;
     if (!strategy) {
       if (!database.skills || !database.skillGuides) {
@@ -746,6 +859,9 @@ export async function startGatewayService(
           authorizer: conversationAuthorizer,
           model: liveModel,
           voiceName: liveVoice,
+          ...(twinProduction
+            ? { paidVoiceAdmission: twinProduction.voiceAdmissionGate }
+            : {}),
         });
       }
     }
@@ -1151,6 +1267,7 @@ export async function startGatewayService(
       ...(composedBillingFinancial ? { billingFinancial: composedBillingFinancial } : {}),
       ...(composedBillingCheckout ? { billingCheckout: composedBillingCheckout } : {}),
       ...(composedFinancial ? { financial: composedFinancial } : {}),
+      ...(twinProduction ? { twinProduction } : {}),
       ...(composedDirectory ? { agentDirectory: composedDirectory } : {}),
       ...(composedConversation
         ? { agentConversation: composedConversation }
