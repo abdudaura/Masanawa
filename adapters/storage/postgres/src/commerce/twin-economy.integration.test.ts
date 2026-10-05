@@ -172,6 +172,160 @@ describeDatabase("Twin economy PostgreSQL acceptance", () => {
     ).resolves.toBeNull();
   });
 
+  it("allows exactly one concurrent owner-request state transition", async () => {
+    const repository = createPostgresTwinRuntimeRepository(pool);
+    const tenantId = createCanonicalId("tenant");
+    const requesterUserId = createCanonicalId("user");
+    const ownerUserId = createCanonicalId("user");
+    const characterId = createCanonicalId("character");
+    const requestId = "owner-request-cas-race";
+    const base = {
+      requestId,
+      requesterUserId,
+      ownerUserId,
+      originatingCharacterId: characterId,
+      modality: "voice" as const,
+      durationMinutes: 15,
+      priceCredits: 0,
+      platformFeeCredits: 0,
+      ownerEarningCredits: 0,
+      chargeMode: "trial" as const,
+      trialPolicyRevision: 1,
+      state: "requested" as const,
+      requestedAt: "2026-10-05T12:00:00.000Z",
+      acceptBy: "2026-10-05T13:00:00.000Z",
+      scheduledFor: null,
+      startedAt: null,
+      completedAt: null,
+    };
+    await repository.putOwnerAccessRequest({
+      tenantId,
+      request: base,
+      reservationId: null,
+      reservedCredits: 0,
+    });
+
+    const [accepted, cancelled] = await Promise.all([
+      repository.transitionOwnerAccessRequest({
+        tenantId,
+        expectedState: "requested",
+        request: { ...base, state: "accepted" },
+        reservationId: null,
+        reservedCredits: 0,
+      }),
+      repository.transitionOwnerAccessRequest({
+        tenantId,
+        expectedState: "requested",
+        request: { ...base, state: "cancelled" },
+        reservationId: null,
+        reservedCredits: 0,
+      }),
+    ]);
+
+    expect([accepted.applied, cancelled.applied].filter(Boolean)).toHaveLength(1);
+    const persisted = await repository.readOwnerAccessRequest({
+      tenantId,
+      requestId,
+    });
+    expect(["accepted", "cancelled"]).toContain(persisted?.state);
+    expect(persisted?.state).toBe(
+      accepted.applied ? "accepted" : "cancelled",
+    );
+  });
+
+  it("finds only due or recoverable owner-access lifecycle work", async () => {
+    const repository = createPostgresTwinRuntimeRepository(pool);
+    const tenantId = createCanonicalId("tenant");
+    const requesterUserId = createCanonicalId("user");
+    const ownerUserId = createCanonicalId("user");
+    const characterId = createCanonicalId("character");
+    const at = "2026-10-05T14:00:00.000Z";
+
+    const put = async (input: {
+      requestId: string;
+      state: "requested" | "scheduled" | "active" | "expired" | "completed";
+      acceptBy?: string;
+      scheduledFor?: string | null;
+    }) => {
+      await repository.putOwnerAccessRequest({
+        tenantId,
+        request: {
+          requestId: input.requestId,
+          requesterUserId,
+          ownerUserId,
+          originatingCharacterId: characterId,
+          modality: "voice",
+          durationMinutes: 15,
+          priceCredits: 0,
+          platformFeeCredits: 0,
+          ownerEarningCredits: 0,
+          chargeMode: "trial",
+          trialPolicyRevision: 1,
+          state: input.state,
+          requestedAt: "2026-10-05T12:00:00.000Z",
+          acceptBy: input.acceptBy ?? "2026-10-05T15:00:00.000Z",
+          scheduledFor: input.scheduledFor ?? null,
+          startedAt: input.state === "active"
+            ? "2026-10-05T13:50:00.000Z"
+            : null,
+          completedAt: input.state === "completed"
+            ? "2026-10-05T13:59:00.000Z"
+            : null,
+        },
+        reservationId: null,
+        reservedCredits: 0,
+      });
+    };
+
+    await put({
+      requestId: "owner-due-requested",
+      state: "requested",
+      acceptBy: "2026-10-05T13:59:00.000Z",
+    });
+    await put({
+      requestId: "owner-future-requested",
+      state: "requested",
+      acceptBy: "2026-10-05T14:01:00.000Z",
+    });
+    await put({
+      requestId: "owner-due-scheduled",
+      state: "scheduled",
+      scheduledFor: "2026-10-05T13:44:00.000Z",
+    });
+    await put({
+      requestId: "owner-future-scheduled",
+      state: "scheduled",
+      scheduledFor: "2026-10-05T13:50:00.000Z",
+    });
+    await put({
+      requestId: "owner-active",
+      state: "active",
+    });
+    await put({
+      requestId: "owner-repair-expired",
+      state: "expired",
+    });
+    await put({
+      requestId: "owner-repair-completed",
+      state: "completed",
+    });
+
+    const candidates = await repository.listOwnerAccessLifecycleCandidates({
+      tenantId,
+      at,
+      startGraceMinutes: 15,
+      limit: 100,
+    });
+    expect(new Set(candidates.map((item) => item.requestId))).toEqual(
+      new Set([
+        "owner-due-requested",
+        "owner-due-scheduled",
+        "owner-repair-expired",
+        "owner-repair-completed",
+      ]),
+    );
+  });
+
   it("converges concurrent exact replays onto one durable receipt", async () => {
     const repository = createPostgresTwinRuntimeRepository(pool);
     const tenantId = createCanonicalId("tenant");
