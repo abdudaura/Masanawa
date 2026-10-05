@@ -11,15 +11,33 @@ void main() {
         '/chat/character_abc');
   });
 
+  test('public Twin links resolve through the privacy-aware Twin lookup route', () {
+    expect(
+      shellDeepLinkRoute(Uri.parse('https://masanawa.com/twin/amina_bello')),
+      '/twin/amina_bello',
+    );
+    expect(
+      shellDeepLinkRoute(Uri.parse('masanawa://twin/amina_bello')),
+      '/twin/amina_bello',
+    );
+  });
+
   test('rejects foreign schemes, credentials, ports and malformed identities', () {
     for (final raw in [
       'https://chat/character_abc',
+      'https://evil.example/twin/amina_bello',
+      'https://user@masanawa.com/twin/amina_bello',
+      'https://masanawa.com:444/twin/amina_bello',
+      'https://masanawa.com/twin/ab',
+      'https://masanawa.com/twin/amina/bello',
       'masanawa://evil/character_abc',
       'masanawa://user@chat/character_abc',
       'masanawa://chat:42/character_abc',
       'masanawa://chat/character_',
       'masanawa://chat/character_a%2Fb',
       'masanawa://chat/character_abc/extra',
+      'masanawa://twin/ab',
+      'masanawa://twin/amina/bello',
     ]) {
       expect(shellDeepLinkRoute(Uri.parse(raw)), isNull, reason: raw);
     }
@@ -35,6 +53,17 @@ void main() {
     pending.offer(Uri.parse('masanawa://chat/character_abc'));
     expect(pending.take(ready: false), isNull);
     expect(pending.take(ready: true)?.path, '/character_abc');
+    expect(pending.take(ready: true), isNull);
+  });
+
+  test('cold-start public Twin link also waits for authentication', () {
+    final pending = PendingDeepLink();
+    pending.offer(Uri.parse('https://masanawa.com/twin/amina_bello'));
+    expect(pending.take(ready: false), isNull);
+    expect(
+      shellDeepLinkRoute(pending.take(ready: true)!),
+      '/twin/amina_bello',
+    );
     expect(pending.take(ready: true), isNull);
   });
 
