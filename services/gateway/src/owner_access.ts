@@ -105,6 +105,12 @@ export interface OwnerAccessRequestPort {
     readonly characterId: CharacterId;
     readonly requestId: string;
   }): Promise<OwnerAccessRequest | null>;
+
+  latestForRequester(input: {
+    readonly tenantId: TenantId;
+    readonly requesterUserId: UserId;
+    readonly characterId: CharacterId;
+  }): Promise<OwnerAccessRequest | null>;
 }
 
 export interface OwnerAccessService {
@@ -139,6 +145,11 @@ export interface OwnerAccessService {
     readonly authorizationHeader: string | undefined;
     readonly characterId: string;
     readonly requestId: string;
+  }): Promise<OwnerAccessRequest | null>;
+
+  latest(input: {
+    readonly authorizationHeader: string | undefined;
+    readonly characterId: string;
   }): Promise<OwnerAccessRequest | null>;
 }
 
@@ -222,6 +233,20 @@ export function createOwnerAccessService(input: {
         actorUserId: authority.userId,
         characterId,
         requestId: requestId(request.requestId),
+      });
+    },
+
+    async latest(request) {
+      const characterId = parseCanonicalId("character", request.characterId);
+      const authority = await input.authorizer.authorize({
+        authorizationHeader: request.authorizationHeader,
+        characterId,
+        capability: "owner-access.read",
+      });
+      return input.requests.latestForRequester({
+        tenantId: authority.tenantId,
+        requesterUserId: authority.userId,
+        characterId,
       });
     },
   });
