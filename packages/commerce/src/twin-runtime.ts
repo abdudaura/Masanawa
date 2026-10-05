@@ -4,14 +4,10 @@ import type {
   TenantId,
   UserId,
 } from "@masanawa/contracts";
-import type {
-  OwnerAccessRequest,
-  OwnerAccessOffering,
-  PaidFeatureKey,
-  PaidFeatureTrialPolicy,
-  TwinAttributionRecord,
-  CommissionPolicy,
-} from "./index.js";
+import type { OwnerAccessRequest } from "./owner-access.js";
+import type { OwnerAccessOffering } from "./owner-access-offering.js";
+import type { PaidFeatureKey, PaidFeatureTrialPolicy } from "./trial.js";
+import type { TwinAttributionRecord, CommissionPolicy } from "./attribution.js";
 
 export interface TwinCreditOperationReceipt {
   readonly tenantId: TenantId;
