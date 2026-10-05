@@ -439,6 +439,7 @@ export async function startGatewayService(
       }
 
       if (!strategy) {
+        let importedBridgeFailure: string | undefined;
         if (credentialsJson?.trim() && credentialEncryptionKey) {
           try {
             startupPool = parseNurainImportedGeminiCredentialPool({
@@ -453,18 +454,28 @@ export async function startGatewayService(
               ...(models ? { models } : {}),
               fallbackModel,
             });
-          } catch {
-            // The canonical plaintext list format remains supported below.
+          } catch (error) {
+            importedBridgeFailure =
+              error instanceof Error
+                ? error.message.slice(0, 160)
+                : "Imported Gemini bridge failed";
           }
         }
 
         if (!startupPool) {
-          startupPool = parseGeminiCredentialPool({
-            ...(credentialsJson ? { credentialsJson } : {}),
-            ...(apiKey ? { apiKey } : {}),
-            ...(models ? { models } : {}),
-            fallbackModel,
-          });
+          try {
+            startupPool = parseGeminiCredentialPool({
+              ...(credentialsJson ? { credentialsJson } : {}),
+              ...(apiKey ? { apiKey } : {}),
+              ...(models ? { models } : {}),
+              fallbackModel,
+            });
+          } catch (error) {
+            if (importedBridgeFailure) {
+              throw new Error(`Gemini credential bridge failed: ${importedBridgeFailure}`);
+            }
+            throw error;
+          }
         }
 
         strategy = createProductionAgentStrategy({
