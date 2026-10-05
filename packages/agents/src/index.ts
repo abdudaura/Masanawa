@@ -21,3 +21,4 @@ export * from "./subworker-budget.js";
 export * from "./execution-control.js";
 export * from "./harness-signals.js";
 export * from "./controlled-harness.js";
+export * from "./inference-usage.js";
