@@ -13,13 +13,22 @@ import {
   type BillingFulfillmentRecord,
   type FlutterwaveBillsClient,
 } from "@masanawa/providers";
-import type { PlatformSessionIdentity } from "@masanawa/security";
 import type { BillingFinancialService } from "./financial_billing.js";
+
+export interface BillingCustomerIdentity {
+  readonly tenantId: import("@masanawa/contracts").TenantId;
+  readonly userId: import("@masanawa/contracts").UserId;
+  readonly profile?: Readonly<{
+    name?: string | null;
+    email?: string | null;
+    phone?: string | null;
+  }>;
+}
 
 export interface CustomerSessionAuthorizer {
   authorize(input: Readonly<{
     authorizationHeader: string | undefined;
-  }>): Promise<PlatformSessionIdentity>;
+  }>): Promise<BillingCustomerIdentity>;
 }
 
 export interface BillingCheckoutView {
@@ -400,7 +409,7 @@ export function createBillingCheckoutService(input: Readonly<{
   }
 
   async function refundIfRequired(
-    owner: Pick<PlatformSessionIdentity, "tenantId" | "userId">,
+    owner: Pick<BillingCustomerIdentity, "tenantId" | "userId">,
     quote: BillingQuote,
     signal?: AbortSignal,
   ): Promise<BillingQuote> {
@@ -517,7 +526,7 @@ export function createBillingCheckoutService(input: Readonly<{
   }
 
   async function reconcileQuote(
-    owner: Pick<PlatformSessionIdentity, "tenantId" | "userId">,
+    owner: Pick<BillingCustomerIdentity, "tenantId" | "userId">,
     quote: BillingQuote,
     signal?: AbortSignal,
   ): Promise<Readonly<{
@@ -551,7 +560,7 @@ export function createBillingCheckoutService(input: Readonly<{
   function view(
     quote: BillingQuote,
     purchase: BillingFulfillmentRecord | null = null,
-    owner?: PlatformSessionIdentity,
+    owner?: BillingCustomerIdentity,
   ): BillingCheckoutView {
     return Object.freeze({
       quote,
@@ -561,7 +570,7 @@ export function createBillingCheckoutService(input: Readonly<{
       document: documentFor(
         quote,
         input.actionSecret,
-        owner?.profile.email == null,
+        !owner?.profile?.email,
         purchase,
       ),
     });
@@ -648,7 +657,7 @@ export function createBillingCheckoutService(input: Readonly<{
         quoteRevision: request.quoteRevision,
         confirmedAt,
       });
-      const email = (request.checkoutEmail ?? owned.identity.profile.email ?? "")
+      const email = (request.checkoutEmail ?? owned.identity.profile?.email ?? "")
         .trim()
         .toLowerCase();
       if (email.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(email)) {
@@ -677,8 +686,10 @@ export function createBillingCheckoutService(input: Readonly<{
         redirectUrl: redirect.toString(),
         customer: {
           email,
-          name: owned.identity.profile.name,
-          ...(owned.identity.profile.phone ? { phone: owned.identity.profile.phone } : {}),
+          name: owned.identity.profile?.name?.trim() || "Masanawa customer",
+          ...(owned.identity.profile?.phone
+            ? { phone: owned.identity.profile.phone }
+            : {}),
         },
         ...(request.signal ? { signal: request.signal } : {}),
       });
