@@ -38,16 +38,16 @@ mobile router/chat, My Twin/onboarding files, Commerce, billing or crypto files 
   integration owner. Stable identity changes returned by a store are rejected.
 - Focused Identity, Memory and Gateway tests cover privacy projection, immutable share id,
   confirmation gating, scope leakage, stale revision and forged/out-of-scope store results.
+- Gateway route payload parsing is fail-closed for unknown fields, wrong primitive types,
+  invalid arrays, malformed revisions/confirmation flags and invalid timestamps.
 
 ## Verification
 
 - Claim was published and reread in draft PR #148 before implementation.
 - Current `main` was rechecked after implementation and remains the base SHA above.
-- Compare audit: branch is 8 commits ahead, 0 behind and exactly the eight claimed paths
+- Compare audit: branch is 10 commits ahead, 0 behind and exactly the eight claimed paths
   above are changed.
-- Foundation CI run `37289561266` completed as failure before executing any step:
-  job `111696500785` has `steps: null`. This is runner allocation/non-execution, not
-  a code test result.
+- Foundation CI run `37289842614` on final head `82d58062a2528973bdda2e322db7c005b68f981c` completed as failure before executing any step: job `111697407570` has `steps: null`. This is runner allocation/non-execution, not a code test result.
 - An independent container checkout was attempted, but outbound DNS/network access is
   disabled in that runtime (`Could not resolve host: github.com`), so an executable
   local typecheck/test pass cannot honestly be claimed from this session.
