@@ -918,7 +918,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
 
   if (options.financial) {
     const financial = options.financial;
-    const auth = (request: { headers: { authorization?: string } }) =>
+    const auth = (request: { headers: { authorization?: string | undefined } }) =>
       request.headers.authorization;
 
     app.get("/v1/financial/capabilities", async (request) =>
