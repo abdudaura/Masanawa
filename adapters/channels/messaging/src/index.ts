@@ -12,3 +12,19 @@ export {
   type DurableChannelActionStore,
   type ResolvedChannelAction,
 } from "./action-reconciliation.js";
+
+export {
+  createChannelOutboundDispatcher,
+  fingerprintChannelOutboundRequest,
+  normalizeChannelOutboundRequest,
+  resolveChannelOutboundAmbiguity,
+  type ChannelOutboundContent,
+  type ChannelOutboundConversation,
+  type ChannelOutboundReceipt,
+  type ChannelOutboundRecord,
+  type ChannelOutboundRequest,
+  type ChannelOutboundState,
+  type ChannelProviderSender,
+  type ChannelProviderSendResult,
+  type DurableChannelOutbox,
+} from "./outbound.js";
