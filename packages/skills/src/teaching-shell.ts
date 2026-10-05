@@ -1,6 +1,12 @@
-import type {
-  TeachingRuntimeProjection,
+import {
+  applyTeachingMultiSelectStageCommand,
+  validateTeachingMultiSelectStage,
+  type TeachingMultiSelectStage,
+  type TeachingRuntimeBinding,
+  type TeachingRuntimeProjection,
+  type TeachingSelectionActionBinding,
 } from "./teaching-runtime.js";
+import type { Instant } from "@masanawa/contracts";
 
 export interface TeachingShellNode {
   readonly type: string;
@@ -349,6 +355,183 @@ export function projectTeachingToShellDocument(
   return document;
 }
 
+
+
+export function projectTeachingMultiSelectToShellDocument(input: {
+  readonly runtimeBinding: TeachingRuntimeBinding;
+  readonly action: TeachingSelectionActionBinding;
+  readonly stage: TeachingMultiSelectStage;
+  readonly projection: Extract<TeachingRuntimeProjection, { kind: "exercise" }>;
+  readonly options: TeachingShellProjectionOptions;
+}): TeachingShellDocumentV1 {
+  const options = validateOptions(input.options);
+  const stage = validateTeachingMultiSelectStage({
+    binding: input.runtimeBinding,
+    action: input.action,
+    stage: input.stage,
+  });
+  const projection = input.projection;
+  if (
+    projection.card.kind !== "multi-select" ||
+    projection.actionKey !== input.action.actionKey ||
+    projection.actionExpiresAt !== input.action.expiresAt ||
+    stage.actionKey !== projection.actionKey ||
+    stage.expiresAt !== projection.actionExpiresAt
+  ) {
+    throw new TypeError(
+      "Teaching multi-select shell projection does not match the exact action stage",
+    );
+  }
+  if (stage.state !== "collecting") {
+    throw new TypeError(
+      "Committed Teaching multi-select cannot be projected for editing",
+    );
+  }
+  if (options.revision !== stage.revision) {
+    throw new TypeError(
+      "Teaching multi-select shell revision must match the server stage revision",
+    );
+  }
+  if (
+    options.expiresAt !== undefined &&
+    options.expiresAt !== stage.expiresAt
+  ) {
+    throw new TypeError(
+      "Teaching multi-select shell expiry must match the bound action expiry",
+    );
+  }
+
+  const selected = new Set(stage.selectedOptionKeys);
+  const optionButtons = projection.card.options.map((option) =>
+    Object.freeze({
+      type: "button",
+      id: option.optionKey,
+      text: boundedText(
+        `${selected.has(option.optionKey) ? "✓ " : ""}${option.label}`,
+        4000,
+      ),
+      action: "teaching.multiselect.toggle",
+      token: stage.actionKey,
+    }),
+  );
+
+  const nodes: readonly TeachingShellNode[] = Object.freeze([
+    Object.freeze({
+      type: "heading",
+      text: "Choose all that apply",
+    }),
+    Object.freeze({
+      type: "text",
+      text: boundedText(projection.card.prompt, 4000),
+    }),
+    Object.freeze({
+      type: "options",
+      children: Object.freeze(optionButtons),
+    }),
+    Object.freeze({
+      type: "notice",
+      tone: "info",
+      text:
+        stage.selectedOptionKeys.length === 0
+          ? "Select one or more answers, then submit."
+          : `${stage.selectedOptionKeys.length} answer${stage.selectedOptionKeys.length === 1 ? "" : "s"} selected.`,
+    }),
+    Object.freeze({
+      type: "button",
+      id: "commit",
+      text: "Submit answers",
+      action: "teaching.multiselect.commit",
+      token: stage.actionKey,
+    }),
+  ]);
+
+  const document = Object.freeze({
+    version: 1 as const,
+    id: options.documentId,
+    revision: stage.revision,
+    fallback: boundedText(projection.card.prompt, 4000),
+    expiresAt: stage.expiresAt,
+    nodes,
+  });
+  assertShellDocumentBounds(document);
+  return document;
+}
+
+export function applyTeachingMultiSelectShellAction(input: {
+  readonly action: TeachingShellActionInput;
+  readonly runtimeBinding: TeachingRuntimeBinding;
+  readonly actionBinding: TeachingSelectionActionBinding;
+  readonly stage: TeachingMultiSelectStage;
+  readonly now: Instant;
+}): ReturnType<typeof applyTeachingMultiSelectStageCommand> {
+  const stage = validateTeachingMultiSelectStage({
+    binding: input.runtimeBinding,
+    action: input.actionBinding,
+    stage: input.stage,
+  });
+  const action = input.action;
+  if (
+    !documentIdPattern.test(action.documentId) ||
+    !Number.isSafeInteger(action.revision) ||
+    action.revision !== stage.revision
+  ) {
+    throw new TypeError(
+      "Teaching multi-select shell action has stale document scope",
+    );
+  }
+  if (
+    action.token !== stage.actionKey ||
+    action.values === null ||
+    typeof action.values !== "object" ||
+    Object.keys(action.values).length !== 0
+  ) {
+    throw new TypeError(
+      "Teaching multi-select shell action payload is invalid",
+    );
+  }
+
+  if (action.actionId === "teaching.multiselect.commit") {
+    if (action.nodeId !== "commit") {
+      throw new TypeError(
+        "Teaching multi-select commit node is invalid",
+      );
+    }
+    return applyTeachingMultiSelectStageCommand({
+      binding: input.runtimeBinding,
+      action: input.actionBinding,
+      stage,
+      command: Object.freeze({ kind: "commit" as const }),
+      now: input.now,
+    });
+  }
+
+  if (action.actionId !== "teaching.multiselect.toggle") {
+    throw new TypeError(
+      "Teaching multi-select shell action id is invalid",
+    );
+  }
+  if (
+    typeof action.nodeId !== "string" ||
+    !input.actionBinding.rubric.allowedOptionKeys.includes(
+      action.nodeId.trim().toLowerCase(),
+    )
+  ) {
+    throw new TypeError(
+      "Teaching multi-select shell option is invalid",
+    );
+  }
+
+  return applyTeachingMultiSelectStageCommand({
+    binding: input.runtimeBinding,
+    action: input.actionBinding,
+    stage,
+    command: Object.freeze({
+      kind: "toggle" as const,
+      optionKey: action.nodeId,
+    }),
+    now: input.now,
+  });
+}
 
 export function resolveTeachingShellAction(
   action: TeachingShellActionInput,
