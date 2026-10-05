@@ -157,6 +157,11 @@ const CharacterParamsSchema = Type.Object(
 
 
 
+const AdminUserParamsSchema = Type.Object(
+  { userId: Type.String() },
+  { additionalProperties: false },
+);
+
 const OperationParamsSchema = Type.Object(
   { operationId: Type.String() },
   { additionalProperties: false },
@@ -490,6 +495,17 @@ export function createOpsApp(options: OpsAppOptions = {}) {
       ],
     );
 
+
+    app.get(
+      "/v1/admin/users/:userId/relationships",
+      { schema: { params: AdminUserParamsSchema } },
+      async (request) => [
+        ...await platformAdmin.listUserRelationships({
+          authorizationHeader: request.headers.authorization,
+          userId: parseCanonicalId("user", request.params.userId),
+        }),
+      ],
+    );
 
     app.get(
       "/v1/admin/agent-runs",
