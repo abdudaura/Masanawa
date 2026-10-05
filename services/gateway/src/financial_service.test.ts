@@ -633,6 +633,11 @@ describe("financial service recovery and admission", () => {
           currency_from: "btc", currency_to: "btc", min_amount: "0.00000001",
         }));
       }
+      if (url.endsWith("/balance")) {
+        return new Response(JSON.stringify({
+          btc: { amount: "1", pendingAmount: "0" },
+        }));
+      }
       if (url.endsWith("/payment") && init?.method === "POST") {
         return new Response(JSON.stringify({
           payment_id: "small-payment",
@@ -905,7 +910,8 @@ describe("financial service recovery and admission", () => {
       authorizationHeader, requestId, providerCode: "USDTTRC20",
       amount: "10", destinationAddress: "address",
     })).rejects.toThrow("nowpayments.payout.transport.unavailable");
-    expect(crypto.reserveWithdrawalWithFee).toHaveBeenCalledOnce();
+    expect(crypto.reserveWithdrawal).toHaveBeenCalledOnce();
+    expect(crypto.reserveWithdrawalWithFee).not.toHaveBeenCalled();
     expect(crypto.settleWithdrawal).not.toHaveBeenCalled();
     expect(crypto.bindProviderPayout).not.toHaveBeenCalled();
   });
@@ -1027,7 +1033,7 @@ describe("financial service recovery and admission", () => {
       quotedAt: at,
     });
     expect(crypto.reserveConversion).not.toHaveBeenCalled();
-    expect(fetch).toHaveBeenCalledTimes(4);
+    expect(fetch).toHaveBeenCalledTimes(5);
   });
 
   it("reserves, dispatches and binds a custody conversion exactly once", async () => {
@@ -1403,7 +1409,7 @@ describe("financial service recovery and admission", () => {
   it("fresh account, exact-route evidence and live custody coverage qualify withdrawals", async () => {
     const { service, crypto } = setup(intent, account);
     expect((await service.capabilities({ authorizationHeader })).withdrawals).toBe(true);
-    expect(crypto.readAggregateLiability).toHaveBeenCalled();
+    expect(crypto.readPlatformAggregateLiability).toHaveBeenCalled();
   });
   it("does not treat Customer Management capability as a substitute for user-to-provider binding", async () => {
     const customerManaged = { ...account, customerManagementEnabled: true };
