@@ -686,7 +686,7 @@ export function createBillingCheckoutService(input: Readonly<{
       if (quote.state === "refunded" || quote.state === "succeeded") return view(quote);
 
       const fulfillmentReference = `bill-${quote.quoteId}`.slice(0,128);
-      let purchase: unknown;
+      let purchase: BillingFulfillmentRecord;
       try {
         purchase = await input.billing.purchase({
           authorizationHeader: request.authorizationHeader,
