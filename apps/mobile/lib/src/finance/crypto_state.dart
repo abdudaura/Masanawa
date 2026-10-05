@@ -180,6 +180,20 @@ class CryptoWalletController extends AsyncNotifier<CryptoWalletSnapshot> {
     return result;
   }
 
+  Future<CryptoFiatPurchase> refreshFiatPurchase(String requestId) async {
+    final purchase = await _transport.refreshFiatPurchase(requestId);
+    final refreshed = await _transport.intent(requestId);
+    if (refreshed != null) {
+      await _mergeOperation(
+        refreshed,
+        refreshBalance:
+            purchase.terminal &&
+            (purchase.status == 'succeeded' || purchase.status == 'refunded'),
+      );
+    }
+    return purchase;
+  }
+
   Future<CryptoWithdrawalQuote> quoteWithdrawal({
     required String providerCode,
     required String amount,
