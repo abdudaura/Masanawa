@@ -44,4 +44,42 @@ All paid twin features may expose an admin-configurable trial. Initial policy de
 permanent code constant, and may also carry usage caps. No paid charge may occur while
 an admitted trial entitlement covers that usage.
 
-Status: implementation started 2026-10-05.
+Status: isolated feature implementation complete; persistence/shared integration pending.
+
+Implemented:
+- reusable paid-feature trial policy with default 7 days;
+- admin-configurable enablement, duration and optional usage cap contracts;
+- trial eligibility/exhaustion/expiry evaluation;
+- trial-aware twin voice pricing;
+- deterministic zero-charge trial settlement;
+- verified paid-usage unit charging and owner/platform split;
+- ambiguous usage fails to reconciliation instead of guessing;
+- failed-before-media consumes no trial and charges nothing;
+- isolated paid voice quote/start Gateway service + route registrar;
+- isolated admin trial read/update service + route registrar;
+- explicit quote acceptance before voice admission;
+- mobile paid-voice quote/admission models;
+- Riverpod paid-voice state seam;
+- trial/paid quote bottom sheet;
+- focused TS and Flutter model tests.
+
+Canonical documentation for the trial rule was separately merged to main in PR #140,
+commit 65a801fbd96e53c803ab7d79a00b7ac6588c7e74.
+
+Not yet integrated:
+- trial-policy persistence/repository adapter and migrations;
+- admin app UI for changing policy;
+- Gateway app/main route composition;
+- binding paid voice admission to live-token minting;
+- server/provider usage-evidence adapter;
+- Commerce ledger posting for final voice settlement;
+- authenticated mobile transport and ai_chat entry point;
+- Activity event emission.
+
+CI:
+- GitHub Foundation/Mobile jobs continue to fail before execution with zero steps;
+  no compile/test success is claimed from those runs.
+
+Integration rule:
+A Live token must not be minted for paid twin voice until a valid trial/paid admission
+exists. Client duration is never canonical billing evidence.
