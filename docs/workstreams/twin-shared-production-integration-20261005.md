@@ -62,6 +62,8 @@ for the shared integration/deployment paths below.
 - `adapters/storage/postgres/src/identity/twin-profile.ts` (new)
 - `adapters/storage/postgres/src/identity/index.ts`
 - `adapters/storage/postgres/src/index.ts`
+- `adapters/storage/postgres/src/events/twin-economy.ts` (new)
+- `adapters/storage/postgres/src/events/index.ts`
 - `adapters/storage/postgres/src/commerce/twin-economy.ts` (new)
 - `adapters/storage/postgres/src/commerce/twin-economy.integration.test.ts` (new)
 - `packages/commerce/migrations/0102_twin_economy.sql` (new only; existing migrations immutable)
