@@ -40,6 +40,26 @@ const conversionIntent: CryptoIntent = {
   status: "processing",
 };
 
+const buyIntent: CryptoIntent = {
+  ...intent,
+  operation: "buy",
+  asset: "NGN",
+  network: null,
+  amount: "1500",
+  targetAsset: "USDTTRC20",
+  targetNetwork: "tron",
+  destinationAddress: null,
+  providerPaymentId: null,
+  providerPayoutId: null,
+  providerInvoiceId: "invoice-1",
+  checkoutUrl: "https://nowpayments.io/payment/?iid=invoice-1",
+  providerConversionId: null,
+  providerTargetAmount: null,
+  payAddress: null,
+  providerPayAmount: null,
+  status: "awaiting_payment",
+};
+
 const account: NowPaymentsAccountEvidence = {
   custodyEnabled: true, customerManagementEnabled: true, conversionEnabled: true,
   payoutEnabled: true, ipWhitelistSatisfied: true,
@@ -64,6 +84,7 @@ function setup(
   enableConversions = false,
   destinationApproved = true,
   withdrawalNetworkFeeMode: "sender" | "receiver" | null = "receiver",
+  enableFiatOnRamp = false,
 ) {
   const payload = { payment_id: "123", order_id: tenantId+"."+requestId, price_amount: "10",
     price_currency: "usdttrc20", pay_currency: "usdttrc20", pay_amount: "10",
@@ -85,6 +106,16 @@ function setup(
       return new Response(JSON.stringify({
         currencies: ["usdttrc20", "btc", "trx"],
       }));
+    }
+    if (url.endsWith("/invoice") && init?.method === "POST") {
+      return new Response(JSON.stringify({
+        id: "invoice-1",
+        order_id: tenantId+"."+requestId,
+        price_amount: 1500,
+        price_currency: "ngn",
+        pay_currency: "ngn",
+        invoice_url: "https://nowpayments.io/payment/?iid=invoice-1",
+      }), { status: 201 });
     }
     if (url.endsWith("/balance")) {
       return new Response(JSON.stringify({
@@ -154,7 +185,40 @@ function setup(
     readIntent: vi.fn(async () => existing),
     readIntentByRequestId: vi.fn(async () => existing),
     readIntentByProviderPayoutId: vi.fn(async () => existing),
-    applyProviderPaymentEvent: vi.fn(async () => ({ ...intent, status: "succeeded" as const })),
+    applyProviderPaymentEvent: vi.fn(async (value: {
+      readonly event: CryptoProviderPaymentEvent;
+    }) => {
+      if (currentIntent.operation === "buy") {
+        currentIntent = {
+          ...currentIntent,
+          providerPaymentId: currentIntent.providerPaymentId ?? value.event.paymentId,
+          providerTargetAmount:
+            value.event.status === "finished"
+              ? value.event.outcomeAmount ?? null
+              : null,
+          status:
+            value.event.status === "finished"
+              ? "succeeded" as const
+              : value.event.status === "refunded"
+                ? "refunded" as const
+                : "processing" as const,
+        };
+        return currentIntent;
+      }
+      return { ...intent, status: "succeeded" as const };
+    }),
+    bindProviderInvoice: vi.fn(async (value: {
+      readonly providerInvoiceId: string;
+      readonly checkoutUrl: string;
+    }) => {
+      currentIntent = {
+        ...currentIntent,
+        providerInvoiceId: value.providerInvoiceId,
+        checkoutUrl: value.checkoutUrl,
+        status: "awaiting_payment",
+      };
+      return currentIntent;
+    }),
     bindProviderPayment: vi.fn(async (value: {
       readonly providerPaymentId: string;
       readonly payAddress: string;
@@ -223,6 +287,10 @@ function setup(
       return value;
     }),
     beginProviderDispatch: vi.fn(async () => ({ intent: currentIntent, shouldDispatch })),
+    failProviderDispatch: vi.fn(async () => {
+      currentIntent = { ...currentIntent, status: "failed" as const };
+      return currentIntent;
+    }),
     readAggregateLiability: vi.fn(async () =>
       pooledCustodyLiabilityCoverageSatisfied === false ? "101" : "0"),
   } as unknown as CryptoRepository;
@@ -236,6 +304,13 @@ function setup(
     ...(withdrawalNetworkFeeMode === null
       ? {}
       : { withdrawalNetworkFeeMode }),
+    ...(enableFiatOnRamp ? {
+      fiatOnRamp: {
+        enabled: true as const,
+        fiatCurrencies: ["NGN", "USD"],
+        settlementProviderCode: "USDTTRC20",
+      },
+    } : {}),
     ...(evidence === undefined ? {} : { withdrawalEvidence: async () => ({
       account: evidence,
       routes: [{ providerCode: "USDTTRC20", asset: "USDT", network: "tron",
