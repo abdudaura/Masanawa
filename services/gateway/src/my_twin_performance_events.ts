@@ -58,8 +58,10 @@ export function createMyTwinEconomyPerformanceReader(input: {
 
       let visitors = 0;
       let conversations = 0;
-      let earningsCredits = 0;
-      const pendingOwnerRequestIds = new Set<string>();
+      let settledEarningsCredits = 0;
+      let reversedEarningsCredits = 0;
+      const requestedOwnerRequestIds = new Set<string>();
+      const resolvedOwnerRequestIds = new Set<string>();
 
       for (const event of events) {
         if (
@@ -78,31 +80,38 @@ export function createMyTwinEconomyPerformanceReader(input: {
             conversations += 1;
             break;
           case "twin.earning.settled":
-            earningsCredits += amount(event.amountCredits);
+            settledEarningsCredits += amount(event.amountCredits);
             break;
           case "twin.earning.reversed":
-            earningsCredits = Math.max(
-              0,
-              earningsCredits - amount(event.amountCredits),
-            );
+            reversedEarningsCredits += amount(event.amountCredits);
             break;
           case "twin.owner-access.requested":
-            pendingOwnerRequestIds.add(event.referenceId);
+            requestedOwnerRequestIds.add(event.referenceId);
             break;
           case "twin.owner-access.accepted":
           case "twin.owner-access.scheduled":
           case "twin.owner-access.completed":
           case "twin.owner-access.refunded":
-            pendingOwnerRequestIds.delete(event.referenceId);
+            resolvedOwnerRequestIds.add(event.referenceId);
             break;
+        }
+      }
+
+      let pendingOwnerRequests = 0;
+      for (const referenceId of requestedOwnerRequestIds) {
+        if (!resolvedOwnerRequestIds.has(referenceId)) {
+          pendingOwnerRequests += 1;
         }
       }
 
       return Object.freeze({
         visitors,
         conversations,
-        earningsCredits,
-        pendingOwnerRequests: pendingOwnerRequestIds.size,
+        earningsCredits: Math.max(
+          0,
+          settledEarningsCredits - reversedEarningsCredits,
+        ),
+        pendingOwnerRequests,
       });
     },
   });
