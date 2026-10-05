@@ -271,7 +271,7 @@ function createDefaultDatabaseDependency(
     mobilePush: createPostgresMobilePushRepository(database.pool),
     mobileActivity: createPostgresMobileAgentActivityRepository(database.pool),
     billingQuotes: createPostgresBillingQuoteRepository(database.pool),
-    billingStore: (identity) =>
+    billingStore: (identity: Readonly<{ tenantId: string; userId: string }>) =>
       createPostgresBillingFulfillmentStore(database.pool, identity),
     billingWebhooks: createPostgresBillingWebhookRepository(database.pool),
     close: database.close,
