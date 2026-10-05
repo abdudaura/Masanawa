@@ -22,6 +22,8 @@ export interface AgentInferenceUsageEvidence {
   readonly outputTokens: number;
   readonly providerCostMicros: number;
   readonly providerCostCurrency: string;
+  readonly evidenceRef: string;
+  readonly pricingRevision: string | null;
   readonly observedAt: Instant;
 }
 
@@ -38,6 +40,26 @@ export interface MeteredAgentInferenceProvider extends AgentInferenceProvider {
     input: AgentInferenceRequest,
     controls?: AgentInferenceControls,
   ): Promise<MeteredAgentInferenceResult>;
+}
+
+function exactKeys(value: object, keys: readonly string[]): void {
+  const unknown = Object.keys(value).filter((key) => !keys.includes(key));
+  if (unknown.length > 0) {
+    throw new TypeError("Agent inference usage evidence has unknown fields");
+  }
+}
+
+function boundedReference(value: string, name: string, max: number): string {
+  if (typeof value !== "string") {
+    throw new TypeError(`${name} must be a string`);
+  }
+  const normalized = value.trim();
+  if (normalized.length < 1 || normalized.length > max) {
+    throw new TypeError(
+      `${name} must be non-empty and at most ${max} characters`,
+    );
+  }
+  return normalized;
 }
 
 function nonNegativeSafeInteger(value: number, name: string): number {
@@ -66,12 +88,47 @@ export function normalizeAgentInferenceUsageEvidence(
   if (!input || typeof input !== "object" || Array.isArray(input)) {
     throw new TypeError("Agent inference usage evidence is invalid");
   }
+  exactKeys(input, [
+    "schemaVersion",
+    "source",
+    "inputTokens",
+    "outputTokens",
+    "providerCostMicros",
+    "providerCostCurrency",
+    "evidenceRef",
+    "pricingRevision",
+    "observedAt",
+  ]);
   if (input.schemaVersion !== 1) {
     throw new TypeError("Agent inference usage evidence schema is invalid");
   }
   if (!agentInferenceUsageSources.includes(input.source)) {
     throw new TypeError(
       "Agent inference usage evidence source is not trusted",
+    );
+  }
+
+  const evidenceRef = boundedReference(
+    input.evidenceRef,
+    "evidenceRef",
+    500,
+  );
+  const pricingRevision =
+    input.pricingRevision === null
+      ? null
+      : boundedReference(
+          input.pricingRevision,
+          "pricingRevision",
+          160,
+        );
+  if (input.source === "platform-metered" && pricingRevision === null) {
+    throw new TypeError(
+      "platform-metered usage requires pricingRevision",
+    );
+  }
+  if (input.source === "provider-reported" && pricingRevision !== null) {
+    throw new TypeError(
+      "provider-reported usage must not claim a platform pricingRevision",
     );
   }
 
@@ -93,6 +150,8 @@ export function normalizeAgentInferenceUsageEvidence(
     providerCostCurrency: normalizeCurrency(
       input.providerCostCurrency,
     ),
+    evidenceRef,
+    pricingRevision,
     observedAt: toInstant(input.observedAt),
   });
 }
