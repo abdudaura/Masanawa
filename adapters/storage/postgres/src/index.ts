@@ -31,3 +31,4 @@ export * from "./commerce/billing-runtime.js";
 
 export * from "./workflows/repository.js";
 export * from "./workflows/authority-gate.js";
+export * from "./workflows/execution-guard.js";
