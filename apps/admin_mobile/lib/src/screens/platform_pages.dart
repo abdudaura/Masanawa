@@ -23,6 +23,74 @@ class _UsersAdminPageState extends State<UsersAdminPage> {
     });
   }
 
+  Future<void> _showRelationships(AdminUser user) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (context) => FractionallySizedBox(
+        heightFactor: 0.72,
+        child: SafeArea(
+          child: FutureBuilder<List<AdminRelationship>>(
+            future: widget.api.userRelationships(user.userId),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState != ConnectionState.done) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(snapshot.error.toString(), textAlign: TextAlign.center),
+                  ),
+                );
+              }
+              final relationships =
+                  snapshot.data ?? const <AdminRelationship>[];
+              return ListView(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                children: [
+                  Text(
+                    'User relationships',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    shortId(user.userId),
+                    style: TextStyle(color: context.masanawa.textMuted),
+                  ),
+                  const SizedBox(height: 12),
+                  if (relationships.isEmpty)
+                    const Card(
+                      child: ListTile(title: Text('No active relationships')),
+                    )
+                  else
+                    ...relationships.map(
+                      (relationship) => Card(
+                        child: ListTile(
+                          leading: const Icon(Icons.link_outlined),
+                          title: Text(
+                            'Character ${shortId(relationship.characterId)}',
+                          ),
+                          subtitle: Text(
+                            '${shortId(relationship.relationshipId)} · '
+                            'rev ${relationship.revision}\n'
+                            'updated ${relationship.updatedAt}',
+                          ),
+                          isThreeLine: true,
+                          trailing: Chip(label: Text(relationship.state)),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => AdminFuture<List<AdminUser>>(
         future: _future,
@@ -49,6 +117,7 @@ class _UsersAdminPageState extends State<UsersAdminPage> {
           ),
           children: users.map((user) => Card(
             child: ListTile(
+              onTap: () => _showRelationships(user),
               leading: CircleAvatar(
                 child: Icon(user.state == 'active'
                     ? Icons.person_outline
