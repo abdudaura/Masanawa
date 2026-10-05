@@ -113,6 +113,29 @@ quote -> payment/authorization -> fulfillment -> receipt -> settlement.
 Originating twin attribution is additional settlement input; it never changes provider
 truth or allows model text to set amounts.
 
+## Paid feature trial policy
+
+Paid features use one reusable, versioned trial policy.
+
+Required fields:
+- feature key;
+- policy revision;
+- enabled/disabled;
+- duration in days;
+- optional usage cap;
+- effective time.
+
+Initial default duration: **7 days**, enabled. Usage caps may differ by paid feature.
+Twin voice begins without a default unit cap; owner access begins with **one completed
+human session** inside the 7-day window. Admin may later change duration, enablement or
+feature-specific caps without an app release.
+
+Trial starts on first qualifying admitted use, not account signup. The server records the
+policy revision, start and expiry. A client timer is not entitlement truth.
+
+A trial-covered operation must settle at zero customer charge. Once the trial expires or
+its configured cap is exhausted, a new normal paid quote/consent is required.
+
 ## Paid twin voice
 
 Voice is a distinct paid product from free text.

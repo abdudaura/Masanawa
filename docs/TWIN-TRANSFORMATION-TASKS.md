@@ -8,12 +8,12 @@ after implementation and relevant acceptance evidence are merged to `main`.
 
 ## Product truth and coordination
 
-- [ ] **TWIN-001** Merge Product Twin Economy canonical overlay and cross-doc alignment.
-- [ ] **TWIN-002** Merge master transformation plan, screen spec, economy contracts and
+- [x] **TWIN-001** Merge Product Twin Economy canonical overlay and cross-doc alignment.
+- [x] **TWIN-002** Merge master transformation plan, screen spec, economy contracts and
   multi-window ownership map.
-- [ ] **TWIN-003** Remove contradictory user-facing reseller/paid-AI-work assumptions
+- [x] **TWIN-003** Remove contradictory user-facing reseller/paid-AI-work assumptions
   from active product docs while preserving internal commerce invariants.
-- [ ] **TWIN-004** Add architecture tests/doc gates preventing a second wallet, clone
+- [x] **TWIN-004** Add architecture tests/doc gates preventing a second wallet, clone
   runtime, marketplace service or social-post subsystem.
 
 ## Twin identity, customization and public profile
@@ -46,6 +46,12 @@ after implementation and relevant acceptance evidence are merged to `main`.
 - [ ] **TWIN-036** Attach originating twin attribution to eligible platform purchases.
 - [ ] **TWIN-037** Implement refund/reversal/chargeback commission reversal.
 - [ ] **TWIN-038** Build Wallet mobile screen and reusable Send/Gift sheet.
+
+## Paid feature trials
+
+- [ ] **TWIN-039** Implement reusable admin-configurable paid-feature trials;
+  initial default is 7 days from first qualifying use, with versioned duration/enablement/
+  optional usage-cap policy and zero-charge settlement while eligible.
 
 ## Paid twin voice
 
@@ -93,8 +99,8 @@ after implementation and relevant acceptance evidence are merged to `main`.
 - [ ] **TWIN-082** Wire mobile transports/providers without direct repository access.
 - [ ] **TWIN-083** Reconcile active billing/crypto/auth branches before shared integration.
 - [ ] **TWIN-084** Preserve existing migration checksums and deployed production state.
-- [ ] **TWIN-085** Migrate existing personal clones/economy views without data loss.
-- [ ] **TWIN-086** Remove/deprecate obsolete endpoints only after client compatibility gate.
+- [x] **TWIN-085** Migrate existing personal clones/economy views without data loss.
+- [x] **TWIN-086** Remove/deprecate obsolete endpoints only after client compatibility gate.
 
 ## Abuse, finance and privacy
 
