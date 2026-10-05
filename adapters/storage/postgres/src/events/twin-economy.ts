@@ -9,6 +9,7 @@ import {
 import {
   assertNoTwinTranscriptFields,
   createTwinEconomyEvent,
+  normalizeTwinEconomyEvent,
   type TwinEconomyEventPayload,
 } from "@masanawa/events";
 import type { Pool } from "pg";
@@ -89,11 +90,7 @@ export function createPostgresTwinEconomyEventStore(
       return Object.freeze(
         result.rows.map((row) =>
           Object.freeze({
-            ...createTwinEconomyEvent({
-              ...row.payload,
-              schemaVersion: undefined as never,
-              summaryCode: undefined as never,
-            } as never),
+            ...normalizeTwinEconomyEvent(row.payload),
             eventId: row.event_id,
           }),
         ),
@@ -119,7 +116,10 @@ export function createPostgresTwinEconomyEventStore(
       );
       return Object.freeze(
         result.rows.map((row) =>
-          Object.freeze({ ...row.payload, eventId: row.event_id }),
+          Object.freeze({
+            ...normalizeTwinEconomyEvent(row.payload),
+            eventId: row.event_id,
+          }),
         ),
       );
     },
