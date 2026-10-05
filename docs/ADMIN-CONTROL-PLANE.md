@@ -44,8 +44,10 @@ Initial decision flow:
 3. JEV evaluates bounded questions such as intent match, ambiguity, escalation need and confidence;
 4. deterministic policy code intersects operator authority, Character delegation and action risk;
 5. the current Ops admin-action broker can execute a bounded allowlist of admitted read-only actions through canonical admin services;
-6. write requests currently stop at `approval-required`; they do not execute until the governed approval path is integrated;
-7. canonical command/Operation/provider/reconciliation evidence returns to Gwani for explanation to the operator.
+6. write requests create/reuse an idempotent prepared Operation plus exact-bound one-time Security approval tied to the Gwani AgentRun and arguments fingerprint;
+7. the signed-in canonical operator can explicitly approve or deny the pending approval from the mobile admin app;
+8. approval still does not equal execution: the approved request must replay through the same Operation and canonical command before any side effect occurs;
+9. canonical command/Operation/provider/reconciliation evidence returns to Gwani for explanation to the operator.
 
 The broker never derives authority from JEV output. JEV may influence routing/escalation only; capability admission remains deterministic.
 
@@ -53,7 +55,7 @@ The broker never derives authority from JEV output. JEV may influence routing/es
 
 These are legitimate admin features, but they require a canonical command/use-case contract rather than a direct SQL mutation:
 
-- approval approve/deny/revoke, with a real operator Principal/approver identity;
+- approved Gwani action replay/consumption through the exact bound Operation and canonical write command; approve/deny is now implemented with the real operator Principal;
 - reconciliation check/retry/resolve actions through Operation/Reconciliation APIs;
 - provider credential rotate/health-test without exposing credential material; revocation is already implemented canonically;
 - World restart and governed canon-event administration; pause/recover is already implemented canonically;
