@@ -58,7 +58,7 @@ class _AdminAgentsPageState extends State<AdminAgentsPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Talk to delegated Masanawa Characters such as Gwani or JEV. '
+                  'Talk to delegated Masanawa Characters such as Gwani. '
                   'Their authority is controlled by Ops, not by the prompt.',
                   style: TextStyle(color: context.masanawa.textMuted),
                 ),
@@ -79,7 +79,7 @@ class _AdminAgentsPageState extends State<AdminAgentsPage> {
                     child: ListTile(
                       title: Text('No admin agents configured'),
                       subtitle: Text(
-                        'Configure Gwani/JEV Character IDs in '
+                        'Configure approved admin Character IDs in '
                         'MASANAWA_OPS_AGENT_DELEGATES_JSON.',
                       ),
                     ),
