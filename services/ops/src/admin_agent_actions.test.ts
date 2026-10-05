@@ -28,13 +28,17 @@ const config: AdminAgentDelegationConfig = Object.freeze({
   ]),
 });
 
+const authorizer = {
+  authorize: vi.fn(async () => ({ tenantId })),
+} as never;
+
 describe("admin Agent action broker", () => {
   it("executes delegated read actions through canonical admin services", async () => {
     const summary = vi.fn(async () => ({ users: 2 }));
     const platformAdmin = {
       summary,
     } as unknown as PlatformAdminService;
-    const broker = createAdminAgentActionBroker({ config, platformAdmin });
+    const broker = createAdminAgentActionBroker({ config, authorizer, platformAdmin });
 
     await expect(broker.execute({
       authorizationHeader: "Bearer operator",
@@ -56,7 +60,7 @@ describe("admin Agent action broker", () => {
     const platformAdmin = {
       setOfferEnabled,
     } as unknown as PlatformAdminService;
-    const broker = createAdminAgentActionBroker({ config, platformAdmin });
+    const broker = createAdminAgentActionBroker({ config, authorizer, platformAdmin });
 
     await expect(broker.execute({
       authorizationHeader: "Bearer operator",
@@ -77,9 +81,31 @@ describe("admin Agent action broker", () => {
     expect(setOfferEnabled).not.toHaveBeenCalled();
   });
 
+  it("intersects Gwani delegation with operator authority", async () => {
+    const deniedAuthorizer = {
+      authorize: vi.fn(async () => {
+        const error = new Error("denied") as Error & { statusCode: number };
+        error.statusCode = 403;
+        throw error;
+      }),
+    } as never;
+    const platformAdmin = {} as PlatformAdminService;
+    const broker = createAdminAgentActionBroker({
+      config,
+      authorizer: deniedAuthorizer,
+      platformAdmin,
+    });
+
+    await expect(broker.execute({
+      authorizationHeader: "Bearer operator",
+      characterId: gwaniId,
+      action: "offer.set-enabled",
+    })).rejects.toMatchObject({ statusCode: 403 });
+  });
+
   it("rejects capabilities not delegated to Gwani", async () => {
     const platformAdmin = {} as PlatformAdminService;
-    const broker = createAdminAgentActionBroker({ config, platformAdmin });
+    const broker = createAdminAgentActionBroker({ config, authorizer, platformAdmin });
 
     await expect(broker.execute({
       authorizationHeader: "Bearer operator",
@@ -90,7 +116,7 @@ describe("admin Agent action broker", () => {
 
   it("rejects Characters that are not admin delegates", async () => {
     const platformAdmin = {} as PlatformAdminService;
-    const broker = createAdminAgentActionBroker({ config, platformAdmin });
+    const broker = createAdminAgentActionBroker({ config, authorizer, platformAdmin });
 
     await expect(broker.execute({
       authorizationHeader: "Bearer operator",
