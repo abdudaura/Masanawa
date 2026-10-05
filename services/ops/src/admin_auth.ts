@@ -53,6 +53,8 @@ const KNOWN_ADMIN_CAPABILITIES = new Set<AgentAdminCapability>([
   "world.admin.write",
   "approvals.admin.read",
   "queues.admin.read",
+  "admin.delegates.read",
+  "admin.delegates.write",
 ]);
 
 function bearerToken(header: string | undefined): string | null {
