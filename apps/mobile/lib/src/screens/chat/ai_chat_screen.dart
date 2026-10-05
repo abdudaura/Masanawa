@@ -1354,10 +1354,113 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     );
   }
 
+  bool _ownerRequestIsLive(OwnerAccessRequest request) {
+    return request.state == OwnerAccessState.requested ||
+        request.state == OwnerAccessState.accepted ||
+        request.state == OwnerAccessState.scheduled ||
+        request.state == OwnerAccessState.active;
+  }
+
+  String _ownerRequestStatus(OwnerAccessRequest request) {
+    switch (request.state) {
+      case OwnerAccessState.requested:
+        return 'Waiting for the owner to respond.';
+      case OwnerAccessState.accepted:
+        return 'The owner accepted your request.';
+      case OwnerAccessState.scheduled:
+        final scheduled = request.scheduledFor;
+        return scheduled == null
+            ? 'The session is scheduled.'
+            : 'Scheduled for ${MaterialLocalizations.of(context).formatFullDate(scheduled)} at '
+                '${TimeOfDay.fromDateTime(scheduled).format(context)}.';
+      case OwnerAccessState.active:
+        return 'Your session is in progress.';
+      case OwnerAccessState.completed:
+      case OwnerAccessState.settled:
+        return 'Your session was completed.';
+      case OwnerAccessState.declined:
+        return 'The owner declined this request.';
+      case OwnerAccessState.expired:
+        return 'This request expired.';
+      case OwnerAccessState.cancelled:
+        return 'You cancelled this request.';
+      case OwnerAccessState.noShow:
+        return 'The scheduled session was missed.';
+      case OwnerAccessState.refunded:
+        return 'This request ended and eligible held Credits were returned.';
+      case OwnerAccessState.disputed:
+        return 'This request is under review.';
+    }
+  }
+
+  Future<void> _showOwnerRequestStatus(
+    AgentDirectoryEntry agent,
+    OwnerAccessRequest request,
+  ) async {
+    final cancellable =
+        request.state == OwnerAccessState.requested ||
+        request.state == OwnerAccessState.accepted ||
+        request.state == OwnerAccessState.scheduled;
+    final cancel = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Talk to the owner'),
+        content: Text(
+          '${_ownerRequestStatus(request)}\n\n'
+          '${request.durationMinutes} minutes · '
+          '${request.chargeMode == 'trial' ? 'trial' : '${request.priceCredits} Credits'}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Close'),
+          ),
+          if (cancellable)
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Cancel request'),
+            ),
+        ],
+      ),
+    );
+    if (cancel != true || !mounted) return;
+    final updated = await ref.read(ownerAccessControllerProvider.notifier).act(
+          characterId: agent.characterId,
+          requestId: request.requestId,
+          action: 'cancel',
+        );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          updated == null
+              ? 'Could not cancel this request.'
+              : 'Talk request cancelled.',
+        ),
+      ),
+    );
+  }
+
   Future<void> _requestOwnerChat(AgentDirectoryEntry agent) async {
     final controller = ref.read(ownerAccessControllerProvider.notifier);
+    final existing = await controller.latest(characterId: agent.characterId);
+    if (!mounted) return;
+    if (existing != null && _ownerRequestIsLive(existing)) {
+      await _showOwnerRequestStatus(agent, existing);
+      return;
+    }
+    if (existing == null &&
+        ref.read(ownerAccessControllerProvider).error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not check your current owner request. Try again.'),
+        ),
+      );
+      return;
+    }
+
     OwnerAccessQuote? quote;
-    for (final minutes in const [15, 30, 60]) {
+    for (final minutes in const [15, 30, 60, 5, 10, 45, 90, 120]) {
       quote = await controller.quote(
         characterId: agent.characterId,
         modality: OwnerAccessModality.voice,
@@ -1368,7 +1471,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     if (quote == null || !mounted) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('The owner is not accepting requests right now.')),
+          const SnackBar(
+            content: Text('The owner is not accepting requests right now.'),
+          ),
         );
       }
       return;
@@ -1400,7 +1505,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(request == null ? 'Could not send owner request.' : 'Owner request sent.'),
+        content: Text(
+          request == null
+              ? 'Could not send owner request.'
+              : 'Owner request sent. We will notify you when it changes.',
+        ),
       ),
     );
   }
