@@ -5,6 +5,7 @@ import type {
 } from "@masanawa/agents";
 import type { CharacterVersionReferenceReader } from "@masanawa/identity";
 import type { SkillRepository } from "@masanawa/skills";
+import type { PlatformSessionRepository } from "@masanawa/security";
 import {
   createCanonicalId,
   nowInstant,
@@ -30,6 +31,7 @@ import {
   createPostgresUserRelationshipReader,
   createPostgresWorldRepository,
   createPostgresSkillRepository,
+  createPostgresPlatformSessionRepository,
   listExternalReceiptsForOperation,
   revokeProviderCredentialRef,
   withTransaction,
@@ -40,7 +42,9 @@ import {
 } from "./agent_admin.js";
 import {
   createBootstrapAdminAuthorizer,
+  createPlatformSessionAdminAuthorizer,
   readBootstrapAdminAuthConfig,
+  readPlatformSessionAdminAuthConfig,
 } from "./admin_auth.js";
 import {
   createPlatformAdminService,
@@ -74,6 +78,7 @@ export interface ServiceDatabaseDependency {
   readonly characterSkillAssignments?: CharacterSkillAssignmentRepository;
   readonly characterVersions?: CharacterVersionReferenceReader;
   readonly skills?: SkillRepository;
+  readonly platformSessions?: PlatformSessionRepository;
   readonly offerCommands?: PlatformAdminOfferCommands;
   readonly credentialCommands?: PlatformAdminCredentialCommands;
   readonly receiptReader?: PlatformAdminReceiptReader;
@@ -142,6 +147,7 @@ function createDefaultDatabaseDependency(
   });
   const commerce = createPostgresCommerceRepository(database.pool);
   const skills = createPostgresSkillRepository(database.pool);
+  const platformSessions = createPostgresPlatformSessionRepository(database.pool);
   const worlds = createPostgresWorldRepository(database.pool);
 
   const offerCommands: PlatformAdminOfferCommands = Object.freeze({
@@ -388,6 +394,7 @@ function createDefaultDatabaseDependency(
     characterVersions:
       createPostgresCharacterVersionReferenceReader(database.pool),
     skills,
+    platformSessions,
     offerCommands,
     credentialCommands,
     receiptReader,
@@ -410,12 +417,18 @@ export async function startOpsService(
     options.databaseFactory ?? createDefaultDatabaseDependency;
   const database = databaseFactory(env);
   const appFactory = options.appFactory ?? createOpsApp;
+  const platformSessionAdminConfig = readPlatformSessionAdminAuthConfig(env);
   const bootstrapAdminConfig = readBootstrapAdminAuthConfig(env);
   const adminAuthorizer =
     options.agentAdminAuthorizer ??
-    (bootstrapAdminConfig
-      ? createBootstrapAdminAuthorizer(bootstrapAdminConfig)
-      : undefined);
+    (platformSessionAdminConfig && database.platformSessions
+      ? createPlatformSessionAdminAuthorizer({
+          config: platformSessionAdminConfig,
+          sessions: database.platformSessions,
+        })
+      : bootstrapAdminConfig
+        ? createBootstrapAdminAuthorizer(bootstrapAdminConfig)
+        : undefined);
 
   const composedAgentAdmin =
     options.appOptions?.agentAdmin ??
