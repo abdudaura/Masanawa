@@ -293,6 +293,16 @@ describe("platform-session Agent authorization", () => {
 });
 
 describe("customer authentication", () => {
+  it("reports session storage outages as retryable availability failures", async () => {
+    const repository = new MemorySessions();
+    repository.resolveAccess = async () => { throw new Error("private database credential"); };
+    const sessions = createPlatformCustomerSessionAuthorizer({ repository });
+    await expect(sessions.authorize({ authorizationHeader: `Bearer msw_access_${"a".repeat(64)}` }))
+      .rejects.toMatchObject({ code: "AUTH_UNAVAILABLE", statusCode: 503, message: "AUTH_UNAVAILABLE" });
+    await expect(sessions.authorize({ authorizationHeader: undefined }))
+      .rejects.toMatchObject({ code: "UNAUTHORIZED", statusCode: 401 });
+  });
+
   it("advertises only OTP channels that are actually configured", () => {
     const repository = new MemorySessions();
     const service = createCustomerAuthService({
@@ -358,7 +368,7 @@ describe("customer authentication", () => {
     const rotated = await service.refresh({ refreshToken: signedIn.refreshToken });
     await expect(customer.authorize({
       authorizationHeader: `Bearer ${signedIn.accessToken}`,
-    })).rejects.toThrow("financial.auth.unauthorized");
+    })).rejects.toMatchObject({ code: "UNAUTHORIZED", statusCode: 401 });
     await expect(customer.authorize({
       authorizationHeader: `Bearer ${rotated.accessToken}`,
     })).resolves.toMatchObject({ tenantId });
@@ -366,7 +376,7 @@ describe("customer authentication", () => {
     await service.logout({ authorizationHeader: `Bearer ${rotated.accessToken}` });
     await expect(customer.authorize({
       authorizationHeader: `Bearer ${rotated.accessToken}`,
-    })).rejects.toThrow("financial.auth.unauthorized");
+    })).rejects.toMatchObject({ code: "UNAUTHORIZED", statusCode: 401 });
   });
 
   it("removes a challenge when delivery fails instead of accepting an unseen OTP", async () => {
@@ -382,3 +392,4 @@ describe("customer authentication", () => {
     expect(repository.challenge).toBeNull();
   });
 });
+
