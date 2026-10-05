@@ -178,4 +178,34 @@ describe("owner access runtime", () => {
     expect(ownerPaid).toBe(900);
     expect(platformPaid).toBe(100);
   });
+  it("expires unanswered paid requests and refunds the reservation", async () => {
+    const memory = memoryRepository();
+    let refund = 0;
+    const reservations: OwnerAccessReservationPort = {
+      async reserve(input) {
+        return { reservationId: "reservation-expire", reservedCredits: input.amountCredits };
+      },
+      async release(input) {
+        refund = input.refundCredits;
+      },
+      async settle() {},
+    };
+    let clock = new Date("2026-10-05T10:00:00Z");
+    const runtime = createOwnerAccessRuntime({
+      repository: memory.repo,
+      reservations,
+      acceptWithinMinutes: 60,
+      now: () => clock,
+    });
+    await runtime.create({
+      requesterUserId: "user-requester",
+      quote: { ...paidQuote, requestId: "owner-request-expire" },
+    });
+    clock = new Date("2026-10-05T11:01:00Z");
+    const result = await runtime.expire("owner-request-expire");
+    expect(result.expired).toBe(true);
+    expect(result.request.state).toBe("expired");
+    expect(refund).toBe(1000);
+  });
+
 });
