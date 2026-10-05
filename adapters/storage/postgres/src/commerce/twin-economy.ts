@@ -883,6 +883,89 @@ export function createPostgresTwinRuntimeRepository(
       );
     },
 
+    async transitionOwnerAccessRequest(input) {
+      const updated = await pool.query<{
+        definition: OwnerAccessRequest;
+        reservation_id: string | null;
+        reserved_credits: string;
+      }>(
+        `UPDATE commerce.owner_access_requests
+            SET state=$4,definition=$5::jsonb,revision=revision+1,
+                updated_at=clock_timestamp()
+          WHERE tenant_id=$1 AND request_id=$2 AND state=$3
+          RETURNING definition,reservation_id,reserved_credits::text`,
+        [
+          input.tenantId,
+          input.request.requestId,
+          input.expectedState,
+          input.request.state,
+          canonicalJson(input.request),
+        ],
+      );
+      if (updated.rows[0]) {
+        return Object.freeze({
+          applied: true,
+          request: requestDefinition(
+            updated.rows[0].definition,
+            updated.rows[0].reservation_id,
+            Number(updated.rows[0].reserved_credits),
+          ),
+        });
+      }
+      const current = await repository.readOwnerAccessRequest({
+        tenantId: input.tenantId,
+        requestId: input.request.requestId,
+      });
+      if (!current) throw new Error("Owner access request not found");
+      return Object.freeze({ applied: false, request: current });
+    },
+
+    async listOwnerAccessLifecycleCandidates(input) {
+      const limit = Math.max(1, Math.min(200, input.limit));
+      if (
+        !Number.isSafeInteger(input.startGraceMinutes) ||
+        input.startGraceMinutes < 1 ||
+        input.startGraceMinutes > 180
+      ) {
+        throw new RangeError("startGraceMinutes is invalid");
+      }
+      const result = await pool.query<{
+        definition: OwnerAccessRequest;
+        reservation_id: string | null;
+        reserved_credits: string;
+      }>(
+        `SELECT definition,reservation_id,reserved_credits::text
+           FROM commerce.owner_access_requests
+          WHERE tenant_id=$1
+            AND (
+              state IN ('declined','expired','cancelled','no-show','completed')
+              OR (
+                state='requested'
+                AND (definition->>'acceptBy')::timestamptz <= $2::timestamptz
+              )
+              OR (
+                state='scheduled'
+                AND definition->>'scheduledFor' IS NOT NULL
+                AND (definition->>'scheduledFor')::timestamptz
+                      + make_interval(mins => $3::int)
+                    <= $2::timestamptz
+              )
+            )
+          ORDER BY updated_at ASC,request_id ASC
+          LIMIT $4`,
+        [input.tenantId, input.at, input.startGraceMinutes, limit],
+      );
+      return Object.freeze(
+        result.rows.map((row) =>
+          requestDefinition(
+            row.definition,
+            row.reservation_id,
+            Number(row.reserved_credits),
+          ),
+        ),
+      );
+    },
+
     async blockTwin(input) {
       await pool.query(
         `INSERT INTO commerce.twin_safety_blocks(
