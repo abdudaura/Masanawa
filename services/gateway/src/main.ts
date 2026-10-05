@@ -22,7 +22,7 @@ import type {
   UserRelationshipProvisioner,
   UserRelationshipReader,
 } from "@masanawa/identity";
-import type { CommerceRepository } from "@masanawa/commerce";
+import type { CommerceRepository, CryptoRepository } from "@masanawa/commerce";
 import { parseCanonicalId, readRequiredEnv } from "@masanawa/contracts";
 import type { PlatformSessionRepository } from "@masanawa/security";
 import {
@@ -42,6 +42,7 @@ import {
   createPostgresCharacterOwnershipReader,
   createPostgresCharacterSkillAssignmentRepository,
   createPostgresCommerceRepository,
+  createPostgresCryptoRepository,
   createPostgresPlatformAgentProfileRepository,
   createPostgresSkillGuideRepository,
   createPostgresSkillDistributionRepository,
@@ -83,8 +84,18 @@ import {
   parseAlphaDevIds,
   parseAlphaRelationshipMap,
 } from "./alpha_dev.js";
+import {
+  NowPaymentsClient,
+  NowPaymentsCustodyClient,
+  NowPaymentsPayoutClient,
+  collectNowPaymentsRuntimeEvidence,
+} from "@masanawa/nowpayments";
 import { createGeminiAlphaInferenceProvider } from "./alpha_executor.js";
 import { createAlphaInferenceStrategy } from "./alpha_strategy.js";
+import {
+  createFinancialService,
+  type FinancialAuthorizer,
+} from "./financial_service.js";
 import { createGeminiLiveAudioRenderer } from "./native_audio.js";
 import { createAgentShellService } from "./agent_shell.js";
 import type {
@@ -107,6 +118,7 @@ import {
   createHttpSmsOtpDelivery,
   createPlatformCustomerAuthorizers,
   createPlatformCustomerSessionAuthorizer,
+  createPlatformSessionFinancialAuthorizer,
   createResendOtpDelivery,
   type CustomerAuthService,
 } from "./customer_auth.js";
@@ -134,6 +146,7 @@ export interface ServiceDatabaseDependency {
   readonly relationshipProvisioner?: UserRelationshipProvisioner;
   readonly platformSessions?: PlatformSessionRepository;
   readonly commerce?: CommerceRepository;
+  readonly crypto?: CryptoRepository;
   readonly ownerships?: CharacterOwnershipReader;
   readonly mobileShell?: MobileShellRepository;
   readonly mobilePush?: MobilePushRepository;
@@ -158,6 +171,7 @@ export interface StartGatewayServiceOptions {
   readonly agentConversationAuthorizer?: AgentConversationAuthorizer;
   readonly creatorCloneAuthorizer?: CreatorCloneAuthorizer;
   readonly commerceAuthorizer?: CommerceUserAuthorizer;
+  readonly financialAuthorizer?: FinancialAuthorizer;
   readonly agentStrategy?: AgentStrategy;
   readonly agentShellActionExecutor?: AgentShellActionExecutor;
 }
@@ -224,6 +238,7 @@ function createDefaultDatabaseDependency(
       createPostgresUserRelationshipProvisioner(database.pool),
     platformSessions: createPostgresPlatformSessionRepository(database.pool),
     commerce: createPostgresCommerceRepository(database.pool),
+    crypto: createPostgresCryptoRepository(database.pool),
     ownerships: createPostgresCharacterOwnershipReader(database.pool),
     mobileShell: createPostgresMobileShellRepository(database.pool),
     mobilePush: createPostgresMobilePushRepository(database.pool),
@@ -273,6 +288,44 @@ function productionGeminiApiKey(
   throw new TypeError("A Gemini API key is required for the production Agent runtime");
 }
 
+function readCsvEnv(value: string | undefined): readonly string[] {
+  if (!value?.trim()) return Object.freeze([]);
+  return Object.freeze([
+    ...new Set(
+      value.split(",").map((entry) => entry.trim().toUpperCase()).filter(Boolean),
+    ),
+  ]);
+}
+
+function readWithdrawalAllowlist(value: string | undefined): ReadonlySet<string> {
+  if (!value?.trim()) return new Set();
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    throw new TypeError("NOWPAYMENTS_WITHDRAWAL_ALLOWLIST_JSON must be valid JSON");
+  }
+  if (!Array.isArray(parsed)) {
+    throw new TypeError("NOWPAYMENTS_WITHDRAWAL_ALLOWLIST_JSON must be an array");
+  }
+  const keys = new Set<string>();
+  for (const item of parsed) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) {
+      throw new TypeError("NOWPAYMENTS_WITHDRAWAL_ALLOWLIST_JSON entry is invalid");
+    }
+    const row = item as Record<string, unknown>;
+    const userId = typeof row.userId === "string" ? row.userId.trim() : "";
+    const providerCode =
+      typeof row.providerCode === "string" ? row.providerCode.trim().toUpperCase() : "";
+    const address = typeof row.address === "string" ? row.address.trim() : "";
+    if (!userId || !providerCode || !address) {
+      throw new TypeError("NOWPAYMENTS_WITHDRAWAL_ALLOWLIST_JSON entry is incomplete");
+    }
+    keys.add(`${userId}|${providerCode}|${address}`);
+  }
+  return keys;
+}
+
 export async function startGatewayService(
   options: StartGatewayServiceOptions = {},
 ): Promise<GatewayServiceRuntime> {
@@ -289,6 +342,7 @@ export async function startGatewayService(
   let conversationAuthorizer = options.agentConversationAuthorizer;
   let creatorCloneAuthorizer = options.creatorCloneAuthorizer;
   let commerceAuthorizer = options.commerceAuthorizer;
+  let financialAuthorizer = options.financialAuthorizer;
   let strategy = options.agentStrategy;
   let nativeAudio;
   let liveVoiceTokens: LiveVoiceTokenService | undefined;
@@ -390,6 +444,9 @@ export async function startGatewayService(
   ) {
     const platformTenantId = parseCanonicalId("tenant", platformTenantRaw);
     const customerSessions = createPlatformCustomerSessionAuthorizer({
+      repository: database.platformSessions,
+    });
+    financialAuthorizer ??= createPlatformSessionFinancialAuthorizer({
       repository: database.platformSessions,
     });
 
@@ -494,7 +551,139 @@ export async function startGatewayService(
     }
   }
 
-  const composedDirectory =
+  const nowPaymentsApiKey = env.NOWPAYMENTS_API_KEY?.trim();
+  const nowPaymentsIpnSecret = env.NOWPAYMENTS_IPN_SECRET?.trim();
+  const nowPaymentsEmail = env.NOWPAYMENTS_PAYOUT_EMAIL?.trim();
+  const nowPaymentsPassword = env.NOWPAYMENTS_PAYOUT_PASSWORD?.trim();
+  const nowPaymentsRelayToken = env.MASANAWA_NOWPAYMENTS_RELAY_TOKEN?.trim();
+  const nowPaymentsRelayBaseUrl =
+    env.NOWPAYMENTS_RELAY_URL?.trim() ||
+    "https://209-38-107-173.sslip.io/v1";
+  const rawPublicBaseUrl =
+    env.MASANAWA_PUBLIC_BASE_URL?.trim() ||
+    env.RAILWAY_STATIC_URL?.trim() ||
+    env.RAILWAY_PUBLIC_DOMAIN?.trim();
+  const publicBaseUrl = rawPublicBaseUrl
+    ? (/^https?:\/\//iu.test(rawPublicBaseUrl)
+        ? rawPublicBaseUrl
+        : `https://${rawPublicBaseUrl}`)
+    : undefined;
+
+  const conversionProviderCodes = readCsvEnv(
+    env.NOWPAYMENTS_CONVERSION_PROVIDER_CODES,
+  );
+  const withdrawalProviderCodes = readCsvEnv(
+    env.NOWPAYMENTS_WITHDRAWAL_PROVIDER_CODES,
+  );
+  const withdrawalAllowlist = readWithdrawalAllowlist(
+    env.NOWPAYMENTS_WITHDRAWAL_ALLOWLIST_JSON,
+  );
+  const payoutFeeMode =
+    env.NOWPAYMENTS_PAYOUT_FEE_MODE === "sender" ||
+    env.NOWPAYMENTS_PAYOUT_FEE_MODE === "receiver"
+      ? env.NOWPAYMENTS_PAYOUT_FEE_MODE
+      : undefined;
+
+  let composedFinancial = options.appOptions?.financial;
+  if (
+    !composedFinancial &&
+    financialAuthorizer &&
+    database.crypto &&
+    nowPaymentsApiKey &&
+    nowPaymentsIpnSecret &&
+    nowPaymentsEmail &&
+    nowPaymentsPassword &&
+    nowPaymentsRelayToken &&
+    publicBaseUrl
+  ) {
+    const sharedProviderOptions = {
+      apiKey: nowPaymentsApiKey,
+      baseUrl: nowPaymentsRelayBaseUrl,
+      relayToken: nowPaymentsRelayToken,
+    };
+    const payments = new NowPaymentsClient(sharedProviderOptions);
+    const custody = new NowPaymentsCustodyClient({
+      ...sharedProviderOptions,
+      email: nowPaymentsEmail,
+      password: nowPaymentsPassword,
+    });
+    const payout = new NowPaymentsPayoutClient({
+      ...sharedProviderOptions,
+      email: nowPaymentsEmail,
+      password: nowPaymentsPassword,
+    });
+
+    const runtimeEvidence = () =>
+      collectNowPaymentsRuntimeEvidence({
+        payments,
+        custody,
+        payout,
+        config: {
+          conversionEnabled:
+            env.NOWPAYMENTS_CONVERSIONS_ENABLED === "true",
+          payoutEnabled:
+            env.NOWPAYMENTS_PAYOUTS_ENABLED === "true" &&
+            env.NOWPAYMENTS_PAYOUT_2FA_READY === "true",
+          ipWhitelistSatisfied:
+            env.NOWPAYMENTS_FIXED_EGRESS_CONFIRMED === "true",
+          payoutDestinationWhitelistSatisfied:
+            env.NOWPAYMENTS_DESTINATION_WHITELIST_CONFIRMED === "true",
+          conversionProviderCodes,
+          withdrawalProviderCodes,
+        },
+        signal: AbortSignal.timeout(15_000),
+      });
+
+    const fiatCurrencies = readCsvEnv(env.NOWPAYMENTS_FIAT_CURRENCIES);
+    const settlementProviderCode =
+      env.NOWPAYMENTS_FIAT_SETTLEMENT_PROVIDER_CODE?.trim().toUpperCase();
+
+    composedFinancial = createFinancialService({
+      authorizer: financialAuthorizer,
+      crypto: database.crypto,
+      nowPayments: payments,
+      nowPaymentsCustody: custody,
+      nowPaymentsPayout: payout,
+      withdrawalEvidence:
+        env.NOWPAYMENTS_PAYOUTS_ENABLED === "true" &&
+        env.NOWPAYMENTS_PAYOUT_2FA_READY === "true" &&
+        payoutFeeMode !== undefined
+          ? runtimeEvidence
+          : undefined,
+      conversionEvidence:
+        env.NOWPAYMENTS_CONVERSIONS_ENABLED === "true"
+          ? runtimeEvidence
+          : undefined,
+      ...(payoutFeeMode === undefined
+        ? {}
+        : { withdrawalNetworkFeeMode: payoutFeeMode }),
+      withdrawalDestinationApproved: async (request) =>
+        withdrawalAllowlist.has(
+          `${request.userId}|${request.providerCode}|${request.destinationAddress}`,
+        ),
+      ...(env.NOWPAYMENTS_PAYOUT_VERIFICATION_CODE?.trim()
+        ? {
+            payoutVerificationCodeProvider: async () =>
+              env.NOWPAYMENTS_PAYOUT_VERIFICATION_CODE!.trim(),
+          }
+        : {}),
+      ...(env.NOWPAYMENTS_FIAT_ONRAMP_ENABLED === "true" &&
+      fiatCurrencies.length > 0 &&
+      settlementProviderCode
+        ? {
+            fiatOnRamp: {
+              enabled: true as const,
+              fiatCurrencies,
+              settlementProviderCode,
+            },
+          }
+        : {}),
+      nowPaymentsIpnSecret,
+      publicBaseUrl,
+    });
+  }
+
+    const composedDirectory =
     options.appOptions?.agentDirectory ??
     (directoryAuthorizer && database.agentPresentations
       ? createAgentDirectoryService({
@@ -654,6 +843,7 @@ export async function startGatewayService(
     app = appFactory({
       ...(options.appOptions ?? {}),
       ...(customerAuth ? { customerAuth } : {}),
+      ...(composedFinancial ? { financial: composedFinancial } : {}),
       ...(composedDirectory ? { agentDirectory: composedDirectory } : {}),
       ...(composedConversation
         ? { agentConversation: composedConversation }
