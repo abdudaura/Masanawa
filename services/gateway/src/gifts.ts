@@ -86,7 +86,7 @@ export function createGiftService(input: {
   readonly guard: GiftGuard;
   readonly executor: GiftExecutor;
 }): GiftService {
-  return Object.freeze({
+  return Object.freeze<GiftService>({
     async gift(request) {
       const authority = await input.authorizer.authorize({
         authorizationHeader: request.authorizationHeader,
