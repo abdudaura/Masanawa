@@ -56,9 +56,11 @@ Infrastructure observation:
 - no post-move authenticated latency result is claimed until a new real request is observed.
 
 Verification:
+- PR #174 merged into `work/production-apk-integration-20261005` at `2b2820c7afd121572dd6355d812d81344fc0c05d`;
+- Foundation CI run 37296822095 and Mobile Build run 37296822109 both ended before any steps executed (`steps: null`), so no hosted application pass/fail is claimed;
 - reconciliation is file/path-scoped; no production crypto, billing, onboarding, workflow or provider
   implementation was replaced;
 - no APK rebuild was performed in this slice;
 - executable hosted Flutter verification remains subject to the repository runner-allocation issue.
 
-Status: implementation complete pending PR integration.
+Status: merged implementation checkpoint.
