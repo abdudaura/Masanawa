@@ -26,6 +26,9 @@ class AdminAgentDelegate {
   const AdminAgentDelegate({
     required this.characterId,
     required this.label,
+    required this.displayName,
+    required this.roleLabel,
+    required this.ready,
     required this.purpose,
     required this.autonomy,
     required this.capabilities,
@@ -35,6 +38,9 @@ class AdminAgentDelegate {
 
   final String characterId;
   final String label;
+  final String? displayName;
+  final String? roleLabel;
+  final bool ready;
   final String purpose;
   final String autonomy;
   final List<String> capabilities;
@@ -45,6 +51,9 @@ class AdminAgentDelegate {
       AdminAgentDelegate(
         characterId: json['characterId'] as String,
         label: json['label'] as String,
+        displayName: json['displayName'] as String?,
+        roleLabel: json['roleLabel'] as String?,
+        ready: json['ready'] as bool? ?? false,
         purpose: json['purpose'] as String? ?? 'Platform administration',
         autonomy: json['autonomy'] as String? ?? 'confirm-writes',
         capabilities: (json['capabilities'] as List<dynamic>? ?? const [])
