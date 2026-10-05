@@ -79,6 +79,28 @@ class OwnerAccessController extends StateNotifier<OwnerAccessUiState> {
     }
   }
 
+  Future<OwnerAccessRequest?> latest({
+    required String characterId,
+  }) async {
+    state = OwnerAccessUiState(
+      quote: state.quote,
+      request: state.request,
+      loading: true,
+    );
+    try {
+      final request = await _transport.latest(characterId: characterId);
+      state = OwnerAccessUiState(quote: state.quote, request: request);
+      return request;
+    } catch (_) {
+      state = OwnerAccessUiState(
+        quote: state.quote,
+        request: state.request,
+        error: 'Could not load your latest owner request right now.',
+      );
+      return null;
+    }
+  }
+
   Future<OwnerAccessRequest?> read({
     required String characterId,
     required String requestId,
