@@ -46,12 +46,14 @@ Implemented:
 - canonical balance adapter over existing Commerce + PersonalClone repositories;
 - creator Agent Float is explicitly dropped from the consumer projection;
 - merged history-source adapter with duplicate consistency checks;
-- focused service/route/source tests.
+- focused service/route/source tests;
+- twin-economy event -> Wallet history adapter with owner-scope enforcement.
 
 Not yet integrated:
 - Gateway app/main composition;
 - authenticated mobile Wallet transport;
-- transfer/gift/billing/voice/owner-access history subsources;
+- event reader/outbox implementation feeding the provided twin-economy Wallet adapter;
+- transfer/funding/withdrawal history subsources not represented by twin-economy events;
 - crypto asset presentation remains separate and must not be folded into Credits;
 - Activity emission and final four-tab router.
 
