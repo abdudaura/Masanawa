@@ -1,12 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@color/masanawa_launch_background" />
-    <item>
-        <bitmap android:gravity="center" android:src="@android:color/transparent" />
+    <item android:gravity="center">
+        <inset
+            android:drawable="@drawable/masanawa_splash_mark"
+            android:inset="34%" />
     </item>
-    <item
-        android:width="96dp"
-        android:height="96dp"
-        android:gravity="center"
-        android:drawable="@drawable/masanawa_splash_mark" />
 </layer-list>
