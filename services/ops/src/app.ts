@@ -249,6 +249,21 @@ const RevokeCredentialBodySchema = Type.Object(
   { additionalProperties: false },
 );
 
+const ApprovalParamsSchema = Type.Object(
+  { approvalId: Type.String() },
+  { additionalProperties: false },
+);
+
+const ApprovalDecisionBodySchema = Type.Object(
+  {
+    decision: Type.Union([
+      Type.Literal("approved"),
+      Type.Literal("denied"),
+    ]),
+  },
+  { additionalProperties: false },
+);
+
 const WorldParamsSchema = Type.Object(
   { worldId: Type.String() },
   { additionalProperties: false },
@@ -866,6 +881,22 @@ export function createOpsApp(options: OpsAppOptions = {}) {
           authorizationHeader: request.headers.authorization,
           worldId: request.params.worldId,
           expectedRevision: request.body.expectedRevision,
+        }),
+    );
+
+    app.post(
+      "/v1/admin/approvals/:approvalId/decision",
+      {
+        schema: {
+          params: ApprovalParamsSchema,
+          body: ApprovalDecisionBodySchema,
+        },
+      },
+      async (request) =>
+        systemAdmin.decideApproval({
+          authorizationHeader: request.headers.authorization,
+          approvalId: request.params.approvalId,
+          decision: request.body.decision,
         }),
     );
 
