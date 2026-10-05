@@ -51,11 +51,13 @@ Masanawa is a platform for creating persistent AI beings that can maintain ident
 The fundamental product unit is the **Character**.
 
 For the consumer product, Masanawa additionally distinguishes platform Characters,
-one personal clone per ordinary User, and later business Characters. A personal clone
-is still a canonical Character; "clone" is a product relationship/ownership concept,
-not a second identity system. Masanawa owns the platform, product/service catalog,
-pricing, execution standards, routing and settlement. See
-`docs/CREATOR-CLONE-ECONOMY.md`.
+one personal **Twin** per ordinary User, and later business Characters. The personal
+Twin is still a canonical Character. The persisted `personal-clone` ownership kind is
+an internal compatibility/domain term, not a second identity system and not ordinary
+user-facing language. Masanawa owns the platform, product/service catalog, pricing,
+execution standards, routing and settlement. See `docs/PRODUCT-TWIN-ECONOMY.md`;
+`docs/CREATOR-CLONE-ECONOMY.md` remains an internal commerce-history foundation where
+its invariants do not conflict with the Twin overlay.
 
 A Character is the durable identity of an AI being. It is not:
 - a prompt;
@@ -277,14 +279,14 @@ The target product is complete only when an agent can combine the following capa
 - keep platform memory independent of third-party app storage.
 
 ### Commerce
-- platform-owned Offer catalog linked to executable Skills/capabilities;
-- deterministic platform pricing, creator commission and Masanawa margin;
-- Customer Credits, creator Agent Float and explicit fulfillment reservations;
-- reseller/originating-Character attribution independent from fulfillment executor;
+- platform-owned product/service catalog linked internally to executable capabilities;
+- deterministic platform pricing, configurable originating-Twin commission and Masanawa margin;
+- simple customer Credits and earnings projections over canonical internal ledger custody;
+- originating-Twin attribution independent from the fulfillment executor;
 - quote;
 - approve;
 - pay/receive where product policy permits;
-- route eligible fallback fulfillment when the originating clone cannot fund/execute;
+- route eligible fallback fulfillment internally without exposing reserve/capacity machinery;
 - append-only ledger and settlement;
 - reconcile refunds/adjustments;
 - produce receipts;
@@ -322,11 +324,12 @@ The target product is complete only when an agent can combine the following capa
 
 ## 5.1 Mobile user experience
 
-The primary mobile product is a voice-first conversation surface over configured
-Characters. The client does not ship a fixed agent roster. Administrators choose which
-Characters appear and their presentation metadata; Character identity remains separate
-from Skill assignment, so any permitted Skill can be assigned or removed without
-recreating or renaming the Character.
+The primary mobile product is the four-surface Twin shell: **My Twin, Explore, Activity
+and Wallet**, with rich text/voice conversation as the main interaction surface inside
+Twins. The client does not ship a fixed agent roster. Administrators choose which
+platform/support Characters appear and their presentation metadata; Character identity
+remains separate from internal capability assignment, so capabilities can evolve without
+recreating or renaming the Character or exposing Skill administration to ordinary users.
 
 Files, artifacts, long-running work, approvals, calls and receipts return into the same
 conversation as typed result parts. Ordinary users should not need top-level Skills,
@@ -395,12 +398,12 @@ Implementation should be prioritized by whether it makes these experiences real.
 8. A world event changes shared Character life state without leaking private relationship memory.
 9. A consequential action has an auditable operation, authority, provider/device receipt and reconciliation path.
 10. Replacing the model, phone or channel does not erase the Character.
-11. A nontechnical user can create one personal clone conversationally, enable a
-    commercial Skill without seeing Tool/provider internals, and share the clone.
-12. A customer can buy an Offer through a creator's clone; if that clone lacks
-    sufficient Agent Float or execution capacity, Masanawa can transparently route
-    fulfillment elsewhere while preserving the originating relationship and deterministic
-    creator attribution.
+11. A nontechnical user can create and customize one personal Twin conversationally,
+    share it, and let another person begin free text chat without seeing runtime internals.
+12. A customer can buy an eligible Masanawa product or service from a Twin conversation;
+    Masanawa may transparently use any eligible executor while preserving the originating
+    Twin attribution and configured owner commission, without exposing Agent Float,
+    provider reserves or execution-capacity mechanics.
 13. Gwani is available as the default platform/support Character, Gwana can be selected
     instead in Settings, and switching between them does not create a new platform
     authority model.
