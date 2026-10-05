@@ -1,6 +1,4 @@
 import type { PersonalCloneProvisioningRepository } from "@masanawa/identity";
-import type { CreatorAuthorizer } from "./creator_clone.js";
-
 export type TwinActivityKind =
   | "visit"
   | "conversation"
@@ -26,6 +24,18 @@ export interface TwinActivityRecord {
   readonly status: TwinActivityStatus;
   readonly occurredAt: string;
   readonly amountCredits?: number | null;
+}
+
+export interface TwinActivityAuthority {
+  readonly tenantId: string;
+  readonly userId: string;
+}
+
+export interface TwinActivityAuthorizer {
+  authorize(input: {
+    readonly authorizationHeader: string | undefined;
+    readonly capability: "creator.activity.read";
+  }): Promise<TwinActivityAuthority>;
 }
 
 export interface TwinActivitySource {
@@ -142,7 +152,7 @@ function emptyView(): TwinActivityView {
 }
 
 export function createTwinActivityService(input: {
-  readonly authorizer: CreatorAuthorizer;
+  readonly authorizer: TwinActivityAuthorizer;
   readonly personalClones: PersonalCloneProvisioningRepository;
   readonly source: TwinActivitySource;
 }): TwinActivityService {
