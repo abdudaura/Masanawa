@@ -43,6 +43,15 @@ class GatewayPaidVoiceTransport implements PaidVoiceTransport {
     return PaidVoiceAdmission.fromJson(_map(response.data));
   }
   @override
+  Future<void> mediaStarted({
+    required String admissionId,
+  }) async {
+    await api.dio.post<dynamic>(
+      '/agent/twin/voice/$admissionId/media-started',
+    );
+  }
+
+  @override
   Future<void> complete({
     required String admissionId,
     required String outcome,
