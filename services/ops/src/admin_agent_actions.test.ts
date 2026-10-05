@@ -64,11 +64,15 @@ describe("admin Agent action broker", () => {
       setOfferEnabled,
     } as unknown as PlatformAdminService;
     const approvalCommands = {
-      prepare: vi.fn(async () => ({
+      admit: vi.fn(async () => ({
         approvalId: "approval_00000000-0000-4000-8000-000000000003",
         operationId: "operation_00000000-0000-4000-8000-000000000004",
         reused: false,
+        execution: "awaiting-approval" as const,
       })),
+      beginExecution: vi.fn(),
+      completeExecution: vi.fn(),
+      markExecutionUnknown: vi.fn(),
     };
     const broker = createAdminAgentActionBroker({
       config,
@@ -101,10 +105,178 @@ describe("admin Agent action broker", () => {
     expect(setOfferEnabled).not.toHaveBeenCalled();
   });
 
+  it("executes an approved exact replay through the canonical write service and Operation lifecycle", async () => {
+    const setOfferEnabled = vi.fn(async () => ({
+      offerId: "offer_00000000-0000-4000-8000-000000000001",
+      revision: 2,
+      enabled: false,
+    }));
+    const platformAdmin = {
+      setOfferEnabled,
+    } as unknown as PlatformAdminService;
+    const approvalCommands = {
+      admit: vi.fn(async () => ({
+        approvalId: "approval_00000000-0000-4000-8000-000000000003",
+        operationId: "operation_00000000-0000-4000-8000-000000000004",
+        reused: true,
+        execution: "authorized" as const,
+      })),
+      beginExecution: vi.fn(async () => undefined),
+      completeExecution: vi.fn(async () => undefined),
+      markExecutionUnknown: vi.fn(async () => undefined),
+    };
+    const broker = createAdminAgentActionBroker({
+      config,
+      authorizer,
+      platformAdmin,
+      approvalCommands,
+    });
+
+    await expect(broker.execute({
+      authorizationHeader: "Bearer operator",
+      characterId: gwaniId,
+      action: "offer.set-enabled",
+      agentRunId: "agent-run_00000000-0000-4000-8000-000000000002",
+      idempotencyKey: "gwani-write-1",
+      arguments: {
+        offerId: "offer_00000000-0000-4000-8000-000000000001",
+        expectedRevision: 1,
+        enabled: false,
+      },
+    })).resolves.toEqual({
+      status: "completed",
+      action: "offer.set-enabled",
+      operationId: "operation_00000000-0000-4000-8000-000000000004",
+      replayed: false,
+      data: {
+        offerId: "offer_00000000-0000-4000-8000-000000000001",
+        revision: 2,
+        enabled: false,
+      },
+    });
+
+    expect(approvalCommands.beginExecution).toHaveBeenCalledWith({
+      tenantId,
+      operationId: "operation_00000000-0000-4000-8000-000000000004",
+    });
+    expect(setOfferEnabled).toHaveBeenCalledWith({
+      authorizationHeader: "Bearer operator",
+      offerId: "offer_00000000-0000-4000-8000-000000000001",
+      expectedRevision: 1,
+      enabled: false,
+    });
+    expect(approvalCommands.completeExecution).toHaveBeenCalledWith({
+      tenantId,
+      operationId: "operation_00000000-0000-4000-8000-000000000004",
+    });
+    expect(approvalCommands.markExecutionUnknown).not.toHaveBeenCalled();
+    expect(approvalCommands.beginExecution.mock.invocationCallOrder[0])
+      .toBeLessThan(setOfferEnabled.mock.invocationCallOrder[0]!);
+    expect(setOfferEnabled.mock.invocationCallOrder[0])
+      .toBeLessThan(approvalCommands.completeExecution.mock.invocationCallOrder[0]!);
+  });
+
+  it("does not execute a canonical write again after the Operation already succeeded", async () => {
+    const setOfferEnabled = vi.fn();
+    const platformAdmin = {
+      setOfferEnabled,
+    } as unknown as PlatformAdminService;
+    const approvalCommands = {
+      admit: vi.fn(async () => ({
+        approvalId: "approval_00000000-0000-4000-8000-000000000003",
+        operationId: "operation_00000000-0000-4000-8000-000000000004",
+        reused: true,
+        execution: "succeeded" as const,
+      })),
+      beginExecution: vi.fn(),
+      completeExecution: vi.fn(),
+      markExecutionUnknown: vi.fn(),
+    };
+    const broker = createAdminAgentActionBroker({
+      config,
+      authorizer,
+      platformAdmin,
+      approvalCommands,
+    });
+
+    await expect(broker.execute({
+      authorizationHeader: "Bearer operator",
+      characterId: gwaniId,
+      action: "offer.set-enabled",
+      agentRunId: "agent-run_00000000-0000-4000-8000-000000000002",
+      idempotencyKey: "gwani-write-1",
+      arguments: {
+        offerId: "offer_00000000-0000-4000-8000-000000000001",
+        expectedRevision: 1,
+        enabled: false,
+      },
+    })).resolves.toEqual({
+      status: "completed",
+      action: "offer.set-enabled",
+      operationId: "operation_00000000-0000-4000-8000-000000000004",
+      replayed: true,
+      data: {
+        operationId: "operation_00000000-0000-4000-8000-000000000004",
+        replayed: true,
+      },
+    });
+
+    expect(setOfferEnabled).not.toHaveBeenCalled();
+    expect(approvalCommands.beginExecution).not.toHaveBeenCalled();
+  });
+
+  it("marks the Operation unknown instead of blindly retrying an ambiguous write failure", async () => {
+    const setOfferEnabled = vi.fn(async () => {
+      throw new Error("connection lost after dispatch");
+    });
+    const platformAdmin = {
+      setOfferEnabled,
+    } as unknown as PlatformAdminService;
+    const approvalCommands = {
+      admit: vi.fn(async () => ({
+        approvalId: "approval_00000000-0000-4000-8000-000000000003",
+        operationId: "operation_00000000-0000-4000-8000-000000000004",
+        reused: true,
+        execution: "authorized" as const,
+      })),
+      beginExecution: vi.fn(async () => undefined),
+      completeExecution: vi.fn(async () => undefined),
+      markExecutionUnknown: vi.fn(async () => undefined),
+    };
+    const broker = createAdminAgentActionBroker({
+      config,
+      authorizer,
+      platformAdmin,
+      approvalCommands,
+    });
+
+    await expect(broker.execute({
+      authorizationHeader: "Bearer operator",
+      characterId: gwaniId,
+      action: "offer.set-enabled",
+      agentRunId: "agent-run_00000000-0000-4000-8000-000000000002",
+      idempotencyKey: "gwani-write-1",
+      arguments: {
+        offerId: "offer_00000000-0000-4000-8000-000000000001",
+        expectedRevision: 1,
+        enabled: false,
+      },
+    })).rejects.toThrow("connection lost after dispatch");
+
+    expect(approvalCommands.completeExecution).not.toHaveBeenCalled();
+    expect(approvalCommands.markExecutionUnknown).toHaveBeenCalledWith({
+      tenantId,
+      operationId: "operation_00000000-0000-4000-8000-000000000004",
+    });
+  });
+
   it("requires AgentRun and idempotency identity for governed writes", async () => {
     const platformAdmin = {} as PlatformAdminService;
     const approvalCommands = {
-      prepare: vi.fn(),
+      admit: vi.fn(),
+      beginExecution: vi.fn(),
+      completeExecution: vi.fn(),
+      markExecutionUnknown: vi.fn(),
     };
     const broker = createAdminAgentActionBroker({
       config,
@@ -120,7 +292,7 @@ describe("admin Agent action broker", () => {
     })).rejects.toThrow(
       "Governed admin writes require agentRunId and idempotencyKey",
     );
-    expect(approvalCommands.prepare).not.toHaveBeenCalled();
+    expect(approvalCommands.admit).not.toHaveBeenCalled();
   });
 
   it("intersects Gwani delegation with operator authority", async () => {
