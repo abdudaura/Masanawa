@@ -21,8 +21,14 @@ import type {
   PersonalCloneProvisioningRepository,
   UserRelationshipReader,
 } from "@masanawa/identity";
-import type { CommerceRepository } from "@masanawa/commerce";
+import type { BillingQuoteRepository, CommerceRepository } from "@masanawa/commerce";
 import { parseCanonicalId, readRequiredEnv } from "@masanawa/contracts";
+import {
+  FlutterwaveBillsClient,
+  FlutterwaveFundingClient,
+  FlutterwaveHttpTransport,
+  type BillingFulfillmentStore,
+} from "@masanawa/providers";
 import {
   createDrainState,
   readNodeServiceRuntimeConfig,
@@ -52,6 +58,9 @@ import {
   createPostgresMobilePushRepository,
   createPostgresMobileAgentActivityRepository,
   createPostgresProductionUserIdentityRepository,
+  createPostgresBillingQuoteRepository,
+  createPostgresBillingFulfillmentStore,
+  createPostgresBillingWebhookRepository,
   type ProductionUserIdentityRepository,
 } from "@masanawa/postgres";
 import {
@@ -105,6 +114,14 @@ import {
   createProductionAuthorizers,
   type ProductionAuthService,
 } from "./production_auth.js";
+import {
+  createBillingFinancialService,
+  type BillingFinancialService,
+} from "./financial_billing.js";
+import {
+  createBillingCheckoutService,
+  type BillingCheckoutService,
+} from "./billing_checkout.js";
 
 export type ServiceSignal = "SIGINT" | "SIGTERM";
 
@@ -132,6 +149,11 @@ export interface ServiceDatabaseDependency {
   readonly mobilePush?: MobilePushRepository;
   readonly mobileActivity?: MobileAgentActivityRepository;
   readonly productionUsers?: ProductionUserIdentityRepository;
+  readonly billingQuotes?: BillingQuoteRepository;
+  readonly billingStore?: (
+    identity: Readonly<{ tenantId: string; userId: string }>,
+  ) => BillingFulfillmentStore;
+  readonly billingWebhooks?: ReturnType<typeof createPostgresBillingWebhookRepository>;
   close(): Promise<void>;
 }
 
@@ -220,6 +242,10 @@ function createDefaultDatabaseDependency(
     mobilePush: createPostgresMobilePushRepository(database.pool),
     mobileActivity: createPostgresMobileAgentActivityRepository(database.pool),
     productionUsers: createPostgresProductionUserIdentityRepository(database.pool),
+    billingQuotes: createPostgresBillingQuoteRepository(database.pool),
+    billingStore: (identity) =>
+      createPostgresBillingFulfillmentStore(database.pool, identity),
+    billingWebhooks: createPostgresBillingWebhookRepository(database.pool),
     close: database.close,
   });
 }
@@ -460,6 +486,165 @@ export async function startGatewayService(
     });
   }
 
+  const billingEnabled = env.FLUTTERWAVE_BILLS_ENABLED === "true";
+  const flutterwaveSecretKey = env.FLUTTERWAVE_SECRET_KEY?.trim();
+  const flutterwaveRelayUrl = env.FLUTTERWAVE_RELAY_URL?.trim();
+  const flutterwaveRelayToken =
+    env.MASANAWA_FLUTTERWAVE_RELAY_TOKEN?.trim();
+  const flutterwaveRelayProtocol =
+    env.FLUTTERWAVE_RELAY_PROTOCOL === "dual-header"
+      ? ("dual-header" as const)
+      : ("bearer" as const);
+
+  if (
+    billingEnabled &&
+    Boolean(flutterwaveRelayUrl) !== Boolean(flutterwaveRelayToken)
+  ) {
+    await database.close().catch(() => undefined);
+    throw new TypeError(
+      "Flutterwave relay URL and relay token must be configured together",
+    );
+  }
+
+  const flutterwaveTransport =
+    billingEnabled && flutterwaveSecretKey
+      ? new FlutterwaveHttpTransport(
+          flutterwaveRelayUrl && flutterwaveRelayToken
+            ? {
+                baseUrl: flutterwaveRelayUrl,
+                relayToken: flutterwaveRelayToken,
+                relayProtocol: flutterwaveRelayProtocol,
+              }
+            : {},
+        )
+      : undefined;
+  const flutterwaveBills =
+    billingEnabled && flutterwaveSecretKey && flutterwaveTransport
+      ? new FlutterwaveBillsClient({
+          secretKey: flutterwaveSecretKey,
+          transport: flutterwaveTransport,
+          country: "NG",
+        })
+      : undefined;
+  const flutterwaveFunding =
+    billingEnabled && flutterwaveSecretKey && flutterwaveTransport
+      ? new FlutterwaveFundingClient({
+          secretKey: flutterwaveSecretKey,
+          transport: flutterwaveTransport,
+        })
+      : undefined;
+
+  const billingAuthorizer =
+    billingEnabled && productionAuth
+      ? Object.freeze({
+          async authorize(request: Readonly<{
+            authorizationHeader: string | undefined;
+          }>) {
+            const authority = await productionAuth.authenticate(
+              request.authorizationHeader,
+            );
+            return Object.freeze({
+              tenantId: authority.tenantId,
+              userId: authority.userId,
+            });
+          },
+        })
+      : undefined;
+
+  const billingCustomerAuthorizer =
+    billingEnabled && productionAuth
+      ? Object.freeze({
+          async authorize(request: Readonly<{
+            authorizationHeader: string | undefined;
+          }>) {
+            const authority = await productionAuth.authenticate(
+              request.authorizationHeader,
+            );
+            return Object.freeze({
+              tenantId: authority.tenantId,
+              userId: authority.userId,
+            });
+          },
+        })
+      : undefined;
+
+  let composedBillingFinancial: BillingFinancialService | undefined =
+    options.appOptions?.billingFinancial;
+  let composedBillingCheckout: BillingCheckoutService | undefined =
+    options.appOptions?.billingCheckout;
+
+  if (
+    billingEnabled &&
+    (!composedBillingFinancial || !composedBillingCheckout)
+  ) {
+    const webhookHash = env.FLUTTERWAVE_WEBHOOK_SECRET_HASH?.trim();
+    const webhookUrl = env.FLUTTERWAVE_WEBHOOK_URL?.trim();
+    const actionSecret = env.MASANAWA_BILLING_ACTION_SECRET?.trim();
+    const redirectUrl =
+      env.MASANAWA_BILLING_REDIRECT_URL?.trim() ||
+      (env.MASANAWA_PUBLIC_BASE_URL?.trim()
+        ? `${env.MASANAWA_PUBLIC_BASE_URL.trim().replace(/\/$/u, "")}/billing/return`
+        : "");
+    const feeBasisPoints = Number(env.MASANAWA_BILLING_FEE_BPS ?? "0");
+    const feeFixedKobo = Number(
+      env.MASANAWA_BILLING_FEE_FIXED_KOBO ?? "0",
+    );
+
+    if (
+      !productionAuth ||
+      !billingAuthorizer ||
+      !billingCustomerAuthorizer ||
+      !database.billingStore ||
+      !database.billingQuotes ||
+      !database.billingWebhooks ||
+      !flutterwaveSecretKey ||
+      !flutterwaveBills ||
+      !flutterwaveFunding ||
+      !webhookHash ||
+      !webhookUrl ||
+      !actionSecret ||
+      !redirectUrl ||
+      !Number.isSafeInteger(feeBasisPoints) ||
+      feeBasisPoints < 0 ||
+      feeBasisPoints > 10_000 ||
+      !Number.isSafeInteger(feeFixedKobo) ||
+      feeFixedKobo < 0
+    ) {
+      await database.close().catch(() => undefined);
+      throw new TypeError(
+        "Billing is enabled but production auth or Flutterwave billing configuration is incomplete",
+      );
+    }
+
+    composedBillingFinancial ??= createBillingFinancialService({
+      billingStore: database.billingStore,
+      webhookRepository: database.billingWebhooks,
+      authorizer: billingAuthorizer,
+      flutterwaveSecretKey,
+      flutterwaveWebhookHash: webhookHash,
+      flutterwaveWebhookUrl: webhookUrl,
+      providerClient: flutterwaveBills,
+      billingFunding: database.billingQuotes,
+      ...(flutterwaveRelayUrl ? { flutterwaveRelayUrl } : {}),
+      ...(flutterwaveRelayToken ? { flutterwaveRelayToken } : {}),
+      ...(flutterwaveRelayProtocol === "dual-header"
+        ? { flutterwaveRelayProtocol: "dual-header" as const }
+        : {}),
+    });
+
+    composedBillingCheckout ??= createBillingCheckoutService({
+      sessions: billingCustomerAuthorizer,
+      quotes: database.billingQuotes,
+      catalog: flutterwaveBills,
+      funding: flutterwaveFunding,
+      billing: composedBillingFinancial,
+      actionSecret,
+      redirectUrl,
+      feeBasisPoints,
+      feeFixedKobo,
+    });
+  }
+
   const composedDirectory =
     options.appOptions?.agentDirectory ??
     (directoryAuthorizer && database.agentPresentations
@@ -620,6 +805,12 @@ export async function startGatewayService(
     app = appFactory({
       ...(options.appOptions ?? {}),
       ...(productionAuth ? { productionAuth } : {}),
+      ...(composedBillingFinancial
+        ? { billingFinancial: composedBillingFinancial }
+        : {}),
+      ...(composedBillingCheckout
+        ? { billingCheckout: composedBillingCheckout }
+        : {}),
       ...(composedDirectory ? { agentDirectory: composedDirectory } : {}),
       ...(composedConversation
         ? { agentConversation: composedConversation }
