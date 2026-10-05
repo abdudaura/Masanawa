@@ -1280,16 +1280,17 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       if (mounted) _comingSoon('Live voice');
       return;
     }
+    final shellTransport = transport as AgentShellTransport;
     LiveVoiceSession? session;
     try {
       await _activeVoiceBubble?._pauseFromAnotherBubble();
-      await transport.setPresence(
+      await shellTransport.setPresence(
         characterId: agent.characterId,
         state: 'on_call',
         durationMs: 5 * 60 * 1000,
       );
       unawaited(ref.read(agentDirectoryProvider.notifier).refresh());
-      final grant = await transport.mintLiveVoiceGrant(agent.characterId);
+      final grant = await shellTransport.mintLiveVoiceGrant(agent.characterId);
       if (!mounted) return;
       session = LiveVoiceSession(
         grant: grant,
@@ -1316,7 +1317,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       }
     } finally {
       await session?.close();
-      await transport
+      await shellTransport
           .setPresence(
             characterId: agent.characterId,
             state: 'available',
