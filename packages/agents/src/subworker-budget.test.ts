@@ -5,7 +5,10 @@ import {
   normalizeAgentExecutionBudget,
   createInitialAgentExecutionUsage,
 } from "./execution-budget.js";
-import { createBudgetedSubworkerAdmissionService } from "./subworker-budget.js";
+import {
+  createBudgetedSubworkerAdmissionService,
+  type AgentExecutionBudgetReservationPort,
+} from "./subworker-budget.js";
 
 const tenantId = "tenant_00000000-0000-4000-8000-000000000001" as never;
 const userId = "user_00000000-0000-4000-8000-000000000002" as never;
@@ -78,7 +81,8 @@ describe("budgeted subworker admission", () => {
       authority: {} as AuthorityContext,
       skillVersionIds: [skillVersionId],
     }));
-    const reserveChildAdmission = vi.fn(async (input) => input.nextUsage);
+    const reserveChildAdmission: AgentExecutionBudgetReservationPort["reserveChildAdmission"] =
+      vi.fn(async (input) => input.nextUsage);
     const service = createBudgetedSubworkerAdmissionService({
       subworkers: { admit },
       reservations: { reserveChildAdmission },
@@ -101,7 +105,8 @@ describe("budgeted subworker admission", () => {
 
   it("rejects a child budget that exceeds parent remaining capacity before child creation", async () => {
     const admit = vi.fn();
-    const reserveChildAdmission = vi.fn(async (input) => input.nextUsage);
+    const reserveChildAdmission: AgentExecutionBudgetReservationPort["reserveChildAdmission"] =
+      vi.fn(async (input) => input.nextUsage);
     const service = createBudgetedSubworkerAdmissionService({
       subworkers: { admit: admit as never },
       reservations: { reserveChildAdmission },
@@ -122,7 +127,8 @@ describe("budgeted subworker admission", () => {
 
   it("rejects parent budget or usage bound to another AgentRun", async () => {
     const admit = vi.fn();
-    const reserveChildAdmission = vi.fn(async (input) => input.nextUsage);
+    const reserveChildAdmission: AgentExecutionBudgetReservationPort["reserveChildAdmission"] =
+      vi.fn(async (input) => input.nextUsage);
     const service = createBudgetedSubworkerAdmissionService({
       subworkers: { admit: admit as never },
       reservations: { reserveChildAdmission },
