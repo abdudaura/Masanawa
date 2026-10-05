@@ -44,4 +44,42 @@ void main() {
     expect(page.items.single.languages, isEmpty);
     expect(page.nextCursor, isNull);
   });
+
+  test('resolves a public twin id for shared links', () async {
+    String? path;
+    final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
+    dio.httpClientAdapter = _Adapter((options) async {
+      path = options.path;
+      return ResponseBody.fromString(
+        '{"characterId":"character-1","publicId":"amina","displayName":"Amina","headline":"Technology","avatarUrl":null,"representationLabel":"AI twin","ownerPresence":"not-present","textChatMode":"free"}',
+        200,
+        headers: {
+          Headers.contentTypeHeader: ['application/json'],
+        },
+      );
+    });
+
+    final transport = GatewayTwinDirectoryTransport(api: ApiClient(dio: dio));
+    final twin = await transport.resolve(publicId: 'amina');
+
+    expect(path, '/agent/twins/amina');
+    expect(twin?.displayName, 'Amina');
+  });
+
+  test('returns null when a public twin link no longer resolves', () async {
+    final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
+    dio.httpClientAdapter = _Adapter((options) async {
+      return ResponseBody.fromString(
+        '{"error":"Twin not found"}',
+        404,
+        headers: {
+          Headers.contentTypeHeader: ['application/json'],
+        },
+      );
+    });
+
+    final transport = GatewayTwinDirectoryTransport(api: ApiClient(dio: dio));
+    expect(await transport.resolve(publicId: 'missing'), isNull);
+  });
+
 }
