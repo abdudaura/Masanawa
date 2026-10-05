@@ -91,6 +91,50 @@ describeDatabase("billing NGN funding PostgreSQL acceptance", () => {
     return f;
   }
 
+  it("grants exactly one hosted-checkout dispatch claim under concurrency", async () => {
+    const f = fixture();
+    await f.repository.createQuote(f.quote);
+    await f.repository.confirmQuote({
+      tenantId: f.tenantId,
+      userId: f.userId,
+      quoteId: f.quote.quoteId,
+      quoteRevision: f.quote.revision,
+      confirmedAt: new Date().toISOString(),
+    });
+    const txRef = `bill-${f.quote.quoteId}-r1`;
+    const [left,right] = await Promise.all([
+      f.repository.claimCheckoutDispatch({
+        tenantId: f.tenantId,
+        userId: f.userId,
+        quoteId: f.quote.quoteId,
+        quoteRevision: f.quote.revision,
+        txRef,
+        claimedAt: new Date().toISOString(),
+      }),
+      f.repository.claimCheckoutDispatch({
+        tenantId: f.tenantId,
+        userId: f.userId,
+        quoteId: f.quote.quoteId,
+        quoteRevision: f.quote.revision,
+        txRef,
+        claimedAt: new Date().toISOString(),
+      }),
+    ]);
+
+    expect([left.claimed,right.claimed].sort()).toEqual([false,true]);
+    expect(left.quote.checkoutTxRef).toBe(txRef);
+    expect(right.quote.checkoutTxRef).toBe(txRef);
+    await expect(f.repository.readQuote({
+      tenantId: f.tenantId,
+      userId: f.userId,
+      quoteId: f.quote.quoteId,
+    })).resolves.toMatchObject({
+      state: "checkout-dispatching",
+      checkoutTxRef: txRef,
+      checkoutUrl: null,
+    });
+  });
+
   it("binds verified exact payment before allowing one fulfillment reserve", async () => {
     const f = await funded();
     const fulfillmentReference = `bill-${f.quote.quoteId}`;
