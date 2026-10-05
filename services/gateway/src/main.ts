@@ -1193,7 +1193,10 @@ export async function startGatewayService(
           profiles: createCanonicalMyTwinProfileSource({
             store: Object.freeze({
               readForOwner: (request) =>
-                database.twinProfiles!.readForOwner(request),
+                database.twinProfiles!.readForOwner({
+                  tenantId: request.tenantId as never,
+                  ownerUserId: request.ownerUserId as never,
+                }),
               update: (request) =>
                 database.twinProfiles!.update({
                   tenantId: request.tenantId as never,
