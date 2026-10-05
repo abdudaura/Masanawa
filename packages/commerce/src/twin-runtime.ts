@@ -230,6 +230,11 @@ export interface TwinRuntimeRepository {
     readonly admissionId: string;
   }): Promise<PersistedTwinVoiceAdmission | null>;
 
+  readVoiceAdmissionByQuote(input: {
+    readonly tenantId: TenantId;
+    readonly quoteId: string;
+  }): Promise<PersistedTwinVoiceAdmission | null>;
+
   markVoiceStarted(input: {
     readonly tenantId: TenantId;
     readonly admissionId: string;
