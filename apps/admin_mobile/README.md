@@ -7,6 +7,8 @@ Android application id: `ng.masanawa.admin`.
 ## Current control areas
 
 - Overview — Ops readiness plus platform-wide operational counts.
+- Admin Agents — real Gateway conversations with explicitly delegated Characters such as Gwani; delegation is Character-, tenant-, capability- and risk-scoped.
+- Decision Center — JEV architecture and shadow-first decision governance. JEV is a typed decision model, not an Agent and never receives admin authority.
 - Users — tenant-scoped identity/relationship counts, lifecycle filters and privacy-safe relationship drill-downs; lifecycle mutation is intentionally read-only until Identity exposes a canonical state-transition command.
 - Agents — discover all canonical Characters, show ownership kind, configure first presentation, edit presentation/visibility/order and assign Skills.
 - Skills — catalog and readiness.
@@ -49,3 +51,18 @@ Configure Ops with a tenant-scoped grant, for example:
 ```
 
 Set that JSON as `MASANAWA_OPS_ADMIN_GRANTS_JSON`. A grant must contain exactly one selector: `userId`, verified `email`, or verified `phone`. Use explicit capability names instead of `"*"` for least-privilege operators. No admin credential is committed to the repository.
+
+
+## Conversational administration
+
+The intended control path is:
+
+1. the signed-in operator talks to Gwani;
+2. Gwani proposes an explicit admin action;
+3. JEV may classify bounded questions such as ambiguity, risk, escalation or evidence need, but it does not authorize anything;
+4. Ops intersects the operator's capability with Gwani's delegated capability and the action risk class;
+5. delegated read-only actions may execute through the canonical admin service;
+6. writes return `approval-required` and do not execute until the governed approval path is satisfied;
+7. canonical command/Operation/provider/reconciliation evidence is returned to Gwani for explanation.
+
+The current branch includes the Ops admin-action broker for safe read actions and write proposals. A Gateway Tool adapter still needs to be wired after the canonical Decisions/JEV and approval contracts are integrated; the model is never allowed to bypass this broker.
