@@ -91,8 +91,19 @@ export interface WorkflowResumeRequest {
   readonly signal?: AbortSignal;
 }
 
+export interface WorkflowExecutionLock {
+  release(): Promise<void>;
+}
+
+export interface WorkflowExecutionGuard {
+  acquire(input: {
+    readonly tenantId: WorkflowRunScope["tenantId"];
+    readonly workflowRunId: WorkflowRun["workflowRunId"];
+  }): Promise<WorkflowExecutionLock | null>;
+}
+
 export interface WorkflowResumeResult {
-  readonly disposition: "paused" | "yielded" | "terminal";
+  readonly disposition: "busy" | "paused" | "yielded" | "terminal";
   readonly run: WorkflowRun;
   readonly checkpoint: WorkflowCheckpoint | null;
   readonly stepsExecuted: number;
@@ -332,6 +343,7 @@ export function createWorkflowExecutor(input: {
   readonly runs: WorkflowRunRepository;
   readonly authorityGate: WorkflowCurrentAuthorityGate;
   readonly nodeExecutor: WorkflowNodeExecutor;
+  readonly executionGuard: WorkflowExecutionGuard;
   readonly now?: () => Instant;
   readonly maxStepsPerResume?: number;
 }): WorkflowExecutor {
@@ -349,7 +361,31 @@ export function createWorkflowExecutor(input: {
         "workflow-run",
         request.workflowRunId,
       );
+      const lock = await input.executionGuard.acquire({
+        tenantId: request.scope.tenantId,
+        workflowRunId,
+      });
 
+      if (lock === null) {
+        const run = await input.runs.read({
+          authority: request.authority,
+          scope: request.scope,
+          workflowRunId,
+        });
+        const checkpoint = await input.runs.readLatestCheckpoint({
+          authority: request.authority,
+          scope: request.scope,
+          workflowRunId,
+        });
+        return Object.freeze({
+          disposition: "busy" as const,
+          run,
+          checkpoint,
+          stepsExecuted: 0,
+        });
+      }
+
+      try {
       let run = await input.runs.read({
         authority: request.authority,
         scope: request.scope,
@@ -608,6 +644,9 @@ export function createWorkflowExecutor(input: {
         checkpoint,
         stepsExecuted,
       });
+      } finally {
+        await lock.release();
+      }
     },
   });
 }
