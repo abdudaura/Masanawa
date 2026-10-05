@@ -43,6 +43,28 @@ export interface TwinEconomyEventPayload {
   readonly summaryCode: string;
 }
 
+const expectedStatuses: Readonly<
+  Record<
+    TwinEconomyEventType,
+    "observed" | "pending" | "completed" | "refunded" | "reversed"
+  >
+> = Object.freeze({
+  "twin.visited": "observed",
+  "twin.conversation.observed": "observed",
+  "twin.purchase.completed": "completed",
+  "twin.purchase.refunded": "refunded",
+  "twin.gift.completed": "completed",
+  "twin.voice.completed": "completed",
+  "twin.voice.refunded": "refunded",
+  "twin.owner-access.requested": "pending",
+  "twin.owner-access.accepted": "pending",
+  "twin.owner-access.scheduled": "pending",
+  "twin.owner-access.completed": "completed",
+  "twin.owner-access.refunded": "refunded",
+  "twin.earning.settled": "completed",
+  "twin.earning.reversed": "reversed",
+});
+
 const summaryCodes: Readonly<Record<TwinEconomyEventType, string>> = Object.freeze({
   "twin.visited": "twin_visit",
   "twin.conversation.observed": "twin_conversation",
@@ -106,6 +128,12 @@ export function normalizeTwinEconomyEvent(
   if (summaryCode !== summaryCodes[input.eventType]) {
     throw new Error(
       `summaryCode does not match ${input.eventType}`,
+    );
+  }
+
+  if (input.status !== expectedStatuses[input.eventType]) {
+    throw new Error(
+      `status does not match ${input.eventType}`,
     );
   }
 
