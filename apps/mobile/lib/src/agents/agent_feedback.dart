@@ -24,12 +24,6 @@ class AgentFeedback {
           recovery: AgentRecovery.signIn,
         );
       }
-      if (error.code == 'AGENT_CONNECTION_REQUIRED') {
-        return const AgentFeedback(
-          'We couldn’t connect right now.',
-          recovery: AgentRecovery.reconnect,
-        );
-      }
       if (error.code == 'NETWORK_UNREACHABLE') {
         return const AgentFeedback('Check your connection and try again.');
       }

@@ -15,6 +15,10 @@ import type {
 import { registerAgentShellRoutes } from "./agent_shell_routes.js";
 import type { MobilePushRegistrationService } from "./mobile_push.js";
 import {
+  CustomerAuthError,
+  type CustomerAuthService,
+} from "./customer_auth.js";
+import {
   admitTelemetryCorrelation,
   injectCorrelationHeaders,
 } from "@masanawa/telemetry";
@@ -40,6 +44,7 @@ export interface GatewayAppOptions {
   readonly agentShell?: AgentShellService;
   readonly liveVoiceTokens?: LiveVoiceTokenService;
   readonly mobilePush?: MobilePushRegistrationService;
+  readonly customerAuth?: CustomerAuthService;
 }
 
 const HealthResponseSchema = Type.Object(
@@ -200,6 +205,113 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     reply.headers(headers);
   });
 
+
+  if (options.customerAuth) {
+    const auth = options.customerAuth;
+    const authError = (
+      error: unknown,
+      reply: { code(statusCode: number): unknown },
+    ) => {
+      if (error instanceof CustomerAuthError) {
+        reply.code(error.statusCode);
+        return { code: error.code, message: error.code };
+      }
+      reply.code(503);
+      return { code: "AUTH_UNAVAILABLE", message: "AUTH_UNAVAILABLE" };
+    };
+
+    app.get("/auth/capabilities", async () => auth.capabilities());
+
+    app.post(
+      "/auth/otp",
+      {
+        schema: {
+          body: Type.Object(
+            {
+              phone: Type.Optional(Type.String({ minLength: 7, maxLength: 40 })),
+              email: Type.Optional(Type.String({ minLength: 3, maxLength: 320 })),
+            },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request, reply) => {
+        try {
+          return await auth.sendOtp({
+            ...(request.body.phone === undefined
+              ? {}
+              : { phone: request.body.phone }),
+            ...(request.body.email === undefined
+              ? {}
+              : { email: request.body.email }),
+          });
+        } catch (error) {
+          return authError(error, reply);
+        }
+      },
+    );
+
+    app.post(
+      "/auth/verify",
+      {
+        schema: {
+          body: Type.Object(
+            {
+              phone: Type.Optional(Type.String({ minLength: 7, maxLength: 40 })),
+              email: Type.Optional(Type.String({ minLength: 3, maxLength: 320 })),
+              code: Type.String({ minLength: 6, maxLength: 6 }),
+              name: Type.Optional(Type.String({ minLength: 1, maxLength: 160 })),
+            },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request, reply) => {
+        try {
+          return await auth.verifyOtp({
+            ...(request.body.phone === undefined
+              ? {}
+              : { phone: request.body.phone }),
+            ...(request.body.email === undefined
+              ? {}
+              : { email: request.body.email }),
+            code: request.body.code,
+            ...(request.body.name === undefined
+              ? {}
+              : { name: request.body.name }),
+          });
+        } catch (error) {
+          return authError(error, reply);
+        }
+      },
+    );
+
+    app.post(
+      "/auth/refresh",
+      {
+        schema: {
+          body: Type.Object(
+            { refreshToken: Type.String({ minLength: 20, maxLength: 256 }) },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request, reply) => {
+        try {
+          return await auth.refresh({ refreshToken: request.body.refreshToken });
+        } catch (error) {
+          return authError(error, reply);
+        }
+      },
+    );
+
+    app.post("/auth/logout", async (request) => {
+      await auth.logout({
+        authorizationHeader: request.headers.authorization,
+      });
+      return { success: true as const };
+    });
+  }
 
   if (options.agentDirectory) {
     const directory = options.agentDirectory;

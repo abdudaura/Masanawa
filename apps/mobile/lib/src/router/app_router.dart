@@ -9,17 +9,15 @@ import '../screens/onboarding/otp_screen.dart';
 import '../screens/onboarding/phone_login_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/settings/clone_setup_screen.dart';
-import '../screens/settings/developer_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../state/session_state.dart';
 
 /// Stripped router — auth (splash → phone → OTP → name), the chat list, one
 /// thread per configured Character, the agent list, and settings. Nothing else.
 ///
-/// Auth rule: OTP must prove ownership. `/name` opens only for first signup
-/// (`SessionNameRequired` or signed-in + `isNewUser`). While the session is
-/// still restoring/sending/verifying, no redirect fires so splash never races
-/// to login on a slow device.
+/// Auth rule: OTP proves ownership. A first signup may pause at `/name`
+/// after successful OTP proof but before the session is issued. All Agent
+/// surfaces require the resulting signed-in platform session.
 final appRouterProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
     initialLocation: '/splash',
@@ -61,8 +59,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           (path == '/agents' || path == '/masana') ||
           path == '/settings' ||
           path == '/clone' ||
-          path == '/profile' ||
-          path == '/developer';
+          path == '/profile';
       if (!isSignedIn && protected) return '/phone-login';
 
       return null;
@@ -87,7 +84,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
       GoRoute(path: '/clone', builder: (_, _) => const CloneSetupScreen()),
       GoRoute(path: '/profile', builder: (_, _) => const SettingsScreen()),
-      GoRoute(path: '/developer', builder: (_, _) => const DeveloperScreen()),
     ],
   );
 

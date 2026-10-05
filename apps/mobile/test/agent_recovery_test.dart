@@ -12,7 +12,6 @@ import 'package:masanawa/src/agents/agent_session.dart';
 import 'package:masanawa/src/agents/masanawa_transport.dart';
 import 'package:masanawa/src/core/network/api_client.dart';
 import 'package:masanawa/src/core/providers.dart';
-import 'package:masanawa/src/state/agent_connection_state.dart';
 import 'package:masanawa/src/state/agent_directory_state.dart';
 import 'package:masanawa/src/state/ai_chat_state.dart';
 import 'package:masanawa/src/screens/chat/masana_list_screen.dart';
@@ -44,21 +43,6 @@ class RetryDirectory implements AgentDirectoryTransport {
     if (++calls == 1)
       throw const ApiException('private database error', statusCode: 503);
     return [agent];
-  }
-}
-
-class MemoryConnectionStore implements AgentConnectionStore {
-  String? value;
-  @override
-  Future<String?> read() async => value;
-  @override
-  Future<void> write(String value) async {
-    this.value = value;
-  }
-
-  @override
-  Future<void> clear() async {
-    value = null;
   }
 }
 
@@ -188,6 +172,56 @@ class RecordingAdapter implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
+class RotatingAuthAdapter implements HttpClientAdapter {
+  final authorizations = <String?>[];
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? stream,
+    Future<void>? cancelFuture,
+  ) async {
+    final authorization = options.headers['Authorization'] as String?;
+    authorizations.add(authorization);
+    if (authorization == 'Bearer expired-token') {
+      return ResponseBody.fromString(
+        jsonEncode({'code': 'UNAUTHORIZED', 'message': 'expired'}),
+        401,
+        headers: {
+          Headers.contentTypeHeader: ['application/json'],
+        },
+      );
+    }
+    return ResponseBody.fromString(
+      jsonEncode({
+        'agents': [
+          {
+            'characterId': 'character-1',
+            'characterVersionId': 'version-1',
+            'displayName': 'Amina',
+            'roleLabel': 'Assistant',
+            'about': '',
+            'greeting': null,
+            'presence': 'available',
+            'activeWorkCount': 0,
+            'supportAgent': true,
+            'defaultPlatformAgent': true,
+            'voiceProvider': 'gemini',
+            'voiceName': 'Bodi',
+          },
+        ],
+      }),
+      200,
+      headers: {
+        Headers.contentTypeHeader: ['application/json'],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -248,74 +282,6 @@ void main() {
       'This agent isn’t available right now.',
     );
   });
-
-  test(
-    'Gateway settings reject credentials, paths, query strings and remote HTTP',
-    () {
-      for (final url in [
-        'http://example.test',
-        'https://user:pass@example.test',
-        'https://example.test/api',
-        'https://example.test?token=secret',
-        'https://example.test#token',
-      ]) {
-        expect(() => normalizeAgentGatewayUrl(url), throwsFormatException);
-      }
-      expect(
-        normalizeAgentGatewayUrl(' https://example.test/ '),
-        'https://example.test',
-      );
-      expect(
-        normalizeAgentGatewayUrl('http://127.0.0.1:3000'),
-        'http://127.0.0.1:3000',
-      );
-    },
-  );
-
-  test(
-    'failed connection verification preserves existing secure settings',
-    () async {
-      final store = MemoryConnectionStore();
-      final c = ProviderContainer(
-        overrides: [agentConnectionStoreProvider.overrideWithValue(store)],
-      );
-      addTearDown(c.dispose);
-      final controller = c.read(agentConnectionProvider.notifier);
-      await Future<void>.delayed(Duration.zero);
-      await controller.connect(
-        baseUrl: 'https://one.test',
-        token: 'private-token',
-        verify: (_, __) async => [agent],
-      );
-      final saved = store.value;
-      await expectLater(
-        controller.connect(
-          baseUrl: 'https://two.test',
-          token: 'wrong',
-          verify: (_, __) async =>
-              throw const ApiException('hidden', statusCode: 401),
-        ),
-        throwsA(isA<ApiException>()),
-      );
-      expect(c.read(agentConnectionProvider).baseUrl, 'https://one.test');
-      expect(store.value, saved);
-      expect(
-        c.read(agentConnectionProvider).toString(),
-        isNot(contains('private-token')),
-      );
-      final restored = ProviderContainer(
-        overrides: [agentConnectionStoreProvider.overrideWithValue(store)],
-      );
-      addTearDown(restored.dispose);
-      restored.read(agentConnectionProvider);
-      await Future<void>.delayed(Duration.zero);
-      expect(
-        restored.read(agentConnectionProvider).baseUrl,
-        'https://one.test',
-      );
-      expect(restored.read(agentConnectionProvider).token, 'private-token');
-    },
-  );
 
   test(
     'directory keeps roster on transient failure and clears it on 401',
@@ -439,6 +405,34 @@ void main() {
     );
   });
 
+  test('Agent transport refreshes an expired production session and retries once',
+      () async {
+    final adapter = RotatingAuthAdapter();
+    final dio = Dio();
+    dio.httpClientAdapter = adapter;
+    var token = 'expired-token';
+    var refreshes = 0;
+    final transport = MasanawaAgentDirectoryTransport(
+      dio: dio,
+      baseUrl: 'https://gateway.test',
+      readAccessToken: () => token,
+      refreshAccessToken: () async {
+        refreshes += 1;
+        token = 'fresh-token';
+        return token;
+      },
+    );
+
+    final agents = await transport.loadDirectory();
+
+    expect(refreshes, 1);
+    expect(agents.single.displayName, 'Amina');
+    expect(adapter.authorizations, [
+      'Bearer expired-token',
+      'Bearer fresh-token',
+    ]);
+  });
+
   test('creator transports use the canonical Gateway route namespace', () async {
     final adapter = GatewayContractAdapter();
     final dio = Dio();
@@ -490,7 +484,7 @@ void main() {
   });
 
   test(
-    'chat transport keeps Alpha authorization and waits for server deadline',
+    'chat transport keeps production authorization and waits for server deadline',
     () async {
       final adapter = RecordingAdapter();
       final dio = Dio(BaseOptions(receiveTimeout: const Duration(seconds: 15)));

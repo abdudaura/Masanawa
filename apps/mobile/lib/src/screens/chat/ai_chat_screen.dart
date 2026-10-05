@@ -1002,7 +1002,17 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                                         .logout();
                                   } else if (failure.actionLabel ==
                                       'Reconnect') {
-                                    if (mounted) context.push('/developer');
+                                    await ref
+                                        .read(agentDirectoryProvider.notifier)
+                                        .refresh();
+                                    if (failure.referenceId != null) {
+                                      await ref
+                                          .read(aiChatProvider.notifier)
+                                          .retryMessage(
+                                            widget.characterId,
+                                            failure.referenceId!,
+                                          );
+                                    }
                                   } else if (failure.referenceId != null) {
                                     await ref
                                         .read(aiChatProvider.notifier)

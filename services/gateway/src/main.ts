@@ -19,10 +19,12 @@ import type {
 import type {
   CharacterOwnershipReader,
   PersonalCloneProvisioningRepository,
+  UserRelationshipProvisioner,
   UserRelationshipReader,
 } from "@masanawa/identity";
 import type { CommerceRepository } from "@masanawa/commerce";
-import { readRequiredEnv } from "@masanawa/contracts";
+import { parseCanonicalId, readRequiredEnv } from "@masanawa/contracts";
+import type { PlatformSessionRepository } from "@masanawa/security";
 import {
   createDrainState,
   readNodeServiceRuntimeConfig,
@@ -47,6 +49,8 @@ import {
   createPostgresUserAgentPreferenceRepository,
   createPostgresPersonalCloneProvisioningRepository,
   createPostgresUserRelationshipReader,
+  createPostgresUserRelationshipProvisioner,
+  createPostgresPlatformSessionRepository,
   createPostgresServiceDependency,
   createPostgresMobileShellRepository,
   createPostgresMobilePushRepository,
@@ -98,6 +102,14 @@ import {
   type GatewayAppOptions,
   type ReadinessCheck,
 } from "./app.js";
+import {
+  createCustomerAuthService,
+  createHttpSmsOtpDelivery,
+  createPlatformCustomerAuthorizers,
+  createPlatformCustomerSessionAuthorizer,
+  createResendOtpDelivery,
+  type CustomerAuthService,
+} from "./customer_auth.js";
 
 export type ServiceSignal = "SIGINT" | "SIGTERM";
 
@@ -119,6 +131,8 @@ export interface ServiceDatabaseDependency {
   readonly skillDistribution?: SkillDistributionRepository;
   readonly personalClones?: PersonalCloneProvisioningRepository;
   readonly relationships?: UserRelationshipReader;
+  readonly relationshipProvisioner?: UserRelationshipProvisioner;
+  readonly platformSessions?: PlatformSessionRepository;
   readonly commerce?: CommerceRepository;
   readonly ownerships?: CharacterOwnershipReader;
   readonly mobileShell?: MobileShellRepository;
@@ -206,6 +220,9 @@ function createDefaultDatabaseDependency(
     skillDistribution: createPostgresSkillDistributionRepository(database.pool),
     personalClones: createPostgresPersonalCloneProvisioningRepository(database.pool),
     relationships: createPostgresUserRelationshipReader(database.pool),
+    relationshipProvisioner:
+      createPostgresUserRelationshipProvisioner(database.pool),
+    platformSessions: createPostgresPlatformSessionRepository(database.pool),
     commerce: createPostgresCommerceRepository(database.pool),
     ownerships: createPostgresCharacterOwnershipReader(database.pool),
     mobileShell: createPostgresMobileShellRepository(database.pool),
@@ -230,6 +247,32 @@ function requiredAlphaEnv(
   return value;
 }
 
+function productionGeminiApiKey(
+  env: Readonly<Record<string, string | undefined>>,
+): string {
+  const direct =
+    env.MASANAWA_GEMINI_API_KEY?.trim() ||
+    env.MASANAWA_ALPHA_GEMINI_API_KEY?.trim();
+  if (direct) return direct;
+  const raw =
+    env.MASANAWA_GEMINI_API_KEYS_JSON?.trim() ||
+    env.MASANAWA_ALPHA_GEMINI_API_KEYS_JSON?.trim();
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      if (Array.isArray(parsed)) {
+        const first = parsed.find(
+          (value): value is string => typeof value === "string" && value.trim().length > 0,
+        );
+        if (first) return first.trim();
+      }
+    } catch {
+      // Fail below with one stable configuration error.
+    }
+  }
+  throw new TypeError("A Gemini API key is required for the production Agent runtime");
+}
+
 export async function startGatewayService(
   options: StartGatewayServiceOptions = {},
 ): Promise<GatewayServiceRuntime> {
@@ -250,6 +293,8 @@ export async function startGatewayService(
   let nativeAudio;
   let liveVoiceTokens: LiveVoiceTokenService | undefined;
   let pushSender: MobilePushSender | undefined;
+  let customerAuth: CustomerAuthService | undefined =
+    options.appOptions?.customerAuth;
 
   if (alphaEnabled(env)) {
     if (
@@ -329,6 +374,124 @@ export async function startGatewayService(
       model: env.MASANAWA_ALPHA_GEMINI_LIVE_MODEL ?? "gemini-3.8-live",
       voiceName: env.MASANAWA_ALPHA_GEMINI_LIVE_VOICE ?? "Kore",
     });
+  }
+
+  const platformTenantRaw = env.MASANAWA_PLATFORM_TENANT_ID?.trim();
+  const otpPepper = env.MASANAWA_AUTH_OTP_PEPPER?.trim();
+  if (
+    platformTenantRaw &&
+    otpPepper &&
+    database.platformSessions &&
+    database.agentPresentations &&
+    database.characterSkillAssignments &&
+    database.relationships &&
+    database.relationshipProvisioner &&
+    database.platformAgentProfiles
+  ) {
+    const platformTenantId = parseCanonicalId("tenant", platformTenantRaw);
+    const customerSessions = createPlatformCustomerSessionAuthorizer({
+      repository: database.platformSessions,
+    });
+
+    if (!customerAuth) {
+      const resendApiKey = env.RESEND_API_KEY?.trim();
+      const resendFrom = env.MASANAWA_AUTH_EMAIL_FROM?.trim();
+      const smsEndpoint = env.MASANAWA_AUTH_SMS_ENDPOINT?.trim();
+      const smsToken = env.MASANAWA_AUTH_SMS_TOKEN?.trim();
+      customerAuth = createCustomerAuthService({
+        repository: database.platformSessions,
+        tenantId: platformTenantId,
+        otpPepper,
+        ...(resendApiKey && resendFrom
+          ? {
+              emailDelivery: createResendOtpDelivery({
+                apiKey: resendApiKey,
+                from: resendFrom,
+              }),
+            }
+          : {}),
+        ...(smsEndpoint && smsToken
+          ? {
+              smsDelivery: createHttpSmsOtpDelivery({
+                endpoint: smsEndpoint,
+                bearerToken: smsToken,
+              }),
+            }
+          : {}),
+      });
+    }
+
+    const customerAuthorizers = createPlatformCustomerAuthorizers({
+      sessions: customerSessions,
+      presentations: database.agentPresentations,
+      skillAssignments: database.characterSkillAssignments,
+      relationships: database.relationships,
+      relationshipProvisioner: database.relationshipProvisioner,
+      platformProfiles: database.platformAgentProfiles,
+      policyRevision:
+        env.MASANAWA_PLATFORM_POLICY_REVISION?.trim() ||
+        "production-mobile-v1",
+    });
+    if (!options.agentDirectoryAuthorizer) {
+      directoryAuthorizer = customerAuthorizers.directory;
+    }
+    if (!options.agentConversationAuthorizer) {
+      conversationAuthorizer = customerAuthorizers.conversation;
+    }
+    if (!options.creatorCloneAuthorizer) {
+      creatorCloneAuthorizer = customerAuthorizers.creator;
+    }
+    if (!options.commerceAuthorizer) {
+      commerceAuthorizer = customerAuthorizers.commerce;
+    }
+
+    if (!strategy) {
+      if (!database.skills || !database.skillGuides) {
+        await database.close().catch(() => undefined);
+        throw new Error(
+          "Production Agent runtime requires canonical Skill repositories",
+        );
+      }
+      const apiKey = productionGeminiApiKey(env);
+      strategy = createAlphaInferenceStrategy({
+        inference: createGeminiAlphaInferenceProvider({
+          apiKey,
+          model:
+            env.MASANAWA_GEMINI_MODEL?.trim() ||
+            env.MASANAWA_ALPHA_GEMINI_MODEL?.trim() ||
+            "gemini-3.8-flash",
+        }),
+        skills: database.skills,
+        guides: database.skillGuides,
+      });
+    }
+
+    const apiKey = productionGeminiApiKey(env);
+    nativeAudio ??= createGeminiLiveAudioRenderer({
+      apiKey,
+      model:
+        env.MASANAWA_GEMINI_LIVE_MODEL?.trim() ||
+        env.MASANAWA_ALPHA_GEMINI_LIVE_MODEL?.trim() ||
+        "gemini-3.8-live",
+      voiceName:
+        env.MASANAWA_GEMINI_LIVE_VOICE?.trim() ||
+        env.MASANAWA_ALPHA_GEMINI_LIVE_VOICE?.trim() ||
+        "Kore",
+    });
+    if (conversationAuthorizer) {
+      liveVoiceTokens = createGeminiLiveTokenService({
+        apiKey,
+        authorizer: conversationAuthorizer,
+        model:
+          env.MASANAWA_GEMINI_LIVE_MODEL?.trim() ||
+          env.MASANAWA_ALPHA_GEMINI_LIVE_MODEL?.trim() ||
+          "gemini-3.8-live",
+        voiceName:
+          env.MASANAWA_GEMINI_LIVE_VOICE?.trim() ||
+          env.MASANAWA_ALPHA_GEMINI_LIVE_VOICE?.trim() ||
+          "Kore",
+      });
+    }
   }
 
   const composedDirectory =
@@ -490,6 +653,7 @@ export async function startGatewayService(
   try {
     app = appFactory({
       ...(options.appOptions ?? {}),
+      ...(customerAuth ? { customerAuth } : {}),
       ...(composedDirectory ? { agentDirectory: composedDirectory } : {}),
       ...(composedConversation
         ? { agentConversation: composedConversation }
