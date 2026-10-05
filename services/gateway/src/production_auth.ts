@@ -73,6 +73,34 @@ function requireBearer(header: string | undefined): string {
   return token;
 }
 
+export async function verifyPlatformAuthOrigin(input: {
+  readonly baseUrl: string;
+  readonly fetchImpl?: typeof fetch;
+  readonly timeoutMs?: number;
+}): Promise<{ readonly status: number }> {
+  const baseUrl = normalizeOrigin(input.baseUrl);
+  const fetchImpl = input.fetchImpl ?? fetch;
+  const timeoutMs = Math.max(1_000, Math.min(20_000, input.timeoutMs ?? 10_000));
+
+  let response: Response;
+  try {
+    response = await fetchImpl(`${baseUrl}/auth/me`, {
+      method: "GET",
+      headers: { accept: "application/json" },
+      redirect: "error",
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+  } catch {
+    throw new Error("Platform auth origin is unreachable");
+  }
+
+  if (response.status !== 401 && response.status !== 403) {
+    throw new Error(`Platform auth origin returned unexpected status ${response.status}`);
+  }
+
+  return Object.freeze({ status: response.status });
+}
+
 export function createPlatformSessionVerifier(input: {
   readonly baseUrl: string;
   readonly fetchImpl?: typeof fetch;
