@@ -56,6 +56,23 @@ export function characterSessionMigrationRoots(): readonly MigrationRoot[] {
   ]);
 }
 
+/** Explicit opt-in roots for durable Work development/acceptance.
+ * This is intentionally not part of the current production default roots yet.
+ */
+export function workflowMigrationRoots(): readonly MigrationRoot[] {
+  return Object.freeze([
+    ...foundationMigrationRoots(),
+    Object.freeze({
+      owner: "identity",
+      directory: packageMigrationDirectory("@masanawa/identity"),
+    }),
+    Object.freeze({
+      owner: "workflows",
+      directory: packageMigrationDirectory("@masanawa/workflows"),
+    }),
+  ]);
+}
+
 export function platformProductMigrationRoots(): readonly MigrationRoot[] {
   return Object.freeze([
     ...characterSessionMigrationRoots(),
