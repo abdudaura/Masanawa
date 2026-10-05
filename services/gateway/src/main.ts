@@ -377,10 +377,10 @@ export async function startGatewayService(
       await database.close().catch(() => undefined);
       throw new Error("Platform auth requires canonical identity and agent repositories");
     }
-    const tenantId = parseCanonicalId(
-      "tenant",
-      requiredPlatformEnv(env, "MASANAWA_PLATFORM_TENANT_ID"),
-    );
+    const configuredTenantId = env.MASANAWA_PLATFORM_TENANT_ID?.trim();
+    const tenantId = configuredTenantId
+      ? parseCanonicalId("tenant", configuredTenantId)
+      : await database.platformIdentity.resolveSingleActiveTenant();
     const production = createProductionAuthorizers({
       verifier: createPlatformSessionVerifier({
         baseUrl: requiredPlatformEnv(env, "MASANAWA_PLATFORM_AUTH_BASE_URL"),
