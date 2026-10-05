@@ -6,7 +6,8 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
     "build": "tsc -p tsconfig.build.json",
-    "start": "node --conditions=production dist/main.js"
+    "start": "pnpm migrate && node --conditions=production dist/main.js",
+    "migrate": "node --conditions=production dist/migrate.js"
   },
   "dependencies": {
     "@fastify/type-provider-typebox": "6.1.0",
