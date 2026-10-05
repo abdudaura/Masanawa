@@ -74,6 +74,14 @@ export function registerOwnerAccessRoutes(
     });
   });
 
+  app.get("/agent/twin/owner-access/latest", async (request) => {
+    const query = request.query as Record<string, unknown>;
+    return service.latest({
+      authorizationHeader: request.headers.authorization,
+      characterId: text(query.characterId, "characterId", 180),
+    });
+  });
+
   app.get("/agent/twin/owner-access/:requestId", async (request) => {
     const query = request.query as Record<string, unknown>;
     const params = request.params as Record<string, unknown>;
