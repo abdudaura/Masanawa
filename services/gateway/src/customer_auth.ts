@@ -395,6 +395,53 @@ export function createPlatformSessionFinancialAuthorizer(input: Readonly<{
   });
 }
 
+export function renderMasanawaOtpEmail(code: string): Readonly<{
+  subject: string;
+  text: string;
+  html: string;
+}> {
+  if (!/^\\d{6}$/u.test(code)) {
+    throw new TypeError("OTP code must contain exactly six digits");
+  }
+
+  const subject = "Your Masanawa sign-in code";
+  const text =
+    "Your Masanawa sign-in code is " +
+    code +
+    ". It expires in 10 minutes. If you did not request this code, you can safely ignore this email.";
+
+  const html = [
+    "<!doctype html>",
+    "<html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">",
+    "<title>" + subject + "</title></head>",
+    "<body style=\"margin:0;padding:0;background:#F6FAFF;font-family:Arial,Helvetica,sans-serif;color:#06132C;\">",
+    "<table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"background:#F6FAFF;padding:32px 16px;\">",
+    "<tr><td align=\"center\">",
+    "<table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"max-width:560px;background:#FFFFFF;border:1px solid #DDEBFF;border-radius:22px;overflow:hidden;box-shadow:0 12px 32px rgba(1,33,210,.08);\">",
+    "<tr><td style=\"background:#0121D2;background-image:linear-gradient(135deg,#0121D2,#1DA4FD);padding:28px 32px;text-align:center;\">",
+    "<div style=\"font-size:30px;font-weight:800;letter-spacing:-.6px;color:#FFFFFF;\">Masanawa</div>",
+    "<div style=\"margin-top:6px;font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#EAF4FF;\">Secure sign-in</div>",
+    "</td></tr>",
+    "<tr><td style=\"padding:36px 32px 14px;text-align:center;\">",
+    "<h1 style=\"margin:0;font-size:26px;line-height:1.25;color:#06132C;\">Verify your email</h1>",
+    "<p style=\"margin:12px auto 0;max-width:420px;font-size:15px;line-height:1.65;color:#53647A;\">Use this one-time code to finish signing in to Masanawa.</p>",
+    "</td></tr>",
+    "<tr><td style=\"padding:12px 32px 20px;text-align:center;\">",
+    "<div style=\"display:inline-block;min-width:260px;padding:18px 24px;border-radius:16px;background:#EEF6FF;border:1px solid #CFE4FF;font-size:34px;line-height:1;font-weight:800;letter-spacing:10px;color:#0121D2;\">" + code + "</div>",
+    "<p style=\"margin:14px 0 0;font-size:13px;line-height:1.5;color:#6E7D90;\">This code expires in 10 minutes.</p>",
+    "</td></tr>",
+    "<tr><td style=\"padding:8px 32px 34px;\">",
+    "<div style=\"border-radius:14px;background:#F8FBFF;padding:16px 18px;font-size:13px;line-height:1.6;color:#607086;\"><strong style=\"color:#06132C;\">Security note:</strong> Masanawa will never ask you to share this code in chat or by phone. If you did not request it, no action is needed.</div>",
+    "</td></tr>",
+    "<tr><td style=\"border-top:1px solid #E7EFFA;padding:20px 32px;text-align:center;font-size:12px;line-height:1.6;color:#8190A3;\">Masanawa · Your AI agents, ready to help<br><span style=\"color:#0A6FFA;\">masanawa.com</span></td></tr>",
+    "</table>",
+    "</td></tr></table>",
+    "</body></html>",
+  ].join("");
+
+  return Object.freeze({ subject, text, html });
+}
+
 export function createResendOtpDelivery(input: Readonly<{
   apiKey: string;
   from: string;
@@ -406,6 +453,7 @@ export function createResendOtpDelivery(input: Readonly<{
   const fetchImpl = input.fetchImpl ?? fetch;
   return Object.freeze({
     async send(request: Parameters<OtpDelivery["send"]>[0]) {
+      const message = renderMasanawaOtpEmail(request.code);
       const response = await fetchImpl("https://api.resend.com/emails", {
         method: "POST",
         headers: {
@@ -416,8 +464,9 @@ export function createResendOtpDelivery(input: Readonly<{
         body: JSON.stringify({
           from,
           to: [request.identifier],
-          subject: "Your Masanawa sign-in code",
-          text: `Your Masanawa sign-in code is ${request.code}. It expires in 10 minutes. If you did not request this code, ignore this message.`,
+          subject: message.subject,
+          text: message.text,
+          html: message.html,
           tags: [{ name: "category", value: "authentication_otp" }],
         }),
       });
