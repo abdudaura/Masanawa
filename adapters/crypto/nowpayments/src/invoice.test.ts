@@ -35,6 +35,7 @@ describe("NOWPayments hosted fiat invoice", () => {
         priceAmount,
         priceCurrency: "NGN",
         payCurrency: "NGN",
+        payoutCurrency: "USDTTRC20",
         ipnCallbackUrl: "https://example.com/ipn",
         orderId: "tenant.request",
       })).rejects.toThrow("nowpayments.invoice.amount.invalid");
@@ -93,6 +94,7 @@ describe("NOWPayments hosted fiat invoice", () => {
         price_amount: 2500,
         price_currency: "ngn",
         pay_currency: "ngn",
+        payout_currency: "usdttrc20",
         invoice_url: "https://nowpayments.io/payment/?iid=invoice-1",
       }), { status: 201 });
     });
