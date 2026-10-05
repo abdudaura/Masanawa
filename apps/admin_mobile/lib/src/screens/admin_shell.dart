@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/admin_api.dart';
 import '../theme/masanawa_theme.dart';
 import 'platform_pages.dart';
+import 'admin_agents_page.dart';
 
 class AdminShell extends StatefulWidget {
   const AdminShell({super.key, required this.api, required this.onSignOut});
@@ -25,6 +26,7 @@ class _AdminShellState extends State<AdminShell> {
   static const _sections = <_AdminSection>[
     _AdminSection('Overview', Icons.dashboard_outlined),
     _AdminSection('Users', Icons.people_outline),
+    _AdminSection('Admin Agents', Icons.support_agent_outlined),
     _AdminSection('Agents', Icons.smart_toy_outlined),
     _AdminSection('Skills', Icons.extension_outlined),
     _AdminSection('Runtime', Icons.timeline_outlined),
@@ -39,6 +41,7 @@ class _AdminShellState extends State<AdminShell> {
   List<Widget> get _pages => [
         OverviewPage(api: widget.api),
         UsersAdminPage(api: widget.api),
+        AdminAgentsPage(api: widget.api),
         AgentsPage(api: widget.api),
         SkillsPage(api: widget.api),
         RuntimeAdminPage(api: widget.api),
