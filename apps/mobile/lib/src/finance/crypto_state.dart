@@ -68,7 +68,6 @@ final cryptoWalletTransportProvider = Provider<CryptoWalletTransport>((ref) {
   return MasanawaCryptoWalletTransport(
     dio: api.dio,
     baseUrl: baseUrl,
-    readAccessToken: () => connection.token ?? api.accessToken,
   );
 });
 
@@ -164,6 +163,23 @@ class CryptoWalletController extends AsyncNotifier<CryptoWalletSnapshot> {
     return result;
   }
 
+  Future<CryptoFiatPurchase> createFiatPurchase({
+    required String requestId,
+    required String fiatAmount,
+    required String fiatCurrency,
+  }) async {
+    final result = await _transport.createFiatPurchase(
+      requestId: requestId,
+      fiatAmount: fiatAmount,
+      fiatCurrency: fiatCurrency,
+    );
+    final intent = await _transport.intent(requestId);
+    if (intent != null) {
+      await _mergeOperation(intent, refreshBalance: false);
+    }
+    return result;
+  }
+
   Future<CryptoWithdrawalQuote> quoteWithdrawal({
     required String providerCode,
     required String amount,
@@ -221,6 +237,18 @@ class CryptoWalletController extends AsyncNotifier<CryptoWalletSnapshot> {
   }
 
   Future<CryptoIntent> refreshOperation(CryptoIntent intent) async {
+    if (intent.operation == 'buy') {
+      final purchase = await _transport.refreshFiatPurchase(intent.requestId);
+      final refreshed = await _transport.intent(intent.requestId) ?? intent;
+      await _mergeOperation(
+        refreshed,
+        refreshBalance:
+            purchase.terminal &&
+            (purchase.status == 'succeeded' || purchase.status == 'refunded'),
+      );
+      return refreshed;
+    }
+
     final refreshed = switch (intent.operation) {
       'withdraw' => await _transport.refreshWithdrawal(intent.requestId),
       'convert' => await _transport.refreshConversion(intent.requestId),
