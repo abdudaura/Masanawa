@@ -48,3 +48,8 @@ Not yet integrated:
 Integration invariant:
 the chat/live voice runtime must call this admission gate before any billable voice
 interaction. Client flags never determine free/paid status.
+
+
+## Local verification
+
+Local strict TypeScript verification: `twin_chat_admission.ts` compiles cleanly with `tsc --strict --noEmit` in isolation.
