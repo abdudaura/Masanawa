@@ -30,6 +30,7 @@ Finish the production-authentication cleanup that the prior Android-shell window
 - services/gateway/src/alpha_dev.ts (auth error normalization only)
 - services/gateway/package.json if a verification dependency is required
 - focused Gateway auth tests
+- services/gateway/src/production_inference.ts and production_strategy.ts (production Gemini pool strategy only)
 - infra/portable/* (provider/domain/secret portability contracts)
 - scripts/database/* (portable PostgreSQL export/import only)
 - scripts/railway/* (rebuild/secret portability automation only)
