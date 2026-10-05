@@ -41,9 +41,9 @@ class AgentListScreen extends ConsumerWidget {
               ),
             ),
             Text(
-              directory.loading
+              directory.loading && directory.agents.isEmpty
                   ? 'Loading…'
-                  : '${directory.agents.length} ${directory.agents.length == 1 ? 'agent' : 'agents'}',
+                  : '${directory.agents.length} ${directory.agents.length == 1 ? 'agent' : 'agents'}${directory.loading ? ' · refreshing…' : ''}',
               style: TextStyle(color: u.textMuted, fontSize: 12.5),
             ),
           ],

@@ -70,6 +70,28 @@ class AgentDirectoryEntry {
     return presence.label;
   }
 
+  Map<String, dynamic> toJson() => {
+        'characterId': characterId,
+        'characterVersionId': characterVersionId,
+        'displayName': displayName,
+        'roleLabel': roleLabel,
+        'about': about,
+        'presence': switch (presence) {
+          AgentPresence.available => 'available',
+          AgentPresence.listening => 'listening',
+          AgentPresence.working => 'working',
+          AgentPresence.onCall => 'on_call',
+          AgentPresence.offline => 'offline',
+        },
+        if (avatarUrl != null) 'avatarUrl': avatarUrl,
+        if (greeting != null) 'greeting': greeting,
+        'activeWorkCount': activeWorkCount,
+        'supportAgent': supportAgent,
+        'defaultPlatformAgent': defaultPlatformAgent,
+        if (voiceProvider != null) 'voiceProvider': voiceProvider,
+        if (voiceName != null) 'voiceName': voiceName,
+      };
+
   factory AgentDirectoryEntry.fromJson(Map<String, dynamic> json) {
     String requiredString(String key) {
       final value = json[key];

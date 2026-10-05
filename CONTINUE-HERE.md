@@ -1,5 +1,20 @@
 # Continue Here
 
+## Production mobile fast-start reconciliation — 2026-10-05
+
+The production APK integration line now carries the reconciled mobile startup improvements.
+Preserve:
+- one-record `auth_session_v2` restore plus one bulk legacy fallback;
+- canonical-User-scoped cached AgentDirectory presentation;
+- immediate use of cached agents while live refresh runs;
+- post-first-frame push/Firebase/native initial-link initialization;
+- cached conversation hydration before Connectivity monitoring and memoized documents-directory lookup;
+- no client hard-coding of Gwani/Gwana and no authority derived from cached presentation.
+
+Live infrastructure evidence before colocation: authenticated `/agent/directory` returned HTTP 200
+but took about 3.2–4.7 seconds while Gateway was in SFO and PostgreSQL in AMS. Gateway has now
+been moved to AMS. Do not claim a latency win until a post-move authenticated request is observed.
+
 ## Core teaching and ownership checkpoint — 2026-10-04
 
 Teaching is required Core: detailed adaptive lessons across topics, worked examples,
