@@ -78,8 +78,10 @@ describe("budgeted subworker admission", () => {
       authority: {} as AuthorityContext,
       skillVersionIds: [skillVersionId],
     }));
+    const reserveChildAdmission = vi.fn(async (input) => input.nextUsage);
     const service = createBudgetedSubworkerAdmissionService({
       subworkers: { admit },
+      reservations: { reserveChildAdmission },
     });
 
     const result = await service.admit({
@@ -90,13 +92,19 @@ describe("budgeted subworker admission", () => {
     expect(result.childBudget.agentRunId).toBe(childAgentRunId);
     expect(result.childBudget.maxTotalTokens).toBe(450);
     expect(result.parentUsageAfterAdmission.childRuns).toBe(1);
+    expect(reserveChildAdmission).toHaveBeenCalledTimes(1);
     expect(admit).toHaveBeenCalledTimes(1);
+    expect(reserveChildAdmission.mock.invocationCallOrder[0]).toBeLessThan(
+      admit.mock.invocationCallOrder[0]!,
+    );
   });
 
   it("rejects a child budget that exceeds parent remaining capacity before child creation", async () => {
     const admit = vi.fn();
+    const reserveChildAdmission = vi.fn(async (input) => input.nextUsage);
     const service = createBudgetedSubworkerAdmissionService({
       subworkers: { admit: admit as never },
+      reservations: { reserveChildAdmission },
     });
 
     await expect(service.admit({
@@ -108,13 +116,16 @@ describe("budgeted subworker admission", () => {
       },
     })).rejects.toThrow("maxInputTokens exceeds");
 
+    expect(reserveChildAdmission).not.toHaveBeenCalled();
     expect(admit).not.toHaveBeenCalled();
   });
 
   it("rejects parent budget or usage bound to another AgentRun", async () => {
     const admit = vi.fn();
+    const reserveChildAdmission = vi.fn(async (input) => input.nextUsage);
     const service = createBudgetedSubworkerAdmissionService({
       subworkers: { admit: admit as never },
+      reservations: { reserveChildAdmission },
     });
 
     await expect(service.admit({
@@ -126,11 +137,17 @@ describe("budgeted subworker admission", () => {
       },
     })).rejects.toThrow("not bound to parentAgentRunId");
 
+    expect(reserveChildAdmission).not.toHaveBeenCalled();
     expect(admit).not.toHaveBeenCalled();
   });
 
   it("rejects mismatched child custody returned by subworker admission", async () => {
     const service = createBudgetedSubworkerAdmissionService({
+      reservations: {
+        async reserveChildAdmission(input) {
+          return input.nextUsage;
+        },
+      },
       subworkers: {
         async admit() {
           return {
@@ -150,5 +167,46 @@ describe("budgeted subworker admission", () => {
       ...common,
       parentUsage: usage(),
     })).rejects.toThrow("mismatched child custody");
+  });
+
+  it("never creates a child when durable budget reservation fails", async () => {
+    const admit = vi.fn();
+    const service = createBudgetedSubworkerAdmissionService({
+      subworkers: { admit: admit as never },
+      reservations: {
+        async reserveChildAdmission() {
+          throw new Error("usage revision conflict");
+        },
+      },
+    });
+
+    await expect(service.admit({
+      ...common,
+      parentUsage: usage(),
+    })).rejects.toThrow("usage revision conflict");
+
+    expect(admit).not.toHaveBeenCalled();
+  });
+
+  it("rejects a reservation response that does not match the expected usage advance", async () => {
+    const admit = vi.fn();
+    const service = createBudgetedSubworkerAdmissionService({
+      subworkers: { admit: admit as never },
+      reservations: {
+        async reserveChildAdmission(input) {
+          return {
+            ...input.nextUsage,
+            childRuns: input.nextUsage.childRuns + 1,
+          };
+        },
+      },
+    });
+
+    await expect(service.admit({
+      ...common,
+      parentUsage: usage(),
+    })).rejects.toThrow("did not persist the expected parent usage");
+
+    expect(admit).not.toHaveBeenCalled();
   });
 });
