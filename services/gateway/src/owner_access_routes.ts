@@ -1,7 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type {
   OwnerAccessModality,
-  OwnerAccessQuote,
   OwnerAccessService,
 } from "./owner_access.js";
 
@@ -46,7 +45,7 @@ export function registerOwnerAccessRoutes(
     return service.request({
       authorizationHeader: request.headers.authorization,
       characterId: text(body.characterId, "characterId", 180),
-      quote: body.quote as OwnerAccessQuote,
+      quoteId: text(body.quoteId, "quoteId", 256),
     });
   });
 
