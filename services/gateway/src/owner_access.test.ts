@@ -82,6 +82,27 @@ function build() {
     async get() {
       return null;
     },
+    async latestForRequester(input) {
+      return {
+        requestId: "owner-request-latest",
+        requesterUserId: input.requesterUserId,
+        ownerUserId: "user-owner",
+        originatingCharacterId: input.characterId,
+        modality: "voice",
+        durationMinutes: 20,
+        priceCredits: 0,
+        platformFeeCredits: 0,
+        ownerEarningCredits: 0,
+        chargeMode: "trial",
+        trialPolicyRevision: 1,
+        state: "requested",
+        requestedAt: "2026-10-05T10:00:00Z",
+        acceptBy: "2026-10-05T11:00:00Z",
+        scheduledFor: null,
+        startedAt: null,
+        completedAt: null,
+      };
+    },
   };
   return createOwnerAccessService({ authorizer, quotes, requests });
 }
@@ -97,6 +118,20 @@ describe("owner access service", () => {
     expect(quote.chargeMode).toBe("trial");
     expect(quote.trialDurationDays).toBe(7);
     expect(quote.priceCredits).toBe(0);
+  });
+
+  it("reads the latest request only through the authenticated requester scope", async () => {
+    const latest = await build().latest({
+      authorizationHeader: "Bearer user",
+      characterId,
+    });
+    expect(latest).toEqual(
+      expect.objectContaining({
+        requestId: "owner-request-latest",
+        requesterUserId,
+        originatingCharacterId: characterId,
+      }),
+    );
   });
 
   it("creates a request from an opaque server quote id only", async () => {
