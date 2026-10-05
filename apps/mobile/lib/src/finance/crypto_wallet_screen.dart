@@ -860,7 +860,6 @@ class _BuySheetState extends State<_BuySheet> {
         const SizedBox(height: 12),
         _AmountField(
           controller: _amount,
-          maxDecimals: 2,
           label: 'Fiat amount',
         ),
         const SizedBox(height: 12),
@@ -1067,11 +1066,9 @@ class _SheetScaffold extends StatelessWidget {
 class _AmountField extends StatelessWidget {
   const _AmountField({
     required this.controller,
-    this.maxDecimals = 18,
     this.label = 'Amount',
   });
   final TextEditingController controller;
-  final int maxDecimals;
   final String label;
 
   @override
