@@ -1,3 +1,4 @@
+import type { MyTwinProfileSource } from "./my_twin_projection.js";
 import type {
   MyTwinFeatureSource,
   MyTwinPerformanceSource,
@@ -106,6 +107,103 @@ export function createOfferingBackedOwnerAccessAvailability(input: {
       return offering
         ? Object.freeze({ enabled: offering.enabled === true })
         : null;
+    },
+  });
+}
+
+
+export interface CanonicalTwinProfileRecord {
+  readonly tenantId: string;
+  readonly characterId: string;
+  readonly ownerUserId: string;
+  readonly publicId: string;
+  readonly displayName: string;
+  readonly bio: string;
+  readonly languages: readonly string[];
+  readonly discoverable: boolean;
+  readonly revision: number;
+}
+
+export interface CanonicalTwinProfileStore {
+  readForOwner(input: {
+    readonly tenantId: string;
+    readonly ownerUserId: string;
+  }): Promise<CanonicalTwinProfileRecord | null>;
+
+  update(input: {
+    readonly tenantId: string;
+    readonly ownerUserId: string;
+    readonly characterId: string;
+    readonly expectedRevision: number;
+    readonly patch: { readonly discoverable: boolean };
+    readonly updatedAt: string;
+  }): Promise<CanonicalTwinProfileRecord>;
+}
+
+function projectProfile(record: CanonicalTwinProfileRecord) {
+  return Object.freeze({
+    characterId: record.characterId,
+    publicId: record.publicId,
+    displayName: record.displayName,
+    bio: record.bio,
+    languages: Object.freeze([...record.languages]),
+    discoverable: record.discoverable,
+    revision: record.revision,
+  });
+}
+
+export function createCanonicalMyTwinProfileSource(input: {
+  readonly store: CanonicalTwinProfileStore;
+  readonly now?: () => string;
+}): MyTwinProfileSource {
+  const now = input.now ?? (() => new Date().toISOString());
+
+  return Object.freeze({
+    async read(request) {
+      const record = await input.store.readForOwner(request);
+      if (!record) return null;
+      if (
+        record.tenantId !== request.tenantId ||
+        record.ownerUserId !== request.ownerUserId
+      ) {
+        throw new Error("Twin profile store returned an out-of-scope profile");
+      }
+      return projectProfile(record);
+    },
+
+    async setDiscoverable(request) {
+      const current = await input.store.readForOwner({
+        tenantId: request.tenantId,
+        ownerUserId: request.ownerUserId,
+      });
+      if (!current) {
+        throw new Error("Personal twin profile does not exist");
+      }
+      if (
+        current.tenantId !== request.tenantId ||
+        current.ownerUserId !== request.ownerUserId
+      ) {
+        throw new Error("Twin profile store returned an out-of-scope profile");
+      }
+
+      const updated = await input.store.update({
+        tenantId: request.tenantId,
+        ownerUserId: request.ownerUserId,
+        characterId: current.characterId,
+        expectedRevision: current.revision,
+        patch: { discoverable: request.discoverable },
+        updatedAt: now(),
+      });
+
+      if (
+        updated.characterId !== current.characterId ||
+        updated.publicId !== current.publicId ||
+        updated.ownerUserId !== current.ownerUserId
+      ) {
+        throw new Error("Twin profile store changed stable twin identity");
+      }
+
+      return projectProfile(updated);
     },
   });
 }
