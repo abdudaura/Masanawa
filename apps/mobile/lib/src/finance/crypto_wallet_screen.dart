@@ -1120,36 +1120,18 @@ class _SummaryRow extends StatelessWidget {
 
 String? _validAmount(String raw, {int maxDecimals = 18}) {
   final value = raw.trim();
-  final match = RegExp(r'^(?:0|[1-9]\d*)(?:\.(\d+))?
-
-class _BuyInput {
-  const _BuyInput(this.currency, this.amount);
-  final String currency;
-  final String amount;
-}
-
-class _ReceiveInput {
-  const _ReceiveInput(this.amount);
-  final String amount;
-}
-
-class _ConvertInput {
-  const _ConvertInput(this.targetProviderCode, this.amount);
-  final String targetProviderCode;
-  final String amount;
-}
-
-class _WithdrawInput {
-  const _WithdrawInput(this.amount, this.address);
-  final String amount;
-  final String address;
-}
-).firstMatch(value);
+  final match = RegExp(r'^(?:0|[1-9]\d*)(?:\.(\d+))?$').firstMatch(value);
   if (match == null || (match.group(1)?.length ?? 0) > maxDecimals) {
     return null;
   }
   final number = num.tryParse(value);
   return number == null || number <= 0 ? null : value;
+}
+
+class _BuyInput {
+  const _BuyInput(this.currency, this.amount);
+  final String currency;
+  final String amount;
 }
 
 class _ReceiveInput {
