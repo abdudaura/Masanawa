@@ -51,7 +51,8 @@ Implemented:
 - discoverability toggle;
 - language chips;
 - concise status chips and performance card;
-- tests proving Skill/workflow metadata is not part of the consumer model.
+- tests proving Skill/workflow metadata is not part of the consumer model;
+- simple Twin share sheet with copy-link and platform-share callback.
 
 Not yet integrated:
 - canonical Gateway TwinProfile endpoint and transport;
