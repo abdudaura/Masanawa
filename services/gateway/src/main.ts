@@ -22,6 +22,7 @@ import type {
   PersonalCloneProvisioningRepository,
   UserRelationshipProvisioner,
   UserRelationshipReader,
+  TwinProfileRepository,
 } from "@masanawa/identity";
 import type { BillingQuoteRepository, CommerceRepository, CryptoRepository } from "@masanawa/commerce";
 import { parseCanonicalId, readRequiredEnv } from "@masanawa/contracts";
@@ -68,6 +69,7 @@ import {
   createPostgresBillingQuoteRepository,
   createPostgresBillingFulfillmentStore,
   createPostgresBillingWebhookRepository,
+  createPostgresTwinProfileRepository,
   withTransaction,
 } from "@masanawa/postgres";
 import {
@@ -157,6 +159,15 @@ import {
   ensureDefaultPlatformAgents,
   type PlatformAgentIdentityProvisioner,
 } from "./platform_agent_bootstrap.js";
+import {
+  createMyTwinProjectionService,
+} from "./my_twin_projection.js";
+import {
+  createCanonicalMyTwinProfileSource,
+  createMyTwinFeatureSource,
+} from "./my_twin_projection_sources.js";
+import { createTwinDirectoryService } from "./twin_directory.js";
+import { createTwinCustomerAuthorizers } from "./twin_customer_authorizers.js";
 
 export type ServiceSignal = "SIGINT" | "SIGTERM";
 
@@ -193,6 +204,7 @@ export interface ServiceDatabaseDependency {
     identity: Readonly<{ tenantId: string; userId: string }>,
   ) => BillingFulfillmentStore;
   readonly billingWebhooks?: ReturnType<typeof createPostgresBillingWebhookRepository>;
+  readonly twinProfiles?: TwinProfileRepository;
   close(): Promise<void>;
 }
 
@@ -329,6 +341,7 @@ function createDefaultDatabaseDependency(
     billingStore: (identity: Readonly<{ tenantId: string; userId: string }>) =>
       createPostgresBillingFulfillmentStore(database.pool, identity),
     billingWebhooks: createPostgresBillingWebhookRepository(database.pool),
+    twinProfiles: createPostgresTwinProfileRepository(database.pool),
     close: database.close,
   });
 }
