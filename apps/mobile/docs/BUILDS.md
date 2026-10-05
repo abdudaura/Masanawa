@@ -6,17 +6,19 @@ All commands run from `apps/mobile`.
 
 | Flag | Default | Meaning |
 | --- | --- | --- |
-| `API_BASE_URL` | `https://unigeria.up.railway.app` | Civic backend (auth OTP, preview chat). |
-| `AGENT_BASE_URL` | _(empty)_ | Masanawa gateway, when Task 099 ships it. |
-| `AGENT_RUNTIME_ENABLED` | `false` | Set `true` plus `AGENT_BASE_URL` for live sessions. |
+| `API_BASE_URL` | `https://nurainworker-production.up.railway.app` | Masanawa API and OTP/session Gateway. |
+| `AGENT_BASE_URL` | `https://nurainworker-production.up.railway.app` | Masanawa Agent/creator Gateway. |
 
 Example:
 
 ```sh
+# Production defaults need no Dart defines.
+flutter run
+
+# Optional staging-origin override:
 flutter run \
   --dart-define=API_BASE_URL=https://staging.example.com \
-  --dart-define=AGENT_RUNTIME_ENABLED=true \
-  --dart-define=AGENT_BASE_URL=https://gateway-staging.example.com
+  --dart-define=AGENT_BASE_URL=https://staging.example.com
 ```
 
 ## Phone (Android)
@@ -49,8 +51,7 @@ Release for the Play Store:
    ```
    Output: `build/app/outputs/bundle/release/app-release.aab`.
 
-Play checklist: real key (not debug), version bumped, staging SMS-code
-login tried on the uploaded track, one preview chat send tried.
+Play checklist: real key (not debug), version bumped, production OTP login tried on the uploaded track, one real authorized Agent chat send tried.
 
 ## Web
 

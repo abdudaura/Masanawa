@@ -2,12 +2,11 @@ import 'package:dio/dio.dart';
 
 import '../api/models.dart';
 
-/// Base URL for the UNigeria API. Overridable at build/run time:
-///   flutter run --dart-define=API_BASE_URL=https://staging.example.com
-/// Defaults to the production Railway deployment.
+/// Masanawa production Gateway. A build may override this for staging, but
+/// users never configure runtime URLs or credentials inside the app.
 const String kApiBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
-  defaultValue: 'https://unigeria.up.railway.app',
+  defaultValue: 'https://nurainworker-production.up.railway.app',
 );
 
 /// Thrown for contract-level / transport failures with a message safe to show.
@@ -55,14 +54,16 @@ class ApiClient {
               !path.contains('/auth/refresh') &&
               !path.contains('/auth/otp') &&
               !path.contains('/auth/verify');
-          if (e.response?.statusCode == 401 && canRefresh && !_refreshing) {
-            _refreshing = true;
+          if (e.response?.statusCode == 401 &&
+              canRefresh &&
+              e.requestOptions.extra['masanawaAuthRetried'] != true) {
             try {
-              final newToken = await onUnauthorized!();
+              final newToken = await refreshAuthorization();
               if (newToken != null && newToken.isNotEmpty) {
                 accessToken = newToken;
                 final opts = e.requestOptions;
                 opts.headers['Authorization'] = 'Bearer $newToken';
+                opts.extra['masanawaAuthRetried'] = true;
                 final retried = await dio.fetch(opts);
                 handler.resolve(retried);
                 return;
@@ -70,8 +71,6 @@ class ApiClient {
             } catch (_) {
               // Refresh failed → the original 401 propagates (the session
               // controller already cleared the session on its side).
-            } finally {
-              _refreshing = false;
             }
           }
           handler.next(e);
@@ -81,7 +80,7 @@ class ApiClient {
   }
 
   final Dio dio;
-  bool _refreshing = false;
+  Future<String?>? _authorizationRefresh;
 
   /// Access token attached to protected requests by the session controller.
   String? accessToken;
@@ -91,7 +90,44 @@ class ApiClient {
   /// controller — never set by API surfaces.
   Future<String?> Function()? onUnauthorized;
 
+  /// Rotates the current session once and shares that in-flight refresh across
+  /// API + Agent transports. Platform refresh tokens rotate, so concurrent
+  /// 401s must never race separate refresh calls.
+  Future<String?> refreshAuthorization() {
+    final active = _authorizationRefresh;
+    if (active != null) return active;
+    final callback = onUnauthorized;
+    if (callback == null) return Future<String?>.value(null);
+    final future = callback();
+    _authorizationRefresh = future;
+    return future.whenComplete(() {
+      if (identical(_authorizationRefresh, future)) {
+        _authorizationRefresh = null;
+      }
+    });
+  }
+
   // ---- Auth (U-p2-01) ----
+
+  Future<List<OtpChannel>> authOtpChannels() async {
+    final data = await _get('/auth/capabilities');
+    final raw = data['otpChannels'];
+    if (raw is! List) {
+      throw const ApiException(
+        'Sign-in methods are unavailable right now.',
+        code: 'AUTH_UNAVAILABLE',
+      );
+    }
+    final channels = <OtpChannel>[];
+    for (final value in raw) {
+      if (value == 'email' && !channels.contains(OtpChannel.email)) {
+        channels.add(OtpChannel.email);
+      } else if (value == 'sms' && !channels.contains(OtpChannel.sms)) {
+        channels.add(OtpChannel.sms);
+      }
+    }
+    return List.unmodifiable(channels);
+  }
 
   Future<OtpSendResponse> otpSend({String? phone, String? email}) async {
     final data = await _post(
@@ -782,6 +818,8 @@ String? _legacyCode(String? value) {
     'OTP_LOCKED',
     'OTP_RATE_LIMITED',
     'OTP_INVALID',
+    'OTP_CHANNEL_UNAVAILABLE',
+    'OTP_DELIVERY_UNAVAILABLE',
     'NAME_REQUIRED_ON_SIGNUP',
     'SESSION_NOT_FOUND',
     'UNAUTHORIZED',
@@ -838,6 +876,10 @@ String _friendlyMessage({
       return 'Too many incorrect attempts. Please wait a few minutes and try again.';
     case 'OTP_RATE_LIMITED':
       return "You've requested too many codes. Please wait a moment and try again.";
+    case 'OTP_CHANNEL_UNAVAILABLE':
+      return 'That sign-in method is not available right now. Choose another option.';
+    case 'OTP_DELIVERY_UNAVAILABLE':
+      return 'We could not send the code right now. Please try again.';
     case 'NAME_REQUIRED_ON_SIGNUP':
       return 'Please enter your name to continue.';
     case 'SESSION_NOT_FOUND':

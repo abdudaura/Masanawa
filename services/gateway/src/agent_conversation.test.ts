@@ -153,9 +153,13 @@ describe("Alpha conversation service", () => {
         if (input.input.kind === "text") {
           return { reply: `Text: ${input.input.text}`, parts: [] };
         }
-        expect(input.input.mimeType).toBe("audio/mp4");
-        expect(input.input.dataBase64).toBe("YWJj");
-        return { reply: "I heard the voice note.", parts: [] };
+        if (input.input.kind === "media") {
+          expect(input.input.mimeType).toBe("audio/mp4");
+          expect(input.input.dataBase64).toBe("YWJj");
+          return { reply: "I heard the voice note.", parts: [] };
+        }
+        expect(input.input.media).toHaveLength(2);
+        return { reply: "I reviewed both attachments.", parts: [] };
       },
     };
 
@@ -195,14 +199,28 @@ describe("Alpha conversation service", () => {
     });
     expect(media.reply).toBe("I heard the voice note.");
 
+    const mediaSet = await service.mediaSetTurn({
+      authorizationHeader: "Bearer alpha",
+      characterSessionId: opened.characterSessionId,
+      characterId: f.scope.characterId,
+      caption: "Compare these",
+      media: [
+        { mimeType: "image/jpeg", dataBase64: "YWJj", name: "one.jpg" },
+        { mimeType: "image/jpeg", dataBase64: "ZGVm", name: "two.jpg" },
+      ],
+      requestId: createCanonicalId("request"),
+      correlationId: createCanonicalId("correlation"),
+    });
+    expect(mediaSet.reply).toBe("I reviewed both attachments.");
+
     await service.close({
       authorizationHeader: "Bearer alpha",
       characterSessionId: opened.characterSessionId,
       characterId: f.scope.characterId,
     });
 
-    expect(events.filter((event) => event.startsWith("run:create"))).toHaveLength(2);
-    expect(events.filter((event) => event === "run:finish:completed")).toHaveLength(2);
+    expect(events.filter((event) => event.startsWith("run:create"))).toHaveLength(3);
+    expect(events.filter((event) => event === "run:finish:completed")).toHaveLength(3);
     expect(events).toContain("session:close");
   });
 

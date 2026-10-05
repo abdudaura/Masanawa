@@ -1,5 +1,32 @@
 # Continue Here
 
+## Twin economy transformation checkpoint — 2026-10-05
+
+The consumer product direction has changed and now takes precedence over older
+user-facing reseller/paid-AI-work framing.
+
+Read these before any new product implementation:
+- `docs/PRODUCT-TWIN-ECONOMY.md`
+- `docs/TWIN-TRANSFORMATION-MASTER-PLAN.md`
+- `docs/TWIN-TRANSFORMATION-TASKS.md`
+- `docs/TWIN-MOBILE-SCREEN-SPEC.md`
+- `docs/TWIN-ECONOMY-CONTRACTS.md`
+- `docs/TWIN-MULTI-WINDOW-EXECUTION.md`
+
+Final ordinary-user mental model: **My Twin, Explore, Activity, Wallet**.
+Public twin text is free. Paid surfaces are twin voice/live voice, Masanawa commerce,
+gifts and paid access to the real owner. Credits may transfer internally but transfers
+must not create acquisition commission. Commission percentages are configurable policy,
+not hard-coded constants. Existing billing/crypto/runtime/recovery foundations are
+preserved and become infrastructure behind the simpler product.
+
+Do not expose Agent Float, Skill graphs, Workflows, Providers, CharacterVersions or
+other runtime internals as ordinary user concepts. Do not build a human social post feed
+or a second wallet/marketplace/clone runtime.
+
+Use TWIN-xxx IDs from the supplemental transformation ledger and the lane map for
+parallel work. Shared Gateway/mobile router/chat integration remains single-owner.
+
 ## Core teaching and ownership checkpoint — 2026-10-04
 
 Teaching is required Core: detailed adaptive lessons across topics, worked examples,

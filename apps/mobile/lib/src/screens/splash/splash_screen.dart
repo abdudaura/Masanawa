@@ -48,7 +48,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     _brandTimer?.cancel();
     _restoreDeadline?.cancel();
     if (session is SessionSignedIn) {
-      context.go(session.user.isNewUser ? '/name' : '/chats');
+      context.go('/chats');
     } else if (session is SessionNameRequired) {
       context.go('/name');
     } else if (session is SessionAwaitingOtp ||

@@ -1,5 +1,6 @@
 package ng.unigeria.unigeria
 
+import android.content.Intent
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioManager
@@ -11,13 +12,34 @@ import kotlin.math.max
 
 class MainActivity : FlutterActivity() {
     private var liveAudioTrack: AudioTrack? = null
+    private var liveSampleRate: Int? = null
+    private var deepLinkChannel: MethodChannel? = null
+    @Volatile private var destroyed = false
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
+        deepLinkChannel = MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "masanawa/deep_links",
+        ).also { channel ->
+            channel.setMethodCallHandler { call, result ->
+                if (call.method == "initial") {
+                    val uri = intent?.takeIf { it.action == Intent.ACTION_VIEW }?.data
+                    result.success(uri?.takeIf { it.scheme == "masanawa" }?.toString())
+                    // Only deliver the launch intent once across reinitialization.
+                    intent?.data = null
+                } else {
+                    result.notImplemented()
+                }
+            }
+        }
+
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             "masanawa/live_pcm",
+            io.flutter.plugin.common.StandardMethodCodec.INSTANCE,
+            flutterEngine.dartExecutor.binaryMessenger.makeBackgroundTaskQueue(),
         ).setMethodCallHandler { call, result ->
             when (call.method) {
                 "start" -> {
@@ -36,19 +58,19 @@ class MainActivity : FlutterActivity() {
                         ) {
                             result.success(false)
                         } else {
-                            val written = track.write(
-                                bytes,
-                                0,
-                                bytes.size,
-                                AudioTrack.WRITE_BLOCKING,
-                            )
-                            result.success(written == bytes.size)
+                            result.success(writeLivePcm(bytes))
                         }
                     }
                 }
 
                 "stop" -> {
                     stopLivePcm()
+                    result.success(true)
+                }
+
+                "release" -> {
+                    stopLivePcm()
+                    restoreAudioRoute()
                     result.success(true)
                 }
 
@@ -62,9 +84,16 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    @Synchronized
     private fun startLivePcm(sampleRate: Int): Boolean {
-        stopLivePcm()
+        if (destroyed) return false
         if (sampleRate !in 8000..48000) return false
+        val existing = liveAudioTrack
+        if (existing != null && liveSampleRate == sampleRate &&
+            existing.state == AudioTrack.STATE_INITIALIZED &&
+            existing.playState == AudioTrack.PLAYSTATE_PLAYING
+        ) return true
+        stopLivePcm()
 
         val minBuffer = AudioTrack.getMinBufferSize(
             sampleRate,
@@ -97,6 +126,7 @@ class MainActivity : FlutterActivity() {
         }
 
         liveAudioTrack = track
+        liveSampleRate = sampleRate
         track.play()
         return true
     }
@@ -113,9 +143,29 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    @Synchronized
+    private fun writeLivePcm(bytes: ByteArray): Boolean {
+        val track = liveAudioTrack ?: return false
+        if (track.state != AudioTrack.STATE_INITIALIZED) return false
+        var offset = 0
+        try {
+            while (offset < bytes.size) {
+                val written = track.write(bytes, offset, bytes.size - offset,
+                    AudioTrack.WRITE_BLOCKING)
+                if (written <= 0) return false
+                offset += written
+            }
+            return true
+        } catch (_: RuntimeException) {
+            return false
+        }
+    }
+
+    @Synchronized
     private fun stopLivePcm() {
         val track = liveAudioTrack ?: return
         liveAudioTrack = null
+        liveSampleRate = null
         try {
             track.pause()
             track.flush()
@@ -127,8 +177,30 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val uri = intent.data
+        if (intent.action == Intent.ACTION_VIEW && uri?.scheme == "masanawa") {
+            deepLinkChannel?.invokeMethod("open", uri.toString())
+            intent.data = null
+        }
+    }
+
     override fun onDestroy() {
+        destroyed = true
         stopLivePcm()
+        restoreAudioRoute()
+        deepLinkChannel?.setMethodCallHandler(null)
+        deepLinkChannel = null
         super.onDestroy()
+    }
+
+    private fun restoreAudioRoute() {
+        @Suppress("DEPRECATION")
+        (getSystemService(AUDIO_SERVICE) as AudioManager).apply {
+            isSpeakerphoneOn = false
+            mode = AudioManager.MODE_NORMAL
+        }
     }
 }
