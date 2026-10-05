@@ -385,6 +385,70 @@ describe("billing checkout", () => {
     expect(purchases).toBe(0);
   });
 
+  it("creates exactly one hosted checkout when two start requests race", async () => {
+    const owner = identity();
+    const quotes = new MemoryQuotes();
+    const base = providerTransport("100");
+    let checkoutPosts = 0;
+    const transport: FlutterwaveBillsTransport = {
+      async request(request) {
+        if (request.method === "POST" && request.path === "/v3/payments") {
+          checkoutPosts += 1;
+          await Promise.resolve();
+        }
+        return base.request(request);
+      },
+    };
+    const service = createBillingCheckoutService({
+      sessions: { async authorize() { return owner; } },
+      quotes,
+      catalog: new FlutterwaveBillsClient({ secretKey: "secret", transport, country: "NG" }),
+      funding: new FlutterwaveFundingClient({ secretKey: "secret", transport }),
+      billing: billing(quotes),
+      actionSecret: "a".repeat(48),
+      redirectUrl: "https://app.masanawa.com/billing/return",
+    });
+    const quoted = await service.createQuote({
+      authorizationHeader: "Bearer session",
+      categoryCode: "AIRTIME",
+      billerCode: "BIL102",
+      itemCode: "AT102",
+      customerId: "+2348012345678",
+      amount: "100",
+    });
+
+    const attempts = await Promise.allSettled([
+      service.startCheckout({
+        authorizationHeader: "Bearer session",
+        quoteId: quoted.quote.quoteId,
+        quoteRevision: 1,
+      }),
+      service.startCheckout({
+        authorizationHeader: "Bearer session",
+        quoteId: quoted.quote.quoteId,
+        quoteRevision: 1,
+      }),
+    ]);
+
+    expect(checkoutPosts).toBe(1);
+    expect(attempts.filter((entry) => entry.status === "fulfilled")).toHaveLength(1);
+    expect(attempts.filter((entry) => entry.status === "rejected")).toHaveLength(1);
+    const rejected = attempts.find((entry) => entry.status === "rejected");
+    expect(rejected).toMatchObject({
+      reason: expect.objectContaining({
+        message: "financial.billing.checkout_creation_in_progress",
+      }),
+    });
+
+    const replay = await service.startCheckout({
+      authorizationHeader: "Bearer session",
+      quoteId: quoted.quote.quoteId,
+      quoteRevision: 1,
+    });
+    expect(replay.checkoutUrl).toContain("checkout.flutterwave.com");
+    expect(checkoutPosts).toBe(1);
+  });
+
   it("keeps an already-created hosted checkout verifiable after the short quote TTL", async () => {
     const owner = identity();
     const quotes = new MemoryQuotes();
