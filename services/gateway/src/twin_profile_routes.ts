@@ -11,6 +11,30 @@ function bodyObject(value: unknown): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
+function optionalString(
+  body: Record<string, unknown>,
+  key: string,
+): string | undefined {
+  const value = body[key];
+  if (value === undefined) return undefined;
+  if (typeof value !== "string") {
+    throw new TypeError(`${key} must be a string`);
+  }
+  return value;
+}
+
+function optionalStringList(
+  body: Record<string, unknown>,
+  key: string,
+): readonly string[] | undefined {
+  const value = body[key];
+  if (value === undefined) return undefined;
+  if (!Array.isArray(value) || value.some((item) => typeof item !== "string")) {
+    throw new TypeError(`${key} must be a string array`);
+  }
+  return value;
+}
+
 function patchFromBody(value: unknown): TwinProfileUpdate {
   const body = bodyObject(value);
   const allowed = new Set([
@@ -24,7 +48,43 @@ function patchFromBody(value: unknown): TwinProfileUpdate {
   for (const key of Object.keys(body)) {
     if (!allowed.has(key)) throw new TypeError(`Unknown twin profile field: ${key}`);
   }
-  return body as TwinProfileUpdate;
+
+  const patch: {
+    displayName?: string;
+    bio?: string;
+    interests?: readonly string[];
+    languages?: readonly string[];
+    avatarUrl?: string | null;
+    discoverable?: boolean;
+  } = {};
+
+  const displayName = optionalString(body, "displayName");
+  if (displayName !== undefined) patch.displayName = displayName;
+
+  const bio = optionalString(body, "bio");
+  if (bio !== undefined) patch.bio = bio;
+
+  const interests = optionalStringList(body, "interests");
+  if (interests !== undefined) patch.interests = interests;
+
+  const languages = optionalStringList(body, "languages");
+  if (languages !== undefined) patch.languages = languages;
+
+  if (body.avatarUrl !== undefined) {
+    if (body.avatarUrl !== null && typeof body.avatarUrl !== "string") {
+      throw new TypeError("avatarUrl must be a string or null");
+    }
+    patch.avatarUrl = body.avatarUrl as string | null;
+  }
+
+  if (body.discoverable !== undefined) {
+    if (typeof body.discoverable !== "boolean") {
+      throw new TypeError("discoverable must be boolean");
+    }
+    patch.discoverable = body.discoverable;
+  }
+
+  return patch;
 }
 
 export function registerTwinProfileRoutes(
@@ -58,10 +118,12 @@ export function registerTwinProfileRoutes(
     if (typeof updatedAt !== "string" || Number.isNaN(Date.parse(updatedAt))) {
       throw new TypeError("updatedAt is invalid");
     }
+
     const patchBody = { ...body };
     delete patchBody.expectedRevision;
     delete patchBody.confirmed;
     delete patchBody.updatedAt;
+
     return service.applyCustomization({
       authorizationHeader: request.headers.authorization,
       expectedRevision: expectedRevision as number,
