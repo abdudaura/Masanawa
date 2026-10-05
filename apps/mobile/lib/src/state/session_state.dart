@@ -273,17 +273,13 @@ class SessionController extends Notifier<SessionState> {
     if (current != null) return current;
 
     // Backward-compatible migration for APKs that stored four independent keys.
-    // Parallel reads avoid the old serial keystore latency.
-    final legacy = await Future.wait<String?>([
-      _storage.read(key: _kAccess),
-      _storage.read(key: _kRefresh),
-      _storage.read(key: _kUser),
-      _storage.read(key: _kExpiry),
-    ]);
-    final access = legacy[0];
-    final refresh = legacy[1];
-    final userRaw = legacy[2];
-    final expiryRaw = legacy[3];
+    // One bulk platform call is cheaper than four additional secure-storage
+    // calls on a fresh install while still preserving legacy upgrades.
+    final legacy = await _storage.readAll();
+    final access = legacy[_kAccess];
+    final refresh = legacy[_kRefresh];
+    final userRaw = legacy[_kUser];
+    final expiryRaw = legacy[_kExpiry];
     if (access == null || refresh == null || userRaw == null) return null;
     if (access.isEmpty || refresh.isEmpty) return null;
 

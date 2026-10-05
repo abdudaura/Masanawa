@@ -1,5 +1,16 @@
 # Continue Here
 
+## Fresh-install session restore checkpoint — 2026-10-05
+
+Preserve the auth startup optimization:
+- current `auth_session_v2` restores with one secure-storage key read;
+- if that record is absent, legacy compatibility uses one bulk `readAll()` call rather
+  than four additional secure-storage reads;
+- a fresh signed-out install therefore performs two session-discovery platform calls instead
+  of up to five;
+- valid legacy sessions still migrate asynchronously to `auth_session_v2`;
+- this is storage-call optimization only; auth/token semantics are unchanged.
+
 ## Mobile first-frame deferral checkpoint — 2026-10-05
 
 Preserve this startup rule:
