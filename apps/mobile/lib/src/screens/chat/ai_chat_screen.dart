@@ -1391,14 +1391,16 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         request.state == OwnerAccessState.requested ||
         request.state == OwnerAccessState.accepted ||
         request.state == OwnerAccessState.scheduled;
+    final priceLabel = request.chargeMode == 'trial'
+        ? 'trial'
+        : '${request.priceCredits} Credits';
     final cancel = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Talk to the owner'),
         content: Text(
           '${_ownerRequestStatus(request)}\n\n'
-          '${request.durationMinutes} minutes · '
-          '${request.chargeMode == 'trial' ? 'trial' : '${request.priceCredits} Credits'}',
+          '${request.durationMinutes} minutes · $priceLabel',
         ),
         actions: [
           TextButton(
@@ -1854,8 +1856,10 @@ class _LiveVoiceSheetState extends State<_LiveVoiceSheet> {
 
   Future<void> _startVerifiedSession() async {
     try {
-      await widget.session.start();
-      await widget.session.ready;
+      await Future.wait<void>([
+        widget.session.start(),
+        widget.session.ready,
+      ]);
       await widget.onMediaStarted?.call();
       final maxDuration = widget.maxDuration;
       if (maxDuration != null) {
