@@ -11,7 +11,7 @@ after implementation and relevant acceptance evidence are merged to `main`.
 - [x] **TWIN-001** Merge Product Twin Economy canonical overlay and cross-doc alignment.
 - [x] **TWIN-002** Merge master transformation plan, screen spec, economy contracts and
   multi-window ownership map.
-- [ ] **TWIN-003** Remove contradictory user-facing reseller/paid-AI-work assumptions
+- [x] **TWIN-003** Remove contradictory user-facing reseller/paid-AI-work assumptions
   from active product docs while preserving internal commerce invariants.
 - [x] **TWIN-004** Add architecture tests/doc gates preventing a second wallet, clone
   runtime, marketplace service or social-post subsystem.
@@ -99,8 +99,8 @@ after implementation and relevant acceptance evidence are merged to `main`.
 - [ ] **TWIN-082** Wire mobile transports/providers without direct repository access.
 - [ ] **TWIN-083** Reconcile active billing/crypto/auth branches before shared integration.
 - [ ] **TWIN-084** Preserve existing migration checksums and deployed production state.
-- [ ] **TWIN-085** Migrate existing personal clones/economy views without data loss.
-- [ ] **TWIN-086** Remove/deprecate obsolete endpoints only after client compatibility gate.
+- [x] **TWIN-085** Migrate existing personal clones/economy views without data loss.
+- [x] **TWIN-086** Remove/deprecate obsolete endpoints only after client compatibility gate.
 
 ## Abuse, finance and privacy
 
