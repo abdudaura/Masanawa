@@ -113,6 +113,12 @@ export interface TwinRuntimeRepository {
     readonly since: string;
   }): Promise<number>;
 
+  listCreditOperationsForUser(input: {
+    readonly tenantId: TenantId;
+    readonly userId: UserId;
+    readonly limit: number;
+  }): Promise<readonly TwinCreditOperationReceipt[]>;
+
   listRecentTransferEdges(input: {
     readonly tenantId: TenantId;
     readonly since: string;
