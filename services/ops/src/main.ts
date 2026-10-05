@@ -9,6 +9,7 @@ import {
   createApprovalBinding,
   createPendingApproval,
   fingerprintCanonicalJson,
+  principalKey,
   type PlatformSessionRepository,
 } from "@masanawa/security";
 import {
@@ -43,6 +44,7 @@ import {
   persistPendingApproval,
   prepareOperation,
   revokeProviderCredentialRef,
+  settlePendingApproval,
   withTransaction,
 } from "@masanawa/postgres";
 import {
@@ -66,6 +68,7 @@ import {
 } from "./platform_admin.js";
 import {
   createSystemAdminService,
+  type SystemAdminApprovalCommands,
   type SystemAdminWorldCommands,
 } from "./system_admin.js";
 import {
@@ -452,6 +455,38 @@ function createDefaultDatabaseDependency(
     },
   });
 
+  const systemApprovalCommands: SystemAdminApprovalCommands = Object.freeze({
+    async decide(input) {
+      const approvalId = parseCanonicalId("approval", input.approvalId);
+      const record = await withTransaction(database.pool, (client) =>
+        settlePendingApproval(client, {
+          tenantId: input.tenantId,
+          approvalId,
+          decision: input.decision,
+          approverKey: principalKey({
+            kind: "operator",
+            userId: input.approverUserId,
+          }),
+          decidedAt: nowInstant(),
+        }),
+      );
+      return {
+        approvalId: record.approvalId,
+        operationId: record.binding.operationId,
+        kind: record.kind,
+        state: record.state,
+        action: record.binding.action,
+        actionVersion: record.binding.actionVersion,
+        resourceKey: record.binding.resourceKey,
+        riskClass: record.binding.riskClass,
+        requestedAt: record.requestedAt,
+        expiresAt: record.expiresAt,
+        decidedAt: record.decidedAt ?? null,
+        approverKey: record.approverKey ?? null,
+      };
+    },
+  });
+
   const worldCommands: SystemAdminWorldCommands = Object.freeze({
     async pause(input) {
       const world = await worlds.pauseWorld({
@@ -571,6 +606,7 @@ export async function startOpsService(
           database: database.platformAdminDatabase,
           authorizer: adminAuthorizer,
           ...(database.worldCommands ? { worldCommands: database.worldCommands } : {}),
+          approvalCommands: systemApprovalCommands,
         })
       : undefined);
 
