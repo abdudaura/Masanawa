@@ -493,10 +493,10 @@ export async function startOpsService(
 
   const composedAdminAgentActions =
     options.appOptions?.adminAgentActions ??
-    (adminAgentDelegationConfig && composedPlatformAdmin
+    (adminAgentDelegationConfig && adminAuthorizer && composedPlatformAdmin
       ? createAdminAgentActionBroker({
           config: adminAgentDelegationConfig,
-          authorizer: adminAuthorizer!,
+          authorizer: adminAuthorizer,
           platformAdmin: composedPlatformAdmin,
         })
       : undefined);
