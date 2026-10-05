@@ -36,14 +36,12 @@ export interface WorkflowRunCreateInput extends WorkRequest {
   readonly workflowRunId: WorkflowRunId;
   readonly workflowVersionId: WorkflowVersionId;
   readonly taskId: TaskId;
-  readonly createdAt: Instant;
 }
 
 export interface WorkflowRunTransitionInput extends WorkRequest {
   readonly workflowRunId: WorkflowRunId;
   readonly expectedRevision: number;
   readonly state: WorkflowRunState;
-  readonly updatedAt: Instant;
   readonly checkpointRevision?: number;
   readonly activeAgentRunId?: AgentRunId | null;
   readonly failureCode?: string | null;
