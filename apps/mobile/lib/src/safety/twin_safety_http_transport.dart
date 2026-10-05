@@ -9,14 +9,14 @@ class GatewayTwinSafetyTransport implements TwinSafetyTransport {
   @override
   Future<void> block({required String characterId}) async {
     await api.dio.post<dynamic>(
-      '/v1/twins/$characterId/block',
+      '/agent/twin/$characterId/block',
       data: const {},
     );
   }
 
   @override
   Future<void> unblock({required String characterId}) async {
-    await api.dio.delete<dynamic>('/v1/twins/$characterId/block');
+    await api.dio.delete<dynamic>('/agent/twin/$characterId/block');
   }
 
   @override
@@ -26,7 +26,7 @@ class GatewayTwinSafetyTransport implements TwinSafetyTransport {
     String? detail,
   }) async {
     await api.dio.post<dynamic>(
-      '/v1/twins/$characterId/report',
+      '/agent/twin/$characterId/report',
       data: {
         'reason': twinReportReasonWire(reason),
         if (detail != null && detail.trim().isNotEmpty) 'detail': detail.trim(),
