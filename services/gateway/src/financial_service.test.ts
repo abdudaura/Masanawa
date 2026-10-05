@@ -462,6 +462,99 @@ describe("financial service recovery and admission", () => {
     expect(crypto.bindProviderInvoice).not.toHaveBeenCalled();
   });
 
+  it("recovers a missed first fiat callback from the authenticated invoice payment list", async () => {
+    const pending = {
+      ...buyIntent,
+      providerPaymentId: null,
+      providerTargetAmount: null,
+      status: "awaiting_payment" as const,
+    };
+    const { service, crypto, fetch } = setup(
+      pending, undefined, undefined, undefined, undefined,
+      false, false, true, "receiver", true,
+    );
+    const recoveredPayload = {
+      payment_id: "fiat-payment-recovered",
+      invoice_id: "invoice-1",
+      order_id: tenantId+"."+requestId,
+      payment_status: "finished",
+      price_amount: "1500",
+      price_currency: "ngn",
+      pay_amount: "1500",
+      pay_currency: "ngn",
+      actually_paid: "1500",
+      outcome_amount: "1.234567",
+      outcome_currency: "usdttrc20",
+    };
+    fetch.mockImplementation(async (request) => {
+      const url = new URL(String(request));
+      if (url.pathname.endsWith("/auth")) {
+        return new Response(JSON.stringify({ token: "fixture-jwt" }));
+      }
+      if (url.pathname.endsWith("/payment/")) {
+        return new Response(JSON.stringify({ data: [recoveredPayload] }));
+      }
+      return new Response("not found", { status: 404 });
+    });
+
+    await expect(service.refreshFiatPurchase({
+      authorizationHeader,
+      requestId,
+    })).resolves.toMatchObject({
+      requestId,
+      status: "succeeded",
+      providerPaymentId: "fiat-payment-recovered",
+      cryptoAmount: "1.234567",
+    });
+    expect(crypto.applyProviderPaymentEvent).toHaveBeenCalledWith(expect.objectContaining({
+      event: expect.objectContaining({
+        paymentId: "fiat-payment-recovered",
+        invoiceId: "invoice-1",
+        outcomeAmount: "1.234567",
+        outcomeCurrency: "USDTTRC20",
+      }),
+    }));
+    expect(fetch.mock.calls.some((call) => {
+      const url = new URL(String(call[0]));
+      return url.pathname.endsWith("/payment/") &&
+        url.searchParams.get("limit") === "100";
+    })).toBe(true);
+  });
+
+  it("keeps a Buy pending when authenticated invoice reconciliation finds no payment", async () => {
+    const pending = {
+      ...buyIntent,
+      providerPaymentId: null,
+      providerTargetAmount: null,
+      status: "awaiting_payment" as const,
+    };
+    const { service, crypto, fetch } = setup(
+      pending, undefined, undefined, undefined, undefined,
+      false, false, true, "receiver", true,
+    );
+    fetch.mockImplementation(async (request) => {
+      const url = new URL(String(request));
+      if (url.pathname.endsWith("/auth")) {
+        return new Response(JSON.stringify({ token: "fixture-jwt" }));
+      }
+      if (url.pathname.endsWith("/payment/")) {
+        return new Response(JSON.stringify({ data: [] }));
+      }
+      return new Response("not found", { status: 404 });
+    });
+
+    await expect(service.refreshFiatPurchase({
+      authorizationHeader,
+      requestId,
+    })).resolves.toMatchObject({
+      requestId,
+      status: "awaiting_payment",
+      providerPaymentId: null,
+      cryptoAmount: null,
+    });
+    expect(crypto.applyProviderPaymentEvent).not.toHaveBeenCalled();
+  });
+
   it("credits only the exact signed fiat on-ramp crypto outcome", async () => {
     const { service, crypto } = setup(
       buyIntent, undefined, undefined, undefined, undefined,
