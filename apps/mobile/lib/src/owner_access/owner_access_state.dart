@@ -76,6 +76,7 @@ class OwnerAccessController extends StateNotifier<OwnerAccessUiState> {
       );
       return null;
     }
+  }
 
   Future<OwnerAccessRequest?> read({
     required String characterId,
@@ -130,8 +131,6 @@ class OwnerAccessController extends StateNotifier<OwnerAccessUiState> {
       );
       return null;
     }
-  }
-
   }
 }
 
