@@ -654,6 +654,19 @@ export async function startGatewayService(
                   characterId: request.characterId,
                 });
               },
+              async canContinue(request) {
+                const profile = await database.twinProfiles!.readForCharacter({
+                  tenantId: request.tenantId,
+                  characterId: request.characterId,
+                });
+                if (!profile) return true;
+                if (profile.ownerUserId === request.userId) return true;
+                return !await database.twinEconomy!.isTwinBlocked({
+                  tenantId: request.tenantId,
+                  actorUserId: request.userId,
+                  characterId: request.characterId,
+                });
+              },
             },
           }
         : {}),
