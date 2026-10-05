@@ -11,17 +11,23 @@ function client(fetch: typeof globalThis.fetch) {
 }
 
 describe("NOWPayments custody client", () => {
-  it("parses custody balances without inventing missing pending funds", async () => {
-    const fetch = vi.fn(async () => new Response(JSON.stringify({
-      usdttrc20: { amount: "12.340000", pendingAmount: "0.5" },
-      btc: { amount: 0, pending_amount: 0 },
-    })));
+  it("parses authenticated custody balances without inventing missing pending funds", async () => {
+    const fetch = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ token: "fixture-jwt" })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        usdttrc20: { amount: "12.340000", pendingAmount: "0.5" },
+        btc: { amount: 0, pending_amount: 0 },
+      })));
     await expect(client(fetch).readBalances()).resolves.toEqual([
       { currency: "BTC", available: "0", pending: "0" },
       { currency: "USDTTRC20", available: "12.34", pending: "0.5" },
     ]);
-    expect(fetch).toHaveBeenCalledOnce();
-    expect(fetch.mock.calls[0]?.[0]).toBe("https://api.nowpayments.io/v1/balance");
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(fetch.mock.calls[0]?.[0]).toBe("https://api.nowpayments.io/v1/auth");
+    expect(fetch.mock.calls[1]?.[0]).toBe("https://api.nowpayments.io/v1/balance");
+    expect(fetch.mock.calls[1]?.[1]).toMatchObject({
+      headers: expect.objectContaining({ authorization: "Bearer fixture-jwt" }),
+    });
   });
 
   it.each(["10.000000000000000001", "9007199254740993"])(
