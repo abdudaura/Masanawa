@@ -622,6 +622,57 @@ export function createPostgresTwinRuntimeRepository(
       });
     },
 
+    async putOwnerAccessQuote(input) {
+      await pool.query(
+        `INSERT INTO commerce.owner_access_quotes(
+           tenant_id,quote_id,requester_user_id,owner_user_id,character_id,
+           definition,created_at,expires_at
+         ) VALUES ($1,$2,$3,$4,$5,$6::jsonb,$7,$8)
+         ON CONFLICT DO NOTHING`,
+        [
+          input.tenantId,
+          input.quote.requestId,
+          input.requesterUserId,
+          input.quote.ownerUserId,
+          input.quote.originatingCharacterId,
+          canonicalJson(input.quote),
+          input.createdAt,
+          input.quote.quoteExpiresAt,
+        ],
+      );
+      const current = await this.readOwnerAccessQuote({
+        tenantId: input.tenantId,
+        quoteId: input.quote.requestId,
+      });
+      if (!current || current.requesterUserId !== input.requesterUserId) {
+        throw new Error("Owner access quote persistence failed");
+      }
+      const { requesterUserId: _requester, ...persisted } = current;
+      if (canonicalJson(persisted) !== canonicalJson(input.quote)) {
+        throw new Error("Owner access quote replay conflict");
+      }
+      return Object.freeze(input.quote);
+    },
+
+    async readOwnerAccessQuote(input) {
+      const result = await pool.query<{
+        requester_user_id: string;
+        definition: import("@masanawa/commerce").OwnerAccessQuote;
+      }>(
+        `SELECT requester_user_id,definition
+           FROM commerce.owner_access_quotes
+          WHERE tenant_id=$1 AND quote_id=$2`,
+        [input.tenantId, input.quoteId],
+      );
+      const row = result.rows[0];
+      return row
+        ? Object.freeze({
+            ...row.definition,
+            requesterUserId: row.requester_user_id as UserId,
+          })
+        : null;
+    },
+
     async readOwnerAccessOffering(input) {
       const result = await pool.query<{ definition: OwnerAccessOffering }>(
         `SELECT definition FROM commerce.owner_access_offerings
