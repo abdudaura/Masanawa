@@ -10,6 +10,7 @@ Preserve this mobile startup behavior:
   current-account hydration path;
 - local chat caches remain scoped by canonical User ID; server history remains
   canonical and may reconcile after the cached shell is already visible.
+- PR #172 merged this cache-first chat startup slice at `6917a7eb7e8305123a3c44a8d2e9fa9441db3f0a`.
 
 ## Fresh-install session restore checkpoint — 2026-10-05
 
