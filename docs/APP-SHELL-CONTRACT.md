@@ -1,5 +1,15 @@
 # Independent app shell contract
 
+## Twin economy shell overlay — 2026-10-05
+
+The four primary product surfaces (My Twin, Explore, Activity, Wallet) are native shell
+navigation/screen concerns. Transaction choices inside a twin conversation should reuse
+the existing ShellDocument/action contract where suitable.
+
+Gift, paid voice quote, commerce purchase and Request Owner actions must be backed by
+server-issued opaque actions and canonical financial state. Narrative AI text must never
+create a charge, transfer, hold or settlement.
+
 Status: renderer and live mobile/Gateway integration are combined on draft PR #104; not yet a verified or deployed release.
 
 ## Update boundary
