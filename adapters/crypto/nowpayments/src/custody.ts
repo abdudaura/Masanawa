@@ -186,9 +186,11 @@ export class NowPaymentsCustodyClient {
   }
 
   async readBalances(signal?: AbortSignal): Promise<readonly NowPaymentsCustodyBalance[]> {
+    const token = await this.authenticate(signal);
     const response = await this.#request("/balance", {
       method: "GET",
-      authenticated: false,
+      authenticated: true,
+      token,
       ...(signal === undefined ? {} : { signal }),
     });
     const body = await response.json();
