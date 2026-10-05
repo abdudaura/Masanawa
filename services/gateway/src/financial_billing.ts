@@ -137,7 +137,7 @@ export function createBillingFinancialService(input: Readonly<{
     const service = orchestrator(identity);
     const current = await input.billingStore(identity).read(reference);
     if (!current) throw new Error("financial.billing_not_found");
-    if (!refresh || ["failed","reversed","manual_review"].includes(current.state)) {
+    if (!refresh || ["failed","reversed"].includes(current.state)) {
       await settle(identity,current);
       return current;
     }
