@@ -20,6 +20,7 @@ void main() {
   late _FakeAdapter adapter;
   final storageMap = <String, String>{};
   final storageReads = <String>[];
+  var storageReadAlls = 0;
 
   ProviderContainer makeContainer() {
     final container = ProviderContainer(overrides: [
@@ -33,6 +34,7 @@ void main() {
     adapter = _FakeAdapter();
     storageMap.clear();
     storageReads.clear();
+    storageReadAlls = 0;
     final dio = Dio(BaseOptions(
       baseUrl: 'https://example.test',
       validateStatus: (s) => s != null && s >= 200 && s < 300,
@@ -52,6 +54,9 @@ void main() {
             final key = call.arguments['key'] as String;
             storageReads.add(key);
             return storageMap[key];
+          case 'readAll':
+            storageReadAlls += 1;
+            return Map<String, String>.from(storageMap);
           case 'write':
             storageMap[call.arguments['key'] as String] =
                 call.arguments['value'] as String;
@@ -138,6 +143,20 @@ void main() {
     expect(restored, isA<SessionSignedIn>());
     expect(api.accessToken, 'legacy-access');
     expect(storageMap['auth_session_v2'], isNotNull);
+    expect(storageReads, ['auth_session_v2']);
+    expect(storageReadAlls, 1);
+  });
+
+  test('empty secure store signs out with two platform reads total', () async {
+    final container = makeContainer();
+
+    container.read(sessionProvider);
+    await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(container.read(sessionProvider), isA<SessionSignedOut>());
+    expect(storageReads, ['auth_session_v2']);
+    expect(storageReadAlls, 1);
   });
 
   test('sendOtp (phone) transitions signedOut → sending → awaitingOtp', () async {
