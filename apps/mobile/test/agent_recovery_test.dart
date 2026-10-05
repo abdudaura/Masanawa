@@ -427,7 +427,7 @@ void main() {
   test('hosted Gateway is the default local connection address', () {
     expect(
       kAgentBaseUrl,
-      'https://nurainworker-production.up.railway.app',
+      'https://masanawa-gateway-production.up.railway.app',
     );
   });
 
