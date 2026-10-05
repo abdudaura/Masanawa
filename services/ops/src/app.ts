@@ -193,11 +193,6 @@ const PutOfferEnabledBodySchema = Type.Object(
   { additionalProperties: false },
 );
 
-const UserParamsSchema = Type.Object(
-  { userId: Type.String() },
-  { additionalProperties: false },
-);
-
 const ReadinessResponseSchema = Type.Object(
   {
     service: Type.Literal("ops"),
