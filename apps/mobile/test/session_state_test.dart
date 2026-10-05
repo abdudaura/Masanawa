@@ -74,9 +74,31 @@ void main() {
     locale: 'en-NG',
     status: 'ACTIVE',
     role: 'USER',
-    isNewUser: true,
+    isNewUser: false,
     createdAt: '2026-08-13T00:00:00Z',
   );
+
+  test('auth capabilities expose only server-configured OTP channels', () async {
+    adapter.respond('/auth/capabilities', {
+      'otpChannels': ['email'],
+    });
+
+    final channels = await api.authOtpChannels();
+
+    expect(channels, [OtpChannel.email]);
+    expect(adapter.requests.last, 'GET /auth/capabilities');
+  });
+
+  test('auth capabilities reject an invalid contract shape', () async {
+    adapter.respond('/auth/capabilities', {
+      'otpChannels': 'email',
+    });
+
+    await expectLater(
+      api.authOtpChannels(),
+      throwsA(isA<ApiException>()),
+    );
+  });
 
   test('sendOtp (phone) transitions signedOut → sending → awaitingOtp', () async {
     adapter.respond('/auth/otp', {'phone': phone, 'resendInSeconds': 300});
@@ -159,94 +181,98 @@ void main() {
     expect(container.read(sessionProvider), isA<SessionSignedIn>());
   });
 
-  test('first login remains signed in while profile completion updates the user', () async {
-    final newUser = AuthUser(
-      id: 'user_test',
-      name: '',
-      email: email,
-      locale: 'en',
-      status: 'ACTIVE',
-      role: 'USER',
-      isNewUser: true,
-      createdAt: '2026-10-04T00:00:00Z',
+  test('new signup keeps the verified OTP for required name capture', () async {
+    adapter.respond(
+      '/auth/verify',
+      {
+        'error': {
+          'code': 'NAME_REQUIRED_ON_SIGNUP',
+          'message': 'NAME_REQUIRED_ON_SIGNUP',
+        }
+      },
+      statusCode: 400,
     );
-    adapter.respond('/auth/verify', {
-      'accessToken': 'a3',
-      'refreshToken': 'r3',
-      'accessExpiresIn': 3600,
-      'user': newUser.toJson(),
-    });
     final container = makeContainer();
     final controller = container.read(sessionProvider.notifier);
     await Future.delayed(Duration.zero);
 
     await controller.verifyOtp(code, email: email);
-    final initial = container.read(sessionProvider);
-    expect(initial, isA<SessionSignedIn>());
-    expect((initial as SessionSignedIn).user.isNewUser, isTrue);
+
+    final pending = container.read(sessionProvider);
+    expect(pending, isA<SessionNameRequired>());
+    final nameRequired = pending as SessionNameRequired;
+    expect(nameRequired.channel, OtpChannel.email);
+    expect(nameRequired.identifier, email);
+    expect(nameRequired.code, code);
 
     final completed = AuthUser(
       id: 'user_test',
       name: 'Ada Obi',
       email: email,
-      locale: 'en',
+      locale: 'en-NG',
       status: 'ACTIVE',
-      role: 'USER',
+      role: 'CITIZEN',
       isNewUser: false,
-      createdAt: '2026-10-04T00:00:00Z',
+      createdAt: '2026-10-05T00:00:00Z',
     );
-    adapter.respond('/auth/profile', {'user': completed.toJson()});
-    await controller.updateProfile(name: 'Ada Obi');
+    adapter.respond('/auth/verify', {
+      'accessToken': 'a3',
+      'refreshToken': 'r3',
+      'accessExpiresIn': 900,
+      'user': completed.toJson(),
+    });
 
-    final updated = container.read(sessionProvider);
-    expect(updated, isA<SessionSignedIn>());
-    final signedIn = updated as SessionSignedIn;
-    expect(signedIn.user.name, 'Ada Obi');
-    expect(signedIn.user.isNewUser, isFalse);
+    await controller.verifyOtp(
+      nameRequired.code,
+      email: nameRequired.identifier,
+      name: 'Ada Obi',
+    );
+
+    final signedIn = container.read(sessionProvider);
+    expect(signedIn, isA<SessionSignedIn>());
+    final completedState = signedIn as SessionSignedIn;
+    expect(completedState.user.name, 'Ada Obi');
+    expect(completedState.user.isNewUser, isFalse);
     expect(api.accessToken, 'a3');
   });
 
-  test('profile save failure preserves the verified production session',
+  test('temporary failure during name capture preserves the verified OTP',
       () async {
-    adapter.respond('/auth/verify', {
-      'accessToken': 'a4',
-      'refreshToken': 'r4',
-      'accessExpiresIn': 3600,
-      'user': AuthUser(
-        id: 'user_profile_retry',
-        name: '',
-        email: email,
-        locale: 'en',
-        status: 'ACTIVE',
-        role: 'USER',
-        isNewUser: true,
-        createdAt: '2026-10-04T00:00:00Z',
-      ).toJson(),
-    });
+    adapter.respond(
+      '/auth/verify',
+      {
+        'error': {
+          'code': 'NAME_REQUIRED_ON_SIGNUP',
+          'message': 'NAME_REQUIRED_ON_SIGNUP',
+        }
+      },
+      statusCode: 400,
+    );
     final container = makeContainer();
     final controller = container.read(sessionProvider.notifier);
     await Future.delayed(Duration.zero);
     await controller.verifyOtp(code, email: email);
+    final initial = container.read(sessionProvider) as SessionNameRequired;
 
     adapter.respond(
-      '/auth/profile',
+      '/auth/verify',
       {
         'error': {'code': 'AUTH_UNAVAILABLE', 'message': 'temporary'}
       },
       statusCode: 503,
     );
-
-    await expectLater(
-      controller.updateProfile(name: 'Ada Obi'),
-      throwsA(isA<ApiException>()),
+    await controller.verifyOtp(
+      initial.code,
+      email: initial.identifier,
+      name: 'Ada Obi',
     );
 
-    final state = container.read(sessionProvider);
-    expect(state, isA<SessionSignedIn>());
-    final signedIn = state as SessionSignedIn;
-    expect(signedIn.user.isNewUser, isTrue);
-    expect(signedIn.tokens.accessToken, 'a4');
-    expect(api.accessToken, 'a4');
+    final retry = container.read(sessionProvider);
+    expect(retry, isA<SessionNameRequired>());
+    final preserved = retry as SessionNameRequired;
+    expect(preserved.code, code);
+    expect(preserved.identifier, email);
+    expect(preserved.message, isNotEmpty);
   });
 
   test('network failure on sendOtp lands in SessionError', () async {

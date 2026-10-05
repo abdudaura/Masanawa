@@ -91,8 +91,8 @@ class ApiClient {
   Future<String?> Function()? onUnauthorized;
 
   /// Rotates the current session once and shares that in-flight refresh across
-  /// API + Agent transports. Supabase refresh tokens rotate, so concurrent 401s
-  /// must never race separate refresh calls.
+  /// API + Agent transports. Platform refresh tokens rotate, so concurrent
+  /// 401s must never race separate refresh calls.
   Future<String?> refreshAuthorization() {
     final active = _authorizationRefresh;
     if (active != null) return active;
@@ -108,6 +108,26 @@ class ApiClient {
   }
 
   // ---- Auth (U-p2-01) ----
+
+  Future<List<OtpChannel>> authOtpChannels() async {
+    final data = await _get('/auth/capabilities');
+    final raw = data['otpChannels'];
+    if (raw is! List) {
+      throw const ApiException(
+        'Sign-in methods are unavailable right now.',
+        code: 'AUTH_UNAVAILABLE',
+      );
+    }
+    final channels = <OtpChannel>[];
+    for (final value in raw) {
+      if (value == 'email' && !channels.contains(OtpChannel.email)) {
+        channels.add(OtpChannel.email);
+      } else if (value == 'sms' && !channels.contains(OtpChannel.sms)) {
+        channels.add(OtpChannel.sms);
+      }
+    }
+    return List.unmodifiable(channels);
+  }
 
   Future<OtpSendResponse> otpSend({String? phone, String? email}) async {
     final data = await _post(
@@ -134,11 +154,6 @@ class ApiClient {
 
   Future<Map<String, dynamic>> logout() async {
     return _post('/auth/logout', const {});
-  }
-
-  Future<AuthUser> updateProfile({required String name}) async {
-    final data = await _patch('/auth/profile', {'name': name});
-    return AuthUser.fromJson(data['user'] as Map<String, dynamic>);
   }
 
   /// Sends one message to the AI assistant. Expects `{reply: String}`.
@@ -803,6 +818,8 @@ String? _legacyCode(String? value) {
     'OTP_LOCKED',
     'OTP_RATE_LIMITED',
     'OTP_INVALID',
+    'OTP_CHANNEL_UNAVAILABLE',
+    'OTP_DELIVERY_UNAVAILABLE',
     'NAME_REQUIRED_ON_SIGNUP',
     'SESSION_NOT_FOUND',
     'UNAUTHORIZED',
@@ -859,6 +876,10 @@ String _friendlyMessage({
       return 'Too many incorrect attempts. Please wait a few minutes and try again.';
     case 'OTP_RATE_LIMITED':
       return "You've requested too many codes. Please wait a moment and try again.";
+    case 'OTP_CHANNEL_UNAVAILABLE':
+      return 'That sign-in method is not available right now. Choose another option.';
+    case 'OTP_DELIVERY_UNAVAILABLE':
+      return 'We could not send the code right now. Please try again.';
     case 'NAME_REQUIRED_ON_SIGNUP':
       return 'Please enter your name to continue.';
     case 'SESSION_NOT_FOUND':
