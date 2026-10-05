@@ -47,7 +47,7 @@ function fromRow(row: TwinProfileRow): TwinPublicProfile {
   if (!Number.isSafeInteger(revision) || revision < 1) {
     throw new Error("Stored Twin profile revision is invalid");
   }
-  return Object.freeze({
+  const repository: PostgresTwinProfileRepository = {
     tenantId: row.tenant_id as TenantId,
     characterId: row.character_id as CharacterId,
     ownerUserId: row.owner_user_id as UserId,
@@ -331,5 +331,6 @@ export function createPostgresTwinProfileRepository(
         return fromRow(inserted.rows[0]!);
       });
     },
-  });
+  };
+  return Object.freeze(repository);
 }
