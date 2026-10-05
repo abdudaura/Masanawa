@@ -39,7 +39,14 @@ class _MasanawaAppState extends ConsumerState<MasanawaApp> {
     _router.routeInformationProvider
         .addListener(_scheduleLinkDrain);
     _scheduleLinkDrain();
-    unawaited(MobilePushService.instance.initialize().catchError((_) {}));
+
+    // Push/Firebase/native-link setup is useful but not required to paint the
+    // first usable frame. Starting it after first paint avoids competing with
+    // router/theme/session startup on slower Android devices.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(MobilePushService.instance.initialize().catchError((_) {}));
+    });
   }
 
   void _openDeepLink(Uri uri) {

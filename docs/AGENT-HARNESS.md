@@ -228,3 +228,14 @@ as immediately usable presentation while the canonical live directory refreshes.
 - Agent-list copy should say the roster is refreshing rather than implying it is unavailable.
 - Only the true no-cache/no-roster state should block on "Loading your agents…".
 - This changes presentation latency only; server admission and authority are unchanged.
+
+
+### First-frame startup deferral
+
+Mobile startup now treats push/Firebase/native-deep-link initialization as post-first-frame
+work. The app subscribes to the existing deep-link stream before first paint, then starts
+`MobilePushService.initialize()` immediately after Flutter renders its first frame.
+
+This preserves launch/deep-link delivery while avoiding unnecessary platform-channel and
+Firebase setup competing with router/theme/session startup on slower Android devices.
+Do not move noncritical notification initialization back in front of first paint.
