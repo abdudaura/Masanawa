@@ -6,6 +6,8 @@ import {
 } from "@masanawa/contracts";
 import { parseTraceparent } from "@masanawa/telemetry";
 import { createGatewayApp } from "./app.js";
+import type { ProductionAuthService } from "./production_auth.js";
+import type { BillingCheckoutService } from "./billing_checkout.js";
 
 const apps: Array<ReturnType<typeof createGatewayApp>> = [];
 
@@ -75,6 +77,60 @@ describe("gateway service bootstrap", () => {
     const parsed = parseTraceparent(traceparent);
     expect(parsed?.traceId).toBe("4bf92f3577b34da6a3ce929d0e0e4736");
     expect(parsed?.spanId).not.toBe("00f067aa0ba902b7");
+  });
+
+  it("exposes production auth capabilities without provider configuration", async () => {
+    const productionAuth: ProductionAuthService = {
+      capabilities: () => ({ otpChannels: ["email"] }),
+      async sendOtp() { throw new Error("unused"); },
+      async verifyOtp() { throw new Error("unused"); },
+      async refresh() { throw new Error("unused"); },
+      async logout() {},
+      async updateProfile() { throw new Error("unused"); },
+      async authenticate() { throw new Error("unused"); },
+    };
+    const app = createGatewayApp({ productionAuth });
+    apps.push(app);
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/auth/capabilities",
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ otpChannels: ["email"] });
+  });
+
+  it("keeps billing history authenticated at the route boundary", async () => {
+    const billingCheckout: BillingCheckoutService = {
+      async createQuote() { throw new Error("unused"); },
+      async startCheckout() { throw new Error("unused"); },
+      async verifyAndPurchase() { throw new Error("unused"); },
+      async read() { throw new Error("unused"); },
+      async list(request) {
+        if (request.authorizationHeader !== "Bearer customer") {
+          throw new Error("financial.auth.unauthorized");
+        }
+        return [];
+      },
+      async reconcileFulfillment() { return null; },
+      async executeShellAction() { throw new Error("unused"); },
+    };
+    const app = createGatewayApp({ billingCheckout });
+    apps.push(app);
+
+    const allowed = await app.inject({
+      method: "GET",
+      url: "/v1/commerce/bills/quotes?limit=10",
+      headers: { authorization: "Bearer customer" },
+    });
+    expect(allowed.statusCode).toBe(200);
+    expect(allowed.json()).toEqual({ quotes: [] });
+
+    const denied = await app.inject({
+      method: "GET",
+      url: "/v1/commerce/bills/quotes",
+    });
+    expect(denied.statusCode).toBe(401);
   });
 
   it("fails readiness closed when a probe throws", async () => {
