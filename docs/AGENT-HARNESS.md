@@ -152,3 +152,24 @@ Next implementation dependency:
 build the canonical `@masanawa/workflows` Task/WorkflowRun lifecycle and repository boundary
 according to the adoption rules, then add PostgreSQL checkpoint persistence before allowing
 the harness to create or resume durable Work.
+
+
+## Canonical workflows runtime foundation — 2026-10-05
+
+The previously empty `@masanawa/workflows` package now defines the canonical lifecycle
+and repository contracts required by durable Work.
+
+Implemented:
+- Task states: queued, running, waiting_approval, waiting_external, completed, failed, cancelled;
+- WorkflowRun states with the same durable waiting/terminal semantics;
+- terminal states cannot restart;
+- Workflow checkpoints include graph signature, committed state, executor state, edge state,
+  pending approvals and monotonic checkpoint revision;
+- checkpoint state is bounded, plain JSON only;
+- access guards require current scoped authority for Relationship + Task/WorkflowRun;
+- repository ports exist for create/read/list/transition and checkpoint append/read;
+- focused lifecycle/checkpoint tests are checked in.
+
+This is still a domain-contract checkpoint, not persistence qualification. PostgreSQL storage,
+restore compatibility checks and resumed present-authority revalidation remain the next slice.
+Do not claim service-restart-safe Work until those pieces are implemented and verified.
