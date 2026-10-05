@@ -1,6 +1,5 @@
 import type {
   AgentRunId,
-  Instant,
   TaskId,
   WorkflowRunId,
   WorkflowVersionId,
@@ -22,14 +21,12 @@ export interface WorkRequest {
 export interface TaskCreateInput extends WorkRequest {
   readonly taskId: TaskId;
   readonly title: string;
-  readonly createdAt: Instant;
 }
 
 export interface TaskTransitionInput extends WorkRequest {
   readonly taskId: TaskId;
   readonly expectedRevision: number;
   readonly state: TaskState;
-  readonly updatedAt: Instant;
   readonly workflowRunId?: WorkflowRunId | null;
   readonly activeAgentRunId?: AgentRunId | null;
   readonly failureCode?: string | null;
