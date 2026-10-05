@@ -535,8 +535,7 @@ export function createFinancialService(input: {
     );
     const covered: NowPaymentsCurrencyEvidence[] = [];
     for (const route of routes) {
-      const liability = await input.crypto.readAggregateLiability({
-        tenantId: auth.tenantId,
+      const liability = await input.crypto.readPlatformAggregateLiability({
         asset: route.providerCode,
         network: route.network,
       });
