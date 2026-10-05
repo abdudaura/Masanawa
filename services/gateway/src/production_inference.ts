@@ -18,12 +18,17 @@ export interface GeminiCredentialPool {
 }
 
 
-const GOOGLE_GEMINI_KEY_RE = /^AIza[0-9A-Za-z_-]{30,80}$/u;
-
 function normalizeSecret(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const normalized = value.trim();
-  return GOOGLE_GEMINI_KEY_RE.test(normalized) ? normalized : null;
+  if (
+    !normalized ||
+    normalized.length > 256 ||
+    /\s/u.test(normalized)
+  ) {
+    return null;
+  }
+  return normalized;
 }
 
 function credentialValues(value: unknown, depth = 0): string[] {
