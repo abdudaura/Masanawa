@@ -16,6 +16,7 @@ Owned paths:
 - `packages/security/src/platform-session.ts`, focused tests and export wiring;
 - `packages/security/migrations/0100_platform_sessions.sql`;
 - `adapters/storage/postgres/src/security/platform-session.ts`, focused tests and export/migration wiring;
+- `packages/identity/src/repository.ts` and `adapters/storage/postgres/src/identity/relationships.ts` only for a narrow get-or-create relationship provisioning port used after current session authorization;
 - `services/gateway/src/customer_auth.ts`, focused tests, and narrow Gateway composition/routes/authorizer integration;
 - deletion of `services/gateway/src/production_auth.ts` and its focused test;
 - deletion of `adapters/storage/postgres/src/identity/production-auth.ts` and its export wiring;
