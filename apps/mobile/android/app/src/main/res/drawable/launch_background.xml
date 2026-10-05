@@ -4,6 +4,6 @@
     <item>
         <bitmap
             android:gravity="center"
-            android:src="@drawable/masanawa_agent_logo" />
+            android:src="@drawable/android12splash" />
     </item>
 </layer-list>
