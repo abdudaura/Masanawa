@@ -817,7 +817,8 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
         message.includes("payment_not_successful") ||
         message.includes("quote_revision_conflict") ||
         message.includes("quote_expired") ||
-        message.includes("checkout_not_created")
+        message.includes("checkout_not_created") ||
+        message.includes("checkout_creation_in_progress")
       ) {
         reply.code(409);
         return { error: message };
