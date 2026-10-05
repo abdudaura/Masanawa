@@ -9,6 +9,7 @@ import {
 } from "./execution-budget.js";
 import {
   createBudgetAccountedMeteredInference,
+  type AgentInferenceDispatchReservationPort,
   type AgentInferenceUsageReservationPort,
 } from "./metered-inference-budget.js";
 import type { MeteredAgentInferenceProvider } from "./inference-usage.js";
@@ -17,6 +18,8 @@ const agentRunId =
   "agent-run_00000000-0000-4000-8000-000000000001" as never;
 const startedAt = "2026-10-05T12:00:00.000Z" as never;
 const observedAt = "2026-10-05T12:00:05.000Z" as never;
+const attemptKey = "inference-attempt:turn-1";
+const requestFingerprint = "sha256:request-fingerprint-1";
 
 const budget = normalizeAgentExecutionBudget({
   schemaVersion: 1,
@@ -71,6 +74,16 @@ function provider(
   };
 }
 
+function dispatches(
+  newlyAdmitted = true,
+): AgentInferenceDispatchReservationPort {
+  return {
+    async reserveInferenceDispatch() {
+      return { newlyAdmitted };
+    },
+  };
+}
+
 const preflight = {
   at: "2026-10-05T12:00:01.000Z" as never,
   inputTokens: 30,
@@ -79,26 +92,50 @@ const preflight = {
   providerCostCurrency: "USD",
 };
 
+function request() {
+  return {
+    agentRunId,
+    attemptKey,
+    requestFingerprint,
+    inference,
+    budget,
+    usage: usage(),
+    preflight,
+  };
+}
+
 describe("budget-accounted metered inference", () => {
-  it("preflights, calls provider, durably records verified usage, then returns result", async () => {
+  it("claims dispatch, calls provider, durably records verified usage, then returns result", async () => {
+    const reserveInferenceDispatch: AgentInferenceDispatchReservationPort["reserveInferenceDispatch"] =
+      vi.fn(async () => ({ newlyAdmitted: true }));
     const reserveInferenceUsage: AgentInferenceUsageReservationPort["reserveInferenceUsage"] =
       vi.fn(async (input) => input.nextUsage);
     const generate = vi.fn(provider().generate);
     const service = createBudgetAccountedMeteredInference({
       provider: { generate },
+      dispatches: { reserveInferenceDispatch },
       reservations: { reserveInferenceUsage },
     });
 
-    const result = await service.generate({
-      agentRunId,
-      inference,
-      budget,
-      usage: usage(),
-      preflight,
-    });
+    const result = await service.generate(request());
 
+    expect(reserveInferenceDispatch).toHaveBeenCalledWith({
+      agentRunId,
+      attemptKey,
+      requestFingerprint,
+    });
     expect(generate).toHaveBeenCalledTimes(1);
-    expect(reserveInferenceUsage).toHaveBeenCalledTimes(1);
+    expect(reserveInferenceUsage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        agentRunId,
+        attemptKey,
+        requestFingerprint,
+        evidenceRef: "provider-request:req-1",
+      }),
+    );
+    expect(reserveInferenceDispatch.mock.invocationCallOrder[0]).toBeLessThan(
+      generate.mock.invocationCallOrder[0]!,
+    );
     expect(generate.mock.invocationCallOrder[0]).toBeLessThan(
       reserveInferenceUsage.mock.invocationCallOrder[0]!,
     );
@@ -108,59 +145,119 @@ describe("budget-accounted metered inference", () => {
     expect(result.usageAfterInference.outputTokens).toBe(10);
   });
 
-  it("does not call provider when preflight exceeds budget", async () => {
+  it("does not reserve dispatch or call provider when preflight exceeds budget", async () => {
     const generate = vi.fn(provider().generate);
+    const reserveInferenceDispatch = vi.fn();
     const reserveInferenceUsage = vi.fn();
     const service = createBudgetAccountedMeteredInference({
       provider: { generate },
+      dispatches: {
+        reserveInferenceDispatch: reserveInferenceDispatch as never,
+      },
       reservations: {
         reserveInferenceUsage: reserveInferenceUsage as never,
       },
     });
 
     await expect(service.generate({
-      agentRunId,
-      inference,
-      budget,
-      usage: usage(),
+      ...request(),
       preflight: {
         ...preflight,
         inputTokens: 1_001,
       },
     })).rejects.toThrow("input-token budget");
 
+    expect(reserveInferenceDispatch).not.toHaveBeenCalled();
     expect(generate).not.toHaveBeenCalled();
     expect(reserveInferenceUsage).not.toHaveBeenCalled();
   });
 
-  it("rejects the provider result when durable usage reservation fails", async () => {
+  it("does not call provider when durable dispatch admission is ambiguous", async () => {
+    const generate = vi.fn(provider().generate);
     const service = createBudgetAccountedMeteredInference({
-      provider: provider(),
+      provider: { generate },
+      dispatches: {
+        async reserveInferenceDispatch() {
+          throw new Error("dispatch reservation timeout");
+        },
+      },
       reservations: {
-        async reserveInferenceUsage() {
-          throw new Error("usage revision conflict");
+        async reserveInferenceUsage(input) {
+          return input.nextUsage;
         },
       },
     });
 
-    await expect(service.generate({
-      agentRunId,
-      inference,
-      budget,
-      usage: usage(),
-      preflight,
-    })).rejects.toMatchObject({
+    await expect(service.generate(request())).rejects.toMatchObject({
+      code: "agents.inference_dispatch_uncommitted",
+      retryable: false,
+      details: { attemptKey },
+    });
+    expect(generate).not.toHaveBeenCalled();
+  });
+
+  it("blocks an already-admitted attempt instead of redispatching provider inference", async () => {
+    const generate = vi.fn(provider().generate);
+    const service = createBudgetAccountedMeteredInference({
+      provider: { generate },
+      dispatches: dispatches(false),
+      reservations: {
+        async reserveInferenceUsage(input) {
+          return input.nextUsage;
+        },
+      },
+    });
+
+    await expect(service.generate(request())).rejects.toMatchObject({
+      code: "agents.inference_dispatch_replay_blocked",
+      retryable: false,
+      details: { attemptKey },
+    });
+    expect(generate).not.toHaveBeenCalled();
+  });
+
+  it("blocks redispatch after provider success when durable usage accounting failed", async () => {
+    let claimed = false;
+    const generate = vi.fn(provider().generate);
+    const reserveInferenceUsage = vi.fn(async () => {
+      throw new Error("usage revision conflict");
+    });
+    const service = createBudgetAccountedMeteredInference({
+      provider: { generate },
+      dispatches: {
+        async reserveInferenceDispatch() {
+          if (claimed) return { newlyAdmitted: false };
+          claimed = true;
+          return { newlyAdmitted: true };
+        },
+      },
+      reservations: { reserveInferenceUsage },
+    });
+
+    await expect(service.generate(request())).rejects.toMatchObject({
       code: "agents.inference_usage_uncommitted",
       retryable: false,
       details: {
         evidenceRef: "provider-request:req-1",
+        attemptKey,
       },
     });
+    expect(generate).toHaveBeenCalledTimes(1);
+    expect(reserveInferenceUsage).toHaveBeenCalledTimes(1);
+
+    await expect(service.generate(request())).rejects.toMatchObject({
+      code: "agents.inference_dispatch_replay_blocked",
+      retryable: false,
+      details: { attemptKey },
+    });
+    expect(generate).toHaveBeenCalledTimes(1);
+    expect(reserveInferenceUsage).toHaveBeenCalledTimes(1);
   });
 
   it("rejects a mismatched committed usage snapshot", async () => {
     const service = createBudgetAccountedMeteredInference({
       provider: provider(),
+      dispatches: dispatches(),
       reservations: {
         async reserveInferenceUsage(input) {
           return {
@@ -171,15 +268,12 @@ describe("budget-accounted metered inference", () => {
       },
     });
 
-    await expect(service.generate({
-      agentRunId,
-      inference,
-      budget,
-      usage: usage(),
-      preflight,
-    })).rejects.toMatchObject({
+    await expect(service.generate(request())).rejects.toMatchObject({
       code: "agents.inference_usage_uncommitted",
-      details: { evidenceRef: "provider-request:req-1" },
+      details: {
+        evidenceRef: "provider-request:req-1",
+        attemptKey,
+      },
     });
   });
 
@@ -203,6 +297,7 @@ describe("budget-accounted metered inference", () => {
           };
         },
       }),
+      dispatches: dispatches(),
       reservations: {
         async reserveInferenceUsage(input) {
           return input.nextUsage;
@@ -210,18 +305,17 @@ describe("budget-accounted metered inference", () => {
       },
     });
 
-    await expect(service.generate({
-      agentRunId,
-      inference,
-      budget,
-      usage: usage(),
-      preflight,
-    })).rejects.toThrow("total-token budget");
+    await expect(service.generate(request()))
+      .rejects.toThrow("total-token budget");
   });
 
-  it("requires budget and usage bound to the requested AgentRun", async () => {
+  it("requires budget and usage bound to the requested AgentRun before dispatch admission", async () => {
+    const reserveInferenceDispatch = vi.fn();
     const service = createBudgetAccountedMeteredInference({
       provider: provider(),
+      dispatches: {
+        reserveInferenceDispatch: reserveInferenceDispatch as never,
+      },
       reservations: {
         async reserveInferenceUsage(input) {
           return input.nextUsage;
@@ -230,12 +324,38 @@ describe("budget-accounted metered inference", () => {
     });
 
     await expect(service.generate({
+      ...request(),
       agentRunId:
         "agent-run_00000000-0000-4000-8000-000000000999" as never,
-      inference,
-      budget,
-      usage: usage(),
-      preflight,
     })).rejects.toThrow("not bound to agentRunId");
+    expect(reserveInferenceDispatch).not.toHaveBeenCalled();
+  });
+
+  it("requires stable opaque attempt identity before provider dispatch", async () => {
+    const generate = vi.fn(provider().generate);
+    const reserveInferenceDispatch = vi.fn();
+    const service = createBudgetAccountedMeteredInference({
+      provider: { generate },
+      dispatches: {
+        reserveInferenceDispatch: reserveInferenceDispatch as never,
+      },
+      reservations: {
+        async reserveInferenceUsage(input) {
+          return input.nextUsage;
+        },
+      },
+    });
+
+    await expect(service.generate({
+      ...request(),
+      attemptKey: "   ",
+    })).rejects.toThrow("attemptKey");
+    await expect(service.generate({
+      ...request(),
+      requestFingerprint: "",
+    })).rejects.toThrow("requestFingerprint");
+
+    expect(reserveInferenceDispatch).not.toHaveBeenCalled();
+    expect(generate).not.toHaveBeenCalled();
   });
 });
