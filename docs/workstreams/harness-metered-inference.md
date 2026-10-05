@@ -13,7 +13,9 @@ record actual token/cost usage instead of treating estimates as truth.
 - `docs/workstreams/harness-metered-inference.md`
 - `packages/agents/src/inference-usage.ts`
 - `packages/agents/src/inference-usage.test.ts`
-- append-only export in `packages/agents/src/index.ts`
+- `packages/agents/src/metered-inference-budget.ts`
+- `packages/agents/src/metered-inference-budget.test.ts`
+- append-only exports in `packages/agents/src/index.ts`
 
 No shared `strategy.ts`, provider adapter, Gateway/mobile/channel, persistence/migration,
 billing or Commerce files are owned.
@@ -74,5 +76,5 @@ prompts, secrets or credentials into the budget contract.
   before an inference result is treated as fully accounted;
 - mobile/WhatsApp/Telegram never report trusted token/cost usage.
 
-Implementation: evidence contract complete.
+Implementation: evidence contract complete; durable accounting-before-result acceptance is in progress.
 Deployment: not claimed.
