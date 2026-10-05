@@ -38,4 +38,27 @@ One screen:
 - simple public/voice/owner-access indicators;
 - no Skill/workflow/provider configuration.
 
-Status: implementation started 2026-10-05.
+Status: isolated new-file My Twin surface complete; shared integration pending.
+
+Implemented:
+- compact TwinProfile projection model;
+- performance summary model (visitors/chats/earned/pending owner requests);
+- public URL/discoverability/voice/owner-access presentation flags;
+- My Twin Riverpod state/transport seam;
+- My Twin primary screen;
+- no-twin empty state;
+- Talk / Teach / Share actions;
+- discoverability toggle;
+- language chips;
+- concise status chips and performance card;
+- tests proving Skill/workflow metadata is not part of the consumer model.
+
+Not yet integrated:
+- canonical Gateway TwinProfile endpoint and transport;
+- active clone onboarding -> My Twin transition;
+- share implementation/deep link;
+- Talk/Teach route callbacks;
+- four-tab router;
+- Settings cleanup.
+
+No existing onboarding/router/settings/shared transport file was modified.
