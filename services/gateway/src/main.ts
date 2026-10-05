@@ -303,24 +303,20 @@ function readWithdrawalAllowlist(value: string | undefined): ReadonlySet<string>
   try {
     parsed = JSON.parse(value);
   } catch {
-    throw new TypeError("NOWPAYMENTS_WITHDRAWAL_ALLOWLIST_JSON must be valid JSON");
+    return new Set();
   }
-  if (!Array.isArray(parsed)) {
-    throw new TypeError("NOWPAYMENTS_WITHDRAWAL_ALLOWLIST_JSON must be an array");
-  }
+  if (!Array.isArray(parsed)) return new Set();
   const keys = new Set<string>();
   for (const item of parsed) {
     if (!item || typeof item !== "object" || Array.isArray(item)) {
-      throw new TypeError("NOWPAYMENTS_WITHDRAWAL_ALLOWLIST_JSON entry is invalid");
+      return new Set();
     }
     const row = item as Record<string, unknown>;
     const userId = typeof row.userId === "string" ? row.userId.trim() : "";
     const providerCode =
       typeof row.providerCode === "string" ? row.providerCode.trim().toUpperCase() : "";
     const address = typeof row.address === "string" ? row.address.trim() : "";
-    if (!userId || !providerCode || !address) {
-      throw new TypeError("NOWPAYMENTS_WITHDRAWAL_ALLOWLIST_JSON entry is incomplete");
-    }
+    if (!userId || !providerCode || !address) return new Set();
     keys.add(`${userId}|${providerCode}|${address}`);
   }
   return keys;
