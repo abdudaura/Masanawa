@@ -429,8 +429,7 @@ export class BillingCommerceOrchestrator {
     const current = await this.#required(reference);
     if (
       current.state === "failed" ||
-      current.state === "reversed" ||
-      current.state === "manual_review"
+      current.state === "reversed"
     ) {
       return current;
     }
