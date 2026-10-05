@@ -5,6 +5,7 @@ export * from "./configuration.js";
 export * from "./run.js";
 export * from "./run-repository.js";
 export * from "./strategy.js";
+export * from "./harness.js";
 export * from "./inference.js";
 export * from "./context.js";
 
