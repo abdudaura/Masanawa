@@ -1099,6 +1099,24 @@ export function createTwinProductionRuntime(input: {
           quoteId: quote.quoteId,
         });
         if (existing) {
+          if (
+            existing.reservationLedgerEntryId &&
+            existing.chargeMode === "paid" &&
+            existing.spendCapCredits > 0
+          ) {
+            await input.commerce.postTransfer({
+              schemaVersion: 1,
+              ledgerEntryId: existing.reservationLedgerEntryId,
+              tenantId: request.tenantId,
+              debit: account(request.tenantId, "customer-credit", request.userId, null),
+              credit: account(request.tenantId, "fulfillment-reserve", request.userId, request.characterId),
+              amountCredits: existing.spendCapCredits,
+              reason: "fulfillment-reserve",
+              quoteId: quote.quoteId as never,
+              fulfillmentId: null,
+              createdAt: existing.admittedAt as never,
+            });
+          }
           return Object.freeze({
             admissionId: existing.admissionId,
             quoteId: existing.quoteId,
@@ -1111,10 +1129,31 @@ export function createTwinProductionRuntime(input: {
         }
         const admissionId = createCanonicalId("operation");
         const admittedAt = at();
-        const reservationLedgerEntryId =
-          quote.chargeMode === "paid" && quote.spendCapCredits > 0
-            ? createCanonicalId("ledger-entry")
-            : null;
+        let reservationLedgerEntryId: LedgerEntryId | null = null;
+        if (quote.chargeMode === "paid" && quote.spendCapCredits > 0) {
+          const reservePlan = await ensurePlan(input.economy, {
+            tenantId: request.tenantId,
+            planKey: `voice-reserve:${quote.quoteId}`,
+            roles: [{ role: "reserve", amountCredits: quote.spendCapCredits }],
+          });
+          reservationLedgerEntryId = planEntry(
+            reservePlan,
+            "reserve",
+            quote.spendCapCredits,
+          );
+          await input.commerce.postTransfer({
+            schemaVersion: 1,
+            ledgerEntryId: reservationLedgerEntryId!,
+            tenantId: request.tenantId,
+            debit: account(request.tenantId, "customer-credit", request.userId, null),
+            credit: account(request.tenantId, "fulfillment-reserve", request.userId, request.characterId),
+            amountCredits: quote.spendCapCredits,
+            reason: "fulfillment-reserve",
+            quoteId: quote.quoteId as never,
+            fulfillmentId: null,
+            createdAt: reservePlan.createdAt as never,
+          });
+        }
         const admission = await input.economy.putVoiceAdmission({
           tenantId: request.tenantId,
           userId: request.userId,
@@ -1130,20 +1169,6 @@ export function createTwinProductionRuntime(input: {
           reservationLedgerEntryId,
           settledAt: null,
         });
-        if (reservationLedgerEntryId && quote.spendCapCredits > 0) {
-          await input.commerce.postTransfer({
-            schemaVersion: 1,
-            ledgerEntryId: reservationLedgerEntryId,
-            tenantId: request.tenantId,
-            debit: account(request.tenantId, "customer-credit", request.userId, null),
-            credit: account(request.tenantId, "fulfillment-reserve", request.userId, request.characterId),
-            amountCredits: quote.spendCapCredits,
-            reason: "fulfillment-reserve",
-            quoteId: quote.quoteId as never,
-            fulfillmentId: null,
-            createdAt: admittedAt as never,
-          });
-        }
         return Object.freeze({
           admissionId: admission.admissionId,
           quoteId: admission.quoteId,
@@ -1405,12 +1430,65 @@ export function createTwinProductionRuntime(input: {
           tenantId: request.tenantId,
           requestId: stored.requestId,
         });
-        if (existing) return existing;
+        if (existing) {
+          if (
+            existing.reservationId &&
+            existing.chargeMode === "paid" &&
+            existing.reservedCredits > 0
+          ) {
+            await input.commerce.postTransfer({
+              schemaVersion: 1,
+              ledgerEntryId: existing.reservationId as LedgerEntryId,
+              tenantId: request.tenantId,
+              debit: account(request.tenantId, "customer-credit", request.requesterUserId, null),
+              credit: account(request.tenantId, "fulfillment-reserve", request.requesterUserId, request.characterId),
+              amountCredits: existing.reservedCredits,
+              reason: "fulfillment-reserve",
+              quoteId: null,
+              fulfillmentId: null,
+              createdAt: existing.requestedAt as never,
+            });
+          }
+          await input.events.append({
+            tenantId: request.tenantId,
+            payload: {
+              eventType: "twin.owner-access.requested",
+              ownerUserId: existing.ownerUserId,
+              characterId: existing.originatingCharacterId,
+              customerUserId: existing.requesterUserId,
+              referenceId: existing.requestId,
+              visibility: "owner",
+              occurredAt: existing.requestedAt,
+              amountCredits: null,
+              status: "pending",
+            },
+          });
+          return existing;
+        }
         const requestedAt = at();
-        const reservationId =
-          stored.chargeMode === "paid" && stored.priceCredits > 0
-            ? createCanonicalId("ledger-entry")
-            : null;
+        const reservedCredits =
+          stored.chargeMode === "paid" ? stored.priceCredits : 0;
+        let reservationId: LedgerEntryId | null = null;
+        if (reservedCredits > 0) {
+          const reservePlan = await ensurePlan(input.economy, {
+            tenantId: request.tenantId,
+            planKey: `owner-access-reserve:${stored.requestId}`,
+            roles: [{ role: "reserve", amountCredits: reservedCredits }],
+          });
+          reservationId = planEntry(reservePlan, "reserve", reservedCredits);
+          await input.commerce.postTransfer({
+            schemaVersion: 1,
+            ledgerEntryId: reservationId!,
+            tenantId: request.tenantId,
+            debit: account(request.tenantId, "customer-credit", request.requesterUserId, null),
+            credit: account(request.tenantId, "fulfillment-reserve", request.requesterUserId, request.characterId),
+            amountCredits: reservedCredits,
+            reason: "fulfillment-reserve",
+            quoteId: null,
+            fulfillmentId: null,
+            createdAt: reservePlan.createdAt as never,
+          });
+        }
         const record = await input.economy.putOwnerAccessRequest({
           tenantId: request.tenantId,
           request: {
@@ -1433,22 +1511,8 @@ export function createTwinProductionRuntime(input: {
             completedAt: null,
           },
           reservationId,
-          reservedCredits: stored.priceCredits,
+          reservedCredits,
         });
-        if (reservationId && stored.priceCredits > 0) {
-          await input.commerce.postTransfer({
-            schemaVersion: 1,
-            ledgerEntryId: reservationId as LedgerEntryId,
-            tenantId: request.tenantId,
-            debit: account(request.tenantId, "customer-credit", request.requesterUserId, null),
-            credit: account(request.tenantId, "fulfillment-reserve", request.requesterUserId, request.characterId),
-            amountCredits: stored.priceCredits,
-            reason: "fulfillment-reserve",
-            quoteId: null,
-            fulfillmentId: null,
-            createdAt: requestedAt as never,
-          });
-        }
         await input.events.append({
           tenantId: request.tenantId,
           payload: {
