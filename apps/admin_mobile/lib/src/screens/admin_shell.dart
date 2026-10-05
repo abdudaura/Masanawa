@@ -365,7 +365,8 @@ class _AgentsPageState extends State<AgentsPage> {
                   leading: const Icon(Icons.smart_toy_outlined),
                   title: Text(character.displayName ?? shortId(character.characterId)),
                   subtitle: Text(
-                    '${shortId(character.characterId)} · ${character.state}',
+                    '${shortId(character.characterId)} · ${character.state}'
+                    '${character.ownershipKind == null ? '' : ' · ${character.ownershipKind}'}',
                   ),
                   onTap: () => Navigator.of(context).pop(character),
                 ),
