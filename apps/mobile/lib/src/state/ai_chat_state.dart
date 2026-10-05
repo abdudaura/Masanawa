@@ -365,6 +365,7 @@ class AiChatController extends Notifier<AiChatState> {
   final Map<String, EncryptedShellActionJournal> _actionJournals = {};
   String? _cacheOwnerId;
   int _cacheGeneration = 0;
+  Future<Directory?>? _documentsDirectoryFuture;
 
   @override
   AiChatState build() {
@@ -1790,21 +1791,29 @@ class AiChatController extends Notifier<AiChatState> {
 
   String _newId() => 'm-${DateTime.now().microsecondsSinceEpoch}-${_seq++}';
 
+  Future<Directory?> _documentsDirectory() {
+    return _documentsDirectoryFuture ??= (() async {
+      try {
+        return await getApplicationDocumentsDirectory();
+      } catch (_) {
+        return null;
+      }
+    })();
+  }
+
   Future<File?> _threadsFile(String ownerId) async {
-    try {
-      if (ownerId.isEmpty) return null;
-      final dir = await getApplicationDocumentsDirectory();
-      final owner =
-          base64Url.encode(utf8.encode(ownerId)).replaceAll('=', '');
-      return File('${dir.path}/masanawa_threads_v2_$owner.json');
-    } catch (_) {
-      return null;
-    }
+    if (ownerId.isEmpty) return null;
+    final dir = await _documentsDirectory();
+    if (dir == null) return null;
+    final owner =
+        base64Url.encode(utf8.encode(ownerId)).replaceAll('=', '');
+    return File('${dir.path}/masanawa_threads_v2_$owner.json');
   }
 
   Future<void> _deleteLegacyThreadCache() async {
     try {
-      final dir = await getApplicationDocumentsDirectory();
+      final dir = await _documentsDirectory();
+      if (dir == null) return;
       final legacy = File('${dir.path}/$_kThreadsFile');
       if (await legacy.exists()) await legacy.delete();
     } catch (_) {
@@ -1869,9 +1878,15 @@ class AiChatController extends Notifier<AiChatState> {
 
   Future<void> _load(String ownerId, int generation) async {
     try {
-      await _deleteLegacyThreadCache();
       final file = await _threadsFile(ownerId);
-      if (file == null || !await file.exists()) return;
+      if (file == null) return;
+
+      // The retired unscoped cache is never read. Its best-effort cleanup is
+      // intentionally off the critical path so current-account threads can
+      // render as soon as their scoped file is available.
+      unawaited(_deleteLegacyThreadCache());
+
+      if (!await file.exists()) return;
       final raw = jsonDecode(await file.readAsString());
       final list = (raw as List? ?? [])
           .map((e) => ChatThread.fromJson((e as Map).cast<String, dynamic>()))
