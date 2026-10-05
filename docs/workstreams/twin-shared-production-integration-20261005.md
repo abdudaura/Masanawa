@@ -78,6 +78,7 @@ for the shared integration/deployment paths below.
 - `apps/mobile/android/app/src/main/AndroidManifest.xml`
 - `apps/mobile/android/app/src/main/kotlin/ng/unigeria/unigeria/MainActivity.kt`
 - `apps/mobile/test/shell_deep_link_test.dart`
+- `apps/mobile/test/owner_access_offering_test.dart` (new)
 - `apps/mobile/lib/src/router/app_router.dart`
 - `apps/mobile/lib/src/agents/masanawa_transport.dart`
 - `apps/mobile/lib/src/voice/paid_voice_http_transport.dart`
