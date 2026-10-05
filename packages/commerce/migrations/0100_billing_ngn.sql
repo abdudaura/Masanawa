@@ -3,7 +3,7 @@ CREATE TABLE commerce.billing_quotes (
   user_id text NOT NULL,
   quote_id text NOT NULL,
   revision bigint NOT NULL DEFAULT 1 CHECK (revision > 0),
-  state text NOT NULL CHECK (state IN ('quoted','confirmed','checkout-created','funded','reserved','succeeded','refund-pending','refund-dispatching','refund-submitted','refunded','expired')),
+  state text NOT NULL CHECK (state IN ('quoted','confirmed','checkout-dispatching','checkout-created','funded','reserved','succeeded','refund-pending','refund-dispatching','refund-submitted','refunded','expired')),
   category_code text,
   biller_code text NOT NULL CHECK (length(btrim(biller_code)) BETWEEN 1 AND 128),
   item_code text NOT NULL CHECK (length(btrim(item_code)) BETWEEN 1 AND 128),
@@ -29,7 +29,14 @@ CREATE TABLE commerce.billing_quotes (
   PRIMARY KEY (tenant_id,user_id,quote_id),
   CHECK (expires_at > created_at),
   CHECK ((payment_verified_at IS NULL) = (provider_transaction_id IS NULL)),
-  CHECK (checkout_url IS NULL OR checkout_tx_ref IS NOT NULL),
+  CHECK (
+    (checkout_tx_ref IS NULL AND checkout_url IS NULL)
+    OR (checkout_tx_ref IS NOT NULL AND checkout_url IS NULL AND state='checkout-dispatching')
+    OR (checkout_tx_ref IS NOT NULL AND checkout_url IS NOT NULL AND state IN (
+      'checkout-created','funded','reserved','succeeded','refund-pending',
+      'refund-dispatching','refund-submitted','refunded'
+    ))
+  ),
   CHECK (refund_reference IS NULL OR state IN ('refund-submitted','refunded'))
 );
 CREATE INDEX billing_quotes_user_history_idx ON commerce.billing_quotes(tenant_id,user_id,created_at DESC,quote_id DESC);
