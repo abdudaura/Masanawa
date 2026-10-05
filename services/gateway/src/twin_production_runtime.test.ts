@@ -511,6 +511,135 @@ function ownerLifecycleHarness(input: {
   };
 }
 
+
+function voiceLifecycleHarness() {
+  const transfers: Array<Record<string, unknown>> = [];
+  const events: Array<Record<string, unknown>> = [];
+  let markStartedCalls = 0;
+  let admission: any = {
+    tenantId,
+    userId: requesterUserId,
+    ownerUserId,
+    admissionId: "operation_voice_lifecycle_123",
+    quoteId: "quote_voice_lifecycle_123",
+    characterId,
+    chargeMode: "paid",
+    admittedAt: new Date(Date.now() - 30_000).toISOString(),
+    startedAt: null,
+    expiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
+    spendCapCredits: 50,
+    reservationLedgerEntryId: "ledger-entry_voice_reserve_123",
+    settledAt: null,
+  };
+
+  const runtime = createTwinProductionRuntime({
+    sessions: {
+      async authorize() {
+        return {
+          tenantId,
+          userId: requesterUserId,
+          profile: {
+            userId: requesterUserId,
+            name: "Requester",
+            email: "requester@example.com",
+            phone: null,
+            locale: "en",
+            createdAt: "2026-10-05T15:00:00.000Z",
+          },
+        } as never;
+      },
+    },
+    profiles: {
+      async ensureForOwner() { return null; },
+      async update() { throw new Error("unused"); },
+      async searchPublic() { return []; },
+      async readPublicById() { return null; },
+    } as never,
+    economy: {
+      async readOwnerForCharacter() {
+        return ownerUserId;
+      },
+      async readVoiceAdmission() {
+        return admission;
+      },
+      async readVoiceQuote() {
+        return {
+          tenantId,
+          userId: requesterUserId,
+          ownerUserId,
+          quoteId: admission.quoteId,
+          characterId,
+          policyRevision: 1,
+          trialPolicyRevision: 1,
+          chargeMode: "paid",
+          trialDurationDays: 7,
+          trialStartsAt: null,
+          trialExpiresAt: null,
+          estimatedSeconds: 300,
+          estimatedPriceCredits: 50,
+          spendCapCredits: 50,
+          ownerShareBasisPoints: 8000,
+          unitSeconds: 60,
+          priceCreditsPerUnit: 10,
+          quoteExpiresAt: new Date(Date.now() + 5 * 60_000).toISOString(),
+          createdAt: new Date(Date.now() - 60_000).toISOString(),
+        };
+      },
+      async markVoiceStarted(input: { readonly startedAt: string }) {
+        markStartedCalls += 1;
+        admission = { ...admission, startedAt: admission.startedAt ?? input.startedAt };
+        return admission;
+      },
+      async readLedgerPlan() { return null; },
+      async putLedgerPlan(input: { readonly plan: unknown }) {
+        return input.plan;
+      },
+      async markVoiceSettled(input: { readonly settledAt: string }) {
+        admission = { ...admission, settledAt: input.settledAt };
+        return { duplicate: false };
+      },
+      async consumeTrialUsage() {},
+    } as never,
+    events: {
+      async append(input: { readonly payload: Record<string, unknown> }) {
+        events.push(input.payload);
+        return `event-${events.length}`;
+      },
+      async listForCharacter() { return []; },
+      async listForUser() { return []; },
+    } as never,
+    commerce: {
+      async postTransfer(input: Record<string, unknown>) {
+        transfers.push(input);
+        return input;
+      },
+    } as never,
+    personalClones: {
+      async readPersonalClone() { return null; },
+    } as never,
+    publicTwinBaseUrl: "https://masanawa.com/twin",
+    adminPrincipals: new Set<string>(),
+    voice: {
+      unitSeconds: 60,
+      priceCreditsPerUnit: 10,
+      ownerShareBasisPoints: 8000,
+    },
+    ownerAccess: {
+      platformFeeBasisPoints: 2000,
+      acceptWithinMinutes: 60,
+      startGraceMinutes: 15,
+    },
+  });
+
+  return {
+    runtime,
+    transfers,
+    events,
+    admission: () => admission,
+    markStartedCalls: () => markStartedCalls,
+  };
+}
+
 describe("Twin production runtime composition", () => {
   it("exposes the complete canonical Twin production surface as one frozen runtime", () => {
     const runtime = harness();
@@ -718,6 +847,65 @@ describe("Twin production runtime composition", () => {
       expect.objectContaining({
         eventType: "twin.owner-access.refunded",
         amountCredits: 0,
+        status: "refunded",
+      }),
+    );
+  });
+
+
+  it("does not start paid voice usage when only a Live token is issued", async () => {
+    const harness = voiceLifecycleHarness();
+
+    await harness.runtime.voiceAdmissionGate.tokenIssued({
+      tenantId,
+      userId: requesterUserId,
+      characterId,
+      admissionId: "operation_voice_lifecycle_123",
+    });
+
+    expect(harness.admission().startedAt).toBeNull();
+    expect(harness.markStartedCalls()).toBe(0);
+  });
+
+  it("records paid voice media start exactly once after connected setup", async () => {
+    const harness = voiceLifecycleHarness();
+
+    const first = await harness.runtime.voiceAdmissionGate.mediaStarted({
+      authorizationHeader: "Bearer requester",
+      admissionId: "operation_voice_lifecycle_123",
+    });
+    const second = await harness.runtime.voiceAdmissionGate.mediaStarted({
+      authorizationHeader: "Bearer requester",
+      admissionId: "operation_voice_lifecycle_123",
+    });
+
+    expect(first.started).toBe(true);
+    expect(second.startedAt).toBe(first.startedAt);
+    expect(harness.markStartedCalls()).toBe(1);
+  });
+
+  it("fully refunds a paid voice reservation when media never started", async () => {
+    const harness = voiceLifecycleHarness();
+
+    const decision = await harness.runtime.voiceAdmissionGate.complete({
+      authorizationHeader: "Bearer requester",
+      admissionId: "operation_voice_lifecycle_123",
+      outcome: "interrupted",
+    });
+
+    expect(decision.customerChargeCredits).toBe(0);
+    expect(decision.refundCredits).toBe(50);
+    expect(harness.transfers).toHaveLength(1);
+    expect(harness.transfers[0]).toEqual(
+      expect.objectContaining({
+        amountCredits: 50,
+        reason: "refund",
+      }),
+    );
+    expect(harness.events.at(-1)).toEqual(
+      expect.objectContaining({
+        eventType: "twin.voice.refunded",
+        amountCredits: 50,
         status: "refunded",
       }),
     );
