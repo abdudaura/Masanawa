@@ -9,12 +9,14 @@ import 'package:flutter/material.dart';
 import 'package:masanawa/src/agents/agent_directory.dart';
 import 'package:masanawa/src/agents/agent_feedback.dart';
 import 'package:masanawa/src/agents/agent_session.dart';
+import 'package:masanawa/src/agents/agent_shell.dart';
 import 'package:masanawa/src/agents/masanawa_transport.dart';
 import 'package:masanawa/src/core/network/api_client.dart';
 import 'package:masanawa/src/core/providers.dart';
 import 'package:masanawa/src/state/agent_directory_state.dart';
 import 'package:masanawa/src/state/ai_chat_state.dart';
 import 'package:masanawa/src/state/session_state.dart';
+import 'package:masanawa/src/chat/message_parts.dart';
 import 'package:masanawa/src/screens/chat/masana_list_screen.dart';
 import 'package:masanawa/src/theme/masanawa_theme.dart';
 
@@ -58,7 +60,7 @@ class RetryDirectory implements AgentDirectoryTransport {
   Future<void> setDefaultPlatformAgent(String characterId) async {}
 }
 
-class RecoveringTransport implements AgentTransport {
+class RecoveringTransport implements AgentTransport, AgentShellTransport {
   int turns = 0;
   int closedSessions = 0;
   final Completer<AgentTurnResult>? pending;
@@ -117,6 +119,74 @@ class RecoveringTransport implements AgentTransport {
   Future<void> closeSession(AgentSessionBinding binding) async {
     closedSessions++;
   }
+
+  final shellEvents = StreamController<AgentShellEvent>.broadcast();
+
+  @override
+  Future<AgentShellConfig> loadShellConfig(String characterId) async =>
+      const AgentShellConfig(
+        shellVersion: 1,
+        minimumAppVersion: '1.0.0',
+        recommendedAppVersion: '1.0.0',
+        features: {'eventStream': true},
+      );
+
+  @override
+  Future<List<AgentHistoryMessage>> loadHistory(
+    String characterId, {
+    int limit = 100,
+    String? before,
+  }) async => const [];
+
+  @override
+  Future<AgentTurnStatus> turnStatus(
+    String characterId,
+    String requestId,
+  ) async => const AgentTurnStatus(state: 'missing');
+
+  @override
+  Stream<AgentShellEvent> events(
+    String characterId, {
+    String? after,
+  }) => shellEvents.stream;
+
+  @override
+  Future<void> dispatchAction({
+    required String characterId,
+    required String characterSessionId,
+    required ShellAction action,
+  }) async {}
+
+  @override
+  Future<bool> actionAccepted({
+    required String characterId,
+    required ShellAction action,
+  }) async => false;
+
+  @override
+  Future<AgentLiveVoiceGrant> mintLiveVoiceGrant(String characterId) async =>
+      throw UnsupportedError('not used');
+
+  @override
+  Future<void> setPresence({
+    required String characterId,
+    required String state,
+    int durationMs = 60000,
+  }) async {}
+
+  @override
+  Future<void> registerPush({
+    required String characterId,
+    required String installationId,
+    required String platform,
+    required String token,
+  }) async {}
+
+  @override
+  Future<void> unregisterPush({
+    required String characterId,
+    required String installationId,
+  }) async {}
 }
 
 class GatewayContractAdapter implements HttpClientAdapter {
@@ -382,6 +452,73 @@ void main() {
       expect(c.read(aiChatProvider).sendingIn, isEmpty);
     },
   );
+
+  test('durable Work event creates and then updates a stable recovery card',
+      () async {
+    final transport = RecoveringTransport();
+    final c = ProviderContainer(
+      overrides: [
+        agentTransportProvider.overrideWithValue(transport),
+        sessionProvider.overrideWith(_SignedOutSessionController.new),
+      ],
+    );
+    addTearDown(() async {
+      await transport.shellEvents.close();
+      c.dispose();
+    });
+
+    final controller = c.read(aiChatProvider.notifier);
+    await controller.syncFromServer('character-1');
+
+    transport.shellEvents.add(
+      AgentShellEvent(
+        cursor: '1',
+        type: 'work.updated',
+        payload: {
+          'referenceId': 'task-1',
+          'part': {
+            'kind': 'work',
+            'title': 'Work',
+            'body': 'Comparing plans…',
+            'status': 'Working',
+            'referenceId': 'task-1',
+          },
+        },
+        createdAt: DateTime.utc(2026, 10, 5, 9),
+      ),
+    );
+    await Future<void>.delayed(Duration.zero);
+
+    var thread = c.read(aiChatProvider).threads['character-1']!;
+    expect(thread.messages, hasLength(1));
+    expect(thread.messages.single.id, 'work-task-1');
+    expect(thread.messages.single.parts.single.kind, AgentMessagePartKind.work);
+    expect(thread.messages.single.parts.single.status, 'Working');
+
+    transport.shellEvents.add(
+      AgentShellEvent(
+        cursor: '2',
+        type: 'work.updated',
+        payload: {
+          'referenceId': 'task-1',
+          'part': {
+            'kind': 'work',
+            'title': 'Work',
+            'body': 'Finished comparing plans.',
+            'status': 'Completed',
+            'referenceId': 'task-1',
+          },
+        },
+        createdAt: DateTime.utc(2026, 10, 5, 9, 1),
+      ),
+    );
+    await Future<void>.delayed(Duration.zero);
+
+    thread = c.read(aiChatProvider).threads['character-1']!;
+    expect(thread.messages, hasLength(1));
+    expect(thread.messages.single.parts.single.status, 'Completed');
+    expect(thread.messages.single.parts.single.body, 'Finished comparing plans.');
+  });
 
   test('clearing a thread prevents a late result from recreating it', () async {
     final pending = Completer<AgentTurnResult>();
