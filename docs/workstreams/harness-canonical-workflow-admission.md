@@ -12,6 +12,9 @@ Purpose: bridge the Agent Harness into the existing canonical Task-based Workflo
 - `packages/workflows/src/execution-admission.ts`
 - `packages/workflows/src/execution-admission.test.ts`
 - append-only export in `packages/workflows/src/index.ts`
+- `adapters/storage/postgres/src/workflows/harness-execution.ts`
+- `adapters/storage/postgres/src/workflows/harness-execution.integration.test.ts`
+- append-only export in `adapters/storage/postgres/src/workflows/index.ts`
 
 ## Canonical dependencies reused
 
@@ -27,6 +30,7 @@ Purpose: bridge the Agent Harness into the existing canonical Task-based Workflo
 ## Boundaries
 
 - no new migrations/tables;
+- PostgreSQL adapter only composes existing checkpoint + Operation truth readers;
 - no second WorkflowRun lease;
 - no second checkpoint store;
 - no Gateway/mobile/channel composition;
