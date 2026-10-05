@@ -151,3 +151,13 @@ export interface CharacterOwnershipReader {
     readonly characterId: CharacterId;
   }): Promise<CharacterOwnership | null>;
 }
+
+
+/** Exact owning projection; callers must separately admit the interaction/authority. */
+export interface CharacterVersionReader {
+  readCharacterVersion(input: {
+    readonly tenantId: TenantId;
+    readonly characterId: CharacterId;
+    readonly characterVersionId: CharacterVersionId;
+  }): Promise<CharacterVersion | null>;
+}

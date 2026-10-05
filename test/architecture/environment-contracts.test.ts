@@ -28,7 +28,7 @@ describe("production environment contracts", () => {
     expect(registry.schemaVersion).toBe(1);
     expect(entries.size).toBe(registry.variables.length);
     for (const entry of registry.variables) {
-      expect(entry.name).toMatch(/^(?:MASANAWA_[A-Z0-9_]+|NODE_ENV|HOST|PORT|DATABASE_URL)$/u);
+      expect(entry.name).toMatch(/^(?:MASANAWA_[A-Z0-9_]+|NODE_ENV|HOST|PORT|DATABASE_URL|RESEND_API_KEY|NEXT_PUBLIC_OPS_API_BASE_URL)$/u);
       expect(entry.owner.trim()).not.toBe("");
       expect(entry.description.trim()).not.toBe("");
       expect(["public", "secret"]).toContain(entry.classification);

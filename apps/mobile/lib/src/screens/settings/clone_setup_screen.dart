@@ -1,249 +1,333 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
+import '../../agents/clone_onboarding.dart';
+import '../../agents/clone_onboarding_transport.dart';
+import '../../agents/masanawa_transport.dart';
 import '../../core/providers.dart';
 import '../../state/agent_directory_state.dart';
+import '../../state/clone_onboarding_controller.dart';
+import '../../state/session_state.dart';
 import '../../theme/masanawa_theme.dart';
-import '../../tokens/masanawa_tokens.dart';
+
+final cloneOnboardingTransportProvider = Provider<CloneOnboardingTransport>(
+  (ref) => HttpCloneOnboardingTransport(
+    dio: ref.watch(apiClientProvider).dio,
+    baseUrl: kAgentBaseUrl,
+  ),
+);
 
 class CloneSetupScreen extends ConsumerStatefulWidget {
   const CloneSetupScreen({super.key});
-
   @override
   ConsumerState<CloneSetupScreen> createState() => _CloneSetupScreenState();
 }
 
 class _CloneSetupScreenState extends ConsumerState<CloneSetupScreen> {
-  final _formKey = GlobalKey<FormState>();
+  final _form = GlobalKey<FormState>();
   final _name = TextEditingController();
   final _bio = TextEditingController();
-  final _languages = TextEditingController(text: 'English, Hausa');
-  final _personality = TextEditingController(text: 'Friendly, practical');
+  final _languages = TextEditingController();
+  final _personality = TextEditingController();
   final _expertise = TextEditingController();
-  bool _submitting = false;
+  late CloneOnboardingController _controller;
+  StreamSubscription<void>? _subscription;
+  String? _owner;
+  int _generation = 0;
+  bool _working = false;
+  bool _editing = false;
+  String? _error;
+
+  String? _account(SessionState state) =>
+      state is SessionSignedIn ? state.user.id : null;
+  @override
+  void initState() {
+    super.initState();
+    _owner = _account(ref.read(sessionProvider));
+    _replaceController();
+    if (_owner != null) unawaited(_reload());
+  }
+
+  void _replaceController() {
+    _controller = CloneOnboardingController(
+      transport: ref.read(cloneOnboardingTransportProvider),
+    );
+    _subscription = _controller.changes.listen((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  void _populate() {
+    final profile = _controller.view?.profile;
+    _name.text = profile?.displayName ?? '';
+    _bio.text = profile?.biography ?? '';
+    _languages.text = profile?.languages.join(', ') ?? '';
+    _personality.text = profile?.personality.join(', ') ?? '';
+    _expertise.text = profile?.expertise.join(', ') ?? '';
+  }
+
+  Future<void> _run(
+    Future<bool> Function(CloneOnboardingController) operation, {
+    bool populate = false,
+  }) async {
+    if (_working || _owner == null) return;
+    final controller = _controller;
+    final generation = _generation;
+    setState(() {
+      _working = true;
+      _error = null;
+    });
+    try {
+      final success = await operation(controller);
+      if (!mounted || generation != _generation) return;
+      if (success) {
+        _editing = false;
+        if (populate) _populate();
+      }
+    } finally {
+      if (mounted && generation == _generation)
+        setState(() => _working = false);
+    }
+  }
+
+  Future<void> _reload() =>
+      _run((controller) => controller.reload(), populate: true);
+  List<String> _items(TextEditingController field, int maximum) {
+    if (field.text.trim().isEmpty) return [];
+    final items = field.text.split(',').map((item) => item.trim()).toList();
+    if (items.length > maximum ||
+        items.any((item) => item.isEmpty || item.length > 120) ||
+        items.map((item) => item.toLowerCase()).toSet().length !=
+            items.length) {
+      throw const FormatException(
+        'Use distinct comma-separated entries, each under 120 characters.',
+      );
+    }
+    return items;
+  }
+
+  Future<void> _review() async {
+    if (!_form.currentState!.validate()) return;
+    try {
+      final profile = <String, dynamic>{
+        'displayName': _name.text.trim(),
+        'languages': _items(_languages, 16),
+      };
+      if (_bio.text.trim().isNotEmpty) profile['biography'] = _bio.text.trim();
+      if (_personality.text.trim().isNotEmpty)
+        profile['personality'] = _items(_personality, 24);
+      if (_expertise.text.trim().isNotEmpty)
+        profile['expertise'] = _items(_expertise, 32);
+      await _run(
+        (controller) async =>
+            await controller.save(profile) && await controller.preview(),
+      );
+    } on FormatException catch (error) {
+      setState(() => _error = error.message);
+    }
+  }
+
+  Future<void> _open() async {
+    final result = _controller.view?.result;
+    if (result == null || _working || _controller.needsReload) return;
+    final generation = _generation;
+    setState(() => _working = true);
+    try {
+      await ref.read(agentDirectoryProvider.notifier).refresh();
+      if (mounted && generation == _generation)
+        context.go('/chat/${Uri.encodeComponent(result.characterId)}');
+    } catch (_) {
+      if (mounted && generation == _generation)
+        setState(
+          () => _error = 'Could not open the conversation. Please try again.',
+        );
+    } finally {
+      if (mounted && generation == _generation)
+        setState(() => _working = false);
+    }
+  }
 
   @override
   void dispose() {
-    _name.dispose();
-    _bio.dispose();
-    _languages.dispose();
-    _personality.dispose();
-    _expertise.dispose();
+    _generation++;
+    _subscription?.cancel();
+    _controller.dispose();
+    for (final field in [_name, _bio, _languages, _personality, _expertise]) {
+      field.dispose();
+    }
     super.dispose();
   }
 
-  List<String> _items(TextEditingController controller) => controller.text
-      .split(',')
-      .map((item) => item.trim())
-      .where((item) => item.isNotEmpty)
-      .toSet()
-      .toList(growable: false);
-
-  String? _required(String? value, {int max = 1000}) {
-    final text = value?.trim() ?? '';
-    if (text.isEmpty) return 'This field is required';
-    if (text.length > max) return 'Keep this under $max characters';
-    return null;
-  }
-
-  Future<void> _createClone() async {
-    if (!_formKey.currentState!.validate()) return;
-    final languages = _items(_languages);
-    final personality = _items(_personality);
-    final expertise = _items(_expertise);
-    if (languages.isEmpty || personality.isEmpty || expertise.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Add at least one language, personality trait and area of expertise.'),
-        ),
-      );
-      return;
-    }
-
-    setState(() => _submitting = true);
-    try {
-      final result = await ref.read(creatorCloneTransportProvider).create(
-            displayName: _name.text.trim(),
-            biography: _bio.text.trim(),
-            languages: languages,
-            personality: personality,
-            expertise: expertise,
-          );
-      await ref.read(agentDirectoryProvider.notifier).refresh();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            result.created
-                ? '${result.displayName} is ready'
-                : 'Your existing clone is ready',
-          ),
-        ),
-      );
-      context.go('/chat/${result.characterId}');
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not create your clone. Please try again.'),
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _submitting = false);
-    }
-  }
-
+  Widget _field(
+    TextEditingController controller,
+    String label,
+    int maximum, {
+    bool required = false,
+    int lines = 1,
+  }) => Padding(
+    padding: const EdgeInsets.only(bottom: 16),
+    child: TextFormField(
+      controller: controller,
+      enabled: !_working && !_controller.busy,
+      maxLines: lines,
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+      ),
+      validator: (value) {
+        final text = value?.trim() ?? '';
+        if (required && text.isEmpty) return 'This field is required';
+        if (text.length > maximum) return 'Keep this under $maximum characters';
+        return null;
+      },
+    ),
+  );
   @override
   Widget build(BuildContext context) {
+    ref.listen<SessionState>(sessionProvider, (_, next) {
+      final owner = _account(next);
+      if (owner == _owner) return;
+      _generation++;
+      _subscription?.cancel();
+      _controller.dispose();
+      _owner = owner;
+      _working = false;
+      _editing = false;
+      _error = null;
+      _replaceController();
+      _populate();
+      setState(() {});
+      if (owner != null) unawaited(_reload());
+    });
+    final view = _controller.view;
+    final enabled = !_working && !_controller.busy && !_controller.needsReload;
+    final form =
+        view != null &&
+        !view.confirmed &&
+        (view.state != 'preview' || _editing);
     final u = context.masanawa;
     return Scaffold(
       backgroundColor: u.surfaceBg,
       appBar: AppBar(
-        backgroundColor: u.surfaceCard,
-        elevation: 0,
+        title: const Text('Your personal clone'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.canPop() ? context.pop() : context.go('/settings'),
+          onPressed: () =>
+              context.canPop() ? context.pop() : context.go('/settings'),
         ),
-        title: const Text('Create your clone'),
       ),
       body: SafeArea(
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(18, 16, 18, 32),
-            children: [
-              Text(
-                'Tell Masanawa who you are.',
-                style: TextStyle(
-                  color: u.textPrimary,
-                  fontSize: MasanawaTokens.fontSize['2xl'],
-                  fontWeight: FontWeight.w600,
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            if (_owner == null)
+              const Text('Sign in to create or resume your personal clone.')
+            else ...[
+              if (_working || _controller.busy) const LinearProgressIndicator(),
+              if (_error != null || _controller.error != null)
+                Semantics(
+                  liveRegion: true,
+                  child: Text(_error ?? _controller.error!),
                 ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'We handle the technical setup. You can improve the same clone over time.',
-                style: TextStyle(
-                  color: u.textMuted,
-                  fontSize: MasanawaTokens.fontSize['sm'],
+              if (view == null || _controller.needsReload)
+                OutlinedButton(
+                  onPressed: _working ? null : _reload,
+                  child: const Text('Reload saved setup'),
                 ),
-              ),
-              const SizedBox(height: 22),
-              _Field(
-                controller: _name,
-                label: 'What should people call your clone?',
-                hint: 'Abdullahi',
-                validator: (value) => _required(value, max: 120),
-              ),
-              const SizedBox(height: 14),
-              _Field(
-                controller: _bio,
-                label: 'Tell us about yourself',
-                hint: 'What you do, what you care about, and what people come to you for',
-                maxLines: 4,
-                validator: (value) => _required(value),
-              ),
-              const SizedBox(height: 14),
-              _Field(
-                controller: _languages,
-                label: 'Languages',
-                hint: 'English, Hausa',
-                validator: (value) => _required(value, max: 500),
-              ),
-              const SizedBox(height: 14),
-              _Field(
-                controller: _personality,
-                label: 'How should your clone feel?',
-                hint: 'Friendly, practical, calm',
-                validator: (value) => _required(value, max: 500),
-              ),
-              const SizedBox(height: 14),
-              _Field(
-                controller: _expertise,
-                label: 'What are you good at?',
-                hint: 'Business, technology, marketing',
-                maxLines: 2,
-                validator: (value) => _required(value, max: 800),
-              ),
-              const SizedBox(height: 24),
-              FilledButton.icon(
-                onPressed: _submitting ? null : _createClone,
-                icon: _submitting
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.auto_awesome_outlined),
-                label: Text(_submitting ? 'Creating…' : 'Create my clone'),
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(52),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(
-                      MasanawaTokens.radius['xl']!,
-                    ),
+              if (form)
+                Form(
+                  key: _form,
+                  child: Column(
+                    children: [
+                      const Text(
+                        'Save your profile, review it, then confirm creation.',
+                      ),
+                      const SizedBox(height: 20),
+                      _field(_name, 'Clone name', 120, required: true),
+                      _field(
+                        _languages,
+                        'Languages, separated by commas',
+                        1935,
+                        required: true,
+                      ),
+                      _field(_bio, 'About you (optional)', 1000, lines: 4),
+                      _field(
+                        _personality,
+                        'Personality traits (optional)',
+                        2903,
+                      ),
+                      _field(_expertise, 'Areas of expertise (optional)', 3871),
+                      FilledButton(
+                        onPressed: enabled ? _review : null,
+                        child: const Text('Save and review'),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'One personal clone per account. Specialist Skills can be added later.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: u.textMuted,
-                  fontSize: MasanawaTokens.fontSize['xs'],
+              if (view?.profile != null && !form) ...[
+                const SizedBox(height: 20),
+                Text(
+                  view!.profile!.displayName ?? '',
+                  style: Theme.of(context).textTheme.headlineSmall,
                 ),
+                Text(view.profile!.languages.join(', ')),
+                const SizedBox(height: 12),
+                Text(view.profile!.biography),
+                const SizedBox(height: 12),
+                Text('Personality: ${view.profile!.personality.join(', ')}'),
+                Text('Expertise: ${view.profile!.expertise.join(', ')}'),
+              ],
+              if (view?.state == 'preview' && !_editing) ...[
+                FilledButton(
+                  onPressed: enabled
+                      ? () => _run((controller) => controller.confirm())
+                      : null,
+                  child: const Text('Confirm and create my clone'),
+                ),
+                TextButton(
+                  onPressed: enabled
+                      ? () => setState(() => _editing = true)
+                      : null,
+                  child: const Text('Edit profile'),
+                ),
+                TextButton(
+                  onPressed: enabled
+                      ? () => _run(
+                          (controller) => controller.cancel(),
+                          populate: true,
+                        )
+                      : null,
+                  child: const Text('Cancel setup'),
+                ),
+              ],
+              if (view?.state == 'confirmed') ...[
+                const Text(
+                  'Your confirmation is saved. Resume to complete the same setup.',
+                ),
+                FilledButton(
+                  onPressed: enabled
+                      ? () => _run((controller) => controller.confirm())
+                      : null,
+                  child: const Text('Resume confirmed setup'),
+                ),
+              ],
+              if (view?.ready == true) ...[
+                const SizedBox(height: 20),
+                Text(
+                  '${view!.result!.displayName} has been created. Open the conversation to check available capabilities.',
+                ),
+                FilledButton(
+                  onPressed: enabled ? _open : null,
+                  child: const Text('Open my clone'),
+                ),
+              ],
+              const SizedBox(height: 20),
+              const Text(
+                'Your draft profile is private to your account. One personal clone per account.',
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _Field extends StatelessWidget {
-  const _Field({
-    required this.controller,
-    required this.label,
-    required this.hint,
-    required this.validator,
-    this.maxLines = 1,
-  });
-
-  final TextEditingController controller;
-  final String label;
-  final String hint;
-  final String? Function(String?) validator;
-  final int maxLines;
-
-  @override
-  Widget build(BuildContext context) {
-    final u = context.masanawa;
-    return TextFormField(
-      controller: controller,
-      maxLines: maxLines,
-      validator: validator,
-      textInputAction:
-          maxLines == 1 ? TextInputAction.next : TextInputAction.newline,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        filled: true,
-        fillColor: u.surfaceCard,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(
-            MasanawaTokens.radius['xl']!,
-          ),
-          borderSide: BorderSide(color: u.structuralBorder),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(
-            MasanawaTokens.radius['xl']!,
-          ),
-          borderSide: BorderSide(color: u.structuralBorder),
+          ],
         ),
       ),
     );
