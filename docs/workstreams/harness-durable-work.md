@@ -10,8 +10,9 @@ Purpose:
 3. Keep Work as a projection of existing Task/WorkflowRun + AgentRun identities.
 
 Owned paths:
-- `packages/agents/src/harness.ts`
+- `packages/agents/src/harness.ts` and its existing export only
 - new focused harness-progress helper/tests under `services/gateway/src/`
+- `services/gateway/src/agent_conversation.ts` + focused tests only to route admitted execution through the harness boundary
 - `apps/mobile/lib/src/agents/agent_shell.dart`
 - `apps/mobile/lib/src/state/ai_chat_state.dart` only for Work-event recovery/upsert
 - `apps/mobile/lib/src/chat/message_parts_view.dart` only for Work status presentation
