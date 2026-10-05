@@ -25,4 +25,26 @@ Codify the simplified interaction charging rule:
 - shared Gateway app/main
 - mobile chat screen
 
-Status: implementation started 2026-10-05.
+Status: isolated interaction-admission rule complete; shared chat/live-token integration pending.
+
+Implemented:
+- text-message / voice-note / live-voice classification;
+- text messages always admitted as free with zero charge and no paid admission;
+- attaching a paid admission can never make text billable;
+- voice note/live voice require a valid paid/trial admission;
+- admission must match authenticated user and target twin;
+- admission must be active and unexpired;
+- cross-user/cross-twin/expired voice admissions fail closed;
+- focused tests for free text and trial/paid voice admission boundaries.
+
+Not yet integrated:
+- existing AI chat route/runtime;
+- voice-note send path;
+- Live voice token minting;
+- paid voice quote/admission persistence;
+- Commerce settlement;
+- Activity events.
+
+Integration invariant:
+the chat/live voice runtime must call this admission gate before any billable voice
+interaction. Client flags never determine free/paid status.
