@@ -409,6 +409,14 @@ export function createBillingCheckoutService(input: Readonly<{
     const terminalRefund = (status: string) =>
       ["successful","completed-bank-transfer","completed-momo","completed-mpgs",
        "completed-offline","completed-preauth"].includes(status);
+    const fullyRefunded = (receipt: Readonly<{ status: string; amount: string | null }>) => {
+      if (!terminalRefund(receipt.status) || receipt.amount === null) return false;
+      try {
+        return parseNgnKobo(receipt.amount) === quote.totalAmountKobo;
+      } catch {
+        return false;
+      }
+    };
 
     let newlyClaimed = false;
     if (quote.state === "refund-pending") {
@@ -441,7 +449,7 @@ export function createBillingCheckoutService(input: Readonly<{
           refundReference: existing.refundReference,
           initiatedAt: now(),
         });
-        if (terminalRefund(existing.status)) {
+        if (fullyRefunded(existing)) {
           return input.quotes.markRefunded({
             tenantId: owner.tenantId,
             userId: owner.userId,
@@ -469,7 +477,7 @@ export function createBillingCheckoutService(input: Readonly<{
         refundReference: receipt.refundReference,
         initiatedAt: now(),
       });
-      if (terminalRefund(receipt.status)) {
+      if (fullyRefunded(receipt)) {
         return input.quotes.markRefunded({
           tenantId: owner.tenantId,
           userId: owner.userId,
@@ -487,7 +495,7 @@ export function createBillingCheckoutService(input: Readonly<{
       ...(quote.refundReference ? { refundReference: quote.refundReference } : {}),
       ...(signal ? { signal } : {}),
     });
-    if (!receipt || !terminalRefund(receipt.status)) return quote;
+    if (!receipt || !fullyRefunded(receipt)) return quote;
     const refundReference = quote.refundReference ?? receipt.refundReference;
     if (!refundReference) {
       throw new Error("financial.billing.refund_evidence_missing");
