@@ -801,7 +801,7 @@ export function createPostgresCryptoRepository(pool: Pool): CryptoRepository {
           updatedAt: input.updatedAt,
         });
       });
-    }
+    },
 
     async readAggregateLiability(input) {
       const normalized = {
