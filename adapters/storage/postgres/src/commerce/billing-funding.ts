@@ -370,7 +370,7 @@ export function createPostgresBillingQuoteRepository(pool: Pool): BillingQuoteRe
           throw new Error("financial.billing.refund_transaction_mismatch");
         }
         if (row.state === "refund-dispatching" || row.state === "refund-submitted" || row.state === "refunded") {
-          return quote(row);
+          return Object.freeze({ quote: quote(row), claimed: false });
         }
         if (row.state !== "refund-pending") {
           throw new Error("financial.billing.refund_not_allowed");
@@ -381,7 +381,7 @@ export function createPostgresBillingQuoteRepository(pool: Pool): BillingQuoteRe
             WHERE tenant_id=$1 AND user_id=$2 AND quote_id=$3 RETURNING *`,
           [input.tenantId,input.userId,input.quoteId,input.claimedAt],
         );
-        return quote(result.rows[0]!);
+        return Object.freeze({ quote: quote(result.rows[0]!), claimed: true });
       });
     },
 
