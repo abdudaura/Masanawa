@@ -10,6 +10,7 @@ import {
   BillingCommerceError,
   FlutterwaveBillProviderError,
   FlutterwaveFundingClient,
+  type BillingFulfillmentRecord,
   type FlutterwaveBillsClient,
 } from "@masanawa/providers";
 import type { PlatformSessionIdentity } from "@masanawa/security";
@@ -25,7 +26,7 @@ export interface BillingCheckoutView {
   readonly quote: BillingQuote;
   readonly phase: "quoted" | "checkout" | "paid" | "processing" | "fulfilled" | "failed" | "refunded";
   readonly checkoutUrl: string | null;
-  readonly purchase: unknown | null;
+  readonly purchase: BillingFulfillmentRecord | null;
   readonly document: unknown;
 }
 
@@ -114,7 +115,12 @@ function presentationRevision(quote: BillingQuote): number {
   }
 }
 
-function documentFor(quote: BillingQuote, actionSecret: string, requireEmail = false): unknown {
+function documentFor(
+  quote: BillingQuote,
+  actionSecret: string,
+  requireEmail = false,
+  purchase: BillingFulfillmentRecord | null = null,
+): unknown {
   const phase = quotePhase(quote);
   const documentId = `billing:${quote.quoteId}`;
   const base = [
@@ -180,6 +186,19 @@ function documentFor(quote: BillingQuote, actionSecret: string, requireEmail = f
     { type: "notice", tone: phase === "fulfilled" ? "success" : phase === "refunded" ? "warning" : "info", text: statusText },
     ...(phase === "checkout" && quote.checkoutUrl
       ? [{ type: "detail", text: "Secure payment link", value: quote.checkoutUrl }]
+      : []),
+    ...(purchase?.providerReference
+      ? [{ type: "detail", text: "Provider reference", value: purchase.providerReference }]
+      : []),
+    ...(purchase?.deliveryCode
+      ? [{ type: "detail", text: "Token / code", value: purchase.deliveryCode }]
+      : []),
+    ...(purchase?.state === "manual_review"
+      ? [{
+          type: "notice",
+          tone: "warning",
+          text: "Provider evidence needs reconciliation. Masanawa will not send another purchase while this is unresolved.",
+        }]
       : []),
   ];
   if (phase === "checkout") {
@@ -311,6 +330,10 @@ export interface BillingCheckoutService {
     quoteId: string;
     signal?: AbortSignal;
   }>): Promise<BillingCheckoutView>;
+  list(request: Readonly<{
+    authorizationHeader: string | undefined;
+    limit?: number;
+  }>): Promise<readonly BillingCheckoutView[]>;
   /** Verified-webhook/internal status reconciliation by globally unique fulfillment reference. */
   reconcileFulfillment(request: Readonly<{
     reference: string;
@@ -481,13 +504,17 @@ export function createBillingCheckoutService(input: Readonly<{
     owner: Pick<PlatformSessionIdentity, "tenantId" | "userId">,
     quote: BillingQuote,
     signal?: AbortSignal,
-  ): Promise<BillingQuote> {
+  ): Promise<Readonly<{
+    quote: BillingQuote;
+    purchase: BillingFulfillmentRecord | null;
+  }>> {
     let current = quote;
+    let purchase: BillingFulfillmentRecord | null = null;
     if (
       current.fulfillmentReference &&
       (current.state === "reserved" || current.state === "succeeded")
     ) {
-      await input.billing.reconcileOwnedPurchase({
+      purchase = await input.billing.reconcileOwnedPurchase({
         tenantId: owner.tenantId,
         userId: owner.userId,
         reference: current.fulfillmentReference,
@@ -501,12 +528,13 @@ export function createBillingCheckoutService(input: Readonly<{
       if (!refreshed) throw new Error("financial.billing.quote_not_found");
       current = refreshed;
     }
-    return refundIfRequired(owner,current,signal);
+    current = await refundIfRequired(owner,current,signal);
+    return Object.freeze({ quote: current, purchase });
   }
 
   function view(
     quote: BillingQuote,
-    purchase: unknown | null = null,
+    purchase: BillingFulfillmentRecord | null = null,
     owner?: PlatformSessionIdentity,
   ): BillingCheckoutView {
     return Object.freeze({
@@ -514,7 +542,12 @@ export function createBillingCheckoutService(input: Readonly<{
       phase: quotePhase(quote),
       checkoutUrl: quote.checkoutUrl,
       purchase,
-      document: documentFor(quote,input.actionSecret,owner?.profile.email == null),
+      document: documentFor(
+        quote,
+        input.actionSecret,
+        owner?.profile.email == null,
+        purchase,
+      ),
     });
   }
 
@@ -720,12 +753,29 @@ export function createBillingCheckoutService(input: Readonly<{
 
     async read(request) {
       const owned = await ownedQuote(request.authorizationHeader,request.quoteId);
-      const quote = await reconcileQuote(
+      const reconciled = await reconcileQuote(
         owned.identity,
         owned.quote,
         request.signal,
       );
-      return view(quote,null,owned.identity);
+      return view(
+        reconciled.quote,
+        reconciled.purchase,
+        owned.identity,
+      );
+    },
+
+    async list(request) {
+      const owner = await identity(request.authorizationHeader);
+      const limit = request.limit ?? 50;
+      const quotes = await input.quotes.listQuotes({
+        tenantId: owner.tenantId,
+        userId: owner.userId,
+        limit,
+      });
+      return Object.freeze(
+        quotes.map((quote) => view(quote,null,owner)),
+      );
     },
 
     async reconcileFulfillment(request) {
@@ -733,11 +783,12 @@ export function createBillingCheckoutService(input: Readonly<{
         fulfillmentReference: request.reference,
       });
       if (!quote) return null;
-      return reconcileQuote(
+      const reconciled = await reconcileQuote(
         { tenantId: quote.tenantId, userId: quote.userId },
         quote,
         request.signal,
       );
+      return reconciled.quote;
     },
 
     async executeShellAction(request) {
