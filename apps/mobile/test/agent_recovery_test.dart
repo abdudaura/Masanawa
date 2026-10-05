@@ -34,6 +34,9 @@ class FakeDirectory implements AgentDirectoryTransport {
     requests.add(request);
     return request.future;
   }
+
+  @override
+  Future<void> setDefaultPlatformAgent(String characterId) async {}
 }
 
 class RetryDirectory implements AgentDirectoryTransport {
@@ -44,6 +47,9 @@ class RetryDirectory implements AgentDirectoryTransport {
       throw const ApiException('private database error', statusCode: 503);
     return [agent];
   }
+
+  @override
+  Future<void> setDefaultPlatformAgent(String characterId) async {}
 }
 
 class RecoveringTransport implements AgentTransport {
