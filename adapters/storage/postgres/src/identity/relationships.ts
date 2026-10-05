@@ -91,6 +91,12 @@ export function createPostgresUserRelationshipProvisioner(
       return withTransaction(
         pool,
         async (client) => {
+          await client.query(
+            "SELECT pg_advisory_xact_lock(hashtext($1))",
+            [
+              `relationship:${input.tenantId}:${input.userId}:${input.characterId}`,
+            ],
+          );
           const inserted = await client.query<RelationshipRow>(
             `INSERT INTO identity.relationships(
                tenant_id,relationship_id,user_id,character_id,state,stage,tone,
