@@ -6,6 +6,12 @@ import {
   type RouteQualification,
 } from "./catalog.js";
 import {
+  normalizeCreateInvoiceInput,
+  parseCreatedInvoice,
+  type CreateNowPaymentsInvoiceInput,
+  type NowPaymentsCreatedInvoice,
+} from "./invoice.js";
+import {
   normalizeCreatePaymentInput,
   parseCreatedPayment,
   type CreateNowPaymentsPaymentInput,
@@ -122,6 +128,23 @@ export class NowPaymentsClient {
     assertAboveMinimum(input.amount, minimum);
     const estimate = await this.estimate(input);
     return Object.freeze({ minimum, estimate });
+  }
+
+  async createInvoice(
+    input: CreateNowPaymentsInvoiceInput,
+  ): Promise<NowPaymentsCreatedInvoice> {
+    const requestBody = normalizeCreateInvoiceInput(input);
+    const response = await this.#request("/invoice", {
+      method: "POST",
+      body: JSON.stringify(requestBody),
+      ...(input.signal === undefined ? {} : { signal: input.signal }),
+    });
+    return parseCreatedInvoice(await response.json(), {
+      orderId: input.orderId,
+      priceAmount: input.priceAmount,
+      priceCurrency: input.priceCurrency,
+      payCurrency: input.payCurrency,
+    });
   }
 
   async submitPayment(
