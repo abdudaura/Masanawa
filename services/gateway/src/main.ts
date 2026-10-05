@@ -674,7 +674,18 @@ function isDirectExecution(): boolean {
 }
 
 if (isDirectExecution()) {
-  void startGatewayService().catch(() => {
+  void startGatewayService().catch((error: unknown) => {
+    const reason =
+      error instanceof Error && error.message
+        ? error.message.slice(0, 500)
+        : "Gateway failed to start";
+    process.stderr.write(
+      `${JSON.stringify({
+        event: "service.start_failed",
+        service: "gateway",
+        reason,
+      })}\n`,
+    );
     process.exitCode = 1;
   });
 }
