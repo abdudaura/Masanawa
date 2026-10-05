@@ -441,33 +441,39 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             SwitchListTile(
               secondary: Icon(Icons.notifications_outlined, color: u.brand),
               title: const Text('Notifications'),
-              subtitle: const Text('Replies and updates'),
-              value: _notifications,
-              onChanged: (v) async {
-                if (v) {
-                  final allowed =
-                      await MobilePushService.instance.requestPermission();
-                  if (!mounted) return;
-                  setState(() => _notifications = allowed);
-                  if (allowed) {
-                    await ref
-                        .read(agentDirectoryProvider.notifier)
-                        .refresh();
-                    await _refreshNotificationState();
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Notifications are disabled. You can enable them in system settings.',
-                        ),
-                      ),
-                    );
-                  }
-                } else {
-                  await MobilePushService.instance.unregister();
-                  if (mounted) setState(() => _notifications = false);
-                }
-              },
+              subtitle: Text(
+                MobilePushService.instance.configured
+                    ? 'Replies and updates'
+                    : 'Not available in this build',
+              ),
+              value: MobilePushService.instance.configured && _notifications,
+              onChanged: !MobilePushService.instance.configured
+                  ? null
+                  : (v) async {
+                      if (v) {
+                        final allowed =
+                            await MobilePushService.instance.requestPermission();
+                        if (!mounted) return;
+                        setState(() => _notifications = allowed);
+                        if (allowed) {
+                          await ref
+                              .read(agentDirectoryProvider.notifier)
+                              .refresh();
+                          await _refreshNotificationState();
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Notifications are disabled. You can enable them in system settings.',
+                              ),
+                            ),
+                          );
+                        }
+                      } else {
+                        await MobilePushService.instance.unregister();
+                        if (mounted) setState(() => _notifications = false);
+                      }
+                    },
             ),
             const Divider(height: 1),
             ListTile(
