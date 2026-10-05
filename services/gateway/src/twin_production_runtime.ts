@@ -1035,9 +1035,9 @@ export function createTwinProductionRuntime(input: {
         ) {
           throw new Error("Paid voice quote is unavailable or expired");
         }
-        const existing = await input.economy.readVoiceAdmission({
+        const existing = await input.economy.readVoiceAdmissionByQuote({
           tenantId: request.tenantId,
-          admissionId: quote.quoteId,
+          quoteId: quote.quoteId,
         });
         if (existing) {
           return Object.freeze({
@@ -1876,29 +1876,20 @@ export function createTwinProductionRuntime(input: {
       });
       const amount = Math.min(-signed, original.commissionCredits - original.reversedCredits);
       if (amount <= 0) return;
-      const ledgerEntryId = createCanonicalId("ledger-entry");
-      const result = await input.economy.recordCommissionReversal({
+      const plan = await ensurePlan(input.economy, {
+        tenantId: request.tenantId,
+        planKey: `commission-reversal:${request.reversalId}`,
+        roles: [{ role: "reversal", amountCredits: amount }],
+      });
+      const stableLedger = planEntry(plan, "reversal", amount)!;
+      await input.economy.recordCommissionReversal({
         tenantId: request.tenantId,
         operationId: request.operationId,
         reversalId: request.reversalId,
         amountCredits: amount,
-        ledgerEntryId,
+        ledgerEntryId: stableLedger,
         reversedAt: at(),
       });
-      const plan = result.duplicate
-        ? await input.economy.readLedgerPlan({
-            tenantId: request.tenantId,
-            planKey: `commission-reversal:${request.reversalId}`,
-          })
-        : await input.economy.putLedgerPlan({
-            tenantId: request.tenantId,
-            plan: {
-              planKey: `commission-reversal:${request.reversalId}`,
-              entries: [{ ledgerEntryId, role: "reversal", amountCredits: amount }],
-              createdAt: at(),
-            },
-          });
-      const stableLedger = planEntry(plan!, "reversal", amount)!;
       await input.commerce.postTransfer({
         schemaVersion: 1,
         ledgerEntryId: stableLedger,
