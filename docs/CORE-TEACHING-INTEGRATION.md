@@ -256,11 +256,31 @@ For a bound single-select exercise:
 into exactly `actionKey + selectedOptionKeys` for Teaching. It rejects non-Teaching
 action IDs, malformed scope and injected form values.
 
-ShellDocument v1 does not currently provide a native multi-select control. The Teaching
-adapter therefore refuses actionable multi-select rather than pretending independent
-buttons represent one multi-answer submission. #91 must either add an explicit bounded
-multi-select primitive/state contract or the server must choose a different pedagogical
-interaction. No silent downgrade is allowed.
+Multi-select uses an explicit server-held staged state machine rather than pretending a
+set of independent buttons is one submitted answer.
+
+`createTeachingMultiSelectStage()` binds the mutable selection state to the exact
+Teaching action binding, expiry and hidden rubric. Every toggle:
+- validates an allowed option;
+- updates a canonical sorted option set;
+- increments the stage revision;
+- regenerates a deterministic stage hash.
+
+`projectTeachingMultiSelectToShellDocument()` uses existing ShellDocument v1 primitives
+only. Each option is a `teaching.multiselect.toggle` button and a separate
+`teaching.multiselect.commit` button submits the server-held set. The Shell document
+revision must exactly equal the current stage revision, so stale UI actions fail closed.
+The document never exposes the rubric, canonical RequestId, RelationshipId or
+SkillVersionId.
+
+`applyTeachingMultiSelectShellAction()` rejects stale revisions, injected form values,
+forged options and empty commits. A committed stage cannot be edited; exact re-commit
+returns the same committed opaque selection. That opaque selection then enters the
+existing `submitOpaqueSelection()` / RequestId replay-safe persistence path.
+
+The owning Gateway/chat integration must durably retain or reconstruct the current
+server-side stage between interactions. Client-local selection state is presentation
+only and must never become learner-progress authority.
 
 ## WhatsApp and Telegram compact callbacks
 
@@ -282,8 +302,17 @@ On ingress, `resolveTeachingChannelSelection()` checks the server-held binding h
 callback identity and expiry, then returns the same opaque Teaching selection shape used
 by the app shell. Changed/tampered callbacks fail closed.
 
-This currently supports single-select only. Multi-select across messaging channels needs
-a real staged selection/commit protocol before it can be considered executable.
+Multi-select messaging now uses the same staged server state. 
+`createTeachingChannelMultiSelectProjection()` emits compact <=64-character opaque
+toggle IDs plus one opaque commit ID, each bound to the exact action binding hash,
+stage hash, stage revision and expiry. `resolveTeachingChannelMultiSelectCommand()`
+rejects callback substitution, stale stage callbacks and expiry.
+
+After any toggle, the channel must render a fresh projection for the new stage revision;
+old callback IDs are intentionally invalid. Commit resolves only to a staged Teaching
+command and cannot supply client-chosen Relationship/Skill/rubric/RequestId data.
+The actual WhatsApp/Telegram owner still needs to persist the server-side stage and route
+these opaque callback IDs through its authenticated account/session handling.
 
 
 ## Durable free-response exercises
@@ -316,3 +345,20 @@ For app/WhatsApp/Telegram, the free-response binding remains server-side. A norm
 message may only be evaluated as the pending exercise after the owning Gateway has
 resolved the authenticated Relationship/session to that exact unexpired binding.
 Narrative text alone never selects an exercise or grants progress authority.
+
+
+## Staged multi-select persistence boundary
+
+The staged protocol deliberately does not introduce a Teaching-owned database. The
+integration owner must persist the current stage alongside the authenticated pending
+Teaching action using canonical session/workflow storage. Persistence must preserve:
+- exact action binding hash;
+- stage revision and stage hash;
+- canonical selected option set;
+- collecting/committed state;
+- expiry.
+
+Concurrent/stale updates must use compare-and-set or equivalent serialization so two
+surfaces cannot both mutate the same stage revision. A stage mutation is presentation
+state only; durable learner progress changes only after commit flows through the
+canonical RequestId selection attempt.
