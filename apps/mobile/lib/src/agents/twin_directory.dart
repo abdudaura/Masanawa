@@ -39,16 +39,16 @@ class TwinDirectoryEntry {
       return value.trim();
     }
 
-    final languages = json['languages'];
-    if (languages is! List) {
-      throw const FormatException('Twin directory entry is missing languages');
-    }
+    final rawLanguages = json['languages'];
+    final languages = rawLanguages is List ? rawLanguages : const <dynamic>[];
+    final bio = (json['bio'] as String?)?.trim();
+    final headline = (json['headline'] as String?)?.trim();
 
     return TwinDirectoryEntry(
       publicId: requiredString('publicId'),
       characterId: requiredString('characterId'),
       displayName: requiredString('displayName'),
-      bio: (json['bio'] as String?)?.trim() ?? '',
+      bio: (bio != null && bio.isNotEmpty) ? bio : (headline ?? ''),
       languages: [
         for (final value in languages)
           if (value is String && value.trim().isNotEmpty) value.trim(),
