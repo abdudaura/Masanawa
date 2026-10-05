@@ -22,6 +22,7 @@ import {
   applyTeachingMultiSelectStageCommand,
   createTeachingChannelMultiSelectProjection,
   resolveTeachingChannelMultiSelectCommand,
+  createTeachingMultiSelectStageCoordinator,
   fingerprintTeachingLessonPlan,
   fingerprintTeachingSelectionAttempt,
   resolveTeachingOpaqueSelection,
@@ -31,6 +32,8 @@ import {
   type TeachingRuntimeProjection,
   type TeachingSelectionAttempt,
   type TeachingFreeResponseAttempt,
+  type TeachingMultiSelectStage,
+  type TeachingMultiSelectStagePort,
 } from "./teaching-runtime.js";
 
 function lesson(): TeachingLessonPlan {
@@ -188,6 +191,71 @@ class MemoryProgressPort implements TeachingProgressPort {
       progress: attempt.progress,
     };
     return "stored";
+  }
+}
+
+
+class MemoryMultiSelectStagePort implements TeachingMultiSelectStagePort {
+  stage: TeachingMultiSelectStage | null = null;
+  compareAndSetCalls = 0;
+
+  async create(input: {
+    readonly stage: TeachingMultiSelectStage;
+  }): Promise<TeachingMultiSelectStage> {
+    if (this.stage === null) {
+      this.stage = input.stage;
+      return input.stage;
+    }
+    if (this.stage.stageHash !== input.stage.stageHash) {
+      throw new TypeError("initial stage conflict");
+    }
+    return this.stage;
+  }
+
+  async load(input: {
+    readonly actionKey: string;
+    readonly actionBindingHash: string;
+  }): Promise<TeachingMultiSelectStage | null> {
+    if (
+      this.stage === null ||
+      this.stage.actionKey !== input.actionKey ||
+      this.stage.actionBindingHash !== input.actionBindingHash
+    ) {
+      return null;
+    }
+    return this.stage;
+  }
+
+  async compareAndSet(input: {
+    readonly actionKey: string;
+    readonly actionBindingHash: string;
+    readonly expectedRevision: number;
+    readonly expectedStageHash: string;
+    readonly nextStage: TeachingMultiSelectStage;
+  }): Promise<TeachingMultiSelectStage> {
+    this.compareAndSetCalls += 1;
+    const current = this.stage;
+    if (current === null) throw new TypeError("stage missing");
+    if (
+      current.actionKey !== input.actionKey ||
+      current.actionBindingHash !== input.actionBindingHash
+    ) {
+      throw new TypeError("stage scope conflict");
+    }
+    if (
+      current.revision === input.nextStage.revision &&
+      current.stageHash === input.nextStage.stageHash
+    ) {
+      return current;
+    }
+    if (
+      current.revision !== input.expectedRevision ||
+      current.stageHash !== input.expectedStageHash
+    ) {
+      throw new TypeError("stale stage revision");
+    }
+    this.stage = input.nextStage;
+    return input.nextStage;
   }
 }
 
@@ -1828,5 +1896,162 @@ describe("Core Teaching staged multi-select", () => {
         now: toInstant("2026-10-05T20:59:30.000Z"),
       }),
     ).toThrow(/cannot be changed/);
+  });
+});
+
+
+describe("Core Teaching durable multi-select stage coordinator", () => {
+  function multiAction(active: TeachingLessonPlan) {
+    const admitted = binding(active);
+    const action = createTeachingSelectionActionBinding({
+      binding: admitted,
+      actionKey: "teach.action.multi.durable",
+      requestId: createCanonicalId("request"),
+      rubric: {
+        relationshipId: active.learner.relationshipId,
+        skillVersionId: active.skillVersionId,
+        lessonStepKey: "common-denominator",
+        exerciseKey: "equivalent-fractions",
+        kind: "multi-select",
+        allowedOptionKeys: ["two-fourths", "three-sixths", "two-thirds"],
+        correctOptionKeys: ["two-fourths", "three-sixths"],
+        correctFeedback: "Correct.",
+        retryFeedback: "Try again.",
+        alternativeExplanation: null,
+      },
+      expiresAt: toInstant("2099-01-01T00:00:00.000Z"),
+    });
+    return { admitted, action };
+  }
+
+  it("opens the exact stage idempotently and persists each revision through compare-and-set", async () => {
+    const active = lesson();
+    const { admitted, action } = multiAction(active);
+    const stages = new MemoryMultiSelectStagePort();
+    const coordinator = createTeachingMultiSelectStageCoordinator({ stages });
+
+    const opened = await coordinator.open({
+      binding: admitted,
+      action,
+    });
+    const replay = await coordinator.open({
+      binding: admitted,
+      action,
+    });
+    expect(replay).toEqual(opened);
+
+    const first = await coordinator.apply({
+      binding: admitted,
+      action,
+      command: { kind: "toggle", optionKey: "two-fourths" },
+      now: toInstant("2026-10-05T21:30:00.000Z"),
+    });
+    expect(first).toMatchObject({
+      kind: "staged",
+      stage: {
+        revision: 1,
+        selectedOptionKeys: ["two-fourths"],
+      },
+    });
+    expect(stages.compareAndSetCalls).toBe(1);
+
+    const second = await coordinator.apply({
+      binding: admitted,
+      action,
+      command: { kind: "toggle", optionKey: "three-sixths" },
+      now: toInstant("2026-10-05T21:30:01.000Z"),
+    });
+    expect(second).toMatchObject({
+      kind: "staged",
+      stage: {
+        revision: 2,
+        selectedOptionKeys: ["three-sixths", "two-fourths"],
+      },
+    });
+    expect(stages.compareAndSetCalls).toBe(2);
+
+    const committed = await coordinator.apply({
+      binding: admitted,
+      action,
+      command: { kind: "commit" },
+      now: toInstant("2026-10-05T21:30:02.000Z"),
+    });
+    expect(committed).toMatchObject({
+      kind: "committed",
+      stage: { state: "committed", revision: 3 },
+      selection: {
+        selectedOptionKeys: ["three-sixths", "two-fourths"],
+      },
+    });
+    expect(stages.compareAndSetCalls).toBe(3);
+
+    const commitReplay = await coordinator.apply({
+      binding: admitted,
+      action,
+      command: { kind: "commit" },
+      now: toInstant("2026-10-05T21:30:03.000Z"),
+    });
+    expect(commitReplay).toEqual(committed);
+    expect(stages.compareAndSetCalls).toBe(3);
+  });
+
+  it("lets only one concurrent surface win a stage revision", async () => {
+    const active = lesson();
+    const { admitted, action } = multiAction(active);
+    const stages = new MemoryMultiSelectStagePort();
+    const coordinator = createTeachingMultiSelectStageCoordinator({ stages });
+    await coordinator.open({ binding: admitted, action });
+
+    const outcomes = await Promise.allSettled([
+      coordinator.apply({
+        binding: admitted,
+        action,
+        command: { kind: "toggle", optionKey: "two-fourths" },
+        now: toInstant("2026-10-05T21:31:00.000Z"),
+      }),
+      coordinator.apply({
+        binding: admitted,
+        action,
+        command: { kind: "toggle", optionKey: "three-sixths" },
+        now: toInstant("2026-10-05T21:31:00.000Z"),
+      }),
+    ]);
+
+    expect(outcomes.filter((item) => item.status === "fulfilled")).toHaveLength(1);
+    expect(outcomes.filter((item) => item.status === "rejected")).toHaveLength(1);
+    expect(stages.stage).toMatchObject({
+      revision: 1,
+      state: "collecting",
+    });
+    expect(stages.stage?.selectedOptionKeys).toHaveLength(1);
+  });
+
+  it("rejects a persistence adapter that returns a different stage than the requested transition", async () => {
+    const active = lesson();
+    const { admitted, action } = multiAction(active);
+    const stages = new MemoryMultiSelectStagePort();
+    const coordinator = createTeachingMultiSelectStageCoordinator({
+      stages: {
+        create: stages.create.bind(stages),
+        load: stages.load.bind(stages),
+        async compareAndSet(input) {
+          const persisted = await stages.compareAndSet(input);
+          return {
+            ...persisted,
+            revision: persisted.revision + 1,
+          };
+        },
+      },
+    });
+    await coordinator.open({ binding: admitted, action });
+
+    await expect(
+      coordinator.apply({
+        binding: admitted,
+        action,
+        command: { kind: "toggle", optionKey: "two-fourths" },
+        now: toInstant("2026-10-05T21:32:00.000Z"),
+      }),
+    ).rejects.toThrow(/stage hash does not match payload|different state/);
   });
 });
