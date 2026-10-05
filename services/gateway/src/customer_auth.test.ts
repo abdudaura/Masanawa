@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { createCanonicalId } from "@masanawa/contracts";
+import { createCanonicalId, nowInstant } from "@masanawa/contracts";
+import type {
+  AgentPresentation,
+  AgentPresentationRepository,
+  CharacterSkillAssignmentRepository,
+  PlatformAgentProfile,
+  PlatformAgentProfileRepository,
+} from "@masanawa/agents";
+import type {
+  UserRelationshipProvisioner,
+  UserRelationshipReader,
+} from "@masanawa/identity";
 import type {
   OtpConsumeResult,
   PlatformAuthChannel,
@@ -9,6 +20,7 @@ import type {
 } from "@masanawa/security";
 import {
   createCustomerAuthService,
+  createPlatformCustomerAuthorizers,
   createPlatformCustomerSessionAuthorizer,
   createPlatformSessionFinancialAuthorizer,
   type OtpDelivery,
@@ -100,6 +112,184 @@ class MemorySessions implements PlatformSessionRepository {
     if (row) row.revoked = true;
   }
 }
+
+describe("platform-session Agent authorization", () => {
+  it("admits platform support Characters and rejects an unrelated personal clone", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const userId = createCanonicalId("user");
+    const supportId = createCanonicalId("character");
+    const cloneId = createCanonicalId("character");
+    const supportVersionId = createCanonicalId("character-version");
+    const cloneVersionId = createCanonicalId("character-version");
+    const relationshipId = createCanonicalId("relationship");
+
+    const supportPresentation: AgentPresentation = {
+      schemaVersion: 1,
+      tenantId,
+      characterId: supportId,
+      characterVersionId: supportVersionId,
+      displayName: "Gwani",
+      roleLabel: "Support Agent",
+      about: "Helps the user",
+      greeting: "Hello",
+      visibleInUserApp: true,
+      sortOrder: 1,
+      revision: 1,
+    };
+    const clonePresentation: AgentPresentation = {
+      ...supportPresentation,
+      characterId: cloneId,
+      characterVersionId: cloneVersionId,
+      displayName: "Another User",
+      roleLabel: "Personal Clone",
+      sortOrder: 2,
+    };
+    const supportProfile: PlatformAgentProfile = {
+      schemaVersion: 1,
+      tenantId,
+      characterId: supportId,
+      supportAgent: true,
+      defaultForNewUsers: true,
+      voiceProvider: "gemini",
+      voiceName: "Bodi",
+      revision: 1,
+    };
+
+    const sessions: PlatformCustomerSessionAuthorizer = {
+      async authorize() {
+        return Object.freeze({
+          tenantId,
+          userId,
+          profile: Object.freeze({
+            tenantId,
+            userId,
+            name: "Test User",
+            email: "user@example.com",
+            phone: null,
+            locale: "en-NG",
+            createdAt: "2026-10-05T00:00:00.000Z",
+          }),
+        });
+      },
+    };
+    const presentations: AgentPresentationRepository = {
+      async readForCharacter(input) {
+        if (input.characterId === supportId) return supportPresentation;
+        if (input.characterId === cloneId) return clonePresentation;
+        return null;
+      },
+      async listAll() { return [supportPresentation, clonePresentation]; },
+      async listVisible() { return [supportPresentation, clonePresentation]; },
+      async put(input) { return input.presentation; },
+    };
+    const skillAssignments: CharacterSkillAssignmentRepository = {
+      async readForCharacter() { return null; },
+      async put(input) { return input.assignment; },
+    };
+    const relationships: UserRelationshipReader = {
+      async readForUserCharacter() { return null; },
+      async listForUser() { return []; },
+    };
+    const relationshipProvisioner: UserRelationshipProvisioner = {
+      async getOrCreateForUserCharacter(input) {
+        expect(input.characterId).toBe(supportId);
+        return Object.freeze({
+          tenantId,
+          relationshipId,
+          userId,
+          characterId: supportId,
+          state: "active" as const,
+          stage: null,
+          tone: null,
+          preferences: Object.freeze({}),
+          disclosures: Object.freeze({}),
+          permissions: Object.freeze({}),
+          revision: 1,
+          createdAt: nowInstant(),
+          updatedAt: nowInstant(),
+        });
+      },
+    };
+    const platformProfiles: PlatformAgentProfileRepository = {
+      async readForCharacter(input) {
+        return input.characterId === supportId ? supportProfile : null;
+      },
+      async listSupportAgents() { return [supportProfile]; },
+      async put(input) { return input.profile; },
+    };
+
+    const authorizers = createPlatformCustomerAuthorizers({
+      sessions,
+      presentations,
+      skillAssignments,
+      relationships,
+      relationshipProvisioner,
+      platformProfiles,
+      policyRevision: "production-v1",
+    });
+
+    const directory = await authorizers.directory.authorize({
+      authorizationHeader: "Bearer session",
+      capability: "agents.directory.read",
+    });
+    expect(directory.characterIds).toEqual([supportId]);
+
+    const admitted = await authorizers.conversation.authorize({
+      authorizationHeader: "Bearer session",
+      characterId: supportId,
+    });
+    expect(admitted.scope.userId).toBe(userId);
+    expect(admitted.scope.relationshipId).toBe(relationshipId);
+
+    await expect(authorizers.conversation.authorize({
+      authorizationHeader: "Bearer session",
+      characterId: cloneId,
+    })).rejects.toMatchObject({ code: "FORBIDDEN", statusCode: 403 });
+  });
+
+  it("maps a rejected platform session to a mobile 401", async () => {
+    const tenantId = createCanonicalId("tenant");
+    const sessions: PlatformCustomerSessionAuthorizer = {
+      async authorize() {
+        throw new Error("financial.auth.unauthorized");
+      },
+    };
+    const authorizers = createPlatformCustomerAuthorizers({
+      sessions,
+      presentations: {
+        async readForCharacter() { return null; },
+        async listAll() { return []; },
+        async listVisible() { return []; },
+        async put(input) { return input.presentation; },
+      },
+      skillAssignments: {
+        async readForCharacter() { return null; },
+        async put(input) { return input.assignment; },
+      },
+      relationships: {
+        async readForUserCharacter() { return null; },
+        async listForUser() { return []; },
+      },
+      relationshipProvisioner: {
+        async getOrCreateForUserCharacter() {
+          throw new Error("must not provision without a valid session");
+        },
+      },
+      platformProfiles: {
+        async readForCharacter() { return null; },
+        async listSupportAgents() { return []; },
+        async put(input) { return input.profile; },
+      },
+      policyRevision: "production-v1",
+    });
+
+    await expect(authorizers.directory.authorize({
+      authorizationHeader: "Bearer bad",
+      capability: "agents.directory.read",
+    })).rejects.toMatchObject({ code: "UNAUTHORIZED", statusCode: 401 });
+    expect(tenantId).toBeTruthy();
+  });
+});
 
 describe("customer authentication", () => {
   it("advertises only OTP channels that are actually configured", () => {
