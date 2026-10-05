@@ -169,7 +169,10 @@ void main() {
     final store = Store();
     final journal = EncryptedShellActionJournal(
       store: store,
-      namespace: 'user-1:session-live',
+      namespace: EncryptedShellActionJournal.namespaceForOwnerSession(
+        ownerId: 'user-1',
+        sessionId: 'session-live',
+      ),
     );
     await journal.createPending('key', action);
 
