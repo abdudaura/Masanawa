@@ -135,7 +135,7 @@ export function createMyTwinProjectionService(input: {
     profile: MyTwinProfileRecord | null,
   ): Promise<MyTwinView> {
     if (!profile) {
-      return Object.freeze({
+      return Object.freeze<MyTwinProjectionService>({
         hasTwin: false,
         characterId: null,
         displayName: "",
