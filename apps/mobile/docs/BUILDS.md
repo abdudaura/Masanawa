@@ -9,7 +9,7 @@ A normal app build is production-shaped:
 | Flag | Default | Meaning |
 | --- | --- | --- |
 | `API_BASE_URL` | `https://api.masanawa.com` | Stable platform API origin; its backing provider can move without rebuilding the app. |
-| `AGENT_BASE_URL` | `https://gateway.masanawa.com` | Stable Masanawa Gateway origin; hosting can move without rebuilding the app. |
+| `AGENT_BASE_URL` | `https://masanawa-gateway-production.up.railway.app` | Stable Masanawa Gateway origin; hosting can move without rebuilding the app. |
 | `AGENT_RUNTIME_ENABLED` | `true` | Live Masanawa agent runtime. Set `false` only for an explicit offline/compatibility build. |
 
 The mobile app never accepts, stores or asks for an Alpha/developer access token. After OTP verification, the same platform access token authorizes the agent directory, conversations, live voice, push, clone, Skills and creator-economy calls.
