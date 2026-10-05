@@ -24,6 +24,7 @@ import {
   createPlatformCustomerSessionAuthorizer,
   createPlatformSessionFinancialAuthorizer,
   type OtpDelivery,
+  type PlatformCustomerSessionAuthorizer,
 } from "./customer_auth.js";
 
 class MemorySessions implements PlatformSessionRepository {
