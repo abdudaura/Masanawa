@@ -281,12 +281,30 @@ class AdminOffer {
     required this.offerId,
     required this.key,
     required this.revision,
+    required this.title,
+    required this.description,
+    required this.skillVersionId,
+    required this.priceCredits,
+    required this.fulfillmentReserveCredits,
+    required this.creatorCommissionCredits,
+    required this.fallbackCommissionCredits,
+    required this.platformMarginCredits,
+    required this.regions,
     required this.enabled,
     required this.updatedAt,
   });
   final String offerId;
   final String key;
   final int revision;
+  final String title;
+  final String description;
+  final String skillVersionId;
+  final int priceCredits;
+  final int fulfillmentReserveCredits;
+  final int creatorCommissionCredits;
+  final int fallbackCommissionCredits;
+  final int platformMarginCredits;
+  final List<String> regions;
   final bool enabled;
   final String updatedAt;
 
@@ -294,6 +312,20 @@ class AdminOffer {
         offerId: json['offerId'] as String,
         key: json['key'] as String,
         revision: json['revision'] as int,
+        title: json['title'] as String,
+        description: json['description'] as String,
+        skillVersionId: json['skillVersionId'] as String,
+        priceCredits: json['priceCredits'] as int,
+        fulfillmentReserveCredits:
+            json['fulfillmentReserveCredits'] as int,
+        creatorCommissionCredits:
+            json['creatorCommissionCredits'] as int,
+        fallbackCommissionCredits:
+            json['fallbackCommissionCredits'] as int,
+        platformMarginCredits: json['platformMarginCredits'] as int,
+        regions: (json['regions'] as List<dynamic>? ?? const [])
+            .map((value) => value.toString())
+            .toList(growable: false),
         enabled: json['enabled'] as bool,
         updatedAt: json['updatedAt'] as String,
       );
@@ -905,6 +937,51 @@ class AdminApi {
     return _list(response.data)
         .map((item) => AdminOffer.fromJson(_map(item)))
         .toList(growable: false);
+  }
+
+
+  Future<AdminOffer> saveOffer({
+    AdminOffer? current,
+    required String key,
+    required String title,
+    required String description,
+    required String skillVersionId,
+    required int priceCredits,
+    required int fulfillmentReserveCredits,
+    required int creatorCommissionCredits,
+    required int fallbackCommissionCredits,
+    required int platformMarginCredits,
+    required List<String> regions,
+    required bool enabled,
+  }) async {
+    final payload = {
+      'key': key.trim(),
+      'title': title.trim(),
+      'description': description.trim(),
+      'skillVersionId': skillVersionId,
+      'priceCredits': priceCredits,
+      'fulfillmentReserveCredits': fulfillmentReserveCredits,
+      'creatorCommissionCredits': creatorCommissionCredits,
+      'fallbackCommissionCredits': fallbackCommissionCredits,
+      'platformMarginCredits': platformMarginCredits,
+      'regions': regions,
+      'enabled': enabled,
+      'expectedRevision': current?.revision,
+    };
+    final response = await _request(
+      () => current == null
+          ? _dio.post<dynamic>(
+              '/v1/admin/offers',
+              options: _auth,
+              data: payload,
+            )
+          : _dio.put<dynamic>(
+              '/v1/admin/offers/${Uri.encodeComponent(current.offerId)}',
+              options: _auth,
+              data: payload,
+            ),
+    );
+    return AdminOffer.fromJson(_map(response.data));
   }
 
 
