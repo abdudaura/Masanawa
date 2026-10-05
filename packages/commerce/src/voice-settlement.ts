@@ -12,6 +12,7 @@ export interface TwinVoiceVerifiedUsage {
   readonly unitSeconds: number;
   readonly priceCreditsPerUnit: number;
   readonly ownerShareBasisPoints: number;
+  readonly reservedCredits: number;
 }
 
 export interface TwinVoiceSettlementDecision {
@@ -47,6 +48,12 @@ export function settleVerifiedTwinVoiceUsage(
     "ownerShareBasisPoints",
     0,
     10_000,
+  );
+  const reservedCredits = integer(
+    input.reservedCredits,
+    "reservedCredits",
+    0,
+    1_000_000_000_000,
   );
 
   if (input.outcome === "ambiguous") {
@@ -87,6 +94,18 @@ export function settleVerifiedTwinVoiceUsage(
   }
 
   const customerChargeCredits = usageUnits * priceCreditsPerUnit;
+  if (customerChargeCredits > reservedCredits) {
+    return Object.freeze({
+      disposition: "reconcile",
+      usageUnits,
+      trialUnitsConsumed: 0,
+      customerChargeCredits: 0,
+      ownerEarningCredits: 0,
+      platformRevenueCredits: 0,
+      refundCredits: 0,
+    });
+  }
+
   const ownerEarningCredits = Math.floor(
     (customerChargeCredits * ownerShareBasisPoints) / 10_000,
   );
@@ -99,6 +118,6 @@ export function settleVerifiedTwinVoiceUsage(
     customerChargeCredits,
     ownerEarningCredits,
     platformRevenueCredits,
-    refundCredits: 0,
+    refundCredits: reservedCredits - customerChargeCredits,
   });
 }
