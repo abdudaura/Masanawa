@@ -240,7 +240,9 @@ export function createPostgresBillingQuoteRepository(pool: Pool): BillingQuoteRe
       return withTransaction(pool, async (client) => {
         const row = await locked(client, input);
         assertRevision(row, input.quoteRevision);
-        assertNotExpired(row, input.boundAt);
+        // Expiry is checked when checkout dispatch is atomically claimed.
+        // Binding records the outcome of that already-admitted external call
+        // and must remain valid if the provider response crosses the quote TTL.
         if (!row.confirmed_at) throw new Error("financial.billing.quote_not_confirmed");
         if (row.checkout_tx_ref !== input.txRef) {
           throw new Error("financial.billing.checkout_replay_conflict");
