@@ -499,6 +499,9 @@ importers:
       '@masanawa/postgres':
         specifier: workspace:*
         version: link:../../adapters/storage/postgres
+      '@masanawa/providers':
+        specifier: workspace:*
+        version: link:../../packages/providers
       '@masanawa/security':
         specifier: workspace:*
         version: link:../../packages/security
