@@ -345,6 +345,85 @@ describe("billing checkout", () => {
     expect(purchases).toBe(0);
   });
 
+  it("keeps an already-created hosted checkout verifiable after the short quote TTL", async () => {
+    const owner = identity();
+    const quotes = new MemoryQuotes();
+    const transport = providerTransport("100");
+    let at = "2026-10-04T20:00:00.000Z";
+    let purchases = 0;
+    const billingService = billing(quotes);
+    const service = createBillingCheckoutService({
+      sessions: { async authorize() { return owner; } },
+      quotes,
+      catalog: new FlutterwaveBillsClient({ secretKey: "secret", transport, country: "NG" }),
+      funding: new FlutterwaveFundingClient({ secretKey: "secret", transport }),
+      billing: {
+        ...billingService,
+        async purchase(request) {
+          purchases += 1;
+          return billingService.purchase(request);
+        },
+      },
+      actionSecret: "a".repeat(48),
+      redirectUrl: "https://app.masanawa.com/billing/return",
+      quoteTtlSeconds: 60,
+      now: () => at,
+    });
+
+    const quoted = await service.createQuote({
+      authorizationHeader: "Bearer session",
+      categoryCode: "AIRTIME",
+      billerCode: "BIL102",
+      itemCode: "AT102",
+      customerId: "+2348012345678",
+      amount: "100",
+    });
+    const quotedDoc = quoted.document as {
+      id: string;
+      revision: number;
+      nodes: Array<{ action?: string; token?: string }>;
+    };
+    const start = quotedDoc.nodes.find((node) => node.action === "billing.checkout.start")!;
+    at = "2026-10-04T20:00:30.000Z";
+    const checkoutExecution = await service.executeShellAction({
+      authorizationHeader: "Bearer session",
+      documentId: quotedDoc.id,
+      revision: quotedDoc.revision,
+      actionId: "billing.checkout.start",
+      token: start.token!,
+    });
+    const checkoutDoc = checkoutExecution.document as {
+      id: string;
+      revision: number;
+      expiresAt: string;
+      nodes: Array<{ action?: string; token?: string }>;
+    };
+    const verify = checkoutDoc.nodes.find((node) => node.action === "billing.checkout.verify")!;
+
+    expect(Date.parse(checkoutDoc.expiresAt)).toBeGreaterThan(
+      Date.parse(quoted.quote.expiresAt),
+    );
+
+    // The economic quote has expired, but this checkout was legitimately
+    // created before expiry and remains in its bounded hosted-payment grace.
+    at = "2026-10-04T20:02:00.000Z";
+    const verified = await service.executeShellAction({
+      authorizationHeader: "Bearer session",
+      documentId: checkoutDoc.id,
+      revision: checkoutDoc.revision,
+      actionId: "billing.checkout.verify",
+      token: verify.token!,
+    });
+
+    expect(verified.phase).toBe("fulfilled");
+    expect(quotes.quote).toMatchObject({
+      state: "succeeded",
+      providerTransactionId: "44",
+      billProviderReference: "BILL-1",
+    });
+    expect(purchases).toBe(1);
+  });
+
   it("refunds verified funds after a definitive pre-dispatch failure", async () => {
     const owner = identity();
     const quotes = new MemoryQuotes();
