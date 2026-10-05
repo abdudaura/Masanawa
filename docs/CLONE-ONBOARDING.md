@@ -2,8 +2,7 @@
 
 First work item in the user-approved sequence: onboarding, live Teaching, data
 purchases, economic views, messaging continuity, crypto operations, recovery/support.
-This PR implements the server-side onboarding slice. It does not mark the mobile
-journey, deployment or any numbered production gate complete.
+This PR implements authenticated server persistence, mobile draft/review/recovery, and normal Gateway startup composition. Deployment, live Core qualification and physical device acceptance remain separate evidence gates.
 
 ## Customer behavior
 
@@ -168,3 +167,16 @@ The screen says creation succeeded only after a canonical ready result, and does
 Validation on main a97df254ff04c717e940a7c86f4b5824dea7629d plus owned changes: 49 focused backend tests pass. Mobile DTO/controller/transport tests run against the same source in a standalone Dart harness (only flutter_test imports replaced with package:test); this is not a Flutter widget or device pass. User-owned APK/device verification remains separate.
 
 Current-main full typecheck is blocked by pre-existing imports of missing Agents inference/context/selection/inference_limits and Gateway native_audio files, plus customer_auth's unresolved FinancialAuthorizer. These files belong to active runtime/shared-auth windows and were not added or modified here. Earlier 85-test/typecheck evidence was on the previous isolated baseline and does not establish that current main compiles.
+
+
+## Completed default Gateway integration — 2026-10-05
+
+The user authorized this window to take over its outstanding integration. Normal `startGatewayService()` now creates the Postgres draft repository and composes the onboarding service from the existing creator authorizer, clone service, directory, assignments, Skills, Guides and distribution repositories. Normal `createGatewayApp()` registers all six routes. `appOptions.cloneOnboarding` remains an explicit injection seam; the previous appFactory helper delegates to the normal app and cannot register routes twice. Existing Identity migration discovery includes 0003 automatically.
+
+Restored the exact missing runtime dependency files already imported by current main, using inspected #89 source and append-only owner read ports. Preserved current canonical session/ownership methods and current mobile shell behavior. Added the required Agents workspace dependency/importer links and registered existing Gateway environment reads. Strict contextual types and the canonical unavailable error category repair current-main build failures without disabling checks.
+
+Authentication now preserves 401 for mobile refresh, 403 for denied authority, and 503 for session storage outages. Onboarding never mutates a draft after failed authentication. The separate financial authorizer's existing contract is preserved.
+
+Verification: 238 tests across 37 Gateway/Identity/Skills/Memory/World/architecture files pass. Gateway, Postgres, Agents and Skills strict typechecks pass. All 15 Gateway production dependency packages build in dependency order; the compiled Gateway imports with production conditions. A real local loopback HTTP server exercised default startup: save -> preview -> durable confirmation -> missing-Core interruption -> same-request resume -> ready -> exact replay, plus unauthorized and forged-scope rejection. This uses explicitly test-only repositories and Skill evidence, not a live provider/database rehearsal. Thirteen earlier Dart source/controller/transport tests pass; Flutter/device execution remains user-owned.
+
+Source composition and build blockers described above are resolved by this continuation. Production completion still requires actual configured support Characters and qualified automatic Core Teaching, the current live service origin/migrations, and device/live acceptance. Missing Core deliberately preserves confirmed setup for recovery; this continuation neither certifies untested Skills nor deploys another window's provider work.

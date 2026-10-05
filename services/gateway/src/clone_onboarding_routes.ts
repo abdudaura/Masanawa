@@ -74,7 +74,5 @@ export async function registerCloneOnboardingRoutes(app: FastifyInstance, servic
 
 /** Existing startGatewayService appFactory seam; owners supply canonical ports. */
 export function createGatewayWithCloneOnboarding(options: GatewayAppOptions & { readonly cloneOnboarding: CloneOnboardingService }) {
-  const app = createGatewayApp(options);
-  app.register(async child => { await registerCloneOnboardingRoutes(child, options.cloneOnboarding); });
-  return app;
+  return createGatewayApp(options);
 }

@@ -122,3 +122,8 @@ Build-gate reconciliation paths:
 Add exact workspace dependencies/importer links required by restored Agents imports. Register already-used Gateway auth/model/mobile configuration names, classifying key/token/pepper/credential JSON values as secrets. Preserve all current lockfile importers and runtime settings; no dependency version upgrade. Extend the environment naming assertion only for the two already-used owner-specific RESEND_API_KEY and NEXT_PUBLIC_OPS_API_BASE_URL names.
 
 - services/gateway/src/customer_auth.test.ts — assert typed canonical session 401 and database-outage 503 behavior; retain financial adapter's existing unauthorized contract.
+
+## Completed takeover implementation
+
+Normal Gateway startup now composes the draft repository/Core/onboarding service and normal app registers the six routes. Missing runtime import closure, exact owner read ports, contextual type failures, session-refresh/outage semantics, manifest/lock links and environment registry are repaired. Verification: 238 tests in 37 files; Gateway/Postgres/Agents/Skills strict typechecks; 15-package Gateway production dependency build; compiled production import; real loopback HTTP draft/confirm/interruption/resume/replay and authority tests. No provider deployment, fabricated Skill certification or full seven-feature completion asserted. Live Core/support configuration and user-owned device acceptance remain qualification gates rather than missing source wiring.
+

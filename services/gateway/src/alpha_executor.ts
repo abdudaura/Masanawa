@@ -24,7 +24,7 @@ export function createGeminiAlphaInferenceProvider(input: {
   if (!model) throw new TypeError("Alpha Gemini model is required");
   const fetchImpl = input.fetchImpl ?? fetch;
 
-  return Object.freeze({
+  return Object.freeze<AgentInferenceProvider>({
     async generate(request, controls) {
       const mediaPart = (
         mimeType: string,
@@ -152,3 +152,4 @@ export function createGeminiAlphaInferenceProvider(input: {
     },
   });
 }
+

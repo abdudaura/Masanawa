@@ -66,3 +66,6 @@ is claimed by these projections.
 ## Current continuation evidence
 
 PR #123 implementation 3698974204d565a6c6e0fc26505d8d92b4099e26 includes the mobile draft/review flow. Thirteen Dart controller/transport tests and analysis pass in a standalone source harness; 49 focused backend tests pass on current main plus owned source. Flutter/device execution remains separate. The old typecheck/85-test evidence above is historical: current main references missing unmerged runtime files. Latest inspection of #89/#90/#92/#94/#96/#124/#126/#128/#130 confirms those remaining integration paths have active owners; none was overwritten or imported wholesale. This handoff makes no new assertion about live provider credentials.
+
+
+Onboarding integration takeover: normal Gateway registration/repository/Core composition and imported runtime build closure are now implemented. Latest backend/architecture batch: 238 tests pass; production dependency build and compiled Gateway import pass. The economic view is still read-only; no legacy Float transfer behavior or active billing/crypto/channel source was replaced.

@@ -1,3 +1,4 @@
+import { CustomerAuthError } from "./customer_auth.js";
 import { cancelCloneSetup, completeCloneSetup, confirmCloneSetup, previewCloneSetup, reviseCloneSetup, CloneSetupError, type CloneSetup, type CloneSetupRepository, type PersonalCloneProvisioningRepository } from "@masanawa/identity";
 import { parseCanonicalId, PlatformError } from "@masanawa/contracts";
 import type { CharacterSkillAssignmentRepository } from "@masanawa/agents";
@@ -86,7 +87,15 @@ export function createCloneOnboardingService(input: {
 }): CloneOnboardingService {
   async function authorize(authorizationHeader: string | undefined) {
     try { return await input.authorizer.authorize({ authorizationHeader, capability: "creator.clone.write" }); }
-    catch { throw new PlatformError({ code: "clone.setup.denied", category: "authorization", message: "Clone setup access denied", retryable: false }); }
+    catch (error) {
+      const status = error instanceof CustomerAuthError ? error.statusCode : null;
+      const category = error instanceof PlatformError ? error.category : null;
+      const authentication = status === 401 || category === "authentication";
+      const unavailable = status === 503 || category === "unavailable";
+      throw new PlatformError({ code: unavailable ? "clone.setup.unavailable" : "clone.setup.denied",
+        category: unavailable ? "unavailable" : authentication ? "authentication" : "authorization",
+        message: unavailable ? "Setup authentication is temporarily unavailable" : "Clone setup access denied", retryable: unavailable });
+    }
   }
   async function view(request: Authenticated, setup: CloneSetup | null): Promise<CloneOnboardingView> {
     // Directory owns configured Gwani/Gwana identity, defaults and voice presentation.

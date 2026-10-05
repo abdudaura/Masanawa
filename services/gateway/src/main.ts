@@ -17,6 +17,7 @@ import type {
   SkillRepository,
 } from "@masanawa/skills";
 import type {
+  CloneSetupRepository,
   CharacterOwnershipReader,
   PersonalCloneProvisioningRepository,
   UserRelationshipProvisioner,
@@ -47,6 +48,7 @@ import {
   createPostgresSkillDistributionRepository,
   createPostgresSkillRepository,
   createPostgresUserAgentPreferenceRepository,
+  createPostgresCloneSetupRepository,
   createPostgresPersonalCloneProvisioningRepository,
   createPostgresUserRelationshipReader,
   createPostgresUserRelationshipProvisioner,
@@ -65,6 +67,7 @@ import {
   createCreatorCloneService,
   type CreatorCloneAuthorizer,
 } from "./creator_clone.js";
+import { createAutomaticCloneCoreProvisioner, createCloneOnboardingService } from "./clone_onboarding.js";
 import { createCreatorEconomyService } from "./creator_economy.js";
 import { createCreatorSkillService } from "./creator_skills.js";
 import {
@@ -130,6 +133,7 @@ export interface ServiceDatabaseDependency {
   readonly skillGuides?: SkillGuideRepository;
   readonly skillDistribution?: SkillDistributionRepository;
   readonly personalClones?: PersonalCloneProvisioningRepository;
+  readonly cloneSetups?: CloneSetupRepository;
   readonly relationships?: UserRelationshipReader;
   readonly relationshipProvisioner?: UserRelationshipProvisioner;
   readonly platformSessions?: PlatformSessionRepository;
@@ -219,6 +223,7 @@ function createDefaultDatabaseDependency(
     skillGuides: createPostgresSkillGuideRepository(database.pool),
     skillDistribution: createPostgresSkillDistributionRepository(database.pool),
     personalClones: createPostgresPersonalCloneProvisioningRepository(database.pool),
+    cloneSetups: createPostgresCloneSetupRepository(database.pool),
     relationships: createPostgresUserRelationshipReader(database.pool),
     relationshipProvisioner:
       createPostgresUserRelationshipProvisioner(database.pool),
@@ -590,6 +595,27 @@ export async function startGatewayService(
         })
       : undefined);
 
+  const composedCloneOnboarding = options.appOptions?.cloneOnboarding ??
+    (creatorCloneAuthorizer && composedCreatorClone && composedDirectory &&
+     database.cloneSetups && database.personalClones &&
+     database.characterSkillAssignments && database.skills &&
+     database.skillGuides && database.skillDistribution
+      ? createCloneOnboardingService({
+          authorizer: creatorCloneAuthorizer,
+          setups: database.cloneSetups,
+          clones: composedCreatorClone,
+          directory: composedDirectory,
+          core: createAutomaticCloneCoreProvisioner({
+            authorizer: creatorCloneAuthorizer,
+            personalClones: database.personalClones,
+            assignments: database.characterSkillAssignments,
+            skills: database.skills,
+            guides: database.skillGuides,
+            distribution: database.skillDistribution,
+          }),
+        })
+      : undefined);
+
   const composedConversation =
     options.appOptions?.agentConversation ??
     (conversationAuthorizer &&
@@ -662,6 +688,7 @@ export async function startGatewayService(
       ...(liveVoiceTokens ? { liveVoiceTokens } : {}),
       ...(composedPush ? { mobilePush: composedPush } : {}),
       ...(composedCreatorClone ? { creatorClone: composedCreatorClone } : {}),
+      ...(composedCloneOnboarding ? { cloneOnboarding: composedCloneOnboarding } : {}),
       ...(composedCreatorEconomy
         ? { creatorEconomy: composedCreatorEconomy }
         : {}),
@@ -719,3 +746,4 @@ if (isDirectExecution()) {
     process.exitCode = 1;
   });
 }
+

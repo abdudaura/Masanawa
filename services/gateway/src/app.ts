@@ -3,6 +3,8 @@ import type { Instant } from "@masanawa/contracts";
 import { nowInstant, parseCanonicalId } from "@masanawa/contracts";
 import type { AgentDirectoryService } from "./agent_directory.js";
 import type { AgentConversationService } from "./agent_conversation_contract.js";
+import { registerCloneOnboardingRoutes } from "./clone_onboarding_routes.js";
+import type { CloneOnboardingService } from "./clone_onboarding.js";
 import type { CreatorCloneService } from "./creator_clone.js";
 import type { CreatorEconomyService } from "./creator_economy.js";
 import type { CreatorSkillService } from "./creator_skills.js";
@@ -37,6 +39,7 @@ export interface GatewayAppOptions {
   readonly agentDirectory?: AgentDirectoryService;
   readonly agentConversation?: AgentConversationService;
   readonly creatorClone?: CreatorCloneService;
+  readonly cloneOnboarding?: CloneOnboardingService;
   readonly creatorEconomy?: CreatorEconomyService;
   readonly creatorSkills?: CreatorSkillService;
   readonly commerceCatalog?: CommerceCatalogService;
@@ -879,6 +882,11 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     );
   }
 
+  if (options.cloneOnboarding) {
+    const onboarding = options.cloneOnboarding;
+    app.register(async child => { await registerCloneOnboardingRoutes(child, onboarding); });
+  }
+
   registerAgentShellRoutes(app, {
     ...(options.agentShell ? { agentShell: options.agentShell } : {}),
     ...(options.liveVoiceTokens
@@ -962,3 +970,4 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
 
   return app;
 }
+

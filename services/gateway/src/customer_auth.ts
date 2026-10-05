@@ -359,15 +359,17 @@ export function createPlatformCustomerSessionAuthorizer(input: Readonly<{
   return Object.freeze({
     async authorize(request: Parameters<PlatformCustomerSessionAuthorizer["authorize"]>[0]) {
       const token = bearer(request.authorizationHeader);
-      if (!token) throw new Error("financial.auth.unauthorized");
+      if (!token) throw new CustomerAuthError("UNAUTHORIZED", 401);
       let accessHash: string;
       try {
         accessHash = hashPlatformSessionToken(token);
       } catch {
-        throw new Error("financial.auth.unauthorized");
+        throw new CustomerAuthError("UNAUTHORIZED", 401);
       }
-      const identity = await input.repository.resolveAccess({ accessHash, at: now() });
-      if (!identity) throw new Error("financial.auth.unauthorized");
+      let identity: PlatformSessionIdentity | null;
+      try { identity = await input.repository.resolveAccess({ accessHash, at: now() }); }
+      catch { throw new CustomerAuthError("AUTH_UNAVAILABLE", 503); }
+      if (!identity) throw new CustomerAuthError("UNAUTHORIZED", 401);
       return identity;
     },
   });
@@ -376,10 +378,10 @@ export function createPlatformCustomerSessionAuthorizer(input: Readonly<{
 export function createPlatformSessionFinancialAuthorizer(input: Readonly<{
   repository: PlatformSessionRepository;
   now?: () => string;
-}>): FinancialAuthorizer {
+}>): PlatformFinancialAuthorizer {
   const now = input.now ?? (() => new Date().toISOString());
   return Object.freeze({
-    async authorize(request: Parameters<FinancialAuthorizer["authorize"]>[0]) {
+    async authorize(request: Parameters<PlatformFinancialAuthorizer["authorize"]>[0]) {
       const token = bearer(request.authorizationHeader);
       if (!token) throw new Error("financial.auth.unauthorized");
       let accessHash: string;
@@ -478,8 +480,10 @@ export function createPlatformCustomerAuthorizers(input: Readonly<{
   async function session(authorizationHeader: string | undefined) {
     try {
       return await input.sessions.authorize({ authorizationHeader });
-    } catch {
-      throw new CustomerAuthError("UNAUTHORIZED", 401);
+    } catch (error) {
+      if (error instanceof CustomerAuthError) throw error;
+      if (error instanceof Error && error.message === "financial.auth.unauthorized") throw new CustomerAuthError("UNAUTHORIZED", 401);
+      throw new CustomerAuthError("AUTH_UNAVAILABLE", 503);
     }
   }
 
@@ -501,7 +505,7 @@ export function createPlatformCustomerAuthorizers(input: Readonly<{
     return Object.freeze([...characterIds]);
   }
 
-  const directory: AgentDirectoryAuthorizer = Object.freeze({
+  const directory: AgentDirectoryAuthorizer = Object.freeze<AgentDirectoryAuthorizer>({
     async authorize(request) {
       const identity = await session(request.authorizationHeader);
       return Object.freeze({
@@ -515,7 +519,7 @@ export function createPlatformCustomerAuthorizers(input: Readonly<{
     },
   });
 
-  const conversation: AgentConversationAuthorizer = Object.freeze({
+  const conversation: AgentConversationAuthorizer = Object.freeze<AgentConversationAuthorizer>({
     async authorize(request): Promise<AgentConversationAdmission> {
       const identity = await session(request.authorizationHeader);
       const characterId = parseCanonicalId("character", request.characterId);
@@ -602,7 +606,7 @@ export function createPlatformCustomerAuthorizers(input: Readonly<{
     },
   });
 
-  const creator: CreatorCloneAuthorizer = Object.freeze({
+  const creator: CreatorCloneAuthorizer = Object.freeze<CreatorCloneAuthorizer>({
     async authorize(request) {
       const identity = await session(request.authorizationHeader);
       return Object.freeze({
@@ -612,7 +616,7 @@ export function createPlatformCustomerAuthorizers(input: Readonly<{
     },
   });
 
-  const commerce: CommerceUserAuthorizer = Object.freeze({
+  const commerce: CommerceUserAuthorizer = Object.freeze<CommerceUserAuthorizer>({
     async authorize(request) {
       const identity = await session(request.authorizationHeader);
       return Object.freeze({
@@ -624,3 +628,4 @@ export function createPlatformCustomerAuthorizers(input: Readonly<{
 
   return Object.freeze({ directory, conversation, creator, commerce });
 }
+

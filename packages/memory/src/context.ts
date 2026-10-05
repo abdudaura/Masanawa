@@ -1,3 +1,5 @@
+import type { RelationshipId, Instant } from "@masanawa/contracts";
+import type { AuthorityContext } from "@masanawa/security";
 import {
   PlatformError,
   type MemoryRecordId,
@@ -217,4 +219,16 @@ export function compileMemoryContext(
     skippedOversizeCount,
     skippedBudgetCount,
   });
+}
+
+export const memoryContextReadCapability = "memory.context.read";
+/** Owning read port: no arbitrary scopes, persistence or transcript extraction. */
+export interface RelationshipMemoryContextReader {
+  readContext(input: {
+    readonly authority: AuthorityContext;
+    readonly tenantId: TenantId;
+    readonly relationshipId: RelationshipId;
+    readonly query: string;
+    readonly at: Instant;
+  }): Promise<CompiledMemoryContext>;
 }

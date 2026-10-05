@@ -1,3 +1,4 @@
+import { CustomerAuthError } from "./customer_auth.js";
 import { describe, expect, it, vi } from "vitest";
 import { createCanonicalId, nowInstant } from "@masanawa/contracts";
 import type { CloneSetup, CloneSetupRepository, CloneSetupScope } from "@masanawa/identity";
@@ -39,6 +40,15 @@ function fixture() {
   return { scope, setups, records, agents, directory, authorizer, clones, core, result, factory, service, auth, requestId, confirm, prepare };
 }
 describe("clone onboarding service", () => {
+  it("preserves expired-session refresh and auth-outage recovery semantics", async () => {
+    const f = fixture();
+    f.authorizer.authorize.mockRejectedValueOnce(new CustomerAuthError("UNAUTHORIZED", 401));
+    await expect(f.service.read(f.auth)).rejects.toMatchObject({ category: "authentication", retryable: false });
+    f.authorizer.authorize.mockRejectedValueOnce(new CustomerAuthError("AUTH_UNAVAILABLE", 503));
+    await expect(f.service.read(f.auth)).rejects.toMatchObject({ category: "unavailable", retryable: true });
+    expect(await f.setups.read(f.scope)).toBeNull();
+  });
+
   it("uses configured Gwani/Bodi by default and retains Gwana/Sulafat", async () => {
     const f = fixture();
     const view = await f.service.read(f.auth);

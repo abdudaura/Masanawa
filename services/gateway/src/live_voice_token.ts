@@ -17,7 +17,7 @@ export function createGeminiLiveTokenService(input: {
   const fetchImpl = input.fetchImpl ?? fetch;
   const now = input.now ?? (() => new Date());
 
-  return Object.freeze({
+  return Object.freeze<LiveVoiceTokenService>({
     async mint(request) {
       const characterId = parseCanonicalId("character", request.characterId);
       await input.authorizer.authorize({
@@ -76,3 +76,4 @@ export function createGeminiLiveTokenService(input: {
     },
   });
 }
+

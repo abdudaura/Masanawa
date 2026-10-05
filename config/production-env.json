@@ -151,6 +151,139 @@
       "classification": "public",
       "requiredIn": [],
       "description": "Development-only Gemini model name used by the replaceable Alpha inference executor."
+    },
+    {
+      "name": "MASANAWA_ALPHA_GEMINI_LIVE_MODEL",
+      "owner": "gateway",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Alpha live audio model."
+    },
+    {
+      "name": "MASANAWA_ALPHA_GEMINI_LIVE_VOICE",
+      "owner": "gateway",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Alpha live audio voice."
+    },
+    {
+      "name": "MASANAWA_AUTH_EMAIL_FROM",
+      "owner": "gateway",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Verified OTP sender address."
+    },
+    {
+      "name": "MASANAWA_AUTH_SMS_ENDPOINT",
+      "owner": "gateway",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Configured HTTPS OTP delivery endpoint."
+    },
+    {
+      "name": "MASANAWA_GEMINI_LIVE_MODEL",
+      "owner": "gateway",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Production live audio model."
+    },
+    {
+      "name": "MASANAWA_GEMINI_LIVE_VOICE",
+      "owner": "gateway",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Production live audio voice."
+    },
+    {
+      "name": "MASANAWA_GEMINI_MODEL",
+      "owner": "gateway",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Production inference model."
+    },
+    {
+      "name": "MASANAWA_MOBILE_MIN_VERSION",
+      "owner": "gateway",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Minimum supported mobile application version."
+    },
+    {
+      "name": "MASANAWA_MOBILE_RECOMMENDED_VERSION",
+      "owner": "gateway",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Recommended mobile application version."
+    },
+    {
+      "name": "MASANAWA_PLATFORM_POLICY_REVISION",
+      "owner": "gateway",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Canonical platform admission policy revision."
+    },
+    {
+      "name": "MASANAWA_PLATFORM_TENANT_ID",
+      "owner": "gateway",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Canonical platform tenant identity."
+    },
+    {
+      "name": "NEXT_PUBLIC_OPS_API_BASE_URL",
+      "owner": "ops",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Public Ops API origin."
+    },
+    {
+      "name": "MASANAWA_ALPHA_GEMINI_API_KEYS_JSON",
+      "owner": "security/bootstrap",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Injected Alpha inference credential pool."
+    },
+    {
+      "name": "MASANAWA_AUTH_OTP_PEPPER",
+      "owner": "security/bootstrap",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "OTP and session digest secret."
+    },
+    {
+      "name": "MASANAWA_AUTH_SMS_TOKEN",
+      "owner": "security/bootstrap",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "OTP delivery authorization secret."
+    },
+    {
+      "name": "MASANAWA_FIREBASE_SERVICE_ACCOUNT_JSON",
+      "owner": "security/bootstrap",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Push delivery service account credential."
+    },
+    {
+      "name": "MASANAWA_GEMINI_API_KEY",
+      "owner": "security/bootstrap",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Production inference credential."
+    },
+    {
+      "name": "MASANAWA_GEMINI_API_KEYS_JSON",
+      "owner": "security/bootstrap",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Production inference credential pool."
+    },
+    {
+      "name": "RESEND_API_KEY",
+      "owner": "security/bootstrap",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "OTP email provider credential."
     }
   ]
 }

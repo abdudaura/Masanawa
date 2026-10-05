@@ -66,7 +66,7 @@ function action(row: any): MobileShellActionRecord {
 }
 
 export function createPostgresMobileShellRepository(pool: Pool): MobileShellRepository {
-  return Object.freeze({
+  return Object.freeze<MobileShellRepository>({
     async claimTurn(input) {
       return withTransaction(pool, async client => {
         const result = await client.query(
@@ -289,7 +289,7 @@ export function createPostgresMobileShellRepository(pool: Pool): MobileShellRepo
 
 
 export function createPostgresMobilePushRepository(pool: Pool): MobilePushRepository {
-  return Object.freeze({
+  return Object.freeze<MobilePushRepository>({
     async register(input) {
       if (
         input.installationId.trim().length < 16 ||
@@ -351,7 +351,7 @@ export function createPostgresMobilePushRepository(pool: Pool): MobilePushReposi
 export function createPostgresMobileAgentActivityRepository(
   pool: Pool,
 ): MobileAgentActivityRepository {
-  return Object.freeze({
+  return Object.freeze<MobileAgentActivityRepository>({
     async setPresence(input) {
       if (
         !Number.isSafeInteger(input.durationMs) ||
@@ -408,3 +408,4 @@ export function createPostgresMobileAgentActivityRepository(
     },
   });
 }
+

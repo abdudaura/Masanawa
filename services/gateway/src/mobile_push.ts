@@ -34,7 +34,7 @@ export function createMobilePushRegistrationService(input: {
   readonly authorizer: AgentConversationAuthorizer;
   readonly repository: MobilePushRepository;
 }): MobilePushRegistrationService {
-  return Object.freeze({
+  return Object.freeze<MobilePushRegistrationService>({
     async register(request) {
       const characterId = parseCanonicalId("character", request.characterId);
       const admission = await input.authorizer.authorize({
@@ -158,7 +158,7 @@ export function createFcmPushSender(input: {
     return cached.token;
   }
 
-  return Object.freeze({
+  return Object.freeze<MobilePushSender>({
     async send(request) {
       const registrations = await input.repository.list(request.scope);
       if (registrations.length === 0) {
@@ -210,3 +210,4 @@ export function createFcmPushSender(input: {
     },
   });
 }
+

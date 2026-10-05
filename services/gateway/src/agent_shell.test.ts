@@ -96,7 +96,7 @@ function fixture() {
       return session;
     },
     async reset() {
-      return session;
+      return { previous: session, current: session };
     },
   };
   return { admission, session, authorizer, sessions };
@@ -292,3 +292,4 @@ describe("agent shell service", () => {
     expect(fullClient.recommendedAppVersion).toBe("1.2.0");
   });
 });
+

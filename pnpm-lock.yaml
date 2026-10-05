@@ -311,6 +311,18 @@ importers:
       '@masanawa/security':
         specifier: workspace:*
         version: link:../security
+      '@masanawa/identity':
+        specifier: workspace:*
+        version: link:../identity
+      '@masanawa/memory':
+        specifier: workspace:*
+        version: link:../memory
+      '@masanawa/skills':
+        specifier: workspace:*
+        version: link:../skills
+      '@masanawa/world':
+        specifier: workspace:*
+        version: link:../world
     devDependencies:
       vitest:
         specifier: 5.0.3
@@ -2425,3 +2437,4 @@ snapshots:
   why-is-node-running@3.2.1: {}
 
   xtend@4.0.2: {}
+
