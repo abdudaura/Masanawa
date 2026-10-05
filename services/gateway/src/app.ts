@@ -866,6 +866,32 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     );
 
     app.get(
+      "/v1/commerce/bills/quotes",
+      {
+        schema: {
+          querystring: Type.Object(
+            { limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })) },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request, reply) => {
+        try {
+          return {
+            quotes: await checkout.list({
+              authorizationHeader: request.headers.authorization as string | undefined,
+              ...(request.query.limit === undefined ? {} : { limit: request.query.limit }),
+            }),
+          };
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "";
+          reply.code(message === "financial.auth.unauthorized" ? 401 : 503);
+          return { error: "billing_history_unavailable" };
+        }
+      },
+    );
+
+    app.get(
       "/v1/commerce/bills/quotes/:quoteId",
       {
         schema: {
