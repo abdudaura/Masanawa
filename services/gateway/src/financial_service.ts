@@ -601,9 +601,6 @@ export function createFinancialService(input: {
       throw new Error("financial.crypto.amount_unavailable");
     }
 
-    const routes = await qualifiedWithdrawalRoutes();
-    const route = routes?.find((candidate) => candidate.providerCode === providerCode);
-    if (!route) throw new Error("financial.crypto.withdrawal_unavailable");
     if (
       !input.withdrawalDestinationApproved ||
       !(await input.withdrawalDestinationApproved({
@@ -615,6 +612,9 @@ export function createFinancialService(input: {
     ) {
       throw new Error("financial.crypto.withdrawal_destination_unapproved");
     }
+    const routes = await qualifiedWithdrawalRoutes();
+    const route = routes?.find((candidate) => candidate.providerCode === providerCode);
+    if (!route) throw new Error("financial.crypto.withdrawal_unavailable");
 
     const signal = AbortSignal.timeout(15_000);
     const [, validated, fee, minimum, balances] = await Promise.all([
