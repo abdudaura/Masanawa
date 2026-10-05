@@ -202,6 +202,7 @@ export function createBillingFinancialService(input: Readonly<{
         tenantId: identity.tenantId, userId: identity.userId,
         quoteId: request.quoteId, quoteRevision: request.quoteRevision!,
         fulfillmentReference: prepared.fulfillmentReference,
+        categoryCode: request.categoryCode ?? null,
         billerCode: prepared.billerCode, itemCode: prepared.itemCode,
         customerId: prepared.customerId, amount: prepared.amount, currency: "NGN",
       });
