@@ -440,7 +440,7 @@ export function createOpsApp(options: OpsAppOptions = {}) {
       async (request) => [
         ...await platformAdmin.listCharacters({
           authorizationHeader: request.headers.authorization,
-          limit: request.query.limit,
+          ...(request.query.limit !== undefined ? { limit: request.query.limit } : {}),
         }),
       ],
     );
@@ -451,8 +451,8 @@ export function createOpsApp(options: OpsAppOptions = {}) {
       async (request) => [
         ...await platformAdmin.listUsers({
           authorizationHeader: request.headers.authorization,
-          limit: request.query.limit,
-          state: request.query.state,
+          ...(request.query.limit !== undefined ? { limit: request.query.limit } : {}),
+          ...(request.query.state !== undefined ? { state: request.query.state } : {}),
         }),
       ],
     );
@@ -464,8 +464,8 @@ export function createOpsApp(options: OpsAppOptions = {}) {
       async (request) => [
         ...await platformAdmin.listAgentRuns({
           authorizationHeader: request.headers.authorization,
-          limit: request.query.limit,
-          state: request.query.state,
+          ...(request.query.limit !== undefined ? { limit: request.query.limit } : {}),
+          ...(request.query.state !== undefined ? { state: request.query.state } : {}),
         }),
       ],
     );
@@ -476,7 +476,7 @@ export function createOpsApp(options: OpsAppOptions = {}) {
       async (request) => [
         ...await platformAdmin.listOffers({
           authorizationHeader: request.headers.authorization,
-          limit: request.query.limit,
+          ...(request.query.limit !== undefined ? { limit: request.query.limit } : {}),
         }),
       ],
     );
@@ -504,7 +504,7 @@ export function createOpsApp(options: OpsAppOptions = {}) {
       async (request) => [
         ...await platformAdmin.listFulfillments({
           authorizationHeader: request.headers.authorization,
-          limit: request.query.limit,
+          ...(request.query.limit !== undefined ? { limit: request.query.limit } : {}),
         }),
       ],
     );
@@ -515,7 +515,7 @@ export function createOpsApp(options: OpsAppOptions = {}) {
       async (request) => [
         ...await platformAdmin.listLedger({
           authorizationHeader: request.headers.authorization,
-          limit: request.query.limit,
+          ...(request.query.limit !== undefined ? { limit: request.query.limit } : {}),
         }),
       ],
     );
@@ -526,8 +526,8 @@ export function createOpsApp(options: OpsAppOptions = {}) {
       async (request) => [
         ...await platformAdmin.listOperations({
           authorizationHeader: request.headers.authorization,
-          limit: request.query.limit,
-          state: request.query.state,
+          ...(request.query.limit !== undefined ? { limit: request.query.limit } : {}),
+          ...(request.query.state !== undefined ? { state: request.query.state } : {}),
         }),
       ],
     );
@@ -538,8 +538,8 @@ export function createOpsApp(options: OpsAppOptions = {}) {
       async (request) => [
         ...await platformAdmin.listReconciliation({
           authorizationHeader: request.headers.authorization,
-          limit: request.query.limit,
-          status: request.query.status,
+          ...(request.query.limit !== undefined ? { limit: request.query.limit } : {}),
+          ...(request.query.status !== undefined ? { status: request.query.status } : {}),
         }),
       ],
     );
@@ -550,7 +550,7 @@ export function createOpsApp(options: OpsAppOptions = {}) {
       async (request) => [
         ...await platformAdmin.listCredentialRefs({
           authorizationHeader: request.headers.authorization,
-          limit: request.query.limit,
+          ...(request.query.limit !== undefined ? { limit: request.query.limit } : {}),
         }),
       ],
     );
@@ -578,7 +578,7 @@ export function createOpsApp(options: OpsAppOptions = {}) {
       async (request) => [
         ...await platformAdmin.listAuditEvents({
           authorizationHeader: request.headers.authorization,
-          limit: request.query.limit,
+          ...(request.query.limit !== undefined ? { limit: request.query.limit } : {}),
         }),
       ],
     );
