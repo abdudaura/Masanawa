@@ -40,11 +40,25 @@ export function createPostgresTwinEconomyEventStore(
   return Object.freeze({
     async append(input) {
       const payload = createTwinEconomyEvent(input.payload);
+      const lockKey = `twin-event:${input.tenantId}:${payload.eventType}:${payload.referenceId}`;
+      return withTransaction(pool, async (client) => {
+        await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [lockKey]);
+        const existing = await client.query<{ event_id: string }>(
+          `SELECT event_id
+             FROM events.platform_events
+            WHERE tenant_id=$1
+              AND event_type=$2
+              AND payload->>'referenceId'=$3
+              AND aggregate_id=$4
+            ORDER BY recorded_at
+            LIMIT 1`,
+          [input.tenantId, payload.eventType, payload.referenceId, payload.characterId],
+        );
+        if (existing.rows[0]) return existing.rows[0].event_id;
       assertNoTwinTranscriptFields(payload as unknown as Record<string, unknown>);
       const eventId = createCanonicalId("event");
       const correlationId = input.correlationId ?? createCanonicalId("correlation");
       const at = nowInstant();
-      await withTransaction(pool, async (client) => {
         await appendPlatformEvent(client, {
           eventId,
           eventType: payload.eventType,
@@ -68,8 +82,8 @@ export function createPostgresTwinEconomyEventStore(
             payload.visibility === "internal" ? "internal" : "private",
           payload,
         });
+        return eventId;
       });
-      return eventId;
     },
 
     async listForCharacter(input) {
