@@ -95,6 +95,83 @@ describeDatabase("Twin economy PostgreSQL acceptance", () => {
     )).rejects.toThrow("Twin economy history is immutable");
   });
 
+  it("returns only the latest owner request for the authenticated requester and Twin", async () => {
+    const repository = createPostgresTwinRuntimeRepository(pool);
+    const tenantId = createCanonicalId("tenant");
+    const requesterUserId = createCanonicalId("user");
+    const otherRequesterUserId = createCanonicalId("user");
+    const ownerUserId = createCanonicalId("user");
+    const characterId = createCanonicalId("character");
+    const otherCharacterId = createCanonicalId("character");
+
+    const put = async (
+      requestId: string,
+      targetCharacterId: typeof characterId,
+      requestedAt: string,
+    ) => repository.putOwnerAccessRequest({
+      tenantId,
+      request: {
+        requestId,
+        requesterUserId,
+        ownerUserId,
+        originatingCharacterId: targetCharacterId,
+        modality: "voice",
+        durationMinutes: 15,
+        priceCredits: 0,
+        platformFeeCredits: 0,
+        ownerEarningCredits: 0,
+        chargeMode: "trial",
+        trialPolicyRevision: 1,
+        state: "requested",
+        requestedAt,
+        acceptBy: new Date(Date.parse(requestedAt) + 60 * 60 * 1000).toISOString(),
+        scheduledFor: null,
+        startedAt: null,
+        completedAt: null,
+      },
+      reservationId: null,
+      reservedCredits: 0,
+    });
+
+    await put(
+      "owner-request-postgres-older",
+      characterId,
+      "2026-10-05T10:00:00.000Z",
+    );
+    await put(
+      "owner-request-postgres-latest",
+      characterId,
+      "2026-10-05T11:00:00.000Z",
+    );
+    await put(
+      "owner-request-postgres-other-twin",
+      otherCharacterId,
+      "2026-10-05T12:00:00.000Z",
+    );
+
+    await expect(
+      repository.readLatestOwnerAccessRequestForRequester({
+        tenantId,
+        requesterUserId,
+        characterId,
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        requestId: "owner-request-postgres-latest",
+        requesterUserId,
+        originatingCharacterId: characterId,
+      }),
+    );
+
+    await expect(
+      repository.readLatestOwnerAccessRequestForRequester({
+        tenantId,
+        requesterUserId: otherRequesterUserId,
+        characterId,
+      }),
+    ).resolves.toBeNull();
+  });
+
   it("converges concurrent exact replays onto one durable receipt", async () => {
     const repository = createPostgresTwinRuntimeRepository(pool);
     const tenantId = createCanonicalId("tenant");
