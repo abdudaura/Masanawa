@@ -239,27 +239,18 @@ export class NowPaymentsCustodyClient {
       throw error;
     }
 
-    let response: Response;
-    try {
-      response = await this.#request("/conversion", {
-        method: "POST",
-        body: JSON.stringify({
-          from_currency: fromCurrency.toLowerCase(),
-          to_currency: toCurrency.toLowerCase(),
-          amount: wireAmount,
-        }),
-        authenticated: true,
-        token,
-        badRequestCode: "nowpayments.conversion.request_rejected",
-        ...(input.signal === undefined ? {} : { signal: input.signal }),
-      });
-    } catch (error) {
-      const code = error instanceof Error ? error.message : "";
-      if (code === "nowpayments.custody.credential.unavailable") {
-        throw new Error("nowpayments.conversion.dispatch_rejected");
-      }
-      throw error;
-    }
+    const response = await this.#request("/conversion", {
+      method: "POST",
+      body: JSON.stringify({
+        from_currency: fromCurrency.toLowerCase(),
+        to_currency: toCurrency.toLowerCase(),
+        amount: wireAmount,
+      }),
+      authenticated: true,
+      token,
+      badRequestCode: "nowpayments.conversion.request_rejected",
+      ...(input.signal === undefined ? {} : { signal: input.signal }),
+    });
     return parseConversion(await response.json(), { fromCurrency, toCurrency, fromAmount: exactAmount });
   }
 
