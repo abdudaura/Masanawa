@@ -25,6 +25,8 @@ Status: mandatory implementation coordination guidance, 2026-10-04.
 | integration | composition, migrations, evidence, cross-stream contracts and guiding docs | shared integration points |
 
 These are ownership categories, not separate runtime authorities or new numbered milestones.
+Persisted Work is not automatically resumable: workflow executor/resume ownership must preserve
+graph compatibility, checkpoint lineage, approvals and current-authority revalidation.
 Choose one workstream per window. Shared files (Gateway composition, package exports,
 migrations registry, root configs, canonical docs) require coordinated integration.
 
