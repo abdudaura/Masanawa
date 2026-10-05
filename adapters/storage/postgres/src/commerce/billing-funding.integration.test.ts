@@ -99,6 +99,20 @@ describeDatabase("billing NGN funding PostgreSQL acceptance", () => {
       currency: "NGN",
     })).rejects.toThrow("quote_terms_mismatch");
 
+    await expect(f.repository.reserveConfirmedBill({
+      tenantId: f.tenantId,
+      userId: f.userId,
+      quoteId: f.quote.quoteId,
+      quoteRevision: f.quote.revision,
+      fulfillmentReference,
+      categoryCode: "MOBILEDATA",
+      billerCode: f.quote.billerCode,
+      itemCode: f.quote.itemCode,
+      customerId: f.quote.customerId,
+      amount: formatNgnKobo(f.quote.serviceAmountKobo),
+      currency: "NGN",
+    })).rejects.toThrow("quote_terms_mismatch");
+
     await Promise.all([
       f.repository.reserveConfirmedBill({
         tenantId: f.tenantId,
