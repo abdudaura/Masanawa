@@ -1074,19 +1074,28 @@ export function createFinancialService(input: {
       if (
         ["succeeded", "failed", "refunded", "expired", "manual_review"].includes(
           intent.status,
-        ) ||
-        intent.providerPaymentId === null
+        )
       ) {
         return fiatPurchaseView(intent);
       }
-
-      const payload = await input.nowPayments.getPaymentEvidence({
-        paymentId: intent.providerPaymentId,
-        signal: AbortSignal.timeout(15_000),
-      });
       if ((intent.providerInvoiceId ?? null) === null) {
         throw new Error("financial.crypto.fiat_onramp_unavailable");
       }
+
+      const signal = AbortSignal.timeout(15_000);
+      const payload =
+        intent.providerPaymentId === null
+          ? await input.nowPaymentsCustody?.findPaymentEvidence({
+              orderId: providerOrderId(intent.tenantId, intent.requestId),
+              invoiceId: intent.providerInvoiceId!,
+              signal,
+            }) ?? null
+          : await input.nowPayments.getPaymentEvidence({
+              paymentId: intent.providerPaymentId,
+              signal,
+            });
+      if (payload === null) return fiatPurchaseView(intent);
+
       const evidence = admitFiatOnRampEvidence(payload, {
         invoiceId: intent.providerInvoiceId!,
         orderId: providerOrderId(intent.tenantId, intent.requestId),
@@ -1094,6 +1103,12 @@ export function createFinancialService(input: {
         fiatCurrency: intent.asset,
         settlementAsset: intent.targetAsset,
       });
+      if (
+        intent.providerPaymentId !== null &&
+        evidence.paymentId !== intent.providerPaymentId
+      ) {
+        throw new Error("financial.crypto.onramp_evidence_mismatch");
+      }
       return fiatPurchaseView(await input.crypto.applyProviderPaymentEvent({
         tenantId: intent.tenantId,
         userId: intent.userId,
