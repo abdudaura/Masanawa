@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+export CI=true
+export FLUTTER_SUPPRESS_ANALYTICS=true
+export PUB_ENVIRONMENT=bot
+
 ROOT="$(pwd)"
 CACHE="$HOME/.masanawa-apk-toolchain"
 mkdir -p "$CACHE"
@@ -38,7 +42,10 @@ if [ ! -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
 fi
 export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
 yes | sdkmanager --licenses >/dev/null || true
-sdkmanager "platform-tools" "platforms;android-37" "build-tools;37.0.0"
+sdkmanager "platform-tools" "platforms;android-36" "platforms;android-37.0" "build-tools;36.0.0"
+if [[ -d "$ANDROID_HOME/platforms/android-37.0" && ! -e "$ANDROID_HOME/platforms/android-37" ]]; then
+  ln -s "$ANDROID_HOME/platforms/android-37.0" "$ANDROID_HOME/platforms/android-37"
+fi
 flutter config --android-sdk "$ANDROID_HOME"
 
 API_BASE_URL="https://masanawa-gateway-production.up.railway.app"
