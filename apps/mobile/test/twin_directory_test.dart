@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:unigeria/src/agents/twin_directory.dart';
+import 'package:masanawa/src/agents/twin_directory.dart';
 
 void main() {
   test('parses privacy-safe free-text public twin projection', () {
