@@ -14,8 +14,14 @@ import 'package:masanawa/src/core/network/api_client.dart';
 import 'package:masanawa/src/core/providers.dart';
 import 'package:masanawa/src/state/agent_directory_state.dart';
 import 'package:masanawa/src/state/ai_chat_state.dart';
+import 'package:masanawa/src/state/session_state.dart';
 import 'package:masanawa/src/screens/chat/masana_list_screen.dart';
 import 'package:masanawa/src/theme/masanawa_theme.dart';
+
+class _SignedOutSessionController extends SessionController {
+  @override
+  SessionState build() => const SessionSignedOut();
+}
 
 const agent = AgentDirectoryEntry(
   characterId: 'character-1',
@@ -34,6 +40,9 @@ class FakeDirectory implements AgentDirectoryTransport {
     requests.add(request);
     return request.future;
   }
+
+  @override
+  Future<void> setDefaultPlatformAgent(String characterId) async {}
 }
 
 class RetryDirectory implements AgentDirectoryTransport {
@@ -44,6 +53,9 @@ class RetryDirectory implements AgentDirectoryTransport {
       throw const ApiException('private database error', statusCode: 503);
     return [agent];
   }
+
+  @override
+  Future<void> setDefaultPlatformAgent(String characterId) async {}
 }
 
 class RecoveringTransport implements AgentTransport {
@@ -237,6 +249,7 @@ void main() {
         ProviderScope(
           overrides: [
             agentDirectoryTransportProvider.overrideWithValue(directory),
+            sessionProvider.overrideWith(_SignedOutSessionController.new),
           ],
           child: MaterialApp(
             theme: buildMasanawaTheme(brightness: Brightness.light),
@@ -290,6 +303,7 @@ void main() {
       final c = ProviderContainer(
         overrides: [
           agentDirectoryTransportProvider.overrideWithValue(transport),
+          sessionProvider.overrideWith(_SignedOutSessionController.new),
         ],
       );
       addTearDown(c.dispose);
@@ -316,7 +330,10 @@ void main() {
   test('older refresh cannot overwrite a recovered directory', () async {
     final transport = FakeDirectory();
     final c = ProviderContainer(
-      overrides: [agentDirectoryTransportProvider.overrideWithValue(transport)],
+      overrides: [
+      agentDirectoryTransportProvider.overrideWithValue(transport),
+      sessionProvider.overrideWith(_SignedOutSessionController.new),
+    ],
     );
     addTearDown(c.dispose);
     c.read(agentDirectoryProvider);
@@ -335,7 +352,10 @@ void main() {
     () async {
       final transport = RecoveringTransport();
       final c = ProviderContainer(
-        overrides: [agentTransportProvider.overrideWithValue(transport)],
+        overrides: [
+        agentTransportProvider.overrideWithValue(transport),
+        sessionProvider.overrideWith(_SignedOutSessionController.new),
+      ],
       );
       addTearDown(c.dispose);
       final controller = c.read(aiChatProvider.notifier);
@@ -367,7 +387,10 @@ void main() {
     final pending = Completer<AgentTurnResult>();
     final transport = RecoveringTransport(pending: pending);
     final c = ProviderContainer(
-      overrides: [agentTransportProvider.overrideWithValue(transport)],
+      overrides: [
+        agentTransportProvider.overrideWithValue(transport),
+        sessionProvider.overrideWith(_SignedOutSessionController.new),
+      ],
     );
     addTearDown(c.dispose);
     final controller = c.read(aiChatProvider.notifier);
@@ -384,7 +407,10 @@ void main() {
   test('clear all closes canonical CharacterSessions before dropping local state', () async {
     final transport = RecoveringTransport();
     final c = ProviderContainer(
-      overrides: [agentTransportProvider.overrideWithValue(transport)],
+      overrides: [
+        agentTransportProvider.overrideWithValue(transport),
+        sessionProvider.overrideWith(_SignedOutSessionController.new),
+      ],
     );
     addTearDown(c.dispose);
     final controller = c.read(aiChatProvider.notifier);

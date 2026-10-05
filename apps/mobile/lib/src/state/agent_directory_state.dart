@@ -81,9 +81,10 @@ class AgentDirectoryController extends Notifier<AgentDirectoryState> {
       if (agents.isNotEmpty) {
         final transport = ref.read(agentTransportProvider);
         if (transport is AgentShellTransport) {
+          final shellTransport = transport as AgentShellTransport;
           unawaited(
             MobilePushService.instance
-                .registerForCharacter(transport, agents.first.characterId)
+                .registerForCharacter(shellTransport, agents.first.characterId)
                 .catchError((_) {}),
           );
         }
