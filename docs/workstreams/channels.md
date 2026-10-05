@@ -6,7 +6,7 @@ Branch: work/channels-webhook-ingress-20261004.
 Base main SHA: 3906419669203844018b6687ad06ab2af48654eb.
 Task references: 097–102 and 108, bounded ingress groundwork; no gate completion.
 Last update: 2026-10-04.
-Current step: authenticated ingress, opaque callback reconciliation, provider-neutral durable outbound/no-blind-resend, and delivery-status custody contracts implemented; concrete storage/provider/Gateway/lockfile integration pending.
+Current step: authenticated ingress, opaque callback reconciliation, durable outbound/no-blind-resend, delivery-status custody, and credential-free Telegram/WhatsApp outbound translators implemented; concrete durable storage, credential HTTP edges/media upload, Gateway/lockfile integration and live provider qualification pending.
 
 ## Exact owned paths
 
