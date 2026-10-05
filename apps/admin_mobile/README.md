@@ -24,14 +24,28 @@ See `docs/ADMIN-CONTROL-PLANE.md` for the complete capability and dependency mat
 
 The app never talks directly to PostgreSQL/Supabase. All data is served through tenant-scoped Ops capabilities. Provider secret material and sensitive event payloads are not projected to the app.
 
-The current operator credential screen is bootstrap authentication. It stores the bearer credential using `flutter_secure_storage` and validates it against the protected `/v1/admin/summary` route. Production admin identity/roles remain a platform prerequisite.
+Production login now uses the same canonical Masanawa PlatformSession as the customer app: email/phone OTP at the Gateway, secure access/refresh token storage, startup refresh, logout revocation, and automatic access-token refresh. Ops independently authorizes the resolved session against `MASANAWA_OPS_ADMIN_GRANTS_JSON`; a normal customer session has no admin authority unless its tenant plus User ID, verified email, or verified phone is explicitly granted the requested capability. The legacy bootstrap token remains an emergency fallback only.
 
 ## Run
 
-The Ops endpoint is deliberately required; the admin app does not default to the customer Gateway.
+The Ops endpoint and customer-auth Gateway are both deliberate build inputs:
 
 ```bash
-flutter run --dart-define=ADMIN_BASE_URL=https://your-ops-host
+flutter run \
+  --dart-define=ADMIN_BASE_URL=https://your-ops-host \
+  --dart-define=ADMIN_AUTH_BASE_URL=https://your-gateway-host
 ```
 
-No admin credential is committed to the repository.
+Configure Ops with a tenant-scoped grant, for example:
+
+```json
+[
+  {
+    "tenantId": "tenant_...",
+    "email": "operator@example.com",
+    "capabilities": ["*"]
+  }
+]
+```
+
+Set that JSON as `MASANAWA_OPS_ADMIN_GRANTS_JSON`. A grant must contain exactly one selector: `userId`, verified `email`, or verified `phone`. Use explicit capability names instead of `"*"` for least-privilege operators. No admin credential is committed to the repository.
