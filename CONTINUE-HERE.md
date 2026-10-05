@@ -10,6 +10,7 @@ Preserve the auth startup optimization:
   of up to five;
 - valid legacy sessions still migrate asynchronously to `auth_session_v2`;
 - this is storage-call optimization only; auth/token semantics are unchanged.
+- PR #170 merged this optimization at `24ce71124a08bd32da51793817b05405454ed69a`.
 
 ## Mobile first-frame deferral checkpoint — 2026-10-05
 
