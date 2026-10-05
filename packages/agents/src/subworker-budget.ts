@@ -141,12 +141,12 @@ export function createBudgetedSubworkerAdmissionService(input: {
       let admitted: SubworkerAdmission;
       try {
         admitted = await input.subworkers.admit({
-        parentAuthority: request.parentAuthority,
-        scope: request.scope,
-        parentAgentRunId: request.parentAgentRunId,
-        childAgentRunId: request.childAgentRunId,
-        parentSkillVersionIds: request.parentSkillVersionIds,
-        requestedSkillVersionIds: request.requestedSkillVersionIds,
+          parentAuthority: request.parentAuthority,
+          scope: request.scope,
+          parentAgentRunId: request.parentAgentRunId,
+          childAgentRunId: request.childAgentRunId,
+          parentSkillVersionIds: request.parentSkillVersionIds,
+          requestedSkillVersionIds: request.requestedSkillVersionIds,
           requestedCapabilities: request.requestedCapabilities,
         });
       } catch (error) {
@@ -164,6 +164,10 @@ export function createBudgetedSubworkerAdmissionService(input: {
         admitted.run.lineage.parentAgentRunId !== request.parentAgentRunId ||
         grant.childBudget.agentRunId !== admitted.run.agentRunId
       ) {
+        executionControl.stop({
+          reason: "shutdown",
+          detail: "Subworker custody validation failed before execution",
+        });
         throw new TypeError(
           "Budgeted subworker admission returned mismatched child custody",
         );
