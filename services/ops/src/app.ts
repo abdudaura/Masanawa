@@ -192,7 +192,11 @@ const OfferParamsSchema = Type.Object(
 
 const PutOfferRevisionBodySchema = Type.Object(
   {
-    key: Type.String({ minLength: 1, maxLength: 128 }),
+    key: Type.String({
+      minLength: 1,
+      maxLength: 128,
+      pattern: "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+    }),
     title: Type.String({ minLength: 1, maxLength: 200 }),
     description: Type.String({ minLength: 1, maxLength: 4000 }),
     skillVersionId: Type.String(),
