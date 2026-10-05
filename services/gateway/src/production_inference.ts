@@ -17,6 +17,70 @@ export interface GeminiCredentialPool {
   readonly models: readonly string[];
 }
 
+export function describeGeminiCredentialJsonShape(raw: string | undefined): Readonly<Record<string, unknown>> {
+  if (!raw?.trim()) return Object.freeze({ present: false });
+  let value: unknown;
+  try {
+    value = JSON.parse(raw);
+  } catch {
+    return Object.freeze({
+      present: true,
+      validJson: false,
+      rawType: "string",
+      rawLength: raw.length,
+    });
+  }
+
+  const describe = (input: unknown, depth = 0): unknown => {
+    if (depth > 3) return "max-depth";
+    if (input === null) return "null";
+    if (Array.isArray(input)) {
+      return Object.freeze({
+        type: "array",
+        length: input.length,
+        itemTypes: Object.freeze([
+          ...new Set(input.slice(0, 20).map((item) =>
+            item === null ? "null" : Array.isArray(item) ? "array" : typeof item,
+          )),
+        ]),
+        sampleShapes: Object.freeze(
+          input.slice(0, 3).map((item) => describe(item, depth + 1)),
+        ),
+      });
+    }
+    if (typeof input === "object") {
+      const object = input as Record<string, unknown>;
+      const keys = Object.keys(object).sort().slice(0, 50);
+      return Object.freeze({
+        type: "object",
+        keys: Object.freeze(keys),
+        valueTypes: Object.freeze(
+          Object.fromEntries(
+            keys.map((key) => [
+              key,
+              object[key] === null
+                ? "null"
+                : Array.isArray(object[key])
+                  ? "array"
+                  : typeof object[key],
+            ]),
+          ),
+        ),
+      });
+    }
+    if (typeof input === "string") {
+      return Object.freeze({ type: "string", length: input.length });
+    }
+    return typeof input;
+  };
+
+  return Object.freeze({
+    present: true,
+    validJson: true,
+    shape: describe(value),
+  });
+}
+
 const GOOGLE_GEMINI_KEY_RE = /^AIza[0-9A-Za-z_-]{30,80}$/u;
 
 function normalizeSecret(value: unknown): string | null {
