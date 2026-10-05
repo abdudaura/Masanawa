@@ -6,6 +6,36 @@ importers:
   .:
     configDependencies: {}
     devDependencies:
+      '@types/node':
+        specifier: 24.13.6
+        version: 24.13.6
+      typescript:
+        specifier: 7.0.2
+        version: 7.0.2
+      vitest:
+        specifier: 5.0.3
+        version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
+      '@masanawa/contracts':
+        specifier: workspace:*
+        version: link:packages/contracts
+      '@masanawa/providers':
+        specifier: workspace:*
+        version: link:packages/providers
+      '@masanawa/security':
+        specifier: workspace:*
+        version: link:packages/security
+      '@masanawa/postgres':
+        specifier: workspace:*
+        version: link:adapters/storage/postgres
+      '@masanawa/skills':
+        specifier: workspace:*
+        version: link:packages/skills
+      '@masanawa/tools':
+        specifier: workspace:*
+        version: link:packages/tools
+      '@masanawa/agents':
+        specifier: workspace:*
+        version: link:packages/agents
       '@masanawa/identity':
         specifier: workspace:*
         version: link:packages/identity
