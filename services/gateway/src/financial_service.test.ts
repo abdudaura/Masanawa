@@ -380,7 +380,7 @@ describe("financial service recovery and admission", () => {
       addressValidated: true, quotedAt: at,
     });
     expect(crypto.reserveWithdrawal).not.toHaveBeenCalled();
-    expect(fetch).toHaveBeenCalledTimes(5);
+    expect(fetch).toHaveBeenCalledTimes(6);
   });
   it("uses the canonical repository fee reserve for non-zero provider fees", async () => {
     const { service, crypto } = setup(null, account);
@@ -592,7 +592,7 @@ describe("financial service recovery and admission", () => {
       quotedAt: at,
     });
     expect(crypto.reserveConversion).not.toHaveBeenCalled();
-    expect(fetch).toHaveBeenCalledTimes(4);
+    expect(fetch).toHaveBeenCalledTimes(5);
   });
 
   it("reserves, dispatches and binds a custody conversion exactly once", async () => {
