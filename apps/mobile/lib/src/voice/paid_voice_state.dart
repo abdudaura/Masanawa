@@ -76,6 +76,12 @@ class PaidVoiceController extends StateNotifier<PaidVoiceState> {
     }
   }
 
+  Future<void> mediaStarted({
+    required String admissionId,
+  }) async {
+    await _transport.mediaStarted(admissionId: admissionId);
+  }
+
   Future<void> complete({
     required String admissionId,
     required String outcome,
