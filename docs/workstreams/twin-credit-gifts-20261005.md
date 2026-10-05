@@ -40,4 +40,35 @@ Gateway composition.
 - reversal is a new command/event, never mutation;
 - Gateway accepts user intent only; canonical account/ledger posting remains server-side.
 
-Status: implementation started 2026-10-05.
+Status: isolated transfer/gift command implementation complete; persistence/shared integration pending.
+
+Implemented:
+- Credit transfer command/fingerprint/provenance contracts;
+- exact integer Credit validation;
+- self-transfer/self-gift rejection;
+- internal-transfer destination provenance;
+- explicit commissionEligible=false for Credit movement;
+- append-only reversal contract;
+- Gift admission with explicit economic reason;
+- authenticated transfer service;
+- server-side recipient resolver;
+- authenticated gift service resolving owner from twin/Character server-side;
+- required abuse-policy guard hooks;
+- executor ports for canonical atomic ledger posting/idempotency;
+- isolated transfer/gift Gateway route registrars;
+- tests proving client-supplied sender/owner fields are ignored;
+- tests proving transfers/gifts cannot become acquisition-commission events.
+
+Not yet integrated:
+- append-only PostgreSQL command/receipt persistence;
+- canonical balance debit/credit transaction;
+- idempotency repository/replay handling;
+- recipient identifier resolver implementation;
+- twin -> owner resolver implementation;
+- packages/commerce exports;
+- Gateway app/main composition;
+- Wallet transport;
+- Activity event emission;
+- security guard adapter from the abuse-control lane.
+
+No active billing/crypto Commerce files or migrations were modified.
