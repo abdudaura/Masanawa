@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -60,18 +59,6 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
       return;
     }
     ref.read(sessionProvider.notifier).sendOtp(email: email);
-  }
-
-  /// Debug-only shortcut — never ships in release builds.
-  void _devSkip() {
-    assert(() {
-      ref.read(sessionProvider.notifier).devLogin(
-            name: 'Test User',
-            email: 'dev@example.com',
-            countryIso: 'NG',
-          );
-      return true;
-    }());
   }
 
   @override
@@ -168,14 +155,6 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
               loading: sending,
               onPressed: _continueWithPhone,
             ),
-          // Debug-only shortcut — hidden in release builds.
-          if (kDebugMode) ...[
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: _devSkip,
-              child: const Text('Skip for now — explore as a test user (debug)'),
-            ),
-          ],
           const SizedBox(height: 8),
           Text(
             'By continuing you agree to our Terms and Privacy Policy.',

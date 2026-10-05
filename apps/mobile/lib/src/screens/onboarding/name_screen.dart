@@ -2,15 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/api/models.dart';
+import '../../core/network/api_client.dart';
 import '../../state/session_state.dart';
 import '../../tokens/masanawa_tokens.dart';
 import '../../ui/components/onboarding_scaffold.dart';
 import '../../ui/components/primary_button.dart';
 
-/// Registration: full name + email address. Phone users arrive here after the
-/// codeless phone login (their number is already saved); email-code users
-/// arrive here on first signup to finish creating the account.
 class NameScreen extends ConsumerStatefulWidget {
   const NameScreen({super.key});
 
@@ -20,18 +17,14 @@ class NameScreen extends ConsumerStatefulWidget {
 
 class _NameScreenState extends ConsumerState<NameScreen> {
   final _name = TextEditingController();
-  final _email = TextEditingController();
   bool _prefilled = false;
+  bool _saving = false;
 
   @override
   void dispose() {
     _name.dispose();
-    _email.dispose();
     super.dispose();
   }
-
-  bool _validEmail(String value) =>
-      RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(value.trim());
 
   void _snack(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -41,50 +34,30 @@ class _NameScreenState extends ConsumerState<NameScreen> {
 
   Future<void> _submit() async {
     final current = ref.read(sessionProvider);
-    final name = _name.text.trim();
-    final email = _email.text.trim();
-
-    // Already fully registered (real account) — nothing to save.
-    if (current is SessionSignedIn &&
-        !isDevAccessToken(current.tokens.accessToken) &&
-        !current.user.isNewUser) {
+    if (current is! SessionSignedIn) {
+      context.go('/phone-login');
+      return;
+    }
+    if (!current.user.isNewUser) {
       context.go('/chats');
       return;
     }
-
-    if (name.isEmpty) {
+    final name = _name.text.trim().replaceAll(RegExp(r'\s+'), ' ');
+    if (name.length < 2) {
       _snack('Please enter your full name');
       return;
     }
-    if (!_validEmail(email)) {
-      _snack('Please enter a valid email address');
-      return;
+    if (_saving) return;
+    setState(() => _saving = true);
+    try {
+      await ref.read(sessionProvider.notifier).updateProfile(name: name);
+    } on ApiException catch (error) {
+      if (mounted) _snack(error.message);
+    } catch (_) {
+      if (mounted) _snack('Could not save your profile. Please try again.');
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
-
-    // Local dev session from a phone login — save name + email on device.
-    if (current is SessionSignedIn &&
-        isDevAccessToken(current.tokens.accessToken)) {
-      await ref
-          .read(sessionProvider.notifier)
-          .updateDevProfile(name: name, email: email);
-      return;
-    }
-
-    // First email-code signup: the backend creates the account with the same
-    // OTP plus the name.
-    if (current is SessionNameRequired) {
-      final isEmailSignup = current.channel == OtpChannel.email;
-      ref.read(sessionProvider.notifier).verifyOtp(
-            current.code,
-            phone: isEmailSignup ? null : current.identifier,
-            email: isEmailSignup ? current.identifier : email,
-            name: name,
-          );
-      return;
-    }
-
-    if (current is SessionVerifying) return;
-    context.go('/chats');
   }
 
   @override
@@ -95,29 +68,23 @@ class _NameScreenState extends ConsumerState<NameScreen> {
       } else if (next is SessionError) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(next.message)));
+      } else if (next is SessionSignedOut) {
+        context.go('/phone-login');
       }
     });
 
     final session = ref.watch(sessionProvider);
-    final submitting = session is SessionVerifying;
-
-    // Prefill what the session already knows (name/email from either path).
-    if (!_prefilled && session is SessionSignedIn) {
+    final signedIn = session is SessionSignedIn ? session : null;
+    if (!_prefilled && signedIn != null) {
       _prefilled = true;
-      if (session.user.name.isNotEmpty) _name.text = session.user.name;
-      final existingEmail = session.user.email;
-      if (existingEmail != null && existingEmail.isNotEmpty) {
-        _email.text = existingEmail;
-      }
+      if (signedIn.user.name.isNotEmpty) _name.text = signedIn.user.name;
     }
-    final alreadyComplete =
-        session is SessionSignedIn && !session.user.isNewUser;
+    final alreadyComplete = signedIn != null && !signedIn.user.isNewUser;
 
     return OnboardingScaffold(
-      title: 'Complete your profile',
-      subtitle: 'Your name identifies you, and your email keeps your account safe.',
-      canGoBack: true,
-      backDestination: '/otp',
+      title: 'What should we call you?',
+      subtitle: 'This name appears on your Masanawa account.',
+      canGoBack: false,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -126,57 +93,39 @@ class _NameScreenState extends ConsumerState<NameScreen> {
             autofocus: !alreadyComplete,
             enabled: !alreadyComplete,
             textCapitalization: TextCapitalization.words,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _submit(),
             style: TextStyle(
               fontSize: MasanawaTokens.fontSize['md'],
               color: Theme.of(context).colorScheme.onSurface,
             ),
             decoration: InputDecoration(
-              labelText: 'Full Name',
-              hintText: 'e.g. Amina Bello or Emeka Okafor',
+              labelText: 'Full name',
+              hintText: 'e.g. Amina Bello',
               prefixIcon: const Icon(Icons.person_outline),
               filled: true,
               fillColor: Theme.of(context).colorScheme.surface,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(MasanawaTokens.radius['md']!),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _email,
-            enabled: !alreadyComplete,
-            keyboardType: TextInputType.emailAddress,
-            autocorrect: false,
-            style: TextStyle(
-              fontSize: MasanawaTokens.fontSize['md'],
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-            decoration: InputDecoration(
-              labelText: 'Email Address',
-              hintText: 'you@example.com',
-              prefixIcon: const Icon(Icons.mail_outline),
-              filled: true,
-              fillColor: Theme.of(context).colorScheme.surface,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(MasanawaTokens.radius['md']!),
+                borderRadius:
+                    BorderRadius.circular(MasanawaTokens.radius['md']!),
               ),
             ),
           ),
           const SizedBox(height: 24),
           PrimaryButton(
-            label: alreadyComplete
-                ? 'Continue'
-                : submitting
-                    ? 'Creating your account…'
-                    : 'Continue',
-            loading: submitting,
-            onPressed: _submit,
+            label: 'Continue',
+            loading: _saving,
+            onPressed: _saving
+                ? null
+                : alreadyComplete
+                    ? () => context.go('/chats')
+                    : _submit,
           ),
           const SizedBox(height: 12),
           Text(
             alreadyComplete
-                ? 'Your profile is saved — continue to your chat.'
-                : 'We use your email only for account safety and important updates.',
+                ? 'Your profile is ready.'
+                : 'Your verified phone number or email remains your sign-in method.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: MasanawaTokens.fontSize['xs'],
