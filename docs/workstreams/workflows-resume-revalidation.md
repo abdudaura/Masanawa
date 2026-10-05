@@ -1,8 +1,8 @@
 # Workflow resume and present-authority revalidation — 2026-10-05
 
 Owner/window: ChatGPT harness/workflows resume continuation.
-Branch: `work/workflows-resume-revalidation-20261005`
-Base: PR #154 head `f17b410e7936d8ea2ed59c457585f9197dfb70d4`
+Branch: `work/workflows-resume-revalidation-20261005b`
+Base: latest PR #154 head `e76239cf8a7d8c8f60c51b82c2e293171f5d5582`
 Purpose: complete the next harness durability slice after PostgreSQL Work persistence.
 
 ## Exact owned paths
