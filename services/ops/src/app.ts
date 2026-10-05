@@ -190,6 +190,30 @@ const OfferParamsSchema = Type.Object(
   { additionalProperties: false },
 );
 
+const PutOfferRevisionBodySchema = Type.Object(
+  {
+    key: Type.String({ minLength: 1, maxLength: 128 }),
+    title: Type.String({ minLength: 1, maxLength: 200 }),
+    description: Type.String({ minLength: 1, maxLength: 4000 }),
+    skillVersionId: Type.String(),
+    priceCredits: Type.Integer({ minimum: 1 }),
+    fulfillmentReserveCredits: Type.Integer({ minimum: 0 }),
+    creatorCommissionCredits: Type.Integer({ minimum: 0 }),
+    fallbackCommissionCredits: Type.Integer({ minimum: 0 }),
+    platformMarginCredits: Type.Integer({ minimum: 0 }),
+    regions: Type.Array(Type.String({ minLength: 1, maxLength: 64 }), {
+      maxItems: 64,
+      uniqueItems: true,
+    }),
+    enabled: Type.Boolean(),
+    expectedRevision: Type.Union([
+      Type.Integer({ minimum: 1 }),
+      Type.Null(),
+    ]),
+  },
+  { additionalProperties: false },
+);
+
 const PutOfferEnabledBodySchema = Type.Object(
   {
     enabled: Type.Boolean(),
@@ -484,6 +508,55 @@ export function createOpsApp(options: OpsAppOptions = {}) {
           ...(request.query.limit !== undefined ? { limit: request.query.limit } : {}),
         }),
       ],
+    );
+
+    app.post(
+      "/v1/admin/offers",
+      { schema: { body: PutOfferRevisionBodySchema } },
+      async (request) =>
+        platformAdmin.saveOfferRevision({
+          authorizationHeader: request.headers.authorization,
+          offerId: null,
+          expectedRevision: null,
+          key: request.body.key,
+          title: request.body.title,
+          description: request.body.description,
+          skillVersionId: request.body.skillVersionId,
+          priceCredits: request.body.priceCredits,
+          fulfillmentReserveCredits: request.body.fulfillmentReserveCredits,
+          creatorCommissionCredits: request.body.creatorCommissionCredits,
+          fallbackCommissionCredits: request.body.fallbackCommissionCredits,
+          platformMarginCredits: request.body.platformMarginCredits,
+          regions: request.body.regions,
+          enabled: request.body.enabled,
+        }),
+    );
+
+    app.put(
+      "/v1/admin/offers/:offerId",
+      {
+        schema: {
+          params: OfferParamsSchema,
+          body: PutOfferRevisionBodySchema,
+        },
+      },
+      async (request) =>
+        platformAdmin.saveOfferRevision({
+          authorizationHeader: request.headers.authorization,
+          offerId: request.params.offerId,
+          expectedRevision: request.body.expectedRevision,
+          key: request.body.key,
+          title: request.body.title,
+          description: request.body.description,
+          skillVersionId: request.body.skillVersionId,
+          priceCredits: request.body.priceCredits,
+          fulfillmentReserveCredits: request.body.fulfillmentReserveCredits,
+          creatorCommissionCredits: request.body.creatorCommissionCredits,
+          fallbackCommissionCredits: request.body.fallbackCommissionCredits,
+          platformMarginCredits: request.body.platformMarginCredits,
+          regions: request.body.regions,
+          enabled: request.body.enabled,
+        }),
     );
 
     app.put(
