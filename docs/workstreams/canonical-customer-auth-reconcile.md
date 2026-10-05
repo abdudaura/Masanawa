@@ -31,4 +31,12 @@ Canonical direction:
 5. Billing/crypto keep using the same session authorizer already present on the live billing branch.
 6. Live deployment integration will be done from the current billing source lineage, not by replacing it with main.
 
-Status: claim published before reconciliation edits.
+Status:
+- implementation complete on PR #132;
+- duplicate Supabase production auth removed in favor of canonical PlatformSession;
+- Agent/directory/creator/commerce authorization now derives from the same durable customer session used by billing;
+- mobile first-signup name capture and server-advertised OTP channels reconciled;
+- automatic API/Agent access-token rotation from #131 preserved;
+- GitHub runs 37250297290 (Foundation CI) and 37250297293 (Mobile Build) failed before step 1 with `steps: null` and no logs, so no compiler/test command executed;
+- strict source/import audit found and fixed a billing-only `financial_service.ts` dependency that is absent from main; all new module imports now resolve inside main;
+- live Railway integration must be applied from the latest active billing branch rather than replacing it with main.
