@@ -1345,6 +1345,20 @@ class AdminApi {
     return AdminWorld.fromJson(_map(response.data));
   }
 
+  Future<AdminApproval> decideApproval(
+    AdminApproval approval,
+    String decision,
+  ) async {
+    final response = await _request(
+      () => _dio.post<dynamic>(
+        '/v1/admin/approvals/${Uri.encodeComponent(approval.approvalId)}/decision',
+        options: _auth,
+        data: {'decision': decision},
+      ),
+    );
+    return AdminApproval.fromJson(_map(response.data));
+  }
+
   Future<List<AdminApproval>> approvals() async {
     final response = await _request(
       () => _dio.get<dynamic>('/v1/admin/approvals', options: _auth),
