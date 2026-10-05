@@ -22,6 +22,13 @@ void main() {
     );
   });
 
+  test('owner request notification opens the Activity tab', () {
+    expect(
+      shellDeepLinkRoute(Uri.parse('masanawa://activity')),
+      '/home?tab=activity',
+    );
+  });
+
   test('rejects foreign schemes, credentials, ports and malformed identities', () {
     for (final raw in [
       'https://chat/character_abc',
@@ -38,6 +45,8 @@ void main() {
       'masanawa://chat/character_abc/extra',
       'masanawa://twin/ab',
       'masanawa://twin/amina/bello',
+      'masanawa://activity/extra',
+      'masanawa://activity?request=secret',
     ]) {
       expect(shellDeepLinkRoute(Uri.parse(raw)), isNull, reason: raw);
     }
