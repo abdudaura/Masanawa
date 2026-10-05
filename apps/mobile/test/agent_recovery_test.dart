@@ -378,7 +378,7 @@ void main() {
       final c = ProviderContainer(
         overrides: [
         agentTransportProvider.overrideWithValue(transport),
-        sessionProvider.overrideWith(_SignedInSessionController.new),
+        sessionProvider.overrideWith(_SignedOutSessionController.new),
       ],
       );
       addTearDown(c.dispose);
