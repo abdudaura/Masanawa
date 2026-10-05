@@ -24,6 +24,12 @@ export {
   type NowPaymentsReadOnlyProbeResult,
 } from "./probe.js";
 export {
+  normalizeCreateInvoiceInput,
+  parseCreatedInvoice,
+  type CreateNowPaymentsInvoiceInput,
+  type NowPaymentsCreatedInvoice,
+} from "./invoice.js";
+export {
   normalizeCreatePaymentInput,
   parseCreatedPayment,
   type CreateNowPaymentsPaymentInput,
