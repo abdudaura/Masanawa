@@ -49,6 +49,19 @@ class SessionVerifying extends SessionState {
   final String identifier;
 }
 
+class SessionNameRequired extends SessionState {
+  const SessionNameRequired(
+    this.channel,
+    this.identifier,
+    this.code, {
+    this.message,
+  });
+  final OtpChannel channel;
+  final String identifier;
+  final String code;
+  final String? message;
+}
+
 class SessionSignedIn extends SessionState {
   const SessionSignedIn(this.user, this.tokens);
   final AuthUser user;
@@ -137,6 +150,21 @@ class SessionController extends Notifier<SessionState> {
     } catch (e) {
       final err =
           e is ApiException ? e : const ApiException('Could not verify code');
+      if (err.code == 'NAME_REQUIRED_ON_SIGNUP') {
+        state = SessionNameRequired(channel, identifier, code);
+        return;
+      }
+      if (name != null &&
+          err.code != 'OTP_INVALID' &&
+          err.code != 'OTP_LOCKED') {
+        state = SessionNameRequired(
+          channel,
+          identifier,
+          code,
+          message: err.message,
+        );
+        return;
+      }
       state = SessionError(
         err.message,
         code: err.code,
@@ -153,31 +181,6 @@ class SessionController extends Notifier<SessionState> {
   }) {
     if (state is SessionError) {
       state = SessionAwaitingOtp(channel, identifier, resendInSeconds);
-    }
-  }
-
-  Future<void> updateProfile({required String name}) async {
-    final current = state;
-    if (current is! SessionSignedIn) {
-      state = const SessionSignedOut();
-      return;
-    }
-    try {
-      final user = await ref.read(apiClientProvider).updateProfile(name: name);
-      final tokens = AuthTokens(
-        accessToken: current.tokens.accessToken,
-        refreshToken: current.tokens.refreshToken,
-        accessExpiresIn: current.tokens.accessExpiresIn,
-        user: user,
-      );
-      await _persist(tokens);
-      state = SessionSignedIn(user, tokens);
-    } catch (e) {
-      final err =
-          e is ApiException ? e : const ApiException('Could not update profile');
-      // A profile write failure does not invalidate the verified login.
-      state = current;
-      throw err;
     }
   }
 
