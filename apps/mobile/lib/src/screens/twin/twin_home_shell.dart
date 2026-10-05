@@ -27,7 +27,7 @@ class TwinHomeShell extends ConsumerStatefulWidget {
 }
 
 class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
-  late int _index = widget.initialIndex.clamp(0, 3);
+  late int _index = widget.initialIndex.clamp(0, 3).toInt();
 
   void _openTwin(TwinDirectoryEntry twin) {
     context.push('/chat/${Uri.encodeComponent(twin.characterId)}');
@@ -47,11 +47,13 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
       builder: (sheetContext) => TwinShareSheet(
         displayName: profile.displayName,
         publicUrl: url,
-        onShare: (value) => SharePlus.instance.share(
-          ShareParams(
-            text: 'Talk to ${profile.displayName} on Masanawa: $value',
-          ),
-        ),
+        onShare: (value) async {
+          await SharePlus.instance.share(
+            ShareParams(
+              text: 'Talk to ${profile.displayName} on Masanawa: $value',
+            ),
+          );
+        },
       ),
     );
   }
