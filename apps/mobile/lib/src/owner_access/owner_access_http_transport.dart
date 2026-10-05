@@ -69,6 +69,18 @@ class GatewayOwnerAccessTransport implements OwnerAccessTransport {
   }
 
   @override
+  Future<OwnerAccessRequest?> latest({
+    required String characterId,
+  }) async {
+    final response = await api.dio.get<dynamic>(
+      '/agent/twin/owner-access/latest',
+      queryParameters: {'characterId': characterId},
+    );
+    if (response.data == null) return null;
+    return OwnerAccessRequest.fromJson(_map(response.data));
+  }
+
+  @override
   Future<OwnerAccessRequest> act({
     required String characterId,
     required String requestId,
