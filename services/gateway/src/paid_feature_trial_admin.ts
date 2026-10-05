@@ -105,7 +105,7 @@ export function createPaidFeatureTrialAdminService(input: {
         revision: 0,
         enabled: true,
         durationDays: 7,
-        maxUnits: null,
+        maxUnits: key === "owner-access" ? 1 : null,
         effectiveAt: now().toISOString(),
       });
     },
