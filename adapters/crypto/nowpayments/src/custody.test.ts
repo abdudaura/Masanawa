@@ -24,6 +24,56 @@ describe("NOWPayments custody client", () => {
     expect(fetch.mock.calls[0]?.[0]).toBe("https://api.nowpayments.io/v1/balance");
   });
 
+  it("recovers one hosted-invoice payment by exact order and invoice identity", async () => {
+    const payment = {
+      payment_id: "payment-1",
+      invoice_id: "invoice-1",
+      order_id: "tenant.request",
+      payment_status: "finished",
+    };
+    const fetch = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ token: "fixture-jwt" })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [payment] })));
+
+    await expect(client(fetch).findPaymentEvidence({
+      orderId: "tenant.request",
+      invoiceId: "invoice-1",
+    })).resolves.toEqual(payment);
+
+    const request = fetch.mock.calls[1];
+    const url = new URL(String(request?.[0]));
+    expect(url.pathname).toBe("/v1/payment/");
+    expect(url.searchParams.get("limit")).toBe("100");
+    expect(url.searchParams.get("page")).toBe("0");
+    expect((request?.[1]?.headers as Record<string, string>).authorization)
+      .toBe("Bearer fixture-jwt");
+  });
+
+  it("fails closed when hosted-invoice payment lookup is absent or ambiguous", async () => {
+    const noMatchFetch = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ token: "fixture-jwt" })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: [{ payment_id: "other", invoice_id: "other", order_id: "tenant.request" }],
+      })));
+    await expect(client(noMatchFetch).findPaymentEvidence({
+      orderId: "tenant.request",
+      invoiceId: "invoice-1",
+    })).resolves.toBeNull();
+
+    const ambiguousFetch = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ token: "fixture-jwt" })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: [
+          { payment_id: "payment-1", invoice_id: "invoice-1", order_id: "tenant.request" },
+          { payment_id: "payment-2", invoice_id: "invoice-1", order_id: "tenant.request" },
+        ],
+      })));
+    await expect(client(ambiguousFetch).findPaymentEvidence({
+      orderId: "tenant.request",
+      invoiceId: "invoice-1",
+    })).rejects.toThrow("nowpayments.payment_lookup.ambiguous");
+  });
+
   it.each(["10.000000000000000001", "9007199254740993"])(
     "rejects lossy conversion amount before authentication: %s",
     async (amount) => {
