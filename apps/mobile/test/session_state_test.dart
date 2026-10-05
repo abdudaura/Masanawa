@@ -78,6 +78,28 @@ void main() {
     createdAt: '2026-08-13T00:00:00Z',
   );
 
+  test('auth capabilities expose only server-configured OTP channels', () async {
+    adapter.respond('/auth/capabilities', {
+      'otpChannels': ['email'],
+    });
+
+    final channels = await api.authOtpChannels();
+
+    expect(channels, [OtpChannel.email]);
+    expect(adapter.requests.last, 'GET /auth/capabilities');
+  });
+
+  test('auth capabilities reject an invalid contract shape', () async {
+    adapter.respond('/auth/capabilities', {
+      'otpChannels': 'email',
+    });
+
+    await expectLater(
+      api.authOtpChannels(),
+      throwsA(isA<ApiException>()),
+    );
+  });
+
   test('sendOtp (phone) transitions signedOut → sending → awaitingOtp', () async {
     adapter.respond('/auth/otp', {'phone': phone, 'resendInSeconds': 300});
     final container = makeContainer();
