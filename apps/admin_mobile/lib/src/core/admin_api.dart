@@ -181,6 +181,7 @@ class AdminCharacter {
     required this.visibleInUserApp,
     required this.displayName,
     required this.roleLabel,
+    required this.ownershipKind,
     required this.updatedAt,
   });
 
@@ -192,6 +193,7 @@ class AdminCharacter {
   final bool? visibleInUserApp;
   final String? displayName;
   final String? roleLabel;
+  final String? ownershipKind;
   final String updatedAt;
 
   factory AdminCharacter.fromJson(Map<String, dynamic> json) => AdminCharacter(
@@ -203,6 +205,7 @@ class AdminCharacter {
         visibleInUserApp: json['visibleInUserApp'] as bool?,
         displayName: json['displayName'] as String?,
         roleLabel: json['roleLabel'] as String?,
+        ownershipKind: json['ownershipKind'] as String?,
         updatedAt: json['updatedAt'] as String,
       );
 }
@@ -234,6 +237,37 @@ class AdminUser {
         updatedAt: json['updatedAt'] as String,
         identityCount: json['identityCount'] as int? ?? 0,
         relationshipCount: json['relationshipCount'] as int? ?? 0,
+      );
+}
+
+class AdminRelationship {
+  const AdminRelationship({
+    required this.relationshipId,
+    required this.userId,
+    required this.characterId,
+    required this.state,
+    required this.revision,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  final String relationshipId;
+  final String userId;
+  final String characterId;
+  final String state;
+  final int revision;
+  final String createdAt;
+  final String updatedAt;
+
+  factory AdminRelationship.fromJson(Map<String, dynamic> json) =>
+      AdminRelationship(
+        relationshipId: json['relationshipId'] as String,
+        userId: json['userId'] as String,
+        characterId: json['characterId'] as String,
+        state: json['state'] as String,
+        revision: json['revision'] as int,
+        createdAt: json['createdAt'] as String,
+        updatedAt: json['updatedAt'] as String,
       );
 }
 
@@ -906,6 +940,19 @@ class AdminApi {
     );
     return _list(response.data)
         .map((item) => AdminUser.fromJson(_map(item)))
+        .toList(growable: false);
+  }
+
+
+  Future<List<AdminRelationship>> userRelationships(String userId) async {
+    final response = await _request(
+      () => _dio.get<dynamic>(
+        '/v1/admin/users/${Uri.encodeComponent(userId)}/relationships',
+        options: _auth,
+      ),
+    );
+    return _list(response.data)
+        .map((item) => AdminRelationship.fromJson(_map(item)))
         .toList(growable: false);
   }
 
