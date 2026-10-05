@@ -99,8 +99,18 @@ export function createPostgresTwinProfileRepository(
              'twin_' || substr(md5(s.result->>'characterId'), 1, 20),
              left(btrim(s.profile->>'displayName'), 80),
              left(coalesce(s.profile->>'biography', ''), 500),
-             coalesce(s.profile->'expertise', '[]'::jsonb),
-             s.profile->'languages',
+             (
+               SELECT coalesce(jsonb_agg(value ORDER BY ordinality), '[]'::jsonb)
+                 FROM jsonb_array_elements(coalesce(s.profile->'expertise', '[]'::jsonb))
+                      WITH ORDINALITY AS interest(value, ordinality)
+                WHERE ordinality <= 20
+             ),
+             (
+               SELECT coalesce(jsonb_agg(value ORDER BY ordinality), '[]'::jsonb)
+                 FROM jsonb_array_elements(s.profile->'languages')
+                      WITH ORDINALITY AS language(value, ordinality)
+                WHERE ordinality <= 12
+             ),
              NULL,
              false,
              1,
