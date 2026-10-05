@@ -96,6 +96,7 @@ export interface ServiceDatabaseDependency {
   readonly characterVersions?: CharacterVersionReferenceReader;
   readonly skills?: SkillRepository;
   readonly platformSessions?: PlatformSessionRepository;
+  readonly adminAgentApprovalCommands?: AdminAgentApprovalCommands;
   readonly offerCommands?: PlatformAdminOfferCommands;
   readonly credentialCommands?: PlatformAdminCredentialCommands;
   readonly receiptReader?: PlatformAdminReceiptReader;
@@ -500,6 +501,7 @@ function createDefaultDatabaseDependency(
       createPostgresCharacterVersionReferenceReader(database.pool),
     skills,
     platformSessions,
+    adminAgentApprovalCommands,
     offerCommands,
     credentialCommands,
     receiptReader,
@@ -598,9 +600,7 @@ export async function startOpsService(
           config: adminAgentDelegationConfig,
           authorizer: adminAuthorizer,
           platformAdmin: composedPlatformAdmin,
-          approvalCommands: database.platformAdminDatabase
-            ? adminAgentApprovalCommands
-            : undefined,
+          approvalCommands: database.adminAgentApprovalCommands,
         })
       : undefined);
 
