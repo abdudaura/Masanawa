@@ -795,6 +795,103 @@ describe("billing service qualification policy", () => {
 });
 
 describe("billing refund safety", () => {
+  it("allows exactly one refund POST when two requests race from refund-pending", async () => {
+    const owner = identity();
+    const quotes = new MemoryQuotes();
+    const createdAt = "2026-10-04T20:00:00.000Z";
+    quotes.quote = Object.freeze({
+      schemaVersion: 1 as const,
+      tenantId: owner.tenantId,
+      userId: owner.userId,
+      quoteId: createCanonicalId("quote"),
+      revision: 1,
+      categoryCode: "AIRTIME",
+      billerCode: "BIL102",
+      itemCode: "AT102",
+      itemName: "MTN Airtime",
+      customerId: "+2348012345678",
+      serviceAmountKobo: 10000,
+      feeAmountKobo: 0,
+      totalAmountKobo: 10000,
+      currency: "NGN" as const,
+      state: "refund-pending" as const,
+      confirmedAt: createdAt,
+      expiresAt: "2026-10-04T21:00:00.000Z",
+      checkoutTxRef: "bill-test-r1",
+      checkoutUrl: "https://checkout.flutterwave.com/v3/hosted/pay/test",
+      providerTransactionId: "44",
+      providerReference: "FLW-PAY-44",
+      billProviderReference: "BILL-FAILED-1",
+      paymentVerifiedAt: createdAt,
+      fulfillmentReference: "bill-fulfillment-1",
+      settlementState: "failed" as const,
+      refundReference: null,
+      createdAt,
+      updatedAt: createdAt,
+    });
+
+    let refundPosts = 0;
+    let refundQueries = 0;
+    const transport: FlutterwaveBillsTransport = {
+      async request(request) {
+        if (request.method === "GET" && request.path === "/v3/refunds") {
+          refundQueries += 1;
+          return { status: 200, body: { status: "success", data: [] } };
+        }
+        if (
+          request.method === "POST" &&
+          request.path === "/v3/transactions/44/refund"
+        ) {
+          refundPosts += 1;
+          await Promise.resolve();
+          return {
+            status: 200,
+            body: {
+              status: "success",
+              data: {
+                id: "refund-44",
+                flw_ref: "REFUND-44",
+                status: "completed-bank-transfer",
+                amount_refunded: "100",
+              },
+            },
+          };
+        }
+        throw new Error(`unexpected provider call ${request.method} ${request.path}`);
+      },
+    };
+    const service = createBillingCheckoutService({
+      sessions: { async authorize() { return owner; } },
+      quotes,
+      catalog: new FlutterwaveBillsClient({
+        secretKey: "secret",
+        transport,
+        country: "NG",
+      }),
+      funding: new FlutterwaveFundingClient({ secretKey: "secret", transport }),
+      billing: billing(quotes),
+      actionSecret: "a".repeat(48),
+      redirectUrl: "https://app.masanawa.com/billing/return",
+      now: () => "2026-10-04T20:10:00.000Z",
+    });
+
+    const [left,right] = await Promise.all([
+      service.read({
+        authorizationHeader: "Bearer session",
+        quoteId: quotes.quote.quoteId,
+      }),
+      service.read({
+        authorizationHeader: "Bearer session",
+        quoteId: quotes.quote.quoteId,
+      }),
+    ]);
+
+    expect(refundPosts).toBe(1);
+    expect(refundQueries).toBeLessThanOrEqual(1);
+    expect([left.quote.state,right.quote.state]).toContain("refunded");
+    expect(quotes.quote.state).toBe("refunded");
+  });
+
   it("never emits a second refund POST from a pre-existing unknown dispatch", async () => {
     const owner = identity();
     const quotes = new MemoryQuotes();
