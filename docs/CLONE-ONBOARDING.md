@@ -158,3 +158,13 @@ Nine bridge regressions pass, including exact recovery, stale preview, forged/cr
 actions, expiry, hidden-field injection, support selection and current parser bounds.
 The SQL qualification also caught and closed SQL CHECK’s NULL-preview-revision escape;
 noncanonical confirmation RequestIds are rejected directly by the database.
+
+## Mobile draft/review continuation
+
+The existing clone setup screen now reads the authenticated saved setup before allowing mutations. It saves profile changes, requests a server preview, and requires a separate explicit confirmation. A confirmed setup is immutable in the screen and resumes with the server-persisted request ID. An ambiguous failure requires a saved-status reload; a matching unchanged preview reuses the same pending confirmation ID. Account changes dispose the controller and discard late responses and private form contents. The transport reuses ApiClient's bearer/refresh interceptor, disables redirects, and validates response state and canonical clone IDs. It never calls the legacy one-shot creation endpoint.
+
+The screen says creation succeeded only after a canonical ready result, and does not claim runtime capabilities are verified. Directory refresh precedes opening the canonical clone conversation. This flow still requires composition of the existing clone-onboarding registrar in the shared Gateway; missing registration is a recoverable error, not a locally fabricated draft.
+
+Validation on main a97df254ff04c717e940a7c86f4b5824dea7629d plus owned changes: 49 focused backend tests pass. Mobile DTO/controller/transport tests run against the same source in a standalone Dart harness (only flutter_test imports replaced with package:test); this is not a Flutter widget or device pass. User-owned APK/device verification remains separate.
+
+Current-main full typecheck is blocked by pre-existing imports of missing Agents inference/context/selection/inference_limits and Gateway native_audio files, plus customer_auth's unresolved FinancialAuthorizer. These files belong to active runtime/shared-auth windows and were not added or modified here. Earlier 85-test/typecheck evidence was on the previous isolated baseline and does not establish that current main compiles.

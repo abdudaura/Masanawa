@@ -67,3 +67,8 @@ Additional exact owned paths:
 - apps/mobile/test/clone_onboarding_transport_test.dart
 
 Replace direct one-shot clone creation with saved draft/review/exact-confirm/resume/open flow. Use the existing normal ApiClient session/interceptor and RequestId helper. Do not edit shared providers, session state, router, masanawa_transport.dart, Gateway app/main, crypto finance, billing or admin files. Required service registration still belongs to shared composition; keep the registrar/appFactory seam usable and publish precise integration dependency.
+
+
+## Implemented mobile continuation
+
+Implemented the six claimed mobile files: authenticated saved draft, editable profile, server preview, explicit exact confirmation, interrupted-confirmation recovery, canonical clone opening and account-scoped disposal. No shared session/provider/router/composition source changed. Current-main focused backend checks: 49 tests pass. Standalone Dart source checks cover confirmation and transport behavior; Flutter/device and native separate-session PostgreSQL acceptance remain open. Full current-main typecheck is blocked by existing missing runtime files and unresolved shared auth types; do not describe the current branch as production-ready or all seven priorities complete.
