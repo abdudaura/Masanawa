@@ -1,5 +1,20 @@
 # Digital Commerce Launch and Scope Review
 
+## Twin economy commerce overlay — 2026-10-05
+
+`docs/PRODUCT-TWIN-ECONOMY.md` defines the consumer-facing product around one personal
+twin per user. Billing and crypto remain platform capabilities but should appear through
+the Wallet and any eligible twin conversation rather than as a competing product identity.
+
+The originating twin may receive configurable attribution/commission on qualifying real
+external funding or eligible purchases. Internal Credit transfers and gifts move existing
+value and do not themselves generate acquisition commission. Public twin text is free;
+paid twin voice and paid human-owner access use separate deterministic Commerce quotes,
+holds/reservations, settlement and refund rules.
+
+Older creator-funded-execution/Agent-Float requirements may remain internal where current
+Commerce needs them, but Agent Float is no longer a primary ordinary-user concept.
+
 Status: canonical launch-planning overlay, ratified provider/UX direction 2026-10-04.
 This document narrows launch priority, not the architecture or completed foundations.
 Broader scope decisions marked proposed require the user's decision; do not silently
