@@ -21,6 +21,41 @@ class AdminApiException implements Exception {
   String toString() => message;
 }
 
+
+class AdminAgentDelegate {
+  const AdminAgentDelegate({
+    required this.characterId,
+    required this.label,
+    required this.purpose,
+    required this.autonomy,
+    required this.capabilities,
+    required this.enabled,
+    required this.approvalRequiredForWrites,
+  });
+
+  final String characterId;
+  final String label;
+  final String purpose;
+  final String autonomy;
+  final List<String> capabilities;
+  final bool enabled;
+  final bool approvalRequiredForWrites;
+
+  factory AdminAgentDelegate.fromJson(Map<String, dynamic> json) =>
+      AdminAgentDelegate(
+        characterId: json['characterId'] as String,
+        label: json['label'] as String,
+        purpose: json['purpose'] as String? ?? 'Platform administration',
+        autonomy: json['autonomy'] as String? ?? 'confirm-writes',
+        capabilities: (json['capabilities'] as List<dynamic>? ?? const [])
+            .map((value) => value.toString())
+            .toList(growable: false),
+        enabled: json['enabled'] as bool? ?? true,
+        approvalRequiredForWrites:
+            json['approvalRequiredForWrites'] as bool? ?? true,
+      );
+}
+
 class AgentPresentation {
   const AgentPresentation({
     required this.characterId,
@@ -770,6 +805,27 @@ class AdminApi {
   final Dio _dio;
 
   Options get _auth => Options(headers: {'Authorization': 'Bearer $_token'});
+
+  String get currentAccessToken => _token;
+
+  Future<String?> refreshForExternalClient() async {
+    final refreshed = await refreshAccessToken?.call();
+    if (refreshed != null && refreshed.trim().isNotEmpty) {
+      _token = refreshed.trim();
+      return _token;
+    }
+    return null;
+  }
+
+
+  Future<List<AdminAgentDelegate>> adminDelegates() async {
+    final response = await _request(
+      () => _dio.get<dynamic>('/v1/admin/delegates', options: _auth),
+    );
+    return _list(response.data)
+        .map((item) => AdminAgentDelegate.fromJson(_map(item)))
+        .toList(growable: false);
+  }
 
   Future<void> health() async {
     await _request(() => _dio.get<dynamic>('/healthz', options: _auth));
