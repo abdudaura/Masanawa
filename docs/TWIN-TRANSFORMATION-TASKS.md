@@ -8,12 +8,12 @@ after implementation and relevant acceptance evidence are merged to `main`.
 
 ## Product truth and coordination
 
-- [ ] **TWIN-001** Merge Product Twin Economy canonical overlay and cross-doc alignment.
-- [ ] **TWIN-002** Merge master transformation plan, screen spec, economy contracts and
+- [x] **TWIN-001** Merge Product Twin Economy canonical overlay and cross-doc alignment.
+- [x] **TWIN-002** Merge master transformation plan, screen spec, economy contracts and
   multi-window ownership map.
 - [ ] **TWIN-003** Remove contradictory user-facing reseller/paid-AI-work assumptions
   from active product docs while preserving internal commerce invariants.
-- [ ] **TWIN-004** Add architecture tests/doc gates preventing a second wallet, clone
+- [x] **TWIN-004** Add architecture tests/doc gates preventing a second wallet, clone
   runtime, marketplace service or social-post subsystem.
 
 ## Twin identity, customization and public profile
