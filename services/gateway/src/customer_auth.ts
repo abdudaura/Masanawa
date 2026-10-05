@@ -376,7 +376,7 @@ export function createPlatformCustomerSessionAuthorizer(input: Readonly<{
 export function createPlatformSessionFinancialAuthorizer(input: Readonly<{
   repository: PlatformSessionRepository;
   now?: () => string;
-}>): FinancialAuthorizer {
+}>): PlatformFinancialAuthorizer {
   const now = input.now ?? (() => new Date().toISOString());
   return Object.freeze({
     async authorize(request: Parameters<PlatformFinancialAuthorizer["authorize"]>[0]) {
@@ -502,7 +502,7 @@ export function createPlatformCustomerAuthorizers(input: Readonly<{
   }
 
   const directory: AgentDirectoryAuthorizer = Object.freeze({
-    async authorize(request) {
+    async authorize(request: Parameters<AgentDirectoryAuthorizer["authorize"]>[0]) {
       const identity = await session(request.authorizationHeader);
       return Object.freeze({
         tenantId: identity.tenantId,
@@ -516,7 +516,7 @@ export function createPlatformCustomerAuthorizers(input: Readonly<{
   });
 
   const conversation: AgentConversationAuthorizer = Object.freeze({
-    async authorize(request): Promise<AgentConversationAdmission> {
+    async authorize(request: Parameters<AgentConversationAuthorizer["authorize"]>[0]): Promise<AgentConversationAdmission> {
       const identity = await session(request.authorizationHeader);
       const characterId = parseCanonicalId("character", request.characterId);
       const presentation = await input.presentations.readForCharacter({
@@ -603,7 +603,7 @@ export function createPlatformCustomerAuthorizers(input: Readonly<{
   });
 
   const creator: CreatorCloneAuthorizer = Object.freeze({
-    async authorize(request) {
+    async authorize(request: Parameters<CreatorCloneAuthorizer["authorize"]>[0]) {
       const identity = await session(request.authorizationHeader);
       return Object.freeze({
         tenantId: identity.tenantId,
@@ -613,7 +613,7 @@ export function createPlatformCustomerAuthorizers(input: Readonly<{
   });
 
   const commerce: CommerceUserAuthorizer = Object.freeze({
-    async authorize(request) {
+    async authorize(request: Parameters<CommerceUserAuthorizer["authorize"]>[0]) {
       const identity = await session(request.authorizationHeader);
       return Object.freeze({
         tenantId: identity.tenantId,
