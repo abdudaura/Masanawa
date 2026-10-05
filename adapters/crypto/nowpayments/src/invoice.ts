@@ -3,8 +3,8 @@ export interface CreateNowPaymentsInvoiceInput {
   readonly priceCurrency: string;
   /**
    * For NOWPayments fiat on-ramp this is the fiat currency the customer pays.
-   * The crypto settlement currency is merchant-account configured and is
-   * verified later from outcome_currency before Masanawa credits the user.
+   * payoutCurrency binds the hosted invoice to Masanawa's configured custody
+   * settlement asset; final outcome_currency is still verified before credit.
    */
   readonly payCurrency: string;
   readonly payoutCurrency: string;
