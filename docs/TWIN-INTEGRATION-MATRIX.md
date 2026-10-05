@@ -11,13 +11,14 @@ active workstreams.
 
 | PR | Workstream | Current status | Why integration must coordinate |
 | --- | --- | --- | --- |
-| #133 | production crypto integration | open | owns crypto repository/provider/runtime paths |
+| #126 | legacy billing hardening | open | do not overlap provider/billing-storage paths while it remains open; #136 owns current shared Twin/Gateway/mobile integration |
+| #133 | production crypto integration | closed / superseded | its required production crypto line was reconciled into #136; do not revive the branch |
 | #134 | customer billing integration | closed / superseded | billing work was reconciled into #136; do not revive this stale branch |
-| #136 | production Gateway/APK readiness | open | owns Gateway app/main, mobile router/chat/settings and production wiring |
+| #136 | production Gateway/APK readiness | open | single owner for shared Twin Gateway/mobile composition and production qualification |
 
-All isolated Twin feature PRs listed below are now merged to `main`. Until #133 and
-#136 merge or explicitly transfer ownership, the remaining Twin work is shared
-integration/persistence/production qualification, not another parallel feature lane.
+All isolated Twin feature PRs listed below are now merged to `main`. The remaining Twin
+work belongs to #136 unless a path is still explicitly owned by an active provider
+workstream such as #126. Do not start another parallel Twin feature lane.
 
 ## Twin feature PRs
 
@@ -66,12 +67,16 @@ Do not integrate all files in one undifferentiated merge.
 Merged foundations: #148 profile/memory, #142 Explore backend, #145 My Twin mobile,
 #146 Explore mobile, #159 admission rule and #171 My Twin backend projection.
 
-Remaining shared-owner work:
-1. compose profile and Explore services through the existing Gateway;
-2. bind authenticated mobile transports;
-3. add public link/deep-link -> Twin conversation;
-4. invoke #159 admission from the existing chat/Live runtime;
-5. preserve the existing Character/Relationship identity when adopting legacy clones.
+Current #136 implementation:
+1. profile, Explore and My Twin are composed through the existing Gateway;
+2. authenticated mobile transports are bound to the production platform session;
+3. canonical HTTPS Twin share links and Android/app deep links resolve through the
+   privacy-aware directory before opening chat;
+4. free public text and paid-voice admission are integrated with the existing chat/Live
+   runtime.
+
+Remaining work is qualification plus any explicit legacy-clone identity adoption needed
+by real production data; do not create replacement Character/Relationship identities.
 
 ### Phase 2 — Events and projections
 Merged foundations: #157 event vocabulary, #138 Activity, #155 Wallet projection and
@@ -87,43 +92,73 @@ Remaining shared-owner work:
 Merged foundations: #149 abuse guards, #150 transfers/gifts and #152
 attribution/commission.
 
-Remaining shared-owner work:
-1. add append-only persistence for transfer/gift commands and receipts;
-2. wire abuse guards into the financial commands;
-3. persist attribution and configurable commission policy;
-4. hook real external funding and eligible billing/crypto purchases to attribution;
-5. post commission only after canonical provider success and reverse it on qualifying reversal;
-6. emit durable events and expose them through Activity/Wallet.
+Current #136 implementation:
+1. Credit transfer/gift commands and receipts use durable replay-safe persistence;
+2. abuse/circular-value guards are composed into the financial commands;
+3. attribution and configurable commission policy are persisted;
+4. commission settlement/reversal uses stable ledger plans and crash-safe replay;
+5. durable Twin economy events feed Activity/Wallet.
+
+Still unresolved: real Flutterwave/NOWPayments provider amounts cannot be passed directly
+to the Credit-denominated commission engine. Canonical Commerce explicitly states NGN
+billing amounts are not AI Credits, and the product docs keep fiat/crypto principal
+separate from Credits/earnings. No approved NGN/crypto -> commission-Credit valuation
+contract exists. Therefore provider-success attribution/commission hooks must remain
+disabled/unwired until an explicit commercial valuation policy is introduced; never
+invent an exchange rate in Gateway code.
 
 ### Phase 4 — Paid voice
 Merged foundations: #139 trial/voice contracts + UI and #159 admission.
 
-Remaining shared-owner work:
-1. persist trial-policy revisions and paid-voice quotes/admissions;
-2. gate existing Live token minting through #159 + valid #139 admission;
-3. capture server/provider usage evidence;
-4. settle verified usage through canonical Commerce;
-5. emit voice completion/refund/earning events;
-6. integrate the paid-voice quote sheet into existing chat.
+Current #136 implementation:
+1. trial-policy revisions, quotes and admissions are durable;
+2. personal-Twin Live token minting requires a valid admission;
+3. token minting no longer starts billing: the mobile Live session waits for Gemini
+   `setupComplete` plus microphone streaming, then sends an authenticated media-start
+   signal and the server records the start timestamp;
+4. settlement duration is server-timed, capped to the accepted quote duration and cannot
+   exceed the reserved spend cap;
+5. paid no-media/interrupted paths refund unused reservation, trial no-media consumes no
+   units, and stable ledger plans make settlement replay-safe;
+6. completion/refund/earning events and the quote/consent chat UI are wired.
+
+Remaining work is compile/device/production qualification. The current Gemini direct-live
+path does not expose an independent provider usage callback, so the evidence boundary is
+an authenticated connected-media signal plus server timestamps rather than a claimed
+provider metering feed.
 
 ### Phase 5 — Paid real-owner access
 Merged foundation: #141 owner access contracts/runtime/UI.
 
-Remaining shared-owner work:
-1. persist owner offerings + request state;
-2. connect canonical Commerce reservation/release/settlement;
-3. add expiry/no-show timers using existing scheduling primitives;
-4. connect verified attendance evidence and notifications;
-5. emit owner-access events;
-6. integrate Request Owner / manage/status sheets into chat and My Twin.
+Current #136 implementation:
+1. owner offerings, quotes and requests are durable;
+2. paid reservations are ledger-first, replay-safe and settle/refund through canonical
+   Commerce;
+3. request expiry and scheduled no-show state/refunds are implemented when lifecycle
+   state is evaluated;
+4. owner/requester FCM notifications reuse the existing mobile-push registration/sender;
+5. owner-access events feed Activity with durable request references and latest-status
+   deduplication;
+6. Activity lets owners accept/decline/schedule/start/complete; chat lets requesters
+   resume/cancel the latest durable request after restart;
+7. Human Access configuration now lives in My Twin rather than legacy creator Settings.
+
+Still required: proactive expiry/no-show sweeping (rather than relying only on reads),
+stronger human attendance evidence if a real person-to-person media/session primitive is
+available, dispute/reconciliation policy, and production/device qualification.
 
 ### Phase 6 — Mobile simplification
-After active APK/billing/crypto ownership is reconciled:
-- switch root navigation to My Twin / Explore / Activity / Wallet;
-- remove creator economy / Agent Float prominence from Settings;
-- remove ordinary Skill-management entry points;
-- keep billing/crypto as Wallet/chat capabilities;
-- add #161 identity banner + compact actions sheet to chat.
+Current #136 implementation:
+- root navigation is My Twin / Explore / Activity / Wallet;
+- Creator economy, Agent Float and ordinary Skill-management controls are removed from
+  customer Settings;
+- Twin discovery and Human Access controls live under My Twin;
+- billing/crypto remain Wallet capabilities;
+- chat keeps the explicit AI-Twin identity and compact Twin actions while dead legacy
+  Agents/video header controls were removed.
+
+Remaining work is responsive/accessibility/low-end Android qualification and any cleanup
+found by the exact-head Flutter analyzer/device run.
 
 ## Shared files — single-owner integration only
 
