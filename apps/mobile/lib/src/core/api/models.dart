@@ -11,6 +11,27 @@ library;
 /// OTP delivery channels. Mirrors `OtpChannel` in the API's otp.service.
 enum OtpChannel { sms, email }
 
+class AuthCapabilities {
+  const AuthCapabilities({required this.otpChannels});
+
+  factory AuthCapabilities.fromJson(Map<String, dynamic> json) {
+    final raw = json['otpChannels'];
+    final channels = <OtpChannel>[];
+    if (raw is List) {
+      for (final value in raw) {
+        if (value == 'sms' && !channels.contains(OtpChannel.sms)) {
+          channels.add(OtpChannel.sms);
+        } else if (value == 'email' && !channels.contains(OtpChannel.email)) {
+          channels.add(OtpChannel.email);
+        }
+      }
+    }
+    return AuthCapabilities(otpChannels: List.unmodifiable(channels));
+  }
+
+  final List<OtpChannel> otpChannels;
+}
+
 /// Request body for `POST /auth/otp` — exactly one channel, mirroring the
 /// contract's `exactlyOneChannel` superRefine.
 class OtpSendRequest {
