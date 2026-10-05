@@ -34,6 +34,9 @@ export interface PlatformCustomerSessionAuthorizer {
 }
 
 export interface CustomerAuthService {
+  capabilities(): Readonly<{
+    otpChannels: readonly PlatformAuthChannel[];
+  }>;
   sendOtp(input: Readonly<{ phone?: string; email?: string }>): Promise<Readonly<{
     phone?: string;
     email?: string;
@@ -149,7 +152,16 @@ export function createCustomerAuthService(input: Readonly<{
     });
   }
 
+  const otpChannels = Object.freeze([
+    ...(input.emailDelivery ? ["email" as const] : []),
+    ...(input.smsDelivery ? ["sms" as const] : []),
+  ]);
+
   return Object.freeze<CustomerAuthService>({
+    capabilities() {
+      return Object.freeze({ otpChannels });
+    },
+
     async sendOtp(request) {
       let normalized;
       try {
