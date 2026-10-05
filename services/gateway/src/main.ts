@@ -775,7 +775,7 @@ export async function startGatewayService(
     }
 
     if (database.twinProfiles && database.twinEvents) {
-      twinConversationObserver = Object.freeze({
+      twinConversationObserver = Object.freeze<TwinConversationObserver>({
         async opened(request) {
           const profile = await database.twinProfiles!.readForCharacter({
             tenantId: request.tenantId as never,
