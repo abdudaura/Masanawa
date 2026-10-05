@@ -82,7 +82,7 @@ export function createAgentConversationService(input: {
       .catch(() => undefined);
   }
 
-  return Object.freeze({
+  const service: AgentConversationService = {
     async open(request) {
       const characterId = parseCanonicalId("character", request.characterId);
       const admission = await input.authorizer.authorize({
@@ -613,5 +613,6 @@ export function createAgentConversationService(input: {
         expectedRevision: session.revision,
       });
     },
-  });
+  };
+  return Object.freeze(service);
 }
