@@ -18,6 +18,7 @@ billing, crypto, shared Gateway composition or mobile router files.
 - new `apps/mobile/lib/src/safety/twin_safety*.dart`
 - new `apps/mobile/lib/src/screens/chat/components/twin_safety*.dart`
 - focused mobile tests
+- `test/architecture/twin-product-simplicity.test.ts`
 - focused tests
 - this claim file
 
