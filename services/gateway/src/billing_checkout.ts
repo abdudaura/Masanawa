@@ -71,6 +71,18 @@ function money(kobo: number): string {
   return `₦${formatNgnKobo(kobo)}`;
 }
 
+function shellActionExpiry(quote: BillingQuote, action: string): string {
+  if (action === "billing.checkout.start") return quote.expiresAt;
+  if (action === "billing.checkout.verify") {
+    // Hosted checkout may legitimately outlive the short economic quote TTL.
+    // Keep verification actionable for 24h after the checkout was bound; the
+    // server still re-verifies exact payment and re-derives live bill terms.
+    const grace = new Date(Date.parse(quote.updatedAt) + 24 * 60 * 60 * 1000).toISOString();
+    return Date.parse(grace) > Date.parse(quote.expiresAt) ? grace : quote.expiresAt;
+  }
+  return quote.expiresAt;
+}
+
 function presentationRevision(quote: BillingQuote): number {
   // Presentation revisions are monotonic workflow stages. Economic quote
   // revision stays immutable and continues to bind money/action authority.
@@ -115,11 +127,12 @@ function documentFor(quote: BillingQuote, actionSecret: string, requireEmail = f
   ];
   if (phase === "quoted") {
     const action = "billing.checkout.start";
+    const actionExpiry = shellActionExpiry(quote,action);
     return Object.freeze({
       version: 1,
       id: documentId,
       revision: presentationRevision(quote),
-      expiresAt: expiry,
+      expiresAt: actionExpiry,
       fallback: `Confirm ${quote.itemName} for ${money(quote.totalAmountKobo)}.`,
       nodes: [
         ...base,
@@ -145,7 +158,7 @@ function documentFor(quote: BillingQuote, actionSecret: string, requireEmail = f
             secret: actionSecret,
             quote,
             action,
-            expiresAt: expiry,
+            expiresAt: actionExpiry,
           }),
         },
       ],
@@ -172,6 +185,7 @@ function documentFor(quote: BillingQuote, actionSecret: string, requireEmail = f
   ];
   if (phase === "checkout") {
     const action = "billing.checkout.verify";
+    const actionExpiry = shellActionExpiry(quote,action);
     nodes.push({
       type: "button",
       id: "verify-payment",
@@ -181,7 +195,7 @@ function documentFor(quote: BillingQuote, actionSecret: string, requireEmail = f
         secret: actionSecret,
         quote,
         action,
-        expiresAt: expiry,
+        expiresAt: actionExpiry,
       }),
     });
   }
@@ -189,7 +203,9 @@ function documentFor(quote: BillingQuote, actionSecret: string, requireEmail = f
     version: 1,
     id: documentId,
     revision: presentationRevision(quote),
-    ...(phase === "checkout" ? { expiresAt: expiry } : {}),
+    ...(phase === "checkout"
+      ? { expiresAt: shellActionExpiry(quote,"billing.checkout.verify") }
+      : {}),
     fallback: statusText,
     nodes,
   });
@@ -231,14 +247,15 @@ function verifyBillingActionToken(input: Readonly<{
   token: string;
   at: string;
 }>): void {
-  if (Date.parse(input.quote.expiresAt) <= Date.parse(input.at)) {
-    throw new Error("financial.billing.quote_expired");
+  const expiresAt = shellActionExpiry(input.quote,input.action);
+  if (Date.parse(expiresAt) <= Date.parse(input.at)) {
+    throw new Error("financial.billing.action_expired");
   }
   const expected = mintBillingActionToken({
     secret: input.secret,
     quote: input.quote,
     action: input.action,
-    expiresAt: input.quote.expiresAt,
+    expiresAt,
   });
   const left = Buffer.from(expected, "utf8");
   const right = Buffer.from(input.token, "utf8");
