@@ -86,3 +86,10 @@ Architecture protection:
 
 This partially implements TWIN-004 and should be extended, not replaced, by future
 integration work.
+
+
+Owner-session privacy:
+- recording is disabled by default;
+- if enabled by policy, requester and owner consent are both required;
+- recording retention is bounded by policy;
+- this implements the core TWIN-096 privacy rule without assuming recordings are needed.
