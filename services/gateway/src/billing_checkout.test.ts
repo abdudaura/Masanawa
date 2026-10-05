@@ -569,6 +569,7 @@ describe("billing checkout", () => {
             providerReference: "BILL-RECOVERED-1",
             providerStatus: "successful",
             lastEvidenceAt: "2026-10-04T20:03:00.000Z",
+            deliveryCode: "TOKEN-RECOVERED-123",
           };
         },
       },
@@ -606,8 +607,59 @@ describe("billing checkout", () => {
       state: "succeeded",
       billProviderReference: "BILL-RECOVERED-1",
     });
+    expect(recovered.purchase).toMatchObject({
+      state: "succeeded",
+      deliveryCode: "TOKEN-RECOVERED-123",
+    });
+    const recoveredDocument = recovered.document as {
+      nodes: Array<{ text?: string; value?: string }>;
+    };
+    expect(recoveredDocument.nodes).toContainEqual(
+      expect.objectContaining({
+        text: "Token / code",
+        value: "TOKEN-RECOVERED-123",
+      }),
+    );
     expect(reconcileCalls).toBe(1);
     expect(purchaseCalls).toBe(1);
+  });
+
+  it("lists only the authenticated customer's durable billing history", async () => {
+    const owner = identity();
+    const quotes = new MemoryQuotes();
+    const service = createBillingCheckoutService({
+      sessions: { async authorize() { return owner; } },
+      quotes,
+      catalog: new FlutterwaveBillsClient({
+        secretKey: "secret",
+        transport: providerTransport("100"),
+        country: "NG",
+      }),
+      funding: new FlutterwaveFundingClient({
+        secretKey: "secret",
+        transport: providerTransport("100"),
+      }),
+      billing: billing(quotes),
+      actionSecret: "a".repeat(48),
+      redirectUrl: "https://app.masanawa.com/billing/return",
+    });
+
+    const quoted = await service.createQuote({
+      authorizationHeader: "Bearer session",
+      categoryCode: "AIRTIME",
+      billerCode: "BIL102",
+      itemCode: "AT102",
+      customerId: "+2348012345678",
+      amount: "100",
+    });
+    const history = await service.list({
+      authorizationHeader: "Bearer session",
+      limit: 10,
+    });
+
+    expect(history).toHaveLength(1);
+    expect(history[0]?.quote.quoteId).toBe(quoted.quote.quoteId);
+    expect(history[0]?.quote.userId).toBe(owner.userId);
   });
 });
 
