@@ -11,7 +11,7 @@ import {
   type Instant,
   type TenantId,
 } from "@masanawa/contracts";
-import type { IdentityRepository } from "@masanawa/identity";
+import type { CharacterConstitution } from "@masanawa/identity";
 import type { SkillDistributionRepository } from "@masanawa/skills";
 
 interface DefaultPlatformAgentSeed {
@@ -37,6 +37,16 @@ const DEFAULT_PLATFORM_AGENTS: readonly DefaultPlatformAgentSeed[] =
     }),
   ]);
 
+export interface PlatformAgentIdentityProvisioner {
+  provision(input: Readonly<{
+    tenantId: TenantId;
+    characterId: CharacterId;
+    characterVersionId: ReturnType<typeof createCanonicalId<"character-version">>;
+    constitution: CharacterConstitution;
+    createdAt: Instant;
+  }>): Promise<void>;
+}
+
 export interface PlatformAgentBootstrapResult {
   readonly changed: boolean;
   readonly supportAgentCount: number;
@@ -54,7 +64,7 @@ export interface PlatformAgentBootstrapResult {
  */
 export async function ensureDefaultPlatformAgents(input: Readonly<{
   tenantId: TenantId;
-  identity: IdentityRepository;
+  identity: PlatformAgentIdentityProvisioner;
   presentations: AgentPresentationRepository;
   profiles: PlatformAgentProfileRepository;
   skillAssignments: CharacterSkillAssignmentRepository;
@@ -108,23 +118,10 @@ export async function ensureDefaultPlatformAgents(input: Readonly<{
       const characterId = createCanonicalId("character");
       const characterVersionId = createCanonicalId("character-version");
 
-      await input.identity.createCharacter({
+      await input.identity.provision({
         tenantId: input.tenantId,
         characterId,
-        createdAt,
-      });
-      await input.identity.assignCharacterOwnership({
-        tenantId: input.tenantId,
-        characterId,
-        kind: "platform",
-        ownerUserId: null,
-        createdAt,
-      });
-      await input.identity.createCharacterVersion({
-        tenantId: input.tenantId,
         characterVersionId,
-        characterId,
-        versionNumber: 1,
         constitution: Object.freeze({
           schemaVersion: 1,
           displayName: seed.displayName,
@@ -152,18 +149,6 @@ export async function ensureDefaultPlatformAgents(input: Readonly<{
           ]),
         }),
         createdAt,
-      });
-      await input.identity.publishCharacterVersion({
-        tenantId: input.tenantId,
-        characterVersionId,
-        publishedAt: createdAt,
-      });
-      await input.identity.activateCharacterVersion({
-        tenantId: input.tenantId,
-        characterId,
-        characterVersionId,
-        expectedCharacterRevision: 1,
-        activatedAt: createdAt,
       });
 
       presentation = await input.presentations.put({
