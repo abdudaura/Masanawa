@@ -416,6 +416,10 @@ export async function startGatewayService(
       const supabaseUrl = env.SUPABASE_URL?.trim();
       const supabaseServiceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY?.trim();
       const credentialEncryptionKey = env.CREDENTIAL_ENCRYPTION_KEY?.trim();
+      const credentialsJson =
+        env.MASANAWA_GEMINI_CREDENTIALS_JSON ??
+        env.MASANAWA_ALPHA_GEMINI_IMPORTED_CREDENTIALS_JSON;
+      const apiKey = env.MASANAWA_GEMINI_API_KEY;
 
       let startupPool;
       if (
@@ -436,17 +440,19 @@ export async function startGatewayService(
           ...(models ? { models } : {}),
           fallbackModel,
         };
-        startupPool = await loadSupabaseGeminiCredentialPool(loaderInput);
-        strategy = createProductionAgentStrategy({
-          inference: createSupabaseGeminiPoolInferenceProvider(loaderInput),
-          skills: database.skills,
-          guides: database.skillGuides,
-        });
-      } else {
-        const credentialsJson =
-          env.MASANAWA_GEMINI_CREDENTIALS_JSON ??
-          env.MASANAWA_ALPHA_GEMINI_IMPORTED_CREDENTIALS_JSON;
-        const apiKey = env.MASANAWA_GEMINI_API_KEY;
+        try {
+          startupPool = await loadSupabaseGeminiCredentialPool(loaderInput);
+          strategy = createProductionAgentStrategy({
+            inference: createSupabaseGeminiPoolInferenceProvider(loaderInput),
+            skills: database.skills,
+            guides: database.skillGuides,
+          });
+        } catch (error) {
+          if (!credentialsJson?.trim() && !apiKey?.trim()) throw error;
+        }
+      }
+
+      if (!strategy) {
         startupPool = parseGeminiCredentialPool({
           ...(credentialsJson ? { credentialsJson } : {}),
           ...(apiKey ? { apiKey } : {}),
