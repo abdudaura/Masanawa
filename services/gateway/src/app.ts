@@ -224,7 +224,12 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     }
 
     const statusCode =
-      typeof error.statusCode === "number" ? error.statusCode : 500;
+      typeof error === "object" &&
+      error !== null &&
+      "statusCode" in error &&
+      typeof (error as { readonly statusCode?: unknown }).statusCode === "number"
+        ? (error as { readonly statusCode: number }).statusCode
+        : 500;
     if (statusCode >= 400 && statusCode < 500) {
       void reply.status(statusCode).send({
         error: {
