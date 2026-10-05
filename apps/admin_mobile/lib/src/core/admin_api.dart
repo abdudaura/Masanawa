@@ -22,6 +22,35 @@ class AdminApiException implements Exception {
 }
 
 
+
+class AdminAgentActionResult {
+  const AdminAgentActionResult({
+    required this.status,
+    required this.action,
+    required this.data,
+    required this.capability,
+    required this.reason,
+  });
+
+  final String status;
+  final String action;
+  final dynamic data;
+  final String? capability;
+  final String? reason;
+
+  bool get completed => status == 'completed';
+  bool get approvalRequired => status == 'approval-required';
+
+  factory AdminAgentActionResult.fromJson(Map<String, dynamic> json) =>
+      AdminAgentActionResult(
+        status: json['status'] as String,
+        action: json['action'] as String,
+        data: json['data'],
+        capability: json['capability'] as String?,
+        reason: json['reason'] as String?,
+      );
+}
+
 class AdminAgentDelegate {
   const AdminAgentDelegate({
     required this.characterId,
@@ -826,6 +855,26 @@ class AdminApi {
     return null;
   }
 
+
+
+  Future<AdminAgentActionResult> runDelegatedAdminAction({
+    required String characterId,
+    required String action,
+    Map<String, dynamic>? arguments,
+  }) async {
+    final response = await _request(
+      () => _dio.post<dynamic>(
+        '/v1/admin/delegates/${Uri.encodeComponent(characterId)}/actions',
+        options: _auth,
+        data: {
+          'action': action,
+          if (arguments != null && arguments.isNotEmpty)
+            'arguments': arguments,
+        },
+      ),
+    );
+    return AdminAgentActionResult.fromJson(_map(response.data));
+  }
 
   Future<List<AdminAgentDelegate>> adminDelegates() async {
     final response = await _request(
