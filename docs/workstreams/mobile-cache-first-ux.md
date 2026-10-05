@@ -25,4 +25,15 @@ Acceptance:
 - true empty/no-cache startup still shows an honest loading state;
 - docs updated before merge.
 
-Status: active.
+Implemented:
+- empty Chats no longer disables "Choose an agent" when a cached roster is already available;
+- blocking "Loading your agents…" is reserved for the true no-cache/no-roster state;
+- Agents shows the cached roster count with a non-blocking "refreshing…" indicator while live data updates;
+- no authority, transport or persistence behavior changed.
+
+Verification:
+- branch diff is limited to the two owned presentation screens and checkpoint docs;
+- no APK rebuild was performed;
+- hosted Flutter execution remains subject to the repository runner-allocation issue.
+
+Status: implementation checkpoint complete pending PR integration.
