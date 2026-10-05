@@ -850,6 +850,7 @@ class AiChatController extends Notifier<AiChatState> {
   }) async {
     final text = rawText.trim();
     if (text.isEmpty || state.sendingIn.contains(characterId)) return;
+    final threadGeneration = _threadGenerations[characterId] ?? 0;
     final message = AiChatMessage(
       id: _newId(),
       isUser: true,
@@ -860,7 +861,12 @@ class AiChatController extends Notifier<AiChatState> {
       deliveryStatus: 'sending',
       requestId: createRequestId(),
     );
-    if (await _offlineNow()) {
+    final offline = await _offlineNow();
+    if (_disposed ||
+        threadGeneration != (_threadGenerations[characterId] ?? 0)) {
+      return;
+    }
+    if (offline) {
       await _enqueueMessage(characterId, message);
       return;
     }
@@ -875,6 +881,7 @@ class AiChatController extends Notifier<AiChatState> {
     String? replyPreview,
   }) async {
     if (state.sendingIn.contains(characterId)) return;
+    final threadGeneration = _threadGenerations[characterId] ?? 0;
     final message = AiChatMessage(
       id: _newId(),
       isUser: true,
@@ -886,7 +893,12 @@ class AiChatController extends Notifier<AiChatState> {
       deliveryStatus: 'sending',
       requestId: createRequestId(),
     );
-    if (await _offlineNow()) {
+    final offline = await _offlineNow();
+    if (_disposed ||
+        threadGeneration != (_threadGenerations[characterId] ?? 0)) {
+      return;
+    }
+    if (offline) {
       await _enqueueMessage(characterId, message);
       return;
     }
@@ -911,6 +923,7 @@ class AiChatController extends Notifier<AiChatState> {
       );
       return;
     }
+    final threadGeneration = _threadGenerations[characterId] ?? 0;
     final bounded = List<ChatAttachment>.unmodifiable(attachments.take(8));
     final message = AiChatMessage(
       id: _newId(),
@@ -924,7 +937,12 @@ class AiChatController extends Notifier<AiChatState> {
       uploadProgress: 0,
       requestId: createRequestId(),
     );
-    if (await _offlineNow()) {
+    final offline = await _offlineNow();
+    if (_disposed ||
+        threadGeneration != (_threadGenerations[characterId] ?? 0)) {
+      return;
+    }
+    if (offline) {
       await _enqueueMessage(characterId, message);
       return;
     }
@@ -1367,15 +1385,23 @@ class AiChatController extends Notifier<AiChatState> {
 
   void _removeStreamingPlaceholders(String characterId) {
     final thread = threadOf(characterId);
+    final removed = thread.messages
+        .where((message) =>
+            !message.isUser && message.deliveryStatus == 'streaming')
+        .length;
+    if (removed == 0) return;
     final messages = thread.messages
         .where((message) =>
             message.isUser || message.deliveryStatus != 'streaming')
         .toList();
-    if (messages.length == thread.messages.length) return;
+    final isOpen = state.openThreadId == characterId;
     state = state.copyWith(
       threads: {
         ...state.threads,
-        characterId: thread.copyWith(messages: messages),
+        characterId: thread.copyWith(
+          messages: messages,
+          unread: isOpen ? 0 : (thread.unread - removed).clamp(0, 1 << 30),
+        ),
       },
     );
   }
