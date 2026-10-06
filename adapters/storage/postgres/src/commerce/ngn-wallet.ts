@@ -11,6 +11,7 @@ interface FundingRow {
   funding_reference: string;
   tx_ref: string;
   amount_kobo: string | number;
+  quote_id: string | null;
   state: NgnFundingIntent["state"];
   account_number: string | null;
   bank_name: string | null;
@@ -41,6 +42,7 @@ function intent(row: FundingRow): NgnFundingIntent {
     fundingReference: row.funding_reference,
     txRef: row.tx_ref,
     amountKobo: integer(row.amount_kobo, "amount"),
+    quoteId: row.quote_id,
     state: row.state,
     accountNumber: row.account_number,
     bankName: row.bank_name,
@@ -95,9 +97,9 @@ export function createPostgresNgnWalletRepository(pool: Pool): NgnWalletReposito
         await lockWallet(client, input.tenantId, input.userId);
         const inserted = await client.query<FundingRow>(
           `INSERT INTO commerce.ngn_funding_intents(
-             tenant_id,user_id,funding_reference,tx_ref,amount_kobo,state,
+             tenant_id,user_id,funding_reference,tx_ref,amount_kobo,quote_id,state,
              expires_at,created_at,updated_at
-           ) VALUES ($1,$2,$3,$4,$5,'creating',$6,$7,$7)
+           ) VALUES ($1,$2,$3,$4,$5,$6,'creating',$7,$8,$8)
            ON CONFLICT (tenant_id,user_id,funding_reference) DO NOTHING
            RETURNING *`,
           [
@@ -106,6 +108,7 @@ export function createPostgresNgnWalletRepository(pool: Pool): NgnWalletReposito
             input.fundingReference,
             input.txRef,
             input.amountKobo,
+            input.quoteId ?? null,
             input.expiresAt,
             input.createdAt,
           ],
