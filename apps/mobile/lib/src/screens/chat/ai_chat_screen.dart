@@ -32,6 +32,7 @@ import '../../state/agent_directory_state.dart';
 import '../../state/ai_chat_state.dart';
 import '../../state/session_state.dart';
 import '../../theme/masanawa_theme.dart';
+import '../../ui/components/platform_agent_avatar.dart';
 
 /// One Character conversation. Voice is the primary action while text,
 /// attachments and structured work results remain in the same timeline.
@@ -874,18 +875,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             onTap: () => context.push('/agents'),
             child: Row(
               children: [
-                CircleAvatar(
-                  radius: 17,
-                  backgroundColor: u.brand,
-                  child: Text(
-                    agent.initial,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 15,
-                    ),
-                  ),
-                ),
+                PlatformAgentAvatar(agent: agent, radius: 17),
                 const SizedBox(width: 9),
                 Expanded(
                   child: Column(
