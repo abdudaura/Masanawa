@@ -199,6 +199,9 @@ importers:
 
   adapters/storage/postgres:
     dependencies:
+      '@masanawa/messaging-channels':
+        specifier: workspace:*
+        version: link:../../channels/messaging
       '@masanawa/agents':
         specifier: workspace:*
         version: link:../../../packages/agents
