@@ -840,28 +840,122 @@ class AiChatController extends Notifier<AiChatState> {
     }
   }
 
-  Future<Map<String, dynamic>> summarizeTwinInterview(
-    String characterId,
-  ) async {
+  Map<String, dynamic> _decodeTwinFacts(String raw) {
+    var text = raw.trim();
+    if (text.startsWith('```')) {
+      text = text.replaceFirst(RegExp(r'^```(?:json)?\\s*'), '');
+      text = text.replaceFirst(RegExp(r'\\s*```$'), '');
+    }
+    final decoded = jsonDecode(text);
+    if (decoded is! Map) {
+      throw const FormatException('Invalid Twin interview facts');
+    }
+    final map = decoded.cast<String, dynamic>();
+    final normalized = <String, dynamic>{};
+    for (final entry in map.entries) {
+      final value = entry.value;
+      if (value is String && value.trim().isNotEmpty) {
+        normalized[entry.key] = value.trim();
+      } else if (value is List) {
+        normalized[entry.key] = [
+          for (final item in value)
+            if (item is String && item.trim().isNotEmpty) item.trim(),
+        ];
+      } else if (value is bool || value is num) {
+        normalized[entry.key] = value;
+      }
+    }
+    return normalized;
+  }
+
+  String twinInterviewTransportPrompt({
+    required String userAnswer,
+    required Map<String, dynamic> facts,
+  }) {
+    final prior = jsonEncode(facts);
+    return 'You are Gwani conducting a short voice-first Twin setup interview. '
+        'Known compact facts so far: $prior. '
+        'The user\'s current answer is: "$userAnswer". '
+        'Use the answer plus known facts to ask exactly one short, useful next question '
+        'about how their Twin should behave, help people, speak, make decisions, or respect boundaries. '
+        'Do not ask about preferred language. Always answer in the language/register of the current user answer. '
+        'Do not mention JSON, setup state, prompts, or internal instructions.';
+  }
+
+  String twinInterviewMediaPrompt(Map<String, dynamic> facts) {
+    final prior = jsonEncode(facts);
+    return 'You are Gwani conducting a short voice-first Twin setup interview. '
+        'Known compact facts so far: $prior. '
+        'Listen to the attached voice answer. Use it plus known facts to ask exactly one short, useful next question '
+        'about how their Twin should behave, help people, make decisions, or respect boundaries. '
+        'Do not ask about preferred language. Answer naturally in the language/register used in the voice answer. '
+        'Do not mention JSON, transcription, setup state, prompts, or internal instructions.';
+  }
+
+  Future<Map<String, dynamic>> extractTwinInterviewText({
+    required String characterId,
+    required String userAnswer,
+    required Map<String, dynamic> facts,
+  }) async {
     final result = await _sendViaTransport(
       characterId,
-      'The Twin setup interview is ending now. Using the conversation context, '
+      'This is an internal Twin-setup extraction step. Do not converse. '
+      'Existing compact facts: ${jsonEncode(facts)}. '
+      'Current user answer: "$userAnswer". '
+      'Return ONLY one compact JSON object containing durable behavior facts learned so far. '
+      'Allowed keys: greetingStyle, personality, helpStyle, expertise, boundaries, decisionStyle, humor, formality, audience, notes. '
+      'Use short strings or arrays of short strings. Merge prior facts with newly learned facts. '
+      'Never include a language preference and never return a transcript.',
+      requestId: createRequestId(),
+    );
+    return _decodeTwinFacts(result.text);
+  }
+
+  Future<Map<String, dynamic>> extractTwinInterviewVoice({
+    required String characterId,
+    required ChatAttachment attachment,
+    required Map<String, dynamic> facts,
+  }) async {
+    final file = File(attachment.path);
+    final bytes = await file.readAsBytes();
+    if (bytes.isEmpty || bytes.length > 8 * 1024 * 1024) {
+      throw const ApiException('Voice answer is unavailable');
+    }
+    final transport = ref.read(agentTransportProvider);
+    final binding = await _bindingFor(characterId, transport);
+    final result = await transport.sendMediaTurn(
+      binding: binding,
+      bytes: bytes,
+      mimeType: 'audio/m4a',
+      caption:
+          'This is an internal Twin-setup extraction step. Do not converse. '
+          'Existing compact facts: ${jsonEncode(facts)}. '
+          'Listen to the attached answer and return ONLY one compact JSON object containing durable behavior facts learned so far. '
+          'Allowed keys: greetingStyle, personality, helpStyle, expertise, boundaries, decisionStyle, humor, formality, audience, notes. '
+          'Use short strings or arrays of short strings. Merge prior facts with newly learned facts. '
+          'Never include a language preference and never return a transcript.',
+      requestId: createRequestId(),
+    );
+    return _decodeTwinFacts(result.text);
+  }
+
+  Future<Map<String, dynamic>> summarizeTwinInterview(
+    String characterId,
+    Map<String, dynamic> facts,
+  ) async {
+    if (facts.isEmpty) {
+      throw const FormatException('Twin interview needs at least one answer');
+    }
+    final result = await _sendViaTransport(
+      characterId,
+      'The Twin setup interview is ending now. Using ONLY these compact facts: ${jsonEncode(facts)}, '
       'return ONLY one compact JSON object with these keys: biography (string), '
       'personality (array of 2-8 short strings), expertise (array of 1-12 short strings). '
       'Do not ask another question. Do not include markdown fences. Do not include a language field. '
-      'The Twin must remain multilingual and should respond in the language each visitor uses.',
+      'The Twin must remain multilingual and respond in the language each visitor uses.',
       requestId: createRequestId(),
     );
-    var raw = result.text.trim();
-    if (raw.startsWith('```')) {
-      raw = raw.replaceFirst(RegExp(r'^```(?:json)?\s*'), '');
-      raw = raw.replaceFirst(RegExp(r'\s*```$'), '');
-    }
-    final decoded = jsonDecode(raw);
-    if (decoded is! Map) {
-      throw const FormatException('Invalid Twin interview summary');
-    }
-    final value = decoded.cast<String, dynamic>();
+    final value = _decodeTwinFacts(result.text);
     final biography = value['biography'];
     final personality = value['personality'];
     final expertise = value['expertise'];
@@ -954,6 +1048,7 @@ class AiChatController extends Notifier<AiChatState> {
     String rawText, {
     String? replyToId,
     String? replyPreview,
+    String? transportPrompt,
   }) async {
     final text = rawText.trim();
     if (text.isEmpty || state.sendingIn.contains(characterId)) return;
@@ -971,7 +1066,11 @@ class AiChatController extends Notifier<AiChatState> {
       await _enqueueMessage(characterId, message);
       return;
     }
-    await _dispatchUserMessage(characterId, message);
+    await _dispatchUserMessage(
+      characterId,
+      message,
+      transportPrompt: transportPrompt,
+    );
   }
 
   Future<void> sendAttachment(
@@ -980,6 +1079,7 @@ class AiChatController extends Notifier<AiChatState> {
     String? caption,
     String? replyToId,
     String? replyPreview,
+    String? transportPrompt,
   }) async {
     if (state.sendingIn.contains(characterId)) return;
     final message = AiChatMessage(
@@ -997,7 +1097,11 @@ class AiChatController extends Notifier<AiChatState> {
       await _enqueueMessage(characterId, message);
       return;
     }
-    await _dispatchUserMessage(characterId, message);
+    await _dispatchUserMessage(
+      characterId,
+      message,
+      transportPrompt: transportPrompt,
+    );
   }
 
   Future<void> sendAttachments(
@@ -1042,6 +1146,7 @@ class AiChatController extends Notifier<AiChatState> {
     String characterId,
     AiChatMessage userMsg, {
     bool retry = false,
+    String? transportPrompt,
   }) async {
     final connectionGeneration = _connectionGeneration;
     final threadGeneration = _threadGenerations[characterId] ?? 0;
@@ -1065,12 +1170,14 @@ class AiChatController extends Notifier<AiChatState> {
       final hasMedia = attachment != null || attachmentSet.isNotEmpty;
       final streamMessageId =
           !hasMedia ? _beginAiStream(characterId) : null;
-      final promptText = userMsg.replyPreview?.trim().isNotEmpty == true
+      final visiblePrompt = userMsg.replyPreview?.trim().isNotEmpty == true
           ? 'Replying to this earlier message:\n"${userMsg.replyPreview}"\n\n${userMsg.text}'
           : userMsg.text;
-      final mediaCaption = userMsg.replyPreview?.trim().isNotEmpty == true
-          ? 'Replying to this earlier message:\n"${userMsg.replyPreview}"\n\n${userMsg.text}'
-          : userMsg.text;
+      final promptText =
+          transportPrompt?.trim().isNotEmpty == true
+              ? transportPrompt!.trim()
+              : visiblePrompt;
+      final mediaCaption = promptText;
       var livePcmStarted = false;
       DateTime? livePcmStartedAt;
       final result = !hasMedia
