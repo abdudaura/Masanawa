@@ -796,6 +796,9 @@ export function createBillingCheckoutService(input: Readonly<{
 
       if (["refund-pending","refund-dispatching","refund-submitted"].includes(quote.state)) {
         const refunded = await refundIfRequired(owned.identity,quote,request.signal);
+        await syncTwinMonetization(owned.identity, refunded).catch(
+          () => undefined,
+        );
         return view(refunded);
       }
       if (quote.state === "refunded" || quote.state === "succeeded") {
@@ -834,6 +837,9 @@ export function createBillingCheckoutService(input: Readonly<{
             tenantId: owned.identity.tenantId,userId: owned.identity.userId,quoteId: quote.quoteId,
           }))!;
           quote = await refundIfRequired(owned.identity,quote,request.signal);
+          await syncTwinMonetization(owned.identity, quote).catch(
+            () => undefined,
+          );
           return view(quote,null,owned.identity);
         }
 
@@ -855,6 +861,9 @@ export function createBillingCheckoutService(input: Readonly<{
             requestedAt: now(),
           });
           quote = await refundIfRequired(owned.identity,quote,request.signal);
+          await syncTwinMonetization(owned.identity, quote).catch(
+            () => undefined,
+          );
           return view(quote,null,owned.identity);
         }
         throw error;
