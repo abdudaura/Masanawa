@@ -91,6 +91,9 @@ after implementation and relevant acceptance evidence are merged to `main`.
 - [ ] **TWIN-074** Preserve rich chat features while simplifying twin-specific actions.
 - [ ] **TWIN-075** Keep Settings limited to account/privacy/security/language/help.
 - [ ] **TWIN-076** Verify accessibility, narrow screens and low-end Android performance.
+  - TWIN-076 implementation note: root tabs are lazy, narrow My Twin actions/metrics and
+    Activity metrics are responsive, and compact-viewport widget coverage exists; keep
+    this task open until exact-head Flutter analysis and real low-end Android acceptance pass.
 
 ## Integration and migration
 
