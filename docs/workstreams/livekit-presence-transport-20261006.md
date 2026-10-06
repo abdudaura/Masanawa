@@ -2,12 +2,13 @@
 
 Owner/window: ChatGPT continuation window / 2026-10-06
 Branch: `work/livekit-presence-transport-20261006`
-Base: PR #248 `work/presence-character-session-bridge-20261006` @ `a818eb034c768c0b18604a652c68b28d881cd813`
+Base: PR #248 `work/presence-character-session-bridge-20261006`
+PR: #254
 Production task: 120 — integrate LiveKit WebRTC transport.
 
 ## Coordination
 
-Task 119 is owned by PR #248 and explicitly leaves LiveKit to Task 120. PR #136 owns shared Gateway/mobile/live-voice production composition. No competing Task 120 LiveKit claim was found at selection.
+Task 119 is owned by PR #248 and explicitly leaves LiveKit to Task 120. PR #136 owns shared Gateway/mobile/live-voice production composition. No competing Task 120 LiveKit claim was present at selection.
 
 ## Exact owned paths
 
@@ -33,28 +34,52 @@ Task 119 is owned by PR #248 and explicitly leaves LiveKit to Task 120. PR #136 
 - avatar renderer (Task 123)
 - persistence/migrations
 
-## Current LiveKit contract
+## Completed implementation
 
-Verified against official LiveKit JS Server SDK v2.19.1 on 2026-10-06:
-- backend token minting uses `AccessToken` and async `toJwt()`;
-- room join permissions are explicit VideoGrant fields;
-- webhook verification uses `WebhookReceiver.receive(rawBody, authorization)`;
-- API secrets stay server-side.
+- Added canonical explicitly registered `media/livekit` adapter workspace.
+- Pinned current `livekit-server-sdk` v2.19.1 in the adapter manifest.
+- Exact canonical PresenceSessionId is the LiveKit room identity; adapter introduces no competing session/Character truth.
+- Added short-lived join-token service with 30–600 second TTL bounds.
+- Participant identity is generation-scoped (`user:gN` / `character:gN`) so downstream Presence can fence stale transport callbacks after reconnect.
+- Token grants are room-join only with publish/subscribe; data publishing and participant metadata mutation are disabled. No room-admin/list/record/ingress grants are emitted.
+- LiveKit server URL is required to be WSS and cannot contain embedded credentials/query/fragment.
+- API secret is supplied only through injected Security-owned `CredentialSecret`; client join descriptors expose only server URL, room, participant identity and short-lived token.
+- Added actual SDK token signer using async `AccessToken.toJwt()`.
+- Added actual SDK webhook decoder using `WebhookReceiver.receive(rawBody, authorization)`.
+- Webhook verification requires raw body + authorization before decoding and bounds the raw body to 1 MiB.
+- Authenticated `participant_joined`, `participant_left`, `participant_connection_aborted` and `room_finished` events normalize into Presence transport evidence.
+- Room identity is parsed back to canonical PresenceSessionId; participant identity is parsed back to role + connection generation.
+- Unsupported LiveKit events return no Presence lifecycle decision rather than being treated as business/session success.
+- Added focused token/grant/generation/endpoint/secret-redaction and webhook lifecycle tests.
 
-## Acceptance target
+## Current LiveKit evidence
 
-- exact PresenceSessionId becomes the room identity; LiveKit never becomes CharacterSession truth;
-- short-lived participant join tokens only, no room-admin/list/record/ingress privileges;
-- no participant metadata mutation or data publishing by default;
-- API secret comes from injected Security-owned credential source, never output/logged;
-- connection-generation-scoped participant identities support stale transport fencing;
-- authenticated raw-body webhook normalization for participant joined/left/connection-aborted and room-finished events;
-- webhook room/participant identity is parsed back to PresenceSession + generation/role evidence;
-- unsupported LiveKit events are ignored as transport evidence, never domain success;
-- adapter follows canonical media adapter topology and explicit registration.
+Official LiveKit JS Server SDK documentation checked 2026-10-06:
+- v2.19.1 current server SDK;
+- async `AccessToken.toJwt()`;
+- explicit VideoGrant room permissions;
+- authenticated raw-body `WebhookReceiver.receive()`;
+- participant lifecycle webhook events.
 
-State: IMPLEMENTING. LiveKit media adapter registration, bounded join-token minting, authenticated raw-body lifecycle webhook normalization and focused tests are committed. Shared lockfile/Presence/Gateway/mobile composition remain excluded.
+## Changed-file audit
 
-Implementation head before handoff: `249a223c11e81a51f171285198b9634e7714ab8d`.
+PR #254 changes exactly the ten claimed paths above relative to PR #248. It is currently mergeable. No Presence-domain, Gateway/mobile, production-config, lockfile, STT/LLM/TTS, turn-policy or avatar file changed.
+
+## Verification
+
+- Source/type audit completed against repository adapter architecture and current LiveKit v2.19.1 API docs.
+- Foundation CI run `37456475031` on implementation head `0cb7191bdc39b3b312c5b4280d6732073b0339eb` failed before checkout: job `112245217919`, `runner_id=0`, `steps=[]`. No repository code executed.
+- Frozen-install/typecheck/test execution still needs the shared lockfile importer plus a working runner.
+
+## Remaining dependencies
+
+1. Workspace/lockfile owner: add the new `@masanawa/livekit-media` importer and `livekit-server-sdk@2.19.1` resolution without overwriting shared lock work.
+2. Task 119/Presence owner: compose join-token issuance only after exact current PresenceSession/CharacterSession validation and apply generation fencing to normalized webhook events.
+3. Security/production configuration owner: provide LiveKit API key/secret through credential custody; never mobile/app environment.
+4. Shared Gateway/mobile owner (#136 or explicit successor): authenticated token endpoint + client room connection after Presence composition.
+5. Task 121 owner: realtime inference/audio pipeline consumes LiveKit media without moving Presence identity or provider secrets.
+6. Executable CI and real LiveKit deployment/media qualification remain required.
+
+State: ISOLATED COMPLETE / INTEGRATION READY.
 
 Last update: 2026-10-06.
