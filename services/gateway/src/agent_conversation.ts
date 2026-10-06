@@ -203,6 +203,10 @@ export function createAgentConversationService(input: {
           authorizationHeader: request.authorizationHeader,
           characterId: admission.scope.characterId,
           modelReply: generated.reply,
+          history: history.map((item) => ({
+            direction: item.direction,
+            parts: item.parts,
+          })),
         });
         const verbalized = cryptoAction
           ? await input.strategy.execute({
@@ -426,6 +430,10 @@ export function createAgentConversationService(input: {
           authorizationHeader: request.authorizationHeader,
           characterId: admission.scope.characterId,
           modelReply: generated.reply,
+          history: history.map((item) => ({
+            direction: item.direction,
+            parts: item.parts,
+          })),
         });
         const verbalized = cryptoAction
           ? await input.strategy.execute({
@@ -662,6 +670,10 @@ export function createAgentConversationService(input: {
           authorizationHeader: request.authorizationHeader,
           characterId: admission.scope.characterId,
           modelReply: generated.reply,
+          history: history.map((item) => ({
+            direction: item.direction,
+            parts: item.parts,
+          })),
         });
         const verbalized = cryptoAction
           ? await input.strategy.execute({
