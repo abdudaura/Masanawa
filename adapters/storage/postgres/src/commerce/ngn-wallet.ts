@@ -12,6 +12,7 @@ interface FundingRow {
   tx_ref: string;
   amount_kobo: string | number;
   quote_id: string | null;
+  originating_character_id: string | null;
   state: NgnFundingIntent["state"];
   account_number: string | null;
   bank_name: string | null;
@@ -43,6 +44,7 @@ function intent(row: FundingRow): NgnFundingIntent {
     txRef: row.tx_ref,
     amountKobo: integer(row.amount_kobo, "amount"),
     quoteId: row.quote_id,
+    originatingCharacterId: row.originating_character_id,
     state: row.state,
     accountNumber: row.account_number,
     bankName: row.bank_name,
@@ -97,9 +99,9 @@ export function createPostgresNgnWalletRepository(pool: Pool): NgnWalletReposito
         await lockWallet(client, input.tenantId, input.userId);
         const inserted = await client.query<FundingRow>(
           `INSERT INTO commerce.ngn_funding_intents(
-             tenant_id,user_id,funding_reference,tx_ref,amount_kobo,quote_id,state,
-             expires_at,created_at,updated_at
-           ) VALUES ($1,$2,$3,$4,$5,$6,'creating',$7,$8,$8)
+             tenant_id,user_id,funding_reference,tx_ref,amount_kobo,quote_id,
+             originating_character_id,state,expires_at,created_at,updated_at
+           ) VALUES ($1,$2,$3,$4,$5,$6,$7,'creating',$8,$9,$9)
            ON CONFLICT (tenant_id,user_id,funding_reference) DO NOTHING
            RETURNING *`,
           [
@@ -109,6 +111,7 @@ export function createPostgresNgnWalletRepository(pool: Pool): NgnWalletReposito
             input.txRef,
             input.amountKobo,
             input.quoteId ?? null,
+            input.originatingCharacterId ?? null,
             input.expiresAt,
             input.createdAt,
           ],
@@ -120,7 +123,13 @@ export function createPostgresNgnWalletRepository(pool: Pool): NgnWalletReposito
           [input.tenantId,input.userId,input.fundingReference],
         );
         const row = existing.rows[0];
-        if (!row || row.tx_ref !== input.txRef || integer(row.amount_kobo,"amount") !== input.amountKobo) {
+        if (
+          !row ||
+          row.tx_ref !== input.txRef ||
+          integer(row.amount_kobo,"amount") !== input.amountKobo ||
+          row.quote_id !== (input.quoteId ?? null) ||
+          row.originating_character_id !== (input.originatingCharacterId ?? null)
+        ) {
           throw new Error("financial.wallet.funding_replay_conflict");
         }
         return intent(row);
