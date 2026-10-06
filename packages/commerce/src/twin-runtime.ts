@@ -8,6 +8,10 @@ import type { OwnerAccessRequest } from "./owner-access.js";
 import type { OwnerAccessOffering } from "./owner-access-offering.js";
 import type { PaidFeatureKey, PaidFeatureTrialPolicy } from "./trial.js";
 import type { TwinAttributionRecord, CommissionPolicy } from "./attribution.js";
+import type {
+  ProviderValuationEventType,
+  ProviderValuationPolicy,
+} from "./provider-valuation.js";
 
 export interface TwinCreditOperationReceipt {
   readonly tenantId: TenantId;
@@ -157,6 +161,18 @@ export interface TwinRuntimeRepository {
     readonly tenantId: TenantId;
     readonly policy: CommissionPolicy;
   }): Promise<CommissionPolicy>;
+
+  readProviderValuationPolicy(input: {
+    readonly tenantId: TenantId;
+    readonly valuationKey: string;
+    readonly eventType: ProviderValuationEventType;
+    readonly at: string;
+  }): Promise<ProviderValuationPolicy | null>;
+
+  putProviderValuationPolicy(input: {
+    readonly tenantId: TenantId;
+    readonly policy: ProviderValuationPolicy;
+  }): Promise<ProviderValuationPolicy>;
 
   putAttribution(input: {
     readonly tenantId: TenantId;
