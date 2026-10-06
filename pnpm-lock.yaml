@@ -213,6 +213,9 @@ importers:
       '@masanawa/commerce':
         specifier: workspace:*
         version: link:../../../packages/commerce
+      '@masanawa/content':
+        specifier: workspace:*
+        version: link:../../../packages/content
       '@masanawa/events':
         specifier: workspace:*
         version: link:../../../packages/events
@@ -338,6 +341,12 @@ importers:
       '@masanawa/contracts':
         specifier: workspace:*
         version: link:../contracts
+    devDependencies:
+      vitest:
+        specifier: 5.0.3
+        version: 5.0.3(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6))
+
+  packages/content:
     devDependencies:
       vitest:
         specifier: 5.0.3
@@ -490,6 +499,9 @@ importers:
       '@masanawa/commerce':
         specifier: workspace:*
         version: link:../../packages/commerce
+      '@masanawa/content':
+        specifier: workspace:*
+        version: link:../../packages/content
       '@masanawa/identity':
         specifier: workspace:*
         version: link:../../packages/identity
