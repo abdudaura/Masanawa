@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../commerce/wallet_models.dart';
+import '../../state/agent_directory_state.dart';
+import '../../state/ai_chat_state.dart';
 import '../../state/wallet_state.dart';
 import '../../theme/masanawa_theme.dart';
 
@@ -24,6 +27,36 @@ class WalletScreen extends ConsumerWidget {
   final VoidCallback? onBuyBills;
   final VoidCallback? onOpenCrypto;
   final VoidCallback? onTalkToGwani;
+
+  void _askGwani(BuildContext context, WidgetRef ref, String request) {
+    final directory = ref.read(agentDirectoryProvider);
+    final matches = directory.agents.where(
+      (agent) =>
+          agent.supportAgent &&
+          agent.displayName.trim().toLowerCase() == 'gwani',
+    ).toList();
+    final defaults = directory.agents.where(
+      (agent) => agent.supportAgent && agent.defaultPlatformAgent,
+    ).toList();
+    final guide = matches.isNotEmpty
+        ? matches.first
+        : defaults.isNotEmpty
+            ? defaults.first
+            : null;
+    if (guide == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gwani is unavailable. Refresh Agents and try again.')),
+      );
+      return;
+    }
+    final chat = ref.read(aiChatProvider.notifier);
+    chat.seedGreeting(
+      guide.characterId,
+      'Tell me what you want to do with your wallet. You can speak naturally.',
+    );
+    chat.sendText(guide.characterId, request);
+    context.push('/chat/${guide.characterId}');
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -77,21 +110,43 @@ class WalletScreen extends ConsumerWidget {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    _ActionChip(icon: Icons.add_rounded, label: 'Fund wallet', onTap: onAddMoney),
-                    _ActionChip(icon: Icons.receipt_long_outlined, label: 'Buy bills', onTap: onBuyBills),
-                    _ActionChip(icon: Icons.currency_bitcoin_rounded, label: 'Crypto', onTap: onOpenCrypto),
-                    _ActionChip(icon: Icons.send_outlined, label: 'Send', onTap: onSend),
-                    _ActionChip(icon: Icons.account_balance_outlined, label: 'Withdraw', onTap: onWithdraw),
+                    _ActionChip(
+                      icon: Icons.add_rounded,
+                      label: 'Fund wallet',
+                      onTap: onAddMoney ?? () => _askGwani(context, ref, 'I want to fund my wallet.'),
+                    ),
+                    _ActionChip(
+                      icon: Icons.receipt_long_outlined,
+                      label: 'Buy bills',
+                      onTap: onBuyBills ?? () => _askGwani(context, ref, 'I want to buy a billing service.'),
+                    ),
+                    _ActionChip(
+                      icon: Icons.currency_bitcoin_rounded,
+                      label: 'Crypto',
+                      onTap: onOpenCrypto ?? () => _askGwani(
+                        context,
+                        ref,
+                        'I want to use crypto. Show me the available crypto actions and guide me in chat.',
+                      ),
+                    ),
+                    _ActionChip(
+                      icon: Icons.send_outlined,
+                      label: 'Send',
+                      onTap: onSend ?? () => _askGwani(context, ref, 'I want to send money or Credits.'),
+                    ),
+                    _ActionChip(
+                      icon: Icons.account_balance_outlined,
+                      label: 'Withdraw',
+                      onTap: onWithdraw ?? () => _askGwani(context, ref, 'I want to withdraw.'),
+                    ),
                   ],
                 ),
-                if (onOpenCrypto != null) ...[
-                  const SizedBox(height: 12),
+                const SizedBox(height: 12),
                   const _AgentMessage(
                     text:
                         'Crypto is available here too. Ask me to buy, deposit, convert, check a balance, or withdraw and I will guide you in chat.',
                     icon: Icons.currency_bitcoin_rounded,
                   ),
-                ],
                 const SizedBox(height: 18),
                 if (value.entries.isNotEmpty) ...[
                   Text(
@@ -107,7 +162,7 @@ class WalletScreen extends ConsumerWidget {
                 ],
                 const SizedBox(height: 18),
                 FilledButton.icon(
-                  onPressed: onTalkToGwani,
+                  onPressed: onTalkToGwani ?? () => _askGwani(context, ref, 'Help me with my wallet.'),
                   icon: const Icon(Icons.mic_rounded),
                   label: const Text('Talk to Gwani'),
                   style: FilledButton.styleFrom(
