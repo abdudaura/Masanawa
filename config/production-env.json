@@ -382,6 +382,27 @@
       "description": "Owner-access request acceptance deadline policy in minutes."
     },
     {
+      "name": "MASANAWA_OWNER_ACCESS_COMPLETION_GRACE_MINUTES",
+      "owner": "gateway/twin-economy",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Grace period in minutes before an overdue owner-access session is reconciled."
+    },
+    {
+      "name": "MASANAWA_OWNER_ACCESS_DISPUTE_WINDOW_MINUTES",
+      "owner": "gateway/twin-economy",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Post-completion owner-access dispute window in minutes before pending owner earnings may be released."
+    },
+    {
+      "name": "MASANAWA_OWNER_ACCESS_MESSAGE_RETENTION_DAYS",
+      "owner": "gateway/twin",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Retention period in days for private owner-access text-room messages."
+    },
+    {
       "name": "MASANAWA_OWNER_ACCESS_PLATFORM_FEE_BPS",
       "owner": "gateway/twin-economy",
       "classification": "public",
