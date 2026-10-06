@@ -112,6 +112,11 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
           : () => _openMyTwinSurface(home.valueOrNull!.myTwin!),
       onCreateMyTwin: () => context.push('/clone'),
       onOpenContinuation: (item) {
+        final characterId = item.characterId;
+        if (characterId != null && characterId.isNotEmpty) {
+          context.push('/chat/' + Uri.encodeComponent(characterId));
+          return;
+        }
         final roomId = item.roomId;
         if (roomId == 'room.internet-cafe') context.push('/billing');
         if (roomId == 'room.story-radio') context.push('/story-radio');
