@@ -8,7 +8,7 @@ import {
   stopAndroidAgentDeviceRuntime,
 } from "../../adapters/devices/android/src/runtime.js";
 
-const deviceId = "device_00000000-0000-4000-8000-000000000001" as never;
+const deviceId = "device_018f6b2e-7c00-7001-8000-000000000001" as never;
 
 function boot() {
   return createAndroidAgentDeviceRuntime({
