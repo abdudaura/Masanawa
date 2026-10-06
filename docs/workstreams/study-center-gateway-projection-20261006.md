@@ -22,6 +22,7 @@ files, Memory adapter files, channels, migrations, production environment or APK
 - Continuation derived through canonical `resolveTeachingContinuation()`, mapped to
   continue/reteach/advance/complete.
 - Durable progress/resume presentation using PR #215 `TeachingStoredProgress`.
+- Exact `fingerprintTeachingLessonPlan()` binding: stored progress for a regenerated/different lesson plan under the same Relationship/SkillVersion fails closed.
 - Text/voice capability projection from canonical learner preferred modalities.
 - Lesson-step projection.
 - Feedback projection with bounded positive-progress presentation.
@@ -35,7 +36,7 @@ files, Memory adapter files, channels, migrations, production environment or APK
 - Bound selectable action token must match the Teaching runtime's bound action key.
 - No RelationshipId, SkillVersionId, RequestId, rubric or correct-answer data enters the
   returned mobile projection.
-- Focused tests cover first lesson, text/voice, reteach/advance, single-select secrecy,
+- Focused tests cover first lesson, text/voice, reteach/advance, exact plan-hash resume binding, single-select secrecy,
   staged multi-select revision, free response, missing/incomplete action projection and
   feedback privacy.
 
