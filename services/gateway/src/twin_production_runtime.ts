@@ -263,6 +263,11 @@ export interface TwinProductionRuntime {
       readonly reversalId: string;
       readonly reversalBaseCredits: number;
     }): Promise<void>;
+    reverseFull(input: {
+      readonly tenantId: TenantId;
+      readonly operationId: string;
+      readonly reversalId: string;
+    }): Promise<void>;
   };
 }
 
@@ -3188,6 +3193,24 @@ export function createTwinProductionRuntime(input: {
           amountCredits: settlement.commissionCredits,
           status: "completed",
         },
+      });
+    },
+
+    async reverseFull(request: {
+      readonly tenantId: TenantId;
+      readonly operationId: string;
+      readonly reversalId: string;
+    }) {
+      const original = await input.economy.readCommissionForOperation({
+        tenantId: request.tenantId,
+        operationId: request.operationId,
+      });
+      if (!original) return;
+      await monetization.reverse({
+        tenantId: request.tenantId,
+        operationId: request.operationId,
+        reversalId: request.reversalId,
+        reversalBaseCredits: original.baseCredits,
       });
     },
 
