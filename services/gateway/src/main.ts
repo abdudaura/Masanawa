@@ -1110,6 +1110,9 @@ export async function startGatewayService(
       redirectUrl,
       feeBasisPoints,
       feeFixedKobo,
+      ...(twinProduction
+        ? { twinMonetization: twinProduction.monetization }
+        : {}),
     });
 
     composedBillingWallet ??= createBillingWalletService({
