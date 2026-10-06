@@ -74,3 +74,7 @@ No provider SDK/network call, live payment, media rendering SDK, migration, prod
 Implementation head before handoff: `6721cd17f2f88dc2673e644f882bea00f5a2e9df`.
 
 Last update: 2026-10-06.
+
+## Verification
+
+- Verification: Foundation CI run `37490713693`, job `112362397489`, failed before checkout with `runner_id=0` and `steps=[]`; no application test result is claimed.
