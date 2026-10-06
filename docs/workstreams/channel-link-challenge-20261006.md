@@ -80,3 +80,18 @@ Remaining integration:
 This lease is renewed to add the durable challenge custody/coordinator port. The coordinator
 will remain Identity-only and require adapters to provide create/load/compare-and-set; it
 will not add a database table or Gateway endpoint.
+
+
+## Durable custody continuation complete
+
+The same PR now also includes:
+- `ChannelLinkChallengeRepository` with create/load/compare-and-set only;
+- `ChannelLinkChallengeCoordinator.issue()` using RequestId as durable issuance replay key;
+- verification that always reloads current state before evaluating the secret;
+- persisted failed-attempt/lock/expiry transitions before returning rejection;
+- persisted verified transition before returning a proof;
+- exact verified replay with no second CAS;
+- fail-closed repository-state echo validation;
+- focused concurrency/replay tests including stale CAS rejection.
+
+Current PR head before this handoff update: `30ba5d83e2cf99fef1ce307f3ac904181937e421`.
