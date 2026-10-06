@@ -39,11 +39,12 @@ import '../../owner_access/owner_access.dart';
 import '../../owner_access/owner_access_state.dart';
 import '../../safety/twin_safety.dart';
 import '../../safety/twin_safety_state.dart';
+import '../../twin/twin_teaching.dart';
 import '../../theme/masanawa_theme.dart';
 
 /// One Character conversation. Voice is the primary action while text,
 /// attachments and structured work results remain in the same timeline.
-enum AiChatEntryMode { chat, voiceNote, liveVoice }
+enum AiChatEntryMode { chat, teach, voiceNote, liveVoice }
 
 class AiChatScreen extends ConsumerStatefulWidget {
   const AiChatScreen({
@@ -184,6 +185,80 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     final attachments = _pendingAttachments;
     if (text.trim().isEmpty && attachments.isEmpty) return;
     final reply = _replyingTo;
+    if (widget.entryMode == AiChatEntryMode.teach &&
+        attachments.isEmpty &&
+        text.trim().isNotEmpty) {
+      unawaited(_teachThenSend(text, reply));
+      return;
+    }
+    _commitTextSend(text, attachments, reply);
+  }
+
+  Future<void> _teachThenSend(
+    String text,
+    AiChatMessage? reply,
+  ) async {
+    final command = interpretTwinTeaching(text);
+    if (command != null) {
+      try {
+        final transport = ref.read(twinProfileTransportProvider);
+        final preview = await transport.previewCustomization(command.patch);
+        if (!mounted) return;
+        var confirmed = true;
+        if (preview.requiresConfirmation) {
+          confirmed = await showDialog<bool>(
+                context: context,
+                builder: (dialogContext) => AlertDialog(
+                  title: const Text('Confirm standing change'),
+                  content: Text(
+                    command.summary +
+                        '. This changes how people can find your Twin until you change it again.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(false),
+                      child: const Text('Cancel'),
+                    ),
+                    FilledButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(true),
+                      child: const Text('Confirm'),
+                    ),
+                  ],
+                ),
+              ) ??
+              false;
+        }
+        if (!confirmed) return;
+        await transport.applyCustomization(
+          preview: preview,
+          confirmed: confirmed,
+        );
+        await ref.read(myTwinProvider.notifier).refresh();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(command.summary + '.')),
+        );
+      } catch (_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'I could not save that Twin update. Your message was not sent; please try again.',
+            ),
+          ),
+        );
+        return;
+      }
+    }
+    if (!mounted) return;
+    _commitTextSend(text, const [], reply);
+  }
+
+  void _commitTextSend(
+    String text,
+    List<ChatAttachment> attachments,
+    AiChatMessage? reply,
+  ) {
     _input.clear();
     final ctl = ref.read(aiChatProvider.notifier);
     ctl.setDraft(widget.characterId, '');
@@ -205,8 +280,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               : (reply.text.isNotEmpty
                   ? reply.text
                   : reply.allAttachments.isNotEmpty
-                  ? reply.allAttachments.first.label
-                  : 'Message'),
+                      ? reply.allAttachments.first.label
+                      : 'Message'),
         ),
       );
       return;
@@ -221,12 +296,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             : (reply.text.isNotEmpty
                 ? reply.text
                 : reply.allAttachments.isNotEmpty
-                ? reply.allAttachments.first.label
-                : 'Message'),
+                    ? reply.allAttachments.first.label
+                    : 'Message'),
       ),
     );
   }
-
   void _stageAttachments(List<ChatAttachment> attachments) {
     if (attachments.isEmpty) return;
     final merged = [
@@ -747,6 +821,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         switch (widget.entryMode) {
           case AiChatEntryMode.chat:
             break;
+          case AiChatEntryMode.teach:
+            if (_input.text.isEmpty) {
+              _input.text = '';
+            }
+            break;
           case AiChatEntryMode.voiceNote:
             unawaited(_startRecording());
             break;
@@ -1101,6 +1180,22 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                     },
                     child: Text(_newBelow > 9 ? '9+' : '$_newBelow'),
                   ),
+                ),
+              ),
+            if (widget.entryMode == AiChatEntryMode.teach)
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.fromLTRB(12, 6, 12, 2),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                decoration: BoxDecoration(
+                  color: u.brand.withValues(alpha: .08),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: u.brand.withValues(alpha: .18)),
+                ),
+                child: Text(
+                  'Teach mode: try “My bio is…”, “I speak…”, “My interests are…”, '
+                  'or “Make my Twin public/private”. Other messages stay normal chat.',
+                  style: TextStyle(color: u.textMuted, fontSize: 12, height: 1.35),
                 ),
               ),
             if (_pendingAttachments.isNotEmpty)
