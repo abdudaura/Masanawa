@@ -1,5 +1,13 @@
 # Masanawa Twin Transformation Master Plan
 
+## 2026-10-06 launch overlay
+
+This transformation remains valuable and implemented Twin work must be preserved.
+However, its My-Twin-first information architecture is superseded by the utility-first
+Home/Rooms launch plan in `docs/HOME-ROOMS-LAUNCH.md`. Do not revert merged Twin economy,
+Wallet, Activity, Explore, public profile, voice/trial, gifts, Credits, attribution or
+owner-access work. Reposition those surfaces under the new Home hierarchy.
+
 Status: canonical execution plan, 2026-10-05.
 Depends on: `docs/PRODUCT-TWIN-ECONOMY.md`.
 Coordination: `docs/TWIN-MULTI-WINDOW-EXECUTION.md`.
