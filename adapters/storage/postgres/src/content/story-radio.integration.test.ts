@@ -131,6 +131,15 @@ describeDatabase("Story Radio PostgreSQL acceptance", () => {
     expect(other.mine).toBeNull();
     expect(other.counts.love).toBe(1);
 
+    await expect(repository.setEpisodePublication({
+      tenantId,
+      episodeId: episode.episodeId,
+      published: false,
+      at: "2026-10-06T10:06:30.000Z",
+    })).rejects.toThrow(
+      "story_radio.episode.last_published_in_live_series",
+    );
+
     await repository.setSeriesPublication({
       tenantId,
       seriesId: series.seriesId,
