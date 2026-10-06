@@ -217,10 +217,28 @@ export function createStoryRadioService(input: Readonly<{
         tenantId,
         userId: String(identity.userId),
       });
+      let continuation = progressView(progress);
+      if (progress?.completed) {
+        const episodes = await publishedEpisodes(tenantId, progress.seriesId);
+        const index = episodes.findIndex(
+          (episode) => episode.episodeId === progress.episodeId,
+        );
+        const next = index >= 0 ? episodes[index + 1] : undefined;
+        continuation = next
+          ? Object.freeze({
+              seriesId: next.seriesId,
+              episodeId: next.episodeId,
+              positionSeconds: 0,
+              durationSeconds: next.durationSeconds,
+              completed: false,
+              updatedAt: progress.updatedAt,
+            })
+          : null;
+      }
       return Object.freeze({
         featured: cards[0] ?? null,
         series: Object.freeze(cards),
-        continueProgress: progressView(progress),
+        continueProgress: continuation,
       });
     },
 
