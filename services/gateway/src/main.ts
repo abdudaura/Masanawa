@@ -784,6 +784,13 @@ export async function startGatewayService(
             180,
             "MASANAWA_OWNER_ACCESS_COMPLETION_GRACE_MINUTES",
           ),
+          messageRetentionDays: boundedEnvInteger(
+            env.MASANAWA_OWNER_ACCESS_MESSAGE_RETENTION_DAYS,
+            30,
+            1,
+            365,
+            "MASANAWA_OWNER_ACCESS_MESSAGE_RETENTION_DAYS",
+          ),
         },
       });
     }
