@@ -235,6 +235,20 @@ function boundedLimit(value: number): number {
   return Math.max(1, Math.min(200, value));
 }
 
+function disputeReason(
+  value: string | undefined,
+): "service-not-delivered" | "service-quality" | "other" | undefined {
+  if (value === undefined) return undefined;
+  if (
+    value !== "service-not-delivered" &&
+    value !== "service-quality" &&
+    value !== "other"
+  ) {
+    throw new TypeError("dispute reason is invalid");
+  }
+  return value;
+}
+
 function requestId(value: string): string {
   if (typeof value !== "string" || value.length < 8 || value.length > 256) {
     throw new TypeError("requestId is invalid");
@@ -293,6 +307,9 @@ export function createOwnerAccessService(input: {
         requestId: requestId(request.requestId),
         action: request.action,
         ...(request.scheduledFor ? { scheduledFor: request.scheduledFor } : {}),
+        ...(disputeReason(request.disputeReason)
+          ? { disputeReason: disputeReason(request.disputeReason)! }
+          : {}),
       });
     },
 
