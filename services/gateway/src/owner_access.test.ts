@@ -44,7 +44,7 @@ function build() {
         requesterUserId,
         ownerUserId: "user-owner",
         originatingCharacterId: input.characterId,
-        modality: "voice",
+        modality: "text",
         durationMinutes: 20,
         priceCredits: 0,
         platformFeeCredits: 0,
@@ -65,7 +65,7 @@ function build() {
         requesterUserId,
         ownerUserId: input.actorUserId,
         originatingCharacterId: input.characterId,
-        modality: "voice",
+        modality: "text",
         durationMinutes: 20,
         priceCredits: 1000,
         platformFeeCredits: 100,
@@ -89,7 +89,7 @@ function build() {
         requesterUserId: input.requesterUserId,
         ownerUserId: "user-owner",
         originatingCharacterId: input.characterId,
-        modality: "voice",
+        modality: "text",
         durationMinutes: 20,
         priceCredits: 0,
         platformFeeCredits: 0,
@@ -104,6 +104,40 @@ function build() {
         completedAt: null,
       };
     },
+    async heartbeat() {
+      return {
+        attendanceVerified: true,
+        verifiedSeconds: 75,
+        presence: [
+          {
+            userId: requesterUserId,
+            firstSeenAt: "2026-10-05T10:00:00Z",
+            lastSeenAt: "2026-10-05T10:01:15Z",
+            heartbeatCount: 6,
+          },
+        ],
+      };
+    },
+    async listMessages() {
+      return [
+        {
+          requestId: "owner-request-latest",
+          messageId: "message-owner-1",
+          senderUserId: requesterUserId,
+          body: "Hello",
+          sentAt: "2026-10-05T10:00:10Z",
+        },
+      ];
+    },
+    async sendMessage(input) {
+      return {
+        requestId: input.requestId,
+        messageId: input.messageId,
+        senderUserId: input.actorUserId,
+        body: input.body,
+        sentAt: "2026-10-05T10:00:15Z",
+      };
+    },
   };
   return createOwnerAccessService({ authorizer, quotes, requests });
 }
@@ -113,7 +147,7 @@ describe("owner access service", () => {
     const quote = await build().quote({
       authorizationHeader: "Bearer user",
       characterId,
-      modality: "voice",
+      modality: "text",
       durationMinutes: 20,
     });
     expect(quote.chargeMode).toBe("trial");
@@ -133,6 +167,34 @@ describe("owner access service", () => {
         originatingCharacterId: characterId,
       }),
     );
+  });
+
+  it("authorizes private room heartbeat and messages through owner-access read", async () => {
+    const service = build();
+    const status = await service.heartbeat({
+      authorizationHeader: "Bearer user",
+      characterId,
+      requestId: "owner-request-latest",
+    });
+    expect(status.attendanceVerified).toBe(true);
+    expect(status.verifiedSeconds).toBe(75);
+
+    const messages = await service.messages({
+      authorizationHeader: "Bearer user",
+      characterId,
+      requestId: "owner-request-latest",
+      limit: 50,
+    });
+    expect(messages[0]?.body).toBe("Hello");
+
+    const sent = await service.sendMessage({
+      authorizationHeader: "Bearer user",
+      characterId,
+      requestId: "owner-request-latest",
+      messageId: "message-client-123",
+      body: "  Hi owner  ",
+    });
+    expect(sent.body).toBe("Hi owner");
   });
 
   it("creates a request from an opaque server quote id only", async () => {
