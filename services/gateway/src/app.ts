@@ -24,6 +24,7 @@ import { registerTwinActivityRoutes } from "./twin_activity_routes.js";
 import { registerWalletProjectionRoutes } from "./wallet_projection_routes.js";
 import { registerCreditTransferRoutes, registerGiftRoutes } from "./credit_transfer_routes.js";
 import { registerTwinAttributionRoutes, registerCommissionPolicyAdminRoutes } from "./twin_attribution_routes.js";
+import { registerProviderValuationAdminRoutes } from "./provider_valuation_admin_routes.js";
 import { registerPaidVoiceRoutes, registerPaidVoiceSettlementRoutes } from "./paid_voice_routes.js";
 import { registerPaidFeatureTrialAdminRoutes } from "./paid_feature_trial_admin_routes.js";
 import {
@@ -1335,6 +1336,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     registerGiftRoutes(app, twin.gifts);
     registerTwinAttributionRoutes(app, twin.twinAttribution);
     registerCommissionPolicyAdminRoutes(app, twin.commissionAdmin);
+    registerProviderValuationAdminRoutes(app, twin.providerValuationAdmin);
     registerPaidVoiceRoutes(app, twin.paidVoice);
     registerPaidVoiceSettlementRoutes(app, twin.voiceAdmissionGate);
     registerPaidFeatureTrialAdminRoutes(app, twin.paidFeatureTrialAdmin);
