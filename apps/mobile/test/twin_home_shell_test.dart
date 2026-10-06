@@ -41,6 +41,26 @@ class _EmptyTwinTransport implements TwinProfileTransport {
   Future<TwinProfile> setDiscoverable(bool discoverable) async => profile;
 }
 
+class _CountingActivityTransport implements TwinActivityTransport {
+  int loads = 0;
+
+  @override
+  Future<TwinActivityView> load({int limit = 50}) async {
+    loads += 1;
+    return const TwinActivityView(
+      hasTwin: false,
+      characterId: null,
+      summary: TwinActivitySummary(
+        visitors: 0,
+        conversations: 0,
+        earningsCredits: 0,
+        pendingOwnerRequests: 0,
+      ),
+      items: [],
+    );
+  }
+}
+
 void main() {
   testWidgets('signed-in root exposes My Twin, Explore, Activity and Wallet',
       (tester) async {
@@ -167,6 +187,43 @@ void main() {
     expect(find.text('Explore'), findsOneWidget);
     expect(find.text('Activity'), findsOneWidget);
     expect(find.text('Wallet'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+
+  testWidgets('inactive root tabs do not start provider work until visited',
+      (tester) async {
+    final activityTransport = _CountingActivityTransport();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          isSignedInProvider.overrideWithValue(true),
+          twinProfileTransportProvider.overrideWithValue(
+            const _EmptyTwinTransport(),
+          ),
+          twinDirectoryTransportProvider.overrideWithValue(
+            const UnavailableTwinDirectoryTransport(),
+          ),
+          twinActivityTransportProvider.overrideWithValue(activityTransport),
+          walletTransportProvider.overrideWithValue(
+            const UnavailableWalletTransport(),
+          ),
+        ],
+        child: MaterialApp(
+          theme: buildMasanawaTheme(brightness: Brightness.light),
+          home: const TwinHomeShell(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    expect(activityTransport.loads, 0);
+
+    await tester.tap(find.text('Activity'));
+    await tester.pumpAndSettle();
+
+    expect(activityTransport.loads, 1);
     expect(tester.takeException(), isNull);
   });
 
