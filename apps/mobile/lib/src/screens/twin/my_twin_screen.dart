@@ -147,14 +147,20 @@ class _TwinBody extends StatelessWidget {
               CircleAvatar(
                 radius: 38,
                 backgroundColor: u.brand.withValues(alpha: .12),
-                child: Text(
-                  profile.initials,
-                  style: TextStyle(
-                    color: u.brand,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                foregroundImage:
+                    profile.avatarUrl == null || profile.avatarUrl!.isEmpty
+                        ? null
+                        : NetworkImage(profile.avatarUrl!),
+                child: profile.avatarUrl == null || profile.avatarUrl!.isEmpty
+                    ? Text(
+                        profile.initials,
+                        style: TextStyle(
+                          color: u.brand,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      )
+                    : null,
               ),
               const SizedBox(height: 12),
               Text(
