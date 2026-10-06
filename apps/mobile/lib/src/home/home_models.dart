@@ -23,6 +23,23 @@ class HomeAssistantCardModel {
   final String? avatarUrl;
   final bool isAvailable;
 
+  factory HomeAssistantCardModel.fromJson(Map<String, dynamic> json) {
+    final role = switch (json['role']) {
+      'gwana' => HomeAssistantRole.gwana,
+      'gwani' => HomeAssistantRole.gwani,
+      _ => throw const FormatException('Unknown Home assistant role'),
+    };
+    return HomeAssistantCardModel(
+      role: role,
+      characterId: json['characterId'] as String? ?? '',
+      displayName: json['displayName'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      voiceLabel: json['voiceLabel'] as String?,
+      avatarUrl: json['avatarUrl'] as String?,
+      isAvailable: json['isAvailable'] != false,
+    );
+  }
+
   String get initials {
     final parts = displayName.trim().split(RegExp(r'\s+'));
     if (parts.isEmpty || parts.first.isEmpty) return '?';
@@ -48,6 +65,17 @@ class HomeRoomCardModel {
   final String iconKey;
   final String? continuationLabel;
   final bool isAvailable;
+
+  factory HomeRoomCardModel.fromJson(Map<String, dynamic> json) {
+    return HomeRoomCardModel(
+      roomId: json['roomId'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      iconKey: json['iconKey'] as String? ?? '',
+      continuationLabel: json['continuationLabel'] as String?,
+      isAvailable: json['isAvailable'] != false,
+    );
+  }
 }
 
 class HomeTwinCardModel {
@@ -82,6 +110,17 @@ class HomeContinuationModel {
   final String kind;
   final String? roomId;
   final String? characterId;
+
+  factory HomeContinuationModel.fromJson(Map<String, dynamic> json) {
+    return HomeContinuationModel(
+      id: json['id'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      subtitle: json['subtitle'] as String? ?? '',
+      kind: json['kind'] as String? ?? '',
+      roomId: json['roomId'] as String?,
+      characterId: json['characterId'] as String?,
+    );
+  }
 }
 
 class HomeSnapshot {
@@ -96,6 +135,37 @@ class HomeSnapshot {
   final List<HomeRoomCardModel> rooms;
   final HomeTwinCardModel? myTwin;
   final List<HomeContinuationModel> continuations;
+
+  factory HomeSnapshot.fromJson(Map<String, dynamic> json) {
+    final rawAssistants = json['assistants'];
+    final rawRooms = json['rooms'];
+    final rawContinuations = json['continuations'];
+    return HomeSnapshot(
+      assistants: [
+        for (final item in rawAssistants is List ? rawAssistants : const [])
+          if (item is Map)
+            HomeAssistantCardModel.fromJson(item.cast<String, dynamic>()),
+      ],
+      rooms: [
+        for (final item in rawRooms is List ? rawRooms : const [])
+          if (item is Map)
+            HomeRoomCardModel.fromJson(item.cast<String, dynamic>()),
+      ],
+      continuations: [
+        for (final item
+            in rawContinuations is List ? rawContinuations : const [])
+          if (item is Map)
+            HomeContinuationModel.fromJson(item.cast<String, dynamic>()),
+      ],
+    );
+  }
+
+  HomeSnapshot withTwin(HomeTwinCardModel twin) => HomeSnapshot(
+        assistants: assistants,
+        rooms: rooms,
+        myTwin: twin,
+        continuations: continuations,
+      );
 
   HomeAssistantCardModel? assistantFor(HomeAssistantRole role) {
     for (final assistant in assistants) {
