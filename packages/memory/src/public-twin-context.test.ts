@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { MemoryFusedHit } from "./fusion.js";
+import type { MemoryScope } from "./model.js";
 import {
   assertPublicTwinMemoryHit,
   compilePublicTwinMemoryContext,
@@ -10,10 +11,7 @@ const characterId = "character_00000000-0000-4000-8000-000000000002" as never;
 const otherCharacterId = "character_00000000-0000-4000-8000-000000000099" as never;
 
 function hit(input: {
-  readonly scope:
-    | { readonly kind: "character-shared"; readonly characterId: typeof characterId }
-    | { readonly kind: "character-private"; readonly characterId: typeof characterId }
-    | { readonly kind: "relationship"; readonly relationshipId: never };
+  readonly scope: MemoryScope;
   readonly tenant?: typeof tenantId;
   readonly suffix?: string;
 }): MemoryFusedHit {
@@ -87,7 +85,7 @@ describe("public twin context safety", () => {
       candidate: hit({
         scope: {
           kind: "character-shared",
-          characterId: otherCharacterId as typeof characterId,
+          characterId: otherCharacterId,
         },
         suffix: "012",
       }),
