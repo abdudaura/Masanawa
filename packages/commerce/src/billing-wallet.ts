@@ -12,6 +12,7 @@ export interface NgnFundingIntent {
   readonly txRef: string;
   readonly amountKobo: number;
   readonly quoteId: string | null;
+  readonly originatingCharacterId?: string | null;
   readonly state: NgnFundingIntentState;
   readonly accountNumber: string | null;
   readonly bankName: string | null;
@@ -36,6 +37,7 @@ export interface NgnWalletRepository {
     readonly txRef: string;
     readonly amountKobo: number;
     readonly quoteId?: string | null;
+    readonly originatingCharacterId?: string | null;
     readonly expiresAt: string;
     readonly createdAt: string;
   }): Promise<NgnFundingIntent>;
