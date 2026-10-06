@@ -21,7 +21,7 @@ class CafeSuggestion {
   final String message;
 }
 
-/// The four cafe categories, in display order.
+/// Conversational Masanawa service shortcuts, in display order.
 const kCafeSuggestions = <CafeSuggestion>[
   CafeSuggestion(key: 'data', label: 'Data', message: 'Buy data'),
   CafeSuggestion(key: 'airtime', label: 'Airtime', message: 'Buy airtime'),
@@ -34,5 +34,10 @@ const kCafeSuggestions = <CafeSuggestion>[
     key: 'tv',
     label: 'TV',
     message: 'Pay TV subscription',
+  ),
+  CafeSuggestion(
+    key: 'crypto',
+    label: 'Crypto',
+    message: 'Help me with crypto',
   ),
 ];
