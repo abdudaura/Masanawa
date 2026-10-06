@@ -8,6 +8,7 @@ import '../../state/session_state.dart';
 import '../../state/agent_directory_state.dart';
 import '../../state/ai_chat_state.dart';
 import '../../theme/masanawa_theme.dart';
+import '../../ui/components/platform_agent_avatar.dart';
 
 /// Server-driven agent roster. No Character names, roles or capabilities are
 /// compiled into the app; admin configuration can change without a release.
@@ -151,7 +152,7 @@ class AgentListScreen extends ConsumerWidget {
                     horizontal: 14,
                     vertical: 7,
                   ),
-                  leading: _AgentAvatar(agent: agent),
+                  leading: PlatformAgentAvatar(agent: agent, radius: 26, showPresence: true),
                   title: Text(
                     agent.displayName,
                     style: TextStyle(
@@ -186,50 +187,3 @@ class AgentListScreen extends ConsumerWidget {
   }
 }
 
-class _AgentAvatar extends StatelessWidget {
-  const _AgentAvatar({required this.agent});
-
-  final AgentDirectoryEntry agent;
-
-  @override
-  Widget build(BuildContext context) {
-    final u = context.masanawa;
-    final image = agent.avatarUrl;
-    return Stack(
-      children: [
-        CircleAvatar(
-          radius: 26,
-          backgroundColor: u.brand,
-          foregroundImage: image != null && image.isNotEmpty
-              ? NetworkImage(image)
-              : null,
-          child: image == null || image.isEmpty
-              ? Text(
-                  agent.initial,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 20,
-                  ),
-                )
-              : null,
-        ),
-        Positioned(
-          right: 0,
-          bottom: 0,
-          child: Container(
-            width: 13,
-            height: 13,
-            decoration: BoxDecoration(
-              color: agent.presence == AgentPresence.offline
-                  ? u.textMuted
-                  : u.success,
-              shape: BoxShape.circle,
-              border: Border.all(color: u.surfaceBg, width: 2),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
