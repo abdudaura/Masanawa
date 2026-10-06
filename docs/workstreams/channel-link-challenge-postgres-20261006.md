@@ -34,6 +34,20 @@ Task: persist replay-safe WhatsApp/Telegram account-link challenges across proce
 - verified/locked/expired lifecycle state survives restart;
 - verified evidence must persist atomically with the verified transition.
 
-State: CLAIMED.
+State: IMPLEMENTED / VERIFICATION PENDING.
+
+## Completed
+
+- adds `identity.channel_link_challenges` durable schema;
+- persists only scoped SHA-256 challenge hashes, never plaintext secrets;
+- implements exact RequestId create replay and conflict rejection;
+- implements load + serializable single-revision compare-and-set;
+- freezes Tenant/account/channel/User/hash/lifetime/max-attempt scope after issue;
+- only pending challenges may advance;
+- invalid attempts, verification, lock and expiry survive process restart;
+- verified external subject evidence persists atomically with verified state;
+- restart tests cover attempt persistence, verified replay, conflicting RequestId create and terminal lock behavior.
+
+Implementation head before handoff: `7d31d3da5166b0643b3fec97095113008569f237`.
 
 Last update: 2026-10-06.
