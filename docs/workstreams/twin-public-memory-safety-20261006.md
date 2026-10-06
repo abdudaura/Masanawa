@@ -33,8 +33,10 @@ Not owned and must not be edited from this window:
 
 ## Current state
 
-CLAIMED. No implementation changes have been made beyond this claim.
+IMPLEMENTING. The public-Twin context compiler and focused leakage-resistance tests are committed; executable CI evidence is pending.
 
 Implementation target: add a single fail-closed public-Twin context compiler that only accepts the represented Twin's explicit `character-shared` scope, rejects caller-supplied broader predicates/private scopes, validates every candidate before context compilation, preserves canonical Memory provenance, and proves leakage resistance with focused tests.
+
+Current implementation head: `b6a1e790c3191f22b900da418ef51ca2e93487d6`.
 
 Last update: 2026-10-06.
