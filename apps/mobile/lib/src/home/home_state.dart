@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/providers.dart';
+import '../state/ai_chat_state.dart';
 import '../state/my_twin_state.dart';
 import '../state/session_state.dart';
 import 'home_models.dart';
@@ -11,13 +12,14 @@ class HomeController extends AsyncNotifier<HomeSnapshot> {
     final signedIn = ref.watch(isSignedInProvider);
     ref.watch(apiClientProvider);
     ref.watch(myTwinProvider);
+    final chat = ref.watch(aiChatProvider);
     if (!signedIn) {
       return const HomeSnapshot(assistants: [], rooms: []);
     }
-    return _load();
+    return _load(chat);
   }
 
-  Future<HomeSnapshot> _load() async {
+  Future<HomeSnapshot> _load(AiChatState chat) async {
     final client = ref.read(apiClientProvider);
     final response = await client.dio.get<Map<String, dynamic>>('/home');
     final data = response.data;
@@ -25,9 +27,9 @@ class HomeController extends AsyncNotifier<HomeSnapshot> {
       throw StateError('Home projection is unavailable');
     }
 
-    final snapshot = HomeSnapshot.fromJson(data);
+    var snapshot = HomeSnapshot.fromJson(data);
     final twin = await ref.read(myTwinProvider.future);
-    return snapshot.withTwin(
+    snapshot = snapshot.withTwin(
       HomeTwinCardModel(
         title: 'My Twin',
         subtitle: twin != null && twin.hasTwin
@@ -38,12 +40,39 @@ class HomeController extends AsyncNotifier<HomeSnapshot> {
         publicUrl: twin?.publicUrl,
       ),
     );
+
+    final assistantIds = {
+      for (final assistant in snapshot.assistants)
+        assistant.characterId: assistant,
+    };
+    final continuations = <HomeContinuationModel>[];
+    for (final thread in chat.chatList) {
+      final assistant = assistantIds[thread.characterId];
+      if (assistant == null || thread.messages.isEmpty) continue;
+      final title = thread.title?.trim();
+      final last = thread.messages.last;
+      continuations.add(
+        HomeContinuationModel(
+          id: 'chat:' + thread.characterId,
+          title: title == null || title.isEmpty
+              ? 'Continue with ' + assistant.displayName
+              : title,
+          subtitle: last.text.trim().isEmpty
+              ? 'Continue your conversation'
+              : last.text.trim(),
+          kind: 'conversation',
+          characterId: thread.characterId,
+        ),
+      );
+      if (continuations.length == 3) break;
+    }
+    return snapshot.withContinuations(continuations);
   }
 
   Future<void> refresh() async {
     if (!ref.read(isSignedInProvider)) return;
     state = const AsyncLoading();
-    state = await AsyncValue.guard(_load);
+    state = await AsyncValue.guard(() => _load(ref.read(aiChatProvider)));
   }
 }
 
