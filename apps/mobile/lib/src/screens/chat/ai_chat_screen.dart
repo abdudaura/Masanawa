@@ -779,6 +779,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             expertise: List<String>.from(summary['expertise'] as List),
           );
       await ref.read(agentDirectoryProvider.notifier).refresh();
+      chat.setTwinInterviewFacts(widget.characterId, const <String, dynamic>{});
+      if (mounted) {
+        setState(() => _twinInterviewFacts = <String, dynamic>{});
+      }
       await chat.announceTwinReady(
         guide.characterId,
         displayName: result.displayName,
