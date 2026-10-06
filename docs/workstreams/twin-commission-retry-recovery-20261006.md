@@ -27,6 +27,26 @@ Task: TWIN-106 — crashes/retries do not duplicate money or sessions.
 - ineligible/self/internal-transfer decisions never reach the economic posting boundary;
 - refund/reversal recovery remains append-only and cannot over-reverse the original settled commission.
 
-State: CLAIMED.
+State: ISOLATED COMPLETE / INTEGRATION READY.
+
+## Completed acceptance evidence
+
+- eligible acquisition/commerce commission posts owner earning once under stable settlement identity;
+- simulated crash after earning post but before caller acknowledgement is safe on exact retry;
+- changed base amount/settlement fingerprint under the same settlement identity fails closed;
+- self-attribution and internal-transfer decisions remain ineligible and cannot reach the posting boundary;
+- partial commission reversal is append-only and independently idempotent;
+- exact reversal retry does not double-clawback;
+- over-reversal beyond remaining settled commission fails closed;
+- no Commerce source/repository, ledger, provider or production integration path changed.
+
+## Remaining production dependencies
+
+1. canonical settlement repository must persist settlement/reversal fingerprints atomically with ledger entries;
+2. provider-success funding/purchase hooks must reuse stable attribution + operation identities;
+3. refund/reversal integration must reconcile against the exact original settlement;
+4. executable CI and persistent-storage crash/restart evidence remain required.
+
+Implementation head before handoff: `2184d3ccf8de6fce680b6b60853bab4beff1fa8b`.
 
 Last update: 2026-10-06.
