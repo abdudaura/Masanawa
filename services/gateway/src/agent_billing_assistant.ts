@@ -58,16 +58,6 @@ function result(reply: string, document?: unknown): AgentBillingResult {
   });
 }
 
-function formatNaira(value: string): string {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) return value;
-  return new Intl.NumberFormat("en-NG", {
-    style: "currency",
-    currency: "NGN",
-    maximumFractionDigits: 2,
-  }).format(parsed);
-}
-
 function parseDirective(reply: string): Directive | null {
   const match = TAG.exec(reply);
   if (!match?.[1]) return null;
@@ -175,21 +165,22 @@ function walletReply(view: BillingWalletView): string {
   return `Your bill is being processed. Your available wallet balance is ₦${view.balance}.`;
 }
 
+export const BILLING_AGENT_SYSTEM_INSTRUCTIONS = Object.freeze([
+  "Masanawa has a server-controlled NGN wallet and bill-payment tool. Never claim a payment happened unless the runtime returns evidence.",
+  "For balance requests, append exactly: <masanawa_action>{\"type\":\"wallet.balance\"}</masanawa_action>.",
+  "For requests to add/fund/deposit money, ask only for amount if missing. When known append: <masanawa_action>{\"type\":\"wallet.fund\",\"amount\":\"5000\"}</masanawa_action>.",
+  "For bill purchases, identify service, provider/network/company, recipient and amount. For data or TV also identify requested plan/package. Ask only for missing or ambiguous information.",
+  "When complete, append exactly one directive: <masanawa_action>{\"type\":\"billing.quote\",\"service\":\"airtime|data|electricity|tv\",\"provider\":\"provider name\",\"recipient\":\"phone/meter/card\",\"amount\":\"decimal NGN amount\",\"plan\":\"optional plan/package/prepaid/postpaid\"}</masanawa_action>.",
+  "Never ask the user to open a browser or Flutterwave checkout. Funding uses a temporary bank account shown inside Masanawa.",
+  "A complete purchase requires one explicit confirmation. Never invent account numbers, balances, billers, plans, tokens, references, or success.",
+  "Understand Nigerian English and Hausa billing phrasing such as kati/katin waya for airtime, wutar lantarki/NEPA for electricity, and saka kudi for funding.",
+]);
+
 export function createAgentBillingAssistant(input: Readonly<{
   checkout: BillingCheckoutService;
   billing: BillingFinancialService;
   wallet: BillingWalletService;
 }>): AgentBillingAssistant {
-  const systemInstructions = Object.freeze([
-    "Masanawa has a server-controlled NGN wallet and bill-payment tool. Never claim a payment happened unless the runtime returns evidence.",
-    "For balance requests, if the user is asking for their Masanawa wallet balance, output exactly one machine directive at the end: <masanawa_action>{\"type\":\"wallet.balance\"}</masanawa_action>.",
-    "For requests to add/fund/deposit money, ask only for the amount if it is missing. When the amount is known, output: <masanawa_action>{\"type\":\"wallet.fund\",\"amount\":\"5000\"}</masanawa_action>.",
-    "For bill purchases, identify service, provider/network/company, recipient and amount. For data or TV also identify the requested plan/package. Ask only for missing or ambiguous information.",
-    "When a bill instruction is complete, append exactly one directive: <masanawa_action>{\"type\":\"billing.quote\",\"service\":\"airtime|data|electricity|tv\",\"provider\":\"provider name\",\"recipient\":\"phone/meter/card\",\"amount\":\"decimal NGN amount\",\"plan\":\"optional plan/package/prepaid/postpaid\"}</masanawa_action>.",
-    "Do not ask the user to open a browser or Flutterwave checkout. Funding is done with a temporary bank account shown inside Masanawa.",
-    "A complete purchase still requires one explicit confirmation. Do not invent account numbers, balances, billers, plans, tokens, references, or success.",
-    "Understand ordinary Nigerian English and Hausa billing phrasing such as kati/katin waya for airtime, data, wutar lantarki/NEPA for electricity, and account number/saka kudi for funding.",
-  ]);
 
   async function executeDirective(
     authorizationHeader: string | undefined,
@@ -260,7 +251,7 @@ export function createAgentBillingAssistant(input: Readonly<{
   }
 
   return Object.freeze<AgentBillingAssistant>({
-    systemInstructions,
+    systemInstructions: BILLING_AGENT_SYSTEM_INSTRUCTIONS,
 
     async beforeInference(request) {
       const text = normalize(request.text);
