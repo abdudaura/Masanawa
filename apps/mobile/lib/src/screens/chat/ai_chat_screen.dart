@@ -1844,21 +1844,20 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       SnackBar(content: Text(ok ? 'Report submitted.' : 'Could not submit report.')),
     );
   }
-  Future<PaidVoiceAdmission?> _admitInlineVoice(
+  Future<(bool allowed, PaidVoiceAdmission? admission)> _admitInlineVoice(
     AgentDirectoryEntry agent,
   ) async {
     final ownedCharacterId = ref.read(myTwinProvider).valueOrNull?.characterId;
     final requiresTwinAdmission =
         !agent.supportAgent && ownedCharacterId != agent.characterId;
-    if (!requiresTwinAdmission) return null;
+    if (!requiresTwinAdmission) return (true, null);
 
     final controller = ref.read(paidVoiceControllerProvider.notifier);
     final quote = await controller.quote(
       characterId: agent.characterId,
       expectedSeconds: 5 * 60,
     );
-    if (quote == null) return null;
-    if (!mounted) return null;
+    if (quote == null || !mounted) return (false, null);
     final accepted = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -1880,8 +1879,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         ],
       ),
     );
-    if (accepted != true) return null;
-    return controller.accept(characterId: agent.characterId);
+    if (accepted != true) return (false, null);
+    final admission = await controller.accept(characterId: agent.characterId);
+    return (admission != null, admission);
   }
 
   Future<void> _startInlineLiveVoice(AgentDirectoryEntry agent) async {
@@ -1897,8 +1897,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       if (mounted) _comingSoon('Live voice');
       return;
     }
-    final paidAdmission = await _admitInlineVoice(agent);
-    if (!mounted) return;
+    final admissionResult = await _admitInlineVoice(agent);
+    if (!mounted || !admissionResult.$1) return;
+    final paidAdmission = admissionResult.$2;
 
     final shellTransport = transport as AgentShellTransport;
     LiveVoiceSession? session;
