@@ -228,30 +228,26 @@ class _TwinBody extends StatelessWidget {
             ),
           ),
         ),
-        if (profile.languages.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          Text(
-            'Languages',
-            style: TextStyle(
-              color: u.textPrimary,
-              fontWeight: FontWeight.w600,
-            ),
+        Container(
+          margin: const EdgeInsets.only(top: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: u.surfaceMuted,
+            borderRadius: BorderRadius.circular(14),
           ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: profile.languages
-                .map(
-                  (language) => Chip(
-                    label: Text(language),
-                    side: BorderSide(color: u.structuralBorder),
-                    backgroundColor: u.surfaceCard,
-                  ),
-                )
-                .toList(),
+          child: Row(
+            children: [
+              Icon(Icons.translate_rounded, color: u.brand, size: 18),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Your Twin follows the language each person uses. No language preference is required.',
+                  style: TextStyle(fontSize: 12.5),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ],
     );
   }
