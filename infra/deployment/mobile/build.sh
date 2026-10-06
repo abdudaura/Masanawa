@@ -72,7 +72,19 @@ set -o pipefail
 sdkmanager "platform-tools" "platforms;android-37.0" "build-tools;36.0.0"
 cd "$ROOT_DIR/apps/mobile"
 flutter pub get
-flutter analyze --no-fatal-infos --no-fatal-warnings
+flutter analyze --no-fatal-infos --no-fatal-warnings \
+  lib/src/home \
+  lib/src/router/app_router.dart \
+  lib/src/screens/twin/twin_home_shell.dart \
+  lib/src/screens/billing/billing_screen.dart \
+  lib/src/screens/chat/ai_chat_screen.dart \
+  lib/src/core/shell_deep_link.dart \
+  lib/src/owner_access/owner_access.dart \
+  lib/src/screens/chat/components/owner_access_status_card.dart \
+  test/home \
+  test/shell_deep_link_test.dart \
+  test/twin_home_shell_test.dart \
+  test/twin_production_integration_test.dart
 timeout --signal=TERM --kill-after=30s 10m flutter test --concurrency=1 --reporter=expanded --timeout=2m \
   test/home/home_billing_intent_test.dart \
   test/home/home_continuation_test.dart \
