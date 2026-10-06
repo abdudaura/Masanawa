@@ -35,3 +35,31 @@ adaptive sequence without forcing a lengthy questionnaire.
 
 Current step: implement contract + deterministic validation + tests, then hand off to the
 existing Teaching runtime owner for model/provider composition.
+
+
+## Implementation checkpoint
+
+Implemented on draft PR #297:
+
+- confidence-gated explicit/inferred learner intake;
+- explicit input precedence over inference;
+- one direct clarification when the essential topic is still unknown;
+- transparent defaults for non-blocking goal/language/modality fields;
+- bounded, identity-free adaptive sequence proposal normalization;
+- provider-neutral planner coordinator with an admitted maximum step count;
+- proposal providers receive allowed resource keys only, not raw resource evidence;
+- final materialization reuses canonical `normalizeTeachingLessonPlan()` and rejects
+  unknown resource keys or unresolved intake;
+- focused tests cover minimal intake, explicit-over-inferred precedence, low-confidence
+  clarification, invalid inference confidence, duplicate/oversized proposals, final
+  canonical materialization, provider-call suppression during clarification, maximum-step
+  enforcement and resource-authority rejection.
+
+Verification:
+- PR #297 is mergeable.
+- GitHub Foundation CI still terminates before producing a downloadable job log, matching
+  the repository-wide runner failure. No test pass is fabricated.
+
+Remaining integration:
+- admitted Teaching runtime supplies the proposal provider/model;
+- actual app/WhatsApp/Telegram/voice rehearsal remains with their owning integration lanes.
