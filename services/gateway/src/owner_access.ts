@@ -50,6 +50,27 @@ export interface OwnerAccessRequest {
   readonly completedAt: string | null;
 }
 
+export interface OwnerAccessRoomMessage {
+  readonly requestId: string;
+  readonly messageId: string;
+  readonly senderUserId: string;
+  readonly body: string;
+  readonly sentAt: string;
+}
+
+export interface OwnerAccessRoomPresence {
+  readonly userId: string;
+  readonly firstSeenAt: string;
+  readonly lastSeenAt: string;
+  readonly heartbeatCount: number;
+}
+
+export interface OwnerAccessRoomStatus {
+  readonly attendanceVerified: boolean;
+  readonly verifiedSeconds: number;
+  readonly presence: readonly OwnerAccessRoomPresence[];
+}
+
 export interface OwnerAccessAuthority {
   readonly tenantId: TenantId;
   readonly userId: UserId;
@@ -111,6 +132,30 @@ export interface OwnerAccessRequestPort {
     readonly requesterUserId: UserId;
     readonly characterId: CharacterId;
   }): Promise<OwnerAccessRequest | null>;
+
+  heartbeat(input: {
+    readonly tenantId: TenantId;
+    readonly actorUserId: UserId;
+    readonly characterId: CharacterId;
+    readonly requestId: string;
+  }): Promise<OwnerAccessRoomStatus>;
+
+  listMessages(input: {
+    readonly tenantId: TenantId;
+    readonly actorUserId: UserId;
+    readonly characterId: CharacterId;
+    readonly requestId: string;
+    readonly limit: number;
+  }): Promise<readonly OwnerAccessRoomMessage[]>;
+
+  sendMessage(input: {
+    readonly tenantId: TenantId;
+    readonly actorUserId: UserId;
+    readonly characterId: CharacterId;
+    readonly requestId: string;
+    readonly messageId: string;
+    readonly body: string;
+  }): Promise<OwnerAccessRoomMessage>;
 }
 
 export interface OwnerAccessService {
@@ -158,6 +203,27 @@ function duration(value: number): number {
     throw new RangeError("durationMinutes is invalid");
   }
   return value;
+}
+
+function messageId(value: string): string {
+  if (typeof value !== "string" || value.length < 8 || value.length > 160) {
+    throw new TypeError("messageId is invalid");
+  }
+  return value;
+}
+
+function messageBody(value: string): string {
+  if (typeof value !== "string") throw new TypeError("message body is invalid");
+  const normalized = value.trim();
+  if (!normalized || normalized.length > 4000) {
+    throw new TypeError("message body is invalid");
+  }
+  return normalized;
+}
+
+function boundedLimit(value: number): number {
+  if (!Number.isSafeInteger(value)) throw new TypeError("limit is invalid");
+  return Math.max(1, Math.min(200, value));
 }
 
 function requestId(value: string): string {
@@ -247,6 +313,54 @@ export function createOwnerAccessService(input: {
         tenantId: authority.tenantId,
         requesterUserId: authority.userId,
         characterId,
+      });
+    },
+
+    async heartbeat(request) {
+      const characterId = parseCanonicalId("character", request.characterId);
+      const authority = await input.authorizer.authorize({
+        authorizationHeader: request.authorizationHeader,
+        characterId,
+        capability: "owner-access.read",
+      });
+      return input.requests.heartbeat({
+        tenantId: authority.tenantId,
+        actorUserId: authority.userId,
+        characterId,
+        requestId: requestId(request.requestId),
+      });
+    },
+
+    async messages(request) {
+      const characterId = parseCanonicalId("character", request.characterId);
+      const authority = await input.authorizer.authorize({
+        authorizationHeader: request.authorizationHeader,
+        characterId,
+        capability: "owner-access.read",
+      });
+      return input.requests.listMessages({
+        tenantId: authority.tenantId,
+        actorUserId: authority.userId,
+        characterId,
+        requestId: requestId(request.requestId),
+        limit: boundedLimit(request.limit),
+      });
+    },
+
+    async sendMessage(request) {
+      const characterId = parseCanonicalId("character", request.characterId);
+      const authority = await input.authorizer.authorize({
+        authorizationHeader: request.authorizationHeader,
+        characterId,
+        capability: "owner-access.read",
+      });
+      return input.requests.sendMessage({
+        tenantId: authority.tenantId,
+        actorUserId: authority.userId,
+        characterId,
+        requestId: requestId(request.requestId),
+        messageId: messageId(request.messageId),
+        body: messageBody(request.body),
       });
     },
   });
