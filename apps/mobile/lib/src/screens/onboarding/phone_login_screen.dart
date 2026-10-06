@@ -169,12 +169,12 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
                         setState(() => _channel = selection.first);
                       },
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
             ],
             if (_isEmail)
               TextField(
                 controller: _email,
-                autofocus: true,
+                autofocus: false,
                 enabled: !sending,
                 keyboardType: TextInputType.emailAddress,
                 autocorrect: false,
@@ -211,7 +211,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
                 ),
               ),
             ],
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             PrimaryButton(
               label: sending
                   ? 'Sending code…'
