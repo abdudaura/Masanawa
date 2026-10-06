@@ -297,4 +297,35 @@ describe("Teaching Memory progress persistence", () => {
       }),
     ).rejects.toMatchObject({ code: "teaching.plan_conflict" });
   });
+
+  it("rejects progress scoped to a different Relationship", async () => {
+    const { port } = harness();
+    const attempt = selectionAttempt();
+
+    await expect(
+      port.commitSelectionAttempt({
+        ...attempt,
+        progress: {
+          ...attempt.progress,
+          relationshipId: createCanonicalId("relationship"),
+        },
+      }),
+    ).rejects.toThrow(
+      "Teaching attempt progress must match Relationship and SkillVersion",
+    );
+  });
+
+  it("rejects malformed attempt hashes before persistence", async () => {
+    const { port, memory } = harness();
+    const attempt = selectionAttempt();
+
+    await expect(
+      port.commitSelectionAttempt({
+        ...attempt,
+        payloadHash: "not-a-hash",
+      }),
+    ).rejects.toThrow("Teaching attempt hashes are invalid");
+
+    expect(memory.snapshot).toBeNull();
+  });
 });
