@@ -1079,11 +1079,6 @@ export function createTwinProductionRuntime(input: {
     authorizer: customerAuthority,
     pricing: {
       async quote(request) {
-        if (request.modality !== "text") {
-          throw new Error(
-            "Human voice/video sessions are not available in this build",
-          );
-        }
         const owner = await input.economy.readOwnerForCharacter({
           tenantId: request.tenantId,
           characterId: request.characterId,
