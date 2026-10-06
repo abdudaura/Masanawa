@@ -24,6 +24,7 @@ import type {
   UserRelationshipReader,
 } from "@masanawa/identity";
 import type { BillingQuoteRepository, CommerceRepository, CryptoRepository } from "@masanawa/commerce";
+import type { StoryRadioRepository } from "@masanawa/content";
 import {
   parseCanonicalId,
   readRequiredEnv,
@@ -75,6 +76,7 @@ import {
   createPostgresTwinProfileRepository,
   createPostgresTwinRuntimeRepository,
   createPostgresTwinEconomyEventStore,
+  createPostgresStoryRadioRepository,
   withTransaction,
 } from "@masanawa/postgres";
 import {
@@ -154,6 +156,7 @@ import {
   createPlatformSessionFinancialAuthorizer,
   createResendOtpDelivery,
   type CustomerAuthService,
+  type PlatformCustomerSessionAuthorizer,
 } from "./customer_auth.js";
 import {
   createBillingFinancialService,
@@ -167,6 +170,7 @@ import {
   ensureDefaultPlatformAgents,
   type PlatformAgentIdentityProvisioner,
 } from "./platform_agent_bootstrap.js";
+import { createStoryRadioService } from "./story_radio.js";
 import {
   createTwinProductionRuntime,
   type TwinProductionRuntime,
@@ -210,6 +214,7 @@ export interface ServiceDatabaseDependency {
   readonly twinProfiles?: ReturnType<typeof createPostgresTwinProfileRepository>;
   readonly twinEconomy?: ReturnType<typeof createPostgresTwinRuntimeRepository>;
   readonly twinEvents?: ReturnType<typeof createPostgresTwinEconomyEventStore>;
+  readonly storyRadio?: StoryRadioRepository;
   close(): Promise<void>;
 }
 
@@ -349,6 +354,7 @@ function createDefaultDatabaseDependency(
     twinProfiles: createPostgresTwinProfileRepository(database.pool),
     twinEconomy: createPostgresTwinRuntimeRepository(database.pool),
     twinEvents: createPostgresTwinEconomyEventStore(database.pool),
+    storyRadio: createPostgresStoryRadioRepository(database.pool),
     close: database.close,
   });
 }
@@ -482,6 +488,7 @@ export async function startGatewayService(
   let ownerAccessSweepRunning = false;
   let customerAuth: CustomerAuthService | undefined =
     options.appOptions?.customerAuth;
+  let platformCustomerSessions: PlatformCustomerSessionAuthorizer | undefined;
   let billingCustomerAuthorizer:
     | ReturnType<typeof createPlatformCustomerSessionAuthorizer>
     | undefined;
@@ -616,6 +623,7 @@ export async function startGatewayService(
     const customerSessions = createPlatformCustomerSessionAuthorizer({
       repository: database.platformSessions,
     });
+    platformCustomerSessions = customerSessions;
     billingCustomerAuthorizer = customerSessions;
     billingFinancialAuthorizer = createPlatformSessionFinancialAuthorizer({
       repository: database.platformSessions,
@@ -1377,6 +1385,16 @@ export async function startGatewayService(
         })
       : undefined);
 
+  const composedStoryRadio =
+    options.appOptions?.storyRadio ??
+    (platformCustomerSessions && database.storyRadio
+      ? createStoryRadioService({
+          repository: database.storyRadio,
+          sessions: platformCustomerSessions,
+          adminUserIds: readPrincipalSet(env.MASANAWA_STORY_RADIO_ADMIN_USER_IDS),
+        })
+      : undefined);
+
   let app: ManagedNodeServer;
   try {
     app = appFactory({
@@ -1386,6 +1404,7 @@ export async function startGatewayService(
       ...(composedBillingCheckout ? { billingCheckout: composedBillingCheckout } : {}),
       ...(composedFinancial ? { financial: composedFinancial } : {}),
       ...(twinProduction ? { twinProduction } : {}),
+      ...(composedStoryRadio ? { storyRadio: composedStoryRadio } : {}),
       ...(composedDirectory ? { agentDirectory: composedDirectory } : {}),
       ...(composedConversation
         ? { agentConversation: composedConversation }
