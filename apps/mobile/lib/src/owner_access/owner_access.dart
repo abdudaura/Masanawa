@@ -265,23 +265,32 @@ class OwnerAccessRoomStatus {
   const OwnerAccessRoomStatus({
     required this.attendanceVerified,
     required this.verifiedSeconds,
+    required this.sessionEndsAt,
     required this.presence,
   });
 
   final bool attendanceVerified;
   final int verifiedSeconds;
+  final DateTime? sessionEndsAt;
   final List<OwnerAccessRoomPresence> presence;
 
   factory OwnerAccessRoomStatus.fromJson(Map<String, dynamic> json) {
     final verified = json['attendanceVerified'];
     final seconds = json['verifiedSeconds'];
+    final sessionEndsAt = json['sessionEndsAt'];
     final presence = json['presence'];
-    if (verified is! bool || seconds is! num || presence is! List) {
+    if (verified is! bool ||
+        seconds is! num ||
+        (sessionEndsAt != null && sessionEndsAt is! String) ||
+        presence is! List) {
       throw const FormatException('Invalid owner access room status');
     }
     return OwnerAccessRoomStatus(
       attendanceVerified: verified,
       verifiedSeconds: seconds.toInt(),
+      sessionEndsAt: sessionEndsAt is String
+          ? DateTime.parse(sessionEndsAt).toLocal()
+          : null,
       presence: List.unmodifiable(
         presence.map(
           (item) => OwnerAccessRoomPresence.fromJson(
