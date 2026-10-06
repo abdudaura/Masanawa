@@ -62,7 +62,7 @@ class TwinProfile {
         .take(2)
         .toList();
     if (parts.isEmpty) return 'AI';
-    return parts.map((part) => part.characters.first.toUpperCase()).join();
+    return parts.map((part) => String.fromCharCode(part.runes.first).toUpperCase()).join();
   }
 
   factory TwinProfile.fromJson(Map<String, dynamic> json) {
