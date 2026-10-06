@@ -34,6 +34,7 @@ import type {
 import type { AgentDirectoryAuthorizer } from "./agent_directory.js";
 import type { CreatorCloneAuthorizer } from "./creator_clone.js";
 import type { CommerceUserAuthorizer } from "./commerce_catalog.js";
+import type { FinancialAuthorizer } from "./financial_service.js";
 
 export class CustomerAuthError extends Error {
   readonly code: string;
