@@ -61,3 +61,18 @@ PR #136 should:
 ## Deployment
 
 Not owned and not claimed. No production environment, Gateway composition, provider, migration or APK files were changed.
+
+
+## Shared production integration outcome — 2026-10-06
+
+The isolated Lane H handoff has now been consumed by the shared production owner.
+
+- Production integration PR #206 final head: `764d179543fd629245e8ad0f98d7fbfc6b11506c`.
+- PR #206 merged into PR #136 branch as `effe6d213a8283b0925cbeac7e37db0b84c32376`.
+- The integrated branch preserves utility-first **Home · Explore · Activity · Wallet**, server-resolved Gwana/Gwani identity/voice/availability, Home `/home` transport, My Twin, Rooms, quick billing intents, chat/voice-note/live-voice entry, pull-to-refresh, continuation cards and deep-link handling.
+- Full workspace qualification on the immediately preceding production-derived Home snapshot passed 156 test files / 831 tests, including both Gateway Home projection tests; production builds completed and Flutter analysis had no compile errors. Focused Home widget/model/continuation/root-shell tests passed.
+- The only reproduced focused Flutter failure was missing test binding initialization in `twin_production_integration_test.dart`; final #206 head fixes it with `TestWidgetsFlutterBinding.ensureInitialized()` and changes no production source.
+- Exact final APK qualification branch `5b90222f60fd19e957dd64c19f9775ac56c52046` was prepared from the final Home head. Render deployment `dep-db2d4orncjis73e9klf0` resolved that exact commit but was canceled before checkout because the workspace exhausted build-pipeline minutes.
+- Railway deployment `e7bf7f7f-652d-49bc-8121-94444c92ab94` targets integrated #136 commit `effe6d213a8283b0925cbeac7e37db0b84c32376` and is held at `NEEDS_APPROVAL` before build/deploy.
+
+Lane H is now **INTEGRATED**. It is not **DEVICE VERIFIED** because current external build/deployment account limits prevent producing and installing the exact integrated release APK. No further Home implementation remains outside those release gates.
