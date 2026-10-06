@@ -354,6 +354,7 @@ export function createTwinProductionRuntime(input: {
     readonly startGraceMinutes: number;
     readonly completionGraceMinutes?: number;
     readonly messageRetentionDays?: number;
+    readonly disputeWindowMinutes?: number;
   };
   readonly notifications?: {
     send(input: {
@@ -1279,6 +1280,8 @@ export function createTwinProductionRuntime(input: {
     input.ownerAccess.startGraceMinutes;
   const ownerMessageRetentionDays =
     input.ownerAccess.messageRetentionDays ?? 30;
+  const ownerDisputeWindowMinutes =
+    input.ownerAccess.disputeWindowMinutes ?? 24 * 60;
 
   const ownerAccessOffering = createOwnerAccessOfferingService({
     authorizer: customerAuthority,
@@ -1467,7 +1470,7 @@ export function createTwinProductionRuntime(input: {
           ledgerEntryId: planEntry(plan, "owner", decision.ownerEarningCredits)!,
           tenantId,
           debit: account(tenantId, "fulfillment-reserve", current.requesterUserId as UserId, current.originatingCharacterId as CharacterId),
-          credit: account(tenantId, "pending-earnings", current.ownerUserId as UserId, current.originatingCharacterId as CharacterId),
+          credit: account(tenantId, "pending-earnings", current.ownerUserId as UserId, null),
           amountCredits: decision.ownerEarningCredits,
           reason: "creator-earning",
           quoteId: null,
@@ -1506,6 +1509,183 @@ export function createTwinProductionRuntime(input: {
       });
     }
     return decision;
+  }
+
+  async function releaseOwnerAccessEarnings(
+    tenantId: TenantId,
+    current: PersistedOwnerAccessRequest,
+  ): Promise<PersistedOwnerAccessRequest> {
+    if (
+      current.state !== "settled" ||
+      current.chargeMode !== "paid" ||
+      current.ownerEarningCredits <= 0 ||
+      current.earningsReleasedAt
+    ) {
+      return current;
+    }
+    const plan = await ensurePlan(input.economy, {
+      tenantId,
+      planKey: `owner-access-earnings-release:${current.requestId}`,
+      roles: [{ role: "release", amountCredits: current.ownerEarningCredits }],
+    });
+    await input.commerce.postTransfer({
+      schemaVersion: 1,
+      ledgerEntryId: planEntry(
+        plan,
+        "release",
+        current.ownerEarningCredits,
+      )!,
+      tenantId,
+      debit: account(
+        tenantId,
+        "pending-earnings",
+        current.ownerUserId as UserId,
+        null,
+      ),
+      credit: account(
+        tenantId,
+        "available-earnings",
+        current.ownerUserId as UserId,
+        null,
+      ),
+      amountCredits: current.ownerEarningCredits,
+      reason: "earning-settlement",
+      quoteId: null,
+      fulfillmentId: null,
+      createdAt: plan.createdAt as never,
+    });
+    const changed = {
+      ...current,
+      earningsReleasedAt: plan.createdAt,
+    };
+    const claimed = await input.economy.transitionOwnerAccessRequest({
+      tenantId,
+      expectedState: "settled",
+      request: changed,
+      reservationId: current.reservationId,
+      reservedCredits: current.reservedCredits,
+    });
+    if (!claimed.applied) return claimed.request;
+    await input.events.append({
+      tenantId,
+      payload: {
+        eventType: "twin.earning.settled",
+        ownerUserId: current.ownerUserId,
+        characterId: current.originatingCharacterId,
+        customerUserId: current.requesterUserId,
+        referenceId: current.requestId,
+        visibility: "owner",
+        occurredAt: plan.createdAt,
+        amountCredits: current.ownerEarningCredits,
+        status: "completed",
+      },
+    });
+    await notifyUser(
+      tenantId,
+      current.ownerUserId as UserId,
+      "Earnings available",
+      `${current.ownerEarningCredits} Credits from a completed human session are now available.`,
+      "masanawa://activity",
+    );
+    return claimed.request;
+  }
+
+  async function refundDisputedOwnerAccess(
+    tenantId: TenantId,
+    current: PersistedOwnerAccessRequest,
+  ): Promise<PersistedOwnerAccessRequest> {
+    if (current.state !== "disputed" || current.chargeMode !== "paid") {
+      throw new Error("Owner access dispute is not refundable");
+    }
+    const roles = [
+      { role: "owner-refund", amountCredits: current.ownerEarningCredits },
+      { role: "platform-refund", amountCredits: current.platformFeeCredits },
+    ].filter((entry) => entry.amountCredits > 0);
+    const plan = await ensurePlan(input.economy, {
+      tenantId,
+      planKey: `owner-access-dispute-refund:${current.requestId}`,
+      roles,
+    });
+    if (current.ownerEarningCredits > 0) {
+      await input.commerce.postTransfer({
+        schemaVersion: 1,
+        ledgerEntryId: planEntry(
+          plan,
+          "owner-refund",
+          current.ownerEarningCredits,
+        )!,
+        tenantId,
+        debit: account(
+          tenantId,
+          "pending-earnings",
+          current.ownerUserId as UserId,
+          null,
+        ),
+        credit: account(
+          tenantId,
+          "customer-credit",
+          current.requesterUserId as UserId,
+          null,
+        ),
+        amountCredits: current.ownerEarningCredits,
+        reason: "refund",
+        quoteId: null,
+        fulfillmentId: null,
+        createdAt: plan.createdAt as never,
+      });
+    }
+    if (current.platformFeeCredits > 0) {
+      await input.commerce.postTransfer({
+        schemaVersion: 1,
+        ledgerEntryId: planEntry(
+          plan,
+          "platform-refund",
+          current.platformFeeCredits,
+        )!,
+        tenantId,
+        debit: account(tenantId, "platform-revenue", null, null),
+        credit: account(
+          tenantId,
+          "customer-credit",
+          current.requesterUserId as UserId,
+          null,
+        ),
+        amountCredits: current.platformFeeCredits,
+        reason: "refund",
+        quoteId: null,
+        fulfillmentId: null,
+        createdAt: plan.createdAt as never,
+      });
+    }
+    const changed = {
+      ...current,
+      state: transitionOwnerAccess(current.state, "refunded"),
+      disputeResolvedAt: plan.createdAt,
+      disputeResolution: "refund" as const,
+    };
+    const claimed = await input.economy.transitionOwnerAccessRequest({
+      tenantId,
+      expectedState: "disputed",
+      request: changed,
+      reservationId: current.reservationId,
+      reservedCredits: current.reservedCredits,
+    });
+    if (!claimed.applied) return claimed.request;
+    await input.events.append({
+      tenantId,
+      payload: {
+        eventType: "twin.owner-access.refunded",
+        ownerUserId: current.ownerUserId,
+        characterId: current.originatingCharacterId,
+        customerUserId: current.requesterUserId,
+        referenceId: current.requestId,
+        visibility: "participant",
+        occurredAt: plan.createdAt,
+        amountCredits: current.priceCredits,
+        status: "refunded",
+      },
+    });
+    return claimed.request;
   }
 
   async function appendOwnerAccessProjectionEvent(
