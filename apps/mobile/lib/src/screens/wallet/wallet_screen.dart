@@ -43,84 +43,92 @@ class WalletScreen extends ConsumerWidget {
           ),
           data: (value) {
             if (value == null) return const SizedBox.shrink();
-            return ListView(
+            final entries = value.entries;
+            return ListView.builder(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
-              children: [
-                _Balances(view: value),
-                const SizedBox(height: 12),
-                _Actions(
-                  onAddMoney: onAddMoney,
-                  onSend: onSend,
-                  onWithdraw: onWithdraw,
-                ),
-                if (onBuyBills != null || onOpenCrypto != null) ...[
-                  const SizedBox(height: 12),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final textScale =
-                          MediaQuery.textScalerOf(context).scale(1);
-                      final stacked =
-                          constraints.maxWidth < 360 || textScale > 1.25;
-                      final buttons = <Widget>[
-                        if (onBuyBills != null)
-                          OutlinedButton.icon(
-                            onPressed: onBuyBills,
-                            icon: const Icon(Icons.receipt_long_outlined),
-                            label: const Text('Bills'),
-                          ),
-                        if (onOpenCrypto != null)
-                          OutlinedButton.icon(
-                            onPressed: onOpenCrypto,
-                            icon: const Icon(Icons.currency_bitcoin),
-                            label: const Text('Crypto'),
-                          ),
-                      ];
-                      if (stacked) {
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            for (var i = 0; i < buttons.length; i++) ...[
-                              buttons[i],
-                              if (i != buttons.length - 1)
-                                const SizedBox(height: 8),
-                            ],
-                          ],
-                        );
-                      }
-                      return Row(
-                        children: [
-                          for (var i = 0; i < buttons.length; i++) ...[
-                            Expanded(child: buttons[i]),
-                            if (i != buttons.length - 1)
-                              const SizedBox(width: 8),
-                          ],
-                        ],
-                      );
-                    },
-                  ),
-                ],
-                const SizedBox(height: 20),
-                Text(
-                  'History',
-                  style: TextStyle(
-                    color: u.textPrimary,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                if (value.entries.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 32),
-                    child: Text(
-                      'No wallet activity yet.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: u.textMuted),
+              itemCount: entries.length + 1,
+              itemBuilder: (context, index) {
+                if (index > 0) {
+                  return _WalletEntryTile(entry: entries[index - 1]);
+                }
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _Balances(view: value),
+                    const SizedBox(height: 12),
+                    _Actions(
+                      onAddMoney: onAddMoney,
+                      onSend: onSend,
+                      onWithdraw: onWithdraw,
                     ),
-                  )
-                else
-                  ...value.entries.map((entry) => _WalletEntryTile(entry: entry)),
-              ],
+                    if (onBuyBills != null || onOpenCrypto != null) ...[
+                      const SizedBox(height: 12),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final textScale =
+                              MediaQuery.textScalerOf(context).scale(1);
+                          final stacked =
+                              constraints.maxWidth < 360 || textScale > 1.25;
+                          final buttons = <Widget>[
+                            if (onBuyBills != null)
+                              OutlinedButton.icon(
+                                onPressed: onBuyBills,
+                                icon: const Icon(Icons.receipt_long_outlined),
+                                label: const Text('Bills'),
+                              ),
+                            if (onOpenCrypto != null)
+                              OutlinedButton.icon(
+                                onPressed: onOpenCrypto,
+                                icon: const Icon(Icons.currency_bitcoin),
+                                label: const Text('Crypto'),
+                              ),
+                          ];
+                          if (stacked) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                for (var i = 0; i < buttons.length; i++) ...[
+                                  buttons[i],
+                                  if (i != buttons.length - 1)
+                                    const SizedBox(height: 8),
+                                ],
+                              ],
+                            );
+                          }
+                          return Row(
+                            children: [
+                              for (var i = 0; i < buttons.length; i++) ...[
+                                Expanded(child: buttons[i]),
+                                if (i != buttons.length - 1)
+                                  const SizedBox(width: 8),
+                              ],
+                            ],
+                          );
+                        },
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+                    Text(
+                      'History',
+                      style: TextStyle(
+                        color: u.textPrimary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    if (entries.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 32),
+                        child: Text(
+                          'No wallet activity yet.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: u.textMuted),
+                        ),
+                      ),
+                  ],
+                );
+              },
             );
           },
         ),
