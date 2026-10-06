@@ -205,7 +205,11 @@ function interactionForExercise(
   bounded(interaction.actionToken, "actionToken", 512);
 
   if (runtime.card.kind === "single-select") {
-    if (runtime.actionKey === null || runtime.actionKey !== interaction.actionToken) {
+    if (
+      interaction.kind !== "single-select" ||
+      runtime.actionKey === null ||
+      runtime.actionKey !== interaction.actionToken
+    ) {
       throw new TypeError(
         "Study single-select action token must match bound Teaching action",
       );
@@ -217,9 +221,9 @@ function interactionForExercise(
 
   if (runtime.card.kind === "multi-select") {
     if (
+      interaction.kind !== "multi-select" ||
       runtime.actionKey === null ||
       runtime.actionKey !== interaction.actionToken ||
-      interaction.kind !== "multi-select" ||
       interaction.stage.actionKey !== runtime.actionKey
     ) {
       throw new TypeError(
