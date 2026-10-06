@@ -1,7 +1,8 @@
 # Twin create/share/free-text acceptance — TWIN-100
 
 Owner/window: ChatGPT continuation window / 2026-10-06
-Branch: `work/twin-create-share-chat-acceptance-20261006`
+Branch: `work/twin-create-share-chat-acceptance-v2-20261006`
+PR: #290
 Base: PR #136 head @ `be24c984ac47f4d2a0af149f3fb51fda49472536`
 Task: TWIN-100 — end-to-end create twin -> share -> free public text chat.
 
@@ -56,6 +57,10 @@ State: ISOLATED COMPLETE / INTEGRATION READY.
 3. TWIN-108 still requires real Android APK/device execution.
 4. Full production acceptance remains dependent on executable CI and deployed end-to-end evidence.
 
-Implementation head before handoff: `d20539ae1d016772a71d08e7e63b0e748791a307`.
+Implementation head before reconcile handoff: `8a431866be950001d6eec776af78d6ae3dfb8875`.
 
 Last update: 2026-10-06.
+
+## Verification
+
+- PR #290 remains tests/docs-only but its #136 base is advancing under the protected production owner; rebase/integration belongs to that owner. CI failed before checkout with runner_id=0 and steps=[].
