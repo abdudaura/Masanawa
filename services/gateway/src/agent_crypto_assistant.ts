@@ -4,6 +4,7 @@ import type { FinancialService } from "./financial_service.js";
 export type AgentCryptoResult = Readonly<{
   reply: string;
   parts: readonly unknown[];
+  verbalizationPrompt: string;
 }>;
 
 export interface AgentCryptoAssistant {
@@ -49,8 +50,15 @@ type Directive =
 const TAG = /<masanawa_crypto>([\s\S]{1,5000}?)<\/masanawa_crypto>/u;
 
 function result(reply: string, document?: unknown): AgentCryptoResult {
+  const evidence = document === undefined ? { message: reply } : document;
   return Object.freeze({
     reply,
+    verbalizationPrompt:
+      "A server-controlled crypto action has already completed or produced a quote. " +
+      "Explain ONLY the verified result below, briefly, in the language and natural register " +
+      "of the user's current request. Never emit a machine directive, never execute another " +
+      "action, never invent status, and preserve addresses/amounts/fees exactly. Verified result: " +
+      JSON.stringify({ message: reply, evidence }),
     parts:
       document === undefined
         ? Object.freeze([])
