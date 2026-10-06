@@ -182,6 +182,75 @@ describe("Group Room message custody", () => {
     })).rejects.toThrow(/changed payload/u);
   });
 
+  it("updates membership only from the exact current revision", async () => {
+    const repository = new InMemoryGroupRoomRepository();
+    const created = await repository.create({
+      tenantId,
+      roomId: "group-room-1",
+      title: "Study Group",
+      description: "",
+      participants: participants(),
+      createdAt: "2026-10-06T10:00:00.000Z",
+    });
+
+    const nextParticipants = [
+      ...created.participants.filter((participant) => participant.participantId !== "member-twin"),
+      {
+        participantId: "member-second-human",
+        kind: "human" as const,
+        role: "member" as const,
+        displayName: "Second user",
+        bindingRef: "subject:user:second",
+        userId: secondUserId,
+        characterId: null,
+      },
+    ];
+
+    const updated = await repository.replaceParticipants({
+      tenantId,
+      roomId: created.roomId,
+      expectedRevision: 0,
+      participants: nextParticipants,
+      updatedAt: "2026-10-06T10:05:00.000Z",
+    });
+    expect(updated.revision).toBe(1);
+    expect(updated.participants.some((participant) => participant.participantId === "member-second-human"))
+      .toBe(true);
+
+    await expect(repository.replaceParticipants({
+      tenantId,
+      roomId: created.roomId,
+      expectedRevision: 0,
+      participants: nextParticipants,
+      updatedAt: "2026-10-06T10:06:00.000Z",
+    })).rejects.toThrow(/revision is stale/u);
+  });
+
+  it("rejects membership mutations that remove the sole owner", async () => {
+    const repository = new InMemoryGroupRoomRepository();
+    const created = await repository.create({
+      tenantId,
+      roomId: "group-room-1",
+      title: "Study Group",
+      description: "",
+      participants: participants(),
+      createdAt: "2026-10-06T10:00:00.000Z",
+    });
+
+    const noOwner = created.participants.map((participant) => ({
+      ...participant,
+      role: "member" as const,
+    }));
+
+    await expect(repository.replaceParticipants({
+      tenantId,
+      roomId: created.roomId,
+      expectedRevision: created.revision,
+      participants: noOwner,
+      updatedAt: "2026-10-06T10:05:00.000Z",
+    })).rejects.toThrow(/exactly one owner/u);
+  });
+
   it("isolates room reads by Tenant", async () => {
     const repository = new InMemoryGroupRoomRepository();
     await repository.create({
