@@ -3,6 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   createCanonicalId,
   type Instant,
+  type RelationshipId,
+  type TenantId,
+  type UserId,
 } from "@masanawa/contracts";
 import {
   assertCharacterSessionAccess,
@@ -16,9 +19,9 @@ import {
 const at = "2026-10-06T12:00:00.000Z" as Instant;
 
 function authority(input: {
-  tenantId: ReturnType<typeof createCanonicalId<"tenant">>;
-  userId: ReturnType<typeof createCanonicalId<"user">>;
-  relationshipId: ReturnType<typeof createCanonicalId<"relationship">>;
+  tenantId: TenantId;
+  userId: UserId;
+  relationshipId: RelationshipId;
   capabilities?: readonly string[];
   expiresAt?: Instant;
 }) {
