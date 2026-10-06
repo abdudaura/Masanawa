@@ -74,13 +74,21 @@ class WalletView {
     required this.spendableCredits,
     required this.pendingEarningsCredits,
     required this.availableEarningsCredits,
+    required this.ngnBalanceKobo,
     required this.entries,
   });
 
   final int spendableCredits;
   final int pendingEarningsCredits;
   final int availableEarningsCredits;
+  final int ngnBalanceKobo;
   final List<WalletEntry> entries;
+
+  String get ngnBalanceLabel {
+    final naira = ngnBalanceKobo ~/ 100;
+    final kobo = (ngnBalanceKobo % 100).toString().padLeft(2, '0');
+    return '₦$naira.$kobo';
+  }
 
   factory WalletView.fromJson(Map<String, dynamic> json) {
     int credits(String key) {
@@ -96,6 +104,10 @@ class WalletView {
       spendableCredits: credits('spendableCredits'),
       pendingEarningsCredits: credits('pendingEarningsCredits'),
       availableEarningsCredits: credits('availableEarningsCredits'),
+      ngnBalanceKobo: (json['ngnBalanceKobo'] is num &&
+              (json['ngnBalanceKobo'] as num) >= 0)
+          ? (json['ngnBalanceKobo'] as num).toInt()
+          : 0,
       entries: [
         for (final item in entries)
           if (item is Map)
