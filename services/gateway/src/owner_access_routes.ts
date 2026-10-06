@@ -82,6 +82,48 @@ export function registerOwnerAccessRoutes(
     });
   });
 
+  app.post(
+    "/agent/twin/owner-access/:requestId/heartbeat",
+    async (request) => {
+      const body = request.body as Record<string, unknown>;
+      const params = request.params as Record<string, unknown>;
+      return service.heartbeat({
+        authorizationHeader: request.headers.authorization,
+        characterId: text(body.characterId, "characterId", 180),
+        requestId: text(params.requestId, "requestId"),
+      });
+    },
+  );
+
+  app.get(
+    "/agent/twin/owner-access/:requestId/messages",
+    async (request) => {
+      const query = request.query as Record<string, unknown>;
+      const params = request.params as Record<string, unknown>;
+      return service.messages({
+        authorizationHeader: request.headers.authorization,
+        characterId: text(query.characterId, "characterId", 180),
+        requestId: text(params.requestId, "requestId"),
+        limit: integer(query.limit ?? 100, "limit", 1, 200),
+      });
+    },
+  );
+
+  app.post(
+    "/agent/twin/owner-access/:requestId/messages",
+    async (request) => {
+      const body = request.body as Record<string, unknown>;
+      const params = request.params as Record<string, unknown>;
+      return service.sendMessage({
+        authorizationHeader: request.headers.authorization,
+        characterId: text(body.characterId, "characterId", 180),
+        requestId: text(params.requestId, "requestId"),
+        messageId: text(body.messageId, "messageId", 160),
+        body: text(body.body, "body", 4000),
+      });
+    },
+  );
+
   app.get("/agent/twin/owner-access/:requestId", async (request) => {
     const query = request.query as Record<string, unknown>;
     const params = request.params as Record<string, unknown>;
