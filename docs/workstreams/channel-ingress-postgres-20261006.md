@@ -37,6 +37,22 @@ Base: stale PR #311 head `31ea6679e5f51b8b17f2db8b767cc4be065465fd`
 - migration root is part of platform-product readiness;
 - workspace dependency + lockfile are updated together.
 
-State: CLAIMED.
+State: IMPLEMENTED / VERIFICATION PENDING.
+
+## Completed
+
+- adds adapter-owned `channels.ingress_events` durable schema;
+- stores only normalized ChannelIngressRecord evidence JSON, not raw webhook bodies or secrets;
+- implements serializable whole-batch admission with exact dedupeKey replay identity;
+- exact dedupeKey+evidenceHash replay returns duplicate;
+- changed evidence under an existing key throws and rolls back the entire batch;
+- concurrent insert races reconcile by re-reading the durable winner inside the transaction;
+- exact duplicate keys inside one requested batch coalesce; changed in-batch evidence fails before SQL;
+- exports the Postgres channel store;
+- adds `@masanawa/messaging-channels` as an explicit Postgres workspace dependency and locks it;
+- adds the messaging-channels migration root to platform-product readiness;
+- transaction-backed tests prove new, duplicate, mixed, whole-batch rollback and empty admission behavior.
+
+Implementation head before handoff: `be349a355205cb1f211b2af25f86924d72be843c`.
 
 Last update: 2026-10-06.
