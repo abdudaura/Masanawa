@@ -29,11 +29,13 @@ class TwinHomeShell extends ConsumerStatefulWidget {
 
 class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
   late int _index;
+  late final Set<int> _visitedTabs;
 
   @override
   void initState() {
     super.initState();
     _index = widget.initialIndex.clamp(0, 3).toInt();
+    _visitedTabs = <int>{_index};
   }
 
   void _openTwin(TwinDirectoryEntry twin) {
@@ -130,11 +132,21 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
     return Scaffold(
       body: IndexedStack(
         index: _index,
-        children: List.generate(4, _page),
+        children: List.generate(
+          4,
+          (index) => _visitedTabs.contains(index)
+              ? _page(index)
+              : const SizedBox.shrink(),
+        ),
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
-        onDestinationSelected: (value) => setState(() => _index = value),
+        onDestinationSelected: (value) {
+          setState(() {
+            _index = value;
+            _visitedTabs.add(value);
+          });
+        },
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.auto_awesome_outlined),
