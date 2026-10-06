@@ -31,12 +31,13 @@ type BillItem = Readonly<{
 type Directive =
   | { type: "wallet.balance" }
   | { type: "wallet.fund"; amount: string }
+  | { type: "billing.confirm" }
   | {
       type: "billing.quote";
       service: "airtime" | "data" | "electricity" | "tv";
       provider: string;
       recipient: string;
-      amount: string;
+      amount?: string;
       plan?: string;
     };
 
@@ -73,19 +74,24 @@ function parseDirective(reply: string): Directive | null {
   if (row.type === "wallet.fund" && typeof row.amount === "string") {
     return Object.freeze({ type: "wallet.fund", amount: row.amount.trim() });
   }
+  if (row.type === "billing.confirm") {
+    return Object.freeze({ type: "billing.confirm" });
+  }
   if (
     row.type === "billing.quote" &&
     ["airtime","data","electricity","tv"].includes(String(row.service)) &&
     typeof row.provider === "string" &&
     typeof row.recipient === "string" &&
-    typeof row.amount === "string"
+    (row.amount === undefined || typeof row.amount === "string")
   ) {
     return Object.freeze({
       type: "billing.quote",
       service: row.service as "airtime" | "data" | "electricity" | "tv",
       provider: row.provider.trim(),
       recipient: row.recipient.trim(),
-      amount: row.amount.trim(),
+      ...(typeof row.amount === "string" && row.amount.trim()
+        ? { amount: row.amount.trim() }
+        : {}),
       ...(typeof row.plan === "string" && row.plan.trim()
         ? { plan: row.plan.trim() }
         : {}),
@@ -170,8 +176,9 @@ export const BILLING_AGENT_SYSTEM_INSTRUCTIONS = Object.freeze([
   "Masanawa has a server-controlled NGN wallet and bill-payment tool. Never claim a payment happened unless the runtime returns evidence.",
   "For balance requests, append exactly: <masanawa_action>{\"type\":\"wallet.balance\"}</masanawa_action>.",
   "For requests to add/fund/deposit money, ask only for amount if missing. When known append: <masanawa_action>{\"type\":\"wallet.fund\",\"amount\":\"5000\"}</masanawa_action>.",
-  "For bill purchases, identify service, provider/network/company, recipient and amount. For data or TV also identify requested plan/package. Ask only for missing or ambiguous information.",
-  "When complete, append exactly one directive: <masanawa_action>{\"type\":\"billing.quote\",\"service\":\"airtime|data|electricity|tv\",\"provider\":\"provider name\",\"recipient\":\"phone/meter/card\",\"amount\":\"decimal NGN amount\",\"plan\":\"optional plan/package/prepaid/postpaid\"}</masanawa_action>.",
+  "For bill purchases, identify service, provider/network/company and recipient. Airtime and electricity need an amount. Data and TV may use the live fixed plan price when the user names a plan, so do not force the user to know its price. Ask only for missing or ambiguous information.",
+  "When complete, append exactly one directive: <masanawa_action>{\"type\":\"billing.quote\",\"service\":\"airtime|data|electricity|tv\",\"provider\":\"provider name\",\"recipient\":\"phone/meter/card\",\"amount\":\"optional decimal NGN amount\",\"plan\":\"optional plan/package/prepaid/postpaid\"}</masanawa_action>.",
+  "If the user says yes/confirm/proceed to the current pending bill, including by voice, append exactly: <masanawa_action>{\"type\":\"billing.confirm\"}</masanawa_action>.",
   "Never ask the user to open a browser or Flutterwave checkout. Funding uses a temporary bank account shown inside Masanawa.",
   "A complete purchase requires one explicit confirmation. Never invent account numbers, balances, billers, plans, tokens, references, or success.",
   "Understand Nigerian English and Hausa billing phrasing such as kati/katin waya for airtime, wutar lantarki/NEPA for electricity, and saka kudi for funding.",
@@ -196,6 +203,23 @@ export function createAgentBillingAssistant(input: Readonly<{
       const view = await input.wallet.createFunding({
         authorizationHeader,
         amount: directive.amount,
+      });
+      return result(walletReply(view), view.document);
+    }
+
+    if (directive.type === "billing.confirm") {
+      const history = await input.checkout.list({
+        authorizationHeader,
+        limit: 10,
+      });
+      const pending = history.find((entry) =>
+        entry.phase === "quoted" && Date.parse(entry.quote.expiresAt) > Date.now(),
+      );
+      if (!pending) return result("There is no pending bill to confirm.");
+      const view = await input.wallet.confirmAndPurchase({
+        authorizationHeader,
+        quoteId: pending.quote.quoteId,
+        quoteRevision: pending.quote.revision,
       });
       return result(walletReply(view), view.document);
     }
@@ -240,13 +264,19 @@ export function createAgentBillingAssistant(input: Readonly<{
       );
     }
 
+    const resolvedAmount =
+      directive.amount?.trim() ||
+      (Number(item.amount) > 0 ? item.amount : "");
+    if (!resolvedAmount) {
+      return result("How much should I pay for this service?");
+    }
     const quote = await input.checkout.createQuote({
       authorizationHeader,
       categoryCode: code,
       billerCode: biller.billerCode,
       itemCode: item.itemCode,
       customerId: directive.recipient,
-      amount: directive.amount,
+      amount: resolvedAmount,
     });
     return result(confirmationReply(quote), quote.document);
   }
