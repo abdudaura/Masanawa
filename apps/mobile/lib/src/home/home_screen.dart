@@ -44,7 +44,7 @@ class HomeScreen extends StatelessWidget {
       key: const ValueKey('home-screen'),
       backgroundColor: u.surfaceBg,
       appBar: AppBar(
-        title: const Text('Masanawa'),
+        title: const Text('Home'),
         actions: [
           IconButton(
             tooltip: 'Profile',
@@ -109,6 +109,11 @@ class _HomeReady extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
       children: [
+        const _SectionHeader(
+          title: 'Your assistants',
+          subtitle: 'Talk, send a voice note, or start live voice.',
+        ),
+        const SizedBox(height: 10),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -129,12 +134,9 @@ class _HomeReady extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 18),
-        const _SectionHeader(
-          title: 'Internet Cafe',
-          subtitle: 'Ask Gwani for what you need.',
-        ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 22),
+        const _SectionHeader(title: 'Quick services'),
+        const SizedBox(height: 10),
         _QuickServices(onTap: onQuickService),
         if (snapshot.myTwin case final twin?) ...[
           const SizedBox(height: 22),
@@ -163,12 +165,16 @@ class _HomeReady extends StatelessWidget {
           ),
         ],
         const SizedBox(height: 14),
-        ..._orderedRooms(snapshot.rooms).map(
+        const _SectionHeader(
+          title: 'Rooms',
+          subtitle: 'Choose a space for what you want to do.',
+        ),
+        const SizedBox(height: 8),
+        ...snapshot.rooms.map(
           (room) => Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: _RoomCard(
               room: room,
-              displayTitle: _roomDisplayTitle(room),
               onTap: onOpenRoom == null ? null : () => onOpenRoom!(room),
             ),
           ),
@@ -201,7 +207,7 @@ class _AssistantCard extends StatelessWidget {
 
     return Container(
       key: ValueKey('home-assistant-' + role.name),
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: u.surfaceCard,
         borderRadius: BorderRadius.circular(20),
@@ -210,7 +216,7 @@ class _AssistantCard extends StatelessWidget {
       child: Column(
         children: [
           CircleAvatar(
-            radius: 24,
+            radius: 28,
             backgroundColor: u.brand.withValues(alpha: .12),
             child: Text(
               model?.initials ?? fallbackName.substring(0, 1),
@@ -221,7 +227,7 @@ class _AssistantCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 9),
           Text(
             model?.displayName ?? fallbackName,
             maxLines: 1,
@@ -229,6 +235,18 @@ class _AssistantCard extends StatelessWidget {
             style: TextStyle(
               color: u.textPrimary,
               fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            available ? model!.description : 'Temporarily unavailable',
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: u.textMuted,
+              fontSize: 12,
+              height: 1.3,
             ),
           ),
           if (available && model!.voiceLabel?.trim().isNotEmpty == true) ...[
@@ -240,7 +258,7 @@ class _AssistantCard extends StatelessWidget {
               style: TextStyle(color: u.textMuted, fontSize: 11),
             ),
           ],
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Wrap(
             alignment: WrapAlignment.center,
             spacing: 4,
@@ -323,21 +341,21 @@ class _QuickServices extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              for (final item in _items) ...[
-                _QuickServiceButton(
-                  service: item.$1,
-                  label: item.$2,
-                  icon: item.$3,
-                  onTap: onTap == null ? null : () => onTap!(item.$1),
-                ),
-                const SizedBox(width: 8),
-              ],
-            ],
-          ),
+        final itemWidth = (constraints.maxWidth - 24) / 4;
+        return Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _items.map((item) {
+            return SizedBox(
+              width: itemWidth,
+              child: _QuickServiceButton(
+                service: item.$1,
+                label: item.$2,
+                icon: item.$3,
+                onTap: onTap == null ? null : () => onTap!(item.$1),
+              ),
+            );
+          }).toList(),
         );
       },
     );
@@ -361,30 +379,27 @@ class _QuickServiceButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final u = context.masanawa;
     return Material(
-      color: u.surfaceMuted,
-      borderRadius: BorderRadius.circular(999),
+      color: u.surfaceCard,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: u.structuralBorder),
+      ),
       child: InkWell(
         key: ValueKey('home-quick-' + service.name),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: u.structuralBorder),
-          ),
-          child: Row(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: u.brand, size: 17),
-              const SizedBox(width: 6),
+              Icon(icon, color: u.brand),
+              const SizedBox(height: 6),
               Text(
                 label,
-                style: TextStyle(
-                  color: u.textPrimary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: u.textPrimary, fontSize: 11),
               ),
             ],
           ),
@@ -458,38 +473,10 @@ class _ContinuationCard extends StatelessWidget {
   }
 }
 
-/// Client-side room display names. Keyed by iconKey (the stable client-known
-/// key) so a server title change can never break the rename.
-String _roomDisplayTitle(HomeRoomCardModel room) => switch (room.iconKey) {
-      'story_radio' => 'Audio Stories',
-      'news' => 'News Updates',
-      _ => room.title,
-    };
-
-/// Audio Stories first, News Updates second, everything else in server order.
-/// Dart's sort is stable, so equal-rank rooms keep their server positions.
-List<HomeRoomCardModel> _orderedRooms(List<HomeRoomCardModel> rooms) {
-  const order = ['story_radio', 'news'];
-  int rank(HomeRoomCardModel room) {
-    final index = order.indexOf(room.iconKey);
-    return index == -1 ? order.length : index;
-  }
-  final sorted = [...rooms];
-  sorted.sort((a, b) => rank(a).compareTo(rank(b)));
-  return sorted;
-}
-
 class _RoomCard extends StatelessWidget {
-  const _RoomCard({
-    required this.room,
-    required this.displayTitle,
-    required this.onTap,
-  });
+  const _RoomCard({required this.room, required this.onTap});
 
   final HomeRoomCardModel room;
-
-  /// Client-side display name (server title stays untouched on the model).
-  final String displayTitle;
   final VoidCallback? onTap;
 
   @override
@@ -510,7 +497,7 @@ class _RoomCard extends StatelessWidget {
           backgroundColor: u.surfaceMuted,
           child: Icon(_roomIcon(room.iconKey), color: u.brand),
         ),
-        title: Text(displayTitle),
+        title: Text(room.title),
         subtitle: Text(
           room.continuationLabel?.trim().isNotEmpty == true
               ? room.continuationLabel!
