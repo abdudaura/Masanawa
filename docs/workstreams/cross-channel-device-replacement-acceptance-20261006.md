@@ -64,3 +64,7 @@ No active #136/#295 paths, provider adapters, migrations, production config or A
 Implementation head before handoff: `cf1d5f5593b079df60f434cf1a264afe802aa0c9`.
 
 Last update: 2026-10-06.
+
+## Verification
+
+- Verification: Foundation CI run `37489868764`, job `112359453519`, failed before checkout with `runner_id=0` and `steps=[]`; no application test result is claimed.
