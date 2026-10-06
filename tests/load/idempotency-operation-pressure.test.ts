@@ -14,13 +14,14 @@ describe("bounded idempotency and operation pressure", () => {
     };
 
     for (let index = 0; index < 25_000; index += 1) {
-      expect(() =>
-        assertIdempotencyMatch(
-          record,
-          "sha256:stable-request-fingerprint",
-        ),
-      ).not.toThrow();
+      assertIdempotencyMatch(
+        record,
+        "sha256:stable-request-fingerprint",
+      );
     }
+    expect(record.requestFingerprint).toBe(
+      "sha256:stable-request-fingerprint",
+    );
   });
 
   it("keeps changed-fingerprint replay fail-closed under 5k conflicts", () => {
@@ -56,14 +57,18 @@ describe("bounded idempotency and operation pressure", () => {
       "succeeded",
     ];
 
+    let accepted = 0;
     for (let iteration = 0; iteration < 10_000; iteration += 1) {
       for (let index = 0; index < chain.length - 1; index += 1) {
         const from = chain[index]!;
         const to = chain[index + 1]!;
-        expect(canTransitionOperation(from, to)).toBe(true);
-        expect(() => assertOperationTransition(from, to)).not.toThrow();
+        if (canTransitionOperation(from, to)) {
+          assertOperationTransition(from, to);
+          accepted += 1;
+        }
       }
     }
+    expect(accepted).toBe(10_000 * (chain.length - 1));
   });
 
   it("never admits invalid terminal or backward Operation transitions under pressure", () => {
