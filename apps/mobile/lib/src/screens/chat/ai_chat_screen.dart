@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
@@ -43,12 +44,14 @@ class AiChatScreen extends ConsumerStatefulWidget {
     this.twinSetup = false,
     this.twinGender,
     this.twinAge,
+    this.twinPhotoPath,
   });
 
   final String characterId;
   final bool twinSetup;
   final String? twinGender;
   final int? twinAge;
+  final String? twinPhotoPath;
 
   @override
   ConsumerState<AiChatScreen> createState() => _AiChatScreenState();
@@ -665,11 +668,30 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         throw StateError('Sign in is required');
       }
       final ownerName = session.user.name.trim();
+      final photoPath = widget.twinPhotoPath?.trim();
+      if (photoPath == null || photoPath.isEmpty) {
+        throw StateError('Twin photo is missing');
+      }
+      final photo = File(photoPath);
+      final bytes = await photo.readAsBytes();
+      if (bytes.isEmpty || bytes.length > 4 * 1024 * 1024) {
+        throw StateError('Twin photo is too large');
+      }
+      final mimeType = lookupMimeType(
+            photoPath,
+            headerBytes: bytes.take(16).toList(),
+          ) ??
+          'image/jpeg';
+      if (!{'image/jpeg', 'image/png', 'image/webp'}.contains(mimeType)) {
+        throw StateError('Twin photo format is unsupported');
+      }
       final result = await ref.read(creatorCloneTransportProvider).create(
             displayName: ownerName.isEmpty ? 'My Twin' : '$ownerName Twin',
             biography: summary['biography'] as String,
             gender: gender,
             age: age,
+            avatarBase64: base64Encode(bytes),
+            avatarMimeType: mimeType,
             personality: List<String>.from(summary['personality'] as List),
             expertise: List<String>.from(summary['expertise'] as List),
           );
