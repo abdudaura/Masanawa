@@ -54,7 +54,7 @@ describe("News Room HTTP route", () => {
     apps.push(app);
     const response = await app.inject({
       method: "GET",
-      url: "/rooms/news",
+      url: "/v1/rooms/news",
       headers: { authorization: "Bearer customer" },
     });
 
@@ -76,7 +76,7 @@ describe("News Room HTTP route", () => {
 
     const response = await app.inject({
       method: "GET",
-      url: "/rooms/news",
+      url: "/v1/rooms/news",
       headers: { authorization: "Bearer customer" },
     });
 
@@ -100,7 +100,7 @@ describe("News Room HTTP route", () => {
 
     const response = await app.inject({
       method: "GET",
-      url: "/rooms/news",
+      url: "/v1/rooms/news",
     });
 
     expect(response.statusCode).toBe(401);
