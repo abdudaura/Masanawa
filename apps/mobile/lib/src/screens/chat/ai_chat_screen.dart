@@ -20,6 +20,7 @@ import 'package:audio_session/audio_session.dart';
 
 import '../../agents/agent_directory.dart';
 import '../../chat/chat_format.dart';
+import '../../chat/cafe_suggestions.dart';
 import '../../chat/message_parts.dart';
 import '../../chat/message_parts_view.dart';
 import '../../chat/shell_document.dart';
@@ -44,7 +45,7 @@ import '../../theme/masanawa_theme.dart';
 
 /// One Character conversation. Voice is the primary action while text,
 /// attachments and structured work results remain in the same timeline.
-enum AiChatEntryMode { chat, teach, voiceNote, liveVoice }
+enum AiChatEntryMode { chat, teach, voiceNote, liveVoice, cafe }
 
 class AiChatScreen extends ConsumerStatefulWidget {
   const AiChatScreen({
@@ -87,6 +88,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   final Set<String> _selectedMessageIds = {};
   final Map<String, GlobalKey> _messageKeys = {};
   bool _initialEntryHandled = false;
+  String? _cafeCategory;
 
   @override
   void initState() {
@@ -192,6 +194,17 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       return;
     }
     _commitTextSend(text, attachments, reply);
+  }
+
+  void _sendCafeSuggestion(CafeSuggestion suggestion) {
+    if (ref.read(aiChatProvider).sendingIn.contains(widget.characterId)) return;
+    setState(() => _cafeCategory = suggestion.key);
+    unawaited(
+      ref.read(aiChatProvider.notifier).sendText(
+            widget.characterId,
+            suggestion.message,
+          ),
+    );
   }
 
   Future<void> _teachThenSend(
@@ -842,6 +855,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           case AiChatEntryMode.liveVoice:
             unawaited(_openLiveVoice(agent));
             break;
+          case AiChatEntryMode.cafe:
+            break;
         }
       });
     }
@@ -1192,6 +1207,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   ),
                 ),
               ),
+            if (widget.entryMode == AiChatEntryMode.cafe)
+              _CafeSuggestionBar(
+                selectedKey: _cafeCategory,
+                onTap: _sendCafeSuggestion,
+              ),
             if (widget.entryMode == AiChatEntryMode.teach)
               Container(
                 width: double.infinity,
@@ -1249,7 +1269,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   ref.read(aiChatProvider.notifier).stopGeneration(widget.characterId);
                 },
                 onAttach: _openAttachSheet,
-                onCamera: () => _pickImage(ImageSource.camera),
                 onMic: updateRequired ? () {} : _toggleRecording,
                 onMicHoldStart: _onMicHoldStart,
                 onMicHoldMove: _onMicHoldMove,
@@ -2306,6 +2325,57 @@ class _AttachOption extends StatelessWidget {
   }
 }
 
+class _CafeSuggestionBar extends StatelessWidget {
+  const _CafeSuggestionBar({
+    required this.selectedKey,
+    required this.onTap,
+  });
+
+  final String? selectedKey;
+  final ValueChanged<CafeSuggestion> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            selectedKey == null
+                ? 'What would you like to do?'
+                : 'Changed your mind? Pick another service.',
+            style: TextStyle(
+              color: u.textMuted,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 7),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (final suggestion in kCafeSuggestions) ...[
+                  ChoiceChip(
+                    label: Text(suggestion.label),
+                    selected: selectedKey == suggestion.key,
+                    onSelected: (_) => onTap(suggestion),
+                    showCheckmark: false,
+                  ),
+                  const SizedBox(width: 7),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _Composer extends StatelessWidget {
   const _Composer({
     required this.controller,
@@ -2314,7 +2384,6 @@ class _Composer extends StatelessWidget {
     required this.onSend,
     required this.onStop,
     required this.onAttach,
-    required this.onCamera,
     required this.onMic,
     required this.onMicHoldStart,
     required this.onMicHoldMove,
@@ -2328,7 +2397,6 @@ class _Composer extends StatelessWidget {
   final VoidCallback onSend;
   final VoidCallback onStop;
   final VoidCallback onAttach;
-  final VoidCallback onCamera;
   final VoidCallback onMic;
   final ValueChanged<LongPressStartDetails> onMicHoldStart;
   final ValueChanged<LongPressMoveUpdateDetails> onMicHoldMove;
@@ -2370,9 +2438,13 @@ class _Composer extends StatelessWidget {
                         textCapitalization: TextCapitalization.sentences,
                         decoration: const InputDecoration(
                           hintText: 'Message',
+                          filled: false,
                           border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          disabledBorder: InputBorder.none,
                           isDense: true,
-                          contentPadding: EdgeInsets.fromLTRB(2, 15, 6, 14),
+                          contentPadding: EdgeInsets.fromLTRB(4, 15, 4, 14),
                         ),
                       ),
                     ),
@@ -2381,12 +2453,6 @@ class _Composer extends StatelessWidget {
                       icon: Icons.attach_file,
                       onPressed: onAttach,
                     ),
-                    if (!hasText)
-                      _ComposerIcon(
-                        tooltip: 'Camera',
-                        icon: Icons.camera_alt_outlined,
-                        onPressed: onCamera,
-                      ),
                   ],
                 ),
               ),
@@ -2451,7 +2517,7 @@ class _ComposerIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final u = context.masanawa;
     return SizedBox(
-      width: 40,
+      width: 36,
       height: 48,
       child: IconButton(
         tooltip: tooltip,
