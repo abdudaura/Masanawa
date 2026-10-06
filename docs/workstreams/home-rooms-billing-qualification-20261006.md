@@ -91,3 +91,48 @@ Only shared-owner or live-account evidence remains:
 6. Exact release APK/device qualification remains Lane P / PR #136.
 
 No further isolated Lane B code work is required unless the live qualification report reveals a provider/account-specific incompatibility that belongs in billing-owned provider logic.
+
+
+## Read-only production inventory follow-up — 2026-10-06
+
+Railway project `empowering-education` was inspected without changing service configuration,
+variables, source branches or deployments.
+
+Observed production state:
+
+- `masanawa-gateway` is sourced from PR #136 branch
+  `work/production-apk-integration-20261005`.
+- legacy `@nurain/worker` is still sourced from
+  `work/billing-customer-journey-20261004`.
+- both services expose the required billing/auth variable **names**, including
+  Flutterwave secret/relay/webhook settings, platform tenant, OTP/action secrets,
+  Resend, fee policy and public-base configuration.
+- the OAuth connector redacts values, so variable presence is evidence only; it does not
+  permit reproducing secrets outside Railway or asserting their correctness.
+- no variable was changed and `FLUTTERWAVE_BILLS_ENABLED` was not enabled by this lane.
+
+The latest legacy-worker Railway deployment
+`20c14144-d369-4752-9019-ae5bf5d8cf27` is marked failed, but its build evidence shows:
+
+- 39 Vitest files passed;
+- 368 tests passed;
+- Flutterwave billing/provider tests passed within that suite;
+- the deployment stopped afterward because the separate NOWPayments custody smoke returned
+  HTTP 403.
+
+Therefore that deployment status is not a billing test failure. It also does not replace
+the launch qualification gate: no complete redacted live catalog + cable/electricity
+recipient-validation report was found in the available logs.
+
+Older Flutterwave live-read logs show provider probing had previously been blocked by a
+Railway `exceed_egress_quota` restriction before the fixed-IP relay path became the
+current qualification mechanism. Those historical failures must not be treated as current
+merchant-catalog evidence.
+
+The remaining live blocker is exact: execute the existing read-only qualification collector
+inside an authorized environment with readable Flutterwave/relay values and suitable real
+non-secret validation targets, then apply the committed gate. The current connector can
+verify variable names and logs but cannot read the secret values, and Railway exposes no
+safe one-off command primitive here that would run the repository script without changing
+service/deployment state. This lane therefore does not mutate production just to obtain
+qualification output.
