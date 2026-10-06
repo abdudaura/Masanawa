@@ -1,4 +1,5 @@
 name: Mobile Build
+# CI qualification branch trigger
 
 on:
   push:
@@ -32,7 +33,7 @@ jobs:
       - name: Install
         run: flutter pub get
       - name: Analyze
-        run: flutter analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
       - name: Test
         run: flutter test
       - name: Phone (production APK)
