@@ -433,7 +433,12 @@ class _ActivityTile extends StatelessWidget {
     final u = context.masanawa;
     final amount = item.amountCredits;
     final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.3;
-    return Container(
+    return Semantics(
+      button: onTap != null,
+      label: amount == null
+          ? '${item.title}. ${item.detail}'
+          : '${item.title}. ${item.detail}. ${amount} Credits',
+      child: Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: u.surfaceCard,
@@ -495,6 +500,7 @@ class _ActivityTile extends StatelessWidget {
                       ],
                     ],
                   ),
+      ),
       ),
     );
   }
