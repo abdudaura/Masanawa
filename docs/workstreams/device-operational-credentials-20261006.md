@@ -38,6 +38,8 @@ Tasks 104/105 are active in PR #120/#121. Task 106 is isolated in PR #236. All o
 - rotation revokes old generation before replacement becomes current;
 - no Device credential grants Character/Tool/Operation authority by itself.
 
-State: CLAIMED. No implementation changes beyond this claim.
+State: IMPLEMENTING. Device operational credential issuance/rotation/revocation/reconnect verification and focused tests are committed. Persistence/export/Gateway/Android composition remain excluded shared seams.
+
+Implementation head before handoff: `1296d259240476030f5717ca39739c71494fdcc2`.
 
 Last update: 2026-10-06.
