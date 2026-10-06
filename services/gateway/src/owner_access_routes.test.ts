@@ -47,6 +47,7 @@ describe("owner access routes", () => {
         return {
           attendanceVerified: false,
           verifiedSeconds: 0,
+          sessionEndsAt: null,
           presence: [],
         };
       },
@@ -90,6 +91,7 @@ describe("owner access routes", () => {
         return {
           attendanceVerified: true,
           verifiedSeconds: 70,
+          sessionEndsAt: "2026-10-05T10:20:00Z",
           presence: [],
         };
       },
