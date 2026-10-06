@@ -48,6 +48,51 @@ describe("gift recipient resolver", () => {
     ).rejects.toThrow("personal twins");
   });
 
+
+  it("rejects cross-Tenant ownership substitution", async () => {
+    const ownership: CharacterOwnershipReader = {
+      async readForCharacter(input) {
+        return {
+          tenantId: "tenant-other" as never,
+          characterId: input.characterId,
+          kind: "personal-clone",
+          ownerUserId: "user-owner" as never,
+          createdAt: "2026-10-05T09:00:00Z" as never,
+        };
+      },
+    };
+
+    await expect(
+      createGiftRecipientResolver({ ownership }).resolveByCharacter({
+        tenantId: "tenant-1",
+        senderUserId: "user-sender",
+        characterId: "character-1",
+      }),
+    ).rejects.toThrow("outside the requested scope");
+  });
+
+  it("rejects same-Tenant different-Character ownership substitution", async () => {
+    const ownership: CharacterOwnershipReader = {
+      async readForCharacter(input) {
+        return {
+          tenantId: input.tenantId,
+          characterId: "character-other" as never,
+          kind: "personal-clone",
+          ownerUserId: "user-owner" as never,
+          createdAt: "2026-10-05T09:00:00Z" as never,
+        };
+      },
+    };
+
+    await expect(
+      createGiftRecipientResolver({ ownership }).resolveByCharacter({
+        tenantId: "tenant-1",
+        senderUserId: "user-sender",
+        characterId: "character-1",
+      }),
+    ).rejects.toThrow("outside the requested scope");
+  });
+
   it("rejects gifts to your own twin", async () => {
     const ownership: CharacterOwnershipReader = {
       async readForCharacter(input) {
