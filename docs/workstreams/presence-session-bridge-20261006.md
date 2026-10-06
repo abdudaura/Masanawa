@@ -3,11 +3,12 @@
 Owner/window: ChatGPT continuation window / 2026-10-06
 Branch: `work/presence-session-bridge-20261006`
 Base SHA: `b8d415f09424ddf3e1a90a578f54c5792668bc3b`
+PR: #249
 Production task: 119 — canonical PresenceSession and CharacterSession bridge.
 
 ## Coordination
 
-No active Task 119 realtime-presence claim was found. Existing presence work is architecture/forensics only. PR #136 owns shared Gateway/mobile production composition; this lane does not touch it.
+No active Task 119 realtime-presence claim was found at selection. Existing presence work was architecture/forensics only. PR #136 owns shared Gateway/mobile production composition; this lane did not touch it.
 
 ## Exact owned paths
 
@@ -33,22 +34,39 @@ No active Task 119 realtime-presence claim was found. Existing presence work is 
 - persistence migrations/adapters
 - production environment/lockfile/shared deployment manifests
 
-## Acceptance target
+## Completed implementation
 
-- provider-neutral canonical PresenceSession bound to one exact active CharacterSession;
-- exact Tenant/User/Character/Relationship identity match;
-- mode `audio|audio-video`;
-- lifecycle `admitted -> active -> closed` with monotonic revision;
-- one PresenceSession cannot silently move across CharacterSession or identity scope;
-- CharacterSession expiry/closure blocks admission;
-- optional pre-existing CharacterSession presence binding must be null or this exact PresenceSession;
-- reconnect can reuse the same active PresenceSession identity, never create authority;
-- close is terminal;
-- service shell follows canonical implementation template;
-- no transport/vendor assumptions.
+- Replaced the empty Presence service placeholder with a canonical TypeScript service shell following the repository service template.
+- Added provider-neutral `PresenceSession` bound to one exact active canonical `CharacterSession`.
+- Admission copies exact Tenant/User/Character/Relationship/CharacterSession identity and returns a revision-bound CharacterSession binding plan rather than mutating Agents state from Presence.
+- Admission fails if the CharacterSession is expired/closed or already bound to another PresenceSession.
+- Added `audio|audio-video` mode without embedding LiveKit/provider assumptions.
+- Added `admitted -> active -> closed` lifecycle with monotonic Presence revision.
+- Added stable PresenceSession identity across reconnect and monotonic `connectionGeneration` fencing so stale transport callbacks can be rejected later.
+- Added exact bridge validation preventing a PresenceSession from moving to another User/Character/Relationship/CharacterSession scope.
+- Closed sessions are terminal and cannot reconnect.
+- Added health/readiness endpoints and managed service drain/start lifecycle using canonical telemetry + node runtime foundations.
+- Added focused session and service-shell tests.
 
-State: IMPLEMENTING. Presence service shell, canonical PresenceSession/CharacterSession bridge, reconnect generation fencing and focused tests are committed. LiveKit/persistence/shared production composition remain excluded.
+## Changed-file audit
 
-Implementation head before handoff: `71b8f6f79614d002d20c80b2dba6c129cec85b7b`.
+PR #249 changes exactly the nine owned paths above. No Agents, Contracts, Gateway, mobile, LiveKit/provider, migration, production config or lockfile path changed.
+
+## Verification
+
+- Source/type audit completed against current `@masanawa/agents` CharacterSession and service implementation-template contracts.
+- Foundation CI run `37455646610` on head `83c36c4b237515b1a4263a87bf195bcb029aea8d` failed before checkout: job `112242465136`, `runner_id=0`, `steps=[]`. No repository code executed.
+- Final branch head after this handoff update is the documentation commit produced here.
+
+## Remaining dependencies
+
+1. Workspace/lockfile integration owner: reconcile the new canonical Presence service importer before frozen-install/build qualification.
+2. Agents owner: apply the returned CharacterSession presence-binding plan using canonical CharacterSession revision custody.
+3. Persistence owner: durable PresenceSession storage/reload and reconnect generation CAS.
+4. Task 120 transport owner: map LiveKit transport/session callbacks to this PresenceSession identity and generation fencing.
+5. Shared Gateway/mobile owner: admission routing and authenticated client token flow only after Task 120+ composition.
+6. Executable CI and production deployment qualification when hosted runners recover.
+
+State: ISOLATED COMPLETE / INTEGRATION READY.
 
 Last update: 2026-10-06.
