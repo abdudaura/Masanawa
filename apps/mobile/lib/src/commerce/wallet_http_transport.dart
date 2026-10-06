@@ -25,8 +25,17 @@ class GatewayWalletTransport implements WalletTransport {
 
   @override
   Future<WalletView> load() async {
-    final response = await api.dio.get<dynamic>('/v1/wallet');
-    return WalletView.fromJson(_map(response.data));
+    final results = await Future.wait([
+      api.dio.get<dynamic>('/v1/wallet'),
+      api.dio.get<dynamic>('/v1/wallet/ngn'),
+    ]);
+    final base = _map(results[0].data);
+    final ngn = _map(results[1].data);
+    return WalletView.fromJson({
+      ...base,
+      'ngnBalanceKobo': ngn['balanceKobo'] ?? 0,
+      'ngnBalance': ngn['balance'],
+    });
   }
 
   @override
