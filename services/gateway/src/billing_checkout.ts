@@ -317,6 +317,7 @@ export interface BillingCheckoutService {
     itemCode: string;
     customerId: string;
     amount: string;
+    originatingCharacterId?: string;
     signal?: AbortSignal;
   }>): Promise<BillingCheckoutView>;
   startCheckout(request: Readonly<{
@@ -379,6 +380,27 @@ export function createBillingCheckoutService(input: Readonly<{
   feeBasisPoints?: number;
   feeFixedKobo?: number;
   quoteTtlSeconds?: number;
+  twinMonetization?: {
+    attribute(input: {
+      readonly tenantId: import("@masanawa/contracts").TenantId;
+      readonly customerUserId: import("@masanawa/contracts").UserId;
+      readonly characterId: import("@masanawa/contracts").CharacterId | null;
+      readonly eventType: "commerce-purchase";
+      readonly operationId: string;
+    }): Promise<void>;
+    settleProviderValue(input: {
+      readonly tenantId: import("@masanawa/contracts").TenantId;
+      readonly valuationKey: string;
+      readonly eventType: "commerce-purchase";
+      readonly operationId: string;
+      readonly sourceUnits: number;
+    }): Promise<unknown>;
+    reverseFull(input: {
+      readonly tenantId: import("@masanawa/contracts").TenantId;
+      readonly operationId: string;
+      readonly reversalId: string;
+    }): Promise<void>;
+  };
   now?: () => string;
 }>): BillingCheckoutService {
   const now = input.now ?? (() => new Date().toISOString());
@@ -405,6 +427,42 @@ export function createBillingCheckoutService(input: Readonly<{
     });
     if (!quote) throw new Error("financial.billing.quote_not_found");
     return Object.freeze({ identity: owner, quote });
+  }
+
+  async function syncTwinMonetization(
+    owner: Pick<BillingCustomerIdentity, "tenantId" | "userId">,
+    quote: BillingQuote,
+  ): Promise<void> {
+    const origin = quote.originatingCharacterId?.trim() ?? "";
+    const monetization = input.twinMonetization;
+    if (!monetization || !origin) return;
+    const operationId = `billing:${quote.quoteId}`;
+
+    if (quote.state === "succeeded") {
+      await monetization.attribute({
+        tenantId: owner.tenantId,
+        customerUserId: owner.userId,
+        characterId: origin as import("@masanawa/contracts").CharacterId,
+        eventType: "commerce-purchase",
+        operationId,
+      });
+      await monetization.settleProviderValue({
+        tenantId: owner.tenantId,
+        valuationKey: "flutterwave:NGN:kobo",
+        eventType: "commerce-purchase",
+        operationId,
+        sourceUnits: quote.serviceAmountKobo,
+      });
+      return;
+    }
+
+    if (quote.state === "refunded") {
+      await monetization.reverseFull({
+        tenantId: owner.tenantId,
+        operationId,
+        reversalId: `billing-refund:${quote.quoteId}`,
+      });
+    }
   }
 
   async function refundIfRequired(
@@ -621,6 +679,9 @@ export function createBillingCheckoutService(input: Readonly<{
         tenantId: owner.tenantId,
         userId: owner.userId,
         categoryCode: category.code,
+        ...(request.originatingCharacterId
+          ? { originatingCharacterId: request.originatingCharacterId }
+          : {}),
         billerCode: item.billerCode,
         itemCode: item.itemCode,
         itemName: item.name,
@@ -737,7 +798,10 @@ export function createBillingCheckoutService(input: Readonly<{
         const refunded = await refundIfRequired(owned.identity,quote,request.signal);
         return view(refunded);
       }
-      if (quote.state === "refunded" || quote.state === "succeeded") return view(quote);
+      if (quote.state === "refunded" || quote.state === "succeeded") {
+        await syncTwinMonetization(owned.identity, quote).catch(() => undefined);
+        return view(quote);
+      }
 
       const fulfillmentReference = `bill-${quote.quoteId}`.slice(0,128);
       let purchase: BillingFulfillmentRecord;
@@ -802,6 +866,7 @@ export function createBillingCheckoutService(input: Readonly<{
         quoteId: quote.quoteId,
       }))!;
       quote = await refundIfRequired(owned.identity,quote,request.signal);
+      await syncTwinMonetization(owned.identity, quote).catch(() => undefined);
       return view(quote,purchase);
     },
 
@@ -811,6 +876,9 @@ export function createBillingCheckoutService(input: Readonly<{
         owned.identity,
         owned.quote,
         request.signal,
+      );
+      await syncTwinMonetization(owned.identity, reconciled.quote).catch(
+        () => undefined,
       );
       return view(
         reconciled.quote,
@@ -837,10 +905,14 @@ export function createBillingCheckoutService(input: Readonly<{
         fulfillmentReference: request.reference,
       });
       if (!quote) return null;
+      const identity = { tenantId: quote.tenantId, userId: quote.userId };
       const reconciled = await reconcileQuote(
-        { tenantId: quote.tenantId, userId: quote.userId },
+        identity,
         quote,
         request.signal,
+      );
+      await syncTwinMonetization(identity, reconciled.quote).catch(
+        () => undefined,
       );
       return reconciled.quote;
     },
