@@ -77,3 +77,19 @@ behind the existing authenticated edge contract:
 
 Provider credentials, access tokens, signed URLs and raw download references remain inside
 the injected provider client. No Gateway/env/secret-store composition is added.
+
+
+## Provider orchestration continuation complete
+
+Added to the same PR:
+- WhatsApp metadata -> opaque authenticated download-ref -> bounded byte retrieval;
+- Telegram getFile -> opaque file-path -> bounded byte retrieval;
+- exact returned file-id checks before download;
+- provider-declared file-size preflight;
+- actual byte-count verification;
+- Telegram normal Bot API 20 MiB ceiling;
+- tests for mismatch, oversize, pass-through rejection, bounded forwarding and byte-count
+  integrity;
+- package exports and provider-flow documentation.
+
+Current head before this handoff update: `cd6b5510a206f19b107868dae8ffe55411f43864`.
