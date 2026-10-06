@@ -60,5 +60,5 @@ Last update: 2026-10-06.
 
 ## Verification
 
-- Foundation CI run `37467868052`, job `112283350226`, on implementation/handoff head `374a442177fe2ab1dc08e9c95617f0ed690b9e60` failed before checkout with `runner_id=0` and `steps=[]`; no repository code executed.
+- Foundation CI run `37467868052`, job `112283363228`, on implementation/handoff head `374a442177fe2ab1dc08e9c95617f0ed690b9e60` failed before checkout with `runner_id=0` and `steps=[]`; no repository code executed.
 - No pass is claimed from that CI result; executable typecheck/test/build remains required once hosted runner allocation recovers.
