@@ -130,9 +130,6 @@ function parseDirective(reply: string): Directive | null {
   return null;
 }
 
-function stripDirective(reply: string): string {
-  return reply.replace(TAG, "").trim();
-}
 
 export const CRYPTO_AGENT_SYSTEM_INSTRUCTIONS = Object.freeze([
   "Masanawa has a server-controlled crypto custody tool backed by NOWPayments. Never invent balances, addresses, routes, quotes, fees, confirmations, transaction IDs, provider status, or success.",
