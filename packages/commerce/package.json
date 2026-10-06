@@ -11,8 +11,8 @@
     }
   },
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json",
-    "build": "tsc -p tsconfig.build.json"
+    "typecheck": "tsc -p tsconfig.json && tsc -p ../content/tsconfig.json && tsc -p ../../adapters/storage/postgres/tsconfig.json && tsc -p ../../services/gateway/tsconfig.json",
+    "build": "tsc -p tsconfig.build.json && cd ../.. && pnpm exec vitest run packages/content/src/index.test.ts services/gateway/src/story_radio.test.ts services/gateway/src/story_radio_routes.test.ts test/architecture/package-boundaries.test.ts"
   },
   "dependencies": {
     "@masanawa/contracts": "workspace:*"
