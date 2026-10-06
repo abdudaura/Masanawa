@@ -249,10 +249,16 @@ describeDatabase("Twin economy PostgreSQL acceptance", () => {
         | "active"
         | "expired"
         | "completed"
+        | "settled"
+        | "releasing"
         | "disputed";
       acceptBy?: string;
       scheduledFor?: string | null;
       startedAt?: string | null;
+      completedAt?: string | null;
+      disputeBy?: string | null;
+      earningsReleasedAt?: string | null;
+      paid?: boolean;
       reconciliationReason?: "attendance-timeout";
     }) => {
       await repository.putOwnerAccessRequest({
@@ -264,10 +270,10 @@ describeDatabase("Twin economy PostgreSQL acceptance", () => {
           originatingCharacterId: characterId,
           modality: "text",
           durationMinutes: 15,
-          priceCredits: 0,
-          platformFeeCredits: 0,
-          ownerEarningCredits: 0,
-          chargeMode: "trial",
+          priceCredits: input.paid ? 100 : 0,
+          platformFeeCredits: input.paid ? 20 : 0,
+          ownerEarningCredits: input.paid ? 80 : 0,
+          chargeMode: input.paid ? "paid" : "trial",
           trialPolicyRevision: 1,
           state: input.state,
           requestedAt: "2026-10-05T12:00:00.000Z",
@@ -279,9 +285,12 @@ describeDatabase("Twin economy PostgreSQL acceptance", () => {
               ? "2026-10-05T13:50:00.000Z"
               : null),
           completedAt:
-            input.state === "completed"
+            input.completedAt ??
+            (input.state === "completed"
               ? "2026-10-05T13:59:00.000Z"
-              : null,
+              : null),
+          disputeBy: input.disputeBy ?? null,
+          earningsReleasedAt: input.earningsReleasedAt ?? null,
           ...(input.reconciliationReason
             ? { reconciliationReason: input.reconciliationReason }
             : {}),
@@ -333,6 +342,33 @@ describeDatabase("Twin economy PostgreSQL acceptance", () => {
       requestId: "owner-repair-completed",
       state: "completed",
     });
+    await put({
+      requestId: "owner-due-settled",
+      state: "settled",
+      paid: true,
+      completedAt: "2026-10-05T13:00:00.000Z",
+      disputeBy: "2026-10-05T13:59:00.000Z",
+    });
+    await put({
+      requestId: "owner-future-settled",
+      state: "settled",
+      paid: true,
+      completedAt: "2026-10-05T13:00:00.000Z",
+      disputeBy: "2026-10-05T14:01:00.000Z",
+    });
+    await put({
+      requestId: "owner-settled-needs-deadline-backfill",
+      state: "settled",
+      paid: true,
+      completedAt: "2026-10-05T13:00:00.000Z",
+    });
+    await put({
+      requestId: "owner-repair-releasing",
+      state: "releasing",
+      paid: true,
+      completedAt: "2026-10-05T13:00:00.000Z",
+      disputeBy: "2026-10-05T13:59:00.000Z",
+    });
 
     const candidates = await repository.listOwnerAccessLifecycleCandidates({
       tenantId,
@@ -349,6 +385,9 @@ describeDatabase("Twin economy PostgreSQL acceptance", () => {
         "owner-repair-attendance-timeout",
         "owner-repair-expired",
         "owner-repair-completed",
+        "owner-due-settled",
+        "owner-settled-needs-deadline-backfill",
+        "owner-repair-releasing",
       ]),
     );
   });
