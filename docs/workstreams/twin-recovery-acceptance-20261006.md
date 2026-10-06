@@ -48,7 +48,7 @@ It proves:
 
 - changed-file audit against `main`: ahead 2 / behind 0 at implementation head and only the two owned files changed;
 - PR #288 opened on implementation head `d69eb08ff5b76f0524f038bc15a4b2eff70dacf8`;
-- GitHub had not attached a workflow run/check to that head when inspected, so no CI success is claimed;
+- Foundation CI run `37478840883` on handoff head `cf1d732c7ef96f5b5b163a83a82d304f9efa7fc9` concluded `failure`, but job `112321338664` has `steps = null`; checkout/install/typecheck/tests never executed, so this is runner-allocation evidence rather than an application test failure;
 - local repository execution is unavailable in the current sandbox because the repository is not mounted and outbound DNS to GitHub is unavailable; no mock result is substituted for repository test execution.
 
 ## Handoff
