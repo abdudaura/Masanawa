@@ -3,6 +3,17 @@
 Status: parallel execution map, 2026-10-06.
 Canonical product overlay: `docs/HOME-ROOMS-LAUNCH.md`.
 
+## Completion-state rule
+
+Use `docs/HOME-ROOMS-STATUS.md` as the single status ledger.
+
+A lane is not complete because its PR is open, mergeable, non-draft, or partially tested.
+Each lane must progress through **UNCLAIMED -> CLAIMED -> IMPLEMENTING -> ISOLATED COMPLETE -> INTEGRATION READY -> INTEGRATED -> DEVICE VERIFIED -> LAUNCH VERIFIED** as applicable.
+
+**ISOLATED COMPLETE** requires every deliverable assigned to that lane to exist in its owned paths, an exact changed-file audit, truthful test/typecheck evidence, named remaining dependencies, and the handoff sentence: **No further isolated implementation remains in this lane.**
+
+When a window reaches isolated completion, it must immediately take another safe unclaimed/inactive lane if one exists instead of reporting back. It may stop only when every other lane is claimed/protected, or a real external/shared-owner blocker remains.
+
 ## Coordination rule
 
 PR #136 / `work/production-apk-integration-20261005` remains the single owner of
