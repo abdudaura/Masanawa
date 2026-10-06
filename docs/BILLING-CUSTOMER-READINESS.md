@@ -143,6 +143,40 @@ this branch has not been deployed into that unrelated runtime as a release.
    enable billing only after final APK/device acceptance. No new live financial purchase was made in
    this implementation batch.
 
+
+## Production verification — 2026-10-06
+
+The canonical production Gateway is now deployed on Railway from PR #136 head
+`fa4f579e4d246e08030ee6028e78cf4c9c3513e3`.
+
+Concrete production evidence:
+
+- `FLUTTERWAVE_BILLS_ENABLED=true` is applied on the Masanawa Gateway.
+- `FLUTTERWAVE_RELAY_URL=https://209-38-107-173.sslip.io` and
+  `FLUTTERWAVE_RELAY_PROTOCOL=dual-header` are explicitly pinned; the existing
+  `MASANAWA_FLUTTERWAVE_RELAY_TOKEN` secret remains in Railway.
+- The DigitalOcean relay at `209.38.107.173` is live and rejects unauthenticated
+  requests with HTTP 401, confirming fail-closed relay admission.
+- Gateway startup now performs a read-only Flutterwave catalog verification when
+  `MASANAWA_FLUTTERWAVE_VERIFY_ON_START=true`. Production deployment
+  `b0f8dbeb-c5f7-4779-b3d7-22316639f6ac` reached SUCCESS only after
+  `flutterwave.billing_verified` reported `categoryCount=12`, `relay=true`,
+  and `relayProtocol=dual-header`.
+- The authenticated billing quote route is mounted in production; an unauthenticated
+  probe reaches the route and is rejected with 4xx rather than 404/5xx.
+- The same deployment verifies the Gemini production pool on startup: 6 credentials
+  checked, 6 authenticated against `gemini-3.8-flash`.
+- The authenticated agent-session route is mounted in production, and production
+  history contains successful authenticated agent-directory requests after session
+  refresh.
+- Railway reports the Gateway online with 1/1 replica running, no current warnings or
+  criticals, and no recent deployment failures.
+
+The provider/relay/configuration path is therefore production-qualified without
+creating a new financial charge. A real customer purchase remains the final monetary
+acceptance action; the repository already records a successful live NGN100 Airtel
+purchase through the same fixed-IP relay.
+
 Customer billing should remain disabled until items 1–5 have concrete evidence. The clean branch
 is reconciled onto the canonical customer-auth architecture and is fail-closed when dependencies are
 absent; it is not yet a deployment or live all-service qualification claim.
