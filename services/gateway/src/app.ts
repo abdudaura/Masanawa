@@ -566,7 +566,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
 
   if (options.newsRoom) {
     const newsRoom = options.newsRoom;
-    app.get("/rooms/news", async (request, reply) => {
+    app.get("/v1/rooms/news", async (request, reply) => {
       try {
         return await newsRoom.read({
           authorizationHeader: request.headers.authorization,
