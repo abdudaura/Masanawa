@@ -17,7 +17,8 @@ class NewsRoomProjection {
     final categories = _listOfMaps(json['categories'])
         .map(NewsCategory.fromJson)
         .where((category) => category.visible)
-        .toList(growable: false);
+        .toList(growable: true)
+      ..sort((a, b) => a.order.compareTo(b.order));
     final visibleCategoryIds = categories.map((e) => e.id).toSet();
     final items = _listOfMaps(json['items'])
         .map(NewsItem.fromJson)
