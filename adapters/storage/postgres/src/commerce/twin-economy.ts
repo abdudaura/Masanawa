@@ -931,6 +931,13 @@ export function createPostgresTwinRuntimeRepository(
       ) {
         throw new RangeError("startGraceMinutes is invalid");
       }
+      if (
+        !Number.isSafeInteger(input.completionGraceMinutes) ||
+        input.completionGraceMinutes < 1 ||
+        input.completionGraceMinutes > 180
+      ) {
+        throw new RangeError("completionGraceMinutes is invalid");
+      }
       const result = await pool.query<{
         definition: OwnerAccessRequest;
         reservation_id: string | null;
@@ -942,6 +949,10 @@ export function createPostgresTwinRuntimeRepository(
             AND (
               state IN ('declined','expired','cancelled','no-show','completed')
               OR (
+                state='disputed'
+                AND definition->>'reconciliationReason'='attendance-timeout'
+              )
+              OR (
                 state='requested'
                 AND (definition->>'acceptBy')::timestamptz <= $2::timestamptz
               )
@@ -952,10 +963,27 @@ export function createPostgresTwinRuntimeRepository(
                       + make_interval(mins => $3::int)
                     <= $2::timestamptz
               )
+              OR (
+                state='active'
+                AND definition->>'startedAt' IS NOT NULL
+                AND (definition->>'startedAt')::timestamptz
+                      + make_interval(
+                          mins => (
+                            (definition->>'durationMinutes')::int + $4::int
+                          )
+                        )
+                    <= $2::timestamptz
+              )
             )
           ORDER BY updated_at ASC,request_id ASC
-          LIMIT $4`,
-        [input.tenantId, input.at, input.startGraceMinutes, limit],
+          LIMIT $5`,
+        [
+          input.tenantId,
+          input.at,
+          input.startGraceMinutes,
+          input.completionGraceMinutes,
+          limit,
+        ],
       );
       return Object.freeze(
         result.rows.map((row) =>
