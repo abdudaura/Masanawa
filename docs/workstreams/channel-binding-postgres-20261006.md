@@ -41,6 +41,22 @@ Both were inactive for more than five minutes when this lane was claimed.
 - create replays are exact and conflicting payloads fail closed;
 - storage rows round-trip to canonical Identity contracts.
 
-State: CLAIMED.
+State: IMPLEMENTED / VERIFICATION PENDING.
+
+## Completed
+
+- adds `identity.channel_accounts` and `identity.channel_bindings` durable schema;
+- enforces Tenant/account/channel/user foreign keys and stable subject uniqueness;
+- enforces at most one active binding per User per ChannelAccount;
+- enforces pending/active proof column invariants;
+- adds replay-safe create semantics for ChannelAccount and pending binding;
+- adds serializable compare-and-swap updates for account/binding lifecycle;
+- fences immutable identity changes, revision skips, terminal revocation and timestamp rollback;
+- exports the Postgres repository through the Identity storage adapter;
+- transaction-backed tests cover create replay, conflicting replay, activation, active-user lookup, terminal revocation and rollback fencing.
+
+Challenge persistence remains intentionally separate.
+
+Implementation head before handoff: `2aaa8b2f38ffcb80997c29b88e0f4e75a928186e`.
 
 Last update: 2026-10-06.
