@@ -233,7 +233,7 @@ describe("owner access routes", () => {
 
     const response = await app.inject({
       method: "POST",
-      url: "/admin/twin/owner-access/owner-request-dispute-123/dispute",
+      url: "/v1/admin/twin/owner-access/owner-request-dispute-123/dispute",
       payload: {
         characterId,
         resolution: "refund",
