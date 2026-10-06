@@ -840,6 +840,1058 @@ class AiChatController extends Notifier<AiChatState> {
     }
   }
 
+  Future<Map<String, dynamic>> summarizeTwinInterview(String characterId) async {
+    final result = await _sendViaTransport(
+      characterId,
+      'The Twin setup interview is ending now. Using the conversation context, '
+      'return ONLY one compact JSON object with these keys: biography (string), '
+      'personality (array of 2-8 short strings), expertise (array of 1-12 short strings). '
+      'Do not ask another question. Do not include markdown fences. Do not include a language field. '
+      'The Twin must remain multilingual and should respond in the language each visitor uses.',
+    );
+    var raw = result.text.trim();
+    if (raw.startsWith('```')) {
+      raw = raw.replaceFirst(RegExp(r'^```(?:json)?\\s*'), '');
+      raw = raw.replaceFirst(RegExp(r'\\s*```    String characterId,
+    String rawText, {
+    String? replyToId,
+    String? replyPreview,
+  }) async {
+    final text = rawText.trim();
+    if (text.isEmpty || state.sendingIn.contains(characterId)) return;
+    final message = AiChatMessage(
+      id: _newId(),
+      isUser: true,
+      text: text,
+      createdAt: DateTime.now(),
+      replyToId: replyToId,
+      replyPreview: replyPreview,
+      deliveryStatus: 'sending',
+      requestId: createRequestId(),
+    );
+    if (await _offlineNow()) {
+      await _enqueueMessage(characterId, message);
+      return;
+    }
+    await _dispatchUserMessage(characterId, message);
+  }
+
+  Future<void> sendAttachment(
+    String characterId,
+    ChatAttachment attachment, {
+    String? caption,
+    String? replyToId,
+    String? replyPreview,
+  }) async {
+    if (state.sendingIn.contains(characterId)) return;
+    final message = AiChatMessage(
+      id: _newId(),
+      isUser: true,
+      text: (caption ?? '').trim(),
+      createdAt: DateTime.now(),
+      attachment: attachment,
+      replyToId: replyToId,
+      replyPreview: replyPreview,
+      deliveryStatus: 'sending',
+      requestId: createRequestId(),
+    );
+    if (await _offlineNow()) {
+      await _enqueueMessage(characterId, message);
+      return;
+    }
+    await _dispatchUserMessage(characterId, message);
+  }
+
+  Future<void> sendAttachments(
+    String characterId,
+    List<ChatAttachment> attachments, {
+    String? caption,
+    String? replyToId,
+    String? replyPreview,
+  }) async {
+    if (attachments.isEmpty || state.sendingIn.contains(characterId)) return;
+    if (attachments.length == 1) {
+      await sendAttachment(
+        characterId,
+        attachments.first,
+        caption: caption,
+        replyToId: replyToId,
+        replyPreview: replyPreview,
+      );
+      return;
+    }
+    final bounded = List<ChatAttachment>.unmodifiable(attachments.take(8));
+    final message = AiChatMessage(
+      id: _newId(),
+      isUser: true,
+      text: (caption ?? '').trim(),
+      createdAt: DateTime.now(),
+      attachments: bounded,
+      replyToId: replyToId,
+      replyPreview: replyPreview,
+      deliveryStatus: 'sending',
+      uploadProgress: 0,
+      requestId: createRequestId(),
+    );
+    if (await _offlineNow()) {
+      await _enqueueMessage(characterId, message);
+      return;
+    }
+    await _dispatchUserMessage(characterId, message);
+  }
+
+  Future<void> _dispatchUserMessage(
+    String characterId,
+    AiChatMessage userMsg, {
+    bool retry = false,
+  }) async {
+    final connectionGeneration = _connectionGeneration;
+    final threadGeneration = _threadGenerations[characterId] ?? 0;
+    final thread = threadOf(characterId);
+    state = state.copyWith(
+      threads: {
+        ...state.threads,
+        characterId: thread.copyWith(
+          messages: retry ? thread.messages : [...thread.messages, userMsg],
+          updatedAt: DateTime.now(),
+        ),
+      },
+      sendingIn: {...state.sendingIn, characterId},
+    );
+    await _save();
+    if (_disposed || threadGeneration != (_threadGenerations[characterId] ?? 0))
+      return;
+    try {
+      final attachment = userMsg.attachment;
+      final attachmentSet = userMsg.attachments;
+      final hasMedia = attachment != null || attachmentSet.isNotEmpty;
+      final streamMessageId =
+          !hasMedia ? _beginAiStream(characterId) : null;
+      final promptText = userMsg.replyPreview?.trim().isNotEmpty == true
+          ? 'Replying to this earlier message:\n"${userMsg.replyPreview}"\n\n${userMsg.text}'
+          : userMsg.text;
+      final mediaCaption = userMsg.replyPreview?.trim().isNotEmpty == true
+          ? 'Replying to this earlier message:\n"${userMsg.replyPreview}"\n\n${userMsg.text}'
+          : userMsg.text;
+      var livePcmStarted = false;
+      DateTime? livePcmStartedAt;
+      final result = !hasMedia
+          ? await _sendViaTransport(
+              characterId,
+              promptText,
+              onTextDelta: (delta) {
+                if (streamMessageId != null) {
+                  _appendAiDelta(characterId, streamMessageId, delta);
+                }
+              },
+              requestId: userMsg.requestId,
+              onAudioPcmChunk: (chunk) async {
+                if (!livePcmStarted) {
+                  livePcmStarted = await LivePcmAudio.start(sampleRate: 24000);
+                  if (livePcmStarted) {
+                    livePcmStartedAt = DateTime.now();
+                  }
+                }
+                if (livePcmStarted) {
+                  await LivePcmAudio.write(chunk);
+                }
+              },
+            )
+          : attachmentSet.isNotEmpty
+          ? await _sendMediaSetViaTransport(
+              characterId,
+              userMsg.id,
+              attachmentSet,
+              caption: mediaCaption,
+              requestId: userMsg.requestId,
+            )
+          : await _sendMediaViaTransport(
+              characterId,
+              userMsg.id,
+              attachment!,
+              caption: mediaCaption,
+              requestId: userMsg.requestId,
+            );
+      if (livePcmStarted) {
+        final elapsedMs = livePcmStartedAt == null
+            ? 0
+            : DateTime.now().difference(livePcmStartedAt!).inMilliseconds;
+        final expectedMs = result.audioDurationMs ?? elapsedMs;
+        final drainMs = (expectedMs - elapsedMs + 220).clamp(220, 30000).toInt();
+        unawaited(
+          Future<void>.delayed(
+            Duration(milliseconds: drainMs),
+            LivePcmAudio.stop,
+          ),
+        );
+      }
+      if (_disposed ||
+          threadGeneration != (_threadGenerations[characterId] ?? 0)) {
+        return;
+      }
+      if (connectionGeneration != _connectionGeneration) {
+        throw const ApiException('Connection changed');
+      }
+      _updateMessage(
+        characterId,
+        userMsg.id,
+        (message) => message.copyWith(
+          deliveryStatus: 'delivered',
+          uploadProgress: message.allAttachments.isNotEmpty ? 1.0 : null,
+        ),
+      );
+      ChatAttachment? replyAudio;
+      if (result.audioBytes case final audio? when audio.isNotEmpty) {
+        final dir = await getTemporaryDirectory();
+        final path =
+            '${dir.path}/masanawa_reply_${DateTime.now().microsecondsSinceEpoch}.wav';
+        await File(path).writeAsBytes(audio, flush: true);
+        replyAudio = ChatAttachment(
+          kind: 'voice',
+          path: path,
+          durationMs: result.audioDurationMs,
+          sizeBytes: audio.length,
+          waveform: _pcmWaveform(audio),
+        );
+      }
+      if (streamMessageId != null) {
+        await _finalizeAiStream(
+          characterId,
+          streamMessageId,
+          result.text,
+          parts: result.parts,
+          attachment: replyAudio,
+          agentRunId: result.agentRunId,
+          requestId: userMsg.requestId,
+        );
+      } else {
+        await _appendAi(
+          characterId,
+          result.text,
+          parts: result.parts,
+          attachment: replyAudio,
+          agentRunId: result.agentRunId,
+          requestId: userMsg.requestId,
+        );
+      }
+    } catch (error) {
+      unawaited(LivePcmAudio.stop());
+      if (_disposed ||
+          threadGeneration != (_threadGenerations[characterId] ?? 0)) {
+        return;
+      }
+      if (error is ApiException &&
+          (error.statusCode == 401 ||
+              error.statusCode == 403 ||
+              error.statusCode == 404)) {
+        _bindings.remove(characterId);
+      }
+      _removeStreamingPlaceholders(characterId);
+      _setDelivery(characterId, userMsg.id, 'failed');
+      final feedback = AgentFeedback.fromError(error, conversation: true);
+      await _appendAi(
+        characterId,
+        feedback.message,
+        parts: [
+          AgentMessagePart(
+            kind: AgentMessagePartKind.status,
+            status: 'failed',
+            referenceId: userMsg.id,
+            actionLabel: feedback.actionLabel,
+          ),
+        ],
+      );
+    }
+  }
+
+  Future<void> retryMessage(String characterId, String messageId) async {
+    if (state.sendingIn.contains(characterId)) return;
+    final thread = threadOf(characterId);
+    final users = thread.messages.where((m) => m.id == messageId && m.isUser);
+    if (users.isEmpty) return;
+    final failures = thread.messages.where(
+      (m) => m.parts.any(
+        (p) =>
+            p.kind == AgentMessagePartKind.status &&
+            p.status == 'failed' &&
+            p.referenceId == messageId,
+      ),
+    );
+    if (failures.isEmpty) return;
+    state = state.copyWith(
+      threads: {
+        ...state.threads,
+        characterId: thread.copyWith(
+          messages: thread.messages
+              .where((m) => !failures.contains(m))
+              .toList(),
+        ),
+      },
+    );
+    await _dispatchUserMessage(characterId, users.first, retry: true);
+  }
+
+  Future<AgentTurnResult> _sendMediaViaTransport(
+    String characterId,
+    String messageId,
+    ChatAttachment attachment, {
+    required String caption,
+    String? requestId,
+  }) async {
+    final file = File(attachment.path);
+    final bytes = await file.readAsBytes();
+    if (bytes.isEmpty || bytes.length > 8 * 1024 * 1024) {
+      throw const ApiException(
+        'Attachment must be between 1 byte and 8 MB',
+        code: 'ATTACHMENT_TOO_LARGE',
+      );
+    }
+    // Voice notes are AAC-LC in an M4A container. Gemini accepts audio/m4a;
+    // generic inference may label the same container audio/mp4 and reject it.
+    final mimeType = attachment.kind == 'voice'
+        ? 'audio/m4a'
+        : lookupMimeType(
+                attachment.path,
+                headerBytes: bytes.take(16).toList(),
+              ) ??
+              switch (attachment.kind) {
+                'image' => 'image/jpeg',
+                _ => 'application/octet-stream',
+              };
+
+    final transport = ref.read(agentTransportProvider);
+    final binding = await _bindingFor(characterId, transport);
+    return transport.sendMediaTurn(
+      binding: binding,
+      bytes: bytes,
+      mimeType: mimeType,
+      caption: caption,
+      requestId: requestId,
+      onUploadProgress: (sent, total) {
+        if (total <= 0) return;
+        _updateMessage(
+          characterId,
+          messageId,
+          (message) => message.copyWith(
+            deliveryStatus: sent >= total ? 'processing' : 'uploading',
+            uploadProgress: (sent / total).clamp(0.0, 1.0).toDouble(),
+          ),
+          persist: false,
+        );
+      },
+    );
+  }
+
+  Future<AgentTurnResult> _sendMediaSetViaTransport(
+    String characterId,
+    String messageId,
+    List<ChatAttachment> attachments, {
+    required String caption,
+    String? requestId,
+  }) async {
+    final media = <AgentMediaInput>[];
+    var totalBytes = 0;
+    for (final attachment in attachments) {
+      final file = File(attachment.path);
+      final bytes = await file.readAsBytes();
+      if (bytes.isEmpty || bytes.length > 8 * 1024 * 1024) {
+        throw const ApiException(
+          'Each attachment must be between 1 byte and 8 MB',
+          code: 'ATTACHMENT_TOO_LARGE',
+        );
+      }
+      totalBytes += bytes.length;
+      if (totalBytes > 12 * 1024 * 1024) {
+        throw const ApiException(
+          'Combined attachments must be 12 MB or smaller',
+          code: 'ATTACHMENT_TOO_LARGE',
+        );
+      }
+      final mimeType = attachment.kind == 'voice'
+          ? 'audio/m4a'
+          : lookupMimeType(
+                  attachment.path,
+                  headerBytes: bytes.take(16).toList(),
+                ) ??
+                switch (attachment.kind) {
+                  'image' => 'image/jpeg',
+                  'video' => 'video/mp4',
+                  _ => 'application/octet-stream',
+                };
+      media.add(
+        AgentMediaInput(
+          bytes: bytes,
+          mimeType: mimeType,
+          name: attachment.name,
+        ),
+      );
+    }
+    final transport = ref.read(agentTransportProvider);
+    final binding = await _bindingFor(characterId, transport);
+    return transport.sendMediaSetTurn(
+      binding: binding,
+      media: media,
+      caption: caption,
+      requestId: requestId,
+      onUploadProgress: (sent, total) {
+        if (total <= 0) return;
+        _updateMessage(
+          characterId,
+          messageId,
+          (message) => message.copyWith(
+            deliveryStatus: sent >= total ? 'processing' : 'uploading',
+            uploadProgress: (sent / total).clamp(0.0, 1.0).toDouble(),
+          ),
+          persist: false,
+        );
+      },
+    );
+  }
+
+  Future<AgentTurnResult> _sendViaTransport(
+    String characterId,
+    String prompt, {
+    void Function(String delta)? onTextDelta,
+    Future<void> Function(Uint8List pcmChunk)? onAudioPcmChunk,
+    String? requestId,
+  }) async {
+    final transport = ref.read(agentTransportProvider);
+    final binding = await _bindingFor(characterId, transport);
+    return transport.sendTurn(
+      binding: binding,
+      text: prompt,
+      onTextDelta: onTextDelta,
+      onAudioPcmChunk: onAudioPcmChunk,
+      requestId: requestId,
+    );
+  }
+
+  Future<AgentSessionBinding> _bindingFor(
+    String characterId,
+    AgentTransport transport,
+  ) async {
+    final connectionGeneration = _connectionGeneration;
+    final threadGeneration = _threadGenerations[characterId] ?? 0;
+    final cached = _bindings[characterId];
+    final previewCached =
+        cached != null && cached.characterSessionId.startsWith('preview-');
+    if (cached != null &&
+        previewCached == (transport is PreviewAgentTransport)) {
+      return cached;
+    }
+    final binding = await transport.openSession(characterId);
+    if (connectionGeneration != _connectionGeneration ||
+        threadGeneration != (_threadGenerations[characterId] ?? 0)) {
+      unawaited(transport.closeSession(binding));
+      throw const ApiException('Conversation changed');
+    }
+    if (_disposed) return binding;
+    _bindings[characterId] = binding;
+    final thread = threadOf(characterId);
+    state = state.copyWith(
+      threads: {
+        ...state.threads,
+        characterId: thread.copyWith(
+          characterSessionId: binding.characterSessionId,
+        ),
+      },
+    );
+    await _save();
+    return binding;
+  }
+
+  String _beginAiStream(String characterId) {
+    final thread = threadOf(characterId);
+    final id = _newId();
+    final isOpen = state.openThreadId == characterId;
+    final message = AiChatMessage(
+      id: id,
+      isUser: false,
+      text: '',
+      createdAt: DateTime.now(),
+      deliveryStatus: 'streaming',
+    );
+    state = state.copyWith(
+      threads: {
+        ...state.threads,
+        characterId: thread.copyWith(
+          messages: [...thread.messages, message],
+          unread: isOpen ? 0 : thread.unread + 1,
+          updatedAt: DateTime.now(),
+        ),
+      },
+    );
+    _save();
+    return id;
+  }
+
+  void _appendAiDelta(String characterId, String messageId, String delta) {
+    if (_disposed || delta.isEmpty) return;
+    _updateMessage(
+      characterId,
+      messageId,
+      (message) => message.copyWith(
+        text: message.text + delta,
+        deliveryStatus: 'streaming',
+      ),
+      persist: false,
+    );
+  }
+
+  Future<void> _finalizeAiStream(
+    String characterId,
+    String messageId,
+    String finalText, {
+    List<AgentMessagePart> parts = const [],
+    ChatAttachment? attachment,
+    String? agentRunId,
+    String? requestId,
+  }) async {
+    if (_disposed) return;
+    _updateMessage(
+      characterId,
+      messageId,
+      (message) => message.copyWith(
+        text: finalText,
+        parts: parts,
+        attachment: attachment,
+        deliveryStatus: 'delivered',
+        requestId: requestId,
+      ),
+      persist: false,
+    );
+    final thread = threadOf(characterId);
+    state = state.copyWith(
+      threads: {
+        ...state.threads,
+        characterId: thread.copyWith(
+          updatedAt: DateTime.now(),
+          agentRunId: agentRunId,
+        ),
+      },
+      sendingIn: {...state.sendingIn}..remove(characterId),
+    );
+    await _save();
+  }
+
+  void _removeStreamingPlaceholders(String characterId) {
+    final thread = threadOf(characterId);
+    final messages = thread.messages
+        .where((message) =>
+            message.isUser || message.deliveryStatus != 'streaming')
+        .toList();
+    if (messages.length == thread.messages.length) return;
+    state = state.copyWith(
+      threads: {
+        ...state.threads,
+        characterId: thread.copyWith(messages: messages),
+      },
+    );
+  }
+
+  Future<void> _appendAi(
+    String characterId,
+    String text, {
+    List<AgentMessagePart> parts = const [],
+    ChatAttachment? attachment,
+    String? agentRunId,
+    String? requestId,
+  }) async {
+    if (_disposed) return;
+    final thread = threadOf(characterId);
+    final isOpen = state.openThreadId == characterId;
+    final msg = AiChatMessage(
+      id: _newId(),
+      isUser: false,
+      text: text,
+      parts: parts,
+      attachment: attachment,
+      createdAt: DateTime.now(),
+      deliveryStatus: 'delivered',
+      requestId: requestId,
+    );
+    state = state.copyWith(
+      threads: {
+        ...state.threads,
+        characterId: thread.copyWith(
+          messages: [...thread.messages, msg],
+          unread: isOpen ? 0 : thread.unread + 1,
+          updatedAt: DateTime.now(),
+          agentRunId: agentRunId,
+        ),
+      },
+      sendingIn: {...state.sendingIn}..remove(characterId),
+    );
+    await _save();
+  }
+
+  void seedGreeting(String characterId, String? greeting) {
+    final text = greeting?.trim() ?? '';
+    if (text.isEmpty) return;
+    final thread = threadOf(characterId);
+    if (thread.messages.isNotEmpty) return;
+    state = state.copyWith(
+      threads: {
+        ...state.threads,
+        characterId: thread.copyWith(
+          messages: [
+            AiChatMessage(
+              id: _newId(),
+              isUser: false,
+              text: text,
+              createdAt: DateTime.now(),
+            ),
+          ],
+          updatedAt: DateTime.now(),
+        ),
+      },
+    );
+    _save();
+  }
+
+  void injectScenario(
+    String characterId, {
+    required AgentMessagePart part,
+    String text = '',
+  }) {
+    if (!kDebugMode) {
+      throw StateError('Scenario injection is debug-only');
+    }
+    unawaited(_appendAi(characterId, text, parts: [part]));
+  }
+
+  void setScrollOffset(String characterId, double offset) {
+    final thread = threadOf(characterId);
+    final safe = offset.isFinite && offset > 0 ? offset : 0.0;
+    if ((thread.scrollOffset - safe).abs() < 12) return;
+    state = state.copyWith(
+      threads: {
+        ...state.threads,
+        characterId: thread.copyWith(scrollOffset: safe),
+      },
+    );
+    _save();
+  }
+
+  void setDraftAttachments(
+    String characterId,
+    List<ChatAttachment> attachments,
+  ) {
+    final thread = threadOf(characterId);
+    state = state.copyWith(
+      threads: {
+        ...state.threads,
+        characterId: thread.copyWith(
+          draftAttachments: List.unmodifiable(attachments),
+        ),
+      },
+    );
+    _save();
+  }
+
+  void setDraftVoice(String characterId, ChatAttachment? attachment) {
+    final thread = threadOf(characterId);
+    state = state.copyWith(
+      threads: {
+        ...state.threads,
+        characterId: thread.copyWith(
+          draftVoice: attachment,
+          clearDraftVoice: attachment == null,
+        ),
+      },
+    );
+    _save();
+  }
+
+  void setDraft(String characterId, String value) {
+    final thread = threadOf(characterId);
+    state = state.copyWith(
+      threads: {...state.threads, characterId: thread.copyWith(draft: value)},
+    );
+    _save();
+  }
+
+  void reactToMessage(String characterId, String messageId, String? emoji) {
+    _updateMessage(characterId, messageId, (m) => m.copyWith(reaction: emoji ?? ''));
+  }
+
+  void editMessage(String characterId, String messageId, String text) {
+    final value = text.trim();
+    if (value.isEmpty) return;
+    _updateMessage(
+      characterId,
+      messageId,
+      (m) => m.isUser && !m.deleted
+          ? m.copyWith(text: value, editedAt: DateTime.now())
+          : m,
+    );
+  }
+
+  void deleteMessage(String characterId, String messageId) {
+    _updateMessage(
+      characterId,
+      messageId,
+      (m) => m.copyWith(
+        text: '',
+        deleted: true,
+        deliveryStatus: 'deleted',
+      ),
+    );
+  }
+
+  void renameThread(String characterId, String title) {
+    final thread = threadOf(characterId);
+    state = state.copyWith(
+      threads: {
+        ...state.threads,
+        characterId: thread.copyWith(title: title.trim().isEmpty ? null : title.trim()),
+      },
+    );
+    _save();
+  }
+
+  void togglePin(String characterId) {
+    final thread = threadOf(characterId);
+    state = state.copyWith(
+      threads: {...state.threads, characterId: thread.copyWith(pinned: !thread.pinned)},
+    );
+    _save();
+  }
+
+  void toggleArchive(String characterId) {
+    final thread = threadOf(characterId);
+    state = state.copyWith(
+      threads: {...state.threads, characterId: thread.copyWith(archived: !thread.archived)},
+    );
+    _save();
+  }
+
+  void stopGeneration(String characterId) {
+    unawaited(LivePcmAudio.stop());
+    ref.read(agentTransportProvider).cancelTurn(characterId);
+    _threadGenerations[characterId] = (_threadGenerations[characterId] ?? 0) + 1;
+    final thread = threadOf(characterId);
+    final messages = [...thread.messages];
+    for (var i = messages.length - 1; i >= 0; i--) {
+      final message = messages[i];
+      if (!message.isUser && message.deliveryStatus == 'streaming') {
+        messages[i] = message.copyWith(deliveryStatus: 'stopped');
+        continue;
+      }
+      if (message.isUser && message.deliveryStatus == 'sending') {
+        messages[i] = message.copyWith(deliveryStatus: 'stopped');
+        break;
+      }
+    }
+    state = state.copyWith(
+      threads: {
+        ...state.threads,
+        characterId: thread.copyWith(messages: messages),
+      },
+      sendingIn: {...state.sendingIn}..remove(characterId),
+    );
+    _save();
+  }
+
+  Future<void> newContext(String characterId) async {
+    _threadGenerations[characterId] = (_threadGenerations[characterId] ?? 0) + 1;
+    final old = _bindings.remove(characterId);
+    if (old != null) {
+      unawaited(ref.read(agentTransportProvider).closeSession(old));
+    }
+    final thread = threadOf(characterId);
+    state = state.copyWith(
+      threads: {
+        ...state.threads,
+        characterId: thread.copyWith(
+          characterSessionId: '',
+          agentRunId: '',
+        ),
+      },
+      sendingIn: {...state.sendingIn}..remove(characterId),
+    );
+    await _save();
+  }
+
+  List<AiChatMessage> searchMessages(String characterId, String query) {
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) return const [];
+    return threadOf(characterId)
+        .messages
+        .where((m) => !m.deleted && m.text.toLowerCase().contains(q))
+        .toList();
+  }
+
+  void _setDelivery(String characterId, String messageId, String status) {
+    _updateMessage(characterId, messageId, (m) => m.copyWith(deliveryStatus: status));
+  }
+
+  void _updateMessage(
+    String characterId,
+    String messageId,
+    AiChatMessage Function(AiChatMessage) transform, {
+    bool persist = true,
+  }) {
+    final thread = threadOf(characterId);
+    final messages = [
+      for (final m in thread.messages)
+        if (m.id == messageId) ...[
+          transform(m),
+        ] else
+          m,
+    ];
+    if (!thread.messages.any((m) => m.id == messageId)) return;
+    state = state.copyWith(
+      threads: {
+        ...state.threads,
+        characterId: thread.copyWith(messages: messages, updatedAt: DateTime.now()),
+      },
+    );
+    if (persist) _save();
+  }
+
+  void clearThread(String characterId) {
+    _threadGenerations[characterId] =
+        (_threadGenerations[characterId] ?? 0) + 1;
+    final binding = _bindings.remove(characterId);
+    if (binding != null) {
+      unawaited(ref.read(agentTransportProvider).closeSession(binding));
+    }
+    unawaited(LivePcmAudio.stop());
+    final threads = {...state.threads}..remove(characterId);
+    state = state.copyWith(
+      threads: threads,
+      sendingIn: {...state.sendingIn}..remove(characterId),
+    );
+    _save();
+  }
+
+  Future<void> clearAll() async {
+    final ids = <String>{...state.threads.keys, ..._bindings.keys};
+    for (final id in ids) {
+      _threadGenerations[id] = (_threadGenerations[id] ?? 0) + 1;
+    }
+    final transport = ref.read(agentTransportProvider);
+    final bindings = [..._bindings.values];
+    _bindings.clear();
+    final subscriptions = [..._eventSubscriptions.values];
+    _eventSubscriptions.clear();
+    _eventCursors.clear();
+    state = state.copyWith(threads: {}, sendingIn: {}, shellConfigs: {});
+    await _save();
+    await Future.wait([
+      for (final binding in bindings)
+        transport.closeSession(binding).catchError((_) {}),
+      for (final subscription in subscriptions)
+        subscription.cancel().catchError((_) {}),
+      LivePcmAudio.stop().catchError((_) {}),
+      _clearOwnedTempMedia(),
+    ]);
+  }
+
+  Future<void> _clearOwnedTempMedia() async {
+    try {
+      final dir = await getTemporaryDirectory();
+      if (!await dir.exists()) return;
+      await for (final entity in dir.list(followLinks: false)) {
+        if (entity is! File) continue;
+        final name = entity.uri.pathSegments.isEmpty
+            ? ''
+            : entity.uri.pathSegments.last;
+        if (!name.startsWith('masanawa_voice_') &&
+            !name.startsWith('masanawa_reply_')) {
+          continue;
+        }
+        try {
+          await entity.delete();
+        } catch (_) {
+          // One locked temp file must not block account cleanup.
+        }
+      }
+    } catch (_) {
+      // OS temp storage remains non-canonical; cleanup is best effort.
+    }
+  }
+
+  List<double> _pcmWaveform(Uint8List wavBytes, {int bars = 36}) {
+    if (wavBytes.length <= 44 || bars < 1) return const [];
+    final pcm = wavBytes.sublist(44);
+    final sampleCount = pcm.length ~/ 2;
+    if (sampleCount < bars) return const [];
+    final samplesPerBar =
+        (sampleCount / bars).floor().clamp(1, sampleCount).toInt();
+    final values = <double>[];
+    for (var bar = 0; bar < bars; bar++) {
+      final startSample = bar * samplesPerBar;
+      if (startSample >= sampleCount) break;
+      final endSample =
+          ((bar + 1) * samplesPerBar).clamp(0, sampleCount).toInt();
+      var peak = 0;
+      for (var sample = startSample; sample < endSample; sample++) {
+        final offset = sample * 2;
+        if (offset + 1 >= pcm.length) break;
+        var value = pcm[offset] | (pcm[offset + 1] << 8);
+        if (value >= 0x8000) value -= 0x10000;
+        final magnitude = value.abs();
+        if (magnitude > peak) peak = magnitude;
+      }
+      values.add((peak / 32768).clamp(0.06, 1.0).toDouble());
+    }
+    return List.unmodifiable(values);
+  }
+
+  String _newId() => 'm-${DateTime.now().microsecondsSinceEpoch}-${_seq++}';
+
+  Future<File?> _threadsFile(String ownerId) async {
+    try {
+      if (ownerId.isEmpty) return null;
+      final dir = await getApplicationDocumentsDirectory();
+      final owner =
+          base64Url.encode(utf8.encode(ownerId)).replaceAll('=', '');
+      return File('${dir.path}/masanawa_threads_v2_$owner.json');
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _deleteLegacyThreadCache() async {
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final legacy = File('${dir.path}/$_kThreadsFile');
+      if (await legacy.exists()) await legacy.delete();
+    } catch (_) {
+      // Legacy cache is never loaded; failed deletion does not block startup.
+    }
+  }
+
+  Future<void> _deleteThreadCache(String ownerId) async {
+    try {
+      final file = await _threadsFile(ownerId);
+      if (file != null && await file.exists()) await file.delete();
+    } catch (_) {
+      // Account cleanup remains best effort locally; server history is canonical.
+    }
+  }
+
+  Future<void> _handleOwnerChange(
+    String? previousOwner,
+    String? nextOwner,
+    int generation,
+  ) async {
+    _connectionGeneration++;
+    final ids = <String>{...state.threads.keys, ..._bindings.keys};
+    for (final id in ids) {
+      _threadGenerations[id] = (_threadGenerations[id] ?? 0) + 1;
+    }
+    final transport = ref.read(agentTransportProvider);
+    final bindings = [..._bindings.values];
+    _bindings.clear();
+    final subscriptions = [..._eventSubscriptions.values];
+    _eventSubscriptions.clear();
+    _eventCursors.clear();
+    state = state.copyWith(
+      threads: {},
+      sendingIn: {},
+      shellConfigs: {},
+      clearOpen: true,
+    );
+
+    if (previousOwner != null && previousOwner.isNotEmpty) {
+      await clearSecureShellState(ownerId: previousOwner);
+      await _deleteThreadCache(previousOwner);
+    }
+    await Future.wait([
+      for (final binding in bindings)
+        transport.closeSession(binding).catchError((_) {}),
+      for (final subscription in subscriptions)
+        subscription.cancel().catchError((_) {}),
+      LivePcmAudio.stop().catchError((_) {}),
+      _clearOwnedTempMedia(),
+    ]);
+
+    if (_disposed ||
+        generation != _cacheGeneration ||
+        nextOwner == null ||
+        nextOwner.isEmpty ||
+        nextOwner != _cacheOwnerId) {
+      return;
+    }
+    await _load(nextOwner, generation);
+  }
+
+  Future<void> _load(String ownerId, int generation) async {
+    try {
+      await _deleteLegacyThreadCache();
+      final file = await _threadsFile(ownerId);
+      if (file == null || !await file.exists()) return;
+      final raw = jsonDecode(await file.readAsString());
+      final list = (raw as List? ?? [])
+          .map((e) => ChatThread.fromJson((e as Map).cast<String, dynamic>()))
+          .where((t) => t.characterId.isNotEmpty)
+          .toList();
+      if (_disposed ||
+          generation != _cacheGeneration ||
+          ownerId != _cacheOwnerId ||
+          list.isEmpty) {
+        return;
+      }
+      state = state.copyWith(
+        threads: {for (final t in list) t.characterId: t, ...state.threads},
+      );
+    } catch (_) {
+      // Corrupt/missing cache never prevents the user from opening chat.
+    }
+  }
+
+  Future<void> _save() async {
+    final ownerId = _cacheOwnerId;
+    if (ownerId == null || ownerId.isEmpty) return;
+    try {
+      final file = await _threadsFile(ownerId);
+      if (file == null) return;
+      final list = state.threads.values.map((t) => t.toJson()).toList();
+      await file.writeAsString(jsonEncode(list));
+    } catch (_) {
+      // Local cache is best-effort. Server session/run truth is canonical.
+    }
+  }
+}
+
+final aiChatProvider = NotifierProvider<AiChatController, AiChatState>(
+  AiChatController.new,
+);
+), '');
+    }
+    final decoded = jsonDecode(raw);
+    if (decoded is! Map) {
+      throw const FormatException('Invalid Twin interview summary');
+    }
+    final value = decoded.cast<String, dynamic>();
+    final biography = value['biography'];
+    final personality = value['personality'];
+    final expertise = value['expertise'];
+    if (biography is! String ||
+        biography.trim().isEmpty ||
+        personality is! List ||
+        expertise is! List) {
+      throw const FormatException('Incomplete Twin interview summary');
+    }
+    value['personality'] = [
+      for (final item in personality)
+        if (item is String && item.trim().isNotEmpty) item.trim(),
+    ];
+    value['expertise'] = [
+      for (final item in expertise)
+        if (item is String && item.trim().isNotEmpty) item.trim(),
+    ];
+    if ((value['personality'] as List).isEmpty ||
+        (value['expertise'] as List).isEmpty) {
+      throw const FormatException('Incomplete Twin interview summary');
+    }
+    value['biography'] = biography.trim();
+    return value;
+  }
+
   Future<void> sendText(
     String characterId,
     String rawText, {
