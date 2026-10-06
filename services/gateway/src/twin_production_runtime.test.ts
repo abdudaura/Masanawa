@@ -416,7 +416,7 @@ function ownerLifecycleHarness(input: {
     requesterUserId,
     ownerUserId,
     originatingCharacterId: characterId,
-    modality: "voice",
+    modality: "text",
     durationMinutes: 15,
     priceCredits: chargeMode === "paid" ? 100 : 0,
     platformFeeCredits: chargeMode === "paid" ? 20 : 0,
