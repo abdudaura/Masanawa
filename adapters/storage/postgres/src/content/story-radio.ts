@@ -126,6 +126,15 @@ export function createPostgresStoryRadioRepository(pool: Pool): StoryRadioReposi
 
     async setSeriesPublication(input) {
       return withTransaction(pool, async (client) => {
+        const locked = await client.query(
+          `SELECT series_id
+             FROM content.story_series
+            WHERE tenant_id=$1 AND series_id=$2
+            FOR UPDATE`,
+          [input.tenantId,input.seriesId],
+        );
+        if (locked.rowCount !== 1) return null;
+
         if (input.published) {
           const count = await client.query<{ count: string }>(
             `SELECT count(*)::text AS count FROM content.story_episodes
