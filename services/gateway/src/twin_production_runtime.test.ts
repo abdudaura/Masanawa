@@ -184,7 +184,7 @@ function paidOrderingHarness(order: string[]) {
           requesterUserId,
           ownerUserId,
           originatingCharacterId: characterId,
-          modality: "voice",
+          modality: "text",
           durationMinutes: 15,
           priceCredits: 150,
           platformFeeCredits: 30,
@@ -403,6 +403,7 @@ function ownerLifecycleHarness(input: {
   readonly startedAt?: string | null;
   readonly reservedCredits?: number;
   readonly conflictOnNextTransition?: boolean;
+  readonly verifiedAttendance?: boolean;
 }) {
   const events: Array<Record<string, unknown>> = [];
   const transfers: Array<Record<string, unknown>> = [];
@@ -434,6 +435,26 @@ function ownerLifecycleHarness(input: {
       : null,
     reservedCredits,
   };
+  const presence: Array<Record<string, unknown>> =
+    input.verifiedAttendance === true
+      ? [
+          {
+            requestId: current.requestId,
+            userId: requesterUserId,
+            firstSeenAt: new Date(Date.now() - 75_000).toISOString(),
+            lastSeenAt: new Date().toISOString(),
+            heartbeatCount: 6,
+          },
+          {
+            requestId: current.requestId,
+            userId: ownerUserId,
+            firstSeenAt: new Date(Date.now() - 75_000).toISOString(),
+            lastSeenAt: new Date().toISOString(),
+            heartbeatCount: 6,
+          },
+        ]
+      : [];
+  const messages: Array<Record<string, unknown>> = [];
 
   const runtime = createTwinProductionRuntime({
     sessions: {
@@ -498,6 +519,46 @@ function ownerLifecycleHarness(input: {
       async listOwnerAccessLifecycleCandidates() {
         return [current];
       },
+      async touchOwnerAccessPresence(update: {
+        readonly requestId: string;
+        readonly userId: string;
+        readonly seenAt: string;
+      }) {
+        const existing = presence.find(
+          (item) => item.userId === update.userId,
+        );
+        if (existing) {
+          existing.lastSeenAt = update.seenAt;
+          existing.heartbeatCount =
+            Number(existing.heartbeatCount ?? 0) + 1;
+          return existing;
+        }
+        const created = {
+          requestId: update.requestId,
+          userId: update.userId,
+          firstSeenAt: update.seenAt,
+          lastSeenAt: update.seenAt,
+          heartbeatCount: 1,
+        };
+        presence.push(created);
+        return created;
+      },
+      async listOwnerAccessPresence() {
+        return presence;
+      },
+      async appendOwnerAccessMessage(update: {
+        readonly message: Record<string, unknown>;
+      }) {
+        const existing = messages.find(
+          (item) => item.messageId === update.message.messageId,
+        );
+        if (existing) return existing;
+        messages.push({ ...update.message });
+        return update.message;
+      },
+      async listOwnerAccessMessages() {
+        return messages;
+      },
       async readLedgerPlan() { return null; },
       async putLedgerPlan(plan: { readonly plan: unknown }) {
         return plan.plan;
@@ -539,6 +600,8 @@ function ownerLifecycleHarness(input: {
     runtime,
     events,
     transfers,
+    presence,
+    messages,
     current: () => current,
   };
 }
@@ -953,6 +1016,86 @@ describe("Twin production runtime composition", () => {
     );
   });
 
+
+  it("settles a paid human text session only after two-party attendance", async () => {
+    const harness = ownerLifecycleHarness({
+      actorUserId: ownerUserId,
+      state: "active",
+      startedAt: new Date(Date.now() - 75_000).toISOString(),
+      reservedCredits: 100,
+      verifiedAttendance: true,
+    });
+
+    const completed = await harness.runtime.ownerAccess.act({
+      authorizationHeader: "Bearer owner",
+      characterId,
+      requestId: "request_lifecycle_123",
+      action: "complete",
+    });
+
+    expect(completed.state).toBe("settled");
+    expect(harness.transfers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          amountCredits: 80,
+          reason: "creator-earning",
+        }),
+        expect.objectContaining({
+          amountCredits: 20,
+          reason: "platform-margin",
+        }),
+      ]),
+    );
+    expect(harness.events.at(-1)).toEqual(
+      expect.objectContaining({
+        eventType: "twin.owner-access.completed",
+        amountCredits: 80,
+        status: "completed",
+      }),
+    );
+  });
+
+  it("keeps the human text room request-scoped and server-timestamped", async () => {
+    const harness = ownerLifecycleHarness({
+      actorUserId: requesterUserId,
+      state: "active",
+      startedAt: new Date(Date.now() - 10_000).toISOString(),
+      reservedCredits: 0,
+      chargeMode: "trial",
+    });
+
+    const status = await harness.runtime.ownerAccess.heartbeat({
+      authorizationHeader: "Bearer requester",
+      characterId,
+      requestId: "request_lifecycle_123",
+    });
+    expect(status.attendanceVerified).toBe(false);
+    expect(harness.presence).toHaveLength(1);
+
+    const sent = await harness.runtime.ownerAccess.sendMessage({
+      authorizationHeader: "Bearer requester",
+      characterId,
+      requestId: "request_lifecycle_123",
+      messageId: "message-human-123",
+      body: "Hello owner",
+    });
+    expect(sent).toEqual(
+      expect.objectContaining({
+        requestId: "request_lifecycle_123",
+        senderUserId: requesterUserId,
+        body: "Hello owner",
+      }),
+    );
+
+    const messages = await harness.runtime.ownerAccess.messages({
+      authorizationHeader: "Bearer requester",
+      characterId,
+      requestId: "request_lifecycle_123",
+      limit: 100,
+    });
+    expect(messages).toHaveLength(1);
+    expect(messages[0]?.messageId).toBe("message-human-123");
+  });
 
   it("does not start paid voice usage when only a Live token is issued", async () => {
     const harness = voiceLifecycleHarness();
