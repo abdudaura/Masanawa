@@ -36,7 +36,7 @@ Always refresh this file if any listed PR head changes before integration.
 
 ## Active shared integration
 
-Lane H integration is actively owned by PR #206 at head `c97ad9d0fc1e19b5c52dd06d4bdde10161224054`, stacked directly on PR #136. Do not open a second Home integration branch while #206 remains active. After #206 is reconciled into #136, mark Lane H **INTEGRATED** in the status ledger.
+Lane H production integration PR #206 completed at head `764d179543fd629245e8ad0f98d7fbfc6b11506c` and was merged into the canonical PR #136 branch as `effe6d213a8283b0925cbeac7e37db0b84c32376`. Lane H is therefore **INTEGRATED**. Do not reopen or duplicate Home integration. Exact APK/device acceptance remains a Lane P release gate.
 
 Story Radio production integration PR #209 is also open at head `9b3490c6fe1d92b44c679c976cc3396535abb6b1` and touches shared #136-owned Gateway/router/production paths. Treat it as a coordinated #136-side integration branch, not a second independent shared owner. Do not mark Lane S **INTEGRATED** until its changes are reconciled onto the canonical #136 head. News integration PR #207 is closed and must not be treated as active integration ownership.
 
@@ -109,3 +109,20 @@ Do not report Home/Rooms launch complete until:
 
 If the shared integration owner pauses while safe integration work remains inside its
 claimed paths, it should continue rather than hand back a partial status.
+
+
+## Home production integration qualification — 2026-10-06
+
+Canonical Home integration evidence:
+
+- isolated Home head consumed: PR #201 `8dcee90e49c6773298398ffeed218ff25ddb3ecb`;
+- production Home PR #206 final head: `764d179543fd629245e8ad0f98d7fbfc6b11506c`;
+- canonical #136 merge commit: `effe6d213a8283b0925cbeac7e37db0b84c32376`;
+- exact Home CI qualification pointer: `5b90222f60fd19e957dd64c19f9775ac56c52046`, differing from final Home only by CI-only `.gitmodules` removal and the scoped qualification command;
+- full workspace qualification immediately before the final binding-test fix: 156 test files passed / 16 skipped, 831 tests passed / 127 skipped; Gateway `/home` route tests passed; workspace/Gateway production builds passed; Flutter analysis reached completion without compile errors; Home widget/model/continuation/root-shell tests passed;
+- the one reproduced failure was test-harness binding initialization in `twin_production_integration_test.dart`; final #206 head adds the required `TestWidgetsFlutterBinding.ensureInitialized()` and changes no production source;
+- final GitHub Actions runs on #206 and merged #136 were infrastructure failures before checkout with `steps = null`, not application failures;
+- exact Render APK deployment `dep-db2d4orncjis73e9klf0` correctly resolved `5b90222f60fd19e957dd64c19f9775ac56c52046` but was canceled before checkout because the Render workspace had exhausted build-pipeline minutes;
+- Railway production deployment `e7bf7f7f-652d-49bc-8121-94444c92ab94` correctly targets `effe6d213a8283b0925cbeac7e37db0b84c32376` and is currently held at `NEEDS_APPROVAL` with no build or deploy logs.
+
+Do not mark Home **DEVICE VERIFIED** until an exact release APK is successfully built from the integrated #136 head and physical-device acceptance passes. The remaining blockers above are external build/deployment account gates, not an unimplemented Home integration handoff.
