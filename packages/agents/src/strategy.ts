@@ -51,6 +51,7 @@ export interface AgentStrategyRequest {
   readonly conversationHistory?: readonly {
     readonly direction: "user" | "assistant";
     readonly text: string;
+    readonly parts?: readonly unknown[];
   }[];
   readonly input: AgentStrategyInput;
 }
