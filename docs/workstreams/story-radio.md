@@ -48,6 +48,7 @@ Implemented in this isolated lane:
 - transport seam with no Gateway authority in the client;
 - Riverpod loading/caching/progress/reaction state;
 - Story Radio landing screen with Continue Listening, Featured and Series sections;
+- isolated episode audio player using the app's existing just_audio dependency;
 - Series screen with ordered episodes, Play entry and lightweight reactions;
 - focused model regressions for ordering, insecure media, cross-series leakage,
   progress overflow and invalid reaction values.
@@ -56,8 +57,7 @@ Still intentionally owned elsewhere:
 - persistent admin Story Radio publication model and storage — Lane A;
 - authenticated Gateway endpoints and real transport composition — PR #136/shared owner;
 - router/Home entry — PR #136/shared owner;
-- actual audio playback session binding, progress timers and next-episode autoplay —
-  shared mobile integration after transport endpoints exist;
+- isolated episode player is implemented with play/pause, seek, speed, periodic progress persistence and next-episode handoff; shared integration only needs to provide authorized audio transport/routes and open the next episode;
 - physical APK verification.
 
 Flutter/Dart is not installed in this execution environment, so no local analyzer/test
