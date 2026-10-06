@@ -47,14 +47,14 @@ The lane handoff and PR must record:
 | --- | --- | ---: | --- | --- |
 | H | Home shell | #201 | ISOLATED COMPLETE | #136 shared navigation/transport/server projection |
 | I | Internet Cafe | #203 | ISOLATED COMPLETE | #136 + canonical billing/Skill resolution |
-| B | Billing qualification | #126 / production billing line | IMPLEMENTING | Billing owner + #136; live merchant qualification and real-purchase/device evidence still required |
+| B | Billing qualification | #210 stacked on #126 | IMPLEMENTING | #210 owns the deterministic qualification gate; live Flutterwave evidence + controlled financial/device acceptance remain before production enablement |
 | T | Study Center | #205 stacked on #94/#96 | ISOLATED COMPLETE | #89/#91/#92 runtime/channel composition + #136 |
 | S | Story Radio | #199 | ISOLATED COMPLETE | Admin publishing/audio/runtime + #136 |
 | N | News | #200 | ISOLATED COMPLETE | Admin/evidence/audio integration + #136 |
 | W | Work & Research | #202 | ISOLATED COMPLETE | #136 + canonical Workflow/research runtime |
 | G | Group Rooms | #204 | ISOLATED COMPLETE | Identity export/persistence/memory + #136 |
 | A | Admin publishing | #208 stacked on #129 | ISOLATED COMPLETE | #129/Ops canonical authorized-command composition |
-| P | Production integration + APK | #136 | IMPLEMENTING | shared integration owner |
+| P | Production integration + APK | #136, with Home integration #206 | IMPLEMENTING | #206 is integrating Lane H on #136; remaining shared Room composition/APK/device acceptance stays under #136 ownership |
 
 ## Move-on gate
 
