@@ -113,13 +113,13 @@ async function load(client:PoolClient,input:{tenantId:TenantId;characterId:Chara
   );
   return r.rows[0]??null;
 }
-async function requireActiveDevice(client:PoolClient,tenantId:TenantId,deviceId:DeviceId){
+async function requireDevice(client:PoolClient,tenantId:TenantId,deviceId:DeviceId,activeRequired:boolean){
   const r=await client.query<{state:string}>(
     "SELECT state FROM devices.devices WHERE tenant_id=$1 AND device_id=$2 FOR UPDATE",
     [tenantId,deviceId]
   );
   if(!r.rows[0]) throw new PlatformError({code:"devices.not_found",category:"not-found",message:"Device does not exist in the requested tenant",retryable:false});
-  if(r.rows[0].state!=="active") throw new PlatformError({code:"devices.not_active",category:"authorization",message:"Device is not active",retryable:false});
+  if(activeRequired&&r.rows[0].state!=="active") throw new PlatformError({code:"devices.not_active",category:"authorization",message:"Device is not active",retryable:false});
 }
 function immutableSame(a:StoredCharacterDeviceAssignment,b:StoredCharacterDeviceAssignment){
   return a.tenantId===b.tenantId&&a.characterId===b.characterId&&a.deviceId===b.deviceId&&a.role===b.role&&
@@ -137,8 +137,8 @@ export async function putCharacterDeviceAssignment(
   const assignment=normalize(input.assignment);
   const fp=fingerprint(assignment);
   return withTransaction(pool,async(client)=>{
-    await requireActiveDevice(client,assignment.tenantId,assignment.deviceId);
     const row=await load(client,assignment,true);
+    await requireDevice(client,assignment.tenantId,assignment.deviceId,!row);
     if(!row){
       if(input.expectedRevision!==null) throw new PlatformError({code:"devices.assignment_not_found",category:"not-found",message:"Character Device assignment does not exist",retryable:false});
       if(assignment.revision!==1||assignment.state!=="active") throw new TypeError("new assignment must be active at revision one");
