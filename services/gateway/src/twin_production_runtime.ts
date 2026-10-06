@@ -2519,7 +2519,14 @@ export function createTwinProductionRuntime(input: {
         }
         if (
           current.modality !== "text" ||
-          !["active", "completed", "settled"].includes(current.state)
+          ![
+            "active",
+            "completed",
+            "settled",
+            "releasing",
+            "disputed",
+            "refunded",
+          ].includes(current.state)
         ) {
           throw new Error("Owner access room is unavailable");
         }
