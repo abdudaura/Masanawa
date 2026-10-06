@@ -1,3 +1,12 @@
+# Masanawa Twin Transformation Tasks
+
+## 2026-10-06 launch overlay
+
+Do not discard completed TWIN tasks. Their domain/UI foundations remain inputs to the
+new launch shell. For new work, prioritize the Home/Rooms phases and lane ownership in
+`docs/HOME-ROOMS-LAUNCH.md` and `docs/HOME-ROOMS-MULTI-WINDOW.md`. Any task wording that
+assumes My Twin is the first landing tab is superseded at the navigation layer only.
+
 # Masanawa Twin Transformation Task Ledger
 
 Status: canonical supplemental transformation ledger, 2026-10-05.
