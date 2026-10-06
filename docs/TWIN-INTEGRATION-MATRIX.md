@@ -99,13 +99,15 @@ Current #136 implementation:
 4. commission settlement/reversal uses stable ledger plans and crash-safe replay;
 5. durable Twin economy events feed Activity/Wallet.
 
-Still unresolved: real Flutterwave/NOWPayments provider amounts cannot be passed directly
-to the Credit-denominated commission engine. Canonical Commerce explicitly states NGN
-billing amounts are not AI Credits, and the product docs keep fiat/crypto principal
-separate from Credits/earnings. No approved NGN/crypto -> commission-Credit valuation
-contract exists. Therefore provider-success attribution/commission hooks must remain
-disabled/unwired until an explicit commercial valuation policy is introduced; never
-invent an exchange rate in Gateway code.
+Current #136 now includes the missing valuation contract without inventing an exchange
+rate. `ProviderValuationPolicy` is append-only and versioned per explicit valuation key
+and event type, represents the conversion as a rational source-unit-to-Credit mapping,
+supports minimums/caps, and has no default. PostgreSQL persistence is immutable, admin
+read/update routes are composed, and `monetization.settleProviderValue` fails closed
+when no matching policy is configured. Real Flutterwave/NOWPayments hooks remain
+deliberately unwired until an approved revision exists for the exact provider
+currency/asset source and the attribution path cannot double-pay canonical Commerce
+creator commission.
 
 ### Phase 4 — Paid voice
 Merged foundations: #139 trial/voice contracts + UI and #159 admission.
@@ -157,9 +159,12 @@ Current #136 implementation:
     request/ledger records;
 12. Human Access configuration lives in My Twin rather than legacy creator Settings.
 
-Still required: general post-session dispute/reconciliation policy beyond the deterministic
-attendance-timeout refund, real voice/video human transport if/when added, and
-production/device qualification.
+Post-session dispute/reconciliation is now implemented for paid text Human Access:
+owner earnings remain pending through a configurable dispute window, requester disputes
+require a reason and must arrive before release, admin resolution can release or refund
+through replay-safe ledger plans, undisputed earnings release automatically after the
+window, and both parties receive lifecycle notifications. Still required: real
+voice/video human transport if/when added, plus production/device qualification.
 
 ### Phase 6 — Mobile simplification
 Current #136 implementation:
