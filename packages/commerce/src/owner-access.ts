@@ -62,6 +62,10 @@ export interface OwnerAccessRequest {
   readonly startedAt: string | null;
   readonly completedAt: string | null;
   readonly reconciliationReason?: "attendance-timeout";
+  readonly disputeBy?: string | null;
+  readonly disputedAt?: string | null;
+  readonly disputeReason?: "service-not-delivered" | "service-quality" | "other" | null;
+  readonly earningsReleasedAt?: string | null;
 }
 
 export interface OwnerAccessSettlementDecision {
@@ -173,7 +177,7 @@ const transitions: Readonly<Record<OwnerAccessState, readonly OwnerAccessState[]
   scheduled: ["active", "cancelled", "no-show", "expired"],
   active: ["completed", "disputed"],
   completed: ["settled", "disputed"],
-  settled: [],
+  settled: ["disputed"],
   declined: ["refunded"],
   expired: ["refunded"],
   cancelled: ["refunded"],
