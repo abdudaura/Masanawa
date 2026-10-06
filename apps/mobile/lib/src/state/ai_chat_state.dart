@@ -907,10 +907,25 @@ class AiChatController extends Notifier<AiChatState> {
               'Keep this short and natural for audio playback.',
       requestId: createRequestId(),
     );
+    ChatAttachment? replyAudio;
+    if (result.audioBytes case final audio? when audio.isNotEmpty) {
+      final dir = await getTemporaryDirectory();
+      final path =
+          '${dir.path}/masanawa_reply_${DateTime.now().microsecondsSinceEpoch}.wav';
+      await File(path).writeAsBytes(audio, flush: true);
+      replyAudio = ChatAttachment(
+        kind: 'voice',
+        path: path,
+        durationMs: result.audioDurationMs,
+        sizeBytes: audio.length,
+        waveform: _pcmWaveform(audio),
+      );
+    }
     await _appendAi(
       characterId,
       result.text,
       parts: result.parts,
+      attachment: replyAudio,
       agentRunId: result.agentRunId,
     );
   }
