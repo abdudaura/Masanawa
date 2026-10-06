@@ -544,35 +544,6 @@ class _RoomCard extends StatelessWidget {
       };
 }
 
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title, this.subtitle});
-
-  final String title;
-  final String? subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    final u = context.masanawa;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            color: u.textPrimary,
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        if (subtitle case final value?) ...[
-          const SizedBox(height: 2),
-          Text(value, style: TextStyle(color: u.textMuted, fontSize: 12)),
-        ],
-      ],
-    );
-  }
-}
-
 class _HomeLoading extends StatelessWidget {
   const _HomeLoading();
 
