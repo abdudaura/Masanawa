@@ -352,6 +352,7 @@ export function createTwinProductionRuntime(input: {
     readonly platformFeeBasisPoints: number;
     readonly acceptWithinMinutes: number;
     readonly startGraceMinutes: number;
+    readonly completionGraceMinutes?: number;
   };
   readonly notifications?: {
     send(input: {
@@ -1277,6 +1278,10 @@ export function createTwinProductionRuntime(input: {
     startGraceMinutes: input.ownerAccess.startGraceMinutes,
   };
 
+  const ownerCompletionGraceMinutes =
+    input.ownerAccess.completionGraceMinutes ??
+    input.ownerAccess.startGraceMinutes;
+
   const ownerAccessOffering = createOwnerAccessOfferingService({
     authorizer: customerAuthority,
     bounds: {
@@ -1556,20 +1561,28 @@ export function createTwinProductionRuntime(input: {
     tenantId: TenantId,
     current: PersistedOwnerAccessRequest,
   ): Promise<PersistedOwnerAccessRequest> {
+    const attendanceTimeoutRefund =
+      current.state === "disputed" &&
+      current.reconciliationReason === "attendance-timeout";
     const refundable = new Set([
       "declined",
       "expired",
       "cancelled",
       "no-show",
     ]);
-    const isRefund = refundable.has(current.state);
+    const isRefund =
+      refundable.has(current.state) || attendanceTimeoutRefund;
     const isSettlement = current.state === "completed";
     if (!isRefund && !isSettlement) {
       await appendOwnerAccessProjectionEvent(tenantId, current);
       return current;
     }
 
-    await settleOwnerRequest(tenantId, current, current.state);
+    await settleOwnerRequest(
+      tenantId,
+      current,
+      attendanceTimeoutRefund ? "no-show" : current.state,
+    );
     const finalState = isSettlement ? "settled" : "refunded";
     const finalized = {
       ...current,
@@ -1614,12 +1627,63 @@ export function createTwinProductionRuntime(input: {
       current.state === "expired" ||
       current.state === "cancelled" ||
       current.state === "no-show" ||
-      current.state === "completed"
+      current.state === "completed" ||
+      (current.state === "disputed" &&
+        current.reconciliationReason === "attendance-timeout")
     ) {
       return finalizeOwnerAccessState(tenantId, current);
     }
 
     const nowMs = Date.now();
+    const activeTimedOut =
+      current.state === "active" &&
+      current.startedAt !== null &&
+      Date.parse(current.startedAt) +
+          (current.durationMinutes + ownerCompletionGraceMinutes) * 60_000 <=
+        nowMs;
+
+    if (activeTimedOut) {
+      const attendance = await ownerAccessAttendance(tenantId, current);
+      const nextState = attendance.attendanceVerified
+        ? "completed"
+        : "disputed";
+      const intermediate = {
+        ...current,
+        state: transitionOwnerAccess(current.state, nextState),
+        completedAt:
+          nextState === "completed" ? at() : current.completedAt,
+        ...(nextState === "disputed"
+          ? { reconciliationReason: "attendance-timeout" as const }
+          : {}),
+      };
+      const claimed = await input.economy.transitionOwnerAccessRequest({
+        tenantId,
+        expectedState: current.state,
+        request: intermediate,
+        reservationId: current.reservationId,
+        reservedCredits: current.reservedCredits,
+      });
+      if (!claimed.applied) {
+        return refreshOwnerAccessLifecycle(tenantId, claimed.request);
+      }
+      const finalized = await finalizeOwnerAccessState(
+        tenantId,
+        claimed.request,
+      );
+      await notifyUser(
+        tenantId,
+        current.requesterUserId as UserId,
+        attendance.attendanceVerified
+          ? "Human session completed"
+          : "Human session refunded",
+        attendance.attendanceVerified
+          ? "Verified attendance was recorded and the session was completed."
+          : "Attendance could not be verified before the session window ended. Any eligible held Credits were returned.",
+        `masanawa://chat/${encodeURIComponent(current.originatingCharacterId)}`,
+      );
+      return finalized;
+    }
+
     const requestedExpired =
       current.state === "requested" &&
       Date.parse(current.acceptBy) <= nowMs;
@@ -1678,6 +1742,7 @@ export function createTwinProductionRuntime(input: {
           tenantId: request.tenantId,
           at: at(),
           startGraceMinutes: ownerPolicy.startGraceMinutes,
+          completionGraceMinutes: ownerCompletionGraceMinutes,
           limit,
         });
       let advanced = 0;
