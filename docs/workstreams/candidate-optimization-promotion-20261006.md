@@ -32,3 +32,22 @@ Implement:
 - explicit approval evidence from an authorized human/operator boundary;
 - stale revision and changed-evidence replay rejection;
 - promotion output as evidence only, never a side effect.
+
+
+## Implementation checkpoint
+
+Completed:
+- bounded immutable candidate artifact identity/hash metadata;
+- revisioned proposed/evaluated/approved/promoted/rejected lifecycle;
+- Task-142 baseline-vs-candidate regression gate;
+- zero-regression + full-candidate-pass default;
+- configurable bounded regression/recovery policy;
+- explicit AuthorityContext approval bound to exact candidate hash + dataset/version;
+- promotion output as evidence only, with no runtime mutation side effect;
+- terminal explicit rejection;
+- focused tests for regression blocking, recovery gates, stale revisions, changed approval
+  evidence, successful promotion evidence and no-self-promotion behavior.
+
+No Task-142 source or shared telemetry barrel/runtime/configuration path was edited.
+
+State: IMPLEMENTATION COMPLETE / VERIFICATION PENDING.
