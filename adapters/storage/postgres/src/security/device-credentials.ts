@@ -298,9 +298,14 @@ export async function createDeviceReconnectChallengeRecord(
     const credential=credentialRecord(credentialRow);
     if(credential.state!=="active"||credential.deviceId!==challenge.deviceId||credential.generation!==challenge.credentialGeneration) throw new PlatformError({code:"devices.reconnect_credential_stale",category:"authorization",message:"Reconnect challenge is not bound to the current active credential",retryable:false});
     if(Date.parse(challenge.expiresAt)>Date.parse(credential.expiresAt)) throw new TypeError("Reconnect challenge cannot outlive Device credential");
-    const current=await readCurrentDeviceOperationalCredential(client as unknown as Pool,{tenantId:challenge.tenantId,deviceId:challenge.deviceId}).catch(()=>null);
-    // The locked credential above plus the unique-active index is authoritative; avoid trusting a stale caller generation.
-    if(current!==null && current.deviceCredentialId!==challenge.deviceCredentialId) throw new PlatformError({code:"devices.reconnect_credential_stale",category:"authorization",message:"Reconnect credential is not current",retryable:false});
+    const currentActive=await client.query<{device_credential_id:DeviceCredentialId;generation:string}>(
+      "SELECT device_credential_id,generation::text FROM devices.operational_credentials WHERE tenant_id=$1 AND device_id=$2 AND state='active' FOR UPDATE",
+      [challenge.tenantId,challenge.deviceId]
+    );
+    const currentRow=currentActive.rows[0];
+    if(!currentRow||currentRow.device_credential_id!==challenge.deviceCredentialId||Number(currentRow.generation)!==challenge.credentialGeneration) {
+      throw new PlatformError({code:"devices.reconnect_credential_stale",category:"authorization",message:"Reconnect credential is not current",retryable:false});
+    }
     const existing=await loadChallenge(client,challenge.tenantId,challenge.requestId,true);
     const fp=challengeFingerprint(challenge);
     if(existing){
