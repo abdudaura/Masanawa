@@ -55,27 +55,48 @@ class WalletScreen extends ConsumerWidget {
                 ),
                 if (onBuyBills != null || onOpenCrypto != null) ...[
                   const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      if (onBuyBills != null)
-                        Expanded(
-                          child: OutlinedButton.icon(
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final textScale =
+                          MediaQuery.textScalerOf(context).scale(1);
+                      final stacked =
+                          constraints.maxWidth < 360 || textScale > 1.25;
+                      final buttons = <Widget>[
+                        if (onBuyBills != null)
+                          OutlinedButton.icon(
                             onPressed: onBuyBills,
                             icon: const Icon(Icons.receipt_long_outlined),
                             label: const Text('Bills'),
                           ),
-                        ),
-                      if (onBuyBills != null && onOpenCrypto != null)
-                        const SizedBox(width: 8),
-                      if (onOpenCrypto != null)
-                        Expanded(
-                          child: OutlinedButton.icon(
+                        if (onOpenCrypto != null)
+                          OutlinedButton.icon(
                             onPressed: onOpenCrypto,
                             icon: const Icon(Icons.currency_bitcoin),
                             label: const Text('Crypto'),
                           ),
-                        ),
-                    ],
+                      ];
+                      if (stacked) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            for (var i = 0; i < buttons.length; i++) ...[
+                              buttons[i],
+                              if (i != buttons.length - 1)
+                                const SizedBox(height: 8),
+                            ],
+                          ],
+                        );
+                      }
+                      return Row(
+                        children: [
+                          for (var i = 0; i < buttons.length; i++) ...[
+                            Expanded(child: buttons[i]),
+                            if (i != buttons.length - 1)
+                              const SizedBox(width: 8),
+                          ],
+                        ],
+                      );
+                    },
                   ),
                 ],
                 const SizedBox(height: 20),
@@ -136,21 +157,38 @@ class _Balances extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _SmallBalance(
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final textScale = MediaQuery.textScalerOf(context).scale(1);
+              final stacked =
+                  constraints.maxWidth < 300 || textScale > 1.5;
+              final items = [
+                _SmallBalance(
                   label: 'Pending',
                   value: '${view.pendingEarningsCredits} Cr',
                 ),
-              ),
-              Expanded(
-                child: _SmallBalance(
+                _SmallBalance(
                   label: 'Available',
                   value: '${view.availableEarningsCredits} Cr',
                 ),
-              ),
-            ],
+              ];
+              if (stacked) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    items[0],
+                    const SizedBox(height: 12),
+                    items[1],
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(child: items[0]),
+                  Expanded(child: items[1]),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -190,30 +228,59 @@ class _Actions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: FilledButton.icon(
-            onPressed: onAddMoney,
-            icon: const Icon(Icons.add),
-            label: const Text('Add money'),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: onSend,
-            icon: const Icon(Icons.send_outlined),
-            label: const Text('Send'),
-          ),
-        ),
-        const SizedBox(width: 8),
-        IconButton.outlined(
-          tooltip: 'Withdraw',
-          onPressed: onWithdraw,
-          icon: const Icon(Icons.south_west),
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final textScale = MediaQuery.textScalerOf(context).scale(1);
+        if (constraints.maxWidth < 380 || textScale > 1.25) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              FilledButton.icon(
+                onPressed: onAddMoney,
+                icon: const Icon(Icons.add),
+                label: const Text('Add money'),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: onSend,
+                icon: const Icon(Icons.send_outlined),
+                label: const Text('Send'),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: onWithdraw,
+                icon: const Icon(Icons.south_west),
+                label: const Text('Withdraw'),
+              ),
+            ],
+          );
+        }
+        return Row(
+          children: [
+            Expanded(
+              child: FilledButton.icon(
+                onPressed: onAddMoney,
+                icon: const Icon(Icons.add),
+                label: const Text('Add money'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: onSend,
+                icon: const Icon(Icons.send_outlined),
+                label: const Text('Send'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            IconButton.outlined(
+              tooltip: 'Withdraw',
+              onPressed: onWithdraw,
+              icon: const Icon(Icons.south_west),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -241,6 +308,7 @@ class _WalletEntryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final u = context.masanawa;
     final sign = entry.incoming ? '+' : '-';
+    final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.3;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
@@ -254,13 +322,24 @@ class _WalletEntryTile extends StatelessWidget {
           entry.title,
           style: TextStyle(color: u.textPrimary, fontSize: 14),
         ),
-        trailing: Text(
-          '$sign${entry.amountCredits} Cr',
-          style: TextStyle(
-            color: u.textPrimary,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        subtitle: largeText
+            ? Text(
+                '$sign${entry.amountCredits} Cr',
+                style: TextStyle(
+                  color: u.textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              )
+            : null,
+        trailing: largeText
+            ? null
+            : Text(
+                '$sign${entry.amountCredits} Cr',
+                style: TextStyle(
+                  color: u.textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
       ),
     );
   }
