@@ -1,6 +1,6 @@
 # Home + Rooms — Lane G Group Rooms
 
-Status: ACTIVE — backend contract continuation
+Status: IMPLEMENTATION COMPLETE — shared integration only
 Owner/window: ChatGPT Group Rooms implementation window
 Branch: `work/home-rooms-group-20261006`
 Base: `docs/home-rooms-launch-20261006` @ `f3aea97a1cf74736c567950ca3091eef91806406`
@@ -60,22 +60,51 @@ At implementation head `da4276044d55e5aa05c3f441182b8f8bff0255a8`, GitHub starte
 
 Both runs terminated before checkout/execution: their only jobs expose `steps = null` and no logs. This matches the repository's known hosted-runner allocation failure and is not an application test result. This environment has no repository checkout/Flutter SDK, so no local Flutter pass is fabricated.
 
-## Backend continuation
+## Backend continuation completed
 
-Ownership expanded after confirming no competing Group Room backend claim. New work is limited to additive Identity files; existing Relationship files and package exports remain untouched.
+Ownership was expanded after confirming no competing Group Room backend claim. The continuation is limited to additive Identity files; existing Relationship files and package exports remain untouched.
+
+Completed backend contract:
+- server-owned Group Room identity with Tenant scope, bounded room metadata and revision;
+- explicit 2..128-member membership with exactly one owner;
+- human participants bind exactly one canonical User;
+- Character participants bind exactly one canonical Character;
+- Twin participants bind canonical owner User + Character together;
+- revision-bound membership replacement rejects stale writers and invalid owner states;
+- group privacy is hard-coded to `memoryScope=group-room`, membership-required, and `privateRelationshipMemoryEligible=false`;
+- member-only message admission with explicit author attribution;
+- tenant + room scoped request replay identity, exact replay idempotency and changed-payload rejection;
+- duplicate message identity rejection;
+- bounded message history reads;
+- in-memory reference repository and focused regression coverage for privacy, bindings, ownership, tenant isolation, replay and membership revision races.
+
+The new Identity contract is intentionally not appended to `packages/identity/src/index.ts` because that shared export file is currently changed by another active PR. The integration owner must export it when reconciling branches rather than this lane overwriting that work.
 
 ## Remaining shared-owner integration dependencies
 
 Only work outside this lane remains:
 1. PR #136/router owner wires Home/Room navigation and the `onOpenConversation` callback into the universal conversation renderer.
-2. Canonical server owners expose the authenticated Group Room projection and enforce membership authorization/persistence.
-3. Canonical Memory/runtime owners execute group-scoped memory rules; group messages must never silently enter private Relationship memory.
-4. Shared transport maps canonical Character/Twin presentation references into the opaque `bindingRef` field.
-5. Production/APK owner performs end-to-end device qualification after composition.
+2. Shared Identity integration appends the new Group Room contract to the public package export and provides PostgreSQL persistence/migration; the export seam is intentionally left untouched because another active PR owns it.
+3. Canonical server composition authenticates Group Room reads/writes and maps them into the projection; this remains #136/shared Gateway work.
+4. Canonical Memory/runtime owners execute group-scoped memory rules; group messages must never silently enter private Relationship memory.
+5. Shared transport maps canonical Character/Twin presentation references into the opaque `bindingRef` field.
+6. Production/APK owner performs end-to-end device qualification after composition.
 
-Backend contract continuation is now in progress; this statement will be replaced by the final handoff.
+No additional isolated Lane G work remains without touching currently shared/claimed exports, PostgreSQL migration registration, Gateway composition or APK ownership.
 
 ## PR / handoff
 
 PR: #204 — `Implement Home/Rooms Lane G Group Rooms`
 Implementation head before this handoff update: `da4276044d55e5aa05c3f441182b8f8bff0255a8`.
+
+
+## Backend verification update
+
+Backend continuation heads:
+- initial server contract/tests: `c6c4c42371cdf6b94b13580b4a54de1bb5c3da31`
+- revision-bound membership: `43905d1a1da9d241c3e14f6f2d84eedf97ec8fc7`
+- canonical binding validation: `fa41db1be1360406d926f5260e538492d704e76d`
+
+Foundation CI run `37447009024` and Mobile Build run `37447009017` again terminated before checkout with `steps = null` and no logs. No application pass/failure is inferred from those runs.
+
+Current diff against the Home/Rooms docs base is exactly seven claimed files: the original five mobile/handoff files plus `packages/identity/src/group-room.ts` and `packages/identity/src/group-room.test.ts`.
