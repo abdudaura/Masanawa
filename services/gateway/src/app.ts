@@ -225,6 +225,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     app.post(
       "/auth/otp",
       {
+        bodyLimit: 8_000_000,
         schema: {
           body: Type.Object(
             {
@@ -598,6 +599,12 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
               biography: Type.String({ minLength: 1, maxLength: 1000 }),
               gender: Type.String({ minLength: 1, maxLength: 32 }),
               age: Type.Integer({ minimum: 1, maximum: 120 }),
+              avatarBase64: Type.String({ minLength: 1, maxLength: 5600000 }),
+              avatarMimeType: Type.Union([
+                Type.Literal("image/jpeg"),
+                Type.Literal("image/png"),
+                Type.Literal("image/webp"),
+              ]),
               personality: Type.Array(
                 Type.String({ minLength: 1, maxLength: 120 }),
                 { minItems: 1, maxItems: 24 },
@@ -629,6 +636,28 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
           authorizationHeader: request.headers.authorization,
           ...request.body,
         }),
+    );
+
+    app.get(
+      "/v1/twins/:publicId/avatar",
+      {
+        schema: {
+          params: Type.Object(
+            { publicId: Type.String({ minLength: 3, maxLength: 64 }) },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request, reply) => {
+        const image = await creatorClone.readPublicAvatar({
+          publicId: request.params.publicId,
+        });
+        if (!image) return reply.code(404).send({ error: "avatar_not_found" });
+        return reply
+          .header("cache-control", "public, max-age=3600")
+          .type(image.contentType)
+          .send(Buffer.from(image.bytes));
+      },
     );
   }
 
