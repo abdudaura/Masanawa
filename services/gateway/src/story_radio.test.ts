@@ -15,14 +15,20 @@ function fakeRepository(): StoryRadioRepository {
   const progress = new Map<string, StoryListeningProgress>();
   const reactions = new Map<string, StoryReaction>();
 
-  const summary = (userId: string, episodeId: string): StoryReactionSummary => {
+  const summary = (
+    tenantId: string,
+    userId: string,
+    episodeId: string,
+  ): StoryReactionSummary => {
     const counts = { like: 0, love: 0, funny: 0, thoughtful: 0 };
     for (const [key, value] of reactions) {
-      if (key.endsWith("|" + episodeId)) counts[value] += 1;
+      if (key.startsWith(tenantId + "|") && key.endsWith("|" + episodeId)) {
+        counts[value] += 1;
+      }
     }
     return Object.freeze({
       counts: Object.freeze(counts),
-      mine: reactions.get(userId + "|" + episodeId) ?? null,
+      mine: reactions.get(tenantId + "|" + userId + "|" + episodeId) ?? null,
     });
   };
 
@@ -40,7 +46,7 @@ function fakeRepository(): StoryRadioRepository {
     },
     async updateSeries(input) {
       const current = series.get(input.seriesId);
-      if (!current) return null;
+      if (!current || current.tenantId !== input.tenantId) return null;
       const next = Object.freeze({ ...current, ...input });
       series.set(input.seriesId, next);
       return next;
@@ -74,7 +80,7 @@ function fakeRepository(): StoryRadioRepository {
     },
     async updateEpisode(input) {
       const current = episodes.get(input.episodeId);
-      if (!current) return null;
+      if (!current || current.tenantId !== input.tenantId) return null;
       const next = Object.freeze({ ...current, ...input });
       episodes.set(input.episodeId, next);
       return next;
@@ -101,27 +107,48 @@ function fakeRepository(): StoryRadioRepository {
       episodes.set(input.episodeId, next);
       return next;
     },
-    async listSeries() { return Object.freeze([...series.values()]); },
-    async getSeries(input) { return series.get(input.seriesId) ?? null; },
-    async listEpisodes(input) {
-      return Object.freeze([...episodes.values()].filter(e => e.seriesId === input.seriesId));
+    async listSeries(input) {
+      return Object.freeze([...series.values()].filter(
+        s => s.tenantId === input.tenantId,
+      ));
     },
-    async listPublishedSeries() {
-      return Object.freeze([...series.values()].filter(s => s.state === "published"));
+    async getSeries(input) {
+      const row = series.get(input.seriesId);
+      return row?.tenantId === input.tenantId ? row : null;
+    },
+    async listEpisodes(input) {
+      return Object.freeze([...episodes.values()].filter(
+        e => e.tenantId === input.tenantId && e.seriesId === input.seriesId,
+      ));
+    },
+    async listPublishedSeries(input) {
+      return Object.freeze([...series.values()].filter(
+        s => s.tenantId === input.tenantId && s.state === "published",
+      ));
     },
     async getPublishedSeries(input) {
       const row = series.get(input.seriesId);
-      return row?.state === "published" ? row : null;
+      return row?.tenantId === input.tenantId && row.state === "published"
+        ? row
+        : null;
     },
     async listPublishedEpisodes(input) {
       return Object.freeze([...episodes.values()]
-        .filter(e => e.seriesId === input.seriesId && e.state === "published")
+        .filter(e =>
+          e.tenantId === input.tenantId &&
+          e.seriesId === input.seriesId &&
+          e.state === "published")
         .sort((a,b) => a.seasonNumber-b.seasonNumber || a.episodeNumber-b.episodeNumber));
     },
     async getPublishedEpisode(input) {
       const row = episodes.get(input.episodeId);
       const parent = row ? series.get(row.seriesId) : null;
-      return row?.state === "published" && parent?.state === "published" ? row : null;
+      return row?.tenantId === input.tenantId &&
+        row.state === "published" &&
+        parent?.tenantId === input.tenantId &&
+        parent.state === "published"
+        ? row
+        : null;
     },
     async getContinueProgress(input) {
       return [...progress.values()]
@@ -134,7 +161,10 @@ function fakeRepository(): StoryRadioRepository {
       if (!e || e.state !== "published" || s?.state !== "published") {
         throw new Error("story_radio.episode.unavailable");
       }
-      progress.set(input.userId + "|" + input.episodeId, input);
+      progress.set(
+        input.tenantId + "|" + input.userId + "|" + input.episodeId,
+        input,
+      );
       return input;
     },
     async getReactionSummary(input) {
@@ -143,7 +173,7 @@ function fakeRepository(): StoryRadioRepository {
       if (!e || e.state !== "published" || s?.state !== "published") {
         throw new Error("story_radio.episode.unavailable");
       }
-      return summary(input.userId, input.episodeId);
+      return summary(input.tenantId, input.userId, input.episodeId);
     },
     async setReaction(input) {
       const e = episodes.get(input.episodeId);
@@ -151,15 +181,18 @@ function fakeRepository(): StoryRadioRepository {
       if (!e || e.state !== "published" || s?.state !== "published") {
         throw new Error("story_radio.episode.unavailable");
       }
-      reactions.set(input.userId + "|" + input.episodeId, input.reaction);
-      return summary(input.userId, input.episodeId);
+      reactions.set(
+        input.tenantId + "|" + input.userId + "|" + input.episodeId,
+        input.reaction,
+      );
+      return summary(input.tenantId, input.userId, input.episodeId);
     },
   };
 }
 
-const session = (userId: string) => ({
+const session = (userId: string, tenantId = "tenant_test") => ({
   authorize: async () => ({
-    tenantId: "tenant_test",
+    tenantId,
     userId,
     profile: {
       tenantId: "tenant_test",
@@ -219,6 +252,56 @@ describe("StoryRadioService", () => {
       seriesId: s.seriesId,
     });
     expect(detail.episodes[0].nextEpisodeId).toBeNull();
+  });
+
+  it("keeps published Story Radio content inside the authenticated tenant", async () => {
+    const repo = fakeRepository();
+    const admin = createStoryRadioService({
+      repository: repo,
+      sessions: session("user_admin", "tenant_a"),
+      adminUserIds: new Set(["user_admin"]),
+      now: () => "2026-10-06T10:00:00.000Z",
+    });
+    const s: any = await admin.adminCreateSeries({
+      authorizationHeader: "Bearer a",
+      title: "Tenant A Stories",
+      description: "",
+      language: "English",
+    });
+    const e: any = await admin.adminCreateEpisode({
+      authorizationHeader: "Bearer a",
+      seriesId: s.seriesId,
+      seasonNumber: 1,
+      episodeNumber: 1,
+      title: "Private to tenant A",
+      description: "",
+      durationSeconds: 60,
+      audioUrl: "https://media.example/tenant-a.mp3",
+    });
+    await admin.adminSetEpisodePublication({
+      authorizationHeader: "Bearer a",
+      episodeId: e.episodeId,
+      published: true,
+    });
+    await admin.adminSetSeriesPublication({
+      authorizationHeader: "Bearer a",
+      seriesId: s.seriesId,
+      published: true,
+    });
+
+    const tenantB = createStoryRadioService({
+      repository: repo,
+      sessions: session("user_b", "tenant_b"),
+    });
+    const home: any = await tenantB.home({ authorizationHeader: "Bearer b" });
+    expect(home.series).toHaveLength(0);
+    await expect(tenantB.series({
+      authorizationHeader: "Bearer b",
+      seriesId: s.seriesId,
+    })).rejects.toMatchObject({
+      code: "story_radio.series.not_found",
+      statusCode: 404,
+    });
   });
 
   it("does not allow a live series to lose its last published episode", async () => {
