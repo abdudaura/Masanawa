@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/chat/cafe_suggestions.dart';
 
 void main() {
-  test('cafe offers the four buying categories in order', () {
+  test('cafe offers conversational service shortcuts in order', () {
     expect(kCafeSuggestions.map((s) => s.label).toList(), [
       'Data',
       'Airtime',
