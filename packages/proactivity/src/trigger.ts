@@ -171,6 +171,9 @@ function normalizeFilters(
   const normalized: Record<string, string> = {};
   for (const [rawKey, rawValue] of entries) {
     const key = stableKey(rawKey, "event filter key", 80);
+    if (Object.hasOwn(normalized, key)) {
+      throw new TypeError("event filters contain duplicate canonical keys");
+    }
     normalized[key] = bounded(rawValue, `event filter ${key}`, 1, 256);
   }
   return Object.freeze(normalized);
