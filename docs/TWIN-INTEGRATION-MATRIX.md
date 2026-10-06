@@ -175,9 +175,14 @@ Current #136 implementation:
 - billing/crypto remain Wallet capabilities;
 - chat keeps the explicit AI-Twin identity and compact Twin actions while dead legacy
   Agents/video header controls were removed.
+- the four root tabs are lazy-initialized so inactive providers do not add startup work
+  on low-end devices;
+- My Twin primary actions/performance metrics and Activity summary metrics adapt to
+  narrow widths instead of forcing compressed single rows.
 
-Remaining work is responsive/accessibility/low-end Android qualification and any cleanup
-found by the exact-head Flutter analyzer/device run.
+Responsive/narrow-screen and lazy-tab implementation is now present. Remaining work is
+exact-head Flutter analyzer/accessibility/device qualification, especially physical
+low-end Android behavior and any cleanup found there.
 
 ## Shared files — single-owner integration only
 
