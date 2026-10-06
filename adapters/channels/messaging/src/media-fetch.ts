@@ -241,7 +241,7 @@ export function createAuthorizedChannelMediaFetcher(
           code = "provider_rejected";
         }
         throw mediaError(
-          `media_${code}`,
+          "media_provider_rejected",
           code.includes("not_found") ? "not-found" : "unavailable",
           "Channel provider rejected the media fetch",
           false,
