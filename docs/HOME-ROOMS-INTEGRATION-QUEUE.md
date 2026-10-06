@@ -34,9 +34,13 @@ This queue starts only after the isolated-feature move-on gate in
 
 Always refresh this file if any listed PR head changes before integration.
 
+## Active shared integration
+
+Lane H integration is actively owned by PR #206 at head `78b9664c87ed0b29e148d34f74db64bd76ef1f37`, stacked directly on PR #136. Do not open a second Home integration branch while #206 remains active. After #206 is reconciled into #136, mark Lane H **INTEGRATED** in the status ledger.
+
 ## Billing gate
 
-Lane B is not integration-complete merely because Billing code exists.
+Lane B is actively continued by PR #210 at head `cad5aa030e49cc105348c98ff42d435ac204f2a8`, stacked on PR #126. Its deterministic qualification gate is implemented and tested, but Lane B is not production-complete merely because the gate exists.
 
 Before production enablement, the billing owner must provide:
 - live eligible Flutterwave NG/NGN catalog evidence;
