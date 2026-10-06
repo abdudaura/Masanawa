@@ -40,7 +40,7 @@ Constraints:
 - no duplicate external bill purchase on retry;
 - preserve existing DigitalOcean relay and live Flutterwave catalog qualification.
 
-Status: INTEGRATION READY.
+Status: INTEGRATED.
 
 
 ## Production qualification evidence — 2026-10-06
@@ -69,7 +69,8 @@ Customer-flow changes qualified on this branch:
 - mobile Bills screen no longer opens hosted checkout or asks for checkout email;
 - chat header displays and periodically refreshes authoritative NGN wallet balance.
 
-Remaining release proof after integration:
-- merge exact qualified head into canonical PR #136;
-- repoint Railway source back to canonical #136 branch and verify the merged canonical SHA starts cleanly;
+Integration outcome:
+- PR #285 merged into canonical production/APK PR #136;
+- canonical merge SHA: `21acc0faaeac9b0eedfd8460f05c266a44fdbde5`;
+- production source is being returned to `work/production-apk-integration-20261005` after the merge;
 - APK/device qualification remains dependent on an available Android/Flutter build runner; Render build-pipeline minutes remain exhausted, so do not claim DEVICE VERIFIED until an APK is built and exercised.
