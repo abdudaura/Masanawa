@@ -5,6 +5,8 @@ import '../../commerce/wallet_models.dart';
 import '../../state/wallet_state.dart';
 import '../../theme/masanawa_theme.dart';
 
+/// Wallet is deliberately presented as a conversation surface rather than a
+/// banking dashboard. Canonical balances and history still come from Wallet.
 class WalletScreen extends ConsumerWidget {
   const WalletScreen({
     super.key,
@@ -13,6 +15,7 @@ class WalletScreen extends ConsumerWidget {
     this.onWithdraw,
     this.onBuyBills,
     this.onOpenCrypto,
+    this.onTalkToGwani,
   });
 
   final VoidCallback? onAddMoney;
@@ -20,6 +23,7 @@ class WalletScreen extends ConsumerWidget {
   final VoidCallback? onWithdraw;
   final VoidCallback? onBuyBills;
   final VoidCallback? onOpenCrypto;
+  final VoidCallback? onTalkToGwani;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -28,77 +32,95 @@ class WalletScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: u.surfaceBg,
-      appBar: AppBar(title: const Text('Wallet')),
+      appBar: AppBar(
+        title: const Text('Wallet'),
+        actions: [
+          IconButton(
+            tooltip: 'Refresh balance',
+            onPressed: () => ref.read(walletProvider.notifier).refresh(),
+            icon: const Icon(Icons.refresh_rounded),
+          ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(walletProvider.notifier).refresh(),
         child: wallet.when(
-          loading: () => const _ScrollableCenter(
-            child: CircularProgressIndicator(),
-          ),
+          loading: () => const _ScrollableCenter(child: CircularProgressIndicator()),
           error: (_, __) => _ScrollableCenter(
-            child: Text(
-              'Wallet is not available yet.',
-              style: TextStyle(color: u.textMuted),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.chat_bubble_outline_rounded, size: 44, color: u.brand),
+                const SizedBox(height: 12),
+                Text(
+                  'I could not load your wallet yet.',
+                  style: TextStyle(color: u.textPrimary, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 6),
+                Text('Pull down to try again.', style: TextStyle(color: u.textMuted)),
+              ],
             ),
           ),
           data: (value) {
             if (value == null) return const SizedBox.shrink();
             return ListView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 28),
               children: [
-                _Balances(view: value),
-                const SizedBox(height: 12),
-                _Actions(
-                  onAddMoney: onAddMoney,
-                  onSend: onSend,
-                  onWithdraw: onWithdraw,
+                _BalanceMessage(view: value),
+                const SizedBox(height: 10),
+                const _AgentMessage(
+                  text:
+                      'Tell me what you want to do. You can speak naturally — fund your wallet, buy airtime or bills, send money, or use crypto.',
                 ),
-                if (onBuyBills != null || onOpenCrypto != null) ...[
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _ActionChip(icon: Icons.add_rounded, label: 'Fund wallet', onTap: onAddMoney),
+                    _ActionChip(icon: Icons.receipt_long_outlined, label: 'Buy bills', onTap: onBuyBills),
+                    _ActionChip(icon: Icons.currency_bitcoin_rounded, label: 'Crypto', onTap: onOpenCrypto),
+                    _ActionChip(icon: Icons.send_outlined, label: 'Send', onTap: onSend),
+                    _ActionChip(icon: Icons.account_balance_outlined, label: 'Withdraw', onTap: onWithdraw),
+                  ],
+                ),
+                if (onOpenCrypto != null) ...[
                   const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      if (onBuyBills != null)
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: onBuyBills,
-                            icon: const Icon(Icons.receipt_long_outlined),
-                            label: const Text('Bills'),
-                          ),
-                        ),
-                      if (onBuyBills != null && onOpenCrypto != null)
-                        const SizedBox(width: 8),
-                      if (onOpenCrypto != null)
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: onOpenCrypto,
-                            icon: const Icon(Icons.currency_bitcoin),
-                            label: const Text('Crypto'),
-                          ),
-                        ),
-                    ],
+                  const _AgentMessage(
+                    text:
+                        'Crypto is available here too. Ask me to buy, deposit, convert, check a balance, or withdraw and I will guide you in chat.',
+                    icon: Icons.currency_bitcoin_rounded,
                   ),
                 ],
-                const SizedBox(height: 20),
-                Text(
-                  'History',
-                  style: TextStyle(
-                    color: u.textPrimary,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
+                const SizedBox(height: 18),
+                if (value.entries.isNotEmpty) ...[
+                  Text(
+                    'Recent activity',
+                    style: TextStyle(
+                      color: u.textMuted,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 7),
+                  ...value.entries.take(8).map((entry) => _WalletEntryBubble(entry: entry)),
+                ],
+                const SizedBox(height: 18),
+                FilledButton.icon(
+                  onPressed: onTalkToGwani,
+                  icon: const Icon(Icons.mic_rounded),
+                  label: const Text('Talk to Gwani'),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(54),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
                   ),
                 ),
                 const SizedBox(height: 8),
-                if (value.entries.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 32),
-                    child: Text(
-                      'No wallet activity yet.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: u.textMuted),
-                    ),
-                  )
-                else
-                  ...value.entries.map((entry) => _WalletEntryTile(entry: entry)),
+                Text(
+                  'Voice is preferred. Text always works too.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: u.textMuted, fontSize: 12),
+                ),
               ],
             );
           },
@@ -108,159 +130,161 @@ class WalletScreen extends ConsumerWidget {
   }
 }
 
-class _Balances extends StatelessWidget {
-  const _Balances({required this.view});
+class _BalanceMessage extends StatelessWidget {
+  const _BalanceMessage({required this.view});
   final WalletView view;
 
   @override
   Widget build(BuildContext context) {
     final u = context.masanawa;
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: u.surfaceCard,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: u.structuralBorder),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Spendable Credits', style: TextStyle(color: u.textMuted)),
-          const SizedBox(height: 4),
-          Text(
-            '${view.spendableCredits} Cr',
-            style: TextStyle(
-              color: u.textPrimary,
-              fontSize: 28,
-              fontWeight: FontWeight.w600,
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 330),
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: u.surfaceCard,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(6),
+            topRight: Radius.circular(20),
+            bottomLeft: Radius.circular(20),
+            bottomRight: Radius.circular(20),
+          ),
+          border: Border.all(color: u.structuralBorder),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(
+              radius: 20,
+              backgroundColor: u.brand.withValues(alpha: .10),
+              child: Icon(Icons.account_balance_wallet_outlined, color: u.brand),
             ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _SmallBalance(
-                  label: 'Pending',
-                  value: '${view.pendingEarningsCredits} Cr',
-                ),
+            const SizedBox(width: 11),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'You have ${view.spendableCredits} Credits available.',
+                    style: TextStyle(
+                      color: u.textPrimary,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  if (view.pendingEarningsCredits > 0 ||
+                      view.availableEarningsCredits > 0) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      '${view.availableEarningsCredits} earnings available'
+                      '${view.pendingEarningsCredits > 0 ? ' · ${view.pendingEarningsCredits} pending' : ''}.',
+                      style: TextStyle(color: u.textMuted, fontSize: 12.5),
+                    ),
+                  ],
+                ],
               ),
-              Expanded(
-                child: _SmallBalance(
-                  label: 'Available',
-                  value: '${view.availableEarningsCredits} Cr',
-                ),
-              ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _SmallBalance extends StatelessWidget {
-  const _SmallBalance({required this.label, required this.value});
-  final String label;
-  final String value;
+class _AgentMessage extends StatelessWidget {
+  const _AgentMessage({required this.text, this.icon = Icons.graphic_eq_rounded});
+  final String text;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
     final u = context.masanawa;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(value, style: TextStyle(color: u.textPrimary, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 2),
-        Text(label, style: TextStyle(color: u.textMuted, fontSize: 12)),
-      ],
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 340),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: u.brand.withValues(alpha: .075),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: u.brand, size: 21),
+            const SizedBox(width: 9),
+            Expanded(
+              child: Text(text, style: TextStyle(color: u.textPrimary, height: 1.4)),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
 
-class _Actions extends StatelessWidget {
-  const _Actions({
-    required this.onAddMoney,
-    required this.onSend,
-    required this.onWithdraw,
-  });
-
-  final VoidCallback? onAddMoney;
-  final VoidCallback? onSend;
-  final VoidCallback? onWithdraw;
+class _ActionChip extends StatelessWidget {
+  const _ActionChip({required this.icon, required this.label, required this.onTap});
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: FilledButton.icon(
-            onPressed: onAddMoney,
-            icon: const Icon(Icons.add),
-            label: const Text('Add money'),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: onSend,
-            icon: const Icon(Icons.send_outlined),
-            label: const Text('Send'),
-          ),
-        ),
-        const SizedBox(width: 8),
-        IconButton.outlined(
-          tooltip: 'Withdraw',
-          onPressed: onWithdraw,
-          icon: const Icon(Icons.south_west),
-        ),
-      ],
+    final u = context.masanawa;
+    return ActionChip(
+      avatar: Icon(icon, size: 18, color: onTap == null ? u.textMuted : u.brand),
+      label: Text(label),
+      onPressed: onTap,
+      backgroundColor: u.surfaceCard,
+      side: BorderSide(color: u.structuralBorder),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
     );
   }
 }
 
-class _WalletEntryTile extends StatelessWidget {
-  const _WalletEntryTile({required this.entry});
+class _WalletEntryBubble extends StatelessWidget {
+  const _WalletEntryBubble({required this.entry});
   final WalletEntry entry;
 
-  IconData get icon {
-    switch (entry.kind) {
-      case WalletEntryKind.funding: return Icons.add_circle_outline;
-      case WalletEntryKind.transferSent: return Icons.north_east;
-      case WalletEntryKind.transferReceived: return Icons.south_west;
-      case WalletEntryKind.purchase: return Icons.shopping_bag_outlined;
-      case WalletEntryKind.commission: return Icons.percent;
-      case WalletEntryKind.gift: return Icons.card_giftcard_outlined;
-      case WalletEntryKind.voice: return Icons.graphic_eq;
-      case WalletEntryKind.ownerSession: return Icons.person_outline;
-      case WalletEntryKind.refund: return Icons.replay_outlined;
-      case WalletEntryKind.withdrawal: return Icons.account_balance_outlined;
-    }
-  }
+  IconData get icon => switch (entry.kind) {
+        WalletEntryKind.funding => Icons.add_circle_outline,
+        WalletEntryKind.transferSent => Icons.north_east,
+        WalletEntryKind.transferReceived => Icons.south_west,
+        WalletEntryKind.purchase => Icons.shopping_bag_outlined,
+        WalletEntryKind.commission => Icons.percent,
+        WalletEntryKind.gift => Icons.card_giftcard_outlined,
+        WalletEntryKind.voice => Icons.graphic_eq,
+        WalletEntryKind.ownerSession => Icons.person_outline,
+        WalletEntryKind.refund => Icons.replay_outlined,
+        WalletEntryKind.withdrawal => Icons.account_balance_outlined,
+      };
 
   @override
   Widget build(BuildContext context) {
     final u = context.masanawa;
     final sign = entry.incoming ? '+' : '-';
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: u.surfaceCard,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(15),
         border: Border.all(color: u.structuralBorder),
       ),
-      child: ListTile(
-        leading: Icon(icon, color: u.brand),
-        title: Text(
-          entry.title,
-          style: TextStyle(color: u.textPrimary, fontSize: 14),
-        ),
-        trailing: Text(
-          '$sign${entry.amountCredits} Cr',
-          style: TextStyle(
-            color: u.textPrimary,
-            fontWeight: FontWeight.w600,
+      child: Row(
+        children: [
+          Icon(icon, color: u.brand, size: 19),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Text(entry.title, style: TextStyle(color: u.textPrimary, fontSize: 13.5)),
           ),
-        ),
+          Text(
+            '$sign${entry.amountCredits} Cr',
+            style: TextStyle(color: u.textPrimary, fontWeight: FontWeight.w700),
+          ),
+        ],
       ),
     );
   }
