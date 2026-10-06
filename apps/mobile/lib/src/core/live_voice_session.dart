@@ -32,6 +32,7 @@ class LiveVoiceSession with WidgetsBindingObserver {
   final AudioRecorder _recorder;
   final _state = StreamController<LiveVoiceState>.broadcast(sync: true);
   final _errors = StreamController<String>.broadcast(sync: true);
+  final _transcripts = StreamController<String>.broadcast(sync: true);
   final Completer<void> _ready = Completer<void>();
   WebSocket? _socket;
   StreamSubscription<Uint8List>? _micSub;
@@ -51,6 +52,7 @@ class LiveVoiceSession with WidgetsBindingObserver {
 
   Stream<LiveVoiceState> get states => _state.stream;
   Stream<String> get errors => _errors.stream;
+  Stream<String> get transcripts => _transcripts.stream;
   Future<void> get ready => _ready.future;
   bool get speakerEnabled => _speaker;
   bool get muted => _muted;
@@ -154,6 +156,7 @@ class LiveVoiceSession with WidgetsBindingObserver {
             'model': 'models/${grant.model}',
             'generationConfig': {
               'responseModalities': ['AUDIO'],
+              'outputAudioTranscription': {},
               'speechConfig': {
                 'voiceConfig': {
                   'prebuiltVoiceConfig': {'voiceName': grant.voiceName},
@@ -274,6 +277,14 @@ class LiveVoiceSession with WidgetsBindingObserver {
         return;
       }
 
+      final outputTranscription = server['outputTranscription'];
+      if (outputTranscription is Map) {
+        final transcript = outputTranscription['text'];
+        if (transcript is String && transcript.isNotEmpty) {
+          _transcripts.add(transcript);
+        }
+      }
+
       final modelTurn = server['modelTurn'];
       if (modelTurn is Map) {
         final parts = modelTurn['parts'];
@@ -392,5 +403,6 @@ class LiveVoiceSession with WidgetsBindingObserver {
     _state.add(LiveVoiceState.ended);
     await _state.close();
     await _errors.close();
+    await _transcripts.close();
   }
 }
