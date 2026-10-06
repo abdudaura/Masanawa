@@ -59,7 +59,8 @@ export function registerOwnerAccessRoutes(
       action !== "schedule" &&
       action !== "start" &&
       action !== "complete" &&
-      action !== "cancel"
+      action !== "cancel" &&
+      action !== "dispute"
     ) {
       throw new TypeError("Invalid owner access action");
     }
@@ -70,6 +71,14 @@ export function registerOwnerAccessRoutes(
       action,
       ...(typeof body.scheduledFor === "string"
         ? { scheduledFor: body.scheduledFor }
+        : {}),
+      ...(typeof body.disputeReason === "string"
+        ? {
+            disputeReason: body.disputeReason as
+              | "service-not-delivered"
+              | "service-quality"
+              | "other",
+          }
         : {}),
     });
   });
