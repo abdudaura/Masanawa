@@ -1028,7 +1028,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               ),
             ],
             IconButton(
-              tooltip: 'Live voice',
+              tooltip: 'Call',
               icon: const Icon(Icons.call_outlined),
               onPressed: updateRequired || !liveVoiceEnabled
                   ? null
@@ -2463,7 +2463,8 @@ class _LiveVoiceSheetState extends State<_LiveVoiceSheet> {
           },
         ),
       ),
-    );
+    ),
+  );
   }
 }
 
