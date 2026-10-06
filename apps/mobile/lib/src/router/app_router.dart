@@ -16,8 +16,8 @@ import '../screens/splash/splash_screen.dart';
 import '../state/session_state.dart';
 import '../state/twin_directory_state.dart';
 
-/// Production router: auth, the Twin-first consumer shell, direct chat and
-/// focused capability routes. Runtime internals stay behind the four root tabs.
+/// Production router: auth, the utility-first Home consumer shell, direct chat
+/// and focused capability routes. Runtime internals stay behind the four root tabs.
 ///
 /// Auth rule: OTP proves ownership. A first signup may pause at `/name`
 /// after successful OTP proof but before the session is issued. All Agent
@@ -99,9 +99,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/chats', redirect: (_, __) => '/home'),
       GoRoute(
         path: '/chat/:id',
-        builder: (context, state) => AiChatScreen(
-          characterId: state.pathParameters['id']!,
-        ),
+        builder: (context, state) {
+          final entry = switch (state.uri.queryParameters['entry']) {
+            'voice-note' => AiChatEntryMode.voiceNote,
+            'live-voice' => AiChatEntryMode.liveVoice,
+            _ => AiChatEntryMode.chat,
+          };
+          return AiChatScreen(
+            characterId: state.pathParameters['id']!,
+            entryMode: entry,
+          );
+        },
       ),
       GoRoute(
         path: '/owner-session/:characterId/:requestId',
@@ -120,7 +128,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/agents', redirect: (_, __) => '/home'),
       GoRoute(path: '/masana', redirect: (_, __) => '/home'),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
-      GoRoute(path: '/billing', builder: (_, _) => const BillingScreen()),
+      GoRoute(
+        path: '/billing',
+        builder: (_, state) => BillingScreen(
+          initialService: state.uri.queryParameters['service'],
+        ),
+      ),
       GoRoute(path: '/crypto', builder: (_, _) => const CryptoWalletScreen()),
       GoRoute(path: '/clone', builder: (_, _) => const CloneSetupScreen()),
       GoRoute(path: '/profile', builder: (_, _) => const SettingsScreen()),
