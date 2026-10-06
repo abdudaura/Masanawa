@@ -52,3 +52,7 @@ This closes a concrete fail-open trust assumption between Gateway Gift resolutio
 Implementation head before handoff: `c09c1aafcffb535a82f3f473b54ddb836d520e31`.
 
 Last update: 2026-10-06.
+
+## Verification
+
+- Verification: Foundation CI run `37491132841`, job `112363850595`, failed before checkout with `runner_id=0` and `steps=[]`; no application test result is claimed.
