@@ -1,5 +1,12 @@
 # Continue Here
 
+## Home + Rooms execution status rule
+
+Before taking or reporting Home/Rooms work, read `docs/HOME-ROOMS-STATUS.md`.
+Do not equate an open/mergeable PR with completion. Windows must continue until their lane is **ISOLATED COMPLETE** by the canonical evidence rule, then immediately take another safe lane when one exists. Shared integration, billing qualification, exact APK build and device acceptance remain separate completion stages.
+
+Current transition: isolated feature work has reached the move-on gate; remaining launch-critical work is Billing qualification plus shared production integration/APK/device acceptance under the named owners.
+
 ## Home + Rooms launch checkpoint — 2026-10-06
 
 The consumer launch priority has been narrowed again for speed-to-release.
