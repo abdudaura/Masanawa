@@ -65,6 +65,7 @@ import {
   type AgentDirectoryAuthorizer,
 } from "./agent_directory.js";
 import { createAgentConversationService } from "./agent_conversation.js";
+import { createAgentCryptoAssistant } from "./agent_crypto_assistant.js";
 import {
   createCreatorCloneService,
   type CreatorCloneAuthorizer,
@@ -688,6 +689,10 @@ export async function startGatewayService(
     });
   }
 
+  const composedCryptoAssistant = composedFinancial
+    ? createAgentCryptoAssistant({ financial: composedFinancial })
+    : undefined;
+
   const composedDirectory =
     options.appOptions?.agentDirectory ??
     (directoryAuthorizer && database.agentPresentations
@@ -816,6 +821,9 @@ export async function startGatewayService(
           strategy,
           ...(nativeAudio ? { nativeAudio } : {}),
           ...(database.mobileShell ? { mobileShell: database.mobileShell } : {}),
+          ...(composedCryptoAssistant
+            ? { cryptoAssistant: composedCryptoAssistant }
+            : {}),
           sessionDurationMs: 24 * 60 * 60 * 1000,
         })
       : undefined);
