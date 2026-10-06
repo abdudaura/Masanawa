@@ -156,7 +156,7 @@ class NewsItemCard extends StatelessWidget {
                         color: colors.textPrimary,
                         fontSize: 16,
                         height: 1.25,
-                        fontWeight: FontWeight.w650,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
@@ -275,7 +275,7 @@ class NewsArticleView extends StatelessWidget {
           'Sources',
           style: TextStyle(
             color: colors.textPrimary,
-            fontWeight: FontWeight.w650,
+            fontWeight: FontWeight.w600,
           ),
         ),
         const SizedBox(height: 8),
