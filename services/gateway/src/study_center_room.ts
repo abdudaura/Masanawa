@@ -1,4 +1,5 @@
 import {
+  fingerprintTeachingLessonPlan,
   normalizeTeachingLessonPlan,
   resolveTeachingContinuation,
   type TeachingArtifactPresentation,
@@ -374,14 +375,19 @@ export function projectStudyCenterRoom(
 ): StudyCenterRoomProjection {
   const plan = normalizeTeachingLessonPlan(input.plan);
 
-  if (
-    input.storedProgress !== null &&
-    (
+  if (input.storedProgress !== null) {
+    if (
       input.storedProgress.progress.relationshipId !== plan.learner.relationshipId ||
       input.storedProgress.progress.skillVersionId !== plan.skillVersionId
-    )
-  ) {
-    throw new TypeError("Stored Teaching progress does not match Study Center plan");
+    ) {
+      throw new TypeError("Stored Teaching progress does not match Study Center plan");
+    }
+    const expectedPlanHash = fingerprintTeachingLessonPlan(plan);
+    if (input.storedProgress.planHash !== expectedPlanHash) {
+      throw new TypeError(
+        "Stored Teaching progress belongs to a different Study Center lesson plan",
+      );
+    }
   }
 
   const modalities = new Set(plan.learner.preferredModalities);
