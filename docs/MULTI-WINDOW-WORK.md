@@ -1,5 +1,19 @@
 # Multi-window Work Coordination
 
+## 2026-10-06 launch lane overlay
+
+For launch work, `docs/HOME-ROOMS-MULTI-WINDOW.md` is the current product-lane map.
+It does not replace the ownership rules in this document.
+
+PR #136 / `work/production-apk-integration-20261005` owns shared Gateway/mobile
+composition and exact APK qualification. Other windows should build isolated Home,
+Internet Cafe, Story Radio, News, Study, Work/Research, Group or Admin components behind
+interfaces and leave shared router/Gateway/composition files to that owner.
+
+Do not create specialist Room agents. Rooms are server-defined presentations over the
+canonical Character/Skill/runtime/Commerce system.
+
+
 ## Twin transformation overlay — 2026-10-05
 
 For digital-twin transformation work, also read:
