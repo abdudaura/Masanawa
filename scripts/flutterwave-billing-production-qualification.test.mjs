@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { validateProductionQualificationInputs } from "./flutterwave-billing-production-qualification.mjs";
 
 test("production runner never invokes payment or refund scripts", async () => {
   const source = await readFile(
@@ -28,4 +29,43 @@ test("production runner preserves incomplete-evidence exit code 2", async () => 
   );
   assert.match(source, /gate\.code === 2/u);
   assert.match(source, /billing must remain disabled/u);
+});
+
+
+test("production preflight requires both Cable and Electricity validation targets", () => {
+  assert.throws(
+    () => validateProductionQualificationInputs({}),
+    /FLUTTERWAVE_QUALIFICATION_TARGETS_JSON is required/u,
+  );
+  assert.throws(
+    () =>
+      validateProductionQualificationInputs({
+        FLUTTERWAVE_QUALIFICATION_TARGETS_JSON: JSON.stringify([
+          { categoryCode: "CABLEBILLS" },
+        ]),
+      }),
+    /UTILITYBILLS/u,
+  );
+
+  const result = validateProductionQualificationInputs({
+    FLUTTERWAVE_QUALIFICATION_TARGETS_JSON: JSON.stringify([
+      { categoryCode: "CABLEBILLS" },
+      { categoryCode: "UTILITYBILLS" },
+    ]),
+  });
+  assert.equal(result.targetCount, 2);
+  assert.deepEqual(result.requiredValidationCategories, [
+    "CABLEBILLS",
+    "UTILITYBILLS",
+  ]);
+});
+
+test("production preflight rejects malformed qualification target JSON", () => {
+  assert.throws(
+    () =>
+      validateProductionQualificationInputs({
+        FLUTTERWAVE_QUALIFICATION_TARGETS_JSON: "{not-json",
+      }),
+    /not valid JSON/u,
+  );
 });
