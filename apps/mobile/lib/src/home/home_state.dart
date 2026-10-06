@@ -75,9 +75,16 @@ class HomeController extends AsyncNotifier<HomeSnapshot> {
       ),
     );
 
-    return snapshot.withContinuations(
-      homeAssistantChatContinuations(snapshot, chat),
-    );
+    final merged = <HomeContinuationModel>[];
+    final seen = <String>{};
+    for (final item in [
+      ...snapshot.continuations,
+      ...homeAssistantChatContinuations(snapshot, chat),
+    ]) {
+      if (seen.add(item.id)) merged.add(item);
+      if (merged.length == 4) break;
+    }
+    return snapshot.withContinuations(List.unmodifiable(merged));
   }
 
   Future<void> refresh() async {
