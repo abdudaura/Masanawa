@@ -2,6 +2,7 @@
 
 Owner/window: ChatGPT continuation window / 2026-10-06
 Branch: `work/studio-production-workflow-20261006`
+PR: #266
 Base: Task 135 PR #264 @ `28742014b461f12b89e2b4ed12cff96bb54c2474`
 Production task: 136 — script/storyboard/render/voice/lipsync production workflow.
 
@@ -62,3 +63,8 @@ State: ISOLATED COMPLETE / INTEGRATION READY.
 Implementation head before handoff: `0875ce7a790e3f7dc1a31832fca96d9c6dce60a8`.
 
 Last update: 2026-10-06.
+
+## Verification
+
+- Foundation CI run `37467518101`, job `112282178366`, on implementation/handoff head `9aa9b323f3bec4472427d2425e4826d01134ea9e` failed before checkout with `runner_id=0` and `steps=[]`; no repository code executed.
+- No pass is claimed from that CI result; executable typecheck/test/build remains required once hosted runner allocation recovers.
