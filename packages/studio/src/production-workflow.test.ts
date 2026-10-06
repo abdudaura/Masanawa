@@ -6,10 +6,10 @@ import {
   failStudioStageBeforeEffect,
   finalStudioVideo,
   markStudioStageUnknown,
-  studioArtifactProvenanceHash,
-  type StudioArtifactRevision,
   type StudioProductionPlan,
-} from "./index.js";
+} from "./production-workflow.js";
+import { studioArtifactProvenanceHash } from "./provenance.js";
+import type { StudioArtifactRevision } from "./model.js";
 
 const tenantId =
   "tenant_01890f4c-0000-7000-8000-000000000001" as never;
