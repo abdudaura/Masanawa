@@ -7,6 +7,7 @@ export type OwnerAccessState =
   | "active"
   | "completed"
   | "settled"
+  | "releasing"
   | "declined"
   | "expired"
   | "cancelled"
@@ -179,7 +180,8 @@ const transitions: Readonly<Record<OwnerAccessState, readonly OwnerAccessState[]
   scheduled: ["active", "cancelled", "no-show", "expired"],
   active: ["completed", "disputed"],
   completed: ["settled", "disputed"],
-  settled: ["disputed"],
+  settled: ["disputed", "releasing"],
+  releasing: ["settled"],
   declined: ["refunded"],
   expired: ["refunded"],
   cancelled: ["refunded"],
