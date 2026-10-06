@@ -353,6 +353,7 @@ export function createTwinProductionRuntime(input: {
     readonly acceptWithinMinutes: number;
     readonly startGraceMinutes: number;
     readonly completionGraceMinutes?: number;
+    readonly messageRetentionDays?: number;
   };
   readonly notifications?: {
     send(input: {
@@ -1281,6 +1282,8 @@ export function createTwinProductionRuntime(input: {
   const ownerCompletionGraceMinutes =
     input.ownerAccess.completionGraceMinutes ??
     input.ownerAccess.startGraceMinutes;
+  const ownerMessageRetentionDays =
+    input.ownerAccess.messageRetentionDays ?? 30;
 
   const ownerAccessOffering = createOwnerAccessOfferingService({
     authorizer: customerAuthority,
@@ -1760,10 +1763,22 @@ export function createTwinProductionRuntime(input: {
           failed += 1;
         }
       }
+      let messagesPurged = 0;
+      try {
+        messagesPurged =
+          await input.economy.purgeExpiredOwnerAccessMessages({
+            tenantId: request.tenantId,
+            at: at(),
+            limit: 500,
+          });
+      } catch {
+        failed += 1;
+      }
       return Object.freeze({
         scanned: candidates.length,
         advanced,
         failed,
+        messagesPurged,
       });
     },
   });
@@ -2243,6 +2258,7 @@ export function createTwinProductionRuntime(input: {
         if (current.modality !== "text" || current.state !== "active") {
           throw new Error("Owner access room is not active");
         }
+        const sentAt = at();
         return input.economy.appendOwnerAccessMessage({
           tenantId: request.tenantId,
           message: {
@@ -2250,8 +2266,12 @@ export function createTwinProductionRuntime(input: {
             messageId: request.messageId,
             senderUserId: request.actorUserId,
             body: request.body,
-            sentAt: at(),
+            sentAt,
           },
+          expiresAt: plusMs(
+            sentAt,
+            ownerMessageRetentionDays * 24 * 60 * 60 * 1000,
+          ),
         });
       },
     },
