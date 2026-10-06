@@ -55,7 +55,7 @@ describe("Home projection route", () => {
 
     const response = await app.inject({
       method: "GET",
-      url: "/home",
+      url: "/v1/home",
       headers: { authorization: "Bearer home-user" },
     });
 
@@ -105,7 +105,7 @@ describe("Home projection route", () => {
     const app = createGatewayApp({ agentDirectory: directory });
     apps.push(app);
 
-    const response = await app.inject({ method: "GET", url: "/home" });
+    const response = await app.inject({ method: "GET", url: "/v1/home" });
 
     expect(response.statusCode).toBe(200);
     expect(response.json().assistants).toEqual([]);
