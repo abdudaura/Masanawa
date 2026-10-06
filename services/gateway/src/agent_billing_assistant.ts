@@ -11,10 +11,12 @@ export interface AgentBillingAssistant {
   readonly systemInstructions: readonly string[];
   beforeInference(input: Readonly<{
     authorizationHeader: string | undefined;
+    characterId: string;
     text: string;
   }>): Promise<AgentBillingResult | null>;
   afterInference(input: Readonly<{
     authorizationHeader: string | undefined;
+    characterId: string;
     modelReply: string;
   }>): Promise<AgentBillingResult | null>;
 }
@@ -192,6 +194,7 @@ export function createAgentBillingAssistant(input: Readonly<{
 
   async function executeDirective(
     authorizationHeader: string | undefined,
+    characterId: string,
     directive: Directive,
   ): Promise<AgentBillingResult> {
     if (directive.type === "wallet.balance") {
@@ -213,7 +216,9 @@ export function createAgentBillingAssistant(input: Readonly<{
         limit: 10,
       });
       const pending = history.find((entry) =>
-        entry.phase === "quoted" && Date.parse(entry.quote.expiresAt) > Date.now(),
+        entry.phase === "quoted" &&
+        entry.quote.originatingCharacterId === characterId &&
+        Date.parse(entry.quote.expiresAt) > Date.now(),
       );
       if (!pending) return result("There is no pending bill to confirm.");
       const view = await input.wallet.confirmAndPurchase({
@@ -277,6 +282,7 @@ export function createAgentBillingAssistant(input: Readonly<{
       itemCode: item.itemCode,
       customerId: directive.recipient,
       amount: resolvedAmount,
+      originatingCharacterId: characterId,
     });
     return result(confirmationReply(quote), quote.document);
   }
@@ -295,6 +301,7 @@ export function createAgentBillingAssistant(input: Readonly<{
         });
         const pending = history.find((entry) =>
           entry.phase === "quoted" &&
+          entry.quote.originatingCharacterId === request.characterId &&
           Date.parse(entry.quote.expiresAt) > Date.now(),
         );
         if (!pending) return null;
@@ -310,7 +317,11 @@ export function createAgentBillingAssistant(input: Readonly<{
         (text.includes("balance") || text.includes("wallet")) &&
         (text.includes("my") || text.includes("mine") || text.includes("na") || text.includes("kudi"))
       ) {
-        return executeDirective(request.authorizationHeader, { type: "wallet.balance" });
+        return executeDirective(
+          request.authorizationHeader,
+          request.characterId,
+          { type: "wallet.balance" },
+        );
       }
 
       return null;
@@ -319,7 +330,11 @@ export function createAgentBillingAssistant(input: Readonly<{
     async afterInference(request) {
       const directive = parseDirective(request.modelReply);
       if (!directive) return null;
-      return executeDirective(request.authorizationHeader, directive);
+      return executeDirective(
+        request.authorizationHeader,
+        request.characterId,
+        directive,
+      );
     },
   });
 }
