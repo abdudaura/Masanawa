@@ -1,5 +1,12 @@
 # Masanawa Twin Transformation — Multi-Window Execution Map
 
+## 2026-10-06 supersession note
+
+The isolated Twin lanes in this document are historical/completed inputs to the current
+launch. New parallel work should use `docs/HOME-ROOMS-MULTI-WINDOW.md`. Preserve merged
+Twin modules; do not reopen old lanes merely to restore My-Twin-first navigation.
+
+
 Status: canonical coordination overlay, 2026-10-05.
 All windows must also read `CONTINUE-HERE.md` and `docs/MULTI-WINDOW-WORK.md`.
 
