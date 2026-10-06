@@ -66,7 +66,7 @@ describe("SLO evaluation", () => {
       },
       observation: {
         total: 10_000,
-        good: 9_850,
+        good: 9_700,
         observedAt: "2026-10-06T12:15:00.000Z" as never,
       },
     });
