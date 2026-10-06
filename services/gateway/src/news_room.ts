@@ -246,7 +246,7 @@ export function createNewsRoomService(input: Readonly<{
   let cached: { expiresAt: number; projection: NewsRoomProjection } | null = null;
 
   return Object.freeze({
-    async read(request) {
+    async read(request: Readonly<{ authorizationHeader: string | undefined }>) {
       await input.authorizer.authorize({
         authorizationHeader: request.authorizationHeader,
       });
