@@ -83,7 +83,10 @@ class _CloneSetupScreenState extends ConsumerState<CloneSetupScreen> {
       );
       if (!mounted) return;
       context.go(
-        '/chat/${guide.characterId}?twinSetup=1&gender=${Uri.encodeQueryComponent(_gender)}&age=$_age',
+        '/chat/${guide.characterId}?twinSetup=1'
+        '&gender=${Uri.encodeQueryComponent(_gender)}'
+        '&age=$_age'
+        '&photo=${Uri.encodeQueryComponent(photo.path)}',
       );
     } finally {
       if (mounted) setState(() => _starting = false);
