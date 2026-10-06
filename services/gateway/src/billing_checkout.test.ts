@@ -347,6 +347,122 @@ describe("billing checkout", () => {
     });
   });
 
+  it("settles configured Twin commission from the persisted chat origin without blocking bill success", async () => {
+    const owner = identity();
+    const originatingCharacterId = createCanonicalId("character");
+    const quotes = new MemoryQuotes();
+    const transport = providerTransport("100");
+    const calls: Array<Record<string, unknown>> = [];
+    const service = createBillingCheckoutService({
+      sessions: { async authorize() { return owner; } },
+      quotes,
+      catalog: new FlutterwaveBillsClient({
+        secretKey: "secret",
+        transport,
+        country: "NG",
+      }),
+      funding: new FlutterwaveFundingClient({ secretKey: "secret", transport }),
+      billing: billing(quotes),
+      actionSecret: "a".repeat(48),
+      redirectUrl: "https://app.masanawa.com/billing/return",
+      twinMonetization: {
+        async attribute(input) {
+          calls.push({ kind: "attribute", ...input });
+        },
+        async settleProviderValue(input) {
+          calls.push({ kind: "settle", ...input });
+          return { eligible: true };
+        },
+        async reverseFull(input) {
+          calls.push({ kind: "reverse", ...input });
+        },
+      },
+    });
+
+    const quoted = await service.createQuote({
+      authorizationHeader: "Bearer session",
+      categoryCode: "AIRTIME",
+      billerCode: "BIL102",
+      itemCode: "AT102",
+      customerId: "+2348012345678",
+      amount: "100",
+      originatingCharacterId,
+    });
+    expect(quoted.quote.originatingCharacterId).toBe(originatingCharacterId);
+
+    await service.startCheckout({
+      authorizationHeader: "Bearer session",
+      quoteId: quoted.quote.quoteId,
+      quoteRevision: quoted.quote.revision,
+    });
+    const done = await service.verifyAndPurchase({
+      authorizationHeader: "Bearer session",
+      quoteId: quoted.quote.quoteId,
+      quoteRevision: quoted.quote.revision,
+    });
+    expect(done.phase).toBe("fulfilled");
+    expect(calls).toContainEqual(expect.objectContaining({
+      kind: "attribute",
+      characterId: originatingCharacterId,
+      eventType: "commerce-purchase",
+      operationId: `billing:${quoted.quote.quoteId}`,
+    }));
+    expect(calls).toContainEqual(expect.objectContaining({
+      kind: "settle",
+      valuationKey: "flutterwave:NGN:kobo",
+      eventType: "commerce-purchase",
+      operationId: `billing:${quoted.quote.quoteId}`,
+      sourceUnits: 10000,
+    }));
+  });
+
+  it("does not fail a fulfilled bill when Twin valuation is not configured", async () => {
+    const owner = identity();
+    const quotes = new MemoryQuotes();
+    const transport = providerTransport("100");
+    const service = createBillingCheckoutService({
+      sessions: { async authorize() { return owner; } },
+      quotes,
+      catalog: new FlutterwaveBillsClient({
+        secretKey: "secret",
+        transport,
+        country: "NG",
+      }),
+      funding: new FlutterwaveFundingClient({ secretKey: "secret", transport }),
+      billing: billing(quotes),
+      actionSecret: "a".repeat(48),
+      redirectUrl: "https://app.masanawa.com/billing/return",
+      twinMonetization: {
+        async attribute() {},
+        async settleProviderValue() {
+          throw Object.assign(new Error("Provider valuation policy is not configured"), {
+            statusCode: 409,
+          });
+        },
+        async reverseFull() {},
+      },
+    });
+    const quoted = await service.createQuote({
+      authorizationHeader: "Bearer session",
+      categoryCode: "AIRTIME",
+      billerCode: "BIL102",
+      itemCode: "AT102",
+      customerId: "+2348012345678",
+      amount: "100",
+      originatingCharacterId: createCanonicalId("character"),
+    });
+    await service.startCheckout({
+      authorizationHeader: "Bearer session",
+      quoteId: quoted.quote.quoteId,
+      quoteRevision: 1,
+    });
+    await expect(service.verifyAndPurchase({
+      authorizationHeader: "Bearer session",
+      quoteId: quoted.quote.quoteId,
+      quoteRevision: 1,
+    })).resolves.toMatchObject({ phase: "fulfilled" });
+  });
+
   it("does not dispatch a bill when verified payment is not the exact quote total", async () => {
     const owner = identity();
     const quotes = new MemoryQuotes();
@@ -886,6 +1002,77 @@ describe("billing service qualification policy", () => {
       expect(validationCalls).toBe(0);
     });
   }
+});
+
+describe("billing Twin commission reversal", () => {
+  it("reverses the full settled commission when a Twin-origin bill is fully refunded", async () => {
+    const owner = identity();
+    const quotes = new MemoryQuotes();
+    const originatingCharacterId = createCanonicalId("character");
+    const createdAt = "2026-10-04T20:00:00.000Z";
+    quotes.quote = Object.freeze({
+      schemaVersion: 1 as const,
+      tenantId: owner.tenantId,
+      userId: owner.userId,
+      quoteId: createCanonicalId("quote"),
+      revision: 1,
+      categoryCode: "AIRTIME",
+      originatingCharacterId,
+      billerCode: "BIL102",
+      itemCode: "AT102",
+      itemName: "MTN Airtime",
+      customerId: "+2348012345678",
+      serviceAmountKobo: 10000,
+      feeAmountKobo: 0,
+      totalAmountKobo: 10000,
+      currency: "NGN" as const,
+      state: "refunded" as const,
+      confirmedAt: createdAt,
+      expiresAt: "2026-10-04T21:00:00.000Z",
+      checkoutTxRef: "bill-test-r1",
+      checkoutUrl: "https://checkout.flutterwave.com/v3/hosted/pay/test",
+      providerTransactionId: "44",
+      providerReference: "FLW-PAY-44",
+      billProviderReference: "BILL-1",
+      paymentVerifiedAt: createdAt,
+      fulfillmentReference: "bill-fulfillment-1",
+      settlementState: "failed" as const,
+      refundReference: "REFUND-44",
+      createdAt,
+      updatedAt: createdAt,
+    });
+    const reversals: Array<Record<string, unknown>> = [];
+    const transport = providerTransport("100");
+    const service = createBillingCheckoutService({
+      sessions: { async authorize() { return owner; } },
+      quotes,
+      catalog: new FlutterwaveBillsClient({
+        secretKey: "secret",
+        transport,
+        country: "NG",
+      }),
+      funding: new FlutterwaveFundingClient({ secretKey: "secret", transport }),
+      billing: billing(quotes),
+      actionSecret: "a".repeat(48),
+      redirectUrl: "https://app.masanawa.com/billing/return",
+      twinMonetization: {
+        async attribute() {},
+        async settleProviderValue() { return { eligible: true }; },
+        async reverseFull(input) { reversals.push(input); },
+      },
+    });
+
+    await service.read({
+      authorizationHeader: "Bearer session",
+      quoteId: quotes.quote.quoteId,
+    });
+    expect(reversals).toEqual([
+      expect.objectContaining({
+        operationId: `billing:${quotes.quote.quoteId}`,
+        reversalId: `billing-refund:${quotes.quote.quoteId}`,
+      }),
+    ]);
+  });
 });
 
 describe("billing refund safety", () => {
