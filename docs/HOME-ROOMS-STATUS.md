@@ -54,7 +54,7 @@ The lane handoff and PR must record:
 | W | Work & Research | #202 + server seam #216 | INTEGRATION READY | #136 mounts route; canonical Skills/Workflow/research runtime resolves allowlisted opaque intents |
 | G | Group Rooms | #214 (supersedes #204) | INTEGRATION READY | Identity export/persistence/memory + #136 |
 | A | Admin publishing | #208 + Story admin #213 | IMPLEMENTING | #208 UI is complete; #213 handles Story Radio admin; News/Home/assistant canonical Ops command wiring remains with #129/Ops |
-| P | Production integration + APK | #136; Home #206 merged; Story #209/#211; News #212 | IMPLEMENTING | canonical #136 head `effe6d213a8283b0925cbeac7e37db0b84c32376` contains Home; release APK is externally blocked by exhausted Render build minutes and GitHub runner allocation, and Railway deployment `e7bf7f7f-652d-49bc-8121-94444c92ab94` is held at `NEEDS_APPROVAL` |
+| P | Production integration + APK | #136; Home #206 merged; Story #209/#211; News #212 | IMPLEMENTING | canonical #136 head `effe6d213a8283b0925cbeac7e37db0b84c32376` contains Home and is live on Railway deployment `e7bf7f7f-652d-49bc-8121-94444c92ab94` (`SUCCESS`); release APK remains externally blocked by exhausted Render build minutes and GitHub runner allocation |
 
 ## Move-on gate
 
@@ -101,5 +101,6 @@ belong to the named shared owners.
 - Final PR #206 head fixes that reproduced failure with `TestWidgetsFlutterBinding.ensureInitialized()`; no production source changed in that final commit.
 - GitHub verification on the final Home head and merged #136 head did not execute application steps: hosted jobs reported `steps = null`.
 - Exact Home CI pointer `5b90222f60fd19e957dd64c19f9775ac56c52046` is the final Home head plus only CI-only `.gitmodules` removal and Home-scoped APK qualification. Render deployment `dep-db2d4orncjis73e9klf0` was correctly pinned to that commit but was canceled before checkout because the Render workspace had exhausted its build-pipeline minutes.
-- Canonical Railway Gateway source is still #136. Deployment `e7bf7f7f-652d-49bc-8121-94444c92ab94` targets merge commit `effe6d213a8283b0925cbeac7e37db0b84c32376` but is held at `NEEDS_APPROVAL` with no build/deploy logs; no repository-side failure is reported.
-- Therefore Lane H is **INTEGRATED**, but not **DEVICE VERIFIED** or **LAUNCH VERIFIED**. Exact release APK creation and the new production deployment require external build/deployment account capacity/approval before the remaining physical-device acceptance can truthfully pass.
+- Canonical Railway Gateway source is still #136. After operator approval, deployment `e7bf7f7f-652d-49bc-8121-94444c92ab94` for merge commit `effe6d213a8283b0925cbeac7e37db0b84c32376` reached `SUCCESS`; Railway reports the Gateway online with 1/1 replica healthy, zero current warnings/criticals, completed migrations, successful Gateway build, service startup on port 8080, and `/healthz` healthcheck success.
+- A fresh GitHub Actions retry of Mobile Build run `37452705824` created job `112241390867` but again completed before checkout with zero job steps, so hosted Actions still does not provide a release artifact path.
+- Therefore Lane H is **INTEGRATED** and the exact Home Gateway merge is live, but it is not **DEVICE VERIFIED** or **LAUNCH VERIFIED**. Exact release APK creation remains externally blocked by build-runner capacity; physical-device acceptance cannot truthfully pass until that artifact exists.
