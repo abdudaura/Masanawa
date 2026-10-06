@@ -38,8 +38,14 @@ Composer:
 - no nested/double TextField border.
 
 Messages:
-- text and voice use the same durable conversation/session lifecycle;
-- failed/stale sessions should recover transparently once before surfacing failure;
+- typed text behaves like ordinary WhatsApp-style buddy messaging;
+- the composer microphone starts realtime Gemini Live conversation immediately; it does not create or send a user voice-note message;
+- the phone/call icon uses the same realtime engine but presents a call-style calling/connected experience;
+- only the agent's spoken output is transcribed on-screen during realtime voice;
+- never display user microphone transcription in the chat;
+- the live agent transcript is ephemeral streaming UI, not a sequence of sent text bubbles;
+- the agent should greet first when a live session connects rather than silently waiting for the user;
+- failed/stale text/media sessions should recover transparently once before surfacing failure;
 - service results, receipts and generated files remain inline.
 
 ## Internet Cafe
@@ -47,8 +53,7 @@ Messages:
 Internet Cafe is a **chat mode**, not a billing app.
 
 Initial state:
-- short prompt: “What would you like to do?”
-- horizontal, reselectable category suggestions: Data, Airtime, Electricity, TV;
+- compact centered, reselectable category suggestions at the top of the chat: Data, Airtime, Electricity, TV;
 - user may ignore all suggestions and simply type or speak.
 
 After a category is tapped:
@@ -118,3 +123,9 @@ Future persistence:
 ## Change-isolation rule
 
 A task scoped to one screen must not redesign another screen unless the product instruction explicitly says so. Theme/token changes must be reviewed separately because they affect every screen.
+
+## Crypto Tokens
+
+- Home places Crypto Tokens immediately after Internet Cafe in the Rooms list.
+- Crypto token selection uses compact centered chips instead of dropdowns.
+- Keep the wallet/history view available, but avoid form-heavy navigation where conversation can perform the operation.
