@@ -326,6 +326,147 @@ describeDatabase("Twin economy PostgreSQL acceptance", () => {
     );
   });
 
+  it("persists owner-session messages idempotently and rejects content replay conflicts", async () => {
+    const repository = createPostgresTwinRuntimeRepository(pool);
+    const tenantId = createCanonicalId("tenant");
+    const requesterUserId = createCanonicalId("user");
+    const ownerUserId = createCanonicalId("user");
+    const characterId = createCanonicalId("character");
+    const requestId = "owner-room-message-request";
+
+    await repository.putOwnerAccessRequest({
+      tenantId,
+      request: {
+        requestId,
+        requesterUserId,
+        ownerUserId,
+        originatingCharacterId: characterId,
+        modality: "text",
+        durationMinutes: 15,
+        priceCredits: 0,
+        platformFeeCredits: 0,
+        ownerEarningCredits: 0,
+        chargeMode: "trial",
+        trialPolicyRevision: 1,
+        state: "active",
+        requestedAt: "2026-10-05T12:00:00.000Z",
+        acceptBy: "2026-10-05T13:00:00.000Z",
+        scheduledFor: null,
+        startedAt: "2026-10-05T12:10:00.000Z",
+        completedAt: null,
+      },
+      reservationId: null,
+      reservedCredits: 0,
+    });
+
+    const message = {
+      requestId,
+      messageId: "message-postgres-owner-room",
+      senderUserId: requesterUserId,
+      body: "Hello owner",
+      sentAt: "2026-10-05T12:10:05.000Z",
+    };
+    const first = await repository.appendOwnerAccessMessage({
+      tenantId,
+      message,
+    });
+    const replay = await repository.appendOwnerAccessMessage({
+      tenantId,
+      message,
+    });
+    expect(replay).toEqual(first);
+
+    await expect(
+      repository.appendOwnerAccessMessage({
+        tenantId,
+        message: { ...message, body: "Different content" },
+      }),
+    ).rejects.toThrow("replay conflict");
+
+    const messages = await repository.listOwnerAccessMessages({
+      tenantId,
+      requestId,
+      limit: 100,
+    });
+    expect(messages).toEqual([first]);
+
+    await expect(
+      pool.query(
+        `UPDATE commerce.owner_access_messages
+            SET body='mutated'
+          WHERE tenant_id=$1 AND request_id=$2 AND message_id=$3`,
+        [tenantId, requestId, message.messageId],
+      ),
+    ).rejects.toThrow("Twin economy history is immutable");
+  });
+
+  it("tracks owner-session participant presence with server timestamps and monotonic heartbeats", async () => {
+    const repository = createPostgresTwinRuntimeRepository(pool);
+    const tenantId = createCanonicalId("tenant");
+    const requesterUserId = createCanonicalId("user");
+    const ownerUserId = createCanonicalId("user");
+    const characterId = createCanonicalId("character");
+    const requestId = "owner-room-presence-request";
+
+    await repository.putOwnerAccessRequest({
+      tenantId,
+      request: {
+        requestId,
+        requesterUserId,
+        ownerUserId,
+        originatingCharacterId: characterId,
+        modality: "text",
+        durationMinutes: 15,
+        priceCredits: 0,
+        platformFeeCredits: 0,
+        ownerEarningCredits: 0,
+        chargeMode: "trial",
+        trialPolicyRevision: 1,
+        state: "active",
+        requestedAt: "2026-10-05T12:00:00.000Z",
+        acceptBy: "2026-10-05T13:00:00.000Z",
+        scheduledFor: null,
+        startedAt: "2026-10-05T12:10:00.000Z",
+        completedAt: null,
+      },
+      reservationId: null,
+      reservedCredits: 0,
+    });
+
+    const first = await repository.touchOwnerAccessPresence({
+      tenantId,
+      requestId,
+      userId: requesterUserId,
+      seenAt: "2026-10-05T12:10:00.000Z",
+    });
+    const second = await repository.touchOwnerAccessPresence({
+      tenantId,
+      requestId,
+      userId: requesterUserId,
+      seenAt: "2026-10-05T12:10:15.000Z",
+    });
+    await repository.touchOwnerAccessPresence({
+      tenantId,
+      requestId,
+      userId: ownerUserId,
+      seenAt: "2026-10-05T12:10:05.000Z",
+    });
+
+    expect(first.heartbeatCount).toBe(1);
+    expect(second.firstSeenAt).toBe("2026-10-05T12:10:00.000Z");
+    expect(second.lastSeenAt).toBe("2026-10-05T12:10:15.000Z");
+    expect(second.heartbeatCount).toBe(2);
+
+    const presence = await repository.listOwnerAccessPresence({
+      tenantId,
+      requestId,
+    });
+    expect(presence).toHaveLength(2);
+    expect(
+      presence.find((item) => item.userId === requesterUserId)?.heartbeatCount,
+    ).toBe(2);
+  });
+
   it("converges concurrent exact replays onto one durable receipt", async () => {
     const repository = createPostgresTwinRuntimeRepository(pool);
     const tenantId = createCanonicalId("tenant");
