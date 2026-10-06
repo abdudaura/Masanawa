@@ -302,5 +302,22 @@ describe("StoryRadioService", () => {
     });
     expect(second.counts.like).toBe(0);
     expect(second.counts.love).toBe(1);
+
+    await admin.adminSetSeriesPublication({
+      authorizationHeader: "Bearer x",
+      seriesId: s.seriesId,
+      published: false,
+    });
+    await expect(listener.saveProgress({
+      authorizationHeader: "Bearer x",
+      seriesId: s.seriesId,
+      episodeId: e.episodeId,
+      positionSeconds: 50,
+      durationSeconds: 100,
+      completed: false,
+    })).rejects.toMatchObject({
+      code: "story_radio.episode.unavailable",
+      statusCode: 404,
+    });
   });
 });
