@@ -198,12 +198,41 @@ export function createAgentConversationService(input: {
             : {}),
           input: Object.freeze({ kind: "text" as const, text }),
         });
-        const result =
-          (await input.cryptoAssistant?.afterInference({
-            authorizationHeader: request.authorizationHeader,
-            characterId: admission.scope.characterId,
-            modelReply: generated.reply,
-          })) ?? generated;
+        const cryptoAction = await input.cryptoAssistant?.afterInference({
+          authorizationHeader: request.authorizationHeader,
+          characterId: admission.scope.characterId,
+          modelReply: generated.reply,
+        });
+        const verbalized = cryptoAction
+          ? await input.strategy.execute({
+              agentRunId,
+              characterSessionId,
+              characterVersionId: session.characterVersionId,
+              skillVersionIds: session.bindings.skillVersionIds,
+              presentation: admission.presentation,
+              runtimeSystemInstructions: Object.freeze([
+                cryptoAction.verbalizationPrompt,
+              ]),
+              ...(history.length
+                ? {
+                    conversationHistory: history
+                      .filter((item) => item.text.trim().length > 0)
+                      .map((item) => ({
+                        direction: item.direction,
+                        text: item.text,
+                      })),
+                  }
+                : {}),
+              ...(request.signal ? { signal: request.signal } : {}),
+              input: Object.freeze({ kind: "text" as const, text }),
+            })
+          : null;
+        const result = cryptoAction && verbalized
+          ? Object.freeze({
+              reply: verbalized.reply,
+              parts: cryptoAction.parts,
+            })
+          : generated;
         const reply = result.reply.trim();
         if (!reply) throw new Error("empty strategy reply");
 
@@ -391,12 +420,46 @@ export function createAgentConversationService(input: {
             dataBase64: request.dataBase64,
           }),
         });
-        const result =
-          (await input.cryptoAssistant?.afterInference({
-            authorizationHeader: request.authorizationHeader,
-            characterId: admission.scope.characterId,
-            modelReply: generated.reply,
-          })) ?? generated;
+        const cryptoAction = await input.cryptoAssistant?.afterInference({
+          authorizationHeader: request.authorizationHeader,
+          characterId: admission.scope.characterId,
+          modelReply: generated.reply,
+        });
+        const verbalized = cryptoAction
+          ? await input.strategy.execute({
+              agentRunId,
+              characterSessionId,
+              characterVersionId: session.characterVersionId,
+              skillVersionIds: session.bindings.skillVersionIds,
+              presentation: admission.presentation,
+              runtimeSystemInstructions: Object.freeze([
+                cryptoAction.verbalizationPrompt,
+              ]),
+              ...(history.length
+                ? {
+                    conversationHistory: history
+                      .filter((item) => item.text.trim().length > 0)
+                      .map((item) => ({
+                        direction: item.direction,
+                        text: item.text,
+                      })),
+                  }
+                : {}),
+              ...(request.signal ? { signal: request.signal } : {}),
+              input: Object.freeze({
+                kind: "media" as const,
+                caption,
+                mimeType,
+                dataBase64: request.dataBase64,
+              }),
+            })
+          : null;
+        const result = cryptoAction && verbalized
+          ? Object.freeze({
+              reply: verbalized.reply,
+              parts: cryptoAction.parts,
+            })
+          : generated;
         const reply = result.reply.trim();
         if (!reply) throw new Error("empty strategy reply");
 
@@ -592,12 +655,45 @@ export function createAgentConversationService(input: {
             media: Object.freeze(media),
           }),
         });
-        const result =
-          (await input.cryptoAssistant?.afterInference({
-            authorizationHeader: request.authorizationHeader,
-            characterId: admission.scope.characterId,
-            modelReply: generated.reply,
-          })) ?? generated;
+        const cryptoAction = await input.cryptoAssistant?.afterInference({
+          authorizationHeader: request.authorizationHeader,
+          characterId: admission.scope.characterId,
+          modelReply: generated.reply,
+        });
+        const verbalized = cryptoAction
+          ? await input.strategy.execute({
+              agentRunId,
+              characterSessionId,
+              characterVersionId: session.characterVersionId,
+              skillVersionIds: session.bindings.skillVersionIds,
+              presentation: admission.presentation,
+              runtimeSystemInstructions: Object.freeze([
+                cryptoAction.verbalizationPrompt,
+              ]),
+              ...(history.length
+                ? {
+                    conversationHistory: history
+                      .filter((item) => item.text.trim().length > 0)
+                      .map((item) => ({
+                        direction: item.direction,
+                        text: item.text,
+                      })),
+                  }
+                : {}),
+              ...(request.signal ? { signal: request.signal } : {}),
+              input: Object.freeze({
+                kind: "media-set" as const,
+                caption,
+                media: Object.freeze(media),
+              }),
+            })
+          : null;
+        const result = cryptoAction && verbalized
+          ? Object.freeze({
+              reply: verbalized.reply,
+              parts: cryptoAction.parts,
+            })
+          : generated;
         const reply = result.reply.trim();
         if (!reply) throw new Error("empty strategy reply");
 
