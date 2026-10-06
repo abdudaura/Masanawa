@@ -34,17 +34,48 @@ This lane implements an isolated, deterministic qualification gate for externall
 - Studio Task 136: PR #266 / `work/studio-production-workflow-20261006`;
 - Character consistency Task 137: PR #268 / `work/character-surface-consistency-20261006`.
 
-## Acceptance intent
+## Completed implementation
 
-The qualifier must fail closed unless:
-- exact Git heads are supplied for Social, Commerce, Studio and Character-consistency evidence;
-- all required Task 138 golden-journey families are present exactly once;
-- every journey passed its functional, retry/recovery and authorization/privacy checks;
-- every claim is bound to SHA-256 evidence;
-- all journey evidence identifies one of the declared upstream heads;
-- blocking parity count is zero;
-- the candidate is explicitly production-like rather than inferred from unit tests.
+The qualifier:
+- requires explicit `production-like` environment evidence rather than inferring acceptance from unit tests;
+- requires exact 40-character Git heads for Social, Commerce, Studio and Character-consistency sources;
+- requires six golden-journey families: Social publication, Commerce purchase/fulfillment, Commerce refund/reconciliation, Studio production, Character consistency and cross-domain replay/recovery;
+- rejects duplicate/unknown journey keys and malformed source identities;
+- binds each journey to the exact declared upstream source head;
+- independently requires functional pass, retry/recovery pass and authorization/privacy pass;
+- requires SHA-256 evidence for each journey plus the parity ledger;
+- fails Task 138 qualification when blocking parity is non-zero;
+- returns only `READY`, `INCOMPLETE` or `FAILED`, with missing evidence never silently accepted;
+- exposes a CLI that exits non-zero unless the result is `READY`.
 
-State: CLAIMED / IMPLEMENTATION IN PROGRESS.
+Focused tests cover:
+- complete READY evidence;
+- missing-journey INCOMPLETE classification;
+- changed upstream-head rejection;
+- independent functional/recovery/privacy failure classification;
+- blocking parity;
+- duplicate journey and malformed hash rejection;
+- non-production-like evidence rejection;
+- required source-head vocabulary stability.
+
+## Verification
+
+- final pre-handoff comparison against `main`: ahead 3 / behind 0;
+- changed files are exactly the three owned paths above;
+- PR #299 opened from implementation head `28201b4e18634f1db995f0896b63860371f54432`;
+- Foundation CI run `37489957255`, job `112359757589`, concluded `failure` with `steps = null`; checkout/install/typecheck/tests never executed, so no application failure or success is inferred.
+
+## Handoff
+
+- implementation head before handoff update: `28201b4e18634f1db995f0896b63860371f54432`;
+- PR: #299 — Add Task 138 social commerce studio qualification gate;
+- isolated implementation status: COMPLETE;
+- Production Task 138 status: NOT COMPLETE.
+
+## Remaining dependencies
+
+Task 138 becomes eligible for READY only after the active Tasks 131–137 owners provide production-like evidence on exact reconciled heads. Real provider/persistence/composition evidence remains with those owners and the protected production integration lane.
+
+State: ISOLATED COMPLETE / WAITING ON TASKS 131–137 PRODUCTION-LIKE EVIDENCE.
 
 Last update: 2026-10-06.
