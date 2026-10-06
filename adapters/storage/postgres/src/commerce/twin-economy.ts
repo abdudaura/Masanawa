@@ -953,6 +953,16 @@ export function createPostgresTwinRuntimeRepository(
                 AND definition->>'reconciliationReason'='attendance-timeout'
               )
               OR (
+                state='settled'
+                AND definition->>'chargeMode'='paid'
+                AND COALESCE((definition->>'ownerEarningCredits')::int,0) > 0
+                AND definition->>'earningsReleasedAt' IS NULL
+                AND (
+                  definition->>'disputeBy' IS NULL
+                  OR (definition->>'disputeBy')::timestamptz <= $2::timestamptz
+                )
+              )
+              OR (
                 state='requested'
                 AND (definition->>'acceptBy')::timestamptz <= $2::timestamptz
               )
