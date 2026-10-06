@@ -333,7 +333,14 @@ class _OwnerAccessSessionScreenState
                   ),
                   child: Text(
                     'You are talking to the real person, not their AI Twin. '
-                    'This private room is used only for this owner-access session.',
+                    'This private room is used only for this owner-access session.' +
+                        (_status?.sessionEndsAt == null
+                            ? ''
+                            : ' The session closes automatically at ' +
+                                TimeOfDay.fromDateTime(
+                                  _status!.sessionEndsAt!,
+                                ).format(context) +
+                                '.'),
                     style: TextStyle(
                       color: u.textMuted,
                       fontSize: 12,
