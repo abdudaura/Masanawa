@@ -1,5 +1,4 @@
 enum PublishingMutationKind {
-  setStoryVisibility,
   setNewsCategoryVisibility,
   setHomeRoomVisibility,
   reorderHomeRoom,
@@ -14,6 +13,7 @@ class StoryRadioAdminItem {
     required this.published,
     required this.sortOrder,
   });
+
   final String seriesId;
   final String title;
   final bool published;
@@ -24,8 +24,12 @@ class StoryRadioAdminItem {
     final title = json['title'];
     final published = json['published'];
     final sortOrder = json['sortOrder'];
-    if (id is! String || id.trim().isEmpty || title is! String ||
-        title.trim().isEmpty || published is! bool || sortOrder is! int ||
+    if (id is! String ||
+        id.trim().isEmpty ||
+        title is! String ||
+        title.trim().isEmpty ||
+        published is! bool ||
+        sortOrder is! int ||
         sortOrder < 0) {
       throw const FormatException('Invalid Story Radio admin item');
     }
@@ -45,12 +49,15 @@ class NewsCategoryAdminItem {
     required this.visible,
     required this.sortOrder,
     required this.pinnedItemId,
+    required this.revision,
   });
+
   final String categoryId;
   final String label;
   final bool visible;
   final int sortOrder;
   final String? pinnedItemId;
+  final int revision;
 
   factory NewsCategoryAdminItem.fromJson(Map<String, dynamic> json) {
     final id = json['categoryId'];
@@ -58,9 +65,17 @@ class NewsCategoryAdminItem {
     final visible = json['visible'];
     final sortOrder = json['sortOrder'];
     final pinned = json['pinnedItemId'];
-    if (id is! String || id.trim().isEmpty || label is! String ||
-        label.trim().isEmpty || visible is! bool || sortOrder is! int ||
-        sortOrder < 0 || (pinned != null && pinned is! String)) {
+    final revision = json['revision'];
+    if (id is! String ||
+        id.trim().isEmpty ||
+        label is! String ||
+        label.trim().isEmpty ||
+        visible is! bool ||
+        sortOrder is! int ||
+        sortOrder < 0 ||
+        (pinned != null && pinned is! String) ||
+        revision is! int ||
+        revision < 1) {
       throw const FormatException('Invalid News category admin item');
     }
     return NewsCategoryAdminItem(
@@ -69,6 +84,7 @@ class NewsCategoryAdminItem {
       visible: visible,
       sortOrder: sortOrder,
       pinnedItemId: pinned as String?,
+      revision: revision,
     );
   }
 }
@@ -79,20 +95,30 @@ class HomeRoomAdminItem {
     required this.label,
     required this.visible,
     required this.sortOrder,
+    required this.revision,
   });
+
   final String roomKey;
   final String label;
   final bool visible;
   final int sortOrder;
+  final int revision;
 
   factory HomeRoomAdminItem.fromJson(Map<String, dynamic> json) {
     final key = json['roomKey'];
     final label = json['label'];
     final visible = json['visible'];
     final sortOrder = json['sortOrder'];
-    if (key is! String || key.trim().isEmpty || label is! String ||
-        label.trim().isEmpty || visible is! bool || sortOrder is! int ||
-        sortOrder < 0) {
+    final revision = json['revision'];
+    if (key is! String ||
+        key.trim().isEmpty ||
+        label is! String ||
+        label.trim().isEmpty ||
+        visible is! bool ||
+        sortOrder is! int ||
+        sortOrder < 0 ||
+        revision is! int ||
+        revision < 1) {
       throw const FormatException('Invalid Home Room admin item');
     }
     return HomeRoomAdminItem(
@@ -100,6 +126,7 @@ class HomeRoomAdminItem {
       label: label,
       visible: visible,
       sortOrder: sortOrder,
+      revision: revision,
     );
   }
 }
@@ -110,20 +137,29 @@ class AssistantHomePresentation {
     required this.displayName,
     required this.position,
     required this.visible,
+    required this.revision,
   });
+
   final String characterId;
   final String displayName;
   final String position;
   final bool visible;
+  final int revision;
 
   factory AssistantHomePresentation.fromJson(Map<String, dynamic> json) {
     final characterId = json['characterId'];
     final displayName = json['displayName'];
     final position = json['position'];
     final visible = json['visible'];
-    if (characterId is! String || characterId.trim().isEmpty ||
-        displayName is! String || displayName.trim().isEmpty ||
-        (position != 'left' && position != 'right') || visible is! bool) {
+    final revision = json['revision'];
+    if (characterId is! String ||
+        characterId.trim().isEmpty ||
+        displayName is! String ||
+        displayName.trim().isEmpty ||
+        (position != 'left' && position != 'right') ||
+        visible is! bool ||
+        revision is! int ||
+        revision < 1) {
       throw const FormatException('Invalid assistant Home presentation');
     }
     return AssistantHomePresentation(
@@ -131,6 +167,7 @@ class AssistantHomePresentation {
       displayName: displayName,
       position: position,
       visible: visible,
+      revision: revision,
     );
   }
 }
@@ -141,39 +178,43 @@ class HomeRoomsPublishingProjection {
     required this.newsCategories,
     required this.homeRooms,
     required this.assistants,
-    required this.revision,
   });
+
   final List<StoryRadioAdminItem> storySeries;
   final List<NewsCategoryAdminItem> newsCategories;
   final List<HomeRoomAdminItem> homeRooms;
   final List<AssistantHomePresentation> assistants;
-  final int revision;
 
   factory HomeRoomsPublishingProjection.fromJson(Map<String, dynamic> json) {
     final story = json['storySeries'];
     final news = json['newsCategories'];
     final rooms = json['homeRooms'];
     final assistants = json['assistants'];
-    final revision = json['revision'];
-    if (story is! List || news is! List || rooms is! List ||
-        assistants is! List || revision is! int || revision < 1) {
+    if (story is! List ||
+        news is! List ||
+        rooms is! List ||
+        assistants is! List) {
       throw const FormatException('Invalid Home/Rooms publishing projection');
     }
     final parsedStory = [
       for (final item in story)
-        if (item is Map) StoryRadioAdminItem.fromJson(item.cast<String, dynamic>()),
+        if (item is Map)
+          StoryRadioAdminItem.fromJson(item.cast<String, dynamic>()),
     ];
     final parsedNews = [
       for (final item in news)
-        if (item is Map) NewsCategoryAdminItem.fromJson(item.cast<String, dynamic>()),
+        if (item is Map)
+          NewsCategoryAdminItem.fromJson(item.cast<String, dynamic>()),
     ];
     final parsedRooms = [
       for (final item in rooms)
-        if (item is Map) HomeRoomAdminItem.fromJson(item.cast<String, dynamic>()),
+        if (item is Map)
+          HomeRoomAdminItem.fromJson(item.cast<String, dynamic>()),
     ];
     final parsedAssistants = [
       for (final item in assistants)
-        if (item is Map) AssistantHomePresentation.fromJson(item.cast<String, dynamic>()),
+        if (item is Map)
+          AssistantHomePresentation.fromJson(item.cast<String, dynamic>()),
     ];
     if (parsedStory.length != story.length ||
         parsedNews.length != news.length ||
@@ -186,7 +227,6 @@ class HomeRoomsPublishingProjection {
       newsCategories: parsedNews,
       homeRooms: parsedRooms,
       assistants: parsedAssistants,
-      revision: revision,
     );
   }
 }
@@ -202,6 +242,7 @@ class PublishingMutationIntent {
     this.displayName,
     this.position,
   });
+
   final PublishingMutationKind kind;
   final String targetId;
   final int expectedRevision;
@@ -228,8 +269,7 @@ class PublishingMutationIntent {
     required bool visible,
     required int expectedRevision,
   }) {
-    if (kind != PublishingMutationKind.setStoryVisibility &&
-        kind != PublishingMutationKind.setNewsCategoryVisibility &&
+    if (kind != PublishingMutationKind.setNewsCategoryVisibility &&
         kind != PublishingMutationKind.setHomeRoomVisibility) {
       throw ArgumentError('Invalid visibility mutation kind');
     }
