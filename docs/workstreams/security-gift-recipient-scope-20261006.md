@@ -37,6 +37,18 @@ record and redirect gift recipient resolution across Tenant or Character scope.
 - same-Tenant different-Character substitution fails before recipient projection;
 - existing personal-Twin owner resolution/self-gift/non-personal behavior remains intact.
 
-State: CLAIMED.
+State: IMPLEMENTED / VERIFICATION PENDING.
+
+## Completed
+
+- resolver now requires returned ownership Tenant to equal the requested Tenant;
+- resolver now requires returned ownership Character to equal the requested Character;
+- cross-Tenant personal-Twin substitution is rejected;
+- same-Tenant different-Character substitution is rejected;
+- existing eligible personal-Twin resolution, self-gift rejection and non-personal rejection remain unchanged.
+
+This closes a concrete fail-open trust assumption between Gateway Gift resolution and the injected Identity ownership reader.
+
+Implementation head before handoff: `c09c1aafcffb535a82f3f473b54ddb836d520e31`.
 
 Last update: 2026-10-06.
