@@ -2562,6 +2562,9 @@ export function createTwinProductionRuntime(input: {
                   60_000,
               )
             : null,
+          realPersonSession: true as const,
+          recordingAllowed: false as const,
+          messageRetentionDays: ownerMessageRetentionDays,
           presence: Object.freeze(
             attendance.presence.map((item) =>
               Object.freeze({
