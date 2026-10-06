@@ -7,6 +7,7 @@ import type {
 import {
   normalizeCommissionPolicy,
   normalizePaidFeatureTrialPolicy,
+  normalizeProviderValuationPolicy,
   type CommissionPolicy,
   type OwnerAccessOffering,
   type OwnerAccessParticipantPresence,
@@ -14,6 +15,7 @@ import {
   type OwnerAccessSessionMessage,
   type PaidFeatureKey,
   type PaidFeatureTrialPolicy,
+  type ProviderValuationPolicy,
   type TwinAttributionRecord,
   type TwinCreditOperationReceipt,
   type TwinRuntimeRepository,
@@ -34,6 +36,10 @@ function policyFrom(value: unknown): CommissionPolicy {
 
 function trialFrom(value: unknown): PaidFeatureTrialPolicy {
   return normalizePaidFeatureTrialPolicy(value as PaidFeatureTrialPolicy);
+}
+
+function valuationFrom(value: unknown): ProviderValuationPolicy {
+  return normalizeProviderValuationPolicy(value as ProviderValuationPolicy);
 }
 
 function requestDefinition(
@@ -320,6 +326,59 @@ export function createPostgresTwinRuntimeRepository(
       });
       if (!current || current.revision !== policy.revision) {
         throw new Error("Commission policy revision conflict");
+      }
+      return current;
+    },
+
+    async readProviderValuationPolicy(input) {
+      const result = await pool.query<{ definition: unknown }>(
+        `SELECT definition
+           FROM commerce.twin_provider_valuation_policy_revisions
+          WHERE tenant_id=$1 AND valuation_key=$2 AND event_type=$3
+            AND effective_at <= $4::timestamptz
+          ORDER BY effective_at DESC, revision DESC
+          LIMIT 1`,
+        [input.tenantId, input.valuationKey, input.eventType, input.at],
+      );
+      return result.rows[0] ? valuationFrom(result.rows[0].definition) : null;
+    },
+
+    async putProviderValuationPolicy(input) {
+      const policy = normalizeProviderValuationPolicy(input.policy);
+      await pool.query(
+        `INSERT INTO commerce.twin_provider_valuation_policy_revisions(
+           tenant_id,valuation_key,event_type,revision,enabled,source_unit,
+           source_units_per_step,credit_units_per_step,minimum_source_units,
+           maximum_base_credits,effective_at,definition
+         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb)
+         ON CONFLICT DO NOTHING`,
+        [
+          input.tenantId,
+          policy.valuationKey,
+          policy.eventType,
+          policy.revision,
+          policy.enabled,
+          policy.sourceUnit,
+          policy.sourceUnitsPerStep,
+          policy.creditUnitsPerStep,
+          policy.minimumSourceUnits,
+          policy.maximumBaseCredits,
+          policy.effectiveAt,
+          canonicalJson(policy),
+        ],
+      );
+      const current = await repository.readProviderValuationPolicy({
+        tenantId: input.tenantId,
+        valuationKey: policy.valuationKey,
+        eventType: policy.eventType,
+        at: policy.effectiveAt,
+      });
+      if (
+        !current ||
+        current.revision !== policy.revision ||
+        canonicalJson(current) !== canonicalJson(policy)
+      ) {
+        throw new Error("Provider valuation policy revision conflict");
       }
       return current;
     },
