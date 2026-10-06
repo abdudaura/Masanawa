@@ -14,6 +14,12 @@ export function createGiftRecipientResolver(input: {
       if (!record || record.ownerUserId === null) {
         throw new Error("Twin does not have an eligible owner");
       }
+      if (
+        record.tenantId !== request.tenantId ||
+        record.characterId !== request.characterId
+      ) {
+        throw new Error("Twin ownership record is outside the requested scope");
+      }
       if (record.kind !== "personal-clone") {
         throw new Error("Gifts are only available for personal twins");
       }
