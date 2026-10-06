@@ -143,3 +143,34 @@ export function registerOwnerAccessRoutes(
     });
   });
 }
+
+
+export function registerOwnerAccessDisputeAdminRoutes(
+  app: FastifyInstance,
+  service: {
+    resolve(input: {
+      readonly authorizationHeader: string | undefined;
+      readonly characterId: string;
+      readonly requestId: string;
+      readonly resolution: "release" | "refund";
+    }): Promise<unknown>;
+  },
+): void {
+  app.post(
+    "/admin/twin/owner-access/:requestId/dispute",
+    async (request) => {
+      const body = request.body as Record<string, unknown>;
+      const params = request.params as Record<string, unknown>;
+      const resolution = body.resolution;
+      if (resolution !== "release" && resolution !== "refund") {
+        throw new TypeError("Invalid owner access dispute resolution");
+      }
+      return service.resolve({
+        authorizationHeader: request.headers.authorization,
+        characterId: text(body.characterId, "characterId", 180),
+        requestId: text(params.requestId, "requestId"),
+        resolution,
+      });
+    },
+  );
+}
