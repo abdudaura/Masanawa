@@ -51,3 +51,19 @@ then pass that proposal through this contract. Current/specialist claims still u
 existing `TeachingEvidencePort`.
 
 No Gateway/mobile/channel composition is claimed by this slice.
+
+
+## Planner orchestration
+
+`createTeachingAdaptivePlanner()` is the provider-neutral orchestration seam. It:
+
+1. resolves the bounded intake;
+2. returns clarification immediately when the topic is still unknown;
+3. invokes the proposal provider only after intake is ready;
+4. supplies only learner context, assumptions, a maximum-step bound and allowed resource
+   keys — never raw resource references/evidence or provider credentials;
+5. rejects a provider sequence that exceeds the admitted bound;
+6. materializes the final plan through canonical resource and lesson validation.
+
+The proposal provider therefore cannot mint resource authority. It may only cite resource
+keys that the caller already supplied, and final plan normalization rejects unknown keys.
