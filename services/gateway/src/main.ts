@@ -791,6 +791,13 @@ export async function startGatewayService(
             365,
             "MASANAWA_OWNER_ACCESS_MESSAGE_RETENTION_DAYS",
           ),
+          disputeWindowMinutes: boundedEnvInteger(
+            env.MASANAWA_OWNER_ACCESS_DISPUTE_WINDOW_MINUTES,
+            24 * 60,
+            60,
+            7 * 24 * 60,
+            "MASANAWA_OWNER_ACCESS_DISPUTE_WINDOW_MINUTES",
+          ),
         },
       });
     }
