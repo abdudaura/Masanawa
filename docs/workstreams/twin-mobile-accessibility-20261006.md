@@ -25,3 +25,25 @@ Task: TWIN-076
 ## Current step
 
 Audit the four customer Twin root screens for horizontal overflow and inaccessible action density, implement responsive fallbacks and semantic labels, add widget coverage, then hand back exact-head verification evidence.
+
+
+## Implementation checkpoint
+
+Implemented on PR #295:
+
+- My Twin primary actions stack automatically on narrow screens or large text;
+- My Twin performance metrics reduce columns at large text instead of clipping;
+- Talk-to-me loading content now allows the label to wrap;
+- Explore cards expose an explicit semantic button label and wrap capability tags;
+- Wallet primary actions and Bills/Crypto actions stack on narrow/large-text layouts;
+- Wallet balances stack when necessary and transaction amounts move below the title at large text;
+- Activity summary reduces columns at large text and transaction amounts move into the subtitle;
+- widget coverage exercises Wallet and Explore at a 320px viewport with 200% text scaling.
+
+## Verification
+
+- PR head: `93413b8ce162d3f32ac6cd0228254e0ce3987b36`
+- PR is mergeable.
+- GitHub Foundation CI and Mobile Build still terminate before producing downloadable job logs, matching the repository-wide runner failure.
+- The local execution container cannot resolve `github.com`, so an exact-head Flutter checkout cannot be run there.
+- TWIN-076 is therefore **implemented but not yet qualified**; do not mark it complete until Flutter analyze/tests and a real-device narrow-screen pass succeed.
