@@ -10,6 +10,8 @@ import '../screens/onboarding/phone_login_screen.dart';
 import '../screens/owner_access/owner_access_session_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/twin/twin_home_shell.dart';
+import '../screens/story_radio/story_radio_screen.dart';
+import '../screens/story_radio/story_radio_episode_screen.dart';
 import '../finance/crypto_wallet_screen.dart';
 import '../screens/settings/clone_setup_screen.dart';
 import '../screens/splash/splash_screen.dart';
@@ -73,7 +75,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path == '/billing' ||
           path == '/crypto' ||
           path == '/clone' ||
-          path == '/profile';
+          path == '/profile' ||
+          path.startsWith('/story-radio');
       if (!isSignedIn && protected) return '/phone-login';
 
       return null;
@@ -119,6 +122,45 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // Backwards-compatible legacy entry points now converge on the Twin shell.
       GoRoute(path: '/agents', redirect: (_, __) => '/home'),
       GoRoute(path: '/masana', redirect: (_, __) => '/home'),
+      GoRoute(
+        path: '/story-radio',
+        builder: (context, _) => StoryRadioScreen(
+          onOpenSeries: (series) => context.push(
+            '/story-radio/series/' + Uri.encodeComponent(series.id),
+          ),
+          onContinue: (progress) => context.push(
+            '/story-radio/series/' +
+                Uri.encodeComponent(progress.seriesId) +
+                '/episode/' +
+                Uri.encodeComponent(progress.episodeId),
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/story-radio/series/:seriesId',
+        builder: (context, state) => StoryRadioSeriesScreen(
+          seriesId: state.pathParameters['seriesId']!,
+          onPlayEpisode: (episode) => context.push(
+            '/story-radio/series/' +
+                Uri.encodeComponent(episode.seriesId) +
+                '/episode/' +
+                Uri.encodeComponent(episode.id),
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/story-radio/series/:seriesId/episode/:episodeId',
+        builder: (context, state) => StoryRadioEpisodeScreen(
+          seriesId: state.pathParameters['seriesId']!,
+          episodeId: state.pathParameters['episodeId']!,
+          onOpenEpisode: (seriesId, episodeId) => context.go(
+            '/story-radio/series/' +
+                Uri.encodeComponent(seriesId) +
+                '/episode/' +
+                Uri.encodeComponent(episodeId),
+          ),
+        ),
+      ),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
       GoRoute(path: '/billing', builder: (_, _) => const BillingScreen()),
       GoRoute(path: '/crypto', builder: (_, _) => const CryptoWalletScreen()),
