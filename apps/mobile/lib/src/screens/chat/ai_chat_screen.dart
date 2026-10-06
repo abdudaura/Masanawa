@@ -82,6 +82,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   bool _nearBottom = true;
   int _newBelow = 0;
   Timer? _scrollPersistTimer;
+  Timer? _walletRefreshTimer;
   final Set<String> _selectedMessageIds = {};
   final Map<String, GlobalKey> _messageKeys = {};
   bool _initialEntryHandled = false;
@@ -112,7 +113,12 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             .setScrollOffset(widget.characterId, _scroll.offset);
       });
     });
+    _walletRefreshTimer = Timer.periodic(const Duration(seconds: 12), (_) {
+      if (!mounted) return;
+      unawaited(ref.read(walletProvider.notifier).refresh());
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(ref.read(walletProvider.notifier).refresh());
       final controller = ref.read(aiChatProvider.notifier);
       controller.openThread(widget.characterId);
       final thread = controller.threadOf(widget.characterId);
@@ -152,6 +158,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     _recTimer?.cancel();
     _ampTimer?.cancel();
     _scrollPersistTimer?.cancel();
+    _walletRefreshTimer?.cancel();
     _recorder.dispose();
     _input.dispose();
     _search.dispose();
@@ -663,6 +670,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     final directory = ref.watch(agentDirectoryProvider);
     final agent = directory.find(widget.characterId);
     final chat = ref.watch(aiChatProvider);
+    final wallet = ref.watch(walletProvider);
+    final ngnBalanceLabel =
+        wallet.asData?.value?.ngnBalanceLabel ?? '₦—';
     final thread = chat.threads[widget.characterId];
     final shellConfig = chat.shellConfigs[widget.characterId];
     final updateRequired = shellConfig?.requiresUpdate() ?? false;
@@ -824,13 +834,29 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      Text(
-                        workingLabel,
-                        style: TextStyle(
-                          color: sending ? u.brand : u.textMuted,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              workingLabel,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: sending ? u.brand : u.textMuted,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            '• $ngnBalanceLabel',
+                            style: TextStyle(
+                              color: u.brand,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
