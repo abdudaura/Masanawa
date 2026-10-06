@@ -50,7 +50,7 @@ export interface CloneOnboardingView {
   readonly setup: CloneSetup | null;
   readonly supportAgents: readonly MobileAgentDirectoryEntry[];
   readonly defaultSupportAgentId: string | null;
-  readonly nextStep: "name" | "languages" | "preview" | "confirm" | "recover" | "open-clone";
+  readonly nextStep: "name" | "preview" | "confirm" | "recover" | "open-clone";
   readonly prompt: string;
   readonly runtimeReadiness: "not-verified";
 }
@@ -73,8 +73,8 @@ export function projectCloneOnboarding(setup: CloneSetup | null, agents: readonl
   else if (setup?.state === "confirmed") { nextStep = "recover"; prompt = "Your profile is confirmed. Resume the same request to finish setup."; }
   else if (setup?.state === "preview") { nextStep = "confirm"; prompt = "Review this profile. Confirm to create your clone, or edit it first."; }
   else if (setup?.state !== "cancelled" && setup?.profile.displayName) {
-    if (setup.profile.languages.length === 0) { nextStep = "languages"; prompt = "Which languages should your clone use?"; }
-    else { nextStep = "preview"; prompt = "Your profile is ready to review. You can also add interests or change its communication style."; }
+    nextStep = "preview";
+    prompt = "Your profile is ready to review. Language follows whoever is speaking to your Twin automatically.";
   }
   return Object.freeze({ setup, supportAgents, defaultSupportAgentId, nextStep, prompt, runtimeReadiness: "not-verified" });
 }
