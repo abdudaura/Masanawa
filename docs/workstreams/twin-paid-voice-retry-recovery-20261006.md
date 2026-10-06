@@ -31,6 +31,25 @@ This lane covers the paid-voice crash boundary only:
 6. ambiguous usage never posts money and remains reconciliation-only;
 7. trial usage retry consumes trial units once.
 
-State: CLAIMED.
+State: ISOLATED COMPLETE / INTEGRATION READY.
+
+## Completed acceptance evidence
+
+- exact verified-usage retry under the same admission identity posts paid settlement once;
+- simulated crash after consequential settlement but before caller completion does not duplicate customer charge, owner earning, platform revenue or refund;
+- same admission identity with changed verified usage/settlement fingerprint fails closed;
+- ambiguous provider usage remains `reconcile` and cannot post economic effects;
+- trial-covered usage consumes trial units once across the same crash/retry boundary;
+- failed-before-media usage consumes no trial units and posts no monetary effect;
+- no production ledger, reservation, Gateway, provider or Commerce source path was modified.
+
+## Remaining production dependencies
+
+1. production ledger/trial ports must enforce the same replay identity durably;
+2. provider usage reconciliation must supply stable admission identity and exact usage evidence;
+3. shared #136 composition must call replay-safe ports before marking voice settlement complete;
+4. executable CI and production crash/restart evidence remain required.
+
+Implementation head before handoff: `2ae0187514bf660b5c8172ab41fcec55a657024e`.
 
 Last update: 2026-10-06.
