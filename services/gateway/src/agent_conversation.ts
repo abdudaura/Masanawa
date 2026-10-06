@@ -189,6 +189,7 @@ export function createAgentConversationService(input: {
                   .map((item) => ({
                     direction: item.direction,
                     text: item.text,
+                    ...(item.parts.length ? { parts: item.parts } : {}),
                   })),
               }
             : {}),
@@ -409,6 +410,7 @@ export function createAgentConversationService(input: {
                   .map((item) => ({
                     direction: item.direction,
                     text: item.text,
+                    ...(item.parts.length ? { parts: item.parts } : {}),
                   })),
               }
             : {}),
@@ -645,6 +647,7 @@ export function createAgentConversationService(input: {
                   .map((item) => ({
                     direction: item.direction,
                     text: item.text,
+                    ...(item.parts.length ? { parts: item.parts } : {}),
                   })),
               }
             : {}),
