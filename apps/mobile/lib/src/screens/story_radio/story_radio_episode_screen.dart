@@ -35,6 +35,21 @@ class _StoryRadioEpisodeScreenState
     Future.microtask(_load);
   }
 
+  @override
+  void didUpdateWidget(covariant StoryRadioEpisodeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.seriesId == widget.seriesId &&
+        oldWidget.episodeId == widget.episodeId) {
+      return;
+    }
+    setState(() {
+      _episode = null;
+      _progress = null;
+      _error = null;
+    });
+    Future.microtask(_load);
+  }
+
   Future<void> _load() async {
     try {
       final series = await ref
@@ -85,6 +100,7 @@ class _StoryRadioEpisodeScreenState
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 560),
                 child: StoryRadioPlayer(
+                  key: ValueKey(episode.id),
                   episode: episode,
                   initialPositionSeconds: _progress?.positionSeconds ?? 0,
                   onNextEpisode: episode.nextEpisodeId == null
