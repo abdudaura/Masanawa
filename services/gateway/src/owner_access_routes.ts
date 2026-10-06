@@ -157,7 +157,7 @@ export function registerOwnerAccessDisputeAdminRoutes(
   },
 ): void {
   app.post(
-    "/admin/twin/owner-access/:requestId/dispute",
+    "/v1/admin/twin/owner-access/:requestId/dispute",
     async (request) => {
       const body = request.body as Record<string, unknown>;
       const params = request.params as Record<string, unknown>;
