@@ -909,6 +909,18 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       },
     );
 
+    // Stream errors must stay coarse (no internals leak to clients) but still
+    // tell the app WHY the turn failed so it can show the right recovery
+    // action instead of a generic retry.
+    const turnStreamErrorCode = (error: unknown): string => {
+      const message = error instanceof Error ? error.message : String(error);
+      if (/Expected .* id/.test(message)) return "unknown_agent";
+      if (/not authorized|Unauthorized|sign in|401/.test(message)) {
+        return "auth_required";
+      }
+      return "turn_failed";
+    };
+
     app.post(
       "/agent/sessions/:characterSessionId/turn-stream",
       {
@@ -966,8 +978,8 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
             signal: controller.signal,
           });
           emit({ type: "done", ...resultBody(result) });
-        } catch {
-          emit({ type: "error", code: "turn_failed" });
+        } catch (error) {
+          emit({ type: "error", code: turnStreamErrorCode(error) });
         } finally {
           finished = true;
           reply.raw.off("close", abort);
