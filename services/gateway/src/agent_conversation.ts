@@ -191,6 +191,7 @@ export function createAgentConversationService(input: {
       try {
         const direct = await input.billingAssistant?.beforeInference({
           authorizationHeader: request.authorizationHeader,
+          characterId: admission.scope.characterId,
           text,
         });
         const generated = direct ?? await input.strategy.execute({
@@ -211,6 +212,7 @@ export function createAgentConversationService(input: {
           ? direct
           : (await input.billingAssistant?.afterInference({
               authorizationHeader: request.authorizationHeader,
+              characterId: admission.scope.characterId,
               modelReply: generated.reply,
             })) ?? generated;
         const reply = result.reply.trim();
@@ -391,6 +393,7 @@ export function createAgentConversationService(input: {
         const result =
           (await input.billingAssistant?.afterInference({
             authorizationHeader: request.authorizationHeader,
+            characterId: admission.scope.characterId,
             modelReply: generated.reply,
           })) ?? generated;
         const reply = result.reply.trim();
@@ -586,6 +589,7 @@ export function createAgentConversationService(input: {
         const result =
           (await input.billingAssistant?.afterInference({
             authorizationHeader: request.authorizationHeader,
+            characterId: admission.scope.characterId,
             modelReply: generated.reply,
           })) ?? generated;
         const reply = result.reply.trim();
