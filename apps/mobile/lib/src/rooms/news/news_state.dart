@@ -12,7 +12,7 @@ class NewsRoomTransport {
 
   Future<NewsRoomProjection> load() async {
     try {
-      final response = await _api.dio.get<Map<String, dynamic>>('/rooms/news');
+      final response = await _api.dio.get<Map<String, dynamic>>('/v1/rooms/news');
       final data = response.data;
       if (data == null) {
         throw const ApiException('News is unavailable right now.');
