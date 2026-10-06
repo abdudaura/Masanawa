@@ -1394,7 +1394,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     final priceLabel = request.chargeMode == 'trial'
         ? 'trial'
         : '${request.priceCredits} Credits';
-    final cancel = await showDialog<bool>(
+    final action = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Talk to the owner'),
@@ -1404,18 +1404,33 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Close'),
           ),
           if (cancellable)
             TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
+              onPressed: () => Navigator.of(dialogContext).pop('cancel'),
               child: const Text('Cancel request'),
+            ),
+          if (request.state == OwnerAccessState.active)
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop('open'),
+              child: const Text('Open human chat'),
             ),
         ],
       ),
     );
-    if (cancel != true || !mounted) return;
+    if (action == null || !mounted) return;
+    if (action == 'open') {
+      await context.push(
+        '/owner-session/' +
+            Uri.encodeComponent(agent.characterId) +
+            '/' +
+            Uri.encodeComponent(request.requestId),
+      );
+      return;
+    }
+    if (action != 'cancel') return;
     final updated = await ref.read(ownerAccessControllerProvider.notifier).act(
           characterId: agent.characterId,
           requestId: request.requestId,
@@ -1455,7 +1470,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     for (final minutes in const [15, 30, 60, 5, 10, 45, 90, 120]) {
       quote = await controller.quote(
         characterId: agent.characterId,
-        modality: OwnerAccessModality.voice,
+        modality: OwnerAccessModality.text,
         durationMinutes: minutes,
       );
       if (quote != null) break;
@@ -1477,8 +1492,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         title: const Text('Talk to the owner'),
         content: Text(
           offer.isTrial
-              ? 'Your ${offer.trialDurationDays}-day trial covers this ${offer.durationMinutes}-minute owner voice request.'
-              : 'Request ${offer.durationMinutes} minutes with the real owner for ${offer.priceCredits} Credits. Funds are held until the session is completed; otherwise eligible refunds are returned.',
+              ? 'Your ${offer.trialDurationDays}-day trial covers this ${offer.durationMinutes}-minute private text session with the real owner.'
+              : 'Request a ${offer.durationMinutes}-minute private text session with the real owner for ${offer.priceCredits} Credits. Funds are held until verified attendance and completion; otherwise eligible refunds are returned.',
         ),
         actions: [
           TextButton(
