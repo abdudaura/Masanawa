@@ -176,6 +176,10 @@ Deliver:
 
 This lane must not reimplement isolated feature-domain logic.
 
+## Shared integration handoff
+
+Once the move-on gate is satisfied, PR #136 must follow the exact-head queue in `docs/HOME-ROOMS-INTEGRATION-QUEUE.md`. Refresh exact heads before composition and do not call a lane integrated until shared wiring exists on the production integration branch.
+
 ## Merge/integration order
 
 1. Docs overlay.
