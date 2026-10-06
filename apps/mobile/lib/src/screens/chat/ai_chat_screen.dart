@@ -1359,6 +1359,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         request.state == OwnerAccessState.scheduled ||
         request.state == OwnerAccessState.active ||
         request.state == OwnerAccessState.disputed ||
+        request.state == OwnerAccessState.releasing ||
         _ownerRequestCanDispute(request);
   }
 
@@ -1388,6 +1389,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         return request.earningsReleasedAt == null
             ? 'Your session was completed.'
             : 'Your session was completed and the payment was released.';
+      case OwnerAccessState.releasing:
+        return 'Your session was completed. Payment release is being finalized.';
       case OwnerAccessState.declined:
         return 'The owner declined this request.';
       case OwnerAccessState.expired:
