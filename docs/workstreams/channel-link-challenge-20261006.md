@@ -39,3 +39,35 @@ Implement a bounded, replay-safe possession challenge with:
 - exact channel/account scope checks;
 - one-time successful proof;
 - redacted failure semantics suitable for WhatsApp/Telegram linking.
+
+
+## Implementation checkpoint
+
+Implemented on draft PR #307.
+
+Exact head: `d30aa0099c74743b69ad5a7ab9f6ad2396c08971`.
+
+Completed:
+- one-time secret issuance with only a scoped SHA-256 hash retained in durable challenge state;
+- Tenant/User/ChannelAccount/channel/Request scope binding;
+- exact expiry semantics and bounded attempt lockout;
+- revision-based stale writer rejection;
+- timing-safe secret verification;
+- exact successful replay for the same external subject;
+- fail-closed replay for another subject/secret;
+- canonical `ChannelBindingProof` output for the existing activation lifecycle;
+- focused tests for scope hashing, success/replay, lockout, expiry, stale revisions,
+  substitution, pre-creation attempts, low-entropy secret rejection and secret redaction;
+- Identity barrel export and operator/integration documentation.
+
+Verification:
+- PR #307 is mergeable and changes only the five claimed files.
+- Foundation CI run 37492501596 produced no downloadable job log. This is the same
+  repository-wide runner/non-execution failure and is not a test verdict.
+
+Remaining integration:
+- durable challenge CAS/repository custody;
+- authenticated issuance endpoint for signed-in users;
+- channel ingress lookup of the challenge + pending binding;
+- activation through existing `activateChannelBinding()`;
+- account/user/IP issuance + verification rate limits.
