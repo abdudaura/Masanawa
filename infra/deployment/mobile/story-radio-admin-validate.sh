@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# admin compile-fix sync marker
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 source <(awk '/^CACHE_DIR=/ { emit=1 } /^# Install Node 24 only inside this isolated validation container\./ { exit } emit { print }' "$ROOT_DIR/infra/deployment/mobile/build.sh")
 flutter config --no-analytics
