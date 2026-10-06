@@ -26,6 +26,28 @@ This is a canonical SLO + runbook slice only. It does **not** claim production a
 - incident steps preserve Tenant/Operation/correlation identity;
 - deployment-specific alert wiring remains external composition.
 
-State: CLAIMED / FULL TASK 147 REMAINS OPEN.
+State: OBSERVABILITY SLICE COMPLETE / FULL TASK 147 REMAINS OPEN.
+
+## Completed implementation
+
+- added bounded availability/latency SLO definitions;
+- deterministic good/total window evaluation;
+- error-budget burn-rate calculation;
+- healthy/ticket/page alert classification;
+- SLO output contains metrics/identifiers only and has no raw payload/secret field;
+- added incident/reconciliation runbook that preserves Tenant/Operation/correlation identity;
+- runbook explicitly forbids blind redispatch for ambiguous Operations;
+- reconciliation closure requires verified evidence and duplicate-effect checks.
+
+## Remaining Task 147 work
+
+- production metric exporters and dashboards;
+- deployed alert routing/on-call integration;
+- SLO target review by real traffic characteristics;
+- runbooks for provider-specific, billing, crypto, channel and Device incidents;
+- reconciliation operator UI/automation;
+- incident drills and postmortem practice.
+
+Implementation head before handoff: `89eed26bd20ec100cfc1acebeb379eef61187478`.
 
 Last update: 2026-10-06.
