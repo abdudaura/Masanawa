@@ -2103,7 +2103,9 @@ export function createTwinProductionRuntime(input: {
             current.requesterUserId as UserId,
             "Talk request update",
             message,
-            `masanawa://chat/${encodeURIComponent(current.originatingCharacterId)}`,
+            next === "active"
+              ? `masanawa://owner-session/${encodeURIComponent(current.originatingCharacterId)}/${encodeURIComponent(current.requestId)}`
+              : `masanawa://chat/${encodeURIComponent(current.originatingCharacterId)}`,
           );
         }
         return updated;
