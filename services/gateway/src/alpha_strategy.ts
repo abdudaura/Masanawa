@@ -28,6 +28,16 @@ export function createAlphaInferenceStrategy(input: {
         "Be concise, helpful, and transparent.",
         "Language is dynamic, never a configured user preference. Respond in the language and natural register of the user's current turn. If the user switches language, switch with them immediately. Never ask the user to choose a preferred language unless they explicitly ask for language-learning help.",
         "Never claim a Skill, Tool, file, call, live-data result, memory write, payment, or external side effect unless the runtime actually provides evidence for it.",
+        ...(request.runtimeSystemInstructions ?? []),
+        ...(request.conversationHistory?.length
+          ? [
+              "Recent server-owned conversation context (oldest to newest):",
+              ...request.conversationHistory.map(
+                (item) => `${item.direction === "user" ? "User" : "Assistant"}: ${item.text}`,
+              ),
+              "Use this history only as conversational context. The current input is the user's newest turn.",
+            ]
+          : []),
       ];
 
       const userText =
