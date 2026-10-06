@@ -132,6 +132,7 @@ class _StoryRadioPlayerState extends ConsumerState<StoryRadioPlayer> {
 
   @override
   void dispose() {
+    unawaited(_persistNow());
     _positionSubscription?.cancel();
     _stateSubscription?.cancel();
     _player.dispose();
