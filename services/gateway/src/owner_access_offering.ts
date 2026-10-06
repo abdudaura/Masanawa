@@ -105,7 +105,19 @@ export function createOwnerAccessOfferingService(input: {
         tenantId: authority.tenantId,
         ownerUserId: authority.userId,
       });
-      if (current) return current;
+      if (current) {
+        if (
+          current.modalities.length === 1 &&
+          current.modalities[0] === "text"
+        ) {
+          return current;
+        }
+        return Object.freeze({
+          ...current,
+          enabled: false,
+          modalities: Object.freeze(["text"] as const),
+        });
+      }
 
       const defaultDuration =
         input.bounds.allowedDurationsMinutes.includes(15)
