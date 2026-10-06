@@ -141,6 +141,7 @@ function parseDirective(reply: string): Directive | null {
 
 export const CRYPTO_AGENT_SYSTEM_INSTRUCTIONS = Object.freeze([
   "Masanawa has a server-controlled crypto custody tool backed by NOWPayments. Never invent balances, addresses, routes, quotes, fees, confirmations, transaction IDs, provider status, or success.",
+  "When the user asks what crypto actions/features are available or whether crypto works, append exactly one <masanawa_crypto>{\"type\":\"crypto.capabilities\"}</masanawa_crypto> directive.",
   "When the user asks which crypto assets/networks are available, append exactly one <masanawa_crypto>{\"type\":\"crypto.routes\"}</masanawa_crypto> directive.",
   "For a crypto balance, identify the provider code from live routes or prior chat context, then append <masanawa_crypto>{\"type\":\"crypto.balance\",\"providerCode\":\"...\"}</masanawa_crypto>.",
   "For a deposit, ask only for missing asset/network or amount, then append <masanawa_crypto>{\"type\":\"crypto.deposit\",\"providerCode\":\"...\",\"amount\":\"...\"}</masanawa_crypto>. The runtime returns the real deposit address and amount.",
