@@ -407,11 +407,6 @@ class CryptoWalletScreen extends ConsumerWidget {
               const SizedBox(height: 10),
               _BalanceCard(
                 wallet: data,
-                onAssetChanged: (value) {
-                  if (value != null) {
-                    ref.read(cryptoWalletProvider.notifier).selectAsset(value);
-                  }
-                },
                 onRefreshBalance: data.selectedProviderCode == null
                     ? null
                     : () =>
@@ -535,12 +530,10 @@ class _CryptoTokenStrip extends StatelessWidget {
 class _BalanceCard extends StatelessWidget {
   const _BalanceCard({
     required this.wallet,
-    required this.onAssetChanged,
     required this.onRefreshBalance,
   });
 
   final CryptoWalletSnapshot wallet;
-  final ValueChanged<String?> onAssetChanged;
   final VoidCallback? onRefreshBalance;
 
   @override
