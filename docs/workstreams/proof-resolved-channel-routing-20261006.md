@@ -37,6 +37,19 @@ Its router and focused tests are preserved without rewriting the stale branch.
 - final route preserves binding revision and routing source for downstream evidence;
 - cross-Tenant/mismatched identity evidence fails closed.
 
-State: CLAIMED.
+State: IMPLEMENTED / VERIFICATION PENDING.
+
+## Completed
+
+- preserves stale deterministic channel router and its focused tests;
+- adds a bridge that accepts only proof-resolved canonical channel identity;
+- unlinked/unusable subjects fail before any Character selection;
+- resolved identity Tenant/account/channel/subject scope is rechecked before routing;
+- deterministic route Tenant/User scope is rechecked after routing;
+- final route preserves binding revision and proof evidence for downstream runtime admission;
+- raw provider/channel identifiers never select Character or Relationship directly;
+- tests cover happy path, unlinked subject, forged resolver scope and forged router User scope.
+
+Implementation head before handoff: `daab0d65455de20bc5fa5a5816acac9fb296f4f4`.
 
 Last update: 2026-10-06.
