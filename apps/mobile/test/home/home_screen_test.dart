@@ -140,6 +140,28 @@ void main() {
     expect(find.text('Rooms'), findsNothing);
   });
 
+  testWidgets('assistant Talk action emits live talk intent',
+      (tester) async {
+    HomeAssistantAction? selectedAction;
+
+    await tester.pumpWidget(
+      app(
+        HomeScreen(
+          state: const HomeViewState.ready(snapshot),
+          onAssistantAction: (_, action) => selectedAction = action,
+        ),
+      ),
+    );
+
+    final gwaniCard = find.byKey(const ValueKey('home-assistant-gwani'));
+    await tester.tap(
+      find.descendant(of: gwaniCard, matching: find.byTooltip('Talk')),
+    );
+    await tester.pump();
+
+    expect(selectedAction, HomeAssistantAction.talk);
+  });
+
   testWidgets('quick services emit intent only and do not execute billing',
       (tester) async {
     HomeQuickService? selected;
