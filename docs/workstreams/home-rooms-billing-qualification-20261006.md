@@ -256,3 +256,24 @@ Interpretation:
 After an exit-0 qualification, PR #136 remains responsible for shared Gateway/mobile composition and controlled real-purchase/device acceptance.
 
 **No further isolated implementation remains in this lane.**
+
+
+## Final takeover live-blocker verification — 2026-10-06 11:30 Europe/Amsterdam
+
+This takeover re-checked the active production Gateway through the connected Railway account without mutating service state.
+
+Verified now:
+- production Gateway variable inventory still contains the Flutterwave secret, fixed-IP relay URL/token, webhook configuration, billing action secret and fee-policy variable names;
+- OAuth access redacts values, so no secret value was copied or exposed;
+- `FLUTTERWAVE_QUALIFICATION_TARGETS_JSON` is **absent** from the production Gateway environment;
+- the connected Railway tool surface does not expose a safe non-mutating shell/one-off exec action against an already-running deployment; available execution-like paths require deployment/configuration mutation and are therefore outside Lane B ownership.
+
+Accordingly there is no additional truthful isolated code change to make. The remaining qualification step requires an authorized operator to supply real non-secret Cable and Electricity recipient identifiers in a safe environment that already has the existing provider/relay secrets and run:
+
+```bash
+node scripts/flutterwave-billing-production-qualification.mjs
+```
+
+Public billing remains gated until that command exits 0. Exit 2 means required live evidence is incomplete; exit 1 means tooling/configuration failure. Controlled purchases, final reconciliation/device acceptance and public enablement remain with PR #136 / Lane P after qualification.
+
+**No further isolated implementation remains in this lane.**
