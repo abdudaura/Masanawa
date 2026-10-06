@@ -73,55 +73,42 @@ class _DirectoryTransport implements TwinDirectoryTransport {
   Future<TwinDirectoryEntry?> resolve({required String publicId}) async => null;
 }
 
-Future<void> _pumpNarrowLargeText(
-  WidgetTester tester, {
-  required Widget child,
-  List<Override> overrides = const [],
-}) async {
-  tester.view.physicalSize = const Size(320, 640);
-  tester.view.devicePixelRatio = 1;
-  addTearDown(() {
-    tester.view.resetPhysicalSize();
-    tester.view.resetDevicePixelRatio();
-  });
-
-  await tester.pumpWidget(
-    ProviderScope(
-      overrides: overrides,
-      child: MaterialApp(
-        theme: buildMasanawaTheme(brightness: Brightness.light),
-        builder: (context, appChild) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            textScaler: const TextScaler.linear(2),
-          ),
-          child: appChild!,
-        ),
-        home: child,
-      ),
-    ),
-  );
-  await tester.pumpAndSettle();
-}
-
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('Wallet avoids horizontal overflow at 320px and 200% text',
       (tester) async {
-    await _pumpNarrowLargeText(
-      tester,
-      overrides: [
-        isSignedInProvider.overrideWithValue(true),
-        walletTransportProvider.overrideWithValue(_WalletTransport()),
-      ],
-      child: WalletScreen(
-        onAddMoney: () {},
-        onSend: () {},
-        onWithdraw: () {},
-        onBuyBills: () {},
-        onOpenCrypto: () {},
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          isSignedInProvider.overrideWithValue(true),
+          walletTransportProvider.overrideWithValue(_WalletTransport()),
+        ],
+        child: MaterialApp(
+          theme: buildMasanawaTheme(brightness: Brightness.light),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: const TextScaler.linear(2),
+            ),
+            child: child!,
+          ),
+          home: WalletScreen(
+            onAddMoney: () {},
+            onSend: () {},
+            onWithdraw: () {},
+            onBuyBills: () {},
+            onOpenCrypto: () {},
+          ),
+        ),
       ),
     );
+    await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
     expect(find.text('Add money'), findsOneWidget);
@@ -137,14 +124,31 @@ void main() {
     final semantics = tester.ensureSemantics();
     addTearDown(semantics.dispose);
 
-    await _pumpNarrowLargeText(
-      tester,
-      overrides: [
-        twinDirectoryTransportProvider
-            .overrideWithValue(_DirectoryTransport()),
-      ],
-      child: ExploreScreen(onOpenTwin: (_) {}),
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          twinDirectoryTransportProvider
+              .overrideWithValue(_DirectoryTransport()),
+        ],
+        child: MaterialApp(
+          theme: buildMasanawaTheme(brightness: Brightness.light),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: const TextScaler.linear(2),
+            ),
+            child: child!,
+          ),
+          home: ExploreScreen(onOpenTwin: (_) {}),
+        ),
+      ),
     );
+    await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
     expect(find.text('Amina Bello'), findsOneWidget);
