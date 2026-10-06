@@ -2,6 +2,7 @@
 
 Owner/window: ChatGPT continuation window / 2026-10-06
 Branch: `work/studio-project-artifact-provenance-20261006`
+PR: #264
 Base SHA: `b8d415f09424ddf3e1a90a578f54c5792668bc3b`
 Production task: 135 — Studio project/artifact/provenance domain.
 
@@ -68,3 +69,8 @@ State: ISOLATED COMPLETE / INTEGRATION READY.
 Implementation head before handoff: `dd458052a1727d3253438d49e2c10b30f67cfffe`.
 
 Last update: 2026-10-06.
+
+## Verification
+
+- Foundation CI run `37466993528`, job `112280416084`, on implementation/handoff head `28742014b461f12b89e2b4ed12cff96bb54c2474` failed before checkout with `runner_id=0` and `steps=[]`; no repository code executed.
+- No pass is claimed from that CI result; executable typecheck/test/build remains required once hosted runner allocation recovers.
