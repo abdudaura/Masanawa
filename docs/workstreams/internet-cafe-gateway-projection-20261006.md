@@ -26,8 +26,11 @@ Skills implementation, Commerce/Event migrations, production environment or APK 
 - Optional server-owned selection projection with known-service and unique-option validation.
 - Duplicate service-id rejection.
 - Missing/blank execution reference rejection.
+- Exact server-side service/intent resolution; forged service/intent pairs fail closed.
+- Server revalidation of task intake, including unknown-field rejection, required fields, bounded text, choice membership, email/phone/date/document reference validation.
+- Billing services reject task-intake submissions because checkout inputs remain canonical Billing-owned state.
 - No price, provider success, receipt, checkout or transaction state is projected by this module.
-- Focused tests for billing-vs-Skill separation, launch quick starts, intake, active selections, unknown-service rejection and missing-reference rejection.
+- Focused tests for billing-vs-Skill separation, launch quick starts, intake, active selections, exact intent binding, forged-field rejection, required-field enforcement, billing-intake rejection, unknown-service rejection and missing-reference rejection.
 
 ## Architecture boundary
 
@@ -39,7 +42,7 @@ eligibility/admission.
 ## Verification
 
 - PR changed-file audit is exactly the three claimed files.
-- Foundation CI run `37451533622`, job `112229005652`, failed before checkout with
+- Latest Foundation CI run `37452103216`, job `112230846065`, failed before checkout with
   `steps = null`; no code/test verdict is fabricated.
 - Projection was checked against current Lane I head `4c3ac73796aff5ec05ee0875512cf294e92239e3`.
 
