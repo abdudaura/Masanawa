@@ -36,6 +36,8 @@ The model must bind a canonical Tenant/User to one canonical ChannelAccount iden
 
 ## Current state
 
-CLAIMED. No implementation changes beyond this claim.
+IMPLEMENTING. Canonical ChannelAccount/UserChannelBinding lifecycle contracts and focused tests are committed. Persistence/export/Gateway composition remain excluded because their paths are actively shared/owned.
+
+Implementation head before handoff: `9c53251e1b4405aeef1892ad8190ccea6be3c67c`.
 
 Last update: 2026-10-06.
