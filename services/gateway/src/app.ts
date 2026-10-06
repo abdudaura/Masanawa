@@ -225,7 +225,6 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     app.post(
       "/auth/otp",
       {
-        bodyLimit: 8_000_000,
         schema: {
           body: Type.Object(
             {
@@ -592,6 +591,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     app.post(
       "/creator/clone",
       {
+        bodyLimit: 8_000_000,
         schema: {
           body: Type.Object(
             {
