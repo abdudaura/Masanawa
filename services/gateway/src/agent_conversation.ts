@@ -16,6 +16,7 @@ import type {
   AgentConversationService,
 } from "./agent_conversation_contract.js";
 import type { NativeAudioRenderer } from "./native_audio.js";
+import type { AgentCryptoAssistant } from "./agent_crypto_assistant.js";
 
 function hashTurnPayload(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex");
@@ -56,6 +57,7 @@ export function createAgentConversationService(input: {
   readonly strategy: AgentStrategy;
   readonly nativeAudio?: NativeAudioRenderer;
   readonly mobileShell?: MobileShellRepository;
+  readonly cryptoAssistant?: AgentCryptoAssistant;
   readonly sessionDurationMs: number;
 }): AgentConversationService {
   if (
@@ -165,18 +167,43 @@ export function createAgentConversationService(input: {
       });
 
       try {
-        const result = await input.strategy.execute({
+        const history = input.mobileShell
+          ? await input.mobileShell.listHistory({
+              scope: admission.scope,
+              limit: 24,
+            })
+          : Object.freeze([]);
+        const generated = await input.strategy.execute({
           agentRunId,
           characterSessionId,
           characterVersionId: session.characterVersionId,
           skillVersionIds: session.bindings.skillVersionIds,
           presentation: admission.presentation,
+          ...(input.cryptoAssistant
+            ? { runtimeSystemInstructions: input.cryptoAssistant.systemInstructions }
+            : {}),
+          ...(history.length
+            ? {
+                conversationHistory: history
+                  .filter((item) => item.text.trim().length > 0)
+                  .map((item) => ({
+                    direction: item.direction,
+                    text: item.text,
+                  })),
+              }
+            : {}),
           ...(request.signal ? { signal: request.signal } : {}),
-          ...(request.onTextDelta
+          ...(!input.cryptoAssistant && request.onTextDelta
             ? { onTextDelta: request.onTextDelta }
             : {}),
           input: Object.freeze({ kind: "text" as const, text }),
         });
+        const result =
+          (await input.cryptoAssistant?.afterInference({
+            authorizationHeader: request.authorizationHeader,
+            characterId: admission.scope.characterId,
+            modelReply: generated.reply,
+          })) ?? generated;
         const reply = result.reply.trim();
         if (!reply) throw new Error("empty strategy reply");
 
@@ -331,12 +358,31 @@ export function createAgentConversationService(input: {
       });
 
       try {
-        const result = await input.strategy.execute({
+        const history = input.mobileShell
+          ? await input.mobileShell.listHistory({
+              scope: admission.scope,
+              limit: 24,
+            })
+          : Object.freeze([]);
+        const generated = await input.strategy.execute({
           agentRunId,
           characterSessionId,
           characterVersionId: session.characterVersionId,
           skillVersionIds: session.bindings.skillVersionIds,
           presentation: admission.presentation,
+          ...(input.cryptoAssistant
+            ? { runtimeSystemInstructions: input.cryptoAssistant.systemInstructions }
+            : {}),
+          ...(history.length
+            ? {
+                conversationHistory: history
+                  .filter((item) => item.text.trim().length > 0)
+                  .map((item) => ({
+                    direction: item.direction,
+                    text: item.text,
+                  })),
+              }
+            : {}),
           ...(request.signal ? { signal: request.signal } : {}),
           input: Object.freeze({
             kind: "media" as const,
@@ -345,6 +391,12 @@ export function createAgentConversationService(input: {
             dataBase64: request.dataBase64,
           }),
         });
+        const result =
+          (await input.cryptoAssistant?.afterInference({
+            authorizationHeader: request.authorizationHeader,
+            characterId: admission.scope.characterId,
+            modelReply: generated.reply,
+          })) ?? generated;
         const reply = result.reply.trim();
         if (!reply) throw new Error("empty strategy reply");
 
@@ -508,12 +560,31 @@ export function createAgentConversationService(input: {
       });
 
       try {
-        const result = await input.strategy.execute({
+        const history = input.mobileShell
+          ? await input.mobileShell.listHistory({
+              scope: admission.scope,
+              limit: 24,
+            })
+          : Object.freeze([]);
+        const generated = await input.strategy.execute({
           agentRunId,
           characterSessionId,
           characterVersionId: session.characterVersionId,
           skillVersionIds: session.bindings.skillVersionIds,
           presentation: admission.presentation,
+          ...(input.cryptoAssistant
+            ? { runtimeSystemInstructions: input.cryptoAssistant.systemInstructions }
+            : {}),
+          ...(history.length
+            ? {
+                conversationHistory: history
+                  .filter((item) => item.text.trim().length > 0)
+                  .map((item) => ({
+                    direction: item.direction,
+                    text: item.text,
+                  })),
+              }
+            : {}),
           ...(request.signal ? { signal: request.signal } : {}),
           input: Object.freeze({
             kind: "media-set" as const,
@@ -521,6 +592,12 @@ export function createAgentConversationService(input: {
             media: Object.freeze(media),
           }),
         });
+        const result =
+          (await input.cryptoAssistant?.afterInference({
+            authorizationHeader: request.authorizationHeader,
+            characterId: admission.scope.characterId,
+            modelReply: generated.reply,
+          })) ?? generated;
         const reply = result.reply.trim();
         if (!reply) throw new Error("empty strategy reply");
 
