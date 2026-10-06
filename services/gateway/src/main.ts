@@ -19,6 +19,7 @@ import type {
 import type {
   CharacterOwnershipReader,
   PersonalCloneProvisioningRepository,
+  TwinProfileRepository,
   UserRelationshipProvisioner,
   UserRelationshipReader,
 } from "@masanawa/identity";
@@ -48,6 +49,7 @@ import {
   createPostgresSkillRepository,
   createPostgresUserAgentPreferenceRepository,
   createPostgresPersonalCloneProvisioningRepository,
+  createPostgresTwinProfileRepository,
   createPostgresUserRelationshipReader,
   createPostgresUserRelationshipProvisioner,
   createPostgresPlatformSessionRepository,
@@ -130,6 +132,7 @@ export interface ServiceDatabaseDependency {
   readonly skillGuides?: SkillGuideRepository;
   readonly skillDistribution?: SkillDistributionRepository;
   readonly personalClones?: PersonalCloneProvisioningRepository;
+  readonly twinProfiles?: TwinProfileRepository;
   readonly relationships?: UserRelationshipReader;
   readonly relationshipProvisioner?: UserRelationshipProvisioner;
   readonly platformSessions?: PlatformSessionRepository;
@@ -219,6 +222,7 @@ function createDefaultDatabaseDependency(
     skillGuides: createPostgresSkillGuideRepository(database.pool),
     skillDistribution: createPostgresSkillDistributionRepository(database.pool),
     personalClones: createPostgresPersonalCloneProvisioningRepository(database.pool),
+    twinProfiles: createPostgresTwinProfileRepository(database.pool),
     relationships: createPostgresUserRelationshipReader(database.pool),
     relationshipProvisioner:
       createPostgresUserRelationshipProvisioner(database.pool),
@@ -587,6 +591,9 @@ export async function startGatewayService(
           personalClones: database.personalClones,
           presentations: database.agentPresentations,
           skillAssignments: database.characterSkillAssignments,
+          ...(database.twinProfiles ? { twinProfiles: database.twinProfiles } : {}),
+          publicBaseUrl:
+            env.MASANAWA_PUBLIC_BASE_URL?.trim() || "https://masanawa.com",
         })
       : undefined);
 
