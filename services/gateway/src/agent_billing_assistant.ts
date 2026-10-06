@@ -206,6 +206,7 @@ export function createAgentBillingAssistant(input: Readonly<{
       const view = await input.wallet.createFunding({
         authorizationHeader,
         amount: directive.amount,
+        originatingCharacterId: characterId,
       });
       return result(walletReply(view), view.document);
     }
