@@ -282,6 +282,61 @@ export function resolveTeachingAdaptiveIntake(
   });
 }
 
+function proposalList(
+  value: readonly string[],
+  name: string,
+  maxEntries: number,
+  maxLength: number,
+): readonly string[] {
+  if (!Array.isArray(value) || value.length > maxEntries) {
+    throw new TypeError(`${name} is invalid`);
+  }
+  const normalized = value.map((item) => {
+    const clean = normalizedText(item, name, maxLength);
+    if (clean === undefined) throw new TypeError(`${name} is invalid`);
+    return clean;
+  });
+  if (new Set(normalized).size !== normalized.length) {
+    throw new TypeError(`${name} must be unique`);
+  }
+  return Object.freeze(normalized);
+}
+
+function proposalKey(value: string, name: string): string {
+  const clean = normalizedText(value, name, 128)!.toLowerCase();
+  if (!/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u.test(clean)) {
+    throw new TypeError(`${name} is invalid`);
+  }
+  return clean;
+}
+
+function normalizeProposalStep(input: TeachingLessonStep): TeachingLessonStep {
+  return Object.freeze({
+    stepKey: proposalKey(input.stepKey, "stepKey"),
+    title: normalizedText(input.title, "step.title", 300)!,
+    objective: normalizedText(input.objective, "step.objective", 1000)!,
+    explanation: normalizedText(input.explanation, "step.explanation", 12_000)!,
+    examples: proposalList(input.examples, "step.examples", 16, 4000),
+    workedSolutions: proposalList(
+      input.workedSolutions,
+      "step.workedSolutions",
+      16,
+      6000,
+    ),
+    exercisePrompts: proposalList(
+      input.exercisePrompts,
+      "step.exercisePrompts",
+      32,
+      2000,
+    ),
+    resourceKeys: Object.freeze(
+      proposalList(input.resourceKeys, "step.resourceKeys", 32, 128).map(
+        (value) => proposalKey(value, "step.resourceKey"),
+      ),
+    ),
+  });
+}
+
 export function normalizeTeachingSequenceProposal(
   input: TeachingSequenceProposal,
 ): TeachingSequenceProposal {
@@ -291,35 +346,35 @@ export function normalizeTeachingSequenceProposal(
     300,
   )!;
   const rationale = normalizedText(input.rationale, "rationale", 2000)!;
-  if (!Array.isArray(input.steps) || input.steps.length < 1 || input.steps.length > 24) {
+  if (
+    !Array.isArray(input.steps) ||
+    input.steps.length < 1 ||
+    input.steps.length > 24
+  ) {
     throw new TypeError("steps are invalid");
   }
-  if (!Array.isArray(input.uncertaintyNotes) || input.uncertaintyNotes.length > 16) {
+  if (
+    !Array.isArray(input.uncertaintyNotes) ||
+    input.uncertaintyNotes.length > 16
+  ) {
     throw new TypeError("uncertaintyNotes are invalid");
   }
 
-  const provisional = normalizeTeachingLessonPlan({
-    skillVersionId: "skill-version_00000000000000000000000000" as SkillVersionId,
-    learner: {
-      relationshipId: "relationship_00000000000000000000000000" as RelationshipId,
-      topic: "placeholder",
-      level: "unspecified",
-      goals: [],
-      language: "en",
-      accessibilityPreferences: [],
-      preferredModalities: ["text"],
-    },
-    sequenceTitle,
-    steps: input.steps,
-    resources: [],
-    uncertaintyNotes: input.uncertaintyNotes,
-  });
+  const steps = input.steps.map(normalizeProposalStep);
+  if (new Set(steps.map((step) => step.stepKey)).size !== steps.length) {
+    throw new TypeError("step keys must be unique");
+  }
 
   return Object.freeze({
-    sequenceTitle: provisional.sequenceTitle,
-    steps: provisional.steps,
+    sequenceTitle,
+    steps: Object.freeze(steps),
     rationale,
-    uncertaintyNotes: provisional.uncertaintyNotes,
+    uncertaintyNotes: proposalList(
+      input.uncertaintyNotes,
+      "uncertaintyNotes",
+      16,
+      2000,
+    ),
   });
 }
 
