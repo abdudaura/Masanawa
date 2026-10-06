@@ -424,10 +424,18 @@ export type TeachingAdaptivePlannerResult =
       assumptions: readonly string[];
     }>;
 
+export interface TeachingAdaptivePlanner {
+  propose(request: {
+    readonly skillVersionId: SkillVersionId;
+    readonly intake: TeachingAdaptiveIntake;
+    readonly resources?: readonly TeachingResourceEvidence[];
+  }): Promise<TeachingAdaptivePlannerResult>;
+}
+
 export function createTeachingAdaptivePlanner(input: {
   readonly proposalPort: TeachingPlanProposalPort;
   readonly maximumSteps?: number;
-}) {
+}): TeachingAdaptivePlanner {
   const maximumSteps = input.maximumSteps ?? 8;
   if (
     !Number.isSafeInteger(maximumSteps) ||
