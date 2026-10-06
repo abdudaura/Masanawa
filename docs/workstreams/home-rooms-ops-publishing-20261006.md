@@ -1,27 +1,70 @@
 # Home/Rooms Ops publishing command seam
 
-Status: CLAIMED — 2026-10-06
+Status: ISOLATED OPS COMMAND CONTRACT COMPLETE — shared authorization/repository composition remains
 Branch: `work/home-rooms-ops-publishing-20261006`
-Base: PR #129 mobile admin control plane
+Base: `work/mobile-admin-app-20261005` / PR #129
+PR: #227
 
-Owned paths only:
+## Ownership
+
+Changed paths only:
 - `services/ops/src/home_rooms_publishing.ts`
 - `services/ops/src/home_rooms_publishing.test.ts`
 - `docs/workstreams/home-rooms-ops-publishing-20261006.md`
 
-Explicit exclusions:
-- no edits to PR #129 existing shared Ops/app/auth files;
-- no edits to PR #208 admin-mobile publishing files;
-- no edits to PR #213 Story Radio admin files;
-- no Gateway/customer-mobile/shared route files;
-- no migrations, direct SQL, production environment or deployment.
+No existing PR #129 Ops/app/auth file, PR #208 admin-mobile file, PR #213 Story Radio
+admin file, Gateway/customer-mobile path, migration, direct SQL, production environment or
+deployment file is edited.
 
-Goal:
-- define an authorization-gated Ops command boundary for News categories/pinning,
-  Home Room visibility/order and platform-assistant Home presentation;
-- use per-target/per-domain optimistic revisions, never one synthetic aggregate revision;
-- keep storage/domain truth behind injected canonical repositories;
-- Story Radio stays owned by #213.
+## Completed
 
-This seam grants no authority by itself. Shared composition must supply an explicit
-HomeRoomsPublishingAuthorizer before any read/write can execute.
+- Mandatory `HomeRoomsPublishingAuthorizer` on every read/write.
+- Explicit publishing capabilities for News, Home Rooms and Home assistants. This seam
+  grants no authority by itself; shared composition must deliberately map them into the
+  canonical admin authorization policy.
+- News category projection with its own revision.
+- Home Room projection with its own revision.
+- Assistant Home presentation projection with its own revision.
+- Separate repository ports for each canonical authority; no synthetic aggregate store.
+- News visibility and pin/clear-pin commands use the category's exact expected revision.
+- Home Room visibility/order commands use the Room's exact expected revision.
+- Assistant presentation uses the Character presentation's exact expected revision.
+- Fail-closed target-id, revision, sort-order, display-name and assistant-position checks.
+- Repository result must return the exact requested target and a newer target revision.
+- Read authorization must resolve all three domains to the same Tenant before data is
+  returned.
+- Focused tests cover independent revisions, capability checks, mutation inputs,
+  cross-target repository corruption/stale revision rejection and cross-Tenant read
+  rejection.
+
+## Story Radio boundary
+
+Story Radio is deliberately absent. PR #213 owns its canonical admin publication endpoints
+and publication authority. Do not route Story mutations through this generic service.
+
+## Integration contract
+
+PR #208 should replace its synthetic global `HomeRoomsPublishingProjection.revision`
+with per-target revisions:
+- `NewsCategoryAdminItem.revision`;
+- `HomeRoomAdminItem.revision`;
+- `AssistantHomePresentation.revision`.
+
+Each mutation should send the revision of the exact target being changed. Story Radio
+continues through #213's own command model.
+
+PR #129/Ops shared composition must:
+1. map these explicit publishing capabilities into canonical operator authorization;
+2. implement the three repository ports using domain-owned storage/commands;
+3. mount routes without bypassing the service;
+4. return target-specific revisions after every accepted mutation.
+
+## Verification
+
+- changed-file audit is exactly the three claimed files;
+- Foundation CI run `37453545166`, job `112235549940`, failed before checkout with
+  `steps = null`; no code/test verdict is fabricated;
+- Render external builds are currently unavailable because the workspace has exhausted
+  build-pipeline minutes; no false executable pass is claimed.
+
+**No further isolated implementation remains in this Ops command-contract slice.**
