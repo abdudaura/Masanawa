@@ -1,5 +1,23 @@
 # Mobile Agent Experience
 
+## 2026-10-06 launch Home/Rooms overlay
+
+The launch information architecture is now **utility-first**. The ordinary user lands on
+**Home**, not My Twin. Primary bottom navigation is **Home · Explore · Activity · Wallet**.
+Home prominently shows **Gwana on the left and Gwani on the right**, each with Chat,
+Voice note and Live voice/call entry, followed by quick billing shortcuts and server-defined
+service Rooms. **My Twin remains a core product surface** but is entered from Home/profile
+rather than owning the first tab.
+
+Canonical Room/product details and launch acceptance are in
+`docs/HOME-ROOMS-LAUNCH.md`; parallel ownership is in
+`docs/HOME-ROOMS-MULTI-WINDOW.md`.
+
+This overlay supersedes older text below that says the primary navigation is exactly
+My Twin/Explore/Activity/Wallet or that Gwani/Gwana must not compete with My Twin.
+Preserve the Twin economy, server-driven agent identity, Skill separation, universal chat
+renderer, Wallet/Activity and security invariants.
+
 Status: canonical product direction for `apps/mobile`.
 
 ## Goal
