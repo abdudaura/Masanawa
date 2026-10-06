@@ -24,6 +24,7 @@ import {
   createTeachingChannelMultiSelectProjection,
   resolveTeachingChannelMultiSelectCommand,
   createTeachingMultiSelectStageCoordinator,
+  createTeachingMultiSelectStageStorageScope,
   fingerprintTeachingLessonPlan,
   fingerprintTeachingSelectionAttempt,
   resolveTeachingOpaqueSelection,
@@ -35,6 +36,7 @@ import {
   type TeachingFreeResponseAttempt,
   type TeachingMultiSelectStage,
   type TeachingMultiSelectStagePort,
+  type TeachingMultiSelectStageStorageScope,
 } from "./teaching-runtime.js";
 
 function lesson(): TeachingLessonPlan {
@@ -198,14 +200,31 @@ class MemoryProgressPort implements TeachingProgressPort {
 
 class MemoryMultiSelectStagePort implements TeachingMultiSelectStagePort {
   stage: TeachingMultiSelectStage | null = null;
+  scope: TeachingMultiSelectStageStorageScope | null = null;
   compareAndSetCalls = 0;
 
+  private sameScope(scope: TeachingMultiSelectStageStorageScope): boolean {
+    return (
+      this.scope !== null &&
+      this.scope.relationshipId === scope.relationshipId &&
+      this.scope.skillVersionId === scope.skillVersionId &&
+      this.scope.requestId === scope.requestId &&
+      this.scope.actionKey === scope.actionKey &&
+      this.scope.actionBindingHash === scope.actionBindingHash
+    );
+  }
+
   async create(input: {
+    readonly scope: TeachingMultiSelectStageStorageScope;
     readonly stage: TeachingMultiSelectStage;
   }): Promise<TeachingMultiSelectStage> {
     if (this.stage === null) {
+      this.scope = input.scope;
       this.stage = input.stage;
       return input.stage;
+    }
+    if (!this.sameScope(input.scope)) {
+      throw new TypeError("initial stage scope conflict");
     }
     if (this.stage.stageHash !== input.stage.stageHash) {
       throw new TypeError("initial stage conflict");
@@ -214,22 +233,16 @@ class MemoryMultiSelectStagePort implements TeachingMultiSelectStagePort {
   }
 
   async load(input: {
-    readonly actionKey: string;
-    readonly actionBindingHash: string;
+    readonly scope: TeachingMultiSelectStageStorageScope;
   }): Promise<TeachingMultiSelectStage | null> {
-    if (
-      this.stage === null ||
-      this.stage.actionKey !== input.actionKey ||
-      this.stage.actionBindingHash !== input.actionBindingHash
-    ) {
+    if (this.stage === null || !this.sameScope(input.scope)) {
       return null;
     }
     return this.stage;
   }
 
   async compareAndSet(input: {
-    readonly actionKey: string;
-    readonly actionBindingHash: string;
+    readonly scope: TeachingMultiSelectStageStorageScope;
     readonly expectedRevision: number;
     readonly expectedStageHash: string;
     readonly nextStage: TeachingMultiSelectStage;
@@ -237,10 +250,7 @@ class MemoryMultiSelectStagePort implements TeachingMultiSelectStagePort {
     this.compareAndSetCalls += 1;
     const current = this.stage;
     if (current === null) throw new TypeError("stage missing");
-    if (
-      current.actionKey !== input.actionKey ||
-      current.actionBindingHash !== input.actionBindingHash
-    ) {
+    if (!this.sameScope(input.scope)) {
       throw new TypeError("stage scope conflict");
     }
     if (
@@ -1924,6 +1934,53 @@ describe("Core Teaching durable multi-select stage coordinator", () => {
     });
     return { admitted, action };
   }
+
+  it("derives durable stage scope from exact Relationship, SkillVersion and Request authority", async () => {
+    const active = lesson();
+    const { admitted, action } = multiAction(active);
+    const scope = createTeachingMultiSelectStageStorageScope({
+      binding: admitted,
+      action,
+    });
+
+    expect(scope).toEqual({
+      relationshipId: active.learner.relationshipId,
+      skillVersionId: active.skillVersionId,
+      requestId: action.requestId,
+      actionKey: action.actionKey,
+      actionBindingHash: action.bindingHash,
+    });
+
+    const stages = new MemoryMultiSelectStagePort();
+    const coordinator = createTeachingMultiSelectStageCoordinator({ stages });
+    await coordinator.open({ binding: admitted, action });
+    expect(stages.scope).toEqual(scope);
+
+    await coordinator.apply({
+      binding: admitted,
+      action,
+      command: { kind: "toggle", optionKey: "two-fourths" },
+      now: toInstant("2026-10-05T21:29:00.000Z"),
+    });
+    expect(stages.scope).toEqual(scope);
+
+    await expect(
+      stages.load({
+        scope: {
+          ...scope,
+          relationshipId: createCanonicalId("relationship"),
+        },
+      }),
+    ).resolves.toBeNull();
+    await expect(
+      stages.load({
+        scope: {
+          ...scope,
+          requestId: createCanonicalId("request"),
+        },
+      }),
+    ).resolves.toBeNull();
+  });
 
   it("opens the exact stage idempotently and persists each revision through compare-and-set", async () => {
     const active = lesson();
