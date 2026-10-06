@@ -61,8 +61,11 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
   }
 
   void _openRoom(HomeRoomCardModel room) {
-    if (room.roomId == 'room.internet-cafe') {
-      context.push('/billing');
+    switch (room.roomId) {
+      case 'room.internet-cafe':
+        context.push('/billing');
+      case 'room.story-radio':
+        context.push('/story-radio');
     }
   }
 
@@ -105,6 +108,7 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
       onOpenContinuation: (item) {
         final roomId = item.roomId;
         if (roomId == 'room.internet-cafe') context.push('/billing');
+        if (roomId == 'room.story-radio') context.push('/story-radio');
       },
       onOpenProfile: () => context.push('/settings'),
     );
