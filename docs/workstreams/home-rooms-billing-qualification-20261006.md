@@ -226,3 +226,33 @@ node scripts/flutterwave-billing-production-qualification.mjs
 Until that happens, Lane B truthfully remains **IMPLEMENTING** and public billing must remain
 disabled. All safe code-side work needed to prevent partial qualification is present; the next
 step requires real provider/customer validation data rather than additional invented fixtures.
+
+
+## Ownership takeover verification — 2026-10-06 11:30 Europe/Amsterdam
+
+The prior Lane B window was explicitly stopped by the user and this window has taken over the existing Lane B claim rather than opening a competing branch.
+
+Re-verified before writing:
+- canonical Home/Rooms status still marks Lane B as **IMPLEMENTING** and PR #136 as the protected shared production integration/APK owner;
+- every other non-production Home/Rooms lane is already isolated-complete or integration-ready;
+- current Lane B PR is #210 on branch `work/home-rooms-billing-qualification-20261006`;
+- pre-takeover head was `834cdfdf05c38c5b06ef25de23b2279e9639de9d`;
+- changed files remain confined to Lane B qualification tooling/tests and this handoff;
+- no Gateway composition, mobile/router, Commerce/Event migration, production environment, Story Radio, News or Home-shell path is owned by this takeover.
+
+The isolated implementation remains complete. No additional safe code-side deliverable is missing inside Lane B-owned paths. The only remaining Lane B launch evidence requires real non-secret Cable and Electricity recipient identifiers plus the already-configured provider/relay secrets in an authorized environment. Those identifiers must not be invented.
+
+Required live command remains:
+
+```bash
+node scripts/flutterwave-billing-production-qualification.mjs
+```
+
+Interpretation:
+- exit 0: live catalog + required recipient-validation evidence satisfies the launch qualification gate;
+- exit 2: evidence is incomplete and billing must remain disabled;
+- exit 1: malformed input/tooling failure.
+
+After an exit-0 qualification, PR #136 remains responsible for shared Gateway/mobile composition and controlled real-purchase/device acceptance.
+
+**No further isolated implementation remains in this lane.**
