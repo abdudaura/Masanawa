@@ -119,7 +119,7 @@ export interface CanonicalTwinProfileRecord {
   readonly publicId: string;
   readonly displayName: string;
   readonly bio: string;
-  readonly avatarUrl: string | null;
+  readonly avatarUrl?: string | null;
   readonly languages: readonly string[];
   readonly discoverable: boolean;
   readonly revision: number;
@@ -147,7 +147,7 @@ function projectProfile(record: CanonicalTwinProfileRecord) {
     publicId: record.publicId,
     displayName: record.displayName,
     bio: record.bio,
-    avatarUrl: record.avatarUrl,
+    avatarUrl: record.avatarUrl ?? null,
     languages: Object.freeze([...record.languages]),
     discoverable: record.discoverable,
     revision: record.revision,
