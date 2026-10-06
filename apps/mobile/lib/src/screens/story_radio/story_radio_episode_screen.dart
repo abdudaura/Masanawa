@@ -51,12 +51,18 @@ class _StoryRadioEpisodeScreenState
   }
 
   Future<void> _load() async {
+    final seriesId = widget.seriesId;
+    final episodeId = widget.episodeId;
     try {
       final series = await ref
           .read(storyRadioProvider.notifier)
-          .loadSeries(widget.seriesId);
-      if (!mounted) return;
-      final episode = series?.episodeById(widget.episodeId);
+          .loadSeries(seriesId);
+      if (!mounted ||
+          widget.seriesId != seriesId ||
+          widget.episodeId != episodeId) {
+        return;
+      }
+      final episode = series?.episodeById(episodeId);
       if (episode == null) {
         setState(() => _error = 'This episode is not available.');
         return;
