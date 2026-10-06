@@ -400,3 +400,85 @@ export function materializeTeachingLessonPlan(input: {
     ]),
   });
 }
+
+
+export interface TeachingPlanProposalPort {
+  propose(input: {
+    readonly learner: TeachingLearnerContext;
+    readonly assumptions: readonly string[];
+    readonly resources: readonly TeachingResourceEvidence[];
+    readonly maximumSteps: number;
+  }): Promise<TeachingSequenceProposal>;
+}
+
+export type TeachingAdaptivePlannerResult =
+  | Readonly<{
+      kind: "clarification";
+      questions: readonly TeachingClarificationQuestion[];
+      assumptions: readonly string[];
+    }>
+  | Readonly<{
+      kind: "plan";
+      plan: TeachingLessonPlan;
+      rationale: string;
+      assumptions: readonly string[];
+    }>;
+
+export function createTeachingAdaptivePlanner(input: {
+  readonly proposalPort: TeachingPlanProposalPort;
+  readonly maximumSteps?: number;
+}) {
+  const maximumSteps = input.maximumSteps ?? 8;
+  if (
+    !Number.isSafeInteger(maximumSteps) ||
+    maximumSteps < 1 ||
+    maximumSteps > 24
+  ) {
+    throw new RangeError("maximumSteps is invalid");
+  }
+
+  return Object.freeze({
+    async propose(request: {
+      readonly skillVersionId: SkillVersionId;
+      readonly intake: TeachingAdaptiveIntake;
+      readonly resources?: readonly TeachingResourceEvidence[];
+    }): Promise<TeachingAdaptivePlannerResult> {
+      const resolution = resolveTeachingAdaptiveIntake(request.intake);
+      if (!resolution.ready || resolution.learner === null) {
+        return Object.freeze({
+          kind: "clarification" as const,
+          questions: resolution.clarificationQuestions,
+          assumptions: resolution.assumptions,
+        });
+      }
+
+      const resources = Object.freeze([...(request.resources ?? [])]);
+      const rawProposal = await input.proposalPort.propose({
+        learner: resolution.learner,
+        assumptions: resolution.assumptions,
+        resources,
+        maximumSteps,
+      });
+      const proposal = normalizeTeachingSequenceProposal(rawProposal);
+      if (proposal.steps.length > maximumSteps) {
+        throw new Error(
+          "Teaching proposal exceeded the admitted adaptive sequence bound",
+        );
+      }
+
+      const plan = materializeTeachingLessonPlan({
+        skillVersionId: request.skillVersionId,
+        resolution,
+        proposal,
+        resources,
+      });
+
+      return Object.freeze({
+        kind: "plan" as const,
+        plan,
+        rationale: proposal.rationale,
+        assumptions: resolution.assumptions,
+      });
+    },
+  });
+}
