@@ -59,3 +59,38 @@ WhatsApp/Telegram account and call the fetcher only after the corresponding
 `ChannelIngressRecord` has been durably admitted and linked to an authorized session.
 
 No provider token or webhook secret should be added to the media request DTO.
+
+
+## Provider-specific orchestration
+
+The generic fetcher now has concrete provider orchestration seams.
+
+### WhatsApp
+
+`createWhatsAppAuthenticatedMediaEdge()` performs:
+
+1. authenticated media metadata lookup by exact provider file id;
+2. exact returned file-id verification;
+3. provider-declared file-size preflight against the caller's admitted byte limit;
+4. authenticated download through an opaque provider download reference;
+5. actual byte-count validation against both the admitted limit and provider metadata.
+
+The opaque download reference never leaves the provider client/edge boundary.
+
+### Telegram
+
+`createTelegramAuthenticatedMediaEdge()` performs:
+
+1. authenticated Bot API `getFile` lookup by exact file id;
+2. exact returned file-id verification;
+3. provider-declared file-size preflight;
+4. authenticated download using the opaque returned file path;
+5. actual byte-count validation.
+
+The normal Telegram Bot API download ceiling is enforced at 20 MiB even when the outer
+Masanawa media policy allows more. The opaque file path never enters the generic media
+result.
+
+Neither provider seam owns credentials or raw HTTP directly. Their injected clients are
+the credential boundary; Gateway/Security composition remains responsible for constructing
+those clients.
