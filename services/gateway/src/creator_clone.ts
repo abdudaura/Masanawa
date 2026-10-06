@@ -10,6 +10,7 @@ import type {
 } from "@masanawa/agents";
 import type {
   PersonalCloneProvisioningRepository,
+  TwinProfileRepository,
 } from "@masanawa/identity";
 
 export interface CreatorCloneAuthority {
@@ -47,6 +48,7 @@ export interface CreatorCloneService {
     readonly characterVersionId: string;
     readonly relationshipId: string;
     readonly displayName: string;
+    readonly publicUrl: string | null;
   }>;
 }
 
@@ -75,6 +77,8 @@ export function createCreatorCloneService(input: {
   readonly personalClones: PersonalCloneProvisioningRepository;
   readonly presentations: AgentPresentationRepository;
   readonly skillAssignments: CharacterSkillAssignmentRepository;
+  readonly twinProfiles?: TwinProfileRepository;
+  readonly publicBaseUrl?: string;
 }): CreatorCloneService {
   return Object.freeze<CreatorCloneService>({
     async create(request) {
@@ -120,6 +124,34 @@ export function createCreatorCloneService(input: {
       });
 
       const effectiveName = provision.version.constitution.displayName;
+      let publicUrl: string | null = null;
+      if (input.twinProfiles) {
+        const existingProfile = await input.twinProfiles.readForOwner({
+          tenantId: authority.tenantId,
+          ownerUserId: authority.userId,
+        });
+        const profile = existingProfile ?? await input.twinProfiles.create({
+          tenantId: authority.tenantId,
+          characterId: provision.character.characterId,
+          ownerUserId: authority.userId,
+          publicId: `twin_${String(provision.character.characterId)
+            .replace(/^character_/u, "")
+            .replace(/-/gu, "")
+            .toLowerCase()
+            .slice(0, 48)}`,
+          displayName: effectiveName.slice(0, 80),
+          bio: provision.version.constitution.biography.slice(0, 500),
+          interests: Object.freeze([...expertise].slice(0, 20)),
+          languages: Object.freeze(["mul"]),
+          avatarUrl: null,
+          discoverable: true,
+          revision: 1,
+          createdAt: at,
+          updatedAt: at,
+        });
+        const base = (input.publicBaseUrl ?? "https://masanawa.com").replace(/\/+$/u, "");
+        publicUrl = `${base}/${profile.publicId}`;
+      }
       const existingPresentation = await input.presentations.readForCharacter({
         tenantId: authority.tenantId,
         characterId: provision.character.characterId,
@@ -166,6 +198,7 @@ export function createCreatorCloneService(input: {
         characterVersionId: provision.version.characterVersionId,
         relationshipId: provision.relationship.relationshipId,
         displayName: effectiveName,
+        publicUrl,
       });
     },
   });
