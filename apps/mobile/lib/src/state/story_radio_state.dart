@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../story_radio/story_radio.dart';
+import '../story_radio/story_radio_http_transport.dart';
+import '../core/providers.dart';
 
 final storyRadioTransportProvider = Provider<StoryRadioTransport>(
-  (ref) => const UnavailableStoryRadioTransport(),
+  (ref) => GatewayStoryRadioTransport(api: ref.watch(apiClientProvider)),
 );
 
 class StoryRadioState {
