@@ -32,6 +32,8 @@ import {
 } from "./owner_access_routes.js";
 import { registerOwnerAccessOfferingRoutes } from "./owner_access_offering_routes.js";
 import { registerTwinSafetyRoutes } from "./twin_safety_routes.js";
+import type { StoryRadioService } from "./story_radio.js";
+import { registerStoryRadioRoutes } from "./story_radio_routes.js";
 import type { BillingCheckoutService } from "./billing_checkout.js";
 import type { BillingFinancialService } from "./financial_billing.js";
 import type { MobilePushRegistrationService } from "./mobile_push.js";
@@ -72,6 +74,7 @@ export interface GatewayAppOptions {
   readonly billingFinancial?: BillingFinancialService;
   readonly financial?: FinancialService;
   readonly twinProduction?: TwinProductionRuntime;
+  readonly storyRadio?: StoryRadioService;
 }
 
 const HealthResponseSchema = Type.Object(
@@ -491,8 +494,8 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
               title: "Story Radio",
               description: "Serialized audio stories",
               iconKey: "story_radio",
-              continuationLabel: null,
-              isAvailable: false,
+              continuationLabel: "Continue listening",
+              isAvailable: true,
             },
             {
               roomId: "room.work-business",
@@ -1316,6 +1319,10 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     ...(options.billingCheckout ? { billingCheckout: options.billingCheckout } : {}),
     ...(options.billingFinancial ? { billingFinancial: options.billingFinancial } : {}),
   });
+
+  if (options.storyRadio) {
+    registerStoryRadioRoutes(app, options.storyRadio);
+  }
 
   if (options.twinProduction) {
     const twin = options.twinProduction;
