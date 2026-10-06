@@ -434,13 +434,6 @@ export function createAgentConversationService(input: {
           referenceId: request.requestId,
         }).catch(() => undefined);
 
-        await input.twinObserver?.completed({
-          tenantId: admission.scope.tenantId,
-          userId: admission.scope.userId,
-          characterId: admission.scope.characterId,
-          referenceId: request.requestId,
-        }).catch(() => undefined);
-
         const audio = await renderAudio(reply, request.signal);
         return Object.freeze({
           reply,
