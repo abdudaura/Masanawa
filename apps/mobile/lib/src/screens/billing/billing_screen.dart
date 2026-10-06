@@ -8,7 +8,9 @@ import '../../core/providers.dart';
 import '../../state/session_state.dart';
 
 class BillingScreen extends ConsumerStatefulWidget {
-  const BillingScreen({super.key});
+  const BillingScreen({super.key, this.initialService});
+
+  final String? initialService;
 
   @override
   ConsumerState<BillingScreen> createState() => _BillingScreenState();
@@ -63,6 +65,29 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
         history = nextHistory;
         loading = false;
       });
+      final initial = widget.initialService?.trim().toLowerCase();
+      if (initial != null && initial.isNotEmpty && category == null) {
+        BillCategory? matched;
+        bool matches(BillCategory value, List<String> terms) {
+          final haystack =
+              (value.code + ' ' + value.name).toLowerCase();
+          return terms.any(haystack.contains);
+        }
+        for (final value in nextCategories) {
+          final terms = switch (initial) {
+            'data' => const ['data', 'internet'],
+            'airtime' => const ['airtime', 'air time', 'mobile recharge'],
+            'electricity' => const ['electricity', 'power'],
+            'tv' => const ['tv', 'cable', 'television'],
+            _ => <String>[initial],
+          };
+          if (matches(value, terms)) {
+            matched = value;
+            break;
+          }
+        }
+        if (matched != null) await selectCategory(matched);
+      }
     } catch (value) {
       if (!mounted) return;
       setState(() {
