@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
+import { parseCanonicalId } from "@masanawa/contracts";
 import type {
   BillingQuote,
   BillingQuoteRepository,
@@ -62,9 +63,9 @@ function splitName(name: string | null | undefined): Readonly<{
 }> {
   const parts = (name ?? "").trim().split(/\s+/u).filter(Boolean);
   if (parts.length === 0) return Object.freeze({});
-  if (parts.length === 1) return Object.freeze({ firstName: parts[0] });
+  if (parts.length === 1) return Object.freeze({ firstName: parts[0]! });
   return Object.freeze({
-    firstName: parts[0],
+    firstName: parts[0]!,
     lastName: parts.slice(1).join(" "),
   });
 }
@@ -354,13 +355,16 @@ export function createBillingWalletService(input: Readonly<{
 
       let resumed = false;
       if (credited.quoteId) {
+        const creditedIdentity = {
+          tenantId: parseCanonicalId("tenant", credited.tenantId),
+          userId: parseCanonicalId("user", credited.userId),
+        };
         const quote = await input.quotes.readQuote({
-          tenantId: credited.tenantId,
-          userId: credited.userId,
+          ...creditedIdentity,
           quoteId: credited.quoteId as BillingQuote["quoteId"],
         });
         if (quote && ["confirmed","reserved"].includes(quote.state)) {
-          await purchaseQuote(credited, quote);
+          await purchaseQuote(creditedIdentity, quote);
           resumed = true;
         }
       }
