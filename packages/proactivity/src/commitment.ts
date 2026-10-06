@@ -282,10 +282,23 @@ export function resolveProactiveCommitment(input: {
     throw new Error("Proactive commitment revision is stale");
   }
   if (current.state !== "open") {
-    if (current.state === input.resolution) {
-      return current;
+    if (current.state !== input.resolution) {
+      throw new Error("resolved commitment state is terminal");
     }
-    throw new Error("resolved commitment state is terminal");
+    const replayResolvedAt = toInstant(input.resolvedAt);
+    const replayNote =
+      input.note === undefined || input.note === null
+        ? null
+        : bounded(input.note, "resolutionNote", 1, 1_000);
+    if (
+      current.resolvedAt !== replayResolvedAt ||
+      current.resolutionNote !== replayNote
+    ) {
+      throw new Error(
+        "resolved commitment replay does not match durable resolution evidence",
+      );
+    }
+    return current;
   }
   if (input.resolution !== "fulfilled" && input.resolution !== "cancelled") {
     throw new TypeError("resolution is invalid");
