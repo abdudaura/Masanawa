@@ -31,3 +31,35 @@ one item explicitly listed in #92's handoff: authorized inbound media fetch.
 Implement a bounded provider-neutral fetch boundary for WhatsApp/Telegram inbound media
 with exact channel-account scope, explicit provider rejection, redacted ambiguous failures,
 MIME consistency checks, byte limits and SHA-256 evidence hashing.
+
+
+## Implementation checkpoint
+
+Implemented on draft PR #306.
+
+Exact head: `773606c1884d43db014ee39281908de0f587211e`.
+
+Completed:
+- generic authorized media fetcher plus WhatsApp/Telegram constructors;
+- exact channel/account/file scope checks before provider access;
+- configurable per-kind limits plus hard 64 MiB ceiling;
+- provider file-id, MIME syntax and media-kind verification;
+- webhook-declared vs fetched MIME conflict detection;
+- empty/oversize body rejection;
+- defensive byte copy and SHA-256 content evidence;
+- stable platform provider-rejection code;
+- redacted retryable ambiguous/network failures;
+- focused tests for scope substitution, file substitution, MIME/kind mismatch, size
+  bounds, provider rejection, network failure, hash evidence and defensive copying;
+- package export and integration/security documentation.
+
+Verification:
+- PR #306 is mergeable.
+- Foundation CI run 37491654640 failed before a downloadable job log existed.
+  This is the same repository runner/non-execution condition and is not a test verdict.
+
+Remaining integration:
+- construct credential-backed provider edges in the owning Gateway/channel composition;
+- persist admitted media linkage and feed returned bytes into canonical file/perception
+  admission;
+- no live provider credential or webhook deployment is claimed here.
