@@ -1917,6 +1917,28 @@ final aiChatProvider = NotifierProvider<AiChatController, AiChatState>(
     );
   }
 
+  /// Executes an internal conversational turn in the same Character session
+  /// without adding the instruction to the visible chat timeline. This is used
+  /// for bounded product orchestration such as turning a completed Twin
+  /// interview into structured setup data. The model reply is likewise not
+  /// shown; callers decide what user-visible confirmation to render.
+  Future<String> runInternalText(String characterId, String prompt) async {
+    final text = prompt.trim();
+    if (text.isEmpty) throw ArgumentError.value(prompt, 'prompt');
+    if (state.sendingIn.contains(characterId)) {
+      throw StateError('A conversation turn is already in progress');
+    }
+    if (await _offlineNow()) {
+      throw const ApiException('Connect to the internet to complete setup');
+    }
+    final result = await _sendViaTransport(
+      characterId,
+      text,
+      requestId: createRequestId(),
+    );
+    return result.text.trim();
+  }
+
   Future<void> sendText(
     String characterId,
     String rawText, {
