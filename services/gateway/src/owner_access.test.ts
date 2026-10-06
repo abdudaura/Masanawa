@@ -108,6 +108,7 @@ function build() {
       return {
         attendanceVerified: true,
         verifiedSeconds: 75,
+        sessionEndsAt: "2026-10-05T10:20:00Z",
         presence: [
           {
             userId: requesterUserId,
