@@ -165,6 +165,15 @@ export function admitSensorPerception(input: {
     if (typeof input.sensor.charging !== "boolean") {
       throw new TypeError("charging must be boolean");
     }
+    if (
+      input.sensor.network !== "offline" &&
+      input.sensor.network !== "wifi" &&
+      input.sensor.network !== "cellular" &&
+      input.sensor.network !== "ethernet" &&
+      input.sensor.network !== "unknown"
+    ) {
+      throw new TypeError("network is invalid");
+    }
 
     return normalizePerceptionEvent({
       ...base,
