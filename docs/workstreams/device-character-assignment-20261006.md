@@ -38,6 +38,8 @@ PR #120 owns Task 104 Device registration/pairing. PR #121 owns Task 105 capabil
 - fail closed on tenant/device mismatch, stale health, missing/unready capability, policy denial, inactive Device/assignment or expired/not-yet-valid assignment;
 - Device replacement never changes Character identity.
 
-State: CLAIMED. No implementation changes beyond this claim.
+State: IMPLEMENTING. CharacterDeviceAssignment domain, capability-policy evaluator and focused tests are committed. Export/persistence/provider composition remain excluded shared seams.
+
+Implementation head before handoff: `171a75632add62d2a6b866da4d46e7f4001d9450`.
 
 Last update: 2026-10-06.
