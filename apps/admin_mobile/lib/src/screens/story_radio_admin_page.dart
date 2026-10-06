@@ -255,13 +255,11 @@ class _StorySeriesEditorPageState extends State<StorySeriesEditorPage> {
   @override
   Widget build(BuildContext context) {
     final series = _series;
-    return PopScope(
-      canPop: true,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && mounted) Navigator.of(context).pop(series != widget.initial);
-      },
-      child: Scaffold(
+    return Scaffold(
         appBar: AppBar(
+          leading: BackButton(
+            onPressed: () => Navigator.of(context).pop(series != widget.initial),
+          ),
           title: Text(series == null ? 'New Story series' : 'Edit Story series'),
           actions: [
             if (series != null)
@@ -374,7 +372,6 @@ class _StorySeriesEditorPageState extends State<StorySeriesEditorPage> {
             const SizedBox(height: 32),
           ],
         ),
-      ),
     );
   }
 }
@@ -530,13 +527,11 @@ class _StoryEpisodeEditorPageState extends State<StoryEpisodeEditorPage> {
   @override
   Widget build(BuildContext context) {
     final episode = _episode;
-    return PopScope(
-      canPop: true,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && mounted) Navigator.of(context).pop(episode != widget.initial);
-      },
-      child: Scaffold(
+    return Scaffold(
         appBar: AppBar(
+          leading: BackButton(
+            onPressed: () => Navigator.of(context).pop(episode != widget.initial),
+          ),
           title: Text(episode == null ? 'New episode' : 'Edit episode'),
           actions: [
             if (episode != null)
@@ -624,7 +619,6 @@ class _StoryEpisodeEditorPageState extends State<StoryEpisodeEditorPage> {
             const SizedBox(height: 32),
           ],
         ),
-      ),
     );
   }
 }
