@@ -94,7 +94,7 @@ export function createPostgresStoryRadioRepository(pool: Pool): StoryRadioReposi
     });
   }
 
-  return Object.freeze({
+  return Object.freeze<StoryRadioRepository>({
     async createSeries(input) {
       const result = await pool.query(
         `INSERT INTO content.story_series(
