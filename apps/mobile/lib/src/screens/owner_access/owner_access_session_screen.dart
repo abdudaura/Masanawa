@@ -133,7 +133,10 @@ class _OwnerAccessSessionScreenState
     if (request.modality != OwnerAccessModality.text) return;
     if (request.state != OwnerAccessState.active &&
         request.state != OwnerAccessState.completed &&
-        request.state != OwnerAccessState.settled) {
+        request.state != OwnerAccessState.settled &&
+        request.state != OwnerAccessState.releasing &&
+        request.state != OwnerAccessState.disputed &&
+        request.state != OwnerAccessState.refunded) {
       return;
     }
     try {
@@ -251,6 +254,15 @@ class _OwnerAccessSessionScreenState
   String _statusText() {
     final request = _request;
     if (request == null) return 'Private human session';
+    if (request.state == OwnerAccessState.disputed) {
+      return 'Under review · private human chat';
+    }
+    if (request.state == OwnerAccessState.refunded) {
+      return 'Refunded · private human chat';
+    }
+    if (request.state == OwnerAccessState.releasing) {
+      return 'Completed · finalizing payment';
+    }
     if (request.state == OwnerAccessState.settled ||
         request.state == OwnerAccessState.completed) {
       return 'Completed · private human chat';
