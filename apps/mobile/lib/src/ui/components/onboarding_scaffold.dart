@@ -52,7 +52,8 @@ class OnboardingScaffold extends StatelessWidget {
               // viewInsets again here pushed auth fields upward twice.
               final minContentHeight =
                   (constraints.maxHeight - (verticalPadding * 2))
-                      .clamp(0.0, double.infinity);
+                      .clamp(0.0, double.infinity)
+                      .toDouble();
 
               return SingleChildScrollView(
                 keyboardDismissBehavior:
