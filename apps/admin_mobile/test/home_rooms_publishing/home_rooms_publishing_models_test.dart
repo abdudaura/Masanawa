@@ -2,30 +2,66 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa_admin/src/home_rooms_publishing/home_rooms_publishing_models.dart';
 
 void main() {
-  test('parses publishing projection', () {
+  test('parses target-specific publishing revisions', () {
     final projection = HomeRoomsPublishingProjection.fromJson({
-      'revision': 3,
       'storySeries': [
-        {'seriesId': 'series-1', 'title': 'Northern Tales', 'published': true, 'sortOrder': 1}
+        {
+          'seriesId': 'series-1',
+          'title': 'Northern Tales',
+          'published': true,
+          'sortOrder': 1,
+        }
       ],
       'newsCategories': [
-        {'categoryId': 'world', 'label': 'World', 'visible': true, 'sortOrder': 1, 'pinnedItemId': 'news-1'}
+        {
+          'categoryId': 'world',
+          'label': 'World',
+          'visible': true,
+          'sortOrder': 1,
+          'pinnedItemId': 'news-1',
+          'revision': 4,
+        }
       ],
       'homeRooms': [
-        {'roomKey': 'study-center', 'label': 'Study Center', 'visible': true, 'sortOrder': 2}
+        {
+          'roomKey': 'study-center',
+          'label': 'Study Center',
+          'visible': true,
+          'sortOrder': 2,
+          'revision': 7,
+        }
       ],
       'assistants': [
-        {'characterId': 'character-1', 'displayName': 'Gwana', 'position': 'left', 'visible': true}
+        {
+          'characterId': 'character-1',
+          'displayName': 'Gwana',
+          'position': 'left',
+          'visible': true,
+          'revision': 11,
+        }
       ],
     });
 
-    expect(projection.revision, 3);
     expect(projection.storySeries.single.published, isTrue);
-    expect(projection.newsCategories.single.pinnedItemId, 'news-1');
-    expect(projection.assistants.single.position, 'left');
+    expect(projection.newsCategories.single.revision, 4);
+    expect(projection.homeRooms.single.revision, 7);
+    expect(projection.assistants.single.revision, 11);
   });
 
-  test('mutation carries optimistic revision', () {
+  test('rejects missing target revisions', () {
+    expect(
+      () => NewsCategoryAdminItem.fromJson({
+        'categoryId': 'world',
+        'label': 'World',
+        'visible': true,
+        'sortOrder': 1,
+        'pinnedItemId': null,
+      }),
+      throwsFormatException,
+    );
+  });
+
+  test('mutation carries exact target revision', () {
     final intent = PublishingMutationIntent.setVisibility(
       kind: PublishingMutationKind.setHomeRoomVisibility,
       targetId: 'study-center',
@@ -34,6 +70,18 @@ void main() {
     );
     expect(intent.expectedRevision, 7);
     expect(intent.visible, isFalse);
+  });
+
+  test('generic publishing no longer accepts Story visibility mutation', () {
+    expect(
+      () => PublishingMutationIntent.setVisibility(
+        kind: PublishingMutationKind.pinNewsItem,
+        targetId: 'series-1',
+        visible: true,
+        expectedRevision: 1,
+      ),
+      throwsArgumentError,
+    );
   });
 
   test('rejects invalid assistant position', () {
@@ -71,16 +119,6 @@ void main() {
       () => PublishingMutationIntent.pinNews(
         categoryId: 'world',
         itemId: '   ',
-        expectedRevision: 2,
-      ),
-      throwsArgumentError,
-    );
-    expect(
-      () => PublishingMutationIntent.updateAssistant(
-        characterId: 'character-1',
-        displayName: '   ',
-        position: 'left',
-        visible: true,
         expectedRevision: 2,
       ),
       throwsArgumentError,
