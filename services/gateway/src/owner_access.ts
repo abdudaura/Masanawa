@@ -37,6 +37,7 @@ export interface OwnerAccessRequest {
     | "active"
     | "completed"
     | "settled"
+    | "releasing"
     | "declined"
     | "expired"
     | "cancelled"
