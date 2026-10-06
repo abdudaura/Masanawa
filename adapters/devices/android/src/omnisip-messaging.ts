@@ -73,6 +73,19 @@ function stringField(
   return normalized;
 }
 
+function bodyField(
+  object: Readonly<Record<string, CanonicalJson>>,
+): string {
+  const value = object.body;
+  if (typeof value !== "string") {
+    throw new TypeError("body must be a string");
+  }
+  if (value.trim().length < 1 || value.length > 4096) {
+    throw new RangeError("body is invalid");
+  }
+  return value;
+}
+
 function simField(
   object: Readonly<Record<string, CanonicalJson>>,
 ): OmniSipSimSlot {
@@ -207,11 +220,18 @@ export function createOmniSipMessagingExecutor(input: {
       }
 
       if (request.capability === "sms.send") {
-        const payload = objectPayload(request.payload);
-        exactKeys(payload, ["destination", "body", "sim"]);
-        const destination = e164(stringField(payload, "destination", 8, 32));
-        const body = stringField(payload, "body", 1, 4096);
-        const sim = simField(payload);
+        let destination: string;
+        let body: string;
+        let sim: OmniSipSimSlot;
+        try {
+          const payload = objectPayload(request.payload);
+          exactKeys(payload, ["destination", "body", "sim"]);
+          destination = e164(stringField(payload, "destination", 8, 32));
+          body = bodyField(payload);
+          sim = simField(payload);
+        } catch {
+          return denied("device.sms-payload-invalid", toInstant(now()));
+        }
 
         if (!status.smsPermissionGranted) {
           return denied("device.sms-permission-missing", status.observedAt);
@@ -253,10 +273,16 @@ export function createOmniSipMessagingExecutor(input: {
         }
       }
 
-      const payload = objectPayload(request.payload);
-      exactKeys(payload, ["code", "sim"]);
-      const code = ussdCode(stringField(payload, "code", 2, 182));
-      const sim = simField(payload);
+      let code: string;
+      let sim: OmniSipSimSlot;
+      try {
+        const payload = objectPayload(request.payload);
+        exactKeys(payload, ["code", "sim"]);
+        code = ussdCode(stringField(payload, "code", 2, 182));
+        sim = simField(payload);
+      } catch {
+        return denied("device.ussd-payload-invalid", toInstant(now()));
+      }
 
       if (!status.ussdPermissionGranted) {
         return denied("device.ussd-permission-missing", status.observedAt);
