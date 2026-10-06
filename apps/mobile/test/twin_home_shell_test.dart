@@ -39,6 +39,21 @@ class _EmptyTwinTransport implements TwinProfileTransport {
 
   @override
   Future<TwinProfile> setDiscoverable(bool discoverable) async => profile;
+
+  @override
+  Future<TwinProfileCustomizationPreview> previewCustomization(
+    TwinProfileCustomizationPatch patch,
+  ) {
+    throw StateError('not used');
+  }
+
+  @override
+  Future<TwinProfile> applyCustomization({
+    required TwinProfileCustomizationPreview preview,
+    required bool confirmed,
+  }) {
+    throw StateError('not used');
+  }
 }
 
 class _CountingActivityTransport implements TwinActivityTransport {
