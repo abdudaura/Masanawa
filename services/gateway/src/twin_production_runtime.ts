@@ -184,6 +184,14 @@ export interface TwinProductionRuntime {
   readonly paidFeatureTrialAdmin: PaidFeatureTrialAdminService;
   readonly ownerAccess: OwnerAccessService;
   readonly ownerAccessOffering: ReturnType<typeof createOwnerAccessOfferingService>;
+  readonly ownerAccessDisputes: {
+    resolve(input: {
+      readonly authorizationHeader: string | undefined;
+      readonly characterId: string;
+      readonly requestId: string;
+      readonly resolution: "release" | "refund";
+    }): Promise<import("@masanawa/commerce").OwnerAccessRequest>;
+  };
   readonly ownerAccessMaintenance: {
     sweep(input: {
       readonly tenantId: TenantId;
@@ -2536,6 +2544,90 @@ export function createTwinProductionRuntime(input: {
     },
   });
 
+  const ownerAccessDisputes = Object.freeze({
+    async resolve(request: {
+      readonly authorizationHeader: string | undefined;
+      readonly characterId: string;
+      readonly requestId: string;
+      readonly resolution: "release" | "refund";
+    }) {
+      const authority = await adminAuthority.authorize({
+        authorizationHeader: request.authorizationHeader,
+      });
+      const characterId = parseCanonicalId("character", request.characterId);
+      const current = await input.economy.readOwnerAccessRequest({
+        tenantId: authority.tenantId,
+        requestId: request.requestId,
+      });
+      if (
+        !current ||
+        current.originatingCharacterId !== characterId ||
+        current.state !== "disputed" ||
+        current.reconciliationReason === "attendance-timeout"
+      ) {
+        throw new Error("Owner access dispute is unavailable");
+      }
+
+      let resolved: PersistedOwnerAccessRequest;
+      if (request.resolution === "refund") {
+        resolved = await refundDisputedOwnerAccess(
+          authority.tenantId,
+          current,
+        );
+      } else {
+        const resolvedAt = at();
+        const changed = {
+          ...current,
+          state: transitionOwnerAccess(current.state, "settled"),
+          disputeResolvedAt: resolvedAt,
+          disputeResolution: "release" as const,
+          disputeBy: resolvedAt,
+        };
+        const claimed = await input.economy.transitionOwnerAccessRequest({
+          tenantId: authority.tenantId,
+          expectedState: "disputed",
+          request: changed,
+          reservationId: current.reservationId,
+          reservedCredits: current.reservedCredits,
+        });
+        if (!claimed.applied) {
+          throw Object.assign(
+            new Error("Owner access dispute changed; refresh and try again"),
+            { statusCode: 409 },
+          );
+        }
+        resolved = await releaseOwnerAccessEarnings(
+          authority.tenantId,
+          claimed.request,
+        );
+      }
+
+      await notifyUser(
+        authority.tenantId,
+        current.requesterUserId as UserId,
+        request.resolution === "refund"
+          ? "Human session refunded"
+          : "Human session dispute resolved",
+        request.resolution === "refund"
+          ? "Your disputed human session was refunded."
+          : "Your dispute was reviewed and the session payment was released.",
+        "masanawa://chat/" + encodeURIComponent(current.originatingCharacterId),
+      );
+      await notifyUser(
+        authority.tenantId,
+        current.ownerUserId as UserId,
+        request.resolution === "refund"
+          ? "Human session refunded"
+          : "Earnings released",
+        request.resolution === "refund"
+          ? "The disputed session was refunded to the requester."
+          : "The dispute was resolved and your session earnings are available.",
+        "masanawa://activity",
+      );
+      return resolved;
+    },
+  });
+
   const twinSafety = createTwinSafetyService({
     authorizer: customerAuthority,
     repository: {
@@ -3062,6 +3154,7 @@ export function createTwinProductionRuntime(input: {
     paidFeatureTrialAdmin,
     ownerAccess,
     ownerAccessOffering,
+    ownerAccessDisputes,
     ownerAccessMaintenance,
     twinSafety,
     voiceAdmissionGate,
