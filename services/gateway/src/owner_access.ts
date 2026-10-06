@@ -76,6 +76,9 @@ export interface OwnerAccessRoomStatus {
   readonly attendanceVerified: boolean;
   readonly verifiedSeconds: number;
   readonly sessionEndsAt: string | null;
+  readonly realPersonSession: true;
+  readonly recordingAllowed: false;
+  readonly messageRetentionDays: number;
   readonly presence: readonly OwnerAccessRoomPresence[];
 }
 
