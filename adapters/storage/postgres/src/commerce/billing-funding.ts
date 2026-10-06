@@ -126,7 +126,7 @@ export function createPostgresBillingQuoteRepository(pool: Pool): BillingQuoteRe
            RETURNING *`,
           [
             input.tenantId,input.userId,input.quoteId,input.revision,input.state,input.categoryCode,
-            input.originatingCharacterId,input.billerCode,input.itemCode,input.itemName,input.customerId,
+            input.originatingCharacterId ?? null,input.billerCode,input.itemCode,input.itemName,input.customerId,
             input.serviceAmountKobo,input.feeAmountKobo,input.totalAmountKobo,input.currency,input.confirmedAt,
             input.expiresAt,input.checkoutTxRef,input.checkoutUrl,input.providerTransactionId,input.providerReference,
             input.billProviderReference,input.paymentVerifiedAt,input.fulfillmentReference,input.settlementState,
@@ -138,7 +138,7 @@ export function createPostgresBillingQuoteRepository(pool: Pool): BillingQuoteRe
         const same =
           existing.revision === input.revision &&
           existing.categoryCode === input.categoryCode &&
-          existing.originatingCharacterId === input.originatingCharacterId &&
+          existing.originatingCharacterId === (input.originatingCharacterId ?? null) &&
           existing.billerCode === input.billerCode &&
           existing.itemCode === input.itemCode &&
           existing.itemName === input.itemName &&
