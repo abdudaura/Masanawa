@@ -89,6 +89,9 @@ export interface StoryRadioRepository {
     published: boolean;
     at: string;
   }>): Promise<StoryEpisode | null>;
+  listSeries(input: Readonly<{ tenantId: string }>): Promise<readonly StorySeries[]>;
+  getSeries(input: Readonly<{ tenantId: string; seriesId: string }>): Promise<StorySeries | null>;
+  listEpisodes(input: Readonly<{ tenantId: string; seriesId: string }>): Promise<readonly StoryEpisode[]>;
   listPublishedSeries(input: Readonly<{ tenantId: string }>): Promise<readonly StorySeries[]>;
   getPublishedSeries(input: Readonly<{ tenantId: string; seriesId: string }>): Promise<StorySeries | null>;
   listPublishedEpisodes(input: Readonly<{ tenantId: string; seriesId: string }>): Promise<readonly StoryEpisode[]>;
