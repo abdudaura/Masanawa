@@ -50,3 +50,16 @@ export {
   type WhatsAppCloudApiEdge,
   type WhatsAppOutboundSenderConfig,
 } from "./whatsapp-outbound.js";
+
+
+export {
+  createWhatsAppCloudApiHttpEdge,
+  type ChannelHttpRequest,
+  type ChannelHttpResponse,
+  type ChannelHttpTransport,
+  type RedactedCredentialSecret,
+} from "./whatsapp-http-edge.js";
+
+export {
+  createTelegramBotApiHttpEdge,
+} from "./telegram-http-edge.js";
