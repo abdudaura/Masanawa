@@ -40,6 +40,23 @@ List<HomeContinuationModel> homeAssistantChatContinuations(
   return List.unmodifiable(continuations);
 }
 
+List<HomeContinuationModel> mergeHomeContinuations(
+  HomeSnapshot snapshot,
+  AiChatState chat, {
+  int limit = 4,
+}) {
+  final merged = <HomeContinuationModel>[];
+  final seen = <String>{};
+  for (final item in [
+    ...snapshot.continuations,
+    ...homeAssistantChatContinuations(snapshot, chat),
+  ]) {
+    if (seen.add(item.id)) merged.add(item);
+    if (merged.length == limit) break;
+  }
+  return List.unmodifiable(merged);
+}
+
 class HomeController extends AsyncNotifier<HomeSnapshot> {
   @override
   Future<HomeSnapshot> build() async {
@@ -75,16 +92,9 @@ class HomeController extends AsyncNotifier<HomeSnapshot> {
       ),
     );
 
-    final merged = <HomeContinuationModel>[];
-    final seen = <String>{};
-    for (final item in [
-      ...snapshot.continuations,
-      ...homeAssistantChatContinuations(snapshot, chat),
-    ]) {
-      if (seen.add(item.id)) merged.add(item);
-      if (merged.length == 4) break;
-    }
-    return snapshot.withContinuations(List.unmodifiable(merged));
+    return snapshot.withContinuations(
+      mergeHomeContinuations(snapshot, chat),
+    );
   }
 
   Future<void> refresh() async {
