@@ -614,6 +614,56 @@ describeDatabase("Twin economy PostgreSQL acceptance", () => {
     ).toBe(2);
   });
 
+  it("persists immutable provider valuation revisions without a default mapping", async () => {
+    const repository = createPostgresTwinRuntimeRepository(pool);
+    const tenantId = createCanonicalId("tenant");
+
+    await expect(repository.readProviderValuationPolicy({
+      tenantId,
+      valuationKey: "flutterwave:NGN:kobo",
+      eventType: "external-funding",
+      at: "2026-10-06T12:00:00.000Z",
+    })).resolves.toBeNull();
+
+    const saved = await repository.putProviderValuationPolicy({
+      tenantId,
+      policy: {
+        schemaVersion: 1,
+        revision: 1,
+        enabled: false,
+        valuationKey: "flutterwave:NGN:kobo",
+        eventType: "external-funding",
+        sourceUnit: "NGN_KOBO",
+        sourceUnitsPerStep: 1000,
+        creditUnitsPerStep: 1,
+        minimumSourceUnits: 1000,
+        maximumBaseCredits: 500,
+        effectiveAt: "2026-10-06T12:00:00.000Z",
+      },
+    });
+    expect(saved).toMatchObject({
+      revision: 1,
+      enabled: false,
+      sourceUnitsPerStep: 1000,
+      creditUnitsPerStep: 1,
+    });
+
+    await expect(repository.putProviderValuationPolicy({
+      tenantId,
+      policy: {
+        ...saved,
+        creditUnitsPerStep: 2,
+      },
+    })).rejects.toThrow("revision conflict");
+
+    await expect(pool.query(
+      `UPDATE commerce.twin_provider_valuation_policy_revisions
+          SET enabled=true
+        WHERE tenant_id=$1 AND valuation_key=$2 AND event_type=$3 AND revision=1`,
+      [tenantId, "flutterwave:NGN:kobo", "external-funding"],
+    )).rejects.toThrow("Twin economy history is immutable");
+  });
+
   it("converges concurrent exact replays onto one durable receipt", async () => {
     const repository = createPostgresTwinRuntimeRepository(pool);
     const tenantId = createCanonicalId("tenant");
