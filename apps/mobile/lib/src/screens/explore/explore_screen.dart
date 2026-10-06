@@ -136,6 +136,7 @@ class _TwinCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final u = context.masanawa;
+    final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.3;
     return Semantics(
       button: true,
       label: 'Open AI Twin ${twin.displayName}',
@@ -221,8 +222,10 @@ class _TwinCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 6),
-              Icon(Icons.chevron_right, color: u.textMuted),
+              if (!largeText) ...[
+                const SizedBox(width: 6),
+                Icon(Icons.chevron_right, color: u.textMuted),
+              ],
             ],
           ),
         ),
