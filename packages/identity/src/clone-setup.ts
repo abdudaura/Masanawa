@@ -58,7 +58,7 @@ function scopeOf(scope: CloneSetupScope): CloneSetupScope {
   return { tenantId: parseCanonicalId("tenant", scope.tenantId), userId: parseCanonicalId("user", scope.userId) };
 }
 export function emptyCloneSetupProfile(): CloneSetupProfile {
-  return Object.freeze({ displayName: null, biography: "A personal Masanawa clone.", languages: Object.freeze([]), personality: Object.freeze(["Friendly", "Clear"]), expertise: Object.freeze(["Everyday conversation"]) });
+  return Object.freeze({ displayName: null, biography: "A personal Masanawa clone.", languages: Object.freeze(["mul"]), personality: Object.freeze(["Friendly", "Clear"]), expertise: Object.freeze(["Everyday conversation"]) });
 }
 export function patchCloneSetupProfile(profile: CloneSetupProfile, patch: unknown): CloneSetupProfile {
   if (!patch || typeof patch !== "object" || Array.isArray(patch) || Object.keys(patch).some(key => !(keys as readonly string[]).includes(key))) return fail("invalid");
@@ -100,7 +100,7 @@ export function previewCloneSetup(scope: CloneSetupScope, draft: CloneSetup | nu
   sameScope(scope, draft);
   revision(draft, expected);
   if (draft.state !== "editing" && draft.state !== "preview") return fail("confirmed");
-  if (!draft.profile.displayName || draft.profile.languages.length === 0) return fail("not-ready");
+  if (!draft.profile.displayName) return fail("not-ready");
   if (draft.state === "preview") return draft;
   return Object.freeze({ ...draft, revision: draft.revision + 1, state: "preview" });
 }
