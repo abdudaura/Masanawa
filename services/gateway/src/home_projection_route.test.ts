@@ -85,7 +85,8 @@ describe("Home projection route", () => {
         }),
         expect.objectContaining({
           roomId: "room.story-radio",
-          isAvailable: false,
+          isAvailable: true,
+          continuationLabel: "Continue listening",
         }),
       ]),
     );
