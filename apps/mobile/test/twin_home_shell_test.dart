@@ -102,4 +102,35 @@ void main() {
 
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('initial Activity tab deep link opens Activity directly',
+      (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          isSignedInProvider.overrideWithValue(true),
+          homeProvider.overrideWith(_FakeHomeController.new),
+          twinDirectoryTransportProvider.overrideWithValue(
+            const UnavailableTwinDirectoryTransport(),
+          ),
+          twinActivityTransportProvider.overrideWithValue(
+            const UnavailableTwinActivityTransport(),
+          ),
+          walletTransportProvider.overrideWithValue(
+            const UnavailableWalletTransport(),
+          ),
+        ],
+        child: MaterialApp(
+          theme: buildMasanawaTheme(brightness: Brightness.light),
+          home: const TwinHomeShell(initialIndex: 2),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Activity is not available yet.'), findsOneWidget);
+    expect(find.text('Gwana'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 }
