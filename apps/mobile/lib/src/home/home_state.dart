@@ -19,7 +19,7 @@ class HomeController extends AsyncNotifier<HomeSnapshot> {
 
   Future<HomeSnapshot> _load() async {
     final client = ref.read(apiClientProvider);
-    final response = await client.dio.get<Map<String, dynamic>>('/home');
+    final response = await client.dio.get<Map<String, dynamic>>('/v1/home');
     final data = response.data;
     if (data == null) {
       throw StateError('Home projection is unavailable');
