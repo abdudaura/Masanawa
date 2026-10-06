@@ -1,5 +1,15 @@
 # Masanawa Product North Star
 
+## 2026-10-06 consumer launch overlay
+
+The ordinary-user launch shell is now **Home · Explore · Activity · Wallet**.
+Home makes Gwani/Gwana and purpose-built service Rooms immediately useful while the
+personal Twin remains preserved as a core Home/profile surface. This supersedes the
+older four-surface wording that put My Twin first, but does not weaken the Character,
+Twin, Skill, commerce, memory or runtime architecture.
+
+Canonical launch overlay: `docs/HOME-ROOMS-LAUNCH.md`.
+
 ## 2026-10-05 consumer-product simplification
 
 For the ordinary-user product, `docs/PRODUCT-TWIN-ECONOMY.md` is now the canonical
