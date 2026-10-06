@@ -8,6 +8,7 @@ class HomeRoomsPublishingPage extends StatelessWidget {
     super.key,
     required this.projection,
     required this.loading,
+    this.saving = false,
     this.errorMessage,
     this.onRetry,
     this.onMutation,
@@ -15,9 +16,12 @@ class HomeRoomsPublishingPage extends StatelessWidget {
 
   final HomeRoomsPublishingProjection? projection;
   final bool loading;
+  final bool saving;
   final String? errorMessage;
   final VoidCallback? onRetry;
   final ValueChanged<PublishingMutationIntent>? onMutation;
+
+  bool get _canMutate => onMutation != null && !saving;
 
   @override
   Widget build(BuildContext context) {
@@ -41,9 +45,23 @@ class HomeRoomsPublishingPage extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Text(
-          'Home & Rooms publishing',
-          style: Theme.of(context).textTheme.headlineSmall,
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Home & Rooms publishing',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+            ),
+            if (saving)
+              const Padding(
+                padding: EdgeInsets.only(left: 12),
+                child: SizedBox.square(
+                  dimension: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: 4),
         Text(
@@ -59,8 +77,8 @@ class HomeRoomsPublishingPage extends StatelessWidget {
                 contentPadding: EdgeInsets.zero,
                 value: item.published,
                 title: Text(item.title),
-                subtitle: Text('Order ' + item.sortOrder.toString()),
-                onChanged: onMutation == null
+                subtitle: Text('Order ${item.sortOrder}'),
+                onChanged: !_canMutate
                     ? null
                     : (value) => onMutation!(
                           PublishingMutationIntent.setVisibility(
@@ -77,25 +95,40 @@ class HomeRoomsPublishingPage extends StatelessWidget {
           title: 'News',
           children: [
             for (final item in view.newsCategories)
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                value: item.visible,
-                title: Text(item.label),
-                subtitle: Text(
-                  item.pinnedItemId == null
-                      ? 'No pinned article'
-                      : 'Pinned: ' + item.pinnedItemId!,
+              Card(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: ListTile(
+                  title: Text(item.label),
+                  subtitle: Text(
+                    item.pinnedItemId == null
+                        ? 'No pinned article'
+                        : 'Pinned: ${item.pinnedItemId}',
+                  ),
+                  leading: Switch(
+                    value: item.visible,
+                    onChanged: !_canMutate
+                        ? null
+                        : (value) => onMutation!(
+                              PublishingMutationIntent.setVisibility(
+                                kind: PublishingMutationKind.setNewsCategoryVisibility,
+                                targetId: item.categoryId,
+                                visible: value,
+                                expectedRevision: view.revision,
+                              ),
+                            ),
+                  ),
+                  trailing: IconButton(
+                    tooltip: 'Change pinned article',
+                    icon: const Icon(Icons.push_pin_outlined),
+                    onPressed: !_canMutate
+                        ? null
+                        : () => _showPinDialog(
+                              context,
+                              item: item,
+                              revision: view.revision,
+                            ),
+                  ),
                 ),
-                onChanged: onMutation == null
-                    ? null
-                    : (value) => onMutation!(
-                          PublishingMutationIntent.setVisibility(
-                            kind: PublishingMutationKind.setNewsCategoryVisibility,
-                            targetId: item.categoryId,
-                            visible: value,
-                            expectedRevision: view.revision,
-                          ),
-                        ),
               ),
           ],
         ),
@@ -104,12 +137,13 @@ class HomeRoomsPublishingPage extends StatelessWidget {
           children: [
             for (final item in view.homeRooms)
               Card(
+                margin: const EdgeInsets.only(bottom: 8),
                 child: ListTile(
                   title: Text(item.label),
-                  subtitle: Text('Order ' + item.sortOrder.toString()),
-                  trailing: Switch(
+                  subtitle: Text('Order ${item.sortOrder}'),
+                  leading: Switch(
                     value: item.visible,
-                    onChanged: onMutation == null
+                    onChanged: !_canMutate
                         ? null
                         : (value) => onMutation!(
                               PublishingMutationIntent.setVisibility(
@@ -120,6 +154,37 @@ class HomeRoomsPublishingPage extends StatelessWidget {
                               ),
                             ),
                   ),
+                  trailing: Wrap(
+                    spacing: 2,
+                    children: [
+                      IconButton(
+                        tooltip: 'Move earlier',
+                        onPressed: !_canMutate || item.sortOrder == 0
+                            ? null
+                            : () => onMutation!(
+                                  PublishingMutationIntent.reorderRoom(
+                                    roomKey: item.roomKey,
+                                    sortOrder: item.sortOrder - 1,
+                                    expectedRevision: view.revision,
+                                  ),
+                                ),
+                        icon: const Icon(Icons.arrow_upward),
+                      ),
+                      IconButton(
+                        tooltip: 'Move later',
+                        onPressed: !_canMutate
+                            ? null
+                            : () => onMutation!(
+                                  PublishingMutationIntent.reorderRoom(
+                                    roomKey: item.roomKey,
+                                    sortOrder: item.sortOrder + 1,
+                                    expectedRevision: view.revision,
+                                  ),
+                                ),
+                        icon: const Icon(Icons.arrow_downward),
+                      ),
+                    ],
+                  ),
                 ),
               ),
           ],
@@ -129,14 +194,24 @@ class HomeRoomsPublishingPage extends StatelessWidget {
           children: [
             for (final assistant in view.assistants)
               Card(
+                margin: const EdgeInsets.only(bottom: 8),
                 child: ListTile(
                   leading: Icon(Icons.smart_toy_outlined, color: colors.brand),
                   title: Text(assistant.displayName),
                   subtitle: Text(
-                    assistant.position == 'left' ? 'Left card' : 'Right card',
+                    '${assistant.position == 'left' ? 'Left card' : 'Right card'} · '
+                    '${assistant.visible ? 'Visible' : 'Hidden'}',
                   ),
-                  trailing: Chip(
-                    label: Text(assistant.visible ? 'Visible' : 'Hidden'),
+                  trailing: IconButton(
+                    tooltip: 'Edit assistant presentation',
+                    icon: const Icon(Icons.edit_outlined),
+                    onPressed: !_canMutate
+                        ? null
+                        : () => _showAssistantDialog(
+                              context,
+                              assistant: assistant,
+                              revision: view.revision,
+                            ),
                   ),
                 ),
               ),
@@ -160,6 +235,136 @@ class HomeRoomsPublishingPage extends StatelessWidget {
       ],
     );
   }
+
+  Future<void> _showPinDialog(
+    BuildContext context, {
+    required NewsCategoryAdminItem item,
+    required int revision,
+  }) async {
+    final controller = TextEditingController(text: item.pinnedItemId ?? '');
+    final result = await showDialog<String?>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Pin article in ${item.label}'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Article ID',
+            helperText: 'Leave empty to clear the pin.',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(controller.text.trim()),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (result == null) return;
+    onMutation?.call(
+      PublishingMutationIntent.pinNews(
+        categoryId: item.categoryId,
+        itemId: result.isEmpty ? null : result,
+        expectedRevision: revision,
+      ),
+    );
+  }
+
+  Future<void> _showAssistantDialog(
+    BuildContext context, {
+    required AssistantHomePresentation assistant,
+    required int revision,
+  }) async {
+    final nameController = TextEditingController(text: assistant.displayName);
+    var position = assistant.position;
+    var visible = assistant.visible;
+
+    final result = await showDialog<_AssistantDraft>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Text('Edit ${assistant.displayName}'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: 'Display name'),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: position,
+                decoration: const InputDecoration(labelText: 'Home position'),
+                items: const [
+                  DropdownMenuItem(value: 'left', child: Text('Left')),
+                  DropdownMenuItem(value: 'right', child: Text('Right')),
+                ],
+                onChanged: (value) {
+                  if (value != null) setState(() => position = value);
+                },
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: visible,
+                title: const Text('Visible on Home'),
+                onChanged: (value) => setState(() => visible = value),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final name = nameController.text.trim();
+                if (name.isEmpty) return;
+                Navigator.of(dialogContext).pop(
+                  _AssistantDraft(
+                    displayName: name,
+                    position: position,
+                    visible: visible,
+                  ),
+                );
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+    nameController.dispose();
+    if (result == null) return;
+    onMutation?.call(
+      PublishingMutationIntent.updateAssistant(
+        characterId: assistant.characterId,
+        displayName: result.displayName,
+        position: result.position,
+        visible: result.visible,
+        expectedRevision: revision,
+      ),
+    );
+  }
+}
+
+class _AssistantDraft {
+  const _AssistantDraft({
+    required this.displayName,
+    required this.position,
+    required this.visible,
+  });
+
+  final String displayName;
+  final String position;
+  final bool visible;
 }
 
 class _Section extends StatelessWidget {
