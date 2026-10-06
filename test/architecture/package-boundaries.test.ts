@@ -36,6 +36,7 @@ const allowedDependencies: Readonly<Record<string, ReadonlySet<string>>> = {
   perception: new Set(["contracts", "security", "events"]),
   proactivity: new Set(["contracts", "security", "events", "workflows", "identity", "world"]),
   commerce: new Set(["contracts", "events", "security", "workflows", "tools", "providers"]),
+  content: new Set(),
   telemetry: new Set(["contracts"]),
   plugins: new Set(["contracts", "security", "tools", "skills", "providers", "events"]),
 };
