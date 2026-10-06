@@ -51,8 +51,36 @@ deployment status and handoff evidence.
 
 Claims must be visible in a coordination PR/main before competing windows begin work.
 If ownership overlaps or is unclear, select a different independent workstream.
-Do not steal an active claim. A stale-looking timestamp alone does not prove abandonment;
-inspect branch/PR evidence and record explicit transfer or coordinate with the user.
+
+### Five-minute stale-claim lease
+
+A workstream claim is an activity lease, not permanent ownership.
+
+- The lease expires after **5 minutes without repository-visible work**.
+- Repository-visible work means a new commit/push, PR update produced by new work,
+  claim/handoff update, or other concrete repository evidence on the claimed branch.
+- An open PR, draft PR, old branch, old claim file, CI run, blocked status, or unfinished
+  checklist does **not** keep ownership alive by itself.
+- Once the latest repository-visible activity is older than 5 minutes, the task is
+  **STALE / RECLAIMABLE** and must not block another window.
+- A new window reclaiming stale work must first inspect the stale branch/PR and preserve
+  useful completed changes. It must publish a fresh claim with its own branch/base SHA
+  before editing.
+- Reclamation does not authorize force-pushing, deleting, or overwriting the stale branch.
+  Existing commits remain recoverable history.
+- If the stale task touches shared-sensitive paths, the new claimant must still perform a
+  fresh conflict check immediately before each shared edit. The stale owner no longer has
+  exclusivity, but newer repository work must always be preserved.
+- If two windows both become active on the same task, the first fresh claim/push after the
+  stale boundary wins the lease; the other window must move or explicitly coordinate.
+- A blocked task does not reserve implementation ownership while inactive. External
+  blockers should be recorded in the handoff, and safe unblocked sub-work may be reclaimed.
+- Completed work waiting only for merge is not "active ownership"; another window may
+  integrate/reconcile it if the original branch has been inactive for more than 5 minutes.
+
+Therefore, **do not treat old open PRs or claims as active ownership**. Check the latest
+repository activity timestamp. If it is more than 5 minutes old, the task is free to claim.
+
 Claims are coordination records, not an automatic distributed lock.
 
 Shared contract changes land first or are explicitly referenced by dependent branches.
