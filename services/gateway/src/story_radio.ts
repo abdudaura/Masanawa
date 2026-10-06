@@ -360,7 +360,7 @@ export function createStoryRadioService(input: Readonly<{
 
     async adminSetSeriesPublication(request) {
       const identity = await admin(request.authorizationHeader);
-      let updated;
+      let updated: StorySeries | null;
       try {
         updated = await input.repository.setSeriesPublication({
           tenantId: String(identity.tenantId),
