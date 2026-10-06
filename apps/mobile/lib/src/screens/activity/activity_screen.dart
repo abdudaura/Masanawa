@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../agents/twin_activity.dart';
 import '../../owner_access/owner_access.dart';
@@ -125,14 +126,24 @@ class ActivityScreen extends ConsumerWidget {
               ),
             if (request.state == OwnerAccessState.active)
               FilledButton(
-                onPressed: () => Navigator.of(dialogContext).pop('complete'),
-                child: const Text('Complete'),
+                onPressed: () => Navigator.of(dialogContext).pop('open'),
+                child: const Text('Open human chat'),
               ),
           ],
         );
       },
     );
     if (action == null || !context.mounted) return;
+
+    if (action == 'open') {
+      context.push(
+        '/owner-session/' +
+            Uri.encodeComponent(characterId) +
+            '/' +
+            Uri.encodeComponent(requestId),
+      );
+      return;
+    }
 
     DateTime? scheduledFor;
     if (action == 'schedule') {
@@ -149,6 +160,15 @@ class ActivityScreen extends ConsumerWidget {
     if (!context.mounted) return;
     await ref.read(twinActivityProvider.notifier).refresh();
     if (!context.mounted) return;
+    if (action == 'start' && updated?.state == OwnerAccessState.active) {
+      await context.push(
+        '/owner-session/' +
+            Uri.encodeComponent(characterId) +
+            '/' +
+            Uri.encodeComponent(requestId),
+      );
+      return;
+    }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
