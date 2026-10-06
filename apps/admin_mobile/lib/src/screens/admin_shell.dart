@@ -5,6 +5,8 @@ import '../theme/masanawa_theme.dart';
 import 'platform_pages.dart';
 import 'admin_agents_page.dart';
 import 'decision_center_page.dart';
+import 'story_radio_admin_page.dart';
+import '../core/story_radio_admin_api.dart';
 
 class AdminShell extends StatefulWidget {
   const AdminShell({super.key, required this.api, required this.onSignOut});
@@ -33,6 +35,7 @@ class _AdminShellState extends State<AdminShell> {
     _AdminSection('Skills', Icons.extension_outlined),
     _AdminSection('Runtime', Icons.timeline_outlined),
     _AdminSection('Commerce', Icons.account_balance_wallet_outlined),
+    _AdminSection('Story Radio', Icons.podcasts_outlined),
     _AdminSection('Operations', Icons.rule_outlined),
     _AdminSection('Providers', Icons.hub_outlined),
     _AdminSection('System', Icons.settings_suggest_outlined),
@@ -49,6 +52,12 @@ class _AdminShellState extends State<AdminShell> {
         SkillsPage(api: widget.api),
         RuntimeAdminPage(api: widget.api),
         CommerceAdminPage(api: widget.api),
+        StoryRadioAdminPage(
+          api: StoryRadioAdminApi(
+            token: widget.api.currentAccessToken,
+            refreshAccessToken: widget.api.refreshForExternalClient,
+          ),
+        ),
         OperationsAdminPage(api: widget.api),
         ProvidersAdminPage(api: widget.api),
         SystemAdminPage(api: widget.api),
