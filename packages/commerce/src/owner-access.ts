@@ -61,6 +61,7 @@ export interface OwnerAccessRequest {
   readonly scheduledFor: string | null;
   readonly startedAt: string | null;
   readonly completedAt: string | null;
+  readonly reconciliationReason?: "attendance-timeout";
 }
 
 export interface OwnerAccessSettlementDecision {
