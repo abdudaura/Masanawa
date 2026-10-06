@@ -1,5 +1,3 @@
-import type { PoolClient } from "pg";
-
 export type NgnFundingIntentState =
   | "creating"
   | "awaiting"
