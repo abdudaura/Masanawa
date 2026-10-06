@@ -345,6 +345,7 @@ export interface TwinRuntimeRepository {
     readonly tenantId: TenantId;
     readonly at: string;
     readonly startGraceMinutes: number;
+    readonly completionGraceMinutes: number;
     readonly limit: number;
   }): Promise<readonly (OwnerAccessRequest & {
     readonly reservationId: string | null;
