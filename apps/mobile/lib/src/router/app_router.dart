@@ -75,6 +75,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/chat/:id',
         builder: (context, state) => AiChatScreen(
           characterId: state.pathParameters['id']!,
+          twinSetup: state.uri.queryParameters['twinSetup'] == '1',
+          twinGender: state.uri.queryParameters['gender'],
+          twinAge: int.tryParse(state.uri.queryParameters['age'] ?? ''),
         ),
       ),
       // Backwards-compat: the old single chat now lands on the list.
