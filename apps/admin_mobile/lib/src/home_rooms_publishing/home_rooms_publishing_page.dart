@@ -73,21 +73,23 @@ class HomeRoomsPublishingPage extends StatelessWidget {
           title: 'Story Radio',
           children: [
             for (final item in view.storySeries)
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                value: item.published,
-                title: Text(item.title),
-                subtitle: Text('Order ${item.sortOrder}'),
-                onChanged: !_canMutate
-                    ? null
-                    : (value) => onMutation!(
-                          PublishingMutationIntent.setVisibility(
-                            kind: PublishingMutationKind.setStoryVisibility,
-                            targetId: item.seriesId,
-                            visible: value,
-                            expectedRevision: view.revision,
-                          ),
-                        ),
+              Card(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: ListTile(
+                  leading: const Icon(Icons.headphones_outlined),
+                  title: Text(item.title),
+                  subtitle: Text('Order ${item.sortOrder}'),
+                  trailing: Chip(
+                    label: Text(item.published ? 'Published' : 'Draft'),
+                  ),
+                ),
+              ),
+            if (view.storySeries.isNotEmpty)
+              const Padding(
+                padding: EdgeInsets.only(top: 4),
+                child: Text(
+                  'Story Radio publishing is managed in its dedicated admin screen.',
+                ),
               ),
           ],
         ),
@@ -110,10 +112,11 @@ class HomeRoomsPublishingPage extends StatelessWidget {
                         ? null
                         : (value) => onMutation!(
                               PublishingMutationIntent.setVisibility(
-                                kind: PublishingMutationKind.setNewsCategoryVisibility,
+                                kind:
+                                    PublishingMutationKind.setNewsCategoryVisibility,
                                 targetId: item.categoryId,
                                 visible: value,
-                                expectedRevision: view.revision,
+                                expectedRevision: item.revision,
                               ),
                             ),
                   ),
@@ -125,7 +128,6 @@ class HomeRoomsPublishingPage extends StatelessWidget {
                         : () => _showPinDialog(
                               context,
                               item: item,
-                              revision: view.revision,
                             ),
                   ),
                 ),
@@ -150,7 +152,7 @@ class HomeRoomsPublishingPage extends StatelessWidget {
                                 kind: PublishingMutationKind.setHomeRoomVisibility,
                                 targetId: item.roomKey,
                                 visible: value,
-                                expectedRevision: view.revision,
+                                expectedRevision: item.revision,
                               ),
                             ),
                   ),
@@ -165,7 +167,7 @@ class HomeRoomsPublishingPage extends StatelessWidget {
                                   PublishingMutationIntent.reorderRoom(
                                     roomKey: item.roomKey,
                                     sortOrder: item.sortOrder - 1,
-                                    expectedRevision: view.revision,
+                                    expectedRevision: item.revision,
                                   ),
                                 ),
                         icon: const Icon(Icons.arrow_upward),
@@ -178,7 +180,7 @@ class HomeRoomsPublishingPage extends StatelessWidget {
                                   PublishingMutationIntent.reorderRoom(
                                     roomKey: item.roomKey,
                                     sortOrder: item.sortOrder + 1,
-                                    expectedRevision: view.revision,
+                                    expectedRevision: item.revision,
                                   ),
                                 ),
                         icon: const Icon(Icons.arrow_downward),
@@ -210,7 +212,6 @@ class HomeRoomsPublishingPage extends StatelessWidget {
                         : () => _showAssistantDialog(
                               context,
                               assistant: assistant,
-                              revision: view.revision,
                             ),
                   ),
                 ),
@@ -239,7 +240,6 @@ class HomeRoomsPublishingPage extends StatelessWidget {
   Future<void> _showPinDialog(
     BuildContext context, {
     required NewsCategoryAdminItem item,
-    required int revision,
   }) async {
     final controller = TextEditingController(text: item.pinnedItemId ?? '');
     final result = await showDialog<String?>(
@@ -260,7 +260,8 @@ class HomeRoomsPublishingPage extends StatelessWidget {
             child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(controller.text.trim()),
+            onPressed: () =>
+                Navigator.of(dialogContext).pop(controller.text.trim()),
             child: const Text('Save'),
           ),
         ],
@@ -272,7 +273,7 @@ class HomeRoomsPublishingPage extends StatelessWidget {
       PublishingMutationIntent.pinNews(
         categoryId: item.categoryId,
         itemId: result.isEmpty ? null : result,
-        expectedRevision: revision,
+        expectedRevision: item.revision,
       ),
     );
   }
@@ -280,7 +281,6 @@ class HomeRoomsPublishingPage extends StatelessWidget {
   Future<void> _showAssistantDialog(
     BuildContext context, {
     required AssistantHomePresentation assistant,
-    required int revision,
   }) async {
     final nameController = TextEditingController(text: assistant.displayName);
     var position = assistant.position;
@@ -349,7 +349,7 @@ class HomeRoomsPublishingPage extends StatelessWidget {
         displayName: result.displayName,
         position: result.position,
         visible: result.visible,
-        expectedRevision: revision,
+        expectedRevision: assistant.revision,
       ),
     );
   }
@@ -369,6 +369,7 @@ class _AssistantDraft {
 
 class _Section extends StatelessWidget {
   const _Section({required this.title, required this.children});
+
   final String title;
   final List<Widget> children;
 
@@ -399,6 +400,7 @@ class _Section extends StatelessWidget {
 
 class _PublishingError extends StatelessWidget {
   const _PublishingError({required this.message, required this.onRetry});
+
   final String message;
   final VoidCallback? onRetry;
 
