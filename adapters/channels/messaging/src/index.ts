@@ -50,3 +50,16 @@ export {
   type WhatsAppCloudApiEdge,
   type WhatsAppOutboundSenderConfig,
 } from "./whatsapp-outbound.js";
+
+
+export {
+  createAuthorizedChannelMediaFetcher,
+  createTelegramInboundMediaFetcher,
+  createWhatsAppInboundMediaFetcher,
+  type AuthorizedChannelMediaFetcherConfig,
+  type ChannelAuthenticatedMediaEdge,
+  type ChannelFetchedMedia,
+  type ChannelInboundMediaFetchRequest,
+  type ChannelInboundMediaKind,
+  type ChannelMediaLimits,
+} from "./media-fetch.js";
