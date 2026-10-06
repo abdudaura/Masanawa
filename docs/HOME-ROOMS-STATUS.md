@@ -45,7 +45,7 @@ The lane handoff and PR must record:
 
 | Lane | Area | PR | State | Remaining owner |
 | --- | --- | ---: | --- | --- |
-| H | Home shell | #201 | ISOLATED COMPLETE | #136 shared navigation/transport/server projection |
+| H | Home shell | #201 + production integration #206 | INTEGRATED | merged into #136 as `effe6d213a8283b0925cbeac7e37db0b84c32376`; exact release APK/device verification remains in Lane P |
 | I | Internet Cafe | #203 | INTEGRATION READY | #136 + canonical billing/Skill resolution |
 | B | Billing qualification | #210 stacked on #126 | IMPLEMENTING | head `27b3318a01395b8155b6b23eb84119bd8e0445e9`; live Flutterwave qualification + controlled financial/device acceptance still required |
 | T | Study Center | #205 + progress #215 + server seam #220 | INTEGRATION READY | compose #94/#96/#215, authenticated pending actions/channels, then #136 route/device acceptance |
@@ -54,7 +54,7 @@ The lane handoff and PR must record:
 | W | Work & Research | #202 + server seam #216 | INTEGRATION READY | #136 mounts route; canonical Skills/Workflow/research runtime resolves allowlisted opaque intents |
 | G | Group Rooms | #214 (supersedes #204) | INTEGRATION READY | Identity export/persistence/memory + #136 |
 | A | Admin publishing | #208 + Story admin #213 | IMPLEMENTING | #208 UI is complete; #213 handles Story Radio admin; News/Home/assistant canonical Ops command wiring remains with #129/Ops |
-| P | Production integration + APK | #136; Home #206; Story #209/#211; News #212 | IMPLEMENTING | #206 head `764d179543fd629245e8ad0f98d7fbfc6b11506c`; duplicate Story integration branches require reconciliation before further shared stacking |
+| P | Production integration + APK | #136; Home #206 merged; Story #209/#211; News #212 | IMPLEMENTING | canonical #136 head `effe6d213a8283b0925cbeac7e37db0b84c32376` contains Home; release APK is externally blocked by exhausted Render build minutes and GitHub runner allocation, and Railway deployment `e7bf7f7f-652d-49bc-8121-94444c92ab94` is held at `NEEDS_APPROVAL` |
 
 ## Move-on gate
 
@@ -91,3 +91,15 @@ without recreating domain logic:
 
 Shared route registration, authenticated pending-action custody and production composition still
 belong to the named shared owners.
+
+
+## Lane H production integration evidence — 2026-10-06
+
+- Home integration PR #206 reached final head `764d179543fd629245e8ad0f98d7fbfc6b11506c` and was merged into the canonical #136 branch as `effe6d213a8283b0925cbeac7e37db0b84c32376`.
+- The preceding exact Home production-derived Render qualification executed the full workspace gate: 156 test files passed, 16 skipped; 831 tests passed, 127 skipped. `services/gateway/src/home_projection_route.test.ts` passed both tests and the Gateway production build completed.
+- Flutter analysis completed without compile errors. Home model, continuation, screen, quick-service, root-shell and deep-link qualification reached execution; the only reproduced failure was an uninitialized Flutter test binding in `twin_production_integration_test.dart`.
+- Final PR #206 head fixes that reproduced failure with `TestWidgetsFlutterBinding.ensureInitialized()`; no production source changed in that final commit.
+- GitHub verification on the final Home head and merged #136 head did not execute application steps: hosted jobs reported `steps = null`.
+- Exact Home CI pointer `5b90222f60fd19e957dd64c19f9775ac56c52046` is the final Home head plus only CI-only `.gitmodules` removal and Home-scoped APK qualification. Render deployment `dep-db2d4orncjis73e9klf0` was correctly pinned to that commit but was canceled before checkout because the Render workspace had exhausted its build-pipeline minutes.
+- Canonical Railway Gateway source is still #136. Deployment `e7bf7f7f-652d-49bc-8121-94444c92ab94` targets merge commit `effe6d213a8283b0925cbeac7e37db0b84c32376` but is held at `NEEDS_APPROVAL` with no build/deploy logs; no repository-side failure is reported.
+- Therefore Lane H is **INTEGRATED**, but not **DEVICE VERIFIED** or **LAUNCH VERIFIED**. Exact release APK creation and the new production deployment require external build/deployment account capacity/approval before the remaining physical-device acceptance can truthfully pass.
