@@ -9,6 +9,7 @@ import '../screens/onboarding/otp_screen.dart';
 import '../screens/onboarding/phone_login_screen.dart';
 import '../screens/owner_access/owner_access_session_screen.dart';
 import '../screens/settings/settings_screen.dart';
+import '../rooms/news/news_screen.dart';
 import '../screens/twin/twin_home_shell.dart';
 import '../finance/crypto_wallet_screen.dart';
 import '../screens/settings/clone_setup_screen.dart';
@@ -71,6 +72,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path == '/masana' ||
           path == '/settings' ||
           path == '/billing' ||
+          path == '/news' ||
           path == '/crypto' ||
           path == '/clone' ||
           path == '/profile';
@@ -121,6 +123,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/masana', redirect: (_, __) => '/home'),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
       GoRoute(path: '/billing', builder: (_, _) => const BillingScreen()),
+      GoRoute(path: '/news', builder: (_, _) => const NewsScreen()),
       GoRoute(path: '/crypto', builder: (_, _) => const CryptoWalletScreen()),
       GoRoute(path: '/clone', builder: (_, _) => const CloneSetupScreen()),
       GoRoute(path: '/profile', builder: (_, _) => const SettingsScreen()),
