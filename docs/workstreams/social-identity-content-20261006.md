@@ -43,6 +43,8 @@ No `packages/social` exists on current main and no competing Task 131 social-dom
 - stale revisions and cross-binding content creation fail closed;
 - no provider-specific publish API or second social runtime.
 
-State: CLAIMED. No implementation changes beyond this claim.
+State: IMPLEMENTING. Canonical Social package, external-account binding, revisioned content lifecycle and focused tests are committed. Publication workflow/persistence/provider integration remain excluded.
+
+Implementation head before handoff: `0a83c3b40304abebb98308199b6139e06303543b`.
 
 Last update: 2026-10-06.
