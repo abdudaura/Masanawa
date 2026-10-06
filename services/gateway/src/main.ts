@@ -1391,7 +1391,10 @@ export async function startGatewayService(
       ? createStoryRadioService({
           repository: database.storyRadio,
           sessions: platformCustomerSessions,
-          adminUserIds: readPrincipalSet(env.MASANAWA_STORY_RADIO_ADMIN_USER_IDS),
+          adminUserIds: new Set([
+            ...readPrincipalSet(env.MASANAWA_ADMIN_USER_IDS),
+            ...readPrincipalSet(env.MASANAWA_STORY_RADIO_ADMIN_USER_IDS),
+          ]),
         })
       : undefined);
 
