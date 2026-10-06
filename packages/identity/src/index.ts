@@ -8,3 +8,4 @@ export * from "./personal-clone.js";
 export * from "./channel-binding.js";
 export * from "./channel-link-challenge.js";
 export * from "./channel-link-coordinator.js";
+export * from "./channel-identity-resolution.js";
