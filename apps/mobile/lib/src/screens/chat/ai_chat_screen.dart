@@ -2103,7 +2103,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         context: context,
         isScrollControlled: true,
         enableDrag: false,
-        builder: (_) => _LiveVoiceSheet(
+        backgroundColor: Colors.transparent,
+        builder: (_) => FractionallySizedBox(
+          heightFactor: .92,
+          child: _LiveVoiceSheet(
           agent: agent,
           session: session!,
           maxDuration: paidAdmission == null
@@ -2137,6 +2140,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                     rethrow;
                   }
                 },
+          ),
         ),
       );
     } catch (_) {
@@ -2299,6 +2303,7 @@ class _LiveVoiceSheet extends StatefulWidget {
 }
 
 class _LiveVoiceSheetState extends State<_LiveVoiceSheet> {
+  bool _ringing = true;
   bool _muted = false;
   bool _speaker = true;
   String? _error;
@@ -2311,8 +2316,15 @@ class _LiveVoiceSheetState extends State<_LiveVoiceSheet> {
       if (mounted) setState(() => _error = message);
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(_startVerifiedSession());
+      unawaited(_beginCallExperience());
     });
+  }
+
+  Future<void> _beginCallExperience() async {
+    await Future<void>.delayed(const Duration(milliseconds: 850));
+    if (!mounted) return;
+    setState(() => _ringing = false);
+    await _startVerifiedSession();
   }
 
   Future<void> _startVerifiedSession() async {
@@ -2347,7 +2359,9 @@ class _LiveVoiceSheetState extends State<_LiveVoiceSheet> {
     super.dispose();
   }
 
-  String _label(LiveVoiceState state) => switch (state) {
+  String _label(LiveVoiceState state) {
+    if (_ringing) return 'Calling…';
+    return switch (state) {
         LiveVoiceState.connecting => 'Connecting…',
         LiveVoiceState.listening => _muted ? 'Muted' : 'Listening…',
         LiveVoiceState.speaking => 'Speaking…',
@@ -2356,14 +2370,18 @@ class _LiveVoiceSheetState extends State<_LiveVoiceSheet> {
         LiveVoiceState.ended => 'Call ended',
         LiveVoiceState.idle => 'Ready',
       };
+  }
 
   @override
   Widget build(BuildContext context) {
     final u = context.masanawa;
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 28, 24, 30),
-        child: StreamBuilder<LiveVoiceState>(
+    return Material(
+      color: u.surfaceBg,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 34, 24, 30),
+          child: StreamBuilder<LiveVoiceState>(
           stream: widget.session.states,
           initialData: LiveVoiceState.connecting,
           builder: (context, snapshot) {
