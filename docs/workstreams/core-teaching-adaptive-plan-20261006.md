@@ -66,3 +66,29 @@ Verification:
 Remaining integration:
 - admitted Teaching runtime supplies the proposal provider/model;
 - actual app/WhatsApp/Telegram/voice rehearsal remains with their owning integration lanes.
+
+
+## Final implementation checkpoint
+
+Implementation is complete for this lane.
+
+Exact PR #297 head: `c5537a6921625065e48053e01d322b9a0f91de08`.
+
+Changed-file audit is limited to the seven claimed paths. The runtime composition now
+exposes `TeachingRuntimeCoordinator.preparePlan()`, which:
+
+- requires the admitted Relationship binding;
+- returns bounded clarification before any provider invocation when intake is incomplete;
+- delegates only after intake is ready;
+- binds the resulting plan to the admitted SkillVersion;
+- leaves durable learner progress untouched until the normal Teaching runtime resumes and
+  records actual learning progress.
+
+GitHub Foundation CI again terminated without a downloadable job log, so this branch has
+no executable CI verdict. The implementation is complete; verification remains blocked by
+the repository-wide runner condition.
+
+Next recommended integration dependency:
+- the admitted Agent runtime/Gateway owner supplies the actual proposal provider/model
+  implementation and carries the resulting canonical plan into the existing Teaching
+  resume/presentation path.
