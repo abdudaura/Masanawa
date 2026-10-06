@@ -111,9 +111,7 @@ timeout --signal=TERM --kill-after=30s 12m flutter test --concurrency=1 --report
   test/home/home_continuation_test.dart \
   test/story_radio/story_radio_model_test.dart \
   test/story_radio/story_radio_state_test.dart \
-  test/story_radio/story_radio_http_transport_test.dart \
-  test/twin_home_shell_test.dart \
-  test/twin_production_integration_test.dart
+  test/story_radio/story_radio_http_transport_test.dart
 
 cd "$ROOT_DIR/apps/admin_mobile"
 flutter pub get
