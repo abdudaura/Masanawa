@@ -2,12 +2,14 @@ import type { FastifyInstance } from "fastify";
 import Type from "typebox";
 import type { BillingCheckoutService } from "./billing_checkout.js";
 import type { BillingFinancialService } from "./financial_billing.js";
+import type { BillingWalletService } from "./billing_wallet.js";
 
 export function registerBillingRoutes(
   app: FastifyInstance,
   options: Readonly<{
     billingCheckout?: BillingCheckoutService;
     billingFinancial?: BillingFinancialService;
+    billingWallet?: BillingWalletService;
   }>,
 ): void {
   const checkout = options.billingCheckout;
@@ -218,6 +220,98 @@ export function registerBillingRoutes(
     );
   }
 
+  const wallet = options.billingWallet;
+  if (wallet) {
+    app.get("/v1/wallet/ngn", async (request, reply) => {
+      try {
+        return await wallet.balance({
+          authorizationHeader: request.headers.authorization,
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "";
+        reply.code(
+          message === "financial.auth.unauthorized" || message === "UNAUTHORIZED"
+            ? 401
+            : 503,
+        );
+        return { error: "wallet_unavailable" };
+      }
+    });
+
+    app.post(
+      "/v1/wallet/ngn/funding",
+      {
+        schema: {
+          body: Type.Object(
+            { amount: Type.String({ minLength: 1, maxLength: 80 }) },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request, reply) => {
+        try {
+          const body = request.body as { amount: string };
+          return await wallet.createFunding({
+            authorizationHeader: request.headers.authorization,
+            amount: body.amount,
+          });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "";
+          reply.code(
+            message === "financial.auth.unauthorized" || message === "UNAUTHORIZED"
+              ? 401
+              : message.includes("amount") || message.includes("virtual_account")
+                ? 400
+                : 503,
+          );
+          return { error: message || "wallet_funding_unavailable" };
+        }
+      },
+    );
+
+    app.post(
+      "/v1/commerce/bills/quotes/:quoteId/confirm-wallet",
+      {
+        schema: {
+          params: Type.Object(
+            { quoteId: Type.String({ minLength: 1, maxLength: 180 }) },
+            { additionalProperties: false },
+          ),
+          body: Type.Object(
+            { quoteRevision: Type.Integer({ minimum: 1 }) },
+            { additionalProperties: false },
+          ),
+        },
+      },
+      async (request, reply) => {
+        try {
+          const params = request.params as { quoteId: string };
+          const body = request.body as { quoteRevision: number };
+          return await wallet.confirmAndPurchase({
+            authorizationHeader: request.headers.authorization,
+            quoteId: params.quoteId,
+            quoteRevision: body.quoteRevision,
+          });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "";
+          reply.code(
+            message === "financial.auth.unauthorized" || message === "UNAUTHORIZED"
+              ? 401
+              : message.includes("quote_not_found")
+                ? 404
+                : message.includes("catalog_") ||
+                    message.includes("recipient_") ||
+                    message.includes("amount_") ||
+                    message.includes("phone_invalid")
+                  ? 400
+                  : 409,
+          );
+          return { error: message || "billing_wallet_purchase_unavailable" };
+        }
+      },
+    );
+  }
+
   const billing = options.billingFinancial;
   if (!billing) return;
 
@@ -342,6 +436,20 @@ export function registerBillingRoutes(
       const verifHash = request.headers["verif-hash"];
       const encoded = Buffer.from(JSON.stringify(request.body ?? {}), "utf8");
       try {
+        if (wallet) {
+          const funding = await wallet.receiveFundingWebhook({
+            rawBody: encoded,
+            verifHash: typeof verifHash === "string" ? verifHash : null,
+          });
+          if (funding.handled) {
+            return {
+              accepted: true,
+              duplicate: funding.duplicate,
+              funding: true,
+              resumed: funding.resumed,
+            };
+          }
+        }
         const result = await billing.receiveWebhook({
           rawBody: encoded,
           verifHash: typeof verifHash === "string" ? verifHash : null,
