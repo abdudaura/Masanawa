@@ -164,6 +164,10 @@ Subsequent production hardening on the same owned branch now also includes:
 - TWIN-076 implementation hardening now lazily constructs root tabs so inactive
   Explore/Activity/Wallet providers do not start work at launch, and My Twin/Activity
   metrics plus primary actions wrap/stack on narrow Android widths instead of squeezing.
+- TWIN-096 privacy hardening now exposes an explicit Human Access room policy from the
+  server: the participant is the real person rather than the AI Twin, launch sessions
+  are private text, Masanawa recording is disabled, and message-retention days come from
+  the configured backend policy and are disclosed in the session UI.
 
 The Phase-3 valuation contract now exists without inventing an exchange rate. An
 append-only provider-valuation policy maps one explicit provider/source-unit key to
@@ -198,8 +202,8 @@ Still required before marking TWIN production tasks complete or merging this veh
    transport, deep-link, narrow-screen and lazy-root-tab tests;
 5. build `assembleRelease` from the exact qualified head and record APK checksum/artifact;
 6. install on a real Android device and exercise create/share/free-text, paid voice,
-   transfer/gift, human text access/dispute, Wallet/Activity, notifications and
-   restart/retry;
+   transfer/gift, human text access/dispute/privacy disclosure, Wallet/Activity,
+   notifications and restart/retry;
 7. qualify production deployment/readiness/rollback evidence before merge.
 
 Do not rewrite applied migrations or mark TWIN-100..109 complete from code presence alone.
