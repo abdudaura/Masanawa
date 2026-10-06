@@ -396,7 +396,8 @@ function ownerLifecycleHarness(input: {
     | "cancelled"
     | "no-show"
     | "refunded"
-    | "settled";
+    | "settled"
+    | "disputed";
   readonly chargeMode?: "trial" | "paid";
   readonly acceptBy?: string;
   readonly scheduledFor?: string | null;
@@ -1095,6 +1096,80 @@ describe("Twin production runtime composition", () => {
     });
     expect(messages).toHaveLength(1);
     expect(messages[0]?.messageId).toBe("message-human-123");
+  });
+
+  it("auto-settles an overdue human session when two-party attendance is verified", async () => {
+    const harness = ownerLifecycleHarness({
+      actorUserId: requesterUserId,
+      state: "active",
+      startedAt: new Date(Date.now() - 31 * 60_000).toISOString(),
+      reservedCredits: 100,
+      verifiedAttendance: true,
+    });
+
+    const result = await harness.runtime.ownerAccessMaintenance.sweep({
+      tenantId,
+      limit: 10,
+    });
+
+    expect(result.failed).toBe(0);
+    expect(harness.current().state).toBe("settled");
+    expect(harness.transfers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          amountCredits: 80,
+          reason: "creator-earning",
+        }),
+        expect.objectContaining({
+          amountCredits: 20,
+          reason: "platform-margin",
+        }),
+      ]),
+    );
+  });
+
+  it("auto-refunds an overdue human session when attendance cannot be verified", async () => {
+    const harness = ownerLifecycleHarness({
+      actorUserId: requesterUserId,
+      state: "active",
+      startedAt: new Date(Date.now() - 31 * 60_000).toISOString(),
+      reservedCredits: 100,
+      verifiedAttendance: false,
+    });
+
+    const result = await harness.runtime.ownerAccessMaintenance.sweep({
+      tenantId,
+      limit: 10,
+    });
+
+    expect(result.failed).toBe(0);
+    expect(harness.current().state).toBe("refunded");
+    expect(harness.current().reconciliationReason).toBe("attendance-timeout");
+    expect(harness.transfers).toEqual([
+      expect.objectContaining({
+        amountCredits: 100,
+        reason: "refund",
+      }),
+    ]);
+  });
+
+  it("repairs an attendance-timeout dispute after a crash before refund", async () => {
+    const harness = ownerLifecycleHarness({
+      actorUserId: requesterUserId,
+      state: "disputed",
+      startedAt: new Date(Date.now() - 31 * 60_000).toISOString(),
+      reservedCredits: 100,
+    });
+    harness.current().reconciliationReason = "attendance-timeout";
+
+    const result = await harness.runtime.ownerAccessMaintenance.sweep({
+      tenantId,
+      limit: 10,
+    });
+
+    expect(result.failed).toBe(0);
+    expect(harness.current().state).toBe("refunded");
+    expect(harness.transfers).toHaveLength(1);
   });
 
   it("does not start paid voice usage when only a Live token is issued", async () => {
