@@ -48,6 +48,10 @@ export interface OwnerAccessRequest {
   readonly scheduledFor: string | null;
   readonly startedAt: string | null;
   readonly completedAt: string | null;
+  readonly disputeBy?: string | null;
+  readonly disputedAt?: string | null;
+  readonly disputeReason?: "service-not-delivered" | "service-quality" | "other" | null;
+  readonly earningsReleasedAt?: string | null;
 }
 
 export interface OwnerAccessRoomMessage {
@@ -117,8 +121,10 @@ export interface OwnerAccessRequestPort {
       | "schedule"
       | "start"
       | "complete"
-      | "cancel";
+      | "cancel"
+      | "dispute";
     readonly scheduledFor?: string;
+    readonly disputeReason?: "service-not-delivered" | "service-quality" | "other";
   }): Promise<OwnerAccessRequest>;
 
   get(input: {
@@ -183,8 +189,10 @@ export interface OwnerAccessService {
       | "schedule"
       | "start"
       | "complete"
-      | "cancel";
+      | "cancel"
+      | "dispute";
     readonly scheduledFor?: string;
+    readonly disputeReason?: "service-not-delivered" | "service-quality" | "other";
   }): Promise<OwnerAccessRequest>;
 
   read(input: {
