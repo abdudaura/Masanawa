@@ -153,13 +153,21 @@ Subsequent production hardening on the same owned branch now also includes:
 - automatic active-session close after booked duration + configurable grace: verified
   attendance settles; missing attendance is crash-repairably refunded;
 - private human messages default to 30-day retention, are update-immutable, are never
-  settlement evidence, and are purged without deleting request/ledger history.
+  settlement evidence, and are purged without deleting request/ledger history;
+- paid completed Human Access keeps owner earnings pending through a configurable
+  post-session dispute window; the requester can dispute before release, admin can
+  deterministically release or refund, replay-safe ledger plans protect both paths, and
+  undisputed earnings release automatically after the window.
 
-A remaining Phase-3 commercial-contract blocker is now explicit: NGN billing and crypto
-asset quantities are canonically separate from AI Credits. The repository has no approved
-valuation rule that converts provider value into commission Credits. Do not wire real
-Flutterwave/NOWPayments success amounts into `monetization.settle(baseCredits)` until a
-versioned commercial valuation policy exists.
+The Phase-3 valuation contract now exists without inventing an exchange rate. An
+append-only provider-valuation policy maps one explicit provider/source-unit key to
+Credits through a versioned rational rule, with minimum/cap controls. There is no
+default mapping: an unconfigured valuation reads as null, and internal provider-value
+settlement fails closed until an active matching revision exists. Admin routes can
+create/read revisions without an app release. Real Flutterwave/NOWPayments success hooks
+remain deliberately unwired until each exact provider/currency-or-asset source has an
+approved configured valuation key and attribution path; canonical Commerce creator
+commission must never be double-paid.
 
 ## Verification status
 
@@ -173,18 +181,19 @@ evidence, not as an application test failure.
 
 Still required before marking TWIN production tasks complete or merging this vehicle:
 
-1. define an approved versioned fiat/crypto -> commission-Credit valuation policy before
-   wiring real billing/crypto provider-success commission settlement;
-2. define general post-session dispute/reconciliation policy beyond the deterministic
-   attendance-timeout auto-refund already implemented;
-3. run Gateway/package TypeScript typecheck + focused Twin tests on a working runner;
-4. run PostgreSQL acceptance with `MASANAWA_TEST_DATABASE_URL`, including Twin replay,
-   owner-request CAS/lifecycle/latest-request, private-room retention and immutability;
-5. run Flutter analyze/tests, including human-room, owner-access, paid-voice, production
+1. configure and approve explicit provider valuation revisions before wiring each real
+   billing/crypto success source; no default exchange rate exists;
+2. run Gateway/package TypeScript typecheck + focused Twin/provider-valuation tests on a
+   working runner;
+3. run PostgreSQL acceptance with `MASANAWA_TEST_DATABASE_URL`, including Twin replay,
+   provider-valuation immutability, owner-request CAS/lifecycle/latest-request,
+   dispute/release/refund, private-room retention and immutability;
+4. run Flutter analyze/tests, including human-room, owner-access, paid-voice, production
    transport and deep-link tests;
-6. build `assembleRelease` from the exact qualified head and record APK checksum/artifact;
-7. install on a real Android device and exercise create/share/free-text, paid voice,
-   transfer/gift, human text access, Wallet/Activity, notifications and restart/retry;
-8. qualify production deployment/readiness/rollback evidence before merge.
+5. build `assembleRelease` from the exact qualified head and record APK checksum/artifact;
+6. install on a real Android device and exercise create/share/free-text, paid voice,
+   transfer/gift, human text access/dispute, Wallet/Activity, notifications and
+   restart/retry;
+7. qualify production deployment/readiness/rollback evidence before merge.
 
 Do not rewrite applied migrations or mark TWIN-100..109 complete from code presence alone.
