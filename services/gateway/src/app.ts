@@ -26,7 +26,10 @@ import { registerCreditTransferRoutes, registerGiftRoutes } from "./credit_trans
 import { registerTwinAttributionRoutes, registerCommissionPolicyAdminRoutes } from "./twin_attribution_routes.js";
 import { registerPaidVoiceRoutes, registerPaidVoiceSettlementRoutes } from "./paid_voice_routes.js";
 import { registerPaidFeatureTrialAdminRoutes } from "./paid_feature_trial_admin_routes.js";
-import { registerOwnerAccessRoutes } from "./owner_access_routes.js";
+import {
+  registerOwnerAccessRoutes,
+  registerOwnerAccessDisputeAdminRoutes,
+} from "./owner_access_routes.js";
 import { registerOwnerAccessOfferingRoutes } from "./owner_access_offering_routes.js";
 import { registerTwinSafetyRoutes } from "./twin_safety_routes.js";
 import type { BillingCheckoutService } from "./billing_checkout.js";
@@ -1190,6 +1193,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     registerPaidVoiceSettlementRoutes(app, twin.voiceAdmissionGate);
     registerPaidFeatureTrialAdminRoutes(app, twin.paidFeatureTrialAdmin);
     registerOwnerAccessRoutes(app, twin.ownerAccess);
+    registerOwnerAccessDisputeAdminRoutes(app, twin.ownerAccessDisputes);
     registerOwnerAccessOfferingRoutes(app, twin.ownerAccessOffering);
     registerTwinSafetyRoutes(app, twin.twinSafety);
   }
