@@ -31,3 +31,19 @@ Represent Relationship-scoped promises/commitments with:
 - fulfillment/cancellation custody;
 - deterministic follow-up trigger compilation for time/event due conditions;
 - terminal fulfilled/cancelled semantics with no silent resurrection.
+
+
+## Implementation checkpoint
+
+Completed:
+- Relationship-scoped promise/commitment record;
+- explicit Character/User responsible party;
+- time/event/manual due semantics;
+- revisioned open-state edits;
+- terminal fulfilled/cancelled resolution;
+- exact lost-response resolution replay;
+- deterministic Task-113 follow-up trigger compilation;
+- no automatic trigger for manual or resolved commitments;
+- focused tests for lifecycle, due validation and execution-authority absence.
+
+State: IMPLEMENTATION COMPLETE / EXECUTABLE VERIFICATION PENDING.
