@@ -47,14 +47,14 @@ The lane handoff and PR must record:
 | --- | --- | ---: | --- | --- |
 | H | Home shell | #201 | ISOLATED COMPLETE | #136 shared navigation/transport/server projection |
 | I | Internet Cafe | #203 | INTEGRATION READY | #136 + canonical billing/Skill resolution |
-| B | Billing qualification | #210 stacked on #126 | IMPLEMENTING | #210 owns the deterministic qualification gate; live Flutterwave evidence + controlled financial/device acceptance remain before production enablement |
-| T | Study Center | #205 stacked on #94/#96 | ISOLATED COMPLETE | #89/#91/#92 runtime/channel composition + #136 |
+| B | Billing qualification | #210 stacked on #126 | IMPLEMENTING | head `27b3318a01395b8155b6b23eb84119bd8e0445e9`; live Flutterwave qualification + controlled financial/device acceptance still required |
+| T | Study Center | #205 + progress #215 + server seam #220 | INTEGRATION READY | compose #94/#96/#215, authenticated pending actions/channels, then #136 route/device acceptance |
 | S | Story Radio | #199 | ISOLATED COMPLETE | Admin publishing/audio/runtime + #136 |
-| N | News | #200 | ISOLATED COMPLETE | Admin/evidence/audio integration + #136 |
-| W | Work & Research | #202 | ISOLATED COMPLETE | #136 + canonical Workflow/research runtime |
+| N | News | #200 closed; production integration #212 active | IMPLEMENTING | #212 on Home integration #206 owns sourced News composition; admin/evidence/audio dependencies remain |
+| W | Work & Research | #202 + server seam #216 | INTEGRATION READY | #136 mounts route; canonical Skills/Workflow/research runtime resolves allowlisted opaque intents |
 | G | Group Rooms | #214 (supersedes #204) | INTEGRATION READY | Identity export/persistence/memory + #136 |
-| A | Admin publishing | #208 stacked on #129 | ISOLATED COMPLETE | #129/Ops canonical authorized-command composition |
-| P | Production integration + APK | #136, with Home integration #206 | IMPLEMENTING | #206 is integrating Lane H on #136; remaining shared Room composition/APK/device acceptance stays under #136 ownership |
+| A | Admin publishing | #208 + Story admin #213 | IMPLEMENTING | #208 UI is complete; #213 handles Story Radio admin; News/Home/assistant canonical Ops command wiring remains with #129/Ops |
+| P | Production integration + APK | #136; Home #206; Story #209/#211; News #212 | IMPLEMENTING | #206 head `764d179543fd629245e8ad0f98d7fbfc6b11506c`; duplicate Story integration branches require reconciliation before further shared stacking |
 
 ## Move-on gate
 
@@ -75,3 +75,19 @@ The project must **not** move from integration to release qualification until:
 
 The project must **not** call Home/Rooms launch complete until the physical-device checklist in
 `docs/HOME-ROOMS-MULTI-WINDOW.md` passes on the exact integrated release head.
+
+
+## Integration-support seams
+
+These are additive seams completed after isolated mobile lanes so the shared owner can compose
+without recreating domain logic:
+
+| Area | PR | Exact head | State |
+| --- | ---: | --- | --- |
+| Core Teaching durable progress | #215 | `7bc1b574f9738f6e8108b3a8e422654b74043c3e` | INTEGRATION READY |
+| Work/Research Gateway projection + intent allowlist | #216 | `27e45edc2b5b9cbf933cda3ffb50785c9a2f712c` | INTEGRATION READY |
+| Internet Cafe Gateway projection + server intake validation | #218 | `ada2ed3f08a9678b2c62def41fee4324b345a8b5` | INTEGRATION READY |
+| Study Center Gateway projection | #220 | `37edb1db2c14fe7d9a78a0601492a3cc0274a169` | INTEGRATION READY |
+
+Shared route registration, authenticated pending-action custody and production composition still
+belong to the named shared owners.
