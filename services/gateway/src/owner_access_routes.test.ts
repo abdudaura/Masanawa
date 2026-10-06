@@ -132,7 +132,12 @@ describe("owner access routes", () => {
       payload: { characterId },
     });
     expect(heartbeat.statusCode).toBe(200);
-    expect(heartbeat.json().attendanceVerified).toBe(true);
+    expect(heartbeat.json()).toMatchObject({
+      attendanceVerified: true,
+      realPersonSession: true,
+      recordingAllowed: false,
+      messageRetentionDays: 30,
+    });
 
     const messages = await app.inject({
       method: "GET",
