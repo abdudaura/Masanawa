@@ -46,7 +46,7 @@ The lane handoff and PR must record:
 | Lane | Area | PR | State | Remaining owner |
 | --- | --- | ---: | --- | --- |
 | H | Home shell | #201 | ISOLATED COMPLETE | #136 shared navigation/transport/server projection |
-| I | Internet Cafe | #203 | ISOLATED COMPLETE | #136 + canonical billing/Skill resolution |
+| I | Internet Cafe | #203 | INTEGRATION READY | #136 + canonical billing/Skill resolution |
 | B | Billing qualification | #210 stacked on #126 | IMPLEMENTING | #210 owns the deterministic qualification gate; live Flutterwave evidence + controlled financial/device acceptance remain before production enablement |
 | T | Study Center | #205 stacked on #94/#96 | ISOLATED COMPLETE | #89/#91/#92 runtime/channel composition + #136 |
 | S | Story Radio | #199 | ISOLATED COMPLETE | Admin publishing/audio/runtime + #136 |
