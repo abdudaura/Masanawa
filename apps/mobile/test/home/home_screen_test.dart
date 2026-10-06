@@ -105,6 +105,41 @@ void main() {
     expect(selectedAction, HomeAssistantAction.chat);
   });
 
+  testWidgets('Crypto Tokens sits directly after Internet Cafe',
+      (tester) async {
+    HomeQuickService? selected;
+
+    await tester.pumpWidget(
+      app(
+        HomeScreen(
+          state: const HomeViewState.ready(snapshot),
+          onQuickService: (service) => selected = service,
+        ),
+      ),
+    );
+
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('home-room-crypto-tokens')),
+      300,
+    );
+
+    final cafe = tester.getTopLeft(
+      find.byKey(const ValueKey('home-room-internet-cafe-server-id')),
+    );
+    final crypto = tester.getTopLeft(
+      find.byKey(const ValueKey('home-room-crypto-tokens')),
+    );
+    expect(crypto.dy, greaterThan(cafe.dy));
+
+    await tester.tap(find.byKey(const ValueKey('home-room-crypto-tokens')));
+    await tester.pump();
+    expect(selected, HomeQuickService.crypto);
+
+    expect(find.text('Your assistants'), findsNothing);
+    expect(find.text('Quick services'), findsNothing);
+    expect(find.text('Rooms'), findsNothing);
+  });
+
   testWidgets('quick services emit intent only and do not execute billing',
       (tester) async {
     HomeQuickService? selected;
