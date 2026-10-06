@@ -136,7 +136,10 @@ class _TwinCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final u = context.masanawa;
-    return Material(
+    return Semantics(
+      button: true,
+      label: 'Open AI Twin ${twin.displayName}',
+      child: Material(
       color: u.surfaceCard,
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
@@ -201,6 +204,7 @@ class _TwinCard extends StatelessWidget {
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 6,
+                      runSpacing: 6,
                       children: [
                         if (twin.voiceEnabled)
                           const _MiniTag(
@@ -222,6 +226,7 @@ class _TwinCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }
