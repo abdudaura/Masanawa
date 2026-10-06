@@ -56,6 +56,21 @@ One exact Tenant/presentation Character must survive:
 5. Cross-surface identity evidence proves Social + Studio + Commerce origin are the same Character while a distinct Commerce executor remains only an execution role.
 6. Any mismatched Tenant/Character, ambiguous side effect, stale revision or missing provenance fails closed.
 
-State: CLAIMED.
+State: IMPLEMENTED / VERIFICATION PENDING.
+
+## Completed
+
+- reclaimed stale Social, Commerce, Studio and Character-consistency prerequisites without rewriting their original branches;
+- composes Social account binding -> ready content -> approval -> outbox claim -> provider success receipt;
+- composes deterministic Commerce quote/admission/settlement with the same originating Character and a distinct fallback executor;
+- proves reconciliation/refund reverses the exact customer payment scope without changing origin attribution;
+- composes Studio source -> script -> storyboard -> voice/render -> lipsync final video with exact parent provenance;
+- certifies Social presentation, Studio media and Commerce originating Character are identical;
+- allows a separate Commerce executor only as explicit executor evidence;
+- mismatched cross-surface Character evidence fails closed.
+
+No provider SDK/network call, live payment, media rendering SDK, migration, production configuration, #136 path or #295 path was changed.
+
+Implementation head before handoff: `6721cd17f2f88dc2673e644f882bea00f5a2e9df`.
 
 Last update: 2026-10-06.
