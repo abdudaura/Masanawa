@@ -82,6 +82,16 @@ function fakeRepository(): StoryRadioRepository {
     async setEpisodePublication(input) {
       const current = episodes.get(input.episodeId);
       if (!current) return null;
+      const parent = series.get(current.seriesId);
+      if (!input.published && current.state === "published" && parent?.state === "published") {
+        const publishedCount = [...episodes.values()].filter(
+          (item) =>
+            item.seriesId === current.seriesId && item.state === "published",
+        ).length;
+        if (publishedCount <= 1) {
+          throw new Error("story_radio.episode.last_published_in_live_series");
+        }
+      }
       const next: StoryEpisode = Object.freeze({
         ...current,
         state: input.published ? "published" : "draft",
@@ -197,6 +207,51 @@ describe("StoryRadioService", () => {
       seriesId: s.seriesId,
     });
     expect(detail.episodes[0].nextEpisodeId).toBeNull();
+  });
+
+  it("does not allow a live series to lose its last published episode", async () => {
+    const repo = fakeRepository();
+    const service = createStoryRadioService({
+      repository: repo,
+      sessions: session("user_admin"),
+      adminUserIds: new Set(["user_admin"]),
+      now: () => "2026-10-06T10:00:00.000Z",
+    });
+    const s: any = await service.adminCreateSeries({
+      authorizationHeader: "Bearer x",
+      title: "Series",
+      description: "",
+      language: "English",
+    });
+    const e: any = await service.adminCreateEpisode({
+      authorizationHeader: "Bearer x",
+      seriesId: s.seriesId,
+      seasonNumber: 1,
+      episodeNumber: 1,
+      title: "Episode",
+      description: "",
+      durationSeconds: 60,
+      audioUrl: "https://media.example/episode.mp3",
+    });
+    await service.adminSetEpisodePublication({
+      authorizationHeader: "Bearer x",
+      episodeId: e.episodeId,
+      published: true,
+    });
+    await service.adminSetSeriesPublication({
+      authorizationHeader: "Bearer x",
+      seriesId: s.seriesId,
+      published: true,
+    });
+
+    await expect(service.adminSetEpisodePublication({
+      authorizationHeader: "Bearer x",
+      episodeId: e.episodeId,
+      published: false,
+    })).rejects.toMatchObject({
+      code: "story_radio.episode.last_published_in_live_series",
+      statusCode: 409,
+    });
   });
 
   it("denies publication commands to ordinary authenticated users", async () => {
