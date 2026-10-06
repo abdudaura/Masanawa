@@ -32,6 +32,14 @@ export function createPlatformCreditRecipientResolver(input: {
       if (!profile) {
         throw new Error("Recipient does not have a Masanawa account");
       }
+      if (profile.tenantId !== request.tenantId) {
+        throw new Error("Recipient profile is outside the requested Tenant");
+      }
+      const resolvedIdentifier =
+        normalized.channel === "email" ? profile.email : profile.phone;
+      if (resolvedIdentifier !== normalized.identifier) {
+        throw new Error("Recipient profile does not match the requested identifier");
+      }
       if (profile.userId === request.senderUserId) {
         throw new Error("Cannot transfer Credits to yourself");
       }
