@@ -309,7 +309,9 @@ class _WalletEntryTile extends StatelessWidget {
     final u = context.masanawa;
     final sign = entry.incoming ? '+' : '-';
     final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.3;
-    return Container(
+    return Semantics(
+      label: '${entry.title}. ${entry.incoming ? "Received" : "Spent"} ${entry.amountCredits} Credits',
+      child: Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: u.surfaceCard,
@@ -340,6 +342,7 @@ class _WalletEntryTile extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
+      ),
       ),
     );
   }
