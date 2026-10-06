@@ -76,7 +76,15 @@ printf 'sdk.dir=%s\nflutter.sdk=%s\n' "${ANDROID_HOME}" "${FLUTTER_HOME}" > andr
 flutter --version
 flutter pub get
 flutter analyze --no-fatal-infos --no-fatal-warnings
-flutter test
+echo "==> Home production Flutter qualification"
+flutter test \
+  test/home/home_billing_intent_test.dart \
+  test/home/home_continuation_test.dart \
+  test/home/home_models_test.dart \
+  test/home/home_screen_test.dart \
+  test/shell_deep_link_test.dart \
+  test/twin_home_shell_test.dart \
+  test/twin_production_integration_test.dart
 flutter build apk --release --dart-define=API_BASE_URL="${API_BASE_URL}" --dart-define=AGENT_BASE_URL="${API_BASE_URL}"
 APK="build/app/outputs/flutter-apk/app-release.apk"
 test -s "${APK}"
