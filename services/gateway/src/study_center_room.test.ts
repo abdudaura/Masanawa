@@ -5,6 +5,7 @@ import {
 import {
   createTeachingMultiSelectStage,
   createTeachingRuntimeBinding,
+  fingerprintTeachingLessonPlan,
   createTeachingSelectionActionBinding,
   type TeachingLessonPlan,
   type TeachingRuntimeProjection,
@@ -62,7 +63,7 @@ function stored(
   lessonStepKey = "supply",
 ): TeachingStoredProgress {
   return {
-    planHash: "sha256:" + "1".repeat(64),
+    planHash: fingerprintTeachingLessonPlan(plan()),
     progress: {
       relationshipId,
       skillVersionId,
@@ -305,6 +306,22 @@ describe("Study Center room projection", () => {
         },
       }),
     ).toThrow("Study selection ids must cover every visible Teaching option exactly");
+  });
+
+  it("rejects durable progress from a different lesson plan hash", () => {
+    const current = stored("planned");
+    expect(() =>
+      projectStudyCenterRoom({
+        plan: plan(),
+        storedProgress: {
+          ...current,
+          planHash: "sha256:" + "9".repeat(64),
+        },
+        runtime: null,
+      }),
+    ).toThrow(
+      "Stored Teaching progress belongs to a different Study Center lesson plan",
+    );
   });
 
   it("projects feedback without exposing Teaching scope", () => {
