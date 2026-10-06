@@ -947,7 +947,7 @@ export function createPostgresTwinRuntimeRepository(
            FROM commerce.owner_access_requests
           WHERE tenant_id=$1
             AND (
-              state IN ('declined','expired','cancelled','no-show','completed')
+              state IN ('declined','expired','cancelled','no-show','completed','releasing')
               OR (
                 state='disputed'
                 AND definition->>'reconciliationReason'='attendance-timeout'
