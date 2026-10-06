@@ -137,8 +137,20 @@ function fakeRepository(): StoryRadioRepository {
       progress.set(input.userId + "|" + input.episodeId, input);
       return input;
     },
-    async getReactionSummary(input) { return summary(input.userId, input.episodeId); },
+    async getReactionSummary(input) {
+      const e = episodes.get(input.episodeId);
+      const s = e ? series.get(e.seriesId) : null;
+      if (!e || e.state !== "published" || s?.state !== "published") {
+        throw new Error("story_radio.episode.unavailable");
+      }
+      return summary(input.userId, input.episodeId);
+    },
     async setReaction(input) {
+      const e = episodes.get(input.episodeId);
+      const s = e ? series.get(e.seriesId) : null;
+      if (!e || e.state !== "published" || s?.state !== "published") {
+        throw new Error("story_radio.episode.unavailable");
+      }
       reactions.set(input.userId + "|" + input.episodeId, input.reaction);
       return summary(input.userId, input.episodeId);
     },
@@ -315,6 +327,21 @@ describe("StoryRadioService", () => {
       positionSeconds: 50,
       durationSeconds: 100,
       completed: false,
+    })).rejects.toMatchObject({
+      code: "story_radio.episode.unavailable",
+      statusCode: 404,
+    });
+    await expect(listener.reactions({
+      authorizationHeader: "Bearer x",
+      episodeId: e.episodeId,
+    })).rejects.toMatchObject({
+      code: "story_radio.episode.unavailable",
+      statusCode: 404,
+    });
+    await expect(listener.react({
+      authorizationHeader: "Bearer x",
+      episodeId: e.episodeId,
+      reaction: "like",
     })).rejects.toMatchObject({
       code: "story_radio.episode.unavailable",
       statusCode: 404,
