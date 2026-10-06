@@ -157,6 +157,12 @@ class ApiClient {
     return _post('/auth/logout', const {});
   }
 
+  // ---- News Room ----
+
+  Future<Map<String, dynamic>> newsRoomProjection() async {
+    return _get('/rooms/news');
+  }
+
   // ---- Billing ----
 
   Future<List<BillCategory>> billingCategories() async {
