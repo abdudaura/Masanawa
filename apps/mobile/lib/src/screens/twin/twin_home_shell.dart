@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:share_plus/share_plus.dart';
 
+import '../../agents/agent_directory.dart';
 import '../../agents/twin_directory.dart';
-import '../../agents/twin_profile.dart';
-import '../../state/wallet_state.dart';
+import '../../home/home_models.dart';
+import '../../home/home_screen.dart';
 import '../../state/agent_directory_state.dart';
+import '../../state/my_twin_state.dart';
+import '../../state/wallet_state.dart';
 import '../activity/activity_screen.dart';
 import '../explore/explore_screen.dart';
 import '../wallet/send_credits_sheet.dart';
 import '../wallet/wallet_screen.dart';
-import 'my_twin_screen.dart';
-import 'twin_share_sheet.dart';
 
 /// Consumer-facing Masanawa root.
 ///
-/// Runtime details such as Characters, Skills, Agent Float and providers stay behind
-/// this shell. The ordinary user navigates only My Twin, Explore, Activity and Wallet.
+/// Launch navigation is utility-first: Home, Explore, Activity and Wallet.
+/// My Twin remains available from Home/profile instead of owning the first tab.
 class TwinHomeShell extends ConsumerStatefulWidget {
   const TwinHomeShell({super.key, this.initialIndex = 0});
 
@@ -32,32 +32,7 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
 
   void _openTwin(TwinDirectoryEntry twin) {
     ref.read(agentDirectoryProvider.notifier).primeTwin(twin);
-    context.push('/chat/${Uri.encodeComponent(twin.characterId)}');
-  }
-
-  void _openOwnedTwin(String characterId) {
-    context.push('/chat/${Uri.encodeComponent(characterId)}');
-  }
-
-  Future<void> _shareTwin(TwinProfile profile) async {
-    final url = profile.publicUrl;
-    if (url == null || url.isEmpty) return;
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: false,
-      builder: (sheetContext) => TwinShareSheet(
-        displayName: profile.displayName,
-        publicUrl: url,
-        onShare: (value) async {
-          await SharePlus.instance.share(
-            ShareParams(
-              text: 'Talk to ${profile.displayName} on Masanawa: $value',
-            ),
-          );
-        },
-      ),
-    );
+    context.push('/chat/\${Uri.encodeComponent(twin.characterId)}');
   }
 
   Future<void> _sendCredits() async {
@@ -97,14 +72,147 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
     );
   }
 
+  HomeViewState _homeState() {
+    final directory = ref.watch(agentDirectoryProvider);
+    final twin = ref.watch(myTwinProvider);
+
+    if (directory.loading && directory.agents.isEmpty) {
+      return const HomeViewState.loading();
+    }
+    if (directory.error != null && directory.agents.isEmpty) {
+      return HomeViewState.error(directory.error);
+    }
+
+    final assistants = <HomeAssistantCardModel>[];
+    for (final agent in directory.agents.where((entry) => entry.supportAgent)) {
+      final name = agent.displayName.trim().toLowerCase();
+      final role = switch (name) {
+        'gwana' => HomeAssistantRole.gwana,
+        'gwani' => HomeAssistantRole.gwani,
+        _ => null,
+      };
+      if (role == null) continue;
+      assistants.add(
+        HomeAssistantCardModel(
+          role: role,
+          characterId: agent.characterId,
+          displayName: agent.displayName,
+          description: agent.about.isEmpty ? agent.roleLabel : agent.about,
+          voiceLabel: agent.voiceName,
+          avatarUrl: agent.avatarUrl,
+          isAvailable: agent.presence != AgentPresence.offline,
+        ),
+      );
+    }
+
+    final profile = twin.valueOrNull;
+    final myTwin = profile == null
+        ? const HomeTwinCardModel(
+            title: 'My Twin',
+            subtitle: 'Create your personal AI twin',
+            hasTwin: false,
+          )
+        : HomeTwinCardModel(
+            title: 'My Twin',
+            subtitle: profile.hasTwin
+                ? profile.displayName
+                : 'Create your personal AI twin',
+            hasTwin: profile.hasTwin,
+            characterId: profile.characterId,
+            publicUrl: profile.publicUrl,
+          );
+
+    return HomeViewState.ready(
+      HomeSnapshot(
+        assistants: List.unmodifiable(assistants),
+        myTwin: myTwin,
+        rooms: const [
+          HomeRoomCardModel(
+            roomId: 'internet-cafe',
+            title: 'Internet Cafe',
+            description: 'Data, airtime, electricity, TV and online services.',
+            iconKey: 'internet_cafe',
+            isAvailable: false,
+          ),
+          HomeRoomCardModel(
+            roomId: 'study',
+            title: 'Study Center',
+            description: 'Learn, practice and continue lessons.',
+            iconKey: 'study',
+            isAvailable: false,
+          ),
+          HomeRoomCardModel(
+            roomId: 'story-radio',
+            title: 'Story Radio',
+            description: 'Listen to serialized AI audio stories.',
+            iconKey: 'story_radio',
+            isAvailable: false,
+          ),
+          HomeRoomCardModel(
+            roomId: 'work',
+            title: 'Work & Business',
+            description: 'Business plans, proposals, reports and projects.',
+            iconKey: 'work',
+            isAvailable: false,
+          ),
+          HomeRoomCardModel(
+            roomId: 'research',
+            title: 'Research & Answers',
+            description: 'Research topics and compare sourced information.',
+            iconKey: 'research',
+            isAvailable: false,
+          ),
+          HomeRoomCardModel(
+            roomId: 'news',
+            title: 'News',
+            description: 'Read current stories with visible sources.',
+            iconKey: 'news',
+            isAvailable: true,
+          ),
+          HomeRoomCardModel(
+            roomId: 'groups',
+            title: 'Group Rooms',
+            description: 'Shared Rooms with people and AI participants.',
+            iconKey: 'groups',
+            isAvailable: false,
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openRoom(HomeRoomCardModel room) {
+    if (room.roomId == 'news') {
+      context.push('/news');
+    }
+  }
+
+  void _assistantAction(
+    HomeAssistantCardModel assistant,
+    HomeAssistantAction action,
+  ) {
+    // Chat is the universal entry surface; voice-note/live-voice controls remain
+    // available inside the same canonical conversation screen.
+    context.push('/chat/\${Uri.encodeComponent(assistant.characterId)}');
+  }
+
+  void _quickService(HomeQuickService service) {
+    // Until Internet Cafe composition lands, reuse the canonical billing screen
+    // rather than inventing a Room-specific financial flow.
+    context.push('/billing');
+  }
+
   Widget _page(int index) {
     return switch (index) {
-      0 => MyTwinScreen(
-          onCreateTwin: () => context.push('/clone'),
-          onTalkToTwin: _openOwnedTwin,
-          onTeachTwin: _openOwnedTwin,
-          onShareTwin: _shareTwin,
-          onOpenSettings: () => context.push('/settings'),
+      0 => HomeScreen(
+          state: _homeState(),
+          onRetry: () => ref.read(agentDirectoryProvider.notifier).refresh(),
+          onAssistantAction: _assistantAction,
+          onQuickService: _quickService,
+          onOpenRoom: _openRoom,
+          onOpenMyTwin: () => context.push('/my-twin'),
+          onCreateMyTwin: () => context.push('/clone'),
+          onOpenProfile: () => context.push('/settings'),
         ),
       1 => ExploreScreen(onOpenTwin: _openTwin),
       2 => const ActivityScreen(),
@@ -130,9 +238,9 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
         onDestinationSelected: (value) => setState(() => _index = value),
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.auto_awesome_outlined),
-            selectedIcon: Icon(Icons.auto_awesome),
-            label: 'My Twin',
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Home',
           ),
           NavigationDestination(
             icon: Icon(Icons.explore_outlined),
