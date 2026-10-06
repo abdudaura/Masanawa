@@ -46,7 +46,7 @@ The integration acceptance harness proves:
   - `packages/commerce/src/transfers.ts`: `d9d06f4601ef8b3c46972d2c591414777f063b0c`;
   - `packages/commerce/src/attribution.ts`: `12a1829f36a22222afb98d57ce8d737b63cec75c`;
 - PR #287 opened on implementation head `c05976850cb13686ec5f0dc27f7f4fba9512ed92`;
-- GitHub had not attached a workflow run/check to that head when inspected, so no CI success is claimed;
+- Foundation CI run `37478228304` on handoff head `6ac0d5edc42d45184480432d81f155009c5bf610` concluded `failure`, but job `112319219184` has `steps = null`; checkout/install/typecheck/tests never executed, so this is runner-allocation evidence rather than an application test failure;
 - local repository execution could not be used because the execution sandbox has no outbound DNS to GitHub and the repo is not mounted there; this is recorded rather than substituting a mock result.
 
 ## Handoff
