@@ -13,6 +13,10 @@ export interface AgentCryptoAssistant {
     authorizationHeader: string | undefined;
     characterId: string;
     modelReply: string;
+    history?: readonly {
+      readonly direction: "user" | "assistant";
+      readonly parts: readonly unknown[];
+    }[];
   }>): Promise<AgentCryptoResult | null>;
 }
 
@@ -138,6 +142,103 @@ function parseDirective(reply: string): Directive | null {
   return null;
 }
 
+function cryptoDocuments(
+  history: readonly {
+    readonly direction: "user" | "assistant";
+    readonly parts: readonly unknown[];
+  }[] | undefined,
+): readonly Record<string, unknown>[] {
+  if (!history?.length) return Object.freeze([]);
+  const documents: Record<string, unknown>[] = [];
+  for (let index = history.length - 1; index >= 0; index--) {
+    const message = history[index]!;
+    if (message.direction !== "assistant") continue;
+    for (let partIndex = message.parts.length - 1; partIndex >= 0; partIndex--) {
+      const part = message.parts[partIndex];
+      if (!part || typeof part !== "object" || Array.isArray(part)) continue;
+      const row = part as Record<string, unknown>;
+      if (row.kind !== "work" || row.title !== "Crypto") continue;
+      const document = row.document;
+      if (!document || typeof document !== "object" || Array.isArray(document)) {
+        continue;
+      }
+      documents.push(document as Record<string, unknown>);
+    }
+  }
+  return Object.freeze(documents);
+}
+
+function sameString(
+  record: Record<string, unknown>,
+  key: string,
+  expected: string,
+): boolean {
+  return typeof record[key] === "string" && record[key] === expected;
+}
+
+function priorConversionQuote(
+  history: Parameters<AgentCryptoAssistant["afterInference"]>[0]["history"],
+  directive: Extract<Directive, { type: "crypto.convert.confirm" }>,
+): Record<string, unknown> | null {
+  return cryptoDocuments(history).find(
+    (document) =>
+      sameString(document, "providerCode", directive.providerCode) &&
+      sameString(document, "targetProviderCode", directive.targetProviderCode) &&
+      sameString(document, "amount", directive.amount) &&
+      typeof document.estimatedTargetAmount === "string" &&
+      typeof document.minimumAmount === "string" &&
+      typeof document.quotedAt === "string",
+  ) ?? null;
+}
+
+function priorWithdrawalQuote(
+  history: Parameters<AgentCryptoAssistant["afterInference"]>[0]["history"],
+  directive: Extract<Directive, { type: "crypto.withdraw.confirm" }>,
+): Record<string, unknown> | null {
+  return cryptoDocuments(history).find(
+    (document) =>
+      sameString(document, "providerCode", directive.providerCode) &&
+      sameString(document, "amount", directive.amount) &&
+      sameString(document, "destinationAddress", directive.destinationAddress) &&
+      document.addressValidated === true &&
+      typeof document.networkFee === "string" &&
+      typeof document.networkFeeMode === "string" &&
+      typeof document.estimatedReceiveAmount === "string" &&
+      typeof document.minimumAmount === "string" &&
+      typeof document.quotedAt === "string",
+  ) ?? null;
+}
+
+function conversionQuoteUnchanged(
+  previous: Record<string, unknown>,
+  current: Awaited<ReturnType<FinancialService["quoteConversion"]>>,
+): boolean {
+  return (
+    previous.providerCode === current.providerCode &&
+    previous.targetProviderCode === current.targetProviderCode &&
+    previous.amount === current.amount &&
+    previous.minimumAmount === current.minimumAmount &&
+    previous.estimatedTargetAmount === current.estimatedTargetAmount
+  );
+}
+
+function withdrawalQuoteUnchanged(
+  previous: Record<string, unknown>,
+  current: Awaited<ReturnType<FinancialService["quoteWithdrawal"]>>,
+): boolean {
+  return (
+    previous.providerCode === current.providerCode &&
+    previous.amount === current.amount &&
+    previous.destinationAddress === current.destinationAddress &&
+    previous.minimumAmount === current.minimumAmount &&
+    previous.networkFee === current.networkFee &&
+    previous.networkFeeMode === current.networkFeeMode &&
+    previous.feePayer === current.feePayer &&
+    previous.estimatedReceiveAmount === current.estimatedReceiveAmount &&
+    previous.addressValidated === current.addressValidated
+  );
+}
+
 
 export const CRYPTO_AGENT_SYSTEM_INSTRUCTIONS = Object.freeze([
   "Masanawa has a server-controlled crypto custody tool backed by NOWPayments. Never invent balances, addresses, routes, quotes, fees, confirmations, transaction IDs, provider status, or success.",
@@ -220,6 +321,24 @@ export function createAgentCryptoAssistant(input: Readonly<{
       }
 
       if (directive.type === "crypto.convert.confirm") {
+        const previous = priorConversionQuote(request.history, directive);
+        if (!previous) {
+          return result(
+            "I need to create a verified conversion quote before I can execute this conversion.",
+          );
+        }
+        const refreshed = await input.financial.quoteConversion({
+          authorizationHeader,
+          providerCode: directive.providerCode,
+          targetProviderCode: directive.targetProviderCode,
+          amount: directive.amount,
+        });
+        if (!conversionQuoteUnchanged(previous, refreshed)) {
+          return result(
+            `The conversion quote changed. The latest estimate is ${refreshed.estimatedTargetAmount} ${refreshed.targetProviderCode} for ${refreshed.amount} ${refreshed.providerCode}. Confirm the new quote if you still want to continue.`,
+            refreshed,
+          );
+        }
         const value = await input.financial.createConversion({
           authorizationHeader,
           requestId: createCanonicalId("request"),
@@ -249,6 +368,24 @@ export function createAgentCryptoAssistant(input: Readonly<{
       }
 
       if (directive.type === "crypto.withdraw.confirm") {
+        const previous = priorWithdrawalQuote(request.history, directive);
+        if (!previous) {
+          return result(
+            "I need to create a verified withdrawal quote before I can execute this withdrawal.",
+          );
+        }
+        const refreshed = await input.financial.quoteWithdrawal({
+          authorizationHeader,
+          providerCode: directive.providerCode,
+          amount: directive.amount,
+          destinationAddress: directive.destinationAddress,
+        });
+        if (!withdrawalQuoteUnchanged(previous, refreshed)) {
+          return result(
+            `The withdrawal quote changed. The latest network fee is ${refreshed.networkFee} and the estimated receive amount is ${refreshed.estimatedReceiveAmount}. Confirm the new quote if you still want to continue.`,
+            refreshed,
+          );
+        }
         const value = await input.financial.createWithdrawal({
           authorizationHeader,
           requestId: createCanonicalId("request"),
