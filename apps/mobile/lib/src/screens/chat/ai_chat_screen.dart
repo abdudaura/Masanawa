@@ -41,10 +41,11 @@ import '../../safety/twin_safety.dart';
 import '../../safety/twin_safety_state.dart';
 import '../../twin/twin_teaching.dart';
 import '../../theme/masanawa_theme.dart';
+import '../../chat/cafe_suggestions.dart';
 
 /// One Character conversation. Voice is the primary action while text,
 /// attachments and structured work results remain in the same timeline.
-enum AiChatEntryMode { chat, teach, voiceNote, liveVoice }
+enum AiChatEntryMode { chat, teach, voiceNote, liveVoice, cafe }
 
 class AiChatScreen extends ConsumerStatefulWidget {
   const AiChatScreen({
@@ -87,6 +88,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   final Set<String> _selectedMessageIds = {};
   final Map<String, GlobalKey> _messageKeys = {};
   bool _initialEntryHandled = false;
+  String? _cafeCategory;
 
   @override
   void initState() {
@@ -192,6 +194,20 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       return;
     }
     _commitTextSend(text, attachments, reply);
+  }
+
+  /// Sends a cafe suggestion as plain chat text. Tapping is identical to
+  /// typing — the billing assistant fills in the blanks conversationally,
+  /// and tapping another chip (or typing) freely changes direction.
+  void _sendCafeSuggestion(CafeSuggestion suggestion) {
+    if (ref.read(aiChatProvider).sendingIn.contains(widget.characterId)) return;
+    setState(() => _cafeCategory = suggestion.key);
+    unawaited(
+      ref.read(aiChatProvider.notifier).sendText(
+            widget.characterId,
+            suggestion.message,
+          ),
+    );
   }
 
   Future<void> _teachThenSend(
@@ -842,6 +858,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           case AiChatEntryMode.liveVoice:
             unawaited(_openLiveVoice(agent));
             break;
+          case AiChatEntryMode.cafe:
+            break;
         }
       });
     }
@@ -1208,6 +1226,30 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   style: TextStyle(color: u.textMuted, fontSize: 12, height: 1.35),
                 ),
               ),
+            if (widget.entryMode == AiChatEntryMode.cafe) ...[
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.fromLTRB(12, 6, 12, 2),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                decoration: BoxDecoration(
+                  color: u.brand.withValues(alpha: .08),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: u.brand.withValues(alpha: .18)),
+                ),
+                child: Text(
+                  'Welcome to Internet Cafe. Buy data, airtime, electricity '
+                  'or TV right here — tap below or just type.',
+                  style:
+                      TextStyle(color: u.textMuted, fontSize: 12, height: 1.35),
+                ),
+              ),
+              const SizedBox(height: 8),
+              _CafeChips(
+                selectedKey: _cafeCategory,
+                onTap: _sendCafeSuggestion,
+              ),
+            ],
             if (_pendingAttachments.isNotEmpty)
               _PendingAttachmentStrip(
                 attachments: _pendingAttachments,
@@ -1249,7 +1291,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   ref.read(aiChatProvider.notifier).stopGeneration(widget.characterId);
                 },
                 onAttach: _openAttachSheet,
-                onCamera: () => _pickImage(ImageSource.camera),
                 onMic: updateRequired ? () {} : _toggleRecording,
                 onMicHoldStart: _onMicHoldStart,
                 onMicHoldMove: _onMicHoldMove,
@@ -2306,6 +2347,78 @@ class _AttachOption extends StatelessWidget {
   }
 }
 
+/// Horizontal quick options for the Internet Cafe entry. Always visible in
+/// cafe mode so changing direction is one tap — no menus, no reselect flow.
+class _CafeChips extends StatelessWidget {
+  const _CafeChips({required this.selectedKey, required this.onTap});
+
+  final String? selectedKey;
+  final ValueChanged<CafeSuggestion> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Row(
+        children: [
+          for (final suggestion in kCafeSuggestions) ...[
+            _CafeChip(
+              suggestion: suggestion,
+              selected: suggestion.key == selectedKey,
+              onTap: () => onTap(suggestion),
+            ),
+            const SizedBox(width: 8),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _CafeChip extends StatelessWidget {
+  const _CafeChip({
+    required this.suggestion,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final CafeSuggestion suggestion;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    return Material(
+      color: selected ? u.brand : u.surfaceMuted,
+      borderRadius: BorderRadius.circular(999),
+      child: InkWell(
+        key: ValueKey('cafe-chip-' + suggestion.key),
+        borderRadius: BorderRadius.circular(999),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: selected ? u.brand : u.structuralBorder,
+            ),
+          ),
+          child: Text(
+            suggestion.label,
+            style: TextStyle(
+              color: selected ? Colors.white : u.textPrimary,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _Composer extends StatelessWidget {
   const _Composer({
     required this.controller,
@@ -2314,7 +2427,6 @@ class _Composer extends StatelessWidget {
     required this.onSend,
     required this.onStop,
     required this.onAttach,
-    required this.onCamera,
     required this.onMic,
     required this.onMicHoldStart,
     required this.onMicHoldMove,
@@ -2328,7 +2440,6 @@ class _Composer extends StatelessWidget {
   final VoidCallback onSend;
   final VoidCallback onStop;
   final VoidCallback onAttach;
-  final VoidCallback onCamera;
   final VoidCallback onMic;
   final ValueChanged<LongPressStartDetails> onMicHoldStart;
   final ValueChanged<LongPressMoveUpdateDetails> onMicHoldMove;
@@ -2345,6 +2456,31 @@ class _Composer extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
+            // Attachments live left of the text area. The sheet still offers
+            // Document, Gallery, Camera and Video — no separate camera button
+            // squeezes the input anymore.
+            Semantics(
+              button: true,
+              label: 'Attach',
+              child: Material(
+                color: u.surfaceMuted,
+                shape: const CircleBorder(),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: onAttach,
+                  child: SizedBox(
+                    width: 52,
+                    height: 52,
+                    child: Icon(
+                      Icons.attach_file,
+                      color: u.brand,
+                      size: 23,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
             Expanded(
               child: Container(
                 constraints: const BoxConstraints(minHeight: 52),
@@ -2356,11 +2492,6 @@ class _Composer extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    _ComposerIcon(
-                      tooltip: 'Emoji',
-                      icon: Icons.emoji_emotions_outlined,
-                      onPressed: onEmojiToggle,
-                    ),
                     Expanded(
                       child: TextField(
                         controller: controller,
@@ -2372,21 +2503,15 @@ class _Composer extends StatelessWidget {
                           hintText: 'Message',
                           border: InputBorder.none,
                           isDense: true,
-                          contentPadding: EdgeInsets.fromLTRB(2, 15, 6, 14),
+                          contentPadding: EdgeInsets.fromLTRB(16, 15, 6, 14),
                         ),
                       ),
                     ),
                     _ComposerIcon(
-                      tooltip: 'Attach',
-                      icon: Icons.attach_file,
-                      onPressed: onAttach,
+                      tooltip: 'Emoji',
+                      icon: Icons.emoji_emotions_outlined,
+                      onPressed: onEmojiToggle,
                     ),
-                    if (!hasText)
-                      _ComposerIcon(
-                        tooltip: 'Camera',
-                        icon: Icons.camera_alt_outlined,
-                        onPressed: onCamera,
-                      ),
                   ],
                 ),
               ),

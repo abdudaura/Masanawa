@@ -54,18 +54,20 @@ final class MasanawaTokens {
 
   static const ColorTokens light = ColorTokens(
     brandPrimary: '#0A6FFA',
-    brandStrong: '#0121D2',
-    brandGradient: TokenGradient('#0121D2', '#1DA4FD'),
+    // Deep navy removed — the light theme is white/grey/blue only, so the
+    // strong role falls back to the brand blue (never renders navy).
+    brandStrong: '#0A6FFA',
+    brandGradient: TokenGradient('#0A6FFA', '#1DA4FD'),
     verified: '#0A6FFA',
     emergency: '#DC2626',
     warning: '#D97706',
     success: '#16A34A',
     textPrimary: '#0A1830',
     textMuted: '#526A86',
-    surfaceBg: '#F6FAFF',
+    surfaceBg: '#FFFFFF',
     surfaceCard: '#FFFFFF',
     surfaceMuted: '#EAF4FF',
-    structuralBorder: '#D6E8FF',
+    structuralBorder: '#E9EDEF',
   );
 
   static const ColorTokens dark = ColorTokens(

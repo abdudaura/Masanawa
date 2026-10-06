@@ -338,6 +338,14 @@ class MasanawaCreatorCloneTransport implements CreatorCloneTransport {
   }
 }
 
+/// Maps a turn-stream `error` event code to an [ApiException] code the UI
+/// feedback mapper understands. Unknown codes stay null → generic retry copy.
+String? _streamErrorCode(Object? code) => switch (code) {
+      'unknown_agent' => 'AGENT_UNAVAILABLE',
+      'auth_required' => 'AUTH_REQUIRED',
+      _ => null,
+    };
+
 class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
   MasanawaAgentTransport({
     required Dio dio,
@@ -410,7 +418,10 @@ class MasanawaAgentTransport implements AgentTransport, AgentShellTransport {
             continue;
           }
           if (type == 'error') {
-            throw const ApiException('Agent streaming turn failed');
+            throw ApiException(
+              'Agent streaming turn failed',
+              code: _streamErrorCode(event['code']),
+            );
           }
           if (type == 'done') done = event;
         }

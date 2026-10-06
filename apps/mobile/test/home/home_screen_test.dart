@@ -191,4 +191,40 @@ void main() {
     );
     expect(gwana.dy, gwani.dy);
   });
+
+  testWidgets('rooms show Audio Stories first then News Updates', (tester) async {
+    const roomsSnapshot = HomeSnapshot(
+      assistants: [],
+      rooms: [
+        HomeRoomCardModel(
+          roomId: 'news-server-id',
+          title: 'News',
+          description: 'Current sourced stories',
+          iconKey: 'news',
+        ),
+        HomeRoomCardModel(
+          roomId: 'story-server-id',
+          title: 'Story radio',
+          description: 'Narrated stories',
+          iconKey: 'story_radio',
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      app(const HomeScreen(state: HomeViewState.ready(roomsSnapshot))),
+    );
+
+    expect(find.text('Masanawa'), findsOneWidget);
+    expect(find.text('Your assistants'), findsNothing);
+    expect(find.text('Rooms'), findsNothing);
+    expect(find.text('Audio Stories'), findsOneWidget);
+    expect(find.text('News Updates'), findsOneWidget);
+    expect(find.text('Story radio'), findsNothing);
+    expect(find.text('News'), findsNothing);
+
+    final audio = tester.getTopLeft(find.text('Audio Stories'));
+    final news = tester.getTopLeft(find.text('News Updates'));
+    expect(audio.dy, lessThan(news.dy));
+  });
 }

@@ -104,6 +104,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             'teach' => AiChatEntryMode.teach,
             'voice-note' => AiChatEntryMode.voiceNote,
             'live-voice' => AiChatEntryMode.liveVoice,
+            'cafe' => AiChatEntryMode.cafe,
             _ => AiChatEntryMode.chat,
           };
           return AiChatScreen(

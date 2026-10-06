@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../agents/twin_directory.dart';
 import '../../state/twin_directory_state.dart';
@@ -34,6 +35,24 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     super.dispose();
   }
 
+  /// Opens the Internet Cafe room: a Gwani chat with buying shortcuts.
+  void _openInternetCafe() {
+    TwinDirectoryEntry? gwani;
+    for (final twin in ref.read(twinDirectoryProvider).items) {
+      if (twin.displayName.trim().toLowerCase() == 'gwani') {
+        gwani = twin;
+        break;
+      }
+    }
+    if (gwani == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gwani isn’t available right now.')),
+      );
+      return;
+    }
+    context.push('/chat/${Uri.encodeComponent(gwani.characterId)}?entry=cafe');
+  }
+
   @override
   Widget build(BuildContext context) {
     final u = context.masanawa;
@@ -56,6 +75,13 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                 hintText: 'Search twins',
                 prefixIcon: Icon(Icons.search),
               ),
+            ),
+            const SizedBox(height: 12),
+            _RoomCard(
+              icon: Icons.language_outlined,
+              title: 'Internet Cafe',
+              subtitle: 'Data, airtime, electricity & TV with Gwani',
+              onTap: _openInternetCafe,
             ),
             const SizedBox(height: 12),
             if (state.loading && state.items.isEmpty)
@@ -118,6 +144,80 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                 ),
             ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A room entry card (Internet Cafe). Rooms open as chats — no menus.
+class _RoomCard extends StatelessWidget {
+  const _RoomCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    return Material(
+      color: u.surfaceCard,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        key: const ValueKey('explore-room-internet-cafe'),
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: u.structuralBorder),
+          ),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 25,
+                backgroundColor: u.brand.withValues(alpha: .10),
+                child: Icon(icon, color: u.brand),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: u.textPrimary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: u.textMuted,
+                        fontSize: 12,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              Icon(Icons.chevron_right, color: u.textMuted),
+            ],
+          ),
         ),
       ),
     );

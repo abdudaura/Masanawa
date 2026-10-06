@@ -18,7 +18,7 @@ class AgentFeedback {
 
   factory AgentFeedback.fromError(Object error, {bool conversation = false}) {
     if (error is ApiException) {
-      if (error.statusCode == 401) {
+      if (error.statusCode == 401 || error.code == 'AUTH_REQUIRED') {
         return const AgentFeedback(
           'Please sign in again to continue.',
           recovery: AgentRecovery.signIn,
@@ -27,7 +27,9 @@ class AgentFeedback {
       if (error.code == 'NETWORK_UNREACHABLE') {
         return const AgentFeedback('Check your connection and try again.');
       }
-      if (error.statusCode == 403 || error.statusCode == 404) {
+      if (error.statusCode == 403 ||
+          error.statusCode == 404 ||
+          error.code == 'AGENT_UNAVAILABLE') {
         return const AgentFeedback('This agent isn’t available right now.');
       }
       if (error.statusCode == 413 || error.code == 'ATTACHMENT_TOO_LARGE') {
