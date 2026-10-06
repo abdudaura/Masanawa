@@ -16,6 +16,8 @@ proof mechanism for the existing `channel-possession-challenge` proof method.
 - `packages/identity/src/channel-link-challenge.ts` (new)
 - `packages/identity/src/channel-link-challenge.test.ts` (new)
 - `packages/identity/src/index.ts` (single export only)
+- `packages/identity/src/channel-link-coordinator.test.ts` (new)
+- `packages/identity/src/channel-link-coordinator.ts` (new)
 - `docs/CHANNEL-LINK-CHALLENGE.md` (new)
 - `docs/workstreams/channel-link-challenge-20261006.md`
 
@@ -71,3 +73,10 @@ Remaining integration:
 - channel ingress lookup of the challenge + pending binding;
 - activation through existing `activateChannelBinding()`;
 - account/user/IP issuance + verification rate limits.
+
+
+## Active continuation
+
+This lease is renewed to add the durable challenge custody/coordinator port. The coordinator
+will remain Identity-only and require adapters to provide create/load/compare-and-set; it
+will not add a database table or Gateway endpoint.
