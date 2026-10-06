@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "family": "media",
+  "implementation": "livekit",
+  "package": "@masanawa/livekit-media",
+  "registration": "explicit"
+}
