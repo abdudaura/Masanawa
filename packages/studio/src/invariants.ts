@@ -99,7 +99,23 @@ export function normalizeStudioArtifactRevision(
     throw new Error("StudioArtifact cannot depend on itself at same/future revision");
   }
 
-  const sources = input.sources.map((source) => Object.freeze({
+  const allowedKinds = new Set([
+    "script", "storyboard", "audio", "image", "video",
+    "subtitle", "render-manifest", "other",
+  ]);
+  if (!allowedKinds.has(input.kind)) {
+    throw new TypeError("StudioArtifact kind is invalid");
+  }
+
+  const allowedSourceTypes = new Set([
+    "user-input", "character-output", "uploaded-media",
+    "provider-output", "operation",
+  ]);
+  const sources = input.sources.map((source) => {
+    if (!allowedSourceTypes.has(source.sourceType)) {
+      throw new TypeError("StudioArtifact sourceType is invalid");
+    }
+    return Object.freeze({
     sourceType: source.sourceType,
     reference: bounded(source.reference, "source.reference", 1, 2048),
     contentHash: hash(source.contentHash, "source.contentHash"),
@@ -107,7 +123,8 @@ export function normalizeStudioArtifactRevision(
       source.operationId === null
         ? null
         : parseCanonicalId("operation", source.operationId),
-  }));
+    });
+  });
   if (sources.length < 1 || sources.length > 64) {
     throw new RangeError("StudioArtifact requires 1 to 64 provenance sources");
   }
