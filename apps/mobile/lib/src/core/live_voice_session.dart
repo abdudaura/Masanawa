@@ -256,6 +256,28 @@ class LiveVoiceSession with WidgetsBindingObserver {
           throw StateError('Audio routing is unavailable.');
         }
         if (_closed) return;
+        // Only model output transcription is enabled. User microphone audio is
+        // intentionally never requested or rendered as text.
+        socket.add(
+          jsonEncode({
+            'clientContent': {
+              'turns': [
+                {
+                  'role': 'user',
+                  'parts': [
+                    {
+                      'text':
+                          'Start this live conversation now with a brief natural greeting, '
+                          'then ask how you can help. Speak in the language most appropriate '
+                          'for the user and keep the opening short.',
+                    },
+                  ],
+                },
+              ],
+              'turnComplete': true,
+            },
+          }),
+        );
         await _beginMicrophone();
         if (!_ready.isCompleted && !_closed) {
           _ready.complete();
