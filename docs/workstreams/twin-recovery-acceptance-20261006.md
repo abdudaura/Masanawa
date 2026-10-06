@@ -28,14 +28,44 @@ This lane adds an isolated integration acceptance harness around the already-mer
 - merged `packages/commerce/src/owner-access-runtime.ts`;
 - production ports must satisfy their existing requestId-based replay-safety contract.
 
-## Acceptance intent
+## Completed implementation
 
-Simulate a crash after a consequential economic effect succeeds but before owner-access state persistence succeeds, then retry the exact transition and prove:
-- a paid settlement is attempted again with the same request/reservation identity but the replay-safe port applies the monetary effect only once;
-- a trial completion replay consumes only one trial unit;
-- the recovered request reaches one terminal completed session state rather than creating a second session;
-- changed identities are not treated as the same replay.
+The recovery harness constructs the already-merged owner-access runtime with:
+- one canonical in-memory request representing an active paid or trial owner session;
+- a repository that deliberately throws on the first state update, modeling a crash after the economic effect but before durable state advancement;
+- replay-safe reservation/trial ports whose effect identity is derived from the exact request/reservation/policy/economic values.
 
-State: CLAIMED / IMPLEMENTATION IN PROGRESS.
+It proves:
+- paid completion calls settlement before state persistence as designed;
+- after the simulated persistence crash, the request remains `active`;
+- exact retry reuses the identical settlement identity;
+- two settlement attempts correspond to one applied monetary effect;
+- recovered state reaches `completed` on the same request rather than creating another session;
+- trial completion behaves the same way: two consume attempts, one replay-safe applied trial-unit effect, one completed session;
+- paid and trial paths remain separate and do not cross-apply effects.
+
+## Verification
+
+- changed-file audit against `main`: ahead 2 / behind 0 at implementation head and only the two owned files changed;
+- PR #288 opened on implementation head `d69eb08ff5b76f0524f038bc15a4b2eff70dacf8`;
+- GitHub had not attached a workflow run/check to that head when inspected, so no CI success is claimed;
+- local repository execution is unavailable in the current sandbox because the repository is not mounted and outbound DNS to GitHub is unavailable; no mock result is substituted for repository test execution.
+
+## Handoff
+
+- implementation head: `d69eb08ff5b76f0524f038bc15a4b2eff70dacf8`;
+- PR: #288 — Add Twin owner-access retry recovery acceptance;
+- isolated implementation status: COMPLETE;
+- full production TWIN-106 status: NOT COMPLETE.
+
+## Remaining dependencies
+
+Full TWIN-106 acceptance still requires protected/shared production evidence:
+- persistent replay-safe reservation, ledger and trial-usage ports;
+- restart/crash testing against those real stores;
+- production Gateway/mobile/session composition;
+- physical/device and provider ambiguity paths where applicable.
+
+State: ISOLATED COMPLETE / REAL PERSISTENCE + PRODUCTION RECOVERY EVIDENCE REMAIN.
 
 Last update: 2026-10-06.
