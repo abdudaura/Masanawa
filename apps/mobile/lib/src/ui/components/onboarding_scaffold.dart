@@ -67,8 +67,7 @@ class OnboardingScaffold extends StatelessWidget {
                   constraints: BoxConstraints(minHeight: minContentHeight),
                   child: Stack(
                     children: [
-                      Align(
-                        alignment: Alignment.topCenter,
+                      Center(
                         child: ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 460),
                           child: Padding(
