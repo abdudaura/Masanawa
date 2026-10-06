@@ -105,7 +105,7 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
       );
     }
 
-    final profile = twin.valueOrNull;
+    final profile = twin.asData?.value;
     final myTwin = profile == null
         ? const HomeTwinCardModel(
             title: 'My Twin',
