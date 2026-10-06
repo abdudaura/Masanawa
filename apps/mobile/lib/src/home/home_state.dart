@@ -9,11 +9,16 @@ class HomeController extends AsyncNotifier<HomeSnapshot> {
   @override
   Future<HomeSnapshot> build() async {
     final signedIn = ref.watch(isSignedInProvider);
+    ref.watch(apiClientProvider);
+    ref.watch(myTwinProvider);
     if (!signedIn) {
       return const HomeSnapshot(assistants: [], rooms: []);
     }
+    return _load();
+  }
 
-    final client = ref.watch(apiClientProvider);
+  Future<HomeSnapshot> _load() async {
+    final client = ref.read(apiClientProvider);
     final response = await client.dio.get<Map<String, dynamic>>('/home');
     final data = response.data;
     if (data == null) {
@@ -21,7 +26,7 @@ class HomeController extends AsyncNotifier<HomeSnapshot> {
     }
 
     final snapshot = HomeSnapshot.fromJson(data);
-    final twin = await ref.watch(myTwinProvider.future);
+    final twin = await ref.read(myTwinProvider.future);
     return snapshot.withTwin(
       HomeTwinCardModel(
         title: 'My Twin',
@@ -36,8 +41,9 @@ class HomeController extends AsyncNotifier<HomeSnapshot> {
   }
 
   Future<void> refresh() async {
+    if (!ref.read(isSignedInProvider)) return;
     state = const AsyncLoading();
-    state = await AsyncValue.guard(build);
+    state = await AsyncValue.guard(_load);
   }
 }
 
