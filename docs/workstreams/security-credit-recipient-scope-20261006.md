@@ -41,3 +41,7 @@ State: IMPLEMENTED / VERIFICATION PENDING.
 Implementation head before handoff: `f43d63bb186c80cf87c02b43cf99152014351421`.
 
 Last update: 2026-10-06.
+
+## Verification
+
+- Verification: Foundation CI run `37491437907`, job `112364893112`, failed before checkout with `runner_id=0` and `steps=[]`; no application test result is claimed.
