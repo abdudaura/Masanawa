@@ -56,6 +56,7 @@ class ActivityScreen extends ConsumerWidget {
       OwnerAccessState.active => 'In progress',
       OwnerAccessState.completed => 'Completed',
       OwnerAccessState.settled => 'Settled',
+      OwnerAccessState.releasing => 'Releasing earnings',
       OwnerAccessState.declined => 'Declined',
       OwnerAccessState.expired => 'Expired',
       OwnerAccessState.cancelled => 'Cancelled',
