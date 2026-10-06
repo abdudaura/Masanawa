@@ -36,11 +36,13 @@ Always refresh this file if any listed PR head changes before integration.
 
 ## Active shared integration
 
-Lane H integration is actively owned by PR #206 at head `78b9664c87ed0b29e148d34f74db64bd76ef1f37`, stacked directly on PR #136. Do not open a second Home integration branch while #206 remains active. After #206 is reconciled into #136, mark Lane H **INTEGRATED** in the status ledger.
+Lane H integration is actively owned by PR #206 at head `c97ad9d0fc1e19b5c52dd06d4bdde10161224054`, stacked directly on PR #136. Do not open a second Home integration branch while #206 remains active. After #206 is reconciled into #136, mark Lane H **INTEGRATED** in the status ledger.
+
+Story Radio production integration PR #209 is also open at head `9b3490c6fe1d92b44c679c976cc3396535abb6b1` and touches shared #136-owned Gateway/router/production paths. Treat it as a coordinated #136-side integration branch, not a second independent shared owner. Do not mark Lane S **INTEGRATED** until its changes are reconciled onto the canonical #136 head. News integration PR #207 is closed and must not be treated as active integration ownership.
 
 ## Billing gate
 
-Lane B is actively continued by PR #210 at head `cad5aa030e49cc105348c98ff42d435ac204f2a8`, stacked on PR #126. Its deterministic qualification gate is implemented and tested, but Lane B is not production-complete merely because the gate exists.
+Lane B is actively continued by PR #210 at head `cff18c160ebe1b7fecc0d3c3ae9b9e200655622e`, stacked on PR #126. Its deterministic qualification gate is implemented and tested, but Lane B is not production-complete merely because the gate exists.
 
 Before production enablement, the billing owner must provide:
 - live eligible Flutterwave NG/NGN catalog evidence;
