@@ -39,6 +39,8 @@ ResponseBody _json(Object value) => ResponseBody.fromString(
     );
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   test('production Twin state providers use the authenticated Gateway transports',
       () async {
     final seenPaths = <String>[];
