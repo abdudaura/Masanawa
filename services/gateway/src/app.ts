@@ -125,6 +125,41 @@ const AgentDirectoryResponseSchema = Type.Object(
 );
 
 
+const HomeAssistantSchema = Type.Object(
+  {
+    role: Type.Union([Type.Literal("gwana"), Type.Literal("gwani")]),
+    characterId: Type.String(),
+    displayName: Type.String(),
+    description: Type.String(),
+    voiceLabel: Type.Union([Type.String(), Type.Null()]),
+    avatarUrl: Type.Union([Type.String(), Type.Null()]),
+    isAvailable: Type.Boolean(),
+  },
+  { additionalProperties: false },
+);
+
+const HomeRoomSchema = Type.Object(
+  {
+    roomId: Type.String(),
+    title: Type.String(),
+    description: Type.String(),
+    iconKey: Type.String(),
+    continuationLabel: Type.Union([Type.String(), Type.Null()]),
+    isAvailable: Type.Boolean(),
+  },
+  { additionalProperties: false },
+);
+
+const HomeResponseSchema = Type.Object(
+  {
+    assistants: Type.Array(HomeAssistantSchema),
+    rooms: Type.Array(HomeRoomSchema),
+    continuations: Type.Array(Type.Unknown()),
+  },
+  { additionalProperties: false },
+);
+
+
 const AgentSessionOpenBodySchema = Type.Object(
   { characterId: Type.String() },
   { additionalProperties: false },
@@ -391,6 +426,110 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
           })),
         ],
       }),
+    );
+
+    app.get(
+      "/home",
+      {
+        schema: {
+          response: { 200: HomeResponseSchema },
+        },
+      },
+      async (request) => {
+        const agents = await directory.list({
+          authorizationHeader: request.headers.authorization,
+        });
+        const support = agents.filter((agent) => agent.supportAgent);
+
+        const byRole = (
+          role: "gwana" | "gwani",
+        ) => {
+          const expectedName = role === "gwana" ? "gwana" : "gwani";
+          const expectedVoice = role === "gwana" ? "sulafat" : "bodi";
+          const agent =
+            support.find(
+              (item) => item.displayName.trim().toLowerCase() === expectedName,
+            ) ??
+            support.find(
+              (item) => item.voiceName?.trim().toLowerCase() === expectedVoice,
+            );
+          if (!agent) return null;
+          return {
+            role,
+            characterId: agent.characterId,
+            displayName: agent.displayName,
+            description: agent.about || agent.roleLabel,
+            voiceLabel: agent.voiceName,
+            avatarUrl: null,
+            isAvailable: agent.presence !== "offline",
+          } as const;
+        };
+
+        return {
+          assistants: [byRole("gwana"), byRole("gwani")].filter(
+            (item): item is NonNullable<typeof item> => item !== null,
+          ),
+          rooms: [
+            {
+              roomId: "room.internet-cafe",
+              title: "Internet Cafe",
+              description: "Data, airtime, bills, applications and documents",
+              iconKey: "internet_cafe",
+              continuationLabel: null,
+              isAvailable: true,
+            },
+            {
+              roomId: "room.study-center",
+              title: "Study Center",
+              description: "Lessons, homework help and exam preparation",
+              iconKey: "study",
+              continuationLabel: null,
+              isAvailable: false,
+            },
+            {
+              roomId: "room.story-radio",
+              title: "Story Radio",
+              description: "Serialized audio stories",
+              iconKey: "story_radio",
+              continuationLabel: null,
+              isAvailable: false,
+            },
+            {
+              roomId: "room.work-business",
+              title: "Work & Business",
+              description: "Plans, proposals, reports and project work",
+              iconKey: "work",
+              continuationLabel: null,
+              isAvailable: false,
+            },
+            {
+              roomId: "room.research-answers",
+              title: "Research & Answers",
+              description: "Research, comparisons and sourced answers",
+              iconKey: "research",
+              continuationLabel: null,
+              isAvailable: false,
+            },
+            {
+              roomId: "room.news",
+              title: "News",
+              description: "Current sourced news and articles",
+              iconKey: "news",
+              continuationLabel: null,
+              isAvailable: false,
+            },
+            {
+              roomId: "room.groups",
+              title: "Group Rooms",
+              description: "Shared rooms with people and AI",
+              iconKey: "groups",
+              continuationLabel: null,
+              isAvailable: false,
+            },
+          ],
+          continuations: [],
+        };
+      },
     );
 
     app.put(
