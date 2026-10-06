@@ -2,8 +2,8 @@
 
 Status: IMPLEMENTATION COMPLETE — shared integration only
 Owner/window: ChatGPT Group Rooms implementation window
-Branch: `work/home-rooms-group-20261006`
-Base: `docs/home-rooms-launch-20261006` @ `f3aea97a1cf74736c567950ca3091eef91806406`
+Branch: `work/home-rooms-group-reconciled-20261006`
+Base: `docs/home-rooms-launch-20261006` @ `f76a45cd9ca4858860ac8468f863623c9fa563ed`
 Lane: G — Group Rooms
 Last update: 2026-10-06
 
@@ -94,7 +94,7 @@ No additional isolated Lane G work remains without touching currently shared/cla
 
 ## PR / handoff
 
-PR: #204 — `Implement Home/Rooms Lane G Group Rooms`
+PR: replacement PR pending; supersedes conflicted #204
 Implementation head before this handoff update: `da4276044d55e5aa05c3f441182b8f8bff0255a8`.
 
 
