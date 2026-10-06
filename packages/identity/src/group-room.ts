@@ -49,6 +49,14 @@ export interface CreateGroupRoomInput {
   readonly createdAt: Instant;
 }
 
+export interface ReplaceGroupRoomParticipantsInput {
+  readonly tenantId: TenantId;
+  readonly roomId: string;
+  readonly expectedRevision: number;
+  readonly participants: readonly GroupRoomParticipant[];
+  readonly updatedAt: Instant;
+}
+
 export interface AppendGroupRoomMessageInput {
   readonly tenantId: TenantId;
   readonly roomId: string;
@@ -62,6 +70,7 @@ export interface AppendGroupRoomMessageInput {
 export interface GroupRoomRepository {
   create(input: CreateGroupRoomInput): Promise<GroupRoom>;
   read(input: { readonly tenantId: TenantId; readonly roomId: string }): Promise<GroupRoom | null>;
+  replaceParticipants(input: ReplaceGroupRoomParticipantsInput): Promise<GroupRoom>;
   appendMessage(input: AppendGroupRoomMessageInput): Promise<{
     readonly outcome: "stored" | "replay";
     readonly message: GroupRoomMessage;
@@ -215,6 +224,31 @@ export class InMemoryGroupRoomRepository implements GroupRoomRepository {
     return this.#rooms.get(this.#roomKey(input.tenantId, bounded(input.roomId, "group room id", 160))) ?? null;
   }
 
+  async replaceParticipants(input: ReplaceGroupRoomParticipantsInput): Promise<GroupRoom> {
+    const key = this.#roomKey(
+      input.tenantId,
+      bounded(input.roomId, "group room id", 160),
+    );
+    const current = this.#rooms.get(key);
+    if (current === undefined) {
+      throw new TypeError("Group Room does not exist");
+    }
+    if (!Number.isSafeInteger(input.expectedRevision) || input.expectedRevision < 0) {
+      throw new TypeError("Group Room expected revision is invalid");
+    }
+    if (current.revision !== input.expectedRevision) {
+      throw new TypeError("Group Room membership revision is stale");
+    }
+    const updated = normalizeGroupRoom({
+      ...current,
+      participants: input.participants,
+      revision: current.revision + 1,
+      updatedAt: toInstant(input.updatedAt),
+    });
+    this.#rooms.set(key, updated);
+    return updated;
+  }
+
   async appendMessage(input: AppendGroupRoomMessageInput): Promise<{
     readonly outcome: "stored" | "replay";
     readonly message: GroupRoomMessage;
@@ -232,7 +266,8 @@ export class InMemoryGroupRoomRepository implements GroupRoomRepository {
       createdAt: input.createdAt,
     }, room);
 
-    const requestIdentity = `${input.tenantId}\0${message.requestKey}`;
+    const requestIdentity =
+      `${input.tenantId}\0${message.roomId}\0${message.requestKey}`;
     const prior = this.#requests.get(requestIdentity);
     if (prior !== undefined) {
       if (JSON.stringify(prior) !== JSON.stringify(message)) {
