@@ -87,7 +87,7 @@ void main() {
     expect(homeAssistantChatContinuations(snapshot, chat), isEmpty);
   });
   test('preserves server continuations before local assistant chats', () {
-    const serverSnapshot = HomeSnapshot(
+    final serverSnapshot = HomeSnapshot(
       assistants: snapshot.assistants,
       rooms: [],
       continuations: [
