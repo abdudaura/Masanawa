@@ -98,6 +98,62 @@ class GatewayOwnerAccessTransport implements OwnerAccessTransport {
     );
     return OwnerAccessRequest.fromJson(_map(response.data));
   }
+
+  @override
+  Future<OwnerAccessRoomStatus> heartbeat({
+    required String characterId,
+    required String requestId,
+  }) async {
+    final response = await api.dio.post<dynamic>(
+      '/agent/twin/owner-access/$requestId/heartbeat',
+      data: {'characterId': characterId},
+    );
+    return OwnerAccessRoomStatus.fromJson(_map(response.data));
+  }
+
+  @override
+  Future<List<OwnerAccessRoomMessage>> messages({
+    required String characterId,
+    required String requestId,
+    int limit = 100,
+  }) async {
+    final response = await api.dio.get<dynamic>(
+      '/agent/twin/owner-access/$requestId/messages',
+      queryParameters: {
+        'characterId': characterId,
+        'limit': limit,
+      },
+    );
+    final data = response.data;
+    if (data is! List) {
+      throw const FormatException('Invalid owner access room messages');
+    }
+    return List.unmodifiable(
+      data.map(
+        (item) => OwnerAccessRoomMessage.fromJson(
+          (item as Map).cast<String, dynamic>(),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Future<OwnerAccessRoomMessage> sendMessage({
+    required String characterId,
+    required String requestId,
+    required String messageId,
+    required String body,
+  }) async {
+    final response = await api.dio.post<dynamic>(
+      '/agent/twin/owner-access/$requestId/messages',
+      data: {
+        'characterId': characterId,
+        'messageId': messageId,
+        'body': body,
+      },
+    );
+    return OwnerAccessRoomMessage.fromJson(_map(response.data));
+  }
 }
 
 
