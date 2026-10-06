@@ -406,7 +406,7 @@ export interface TeachingPlanProposalPort {
   propose(input: {
     readonly learner: TeachingLearnerContext;
     readonly assumptions: readonly string[];
-    readonly resources: readonly TeachingResourceEvidence[];
+    readonly availableResourceKeys: readonly string[];
     readonly maximumSteps: number;
   }): Promise<TeachingSequenceProposal>;
 }
@@ -453,10 +453,18 @@ export function createTeachingAdaptivePlanner(input: {
       }
 
       const resources = Object.freeze([...(request.resources ?? [])]);
+      const availableResourceKeys = Object.freeze(
+        resources.map((resource) =>
+          proposalKey(resource.resourceKey, "resourceKey"),
+        ),
+      );
+      if (new Set(availableResourceKeys).size !== availableResourceKeys.length) {
+        throw new TypeError("resource keys must be unique");
+      }
       const rawProposal = await input.proposalPort.propose({
         learner: resolution.learner,
         assumptions: resolution.assumptions,
-        resources,
+        availableResourceKeys,
         maximumSteps,
       });
       const proposal = normalizeTeachingSequenceProposal(rawProposal);
