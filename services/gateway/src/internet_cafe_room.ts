@@ -486,3 +486,149 @@ export function projectInternetCafeRoom(
       : { continuationLabel: bounded(input.continuationLabel, "continuationLabel", 500) }),
   });
 }
+
+
+export interface InternetCafeIntakeSubmissionInput {
+  readonly serviceId: string;
+  readonly intentId: string;
+  readonly values: Readonly<Record<string, unknown>>;
+}
+
+export interface ResolvedInternetCafeIntent {
+  readonly serviceId: string;
+  readonly intentId: string;
+  readonly execution: InternetCafeExecutionBindingProjection;
+}
+
+function allServices(
+  room: InternetCafeRoomProjection,
+): readonly InternetCafeServiceProjection[] {
+  return room.sections.flatMap((section) => section.services);
+}
+
+export function resolveInternetCafeIntent(
+  room: InternetCafeRoomProjection,
+  input: {
+    readonly serviceId: string;
+    readonly intentId: string;
+  },
+): ResolvedInternetCafeIntent {
+  const serviceId = bounded(input.serviceId, "serviceId", 128);
+  const intentId = bounded(input.intentId, "intentId", 256);
+  const service = allServices(room).find((item) => item.serviceId === serviceId);
+  if (service === undefined || service.intentId !== intentId) {
+    throw new TypeError("Internet Cafe service/intent binding is invalid");
+  }
+  return Object.freeze({
+    serviceId: service.serviceId,
+    intentId: service.intentId,
+    execution: service.execution,
+  });
+}
+
+function validateFieldValue(
+  field: InternetCafeIntakeFieldProjection,
+  value: unknown,
+): string | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== "string") {
+    throw new TypeError(`Internet Cafe intake field ${field.fieldId} must be text`);
+  }
+  const normalized = value.trim();
+  if (normalized.length === 0) return null;
+  const max = field.kind === "long-text" ? 16_384 : 4_000;
+  if (normalized.length > max) {
+    throw new TypeError(`Internet Cafe intake field ${field.fieldId} is too long`);
+  }
+
+  switch (field.kind) {
+    case "choice":
+      if (!field.choices.some((item) => item.value === normalized)) {
+        throw new TypeError(`Internet Cafe intake choice ${field.fieldId} is invalid`);
+      }
+      break;
+    case "email":
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(normalized)) {
+        throw new TypeError(`Internet Cafe intake email ${field.fieldId} is invalid`);
+      }
+      break;
+    case "phone":
+      if (!/^\+?[0-9][0-9 ()-]{5,31}$/u.test(normalized)) {
+        throw new TypeError(`Internet Cafe intake phone ${field.fieldId} is invalid`);
+      }
+      break;
+    case "date": {
+      const timestamp = Date.parse(normalized);
+      if (!Number.isFinite(timestamp)) {
+        throw new TypeError(`Internet Cafe intake date ${field.fieldId} is invalid`);
+      }
+      break;
+    }
+    case "document":
+      if (
+        normalized.length > 512 ||
+        !/^[A-Za-z0-9._:-]+$/u.test(normalized)
+      ) {
+        throw new TypeError(
+          `Internet Cafe intake document reference ${field.fieldId} is invalid`,
+        );
+      }
+      break;
+    case "short-text":
+    case "long-text":
+      break;
+  }
+  return normalized;
+}
+
+export function validateInternetCafeIntakeSubmission(
+  room: InternetCafeRoomProjection,
+  input: InternetCafeIntakeSubmissionInput,
+): Readonly<{
+  serviceId: string;
+  intentId: string;
+  execution: InternetCafeExecutionBindingProjection;
+  values: Readonly<Record<string, string>>;
+}> {
+  const resolved = resolveInternetCafeIntent(room, input);
+  const service = allServices(room).find(
+    (item) => item.serviceId === resolved.serviceId,
+  )!;
+  if (service.intake === undefined) {
+    throw new TypeError("Internet Cafe service does not accept task intake");
+  }
+  if (
+    input.values === null ||
+    Array.isArray(input.values) ||
+    typeof input.values !== "object"
+  ) {
+    throw new TypeError("Internet Cafe intake values are invalid");
+  }
+
+  const fields = new Map(
+    service.intake.fields.map((item) => [item.fieldId, item] as const),
+  );
+  const unknown = Object.keys(input.values).filter((key) => !fields.has(key));
+  if (unknown.length > 0) {
+    throw new TypeError("Internet Cafe intake contains unknown fields");
+  }
+
+  const normalized: Record<string, string> = {};
+  for (const field of service.intake.fields) {
+    const value = validateFieldValue(field, input.values[field.fieldId]);
+    if (value === null) {
+      if (field.required) {
+        throw new TypeError(
+          `Required Internet Cafe intake field is missing: ${field.fieldId}`,
+        );
+      }
+      continue;
+    }
+    normalized[field.fieldId] = value;
+  }
+
+  return Object.freeze({
+    ...resolved,
+    values: Object.freeze(normalized),
+  });
+}
