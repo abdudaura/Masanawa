@@ -1,5 +1,28 @@
 # Masanawa Twin Mobile Screen Specification
 
+## 2026-10-06 navigation supersession
+
+The launch shell now uses **Home · Explore · Activity · Wallet**. Home is the default
+landing surface and contains Gwana/Gwani, quick services, service Rooms and a My Twin
+entry. The older Navigation/My Twin-first sections below are retained as implementation
+history for the preserved Twin surfaces, but they are no longer the launch hierarchy.
+See `docs/HOME-ROOMS-LAUNCH.md` for the canonical Home/Rooms screen model.
+
+### Home launch surface
+
+Home must include, in order:
+1. header/profile access;
+2. Gwana left + Gwani right peer cards with Chat, Voice note and Live voice/call;
+3. quick Data/Airtime/Electricity/TV shortcuts that enter Internet Cafe flows;
+4. conversation-like Room rows for Internet Cafe, Study Center, Story Radio,
+   Work & Business, Research & Answers, News and later Group Rooms;
+5. My Twin card/continuation when available;
+6. a small recent/continue section rather than a raw WhatsApp-style chat list.
+
+Story Radio is admin-curated serialized audio only at launch: listen, continue, next
+episode and bounded reactions. It has no consumer story creation or video-creator UI.
+News is a separate source-aware Room.
+
 Status: implementation target, 2026-10-05.
 Canonical product overlay: `docs/PRODUCT-TWIN-ECONOMY.md`.
 
