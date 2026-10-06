@@ -115,7 +115,7 @@ describeDatabase("Twin economy PostgreSQL acceptance", () => {
         requesterUserId,
         ownerUserId,
         originatingCharacterId: targetCharacterId,
-        modality: "voice",
+        modality: "text",
         durationMinutes: 15,
         priceCredits: 0,
         platformFeeCredits: 0,
@@ -184,7 +184,7 @@ describeDatabase("Twin economy PostgreSQL acceptance", () => {
       requesterUserId,
       ownerUserId,
       originatingCharacterId: characterId,
-      modality: "voice" as const,
+      modality: "text" as const,
       durationMinutes: 15,
       priceCredits: 0,
       platformFeeCredits: 0,
@@ -243,9 +243,17 @@ describeDatabase("Twin economy PostgreSQL acceptance", () => {
 
     const put = async (input: {
       requestId: string;
-      state: "requested" | "scheduled" | "active" | "expired" | "completed";
+      state:
+        | "requested"
+        | "scheduled"
+        | "active"
+        | "expired"
+        | "completed"
+        | "disputed";
       acceptBy?: string;
       scheduledFor?: string | null;
+      startedAt?: string | null;
+      reconciliationReason?: "attendance-timeout";
     }) => {
       await repository.putOwnerAccessRequest({
         tenantId,
@@ -254,7 +262,7 @@ describeDatabase("Twin economy PostgreSQL acceptance", () => {
           requesterUserId,
           ownerUserId,
           originatingCharacterId: characterId,
-          modality: "voice",
+          modality: "text",
           durationMinutes: 15,
           priceCredits: 0,
           platformFeeCredits: 0,
@@ -265,12 +273,18 @@ describeDatabase("Twin economy PostgreSQL acceptance", () => {
           requestedAt: "2026-10-05T12:00:00.000Z",
           acceptBy: input.acceptBy ?? "2026-10-05T15:00:00.000Z",
           scheduledFor: input.scheduledFor ?? null,
-          startedAt: input.state === "active"
-            ? "2026-10-05T13:50:00.000Z"
-            : null,
-          completedAt: input.state === "completed"
-            ? "2026-10-05T13:59:00.000Z"
-            : null,
+          startedAt:
+            input.startedAt ??
+            (input.state === "active"
+              ? "2026-10-05T13:50:00.000Z"
+              : null),
+          completedAt:
+            input.state === "completed"
+              ? "2026-10-05T13:59:00.000Z"
+              : null,
+          ...(input.reconciliationReason
+            ? { reconciliationReason: input.reconciliationReason }
+            : {}),
         },
         reservationId: null,
         reservedCredits: 0,
@@ -298,8 +312,18 @@ describeDatabase("Twin economy PostgreSQL acceptance", () => {
       scheduledFor: "2026-10-05T13:50:00.000Z",
     });
     await put({
-      requestId: "owner-active",
+      requestId: "owner-future-active",
       state: "active",
+    });
+    await put({
+      requestId: "owner-due-active",
+      state: "active",
+      startedAt: "2026-10-05T13:20:00.000Z",
+    });
+    await put({
+      requestId: "owner-repair-attendance-timeout",
+      state: "disputed",
+      reconciliationReason: "attendance-timeout",
     });
     await put({
       requestId: "owner-repair-expired",
@@ -321,6 +345,8 @@ describeDatabase("Twin economy PostgreSQL acceptance", () => {
       new Set([
         "owner-due-requested",
         "owner-due-scheduled",
+        "owner-due-active",
+        "owner-repair-attendance-timeout",
         "owner-repair-expired",
         "owner-repair-completed",
       ]),
