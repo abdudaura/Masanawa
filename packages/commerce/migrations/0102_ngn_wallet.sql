@@ -23,6 +23,7 @@ CREATE TABLE commerce.ngn_funding_intents (
   funding_reference text NOT NULL,
   tx_ref text NOT NULL UNIQUE,
   amount_kobo bigint NOT NULL CHECK (amount_kobo > 0),
+  quote_id text,
   state text NOT NULL CHECK (state IN ('creating','awaiting','credited','expired','failed')),
   account_number text,
   bank_name text,
