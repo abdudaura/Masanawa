@@ -32,7 +32,7 @@ function passingEvidence() {
     healthChecks: REQUIRED_HEALTH_CHECKS.map((key, index) => ({
       key,
       passed: true,
-      evidenceHash: hash(String.fromCharCode(100 + index)),
+      evidenceHash: hash("0123456789abcdef"[index]),
     })),
     parityBlockingOpen: 0,
     activeSeverityOneIncidents: 0,
@@ -44,7 +44,7 @@ function passingEvidence() {
     auditFamilies: REQUIRED_AUDIT_FAMILIES.map((key, index) => ({
       key,
       passed: true,
-      evidenceHash: hash(String.fromCharCode(102 + index)),
+      evidenceHash: hash("89abcdef01234567"[index]),
     })),
   };
 }
