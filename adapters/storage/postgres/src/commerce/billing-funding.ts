@@ -15,6 +15,7 @@ interface BillingQuoteRow {
   revision: string | number;
   state: BillingQuoteState;
   category_code: string | null;
+  originating_character_id: string | null;
   biller_code: string;
   item_code: string;
   item_name: string;
@@ -57,6 +58,7 @@ function quote(row: BillingQuoteRow): BillingQuote {
     quoteId: parseCanonicalId("quote", row.quote_id),
     revision: integer(row.revision, "revision"),
     categoryCode: row.category_code,
+    originatingCharacterId: row.originating_character_id,
     billerCode: row.biller_code,
     itemCode: row.item_code,
     itemName: row.item_name,
@@ -113,20 +115,20 @@ export function createPostgresBillingQuoteRepository(pool: Pool): BillingQuoteRe
       return withTransaction(pool, async (client) => {
         const inserted = await client.query<BillingQuoteRow>(
           `INSERT INTO commerce.billing_quotes(
-             tenant_id,user_id,quote_id,revision,state,category_code,biller_code,item_code,
-             item_name,customer_id,service_amount_kobo,fee_amount_kobo,total_amount_kobo,
-             currency,confirmed_at,expires_at,checkout_tx_ref,checkout_url,
+             tenant_id,user_id,quote_id,revision,state,category_code,originating_character_id,
+             biller_code,item_code,item_name,customer_id,service_amount_kobo,fee_amount_kobo,
+             total_amount_kobo,currency,confirmed_at,expires_at,checkout_tx_ref,checkout_url,
              provider_transaction_id,provider_reference,bill_provider_reference,payment_verified_at,
              fulfillment_reference,settlement_state,refund_reference,created_at,updated_at
            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,
-                     $17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27)
+                     $17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28)
            ON CONFLICT (tenant_id,user_id,quote_id) DO NOTHING
            RETURNING *`,
           [
             input.tenantId,input.userId,input.quoteId,input.revision,input.state,input.categoryCode,
-            input.billerCode,input.itemCode,input.itemName,input.customerId,input.serviceAmountKobo,
-            input.feeAmountKobo,input.totalAmountKobo,input.currency,input.confirmedAt,input.expiresAt,
-            input.checkoutTxRef,input.checkoutUrl,input.providerTransactionId,input.providerReference,
+            input.originatingCharacterId,input.billerCode,input.itemCode,input.itemName,input.customerId,
+            input.serviceAmountKobo,input.feeAmountKobo,input.totalAmountKobo,input.currency,input.confirmedAt,
+            input.expiresAt,input.checkoutTxRef,input.checkoutUrl,input.providerTransactionId,input.providerReference,
             input.billProviderReference,input.paymentVerifiedAt,input.fulfillmentReference,input.settlementState,
             input.refundReference,input.createdAt,input.updatedAt,
           ],
@@ -136,6 +138,7 @@ export function createPostgresBillingQuoteRepository(pool: Pool): BillingQuoteRe
         const same =
           existing.revision === input.revision &&
           existing.categoryCode === input.categoryCode &&
+          existing.originatingCharacterId === input.originatingCharacterId &&
           existing.billerCode === input.billerCode &&
           existing.itemCode === input.itemCode &&
           existing.itemName === input.itemName &&
