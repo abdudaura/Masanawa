@@ -1061,8 +1061,8 @@ export function createPostgresTwinRuntimeRepository(
       const message = input.message;
       await pool.query(
         `INSERT INTO commerce.owner_access_messages(
-           tenant_id,request_id,message_id,sender_user_id,body,sent_at
-         ) VALUES ($1,$2,$3,$4,$5,$6)
+           tenant_id,request_id,message_id,sender_user_id,body,sent_at,expires_at
+         ) VALUES ($1,$2,$3,$4,$5,$6,$7)
          ON CONFLICT DO NOTHING`,
         [
           input.tenantId,
@@ -1071,6 +1071,7 @@ export function createPostgresTwinRuntimeRepository(
           message.senderUserId,
           message.body,
           message.sentAt,
+          input.expiresAt,
         ],
       );
       const result = await pool.query<{
@@ -1134,6 +1135,22 @@ export function createPostgresTwinRuntimeRepository(
           }),
         ),
       );
+    },
+
+    async purgeExpiredOwnerAccessMessages(input) {
+      const limit = Math.max(1, Math.min(1000, input.limit));
+      const result = await pool.query(
+        `DELETE FROM commerce.owner_access_messages
+          WHERE ctid IN (
+            SELECT ctid
+              FROM commerce.owner_access_messages
+             WHERE tenant_id=$1 AND expires_at <= $2::timestamptz
+             ORDER BY expires_at ASC
+             LIMIT $3
+          )`,
+        [input.tenantId, input.at, limit],
+      );
+      return result.rowCount ?? 0;
     },
 
     async blockTwin(input) {
