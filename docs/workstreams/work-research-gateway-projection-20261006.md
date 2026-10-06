@@ -20,6 +20,7 @@ production environment, Commerce, Workflow implementation or provider code.
 - Exact server projection contract matching Lane W mobile wire models.
 - Work & Business and Research & Answers server-owned titles, subtitles and approved quick starts.
 - Opaque quick-start intent identifiers; this module grants no execution authority.
+- Exact server-side quick-start allowlist resolution; cross-Room and arbitrary forged runtime intent ids fail closed.
 - Canonical `AgentRun` lifecycle validation and mapping:
   - running -> working
   - completed -> completed
@@ -29,7 +30,7 @@ production environment, Commerce, Workflow implementation or provider code.
 - Typed artifact projection with HTTPS-only optional URI.
 - Typed evidence/source projection with HTTPS-only source URI and canonical Instant normalization.
 - Per-item `requiresEvidence` switch so current/specialist research fails closed without sources while file/document work is not forced to invent web citations.
-- Focused tests for quick starts, lifecycle mapping, pending states, sourced research, evidence-required rejection, insecure URL rejection and inconsistent terminal progress.
+- Focused tests for quick starts, intent allowlisting/forgery rejection, lifecycle mapping, pending states, sourced research, evidence-required rejection, insecure URL rejection and inconsistent terminal progress.
 
 ## Architecture boundary
 
@@ -41,7 +42,7 @@ Workflow/research execution engine.
 
 - Gateway already declares `@masanawa/agents`, so this projection adds no workspace dependency.
 - PR diff remains exactly the three claimed files.
-- Foundation CI run `37451093045`, job `112227569248`, failed before checkout with
+- Latest Foundation CI run `37452381188`, job `112231756261`, failed before checkout with
   `steps = null`; no code/test verdict is fabricated.
 - Source was manually audited against the exact Lane W mobile wire contract and the current
   PR #136 canonical AgentRun contract.
