@@ -126,11 +126,22 @@ class StoryRadioAdminApi {
         }
       }
       final data = error.response?.data;
-      final message = data is Map
-          ? (data['error'] is Map
-              ? (data['error'] as Map)['message']?.toString()
-              : data['message']?.toString())
+      final code = data is Map && data['error'] is Map
+          ? (data['error'] as Map)['code']?.toString()
           : null;
+      final message = switch (code) {
+        'story_radio.series.requires_published_episode' =>
+          'Publish at least one episode before publishing this series.',
+        'story_radio.episode.last_published_in_live_series' =>
+          'Unpublish the series before unpublishing its last live episode.',
+        'story_radio.admin.forbidden' =>
+          'This admin account is not allowed to publish Story Radio.',
+        _ => data is Map
+            ? (data['error'] is Map
+                ? (data['error'] as Map)['message']?.toString()
+                : data['message']?.toString())
+            : null,
+      };
       throw Exception(message ?? 'Story Radio administration failed.');
     }
   }
