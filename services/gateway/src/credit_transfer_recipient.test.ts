@@ -63,6 +63,73 @@ describe("platform Credit recipient resolver", () => {
     expect(seen).toBe("+2348012345678");
   });
 
+
+  it("rejects cross-Tenant profile substitution", async () => {
+    const resolver = createPlatformCreditRecipientResolver({
+      sessions: repository(async (input) => ({
+        tenantId: "tenant-other" as never,
+        userId: "user_b" as never,
+        name: "B",
+        email: input.channel === "email" ? input.identifier : null,
+        phone: input.channel === "sms" ? input.identifier : null,
+        locale: "en",
+        createdAt: "2026-10-05T09:00:00Z",
+      })),
+    });
+
+    await expect(
+      resolver.resolve({
+        tenantId: "tenant_a",
+        senderUserId: "user_a",
+        recipient: "friend@example.com",
+      }),
+    ).rejects.toThrow("outside the requested Tenant");
+  });
+
+  it("rejects same-Tenant profile substitution for a different email", async () => {
+    const resolver = createPlatformCreditRecipientResolver({
+      sessions: repository(async (input) => ({
+        tenantId: input.tenantId,
+        userId: "user_b" as never,
+        name: "B",
+        email: "other@example.com",
+        phone: null,
+        locale: "en",
+        createdAt: "2026-10-05T09:00:00Z",
+      })),
+    });
+
+    await expect(
+      resolver.resolve({
+        tenantId: "tenant_a",
+        senderUserId: "user_a",
+        recipient: "friend@example.com",
+      }),
+    ).rejects.toThrow("does not match the requested identifier");
+  });
+
+  it("rejects same-Tenant profile substitution for a different phone", async () => {
+    const resolver = createPlatformCreditRecipientResolver({
+      sessions: repository(async (input) => ({
+        tenantId: input.tenantId,
+        userId: "user_b" as never,
+        name: "B",
+        email: null,
+        phone: "+2348099999999",
+        locale: "en",
+        createdAt: "2026-10-05T09:00:00Z",
+      })),
+    });
+
+    await expect(
+      resolver.resolve({
+        tenantId: "tenant_a",
+        senderUserId: "user_a",
+        recipient: "+2348012345678",
+      }),
+    ).rejects.toThrow("does not match the requested identifier");
+  });
+
   it("fails when the recipient has no Masanawa profile", async () => {
     const resolver = createPlatformCreditRecipientResolver({
       sessions: repository(async () => null),
