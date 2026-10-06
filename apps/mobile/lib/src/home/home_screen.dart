@@ -161,7 +161,7 @@ class _HomeReady extends StatelessWidget {
               onTap: onOpenRoom == null ? null : () => onOpenRoom!(room),
             ),
           ),
-          if (room.roomId == 'internet_cafe')
+          if (room.iconKey == 'internet_cafe')
             Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: _CryptoTokensCard(
