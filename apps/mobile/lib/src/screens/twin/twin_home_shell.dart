@@ -7,6 +7,9 @@ import '../../agents/twin_directory.dart';
 import '../../agents/twin_profile.dart';
 import '../../state/wallet_state.dart';
 import '../../state/agent_directory_state.dart';
+import '../../home/home_models.dart';
+import '../../home/home_screen.dart';
+import '../../home/home_state.dart';
 import '../activity/activity_screen.dart';
 import '../explore/explore_screen.dart';
 import '../wallet/send_credits_sheet.dart';
@@ -17,7 +20,7 @@ import 'twin_share_sheet.dart';
 /// Consumer-facing Masanawa root.
 ///
 /// Runtime details such as Characters, Skills, Agent Float and providers stay behind
-/// this shell. The ordinary user navigates only My Twin, Explore, Activity and Wallet.
+/// this shell. The ordinary user navigates Home, Explore, Activity and Wallet.
 class TwinHomeShell extends ConsumerStatefulWidget {
   const TwinHomeShell({super.key, this.initialIndex = 0});
 
@@ -37,6 +40,74 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
 
   void _openOwnedTwin(String characterId) {
     context.push('/chat/${Uri.encodeComponent(characterId)}');
+  }
+
+
+  void _openAssistant(
+    HomeAssistantCardModel assistant,
+    HomeAssistantAction action,
+  ) {
+    final id = Uri.encodeComponent(assistant.characterId);
+    final entry = switch (action) {
+      HomeAssistantAction.chat => null,
+      HomeAssistantAction.voiceNote => 'voice-note',
+      HomeAssistantAction.liveVoice => 'live-voice',
+    };
+    context.push(entry == null ? '/chat/' + id : '/chat/' + id + '?entry=' + entry);
+  }
+
+  void _openQuickService(HomeQuickService service) {
+    context.push('/billing?service=' + service.name);
+  }
+
+  void _openRoom(HomeRoomCardModel room) {
+    if (room.roomId == 'room.internet-cafe') {
+      context.push('/billing');
+    }
+  }
+
+  Future<void> _openMyTwinSurface(HomeTwinCardModel twin) async {
+    if (!twin.hasTwin) {
+      context.push('/clone');
+      return;
+    }
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => MyTwinScreen(
+          onCreateTwin: () => context.push('/clone'),
+          onTalkToTwin: _openOwnedTwin,
+          onTeachTwin: _openOwnedTwin,
+          onShareTwin: _shareTwin,
+          onOpenSettings: () => context.push('/settings'),
+        ),
+      ),
+    );
+  }
+
+  Widget _homePage() {
+    final home = ref.watch(homeProvider);
+    final state = home.when(
+      data: HomeViewState.ready,
+      loading: () => const HomeViewState.loading(),
+      error: (error, _) => HomeViewState.error(error.toString()),
+    );
+    return HomeScreen(
+      state: state,
+      onRetry: () => ref.read(homeProvider.notifier).refresh(),
+      onRefresh: () => ref.read(homeProvider.notifier).refresh(),
+      onAssistantAction: _openAssistant,
+      onQuickService: _openQuickService,
+      onOpenRoom: _openRoom,
+      onOpenMyTwin: home.valueOrNull?.myTwin == null
+          ? null
+          : () => _openMyTwinSurface(home.valueOrNull!.myTwin!),
+      onCreateMyTwin: () => context.push('/clone'),
+      onOpenContinuation: (item) {
+        final roomId = item.roomId;
+        if (roomId == 'room.internet-cafe') context.push('/billing');
+      },
+      onOpenProfile: () => context.push('/settings'),
+    );
   }
 
   Future<void> _shareTwin(TwinProfile profile) async {
@@ -99,13 +170,7 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
 
   Widget _page(int index) {
     return switch (index) {
-      0 => MyTwinScreen(
-          onCreateTwin: () => context.push('/clone'),
-          onTalkToTwin: _openOwnedTwin,
-          onTeachTwin: _openOwnedTwin,
-          onShareTwin: _shareTwin,
-          onOpenSettings: () => context.push('/settings'),
-        ),
+      0 => _homePage(),
       1 => ExploreScreen(onOpenTwin: _openTwin),
       2 => const ActivityScreen(),
       3 => WalletScreen(
@@ -130,9 +195,9 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
         onDestinationSelected: (value) => setState(() => _index = value),
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.auto_awesome_outlined),
-            selectedIcon: Icon(Icons.auto_awesome),
-            label: 'My Twin',
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Home',
           ),
           NavigationDestination(
             icon: Icon(Icons.explore_outlined),
