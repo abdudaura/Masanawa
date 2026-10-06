@@ -8,6 +8,7 @@ import { parseTraceparent } from "@masanawa/telemetry";
 import { createGatewayApp } from "./app.js";
 import type { CustomerAuthService } from "./customer_auth.js";
 import type { BillingCheckoutService } from "./billing_checkout.js";
+import type { NewsService } from "./news_service.js";
 
 const apps: Array<ReturnType<typeof createGatewayApp>> = [];
 
@@ -155,4 +156,55 @@ describe("gateway service bootstrap", () => {
     ]);
     expect(response.body).not.toContain("secret internal failure");
   });
+  it("serves the authenticated News Room projection", async () => {
+    const news: NewsService = {
+      async load(request) {
+        expect(request.authorizationHeader).toBe("Bearer customer");
+        return {
+          updatedAt: "2026-10-06T09:00:00.000Z",
+          featuredItemId: "news-1",
+          categories: [
+            { id: "top", label: "Top", order: 0, visible: true },
+          ],
+          items: [
+            {
+              id: "news-1",
+              title: "Headline",
+              summary: "Summary",
+              body: "Body",
+              categoryId: "top",
+              imageUrl: null,
+              sources: [
+                {
+                  label: "Source",
+                  publisher: "Publisher",
+                  url: "https://publisher.example/story",
+                },
+              ],
+              evidenceRefs: ["https://publisher.example/story"],
+              audio: null,
+              publishedAt: "2026-10-06T08:00:00.000Z",
+              visible: true,
+              pinned: true,
+            },
+          ],
+        };
+      },
+    };
+    const app = createGatewayApp({ news });
+    apps.push(app);
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/rooms/news",
+      headers: { authorization: "Bearer customer" },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().featuredItemId).toBe("news-1");
+    expect(response.json().items[0].sources[0].url).toBe(
+      "https://publisher.example/story",
+    );
+  });
+
 });
