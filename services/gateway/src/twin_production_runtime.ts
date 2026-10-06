@@ -2175,6 +2175,13 @@ export function createTwinProductionRuntime(input: {
         return Object.freeze({
           attendanceVerified: attendance.attendanceVerified,
           verifiedSeconds: attendance.verifiedSeconds,
+          sessionEndsAt: current.startedAt
+            ? plusMs(
+                current.startedAt,
+                (current.durationMinutes + ownerCompletionGraceMinutes) *
+                  60_000,
+              )
+            : null,
           presence: Object.freeze(
             attendance.presence.map((item) =>
               Object.freeze({
