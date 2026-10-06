@@ -131,6 +131,7 @@ import {
 } from "./financial_service.js";
 import { createGeminiLiveAudioRenderer } from "./native_audio.js";
 import { createAgentShellService } from "./agent_shell.js";
+import { createNewsRoomService } from "./news_room.js";
 import type {
   AgentShellActionExecutor,
   LiveVoiceTokenService,
@@ -1228,6 +1229,14 @@ export async function startGatewayService(
         })
       : undefined);
 
+  const composedNewsRoom =
+    options.appOptions?.newsRoom ??
+    (billingCustomerAuthorizer
+      ? createNewsRoomService({
+          authorizer: billingCustomerAuthorizer,
+        })
+      : undefined);
+
   const composedCommerceFulfillment =
     options.appOptions?.commerceFulfillment ??
     (commerceAuthorizer &&
@@ -1387,6 +1396,7 @@ export async function startGatewayService(
       ...(composedFinancial ? { financial: composedFinancial } : {}),
       ...(twinProduction ? { twinProduction } : {}),
       ...(composedDirectory ? { agentDirectory: composedDirectory } : {}),
+      ...(composedNewsRoom ? { newsRoom: composedNewsRoom } : {}),
       ...(composedConversation
         ? { agentConversation: composedConversation }
         : {}),
