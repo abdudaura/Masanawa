@@ -9,7 +9,7 @@ yes | sdkmanager --licenses >/dev/null
 license_status=${PIPESTATUS[1]}
 set -o pipefail
 [[ "$license_status" -eq 0 ]]
-sdkmanager "platform-tools" "platforms;android-37.0" "build-tools;36.0.0"
+sdkmanager "platform-tools" "platforms;android-37.0" "build-tools;36.0.0" "ndk;28.2.13676358"
 
 # Railway production validator is capped at 1 GB. Keep Gradle/Kotlin in-process
 # and leave headroom for Flutter's AOT compiler and Android packaging.
