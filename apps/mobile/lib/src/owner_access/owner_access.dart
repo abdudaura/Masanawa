@@ -310,22 +310,37 @@ class OwnerAccessRoomStatus {
     required this.attendanceVerified,
     required this.verifiedSeconds,
     required this.sessionEndsAt,
+    required this.realPersonSession,
+    required this.recordingAllowed,
+    required this.messageRetentionDays,
     required this.presence,
   });
 
   final bool attendanceVerified;
   final int verifiedSeconds;
   final DateTime? sessionEndsAt;
+  final bool realPersonSession;
+  final bool recordingAllowed;
+  final int? messageRetentionDays;
   final List<OwnerAccessRoomPresence> presence;
 
   factory OwnerAccessRoomStatus.fromJson(Map<String, dynamic> json) {
     final verified = json['attendanceVerified'];
     final seconds = json['verifiedSeconds'];
     final sessionEndsAt = json['sessionEndsAt'];
+    final realPersonSession = json['realPersonSession'];
+    final recordingAllowed = json['recordingAllowed'];
+    final messageRetentionDays = json['messageRetentionDays'];
     final presence = json['presence'];
     if (verified is! bool ||
         seconds is! num ||
         (sessionEndsAt != null && sessionEndsAt is! String) ||
+        (realPersonSession != null && realPersonSession is! bool) ||
+        (recordingAllowed != null && recordingAllowed is! bool) ||
+        (messageRetentionDays != null &&
+            (messageRetentionDays is! num ||
+                messageRetentionDays.toInt() < 1 ||
+                messageRetentionDays.toInt() > 365)) ||
         presence is! List) {
       throw const FormatException('Invalid owner access room status');
     }
@@ -334,6 +349,11 @@ class OwnerAccessRoomStatus {
       verifiedSeconds: seconds.toInt(),
       sessionEndsAt: sessionEndsAt is String
           ? DateTime.parse(sessionEndsAt).toLocal()
+          : null,
+      realPersonSession: realPersonSession == true,
+      recordingAllowed: recordingAllowed == true,
+      messageRetentionDays: messageRetentionDays is num
+          ? messageRetentionDays.toInt()
           : null,
       presence: List.unmodifiable(
         presence.map(
@@ -345,7 +365,6 @@ class OwnerAccessRoomStatus {
     );
   }
 }
-
 abstract class OwnerAccessTransport {
   Future<OwnerAccessQuote> quote({
     required String characterId,
