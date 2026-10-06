@@ -198,6 +198,16 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     String text,
     AiChatMessage? reply,
   ) async {
+    final ownedTwin = await ref.read(myTwinProvider.future);
+    if (!mounted) return;
+    if (ownedTwin?.characterId != widget.characterId) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Teach mode is available only in your own Twin chat.'),
+        ),
+      );
+      return;
+    }
     final command = interpretTwinTeaching(text);
     if (command != null) {
       try {
