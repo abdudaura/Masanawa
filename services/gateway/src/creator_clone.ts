@@ -1,6 +1,8 @@
 import {
   createCanonicalId,
   nowInstant,
+  type CharacterId,
+  type Instant,
   type TenantId,
   type UserId,
 } from "@masanawa/contracts";
@@ -83,15 +85,15 @@ function list(values: readonly string[], name: string, maxItems: number): readon
 export interface CreatorTwinImageStore {
   put(input: {
     readonly tenantId: TenantId;
-    readonly characterId: string;
+    readonly characterId: CharacterId;
     readonly ownerUserId: UserId;
     readonly contentType: "image/jpeg" | "image/png" | "image/webp";
     readonly bytes: Uint8Array;
-    readonly updatedAt: string;
+    readonly updatedAt: Instant;
   }): Promise<void>;
   read(input: {
     readonly tenantId: TenantId;
-    readonly characterId: string;
+    readonly characterId: CharacterId;
   }): Promise<{
     readonly contentType: "image/jpeg" | "image/png" | "image/webp";
     readonly bytes: Uint8Array;
@@ -106,6 +108,7 @@ export function createCreatorCloneService(input: {
   readonly twinProfiles?: TwinProfileRepository;
   readonly twinImages?: CreatorTwinImageStore;
   readonly publicBaseUrl?: string;
+  readonly publicTenantId?: TenantId;
 }): CreatorCloneService {
   return Object.freeze<CreatorCloneService>({
     async create(request) {
@@ -264,17 +267,20 @@ export function createCreatorCloneService(input: {
     },
 
     async readPublicAvatar(request) {
-      if (!input.twinProfiles || !input.twinImages) return null;
+      if (!input.twinProfiles || !input.twinImages || !input.publicTenantId) {
+        return null;
+      }
       const publicId = request.publicId.trim().toLowerCase();
       if (!/^[a-z0-9][a-z0-9_-]{2,63}$/u.test(publicId)) return null;
-      const tenantId = (await input.twinProfiles.readPublicById({
-        tenantId: ("" as TenantId),
+      const profile = await input.twinProfiles.readPublicById({
+        tenantId: input.publicTenantId,
         publicId,
-      }).catch(() => null));
-      // Public profile lookup is tenant-scoped; the HTTP composition supplies
-      // an explicit platform tenant through publicAvatarTenantId below.
-      void tenantId;
-      return null;
+      });
+      if (!profile || profile.discoverable !== true) return null;
+      return input.twinImages.read({
+        tenantId: input.publicTenantId,
+        characterId: profile.characterId,
+      });
     },
   });
 }
