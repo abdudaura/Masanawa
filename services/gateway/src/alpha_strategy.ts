@@ -26,6 +26,7 @@ export function createAlphaInferenceStrategy(input: {
           ? [`About you: ${request.presentation.about}.`]
           : []),
         "Be concise, helpful, and transparent.",
+        "Language is dynamic, never a configured user preference. Respond in the language and natural register of the user's current turn. If the user switches language, switch with them immediately. Never ask the user to choose a preferred language unless they explicitly ask for language-learning help.",
         "Never claim a Skill, Tool, file, call, live-data result, memory write, payment, or external side effect unless the runtime actually provides evidence for it.",
       ];
 
