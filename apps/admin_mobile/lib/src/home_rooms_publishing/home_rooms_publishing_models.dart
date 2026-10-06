@@ -211,6 +211,17 @@ class PublishingMutationIntent {
   final String? displayName;
   final String? position;
 
+  static String _target(String value) {
+    final target = value.trim();
+    if (target.isEmpty) throw ArgumentError('targetId must not be empty');
+    return target;
+  }
+
+  static int _revision(int value) {
+    if (value < 1) throw ArgumentError('expectedRevision must be positive');
+    return value;
+  }
+
   factory PublishingMutationIntent.setVisibility({
     required PublishingMutationKind kind,
     required String targetId,
@@ -224,9 +235,9 @@ class PublishingMutationIntent {
     }
     return PublishingMutationIntent(
       kind: kind,
-      targetId: targetId,
+      targetId: _target(targetId),
       visible: visible,
-      expectedRevision: expectedRevision,
+      expectedRevision: _revision(expectedRevision),
     );
   }
 
@@ -238,9 +249,9 @@ class PublishingMutationIntent {
     if (sortOrder < 0) throw ArgumentError('sortOrder must be non-negative');
     return PublishingMutationIntent(
       kind: PublishingMutationKind.reorderHomeRoom,
-      targetId: roomKey,
+      targetId: _target(roomKey),
       sortOrder: sortOrder,
-      expectedRevision: expectedRevision,
+      expectedRevision: _revision(expectedRevision),
     );
   }
 
@@ -248,13 +259,18 @@ class PublishingMutationIntent {
     required String categoryId,
     required String? itemId,
     required int expectedRevision,
-  }) =>
-      PublishingMutationIntent(
-        kind: PublishingMutationKind.pinNewsItem,
-        targetId: categoryId,
-        pinnedItemId: itemId,
-        expectedRevision: expectedRevision,
-      );
+  }) {
+    final pinned = itemId?.trim();
+    if (pinned != null && pinned.isEmpty) {
+      throw ArgumentError('itemId must be null or non-empty');
+    }
+    return PublishingMutationIntent(
+      kind: PublishingMutationKind.pinNewsItem,
+      targetId: _target(categoryId),
+      pinnedItemId: pinned,
+      expectedRevision: _revision(expectedRevision),
+    );
+  }
 
   factory PublishingMutationIntent.updateAssistant({
     required String characterId,
@@ -266,13 +282,15 @@ class PublishingMutationIntent {
     if (position != 'left' && position != 'right') {
       throw ArgumentError('Assistant position must be left or right');
     }
+    final name = displayName.trim();
+    if (name.isEmpty) throw ArgumentError('displayName must not be empty');
     return PublishingMutationIntent(
       kind: PublishingMutationKind.updateAssistantPresentation,
-      targetId: characterId,
-      displayName: displayName,
+      targetId: _target(characterId),
+      displayName: name,
       position: position,
       visible: visible,
-      expectedRevision: expectedRevision,
+      expectedRevision: _revision(expectedRevision),
     );
   }
 }
