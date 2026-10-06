@@ -50,3 +50,10 @@ export {
   type WhatsAppCloudApiEdge,
   type WhatsAppOutboundSenderConfig,
 } from "./whatsapp-outbound.js";
+
+
+export {
+  createDurableChannelIngressAdmission,
+  type AtomicChannelIngressStore,
+  type ChannelIngressCustodyObservation,
+} from "./ingress-custody.js";
