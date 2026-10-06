@@ -1077,6 +1077,11 @@ export function createTwinProductionRuntime(input: {
     authorizer: customerAuthority,
     pricing: {
       async quote(request) {
+        if (request.modality !== "text") {
+          throw new Error(
+            "Human voice/video sessions are not available in this build",
+          );
+        }
         const owner = await input.economy.readOwnerForCharacter({
           tenantId: request.tenantId,
           characterId: request.characterId,
@@ -1329,23 +1334,94 @@ export function createTwinProductionRuntime(input: {
     },
   });
 
+  type PersistedOwnerAccessRequest = NonNullable<
+    Awaited<ReturnType<TwinRuntimeRepository["readOwnerAccessRequest"]>>
+  >;
+
+  async function ownerAccessAttendance(
+    tenantId: TenantId,
+    current: PersistedOwnerAccessRequest,
+  ): Promise<Readonly<{
+    attendanceVerified: boolean;
+    verifiedSeconds: number;
+    presence: readonly {
+      readonly userId: UserId;
+      readonly firstSeenAt: string;
+      readonly lastSeenAt: string;
+      readonly heartbeatCount: number;
+    }[];
+  }>> {
+    if (current.modality !== "text") {
+      return Object.freeze({
+        attendanceVerified: false,
+        verifiedSeconds: 0,
+        presence: Object.freeze([]),
+      });
+    }
+    const presence = await input.economy.listOwnerAccessPresence({
+      tenantId,
+      requestId: current.requestId,
+    });
+    const requester = presence.find(
+      (item) => item.userId === current.requesterUserId,
+    );
+    const owner = presence.find(
+      (item) => item.userId === current.ownerUserId,
+    );
+    if (
+      !requester ||
+      !owner ||
+      requester.heartbeatCount < 2 ||
+      owner.heartbeatCount < 2
+    ) {
+      return Object.freeze({
+        attendanceVerified: false,
+        verifiedSeconds: 0,
+        presence,
+      });
+    }
+    const overlapStart = Math.max(
+      Date.parse(requester.firstSeenAt),
+      Date.parse(owner.firstSeenAt),
+    );
+    const overlapEnd = Math.min(
+      Date.parse(requester.lastSeenAt),
+      Date.parse(owner.lastSeenAt),
+    );
+    const verifiedSeconds = Math.max(
+      0,
+      Math.floor((overlapEnd - overlapStart) / 1000),
+    );
+    return Object.freeze({
+      attendanceVerified: verifiedSeconds >= 60,
+      verifiedSeconds,
+      presence,
+    });
+  }
+
   async function settleOwnerRequest(
     tenantId: TenantId,
     current: Awaited<ReturnType<TwinRuntimeRepository["readOwnerAccessRequest"]>>,
     nextState: import("@masanawa/commerce").OwnerAccessState,
   ) {
     if (!current) throw new Error("Owner access request not found");
-    const startedMs = current.startedAt ? Date.parse(current.startedAt) : Number.NaN;
-    const verified =
-      Number.isFinite(startedMs) && Date.now() - startedMs >= 60_000;
+    const attendance =
+      nextState === "completed"
+        ? await ownerAccessAttendance(tenantId, current)
+        : {
+            attendanceVerified: false,
+            verifiedSeconds: 0,
+            presence: [] as const,
+          };
     const decision = decideOwnerAccessSettlement({
       state: nextState,
       chargeMode: current.chargeMode,
       reservedCredits: current.reservedCredits,
       ownerEarningCredits: current.ownerEarningCredits,
       platformFeeCredits: current.platformFeeCredits,
-      attendanceVerified: verified,
-      completionVerified: nextState === "completed" && verified,
+      attendanceVerified: attendance.attendanceVerified,
+      completionVerified:
+        nextState === "completed" && attendance.attendanceVerified,
     });
     if (decision.disposition === "reconcile") {
       throw new Error("Owner access requires reconciliation");
@@ -1428,10 +1504,6 @@ export function createTwinProductionRuntime(input: {
     }
     return decision;
   }
-
-  type PersistedOwnerAccessRequest = NonNullable<
-    Awaited<ReturnType<TwinRuntimeRepository["readOwnerAccessRequest"]>>
-  >;
 
   async function appendOwnerAccessProjectionEvent(
     tenantId: TenantId,
@@ -1702,6 +1774,7 @@ export function createTwinProductionRuntime(input: {
           !stored ||
           stored.requesterUserId !== request.requesterUserId ||
           stored.originatingCharacterId !== request.characterId ||
+          stored.modality !== "text" ||
           Date.parse(stored.quoteExpiresAt) <= Date.now()
         ) {
           throw new Error("Owner access quote is unavailable or expired");
@@ -1865,16 +1938,22 @@ export function createTwinProductionRuntime(input: {
           current,
         );
 
+        if (
+          request.action === "start" &&
+          current.modality !== "text"
+        ) {
+          throw new Error(
+            "Human voice/video sessions are not available in this build",
+          );
+        }
         if (request.action === "complete") {
-          const startedMs = current.startedAt
-            ? Date.parse(current.startedAt)
-            : Number.NaN;
-          if (
-            !Number.isFinite(startedMs) ||
-            Date.now() - startedMs < 60_000
-          ) {
+          const attendance = await ownerAccessAttendance(
+            request.tenantId,
+            current,
+          );
+          if (!attendance.attendanceVerified) {
             throw new Error(
-              "Owner access cannot complete before verified attendance",
+              "Owner access cannot complete before both participants have verified attendance",
             );
           }
         }
@@ -1995,6 +2074,111 @@ export function createTwinProductionRuntime(input: {
           throw new Error("Owner access latest-request scope violation");
         }
         return refreshOwnerAccessLifecycle(request.tenantId, current);
+      },
+
+      async heartbeat(request) {
+        const current = await input.economy.readOwnerAccessRequest({
+          tenantId: request.tenantId,
+          requestId: request.requestId,
+        });
+        if (
+          !current ||
+          current.originatingCharacterId !== request.characterId ||
+          (current.requesterUserId !== request.actorUserId &&
+            current.ownerUserId !== request.actorUserId)
+        ) {
+          throw Object.assign(
+            new Error("Owner access room is private"),
+            { statusCode: 403 },
+          );
+        }
+        if (current.modality !== "text" || current.state !== "active") {
+          throw new Error("Owner access room is not active");
+        }
+        await input.economy.touchOwnerAccessPresence({
+          tenantId: request.tenantId,
+          requestId: current.requestId,
+          userId: request.actorUserId,
+          seenAt: at(),
+        });
+        const attendance = await ownerAccessAttendance(
+          request.tenantId,
+          current,
+        );
+        return Object.freeze({
+          attendanceVerified: attendance.attendanceVerified,
+          verifiedSeconds: attendance.verifiedSeconds,
+          presence: Object.freeze(
+            attendance.presence.map((item) =>
+              Object.freeze({
+                userId: item.userId,
+                firstSeenAt: item.firstSeenAt,
+                lastSeenAt: item.lastSeenAt,
+                heartbeatCount: item.heartbeatCount,
+              }),
+            ),
+          ),
+        });
+      },
+
+      async listMessages(request) {
+        const current = await input.economy.readOwnerAccessRequest({
+          tenantId: request.tenantId,
+          requestId: request.requestId,
+        });
+        if (
+          !current ||
+          current.originatingCharacterId !== request.characterId ||
+          (current.requesterUserId !== request.actorUserId &&
+            current.ownerUserId !== request.actorUserId)
+        ) {
+          throw Object.assign(
+            new Error("Owner access room is private"),
+            { statusCode: 403 },
+          );
+        }
+        if (
+          current.modality !== "text" ||
+          !["active", "completed", "settled"].includes(current.state)
+        ) {
+          throw new Error("Owner access room is unavailable");
+        }
+        return input.economy.listOwnerAccessMessages({
+          tenantId: request.tenantId,
+          requestId: current.requestId,
+          limit: request.limit,
+        });
+      },
+
+      async sendMessage(request) {
+        const current = await input.economy.readOwnerAccessRequest({
+          tenantId: request.tenantId,
+          requestId: request.requestId,
+        });
+        if (
+          !current ||
+          current.originatingCharacterId !== request.characterId ||
+          (current.requesterUserId !== request.actorUserId &&
+            current.ownerUserId !== request.actorUserId)
+        ) {
+          throw Object.assign(
+            new Error("Owner access room is private"),
+            { statusCode: 403 },
+          );
+        }
+        if (current.modality !== "text" || current.state !== "active") {
+          throw new Error("Owner access room is not active");
+        }
+        return input.economy.appendOwnerAccessMessage({
+          tenantId: request.tenantId,
+          message: {
+            requestId: current.requestId,
+            messageId: request.messageId,
+            senderUserId: request.actorUserId,
+            body: request.body,
+            sentAt: at(),
+          },
+        });
       },
     },
   });
