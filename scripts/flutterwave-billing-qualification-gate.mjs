@@ -13,7 +13,8 @@ function fail(message) {
 }
 
 function parseCsv(value, fallback = []) {
-  if (value === undefined || value === null || value.trim() === "") return [...fallback];
+  if (value === undefined || value === null) return [...fallback];
+  if (value.trim() === "") return [];
   return [...new Set(value.split(",").map((part) => part.trim()).filter(Boolean))];
 }
 
