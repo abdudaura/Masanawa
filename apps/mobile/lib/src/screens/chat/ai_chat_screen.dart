@@ -81,10 +81,13 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   LiveVoiceSession? _inlineVoiceSession;
   StreamSubscription<String>? _inlineTranscriptSub;
   StreamSubscription<LiveVoiceState>? _inlineVoiceStateSub;
+  StreamSubscription<void>? _inlineTurnSub;
   PaidVoiceAdmission? _inlinePaidAdmission;
   AgentShellTransport? _inlineShellTransport;
   String? _inlineVoiceCharacterId;
   String _inlineTranscript = '';
+  String _inlineTranscriptHistory = '';
+  String _inlineCurrentTranscript = '';
   LiveVoiceState _inlineVoiceState = LiveVoiceState.idle;
   bool _inlineVoiceClosing = false;
 
@@ -157,7 +160,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     _walletRefreshTimer?.cancel();
     _inlineTranscriptSub?.cancel();
     _inlineVoiceStateSub?.cancel();
-    unawaited(_inlineVoiceSession?.close());
+    _inlineTurnSub?.cancel();
+    unawaited(_disposeInlineVoice());
     _input.dispose();
     _search.dispose();
     _scroll.dispose();
@@ -1636,6 +1640,91 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     return (admission != null, admission);
   }
 
+  void _applyInlineTranscriptChunk(String chunk) {
+    final next = chunk.trim();
+    if (next.isEmpty || !mounted) return;
+    setState(() {
+      final current = _inlineCurrentTranscript;
+      if (current.isEmpty || next.startsWith(current)) {
+        _inlineCurrentTranscript = next;
+      } else if (!current.endsWith(next)) {
+        final separator =
+            current.endsWith(' ') || next.startsWith(' ') ? '' : ' ';
+        _inlineCurrentTranscript = current + separator + next;
+      }
+      _inlineTranscript = [
+        if (_inlineTranscriptHistory.trim().isNotEmpty)
+          _inlineTranscriptHistory.trim(),
+        if (_inlineCurrentTranscript.trim().isNotEmpty)
+          _inlineCurrentTranscript.trim(),
+      ].join('\n\n');
+    });
+  }
+
+  void _finishInlineTranscriptTurn() {
+    if (!mounted) return;
+    final current = _inlineCurrentTranscript.trim();
+    if (current.isEmpty) return;
+    setState(() {
+      _inlineTranscriptHistory = [
+        if (_inlineTranscriptHistory.trim().isNotEmpty)
+          _inlineTranscriptHistory.trim(),
+        current,
+      ].join('\n\n');
+      _inlineCurrentTranscript = '';
+      _inlineTranscript = _inlineTranscriptHistory;
+    });
+  }
+
+  Future<void> _disposeInlineVoice() async {
+    if (_inlineVoiceClosing) return;
+    final session = _inlineVoiceSession;
+    if (session == null) return;
+    _inlineVoiceClosing = true;
+    final admission = _inlinePaidAdmission;
+    final shellTransport = _inlineShellTransport;
+    final characterId = _inlineVoiceCharacterId;
+    final paidController = admission == null
+        ? null
+        : ref.read(paidVoiceControllerProvider.notifier);
+    final walletController = admission == null
+        ? null
+        : ref.read(walletProvider.notifier);
+    try {
+      await _inlineTranscriptSub?.cancel();
+      await _inlineVoiceStateSub?.cancel();
+      await _inlineTurnSub?.cancel();
+      _inlineTranscriptSub = null;
+      _inlineVoiceStateSub = null;
+      _inlineTurnSub = null;
+      await session.close();
+      if (admission != null && paidController != null) {
+        await paidController
+            .complete(
+              admissionId: admission.admissionId,
+              outcome: 'interrupted',
+            )
+            .catchError((_) {});
+        unawaited(walletController?.refresh() ?? Future<void>.value());
+      }
+      if (shellTransport != null && characterId != null) {
+        await shellTransport
+            .setPresence(
+              characterId: characterId,
+              state: 'available',
+              durationMs: 60 * 1000,
+            )
+            .catchError((_) {});
+      }
+    } finally {
+      _inlineVoiceSession = null;
+      _inlinePaidAdmission = null;
+      _inlineShellTransport = null;
+      _inlineVoiceCharacterId = null;
+      _inlineVoiceClosing = false;
+    }
+  }
+
   Future<void> _startInlineLiveVoice(AgentDirectoryEntry agent) async {
     if (_inlineVoiceSession != null) {
       await _stopInlineLiveVoice(outcome: 'completed');
@@ -1674,16 +1763,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
       _inlineTranscriptSub?.cancel();
       _inlineVoiceStateSub?.cancel();
-      _inlineTranscriptSub = session.transcripts.listen((chunk) {
-        if (!mounted || chunk.isEmpty) return;
-        setState(() {
-          _inlineTranscript = (_inlineTranscript + chunk);
-          if (_inlineTranscript.length > 6000) {
-            _inlineTranscript =
-                _inlineTranscript.substring(_inlineTranscript.length - 6000);
-          }
-        });
-      });
+      _inlineTurnSub?.cancel();
+      _inlineTranscriptSub =
+          session.transcripts.listen(_applyInlineTranscriptChunk);
+      _inlineTurnSub =
+          session.turnCompletions.listen((_) => _finishInlineTranscriptTurn());
       _inlineVoiceStateSub = session.states.listen((state) {
         if (!mounted) return;
         setState(() => _inlineVoiceState = state);
@@ -1698,6 +1782,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         _inlineShellTransport = shellTransport;
         _inlineVoiceCharacterId = agent.characterId;
         _inlineTranscript = '';
+        _inlineTranscriptHistory = '';
+        _inlineCurrentTranscript = '';
         _inlineVoiceState = LiveVoiceState.connecting;
       });
 
@@ -1738,8 +1824,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     try {
       await _inlineTranscriptSub?.cancel();
       await _inlineVoiceStateSub?.cancel();
+      await _inlineTurnSub?.cancel();
       _inlineTranscriptSub = null;
       _inlineVoiceStateSub = null;
+      _inlineTurnSub = null;
       await session.close();
       if (admission != null) {
         await ref
