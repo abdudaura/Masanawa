@@ -1122,6 +1122,9 @@ export async function startGatewayService(
       funding: flutterwaveFunding,
       billing: composedBillingFinancial,
       webhookSecretHash: webhookHash,
+      ...(twinProduction
+        ? { twinMonetization: twinProduction.monetization }
+        : {}),
     });
   }
 
