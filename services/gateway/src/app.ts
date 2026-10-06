@@ -431,7 +431,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     );
 
     app.get(
-      "/home",
+      "/v1/home",
       {
         schema: {
           response: { 200: HomeResponseSchema },
