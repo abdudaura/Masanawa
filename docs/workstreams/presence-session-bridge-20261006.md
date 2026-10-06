@@ -47,6 +47,8 @@ No active Task 119 realtime-presence claim was found. Existing presence work is 
 - service shell follows canonical implementation template;
 - no transport/vendor assumptions.
 
-State: CLAIMED. No implementation changes beyond this claim.
+State: IMPLEMENTING. Presence service shell, canonical PresenceSession/CharacterSession bridge, reconnect generation fencing and focused tests are committed. LiveKit/persistence/shared production composition remain excluded.
+
+Implementation head before handoff: `71b8f6f79614d002d20c80b2dba6c129cec85b7b`.
 
 Last update: 2026-10-06.
