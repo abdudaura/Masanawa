@@ -8,6 +8,11 @@ import {
 } from "@masanawa/contracts";
 import { canonicalJson, fingerprintCanonicalJson } from "@masanawa/security";
 import {
+  type TeachingAdaptiveIntake,
+  type TeachingAdaptivePlanner,
+  type TeachingAdaptivePlannerResult,
+} from "./teaching-plan.js";
+import {
   evaluateTeachingSelection,
   normalizeTeachingAnswerEvaluation,
   normalizeTeachingExerciseCard,
@@ -1113,6 +1118,7 @@ export interface TeachingRuntimeCoordinatorOptions {
   readonly progress: TeachingProgressPort;
   readonly presentation?: TeachingPresentationPort;
   readonly evidence?: TeachingEvidencePort;
+  readonly adaptivePlanner?: TeachingAdaptivePlanner;
 }
 
 export function fingerprintTeachingLessonPlan(
@@ -1468,11 +1474,33 @@ export class TeachingRuntimeCoordinator {
   readonly #progress: TeachingProgressPort;
   readonly #presentation: TeachingPresentationPort | undefined;
   readonly #evidence: TeachingEvidencePort | undefined;
+  readonly #adaptivePlanner: TeachingAdaptivePlanner | undefined;
 
   constructor(options: TeachingRuntimeCoordinatorOptions) {
     this.#progress = options.progress;
     this.#presentation = options.presentation;
     this.#evidence = options.evidence;
+    this.#adaptivePlanner = options.adaptivePlanner;
+  }
+
+  async preparePlan(request: {
+    readonly binding: TeachingRuntimeBinding;
+    readonly intake: TeachingAdaptiveIntake;
+    readonly resources?: readonly TeachingResourceEvidence[];
+  }): Promise<TeachingAdaptivePlannerResult> {
+    if (this.#adaptivePlanner === undefined) {
+      throw new Error("Teaching adaptive planner is not configured");
+    }
+    if (request.intake.relationshipId !== request.binding.relationshipId) {
+      throw new TypeError(
+        "Teaching adaptive intake must match the admitted Relationship",
+      );
+    }
+    return this.#adaptivePlanner.propose({
+      skillVersionId: request.binding.skillVersionId,
+      intake: request.intake,
+      resources: request.resources,
+    });
   }
 
   async resume(
