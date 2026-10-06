@@ -101,6 +101,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/chat/:id',
         builder: (context, state) {
           final entry = switch (state.uri.queryParameters['entry']) {
+            'teach' => AiChatEntryMode.teach,
             'voice-note' => AiChatEntryMode.voiceNote,
             'live-voice' => AiChatEntryMode.liveVoice,
             _ => AiChatEntryMode.chat,
