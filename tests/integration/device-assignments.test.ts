@@ -40,8 +40,7 @@ describePostgres("Character Device assignment persistence acceptance",()=>{
     } finally { await admin?.end(); }
   });
 
-  async function activeDevice(){
-    const tenantId=createCanonicalId("tenant");
+  async function activeDevice(tenantId=createCanonicalId("tenant")){
     const d=await registerDevice(pool,{
       tenantId,enrollmentFingerprint:`enrollment-${randomUUID()}`,
       metadata:{deviceClass:"android_phone",platform:"android",platformVersion:"12",model:"TECNO Pop 7",appVersion:"1.0.0"},
@@ -115,18 +114,18 @@ describePostgres("Character Device assignment persistence acceptance",()=>{
 
   it("creates replacement Device assignment without changing Character identity",async()=>{
     const originalScope=await activeDevice();
-    const replacementScope=await activeDevice();
+    const replacementScope=await activeDevice(originalScope.tenantId);
     const characterId=createCanonicalId("character");
     const original=assignment(originalScope,characterId);
     const replacement=assignment(replacementScope,characterId);
     await putCharacterDeviceAssignment(pool,{assignment:original,expectedRevision:null});
     await putCharacterDeviceAssignment(pool,{assignment:replacement,expectedRevision:null});
     const listed=await listCharacterDeviceAssignments(pool,{tenantId:originalScope.tenantId,characterId});
-    expect(listed.map(x=>x.characterId)).toEqual([characterId]);
-    expect(listed[0]?.deviceId).toBe(originalScope.deviceId);
-
-    // Replacement in another Tenant must remain isolated rather than merge identities.
-    expect(replacement.tenantId).not.toBe(original.tenantId);
+    expect(listed).toHaveLength(2);
+    expect(listed.every(x=>x.characterId===characterId)).toBe(true);
+    expect(new Set(listed.map(x=>x.deviceId))).toEqual(
+      new Set([originalScope.deviceId,replacementScope.deviceId]),
+    );
   });
 
   it("filters revoked assignments by default and can include durable history",async()=>{
