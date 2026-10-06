@@ -435,7 +435,10 @@ class _EpisodeTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Episode ' + episode.episodeNumber.toString(),
+                  'Season ' +
+                      episode.seasonNumber.toString() +
+                      ' · Episode ' +
+                      episode.episodeNumber.toString(),
                   style: TextStyle(
                     color: u.textMuted,
                     fontSize: 11,
