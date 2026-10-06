@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../owner_access/owner_access.dart';
-import '../../../theme/masanawa_theme.dart';
+import 'package:masanawa/src/owner_access/owner_access.dart';
+import 'package:masanawa/src/theme/masanawa_theme.dart';
 
 class OwnerAccessSettingsSheet extends StatefulWidget {
   const OwnerAccessSettingsSheet({
