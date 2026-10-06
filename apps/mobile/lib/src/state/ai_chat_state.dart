@@ -1892,6 +1892,31 @@ final aiChatProvider = NotifierProvider<AiChatController, AiChatState>(
     return value;
   }
 
+  Future<void> announceTwinReady(
+    String characterId, {
+    required String displayName,
+    required String? publicUrl,
+  }) async {
+    final link = publicUrl?.trim();
+    final result = await _sendViaTransport(
+      characterId,
+      link == null || link.isEmpty
+          ? 'The Twin named "$displayName" has now been created. '
+              'Congratulate the user briefly in the same language they have been using. '
+              'Explain verbally how people can talk to their Twin and that the share link will appear as soon as the public profile finishes syncing.'
+          : 'The Twin named "$displayName" has now been created. Its full referral link is $link. '
+              'Congratulate the user briefly in the same language they have been using. '
+              'Read/explain the link clearly and explain that they can share it so people can talk to the Twin. '
+              'Keep this short and natural for audio playback.',
+    );
+    await _appendAi(
+      characterId,
+      result.text,
+      parts: result.parts,
+      agentRunId: result.agentRunId,
+    );
+  }
+
   Future<void> sendText(
     String characterId,
     String rawText, {
