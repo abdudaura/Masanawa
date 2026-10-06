@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import type { AgentDirectoryService } from "./agent_directory.js";
 import { createGatewayApp } from "./app.js";
+import type { StoryRadioService } from "./story_radio.js";
 
 const apps: Array<ReturnType<typeof createGatewayApp>> = [];
 
@@ -91,6 +92,51 @@ describe("Home projection route", () => {
       ]),
     );
     expect(body).not.toHaveProperty("skills");
+  });
+
+  it("projects Story Radio listening progress into Home continuation", async () => {
+    const directory: AgentDirectoryService = {
+      async list() { return []; },
+      async setDefaultPlatformAgent() { throw new Error("not used"); },
+    };
+    const storyRadio = {
+      async home() {
+        return {
+          featured: null,
+          series: [],
+          continueProgress: {
+            seriesId: "series-1",
+            episodeId: "episode-2",
+            positionSeconds: 0,
+            durationSeconds: 180,
+            completed: false,
+            updatedAt: "2026-10-06T10:00:00.000Z",
+          },
+        };
+      },
+    } as unknown as StoryRadioService;
+
+    const app = createGatewayApp({
+      agentDirectory: directory,
+      storyRadio,
+    });
+    apps.push(app);
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/home",
+      headers: { authorization: "Bearer home-user" },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().continuations).toEqual([
+      expect.objectContaining({
+        id: "story-radio:episode-2",
+        title: "Continue Story Radio",
+        kind: "story-radio",
+        roomId: "room.story-radio",
+      }),
+    ]);
   });
 
   it("does not invent assistant Character IDs when a Home role is absent", async () => {
