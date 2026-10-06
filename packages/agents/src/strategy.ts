@@ -47,6 +47,11 @@ export interface AgentStrategyRequest {
   readonly characterVersionId: CharacterVersionId;
   readonly skillVersionIds: readonly SkillVersionId[];
   readonly presentation: AgentStrategyPresentation;
+  readonly runtimeSystemInstructions?: readonly string[];
+  readonly conversationHistory?: readonly {
+    readonly direction: "user" | "assistant";
+    readonly text: string;
+  }[];
   readonly input: AgentStrategyInput;
 }
 
