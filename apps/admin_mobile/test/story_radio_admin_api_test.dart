@@ -19,38 +19,6 @@ class _Adapter implements HttpClientAdapter {
 
   @override
   void close({bool force = false}) {}
-  test('refreshes an expired admin session once and retries with the new token', () async {
-    final seenAuthorization = <String?>[];
-    var requests = 0;
-    var refreshes = 0;
-    final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
-    dio.httpClientAdapter = _Adapter((options) async {
-      requests += 1;
-      seenAuthorization.add(options.headers['Authorization']?.toString());
-      if (requests == 1) {
-        return _json({
-          'error': {'code': 'customer_auth.session.invalid'},
-        }, statusCode: 401);
-      }
-      return _json({'series': const []});
-    });
-    final api = StoryRadioAdminApi(
-      token: 'expired-token',
-      dio: dio,
-      refreshAccessToken: () async {
-        refreshes += 1;
-        return 'fresh-token';
-      },
-    );
-
-    final series = await api.listSeries();
-
-    expect(series, isEmpty);
-    expect(refreshes, 1);
-    expect(requests, 2);
-    expect(seenAuthorization, ['Bearer expired-token', 'Bearer fresh-token']);
-  });
-
 }
 
 ResponseBody _json(Object value, {int statusCode = 200}) =>
@@ -107,4 +75,38 @@ void main() {
 
     expect(episode.published, isFalse);
   });
+
+  test('refreshes an expired admin session once and retries with the new token', () async {
+    final seenAuthorization = <String?>[];
+    var requests = 0;
+    var refreshes = 0;
+    final dio = Dio(BaseOptions(baseUrl: 'https://example.test'));
+    dio.httpClientAdapter = _Adapter((options) async {
+      requests += 1;
+      seenAuthorization.add(options.headers['Authorization']?.toString());
+      if (requests == 1) {
+        return _json({
+          'error': {'code': 'customer_auth.session.invalid'},
+        }, statusCode: 401);
+      }
+      return _json({'series': const []});
+    });
+    final api = StoryRadioAdminApi(
+      token: 'expired-token',
+      dio: dio,
+      refreshAccessToken: () async {
+        refreshes += 1;
+        return 'fresh-token';
+      },
+    );
+
+    final series = await api.listSeries();
+
+    expect(series, isEmpty);
+    expect(refreshes, 1);
+    expect(requests, 2);
+    expect(seenAuthorization, ['Bearer expired-token', 'Bearer fresh-token']);
+  });
+
+
 }
