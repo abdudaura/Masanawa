@@ -33,6 +33,26 @@ No competing Task 137 claim was found at selection. Social Task 131 is active in
 - evidence is revision/source bound and cannot silently change role;
 - empty or duplicate contradictory evidence fails closed.
 
-State: CLAIMED.
+State: ISOLATED COMPLETE / INTEGRATION READY.
+
+## Completed implementation
+
+- added a neutral Identity-domain evidence contract with no dependency on Social, Studio or Commerce packages;
+- requires exact Tenant match across every surface;
+- requires Social presentation, Studio media and Commerce originating evidence to resolve to the exact presentation Character;
+- allows Commerce executor Character to differ only as an explicit execution role;
+- executor identity can never substitute for missing/mismatched Commerce originating identity;
+- evidence is source-reference + revision bound;
+- duplicate evidence, missing required surfaces, cross-Tenant evidence and mismatched presentation identity fail closed;
+- focused tests cover correct fallback executor behavior and all mismatch cases.
+
+## Remaining integration dependencies
+
+1. Identity public-barrel owner must append the new guard export when available.
+2. Social/Studio/Commerce composition owners must map their canonical records into this evidence before publish/fulfillment handoff.
+3. Gateway/Worker integration must fail before external publish/fulfillment when consistency evidence is invalid.
+4. Task 138 golden journeys should exercise the composed rule end to end.
+
+Implementation head before handoff: `75055d07e4bdb33bfefd4e2e5986555bc0f215e8`.
 
 Last update: 2026-10-06.
