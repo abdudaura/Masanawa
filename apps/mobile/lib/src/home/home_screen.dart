@@ -16,6 +16,7 @@ class HomeScreen extends StatelessWidget {
     super.key,
     required this.state,
     this.onRetry,
+    this.onRefresh,
     this.onAssistantAction,
     this.onQuickService,
     this.onOpenRoom,
@@ -27,6 +28,7 @@ class HomeScreen extends StatelessWidget {
 
   final HomeViewState state;
   final VoidCallback? onRetry;
+  final Future<void> Function()? onRefresh;
   final HomeAssistantActionCallback? onAssistantAction;
   final HomeQuickServiceCallback? onQuickService;
   final HomeRoomCallback? onOpenRoom;
@@ -59,6 +61,7 @@ class HomeScreen extends StatelessWidget {
           ),
         HomeLoadStatus.ready => _HomeReady(
             snapshot: state.snapshot!,
+            onRefresh: onRefresh,
             onAssistantAction: onAssistantAction,
             onQuickService: onQuickService,
             onOpenRoom: onOpenRoom,
@@ -74,6 +77,7 @@ class HomeScreen extends StatelessWidget {
 class _HomeReady extends StatelessWidget {
   const _HomeReady({
     required this.snapshot,
+    required this.onRefresh,
     required this.onAssistantAction,
     required this.onQuickService,
     required this.onOpenRoom,
@@ -83,6 +87,7 @@ class _HomeReady extends StatelessWidget {
   });
 
   final HomeSnapshot snapshot;
+  final Future<void> Function()? onRefresh;
   final HomeAssistantActionCallback? onAssistantAction;
   final HomeQuickServiceCallback? onQuickService;
   final HomeRoomCallback? onOpenRoom;
@@ -99,7 +104,7 @@ class _HomeReady extends StatelessWidget {
     final gwana = snapshot.assistantFor(HomeAssistantRole.gwana);
     final gwani = snapshot.assistantFor(HomeAssistantRole.gwani);
 
-    return ListView(
+    final list = ListView(
       key: const ValueKey('home-content'),
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
@@ -176,6 +181,9 @@ class _HomeReady extends StatelessWidget {
         ),
       ],
     );
+    return onRefresh == null
+        ? list
+        : RefreshIndicator(onRefresh: onRefresh!, child: list);
   }
 }
 
