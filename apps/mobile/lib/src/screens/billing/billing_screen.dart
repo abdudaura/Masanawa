@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/api/billing_models.dart';
 import '../../core/network/api_client.dart';
 import '../../core/providers.dart';
+import '../../state/wallet_state.dart';
 
 BillCategory? billingCategoryForHomeService(
   List<BillCategory> categories,
