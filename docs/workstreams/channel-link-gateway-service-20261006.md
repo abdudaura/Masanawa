@@ -37,6 +37,22 @@ The resolver source is preserved without rewriting the stale branch.
 - binding owned by another User, revoked binding, account mismatch, or transport-scope mismatch fails closed;
 - proof-backed subject resolution returns the canonical User only after activation.
 
-State: CLAIMED.
+State: IMPLEMENTED / VERIFICATION PENDING.
+
+## Completed
+
+- preserves stale proof-backed channel subject resolver on the durable channel lineage;
+- platform-authenticated User can issue only against an active exact ChannelAccount;
+- Gateway generates a one-time high-entropy secret and persists only the durable challenge hash;
+- exact issue retry returns `already-issued` without minting a second secret;
+- transport-authenticated verification must match exact account/channel/subject and challenge Tenant scope;
+- successful verification creates/reuses one pending binding and activates it with exact challenge proof;
+- exact verified retry returns the same active binding without duplicate activation;
+- active binding proof mismatch, revoked binding, foreign identity binding and unavailable account fail closed;
+- proof-backed resolver returns canonical User only after activation.
+
+Router/transport wiring remains intentionally separate.
+
+Implementation head before handoff: `18fb2795acf6f1768c9ef2fb2fded4e8508724f7`.
 
 Last update: 2026-10-06.
