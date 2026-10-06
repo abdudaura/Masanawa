@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createCanonicalId, toInstant } from "@masanawa/contracts";
 import {
+  createTeachingAdaptivePlanner,
   materializeTeachingLessonPlan,
   normalizeTeachingSequenceProposal,
   resolveTeachingAdaptiveIntake,
@@ -202,5 +203,119 @@ describe("adaptive Teaching sequence proposal", () => {
         proposal: proposal(),
       }),
     ).toThrow(/requires clarification/);
+  });
+});
+
+
+describe("adaptive Teaching planner coordinator", () => {
+  it("returns clarification without invoking the proposal provider", async () => {
+    let calls = 0;
+    const planner = createTeachingAdaptivePlanner({
+      proposalPort: {
+        async propose() {
+          calls += 1;
+          return proposal();
+        },
+      },
+    });
+
+    const result = await planner.propose({
+      skillVersionId,
+      intake: {
+        relationshipId,
+        explicit: {},
+      },
+    });
+
+    expect(result.kind).toBe("clarification");
+    expect(calls).toBe(0);
+  });
+
+  it("passes resolved learner context and bounded steps to the proposal provider", async () => {
+    let observedMaximum = 0;
+    let observedTopic = "";
+    const planner = createTeachingAdaptivePlanner({
+      maximumSteps: 6,
+      proposalPort: {
+        async propose(input) {
+          observedMaximum = input.maximumSteps;
+          observedTopic = input.learner.topic;
+          return proposal();
+        },
+      },
+    });
+
+    const result = await planner.propose({
+      skillVersionId,
+      intake: {
+        relationshipId,
+        explicit: {
+          topic: "Fractions",
+          level: "beginner",
+          goals: ["Understand fractions"],
+          language: "en",
+          preferredModalities: ["text"],
+        },
+      },
+      resources: [
+        {
+          resourceKey: "fractions-reference",
+          title: "Reviewed fractions reference",
+          reference: "resource://teaching/math/fractions/v1",
+          contentHash: `sha256:${"b".repeat(64)}`,
+          checkedAt: toInstant("2026-10-06T00:00:00.000Z"),
+        },
+      ],
+    });
+
+    expect(observedMaximum).toBe(6);
+    expect(observedTopic).toBe("Fractions");
+    expect(result.kind).toBe("plan");
+    if (result.kind === "plan") {
+      expect(result.plan.steps).toHaveLength(2);
+      expect(result.rationale).toContain("concrete");
+    }
+  });
+
+  it("fails if a provider returns more steps than its admitted bound", async () => {
+    const base = proposal();
+    const planner = createTeachingAdaptivePlanner({
+      maximumSteps: 1,
+      proposalPort: {
+        async propose() {
+          return base;
+        },
+      },
+    });
+
+    await expect(
+      planner.propose({
+        skillVersionId,
+        intake: {
+          relationshipId,
+          explicit: { topic: "Fractions" },
+        },
+      }),
+    ).rejects.toThrow(/exceeded the admitted adaptive sequence bound/);
+  });
+
+  it("does not let a provider cite resource keys the runtime did not supply", async () => {
+    const planner = createTeachingAdaptivePlanner({
+      proposalPort: {
+        async propose() {
+          return proposal();
+        },
+      },
+    });
+
+    await expect(
+      planner.propose({
+        skillVersionId,
+        intake: {
+          relationshipId,
+          explicit: { topic: "Fractions" },
+        },
+      }),
+    ).rejects.toThrow(/unknown resource evidence/);
   });
 });
