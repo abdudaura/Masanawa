@@ -97,7 +97,9 @@ function harness() {
       },
     } as never,
     publicTwinBaseUrl: "https://masanawa.com/twin",
-    adminPrincipals: new Set<string>(),
+    adminPrincipals: input.admin
+      ? new Set<string>([String(input.actorUserId)])
+      : new Set<string>(),
     voice: {
       unitSeconds: 60,
       priceCreditsPerUnit: 10,
@@ -397,6 +399,7 @@ function ownerLifecycleHarness(input: {
     | "no-show"
     | "refunded"
     | "settled"
+    | "releasing"
     | "disputed";
   readonly chargeMode?: "trial" | "paid";
   readonly acceptBy?: string;
@@ -405,6 +408,12 @@ function ownerLifecycleHarness(input: {
   readonly reservedCredits?: number;
   readonly conflictOnNextTransition?: boolean;
   readonly verifiedAttendance?: boolean;
+  readonly completedAt?: string | null;
+  readonly disputeBy?: string | null;
+  readonly disputedAt?: string | null;
+  readonly disputeReason?: "service-not-delivered" | "service-quality" | "other" | null;
+  readonly earningsReleasedAt?: string | null;
+  readonly admin?: boolean;
 }) {
   const events: Array<Record<string, unknown>> = [];
   const transfers: Array<Record<string, unknown>> = [];
@@ -430,7 +439,11 @@ function ownerLifecycleHarness(input: {
       new Date(Date.now() + 60 * 60 * 1000).toISOString(),
     scheduledFor: input.scheduledFor ?? null,
     startedAt: input.startedAt ?? null,
-    completedAt: null,
+    completedAt: input.completedAt ?? null,
+    disputeBy: input.disputeBy ?? null,
+    disputedAt: input.disputedAt ?? null,
+    disputeReason: input.disputeReason ?? null,
+    earningsReleasedAt: input.earningsReleasedAt ?? null,
     reservationId: reservedCredits > 0
       ? "ledger-entry_reservation_lifecycle"
       : null,
@@ -1174,6 +1187,186 @@ describe("Twin production runtime composition", () => {
     expect(result.failed).toBe(0);
     expect(harness.current().state).toBe("refunded");
     expect(harness.transfers).toHaveLength(1);
+  });
+
+  it("holds completed human-session earnings pending until the dispute deadline", async () => {
+    const harness = ownerLifecycleHarness({
+      actorUserId: ownerUserId,
+      state: "active",
+      startedAt: new Date(Date.now() - 75_000).toISOString(),
+      reservedCredits: 100,
+      verifiedAttendance: true,
+    });
+
+    const completed = await harness.runtime.ownerAccess.act({
+      authorizationHeader: "Bearer owner",
+      characterId,
+      requestId: "request_lifecycle_123",
+      action: "complete",
+    });
+
+    expect(completed.state).toBe("settled");
+    expect(completed.disputeBy).toBeTruthy();
+    expect(Date.parse(completed.disputeBy!)).toBeGreaterThan(Date.now());
+    expect(completed.earningsReleasedAt).toBeNull();
+    expect(harness.transfers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          amountCredits: 80,
+          reason: "creator-earning",
+          credit: expect.objectContaining({
+            kind: "pending-earnings",
+            userId: ownerUserId,
+            characterId: null,
+          }),
+        }),
+      ]),
+    );
+  });
+
+  it("lets the requester freeze pending earnings during the dispute window", async () => {
+    const harness = ownerLifecycleHarness({
+      actorUserId: requesterUserId,
+      state: "settled",
+      completedAt: new Date(Date.now() - 5 * 60_000).toISOString(),
+      disputeBy: new Date(Date.now() + 60 * 60_000).toISOString(),
+      reservedCredits: 100,
+    });
+
+    const disputed = await harness.runtime.ownerAccess.act({
+      authorizationHeader: "Bearer requester",
+      characterId,
+      requestId: "request_lifecycle_123",
+      action: "dispute",
+      disputeReason: "service-quality",
+    });
+
+    expect(disputed.state).toBe("disputed");
+    expect(disputed.disputeReason).toBe("service-quality");
+    expect(disputed.disputedAt).toBeTruthy();
+    expect(harness.transfers).toHaveLength(0);
+  });
+
+  it("releases undisputed owner earnings from pending to available after the window", async () => {
+    const harness = ownerLifecycleHarness({
+      actorUserId: requesterUserId,
+      state: "settled",
+      completedAt: new Date(Date.now() - 2 * 60 * 60_000).toISOString(),
+      disputeBy: new Date(Date.now() - 60_000).toISOString(),
+      reservedCredits: 100,
+    });
+
+    const result = await harness.runtime.ownerAccessMaintenance.sweep({
+      tenantId,
+      limit: 10,
+    });
+
+    expect(result.failed).toBe(0);
+    expect(harness.current().state).toBe("settled");
+    expect(harness.current().earningsReleasedAt).toBeTruthy();
+    expect(harness.transfers).toEqual([
+      expect.objectContaining({
+        amountCredits: 80,
+        reason: "earning-settlement",
+        debit: expect.objectContaining({
+          kind: "pending-earnings",
+          userId: ownerUserId,
+          characterId: null,
+        }),
+        credit: expect.objectContaining({
+          kind: "available-earnings",
+          userId: ownerUserId,
+          characterId: null,
+        }),
+      }),
+    ]);
+  });
+
+  it("repairs a crash left in the releasing state without reopening disputes", async () => {
+    const harness = ownerLifecycleHarness({
+      actorUserId: requesterUserId,
+      state: "releasing",
+      completedAt: new Date(Date.now() - 2 * 60 * 60_000).toISOString(),
+      disputeBy: new Date(Date.now() - 60_000).toISOString(),
+      reservedCredits: 100,
+    });
+
+    const result = await harness.runtime.ownerAccessMaintenance.sweep({
+      tenantId,
+      limit: 10,
+    });
+
+    expect(result.failed).toBe(0);
+    expect(harness.current().state).toBe("settled");
+    expect(harness.current().earningsReleasedAt).toBeTruthy();
+    expect(harness.transfers).toHaveLength(1);
+  });
+
+  it("admin can resolve a requester dispute by refunding the full paid session", async () => {
+    const harness = ownerLifecycleHarness({
+      actorUserId: requesterUserId,
+      admin: true,
+      state: "disputed",
+      completedAt: new Date(Date.now() - 10 * 60_000).toISOString(),
+      disputedAt: new Date(Date.now() - 5 * 60_000).toISOString(),
+      disputeReason: "service-not-delivered",
+      reservedCredits: 100,
+    });
+
+    const resolved = await harness.runtime.ownerAccessDisputes.resolve({
+      authorizationHeader: "Bearer admin",
+      characterId,
+      requestId: "request_lifecycle_123",
+      resolution: "refund",
+    });
+
+    expect(resolved.state).toBe("refunded");
+    expect(resolved.disputeResolution).toBe("refund");
+    expect(harness.transfers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          amountCredits: 80,
+          reason: "refund",
+          debit: expect.objectContaining({ kind: "pending-earnings" }),
+          credit: expect.objectContaining({ kind: "customer-credit" }),
+        }),
+        expect.objectContaining({
+          amountCredits: 20,
+          reason: "refund",
+          debit: expect.objectContaining({ kind: "platform-revenue" }),
+          credit: expect.objectContaining({ kind: "customer-credit" }),
+        }),
+      ]),
+    );
+  });
+
+  it("admin can resolve a requester dispute by releasing the owner earnings", async () => {
+    const harness = ownerLifecycleHarness({
+      actorUserId: ownerUserId,
+      admin: true,
+      state: "disputed",
+      completedAt: new Date(Date.now() - 10 * 60_000).toISOString(),
+      disputedAt: new Date(Date.now() - 5 * 60_000).toISOString(),
+      disputeReason: "other",
+      reservedCredits: 100,
+    });
+
+    const resolved = await harness.runtime.ownerAccessDisputes.resolve({
+      authorizationHeader: "Bearer admin",
+      characterId,
+      requestId: "request_lifecycle_123",
+      resolution: "release",
+    });
+
+    expect(resolved.state).toBe("settled");
+    expect(resolved.disputeResolution).toBe("release");
+    expect(resolved.earningsReleasedAt).toBeTruthy();
+    expect(harness.transfers).toEqual([
+      expect.objectContaining({
+        amountCredits: 80,
+        reason: "earning-settlement",
+      }),
+    ]);
   });
 
   it("does not start paid voice usage when only a Live token is issued", async () => {
