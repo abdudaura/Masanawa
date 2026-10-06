@@ -527,30 +527,58 @@ class _PrimaryActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: FilledButton.icon(
-            onPressed: onTalk,
-            icon: const Icon(Icons.chat_bubble_outline),
-            label: const Text('Talk'),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: onTeach,
-            icon: const Icon(Icons.school_outlined),
-            label: const Text('Teach'),
-          ),
-        ),
-        const SizedBox(width: 8),
-        IconButton.outlined(
-          tooltip: 'Share twin',
-          onPressed: onShare,
-          icon: const Icon(Icons.share_outlined),
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 360) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              FilledButton.icon(
+                onPressed: onTalk,
+                icon: const Icon(Icons.chat_bubble_outline),
+                label: const Text('Talk'),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: onTeach,
+                icon: const Icon(Icons.school_outlined),
+                label: const Text('Teach'),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: onShare,
+                icon: const Icon(Icons.share_outlined),
+                label: const Text('Share'),
+              ),
+            ],
+          );
+        }
+        return Row(
+          children: [
+            Expanded(
+              child: FilledButton.icon(
+                onPressed: onTalk,
+                icon: const Icon(Icons.chat_bubble_outline),
+                label: const Text('Talk'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: onTeach,
+                icon: const Icon(Icons.school_outlined),
+                label: const Text('Teach'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            IconButton.outlined(
+              tooltip: 'Share twin',
+              onPressed: onShare,
+              icon: const Icon(Icons.share_outlined),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -570,19 +598,26 @@ class _PerformanceCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: u.structuralBorder),
       ),
-      child: Row(
-        children: [
-          Expanded(child: _Metric('Visitors', '${summary.visitors}')),
-          Expanded(child: _Metric('Chats', '${summary.conversations}')),
-          Expanded(child: _Metric('Earned', '${summary.earningsCredits} Cr')),
-          if (summary.pendingOwnerRequests > 0)
-            Expanded(
-              child: _Metric(
-                'Needs you',
-                '${summary.pendingOwnerRequests}',
-              ),
-            ),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final items = <Widget>[
+            _Metric('Visitors', '${summary.visitors}'),
+            _Metric('Chats', '${summary.conversations}'),
+            _Metric('Earned', '${summary.earningsCredits} Cr'),
+            if (summary.pendingOwnerRequests > 0)
+              _Metric('Needs you', '${summary.pendingOwnerRequests}'),
+          ];
+          final columns = constraints.maxWidth < 360 ? 2 : items.length;
+          final width =
+              (constraints.maxWidth - ((columns - 1) * 12)) / columns;
+          return Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              for (final item in items) SizedBox(width: width, child: item),
+            ],
+          );
+        },
       ),
     );
   }
