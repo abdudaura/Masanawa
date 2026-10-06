@@ -643,6 +643,28 @@ export function applyTeachingMultiSelectStageCommand(input: {
 }
 
 
+export interface TeachingMultiSelectStageStorageScope {
+  readonly relationshipId: RelationshipId;
+  readonly skillVersionId: SkillVersionId;
+  readonly requestId: RequestId;
+  readonly actionKey: string;
+  readonly actionBindingHash: string;
+}
+
+export function createTeachingMultiSelectStageStorageScope(input: {
+  readonly binding: TeachingRuntimeBinding;
+  readonly action: TeachingSelectionActionBinding;
+}): TeachingMultiSelectStageStorageScope {
+  assertMultiSelectAction(input.binding, input.action);
+  return Object.freeze({
+    relationshipId: input.action.relationshipId,
+    skillVersionId: input.action.skillVersionId,
+    requestId: input.action.requestId,
+    actionKey: input.action.actionKey,
+    actionBindingHash: input.action.bindingHash,
+  });
+}
+
 export interface TeachingMultiSelectStagePort {
   /**
    * Create the initial stage exactly once.
@@ -651,12 +673,12 @@ export interface TeachingMultiSelectStagePort {
    * stage for the same action binding must fail closed.
    */
   create(input: {
+    readonly scope: TeachingMultiSelectStageStorageScope;
     readonly stage: TeachingMultiSelectStage;
   }): Promise<TeachingMultiSelectStage>;
 
   load(input: {
-    readonly actionKey: string;
-    readonly actionBindingHash: string;
+    readonly scope: TeachingMultiSelectStageStorageScope;
   }): Promise<TeachingMultiSelectStage | null>;
 
   /**
@@ -667,8 +689,7 @@ export interface TeachingMultiSelectStagePort {
    * return the already persisted nextStage.
    */
   compareAndSet(input: {
-    readonly actionKey: string;
-    readonly actionBindingHash: string;
+    readonly scope: TeachingMultiSelectStageStorageScope;
     readonly expectedRevision: number;
     readonly expectedStageHash: string;
     readonly nextStage: TeachingMultiSelectStage;
@@ -706,7 +727,8 @@ export function createTeachingMultiSelectStageCoordinator(input: {
       readonly action: TeachingSelectionActionBinding;
     }): Promise<TeachingMultiSelectStage> {
       const initial = createTeachingMultiSelectStage(request);
-      const stored = await input.stages.create({ stage: initial });
+      const scope = createTeachingMultiSelectStageStorageScope(request);
+      const stored = await input.stages.create({ scope, stage: initial });
       const validated = validateTeachingMultiSelectStage({
         binding: request.binding,
         action: request.action,
@@ -724,10 +746,8 @@ export function createTeachingMultiSelectStageCoordinator(input: {
       readonly action: TeachingSelectionActionBinding;
     }): Promise<TeachingMultiSelectStage> {
       assertMultiSelectAction(request.binding, request.action);
-      const stored = await input.stages.load({
-        actionKey: request.action.actionKey,
-        actionBindingHash: request.action.bindingHash,
-      });
+      const scope = createTeachingMultiSelectStageStorageScope(request);
+      const stored = await input.stages.load({ scope });
       if (stored === null) {
         throw new TypeError("Teaching multi-select stage was not found");
       }
@@ -772,9 +792,12 @@ export function createTeachingMultiSelectStageCoordinator(input: {
         return result;
       }
 
+      const scope = createTeachingMultiSelectStageStorageScope({
+        binding: request.binding,
+        action: request.action,
+      });
       const stored = await input.stages.compareAndSet({
-        actionKey: current.actionKey,
-        actionBindingHash: current.actionBindingHash,
+        scope,
         expectedRevision: current.revision,
         expectedStageHash: current.stageHash,
         nextStage: result.stage,
