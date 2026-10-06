@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../agents/twin_directory.dart';
 import '../../state/twin_directory_state.dart';
 import '../../theme/masanawa_theme.dart';
@@ -62,7 +63,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
             _RoomCard(
               icon: Icons.language_outlined,
               title: 'Internet Cafe',
-              subtitle: 'Data, airtime, electricity & TV with Gwani',
+              subtitle: 'Data, airtime, electricity, TV, crypto & more with Gwani',
               onTap: widget.onOpenInternetCafe,
             ),
             const SizedBox(height: 12),
