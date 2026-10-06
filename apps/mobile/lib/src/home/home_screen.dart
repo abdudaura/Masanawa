@@ -153,15 +153,24 @@ class _HomeReady extends StatelessWidget {
           ),
         ],
         const SizedBox(height: 14),
-        ...snapshot.rooms.map(
-          (room) => Padding(
+        for (final room in snapshot.rooms) ...[
+          Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: _RoomCard(
               room: room,
               onTap: onOpenRoom == null ? null : () => onOpenRoom!(room),
             ),
           ),
-        ),
+          if (room.roomId == 'internet_cafe')
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _CryptoTokensCard(
+                onTap: onQuickService == null
+                    ? null
+                    : () => onQuickService!(HomeQuickService.crypto),
+              ),
+            ),
+        ],
       ],
     );
     return onRefresh == null
@@ -256,7 +265,7 @@ class _AssistantCard extends StatelessWidget {
                     : () => onAction!(model, HomeAssistantAction.chat),
               ),
               _AssistantAction(
-                tooltip: 'Voice note',
+                tooltip: 'Talk',
                 icon: Icons.mic_none_rounded,
                 enabled: available,
                 onTap: model == null || onAction == null
@@ -318,7 +327,6 @@ class _QuickServices extends StatelessWidget {
     (HomeQuickService.airtime, 'Airtime', Icons.phone_android_outlined),
     (HomeQuickService.electricity, 'Electricity', Icons.bolt_outlined),
     (HomeQuickService.tv, 'TV', Icons.tv_outlined),
-    (HomeQuickService.crypto, 'Crypto Tokens', Icons.currency_bitcoin),
   ];
 
   @override
@@ -388,6 +396,34 @@ class _QuickServiceButton extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _CryptoTokensCard extends StatelessWidget {
+  const _CryptoTokensCard({required this.onTap});
+
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    return Material(
+      color: u.surfaceCard,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(color: u.structuralBorder),
+      ),
+      child: ListTile(
+        key: const ValueKey('home-room-crypto-tokens'),
+        onTap: onTap,
+        leading: CircleAvatar(
+          backgroundColor: u.surfaceMuted,
+          child: Icon(Icons.currency_bitcoin, color: u.brand),
+        ),
+        title: const Text('Crypto Tokens'),
+        trailing: const Icon(Icons.chevron_right),
       ),
     );
   }
