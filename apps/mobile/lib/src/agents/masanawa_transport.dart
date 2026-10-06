@@ -321,14 +321,16 @@ class MasanawaCreatorCloneTransport implements CreatorCloneTransport {
   Future<CreatorCloneResult> create({
     required String displayName,
     required String biography,
-    required List<String> languages,
+    required String gender,
+    required int age,
     required List<String> personality,
     required List<String> expertise,
   }) async {
     final data = await _client.post('/creator/clone', {
       'displayName': displayName,
       'biography': biography,
-      'languages': languages,
+      'gender': gender,
+      'age': age,
       'personality': personality,
       'expertise': expertise,
     });
