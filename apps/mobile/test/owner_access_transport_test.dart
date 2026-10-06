@@ -10,6 +10,21 @@ import 'package:masanawa/src/owner_access/owner_access_http_transport.dart';
 class _OwnerAccessAdapter implements HttpClientAdapter {
   final requests = <RequestOptions>[];
 
+  Map<String, dynamic> _requestBody(String state) => {
+        'requestId': 'owner-request-123',
+        'requesterUserId': 'user-requester',
+        'ownerUserId': 'user-owner',
+        'originatingCharacterId': 'character_test',
+        'modality': 'text',
+        'durationMinutes': 15,
+        'priceCredits': 0,
+        'chargeMode': 'trial',
+        'state': state,
+        'requestedAt': '2026-10-05T10:00:00Z',
+        'acceptBy': '2026-10-05T11:00:00Z',
+        'scheduledFor': null,
+      };
+
   @override
   Future<ResponseBody> fetch(
     RequestOptions options,
@@ -17,20 +32,51 @@ class _OwnerAccessAdapter implements HttpClientAdapter {
     Future<void>? cancelFuture,
   ) async {
     requests.add(options);
-    final body = {
-      'requestId': 'owner-request-123',
-      'requesterUserId': 'user-requester',
-      'ownerUserId': 'user-owner',
-      'originatingCharacterId': 'character_test',
-      'modality': 'voice',
-      'durationMinutes': 15,
-      'priceCredits': 0,
-      'chargeMode': 'trial',
-      'state': options.method == 'POST' ? 'cancelled' : 'requested',
-      'requestedAt': '2026-10-05T10:00:00Z',
-      'acceptBy': '2026-10-05T11:00:00Z',
-      'scheduledFor': null,
-    };
+    final path = options.uri.path;
+    Object body;
+    if (path.endsWith('/heartbeat')) {
+      body = {
+        'attendanceVerified': true,
+        'verifiedSeconds': 75,
+        'presence': [
+          {
+            'userId': 'user-requester',
+            'firstSeenAt': '2026-10-05T10:00:00Z',
+            'lastSeenAt': '2026-10-05T10:01:15Z',
+            'heartbeatCount': 6,
+          },
+          {
+            'userId': 'user-owner',
+            'firstSeenAt': '2026-10-05T10:00:00Z',
+            'lastSeenAt': '2026-10-05T10:01:15Z',
+            'heartbeatCount': 6,
+          },
+        ],
+      };
+    } else if (path.endsWith('/messages') && options.method == 'GET') {
+      body = [
+        {
+          'requestId': 'owner-request-123',
+          'messageId': 'message-server-123',
+          'senderUserId': 'user-owner',
+          'body': 'Hello',
+          'sentAt': '2026-10-05T10:00:30Z',
+        },
+      ];
+    } else if (path.endsWith('/messages')) {
+      final data = (options.data as Map).cast<String, dynamic>();
+      body = {
+        'requestId': 'owner-request-123',
+        'messageId': data['messageId'],
+        'senderUserId': 'user-requester',
+        'body': data['body'],
+        'sentAt': '2026-10-05T10:00:40Z',
+      };
+    } else {
+      body = _requestBody(
+        path.endsWith('/action') ? 'cancelled' : 'requested',
+      );
+    }
     return ResponseBody.fromString(
       jsonEncode(body),
       200,
@@ -54,6 +100,7 @@ void main() {
 
     final latest = await transport.latest(characterId: 'character_test');
     expect(latest?.state, OwnerAccessState.requested);
+    expect(latest?.modality, OwnerAccessModality.text);
 
     final cancelled = await transport.act(
       characterId: 'character_test',
@@ -69,6 +116,51 @@ void main() {
     expect(adapter.requests[1].data, {
       'characterId': 'character_test',
       'action': 'cancel',
+    });
+  });
+
+  test('human room heartbeat, message read and send use private request routes', () async {
+    final dio = Dio(BaseOptions(baseUrl: 'https://gateway.test'));
+    final adapter = _OwnerAccessAdapter();
+    dio.httpClientAdapter = adapter;
+    final client = ApiClient(dio: dio)..accessToken = 'user-session';
+    final transport = GatewayOwnerAccessTransport(api: client);
+
+    final status = await transport.heartbeat(
+      characterId: 'character_test',
+      requestId: 'owner-request-123',
+    );
+    expect(status.attendanceVerified, isTrue);
+    expect(status.verifiedSeconds, 75);
+    expect(status.presence, hasLength(2));
+
+    final messages = await transport.messages(
+      characterId: 'character_test',
+      requestId: 'owner-request-123',
+    );
+    expect(messages.single.body, 'Hello');
+
+    final sent = await transport.sendMessage(
+      characterId: 'character_test',
+      requestId: 'owner-request-123',
+      messageId: 'message-client-123',
+      body: 'Hi',
+    );
+    expect(sent.body, 'Hi');
+
+    expect(
+      adapter.requests.map((request) => request.uri.path).toList(),
+      [
+        '/agent/twin/owner-access/owner-request-123/heartbeat',
+        '/agent/twin/owner-access/owner-request-123/messages',
+        '/agent/twin/owner-access/owner-request-123/messages',
+      ],
+    );
+    expect(adapter.requests[1].uri.queryParameters['characterId'], 'character_test');
+    expect(adapter.requests[2].data, {
+      'characterId': 'character_test',
+      'messageId': 'message-client-123',
+      'body': 'Hi',
     });
     for (final request in adapter.requests) {
       expect(request.headers['Authorization'], 'Bearer user-session');
