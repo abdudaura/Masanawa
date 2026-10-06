@@ -36,6 +36,29 @@ No competing Task 143 claim was found at selection. Task 142 evaluation evidence
 - result is a bounded promotion proposal only; publication remains an external owner action;
 - rejected candidates cannot silently become eligible.
 
-State: CLAIMED.
+State: ISOLATED COMPLETE / INTEGRATION READY.
+
+## Completed implementation
+
+- immutable LearningCandidate identity by target kind/key/base version/content hash;
+- proposed -> evaluating transition with stale-revision protection;
+- promotion assessment requires same-dataset baseline/candidate evaluation evidence from Task 142;
+- candidate evaluation itself must pass;
+- comparison must contain zero new regressions;
+- certification and rehearsal evidence are independently required, revisioned, SHA-256 evidence-backed and bound to the exact candidate fingerprint/content hash;
+- any failed gate produces terminal rejected candidate evidence;
+- all gates passing produces an eligible candidate plus bounded promotion proposal only;
+- proposal contains no publication action, runtime authority or self-mutation behavior;
+- rejected/eligible candidates cannot be silently reassessed as though still evaluating.
+
+## Remaining integration dependencies
+
+1. Telemetry barrel owner must export learning/evaluation surfaces when ownership is available.
+2. Certification and rehearsal owners must provide durable, independently verified gate evidence.
+3. A separate governed publisher may consume an eligible proposal to create a new immutable Prompt/Strategy/Skill version.
+4. Task 144 acceptance should prove plugins/learning cannot bypass these gates.
+5. storage/worker/ops composition remains integration-owner work.
+
+Implementation head before handoff: `1a74083d2a08080319b9e0830ddd53faecb0196c`.
 
 Last update: 2026-10-06.
