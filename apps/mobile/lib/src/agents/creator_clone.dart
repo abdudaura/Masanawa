@@ -36,7 +36,8 @@ abstract class CreatorCloneTransport {
   Future<CreatorCloneResult> create({
     required String displayName,
     required String biography,
-    required List<String> languages,
+    required String gender,
+    required int age,
     required List<String> personality,
     required List<String> expertise,
   });
@@ -49,7 +50,8 @@ class UnavailableCreatorCloneTransport implements CreatorCloneTransport {
   Future<CreatorCloneResult> create({
     required String displayName,
     required String biography,
-    required List<String> languages,
+    required String gender,
+    required int age,
     required List<String> personality,
     required List<String> expertise,
   }) {
