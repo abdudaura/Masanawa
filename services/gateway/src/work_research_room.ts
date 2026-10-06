@@ -356,3 +356,32 @@ export function projectWorkResearchRoom(input: {
     items: Object.freeze((input.items ?? []).map(projectItem)),
   });
 }
+
+
+export interface ResolvedWorkResearchIntent {
+  readonly roomKind: WorkResearchRoomKind;
+  readonly intentId: string;
+}
+
+export function resolveWorkResearchQuickStart(input: {
+  readonly roomKind: WorkResearchRoomKind;
+  readonly intentId: string;
+}): ResolvedWorkResearchIntent {
+  if (!workResearchRoomKinds.includes(input.roomKind)) {
+    throw new TypeError("Unsupported Work/Research room kind");
+  }
+  if (typeof input.intentId !== "string") {
+    throw new TypeError("Work/Research quick-start intent is invalid");
+  }
+  const intentId = input.intentId.trim();
+  const allowed = quickStarts[input.roomKind];
+  if (!allowed.some((item) => item.intentId === intentId)) {
+    throw new TypeError(
+      "Work/Research quick-start intent is not allowed for this Room",
+    );
+  }
+  return Object.freeze({
+    roomKind: input.roomKind,
+    intentId,
+  });
+}
