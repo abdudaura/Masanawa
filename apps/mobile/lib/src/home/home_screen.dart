@@ -129,9 +129,12 @@ class _HomeReady extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 22),
-        const _SectionHeader(title: 'Quick services'),
-        const SizedBox(height: 10),
+        const SizedBox(height: 18),
+        const _SectionHeader(
+          title: 'Internet Cafe',
+          subtitle: 'Ask Gwani for what you need.',
+        ),
+        const SizedBox(height: 8),
         _QuickServices(onTap: onQuickService),
         if (snapshot.myTwin case final twin?) ...[
           const SizedBox(height: 22),
@@ -320,21 +323,21 @@ class _QuickServices extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final itemWidth = (constraints.maxWidth - 24) / 4;
-        return Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: _items.map((item) {
-            return SizedBox(
-              width: itemWidth,
-              child: _QuickServiceButton(
-                service: item.$1,
-                label: item.$2,
-                icon: item.$3,
-                onTap: onTap == null ? null : () => onTap!(item.$1),
-              ),
-            );
-          }).toList(),
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (final item in _items) ...[
+                _QuickServiceButton(
+                  service: item.$1,
+                  label: item.$2,
+                  icon: item.$3,
+                  onTap: onTap == null ? null : () => onTap!(item.$1),
+                ),
+                const SizedBox(width: 8),
+              ],
+            ],
+          ),
         );
       },
     );
@@ -358,27 +361,30 @@ class _QuickServiceButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final u = context.masanawa;
     return Material(
-      color: u.surfaceCard,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: u.structuralBorder),
-      ),
+      color: u.surfaceMuted,
+      borderRadius: BorderRadius.circular(999),
       child: InkWell(
         key: ValueKey('home-quick-' + service.name),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(999),
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-          child: Column(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: u.structuralBorder),
+          ),
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: u.brand),
-              const SizedBox(height: 6),
+              Icon(icon, color: u.brand, size: 17),
+              const SizedBox(width: 6),
               Text(
                 label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: u.textPrimary, fontSize: 11),
+                style: TextStyle(
+                  color: u.textPrimary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
