@@ -1,6 +1,6 @@
 enum HomeAssistantRole { gwana, gwani }
 
-enum HomeAssistantAction { chat, voiceNote, liveVoice }
+enum HomeAssistantAction { chat, talk, liveVoice }
 
 enum HomeQuickService { data, airtime, electricity, tv, crypto }
 
