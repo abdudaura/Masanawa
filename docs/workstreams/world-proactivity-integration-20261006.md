@@ -3,24 +3,36 @@
 Owner/window: ChatGPT continuation window (2026-10-06)
 Branch: `work/world-proactivity-integration-20261006`
 Base SHA: `26cec448c0a6fe5d725787319832b1b6d4eb1dbd` (Task 115 exact head / PR #242)
+Implementation head: `09ca527d1a27fd13f4ff2985cce415eb9744e38c`
+PR: #244
 
-## Task references
-- `docs/PRODUCTION-MASTER-TASKS.md` — **116** Implement routine/world-event proactive integration.
-- Canonical World `Routine` and `WorldEvent` remain owned by `packages/world`.
+## Completed implementation
+- Projects enabled canonical World routines into Task 113 daily schedule-trigger candidates.
+- Projects only approved public/shared World events into event-trigger candidates.
+- Draft, retired, private/internal and Character-mismatched events are rejected/ignored.
+- Tenant/Character scope mismatches fail closed.
+- Dedupe identity is derived from canonical World/routine occurrence identity.
+- World remains the sole source of truth; no Routine/WorldEvent state is duplicated.
+- Root contract tests cover enabled/disabled routines, approved/hidden events and cross-tenant/Character isolation.
 
-## Owned paths
-- `packages/proactivity/src/world-integration.ts` (new)
-- `tests/contracts/world-proactivity-integration.test.ts` (new)
-- `docs/workstreams/world-proactivity-integration-20261006.md`
+## Changed-file audit
+Exactly three files:
+1. `docs/workstreams/world-proactivity-integration-20261006.md`
+2. `packages/proactivity/src/world-integration.ts`
+3. `tests/contracts/world-proactivity-integration.test.ts`
 
-## Excluded/shared paths
-- No edits to `packages/world`, World persistence/simulation, Workflow scheduler, Gateway, migrations, package manifests/lockfile or production config.
-- No duplicate Routine/WorldEvent state.
+No World package/persistence, Workflow scheduler, Gateway, migrations, package manifests/lockfile or production config changed.
 
-## Dependencies
-- Task 113 trigger model is the target representation.
-- World owner supplies canonical approved WorldEvent and enabled Routine snapshots.
-- Task 115 policy still gates actual proactive firing/delivery.
+## Verification
+Foundation CI run `37455049305`, job `112240488555` ended `failure` with `steps = null`; checkout/install/tests never executed. Not a pass and not application-failure evidence.
+
+## Remaining dependencies
+- PR #242/#240/#239 proactivity stack integrates first.
+- World owner supplies canonical snapshots.
+- Task 115 policy gates actual firing/delivery.
+- Workflow scheduler/execution owner remains responsible for durable occurrence/execution.
 
 ## Current state
-CLAIMED. Project enabled canonical routines into schedule-trigger candidates and approved visible World events into event-trigger candidates, rejecting internal/private/draft/retired or mismatched-Character inputs.
+**ISOLATED COMPLETE / INTEGRATION READY.**
+
+No further isolated implementation remains in this lane.
