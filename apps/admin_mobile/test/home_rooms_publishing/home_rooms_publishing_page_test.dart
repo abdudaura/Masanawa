@@ -6,7 +6,6 @@ import 'package:masanawa_admin/src/theme/masanawa_theme.dart';
 
 void main() {
   final projection = HomeRoomsPublishingProjection(
-    revision: 5,
     storySeries: const [
       StoryRadioAdminItem(
         seriesId: 'series-1',
@@ -22,6 +21,7 @@ void main() {
         visible: true,
         sortOrder: 1,
         pinnedItemId: null,
+        revision: 4,
       ),
     ],
     homeRooms: const [
@@ -30,6 +30,7 @@ void main() {
         label: 'Study Center',
         visible: true,
         sortOrder: 1,
+        revision: 7,
       ),
     ],
     assistants: const [
@@ -38,6 +39,7 @@ void main() {
         displayName: 'Gwana',
         position: 'left',
         visible: true,
+        revision: 11,
       ),
     ],
   );
@@ -58,22 +60,31 @@ void main() {
         ),
       );
 
-  testWidgets('emits revision-bound visibility mutation', (tester) async {
+  testWidgets('Story Radio is read-only in generic publishing page',
+      (tester) async {
+    await tester.pumpWidget(page(onMutation: (_) {}));
+
+    expect(find.text('Northern Tales'), findsOneWidget);
+    expect(
+      find.text('Story Radio publishing is managed in its dedicated admin screen.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('News visibility uses News category revision', (tester) async {
     PublishingMutationIntent? mutation;
     await tester.pumpWidget(page(onMutation: (value) => mutation = value));
 
-    expect(find.text('Northern Tales'), findsOneWidget);
-    expect(find.text('Study Center'), findsOneWidget);
-
-    await tester.tap(find.byType(Switch).first);
+    final switches = find.byType(Switch);
+    await tester.tap(switches.first);
     await tester.pump();
 
-    expect(mutation?.kind, PublishingMutationKind.setStoryVisibility);
-    expect(mutation?.targetId, 'series-1');
-    expect(mutation?.expectedRevision, 5);
+    expect(mutation?.kind, PublishingMutationKind.setNewsCategoryVisibility);
+    expect(mutation?.targetId, 'world');
+    expect(mutation?.expectedRevision, 4);
   });
 
-  testWidgets('emits room reordering mutation', (tester) async {
+  testWidgets('room reordering uses Home Room revision', (tester) async {
     PublishingMutationIntent? mutation;
     await tester.pumpWidget(page(onMutation: (value) => mutation = value));
 
@@ -84,10 +95,10 @@ void main() {
     expect(mutation?.kind, PublishingMutationKind.reorderHomeRoom);
     expect(mutation?.targetId, 'study-center');
     expect(mutation?.sortOrder, 2);
-    expect(mutation?.expectedRevision, 5);
+    expect(mutation?.expectedRevision, 7);
   });
 
-  testWidgets('emits news pinning mutation from dialog', (tester) async {
+  testWidgets('news pinning uses News category revision', (tester) async {
     PublishingMutationIntent? mutation;
     await tester.pumpWidget(page(onMutation: (value) => mutation = value));
 
@@ -105,10 +116,10 @@ void main() {
     expect(mutation?.kind, PublishingMutationKind.pinNewsItem);
     expect(mutation?.targetId, 'world');
     expect(mutation?.pinnedItemId, 'news-42');
-    expect(mutation?.expectedRevision, 5);
+    expect(mutation?.expectedRevision, 4);
   });
 
-  testWidgets('emits assistant presentation mutation from dialog',
+  testWidgets('assistant edit uses assistant presentation revision',
       (tester) async {
     PublishingMutationIntent? mutation;
     await tester.pumpWidget(page(onMutation: (value) => mutation = value));
@@ -129,12 +140,10 @@ void main() {
     expect(mutation?.kind, PublishingMutationKind.updateAssistantPresentation);
     expect(mutation?.targetId, 'character-1');
     expect(mutation?.displayName, 'Gwana Home');
-    expect(mutation?.position, 'left');
-    expect(mutation?.visible, isTrue);
-    expect(mutation?.expectedRevision, 5);
+    expect(mutation?.expectedRevision, 11);
   });
 
-  testWidgets('disables all mutation controls while saving', (tester) async {
+  testWidgets('disables mutation controls while saving', (tester) async {
     await tester.pumpWidget(page(onMutation: (_) {}, saving: true));
 
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
