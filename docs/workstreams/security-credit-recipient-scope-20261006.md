@@ -27,6 +27,17 @@ another Tenant or a different identifier and redirect a Credit transfer.
 - same-Tenant different-identifier substitution fails closed;
 - normal email/phone resolution and self-transfer rejection remain unchanged.
 
-State: CLAIMED.
+State: IMPLEMENTED / VERIFICATION PENDING.
+
+## Completed
+
+- returned PlatformAuthProfile Tenant must match the transfer request Tenant;
+- returned profile email/phone must equal the exact normalized lookup identifier;
+- cross-Tenant profile substitution is rejected;
+- same-Tenant wrong-email substitution is rejected;
+- same-Tenant wrong-phone substitution is rejected;
+- normal normalized email/phone lookup and self-transfer behavior remain intact.
+
+Implementation head before handoff: `f43d63bb186c80cf87c02b43cf99152014351421`.
 
 Last update: 2026-10-06.
