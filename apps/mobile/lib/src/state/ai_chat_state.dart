@@ -1181,8 +1181,9 @@ class AiChatController extends Notifier<AiChatState> {
               };
 
     final transport = ref.read(agentTransportProvider);
-    final binding = await _bindingFor(characterId, transport);
-    return transport.sendMediaTurn(
+    final hadCachedBinding = _bindings.containsKey(characterId);
+    var binding = await _bindingFor(characterId, transport);
+    Future<AgentTurnResult> send() => transport.sendMediaTurn(
       binding: binding,
       bytes: bytes,
       mimeType: mimeType,
@@ -1201,6 +1202,14 @@ class AiChatController extends Notifier<AiChatState> {
         );
       },
     );
+    try {
+      return await send();
+    } catch (error) {
+      if (!hadCachedBinding || !_isStaleSessionError(error)) rethrow;
+      _bindings.remove(characterId);
+      binding = await _bindingFor(characterId, transport);
+      return send();
+    }
   }
 
   Future<AgentTurnResult> _sendMediaSetViaTransport(
@@ -1269,6 +1278,9 @@ class AiChatController extends Notifier<AiChatState> {
     );
   }
 
+  bool _isStaleSessionError(Object error) =>
+      error is ApiException && error.statusCode == 404;
+
   Future<AgentTurnResult> _sendViaTransport(
     String characterId,
     String prompt, {
@@ -1277,14 +1289,28 @@ class AiChatController extends Notifier<AiChatState> {
     String? requestId,
   }) async {
     final transport = ref.read(agentTransportProvider);
-    final binding = await _bindingFor(characterId, transport);
-    return transport.sendTurn(
-      binding: binding,
-      text: prompt,
-      onTextDelta: onTextDelta,
-      onAudioPcmChunk: onAudioPcmChunk,
-      requestId: requestId,
-    );
+    final hadCachedBinding = _bindings.containsKey(characterId);
+    var binding = await _bindingFor(characterId, transport);
+    try {
+      return await transport.sendTurn(
+        binding: binding,
+        text: prompt,
+        onTextDelta: onTextDelta,
+        onAudioPcmChunk: onAudioPcmChunk,
+        requestId: requestId,
+      );
+    } catch (error) {
+      if (!hadCachedBinding || !_isStaleSessionError(error)) rethrow;
+      _bindings.remove(characterId);
+      binding = await _bindingFor(characterId, transport);
+      return transport.sendTurn(
+        binding: binding,
+        text: prompt,
+        onTextDelta: onTextDelta,
+        onAudioPcmChunk: onAudioPcmChunk,
+        requestId: requestId,
+      );
+    }
   }
 
   Future<AgentSessionBinding> _bindingFor(
