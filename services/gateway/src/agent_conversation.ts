@@ -16,6 +16,7 @@ import type {
   AgentConversationService,
 } from "./agent_conversation_contract.js";
 import type { NativeAudioRenderer } from "./native_audio.js";
+import type { AgentBillingAssistant } from "./agent_billing_assistant.js";
 
 function hashTurnPayload(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex");
@@ -72,6 +73,7 @@ export function createAgentConversationService(input: {
   readonly nativeAudio?: NativeAudioRenderer;
   readonly mobileShell?: MobileShellRepository;
   readonly twinObserver?: TwinConversationObserver;
+  readonly billingAssistant?: AgentBillingAssistant;
   readonly sessionDurationMs: number;
 }): AgentConversationService {
   if (
@@ -187,18 +189,30 @@ export function createAgentConversationService(input: {
       });
 
       try {
-        const result = await input.strategy.execute({
+        const direct = await input.billingAssistant?.beforeInference({
+          authorizationHeader: request.authorizationHeader,
+          text,
+        });
+        const generated = direct ?? await input.strategy.execute({
           agentRunId,
           characterSessionId,
           characterVersionId: session.characterVersionId,
           skillVersionIds: session.bindings.skillVersionIds,
           presentation: admission.presentation,
           ...(request.signal ? { signal: request.signal } : {}),
-          ...(request.onTextDelta
+          // Billing directives are server-consumed machine output. Avoid
+          // streaming raw directives into the visible chat before execution.
+          ...(!input.billingAssistant && request.onTextDelta
             ? { onTextDelta: request.onTextDelta }
             : {}),
           input: Object.freeze({ kind: "text" as const, text }),
         });
+        const result = direct
+          ? direct
+          : (await input.billingAssistant?.afterInference({
+              authorizationHeader: request.authorizationHeader,
+              modelReply: generated.reply,
+            })) ?? generated;
         const reply = result.reply.trim();
         if (!reply) throw new Error("empty strategy reply");
 
@@ -360,7 +374,7 @@ export function createAgentConversationService(input: {
       });
 
       try {
-        const result = await input.strategy.execute({
+        const generated = await input.strategy.execute({
           agentRunId,
           characterSessionId,
           characterVersionId: session.characterVersionId,
@@ -374,6 +388,11 @@ export function createAgentConversationService(input: {
             dataBase64: request.dataBase64,
           }),
         });
+        const result =
+          (await input.billingAssistant?.afterInference({
+            authorizationHeader: request.authorizationHeader,
+            modelReply: generated.reply,
+          })) ?? generated;
         const reply = result.reply.trim();
         if (!reply) throw new Error("empty strategy reply");
 
@@ -551,7 +570,7 @@ export function createAgentConversationService(input: {
       });
 
       try {
-        const result = await input.strategy.execute({
+        const generated = await input.strategy.execute({
           agentRunId,
           characterSessionId,
           characterVersionId: session.characterVersionId,
@@ -564,6 +583,11 @@ export function createAgentConversationService(input: {
             media: Object.freeze(media),
           }),
         });
+        const result =
+          (await input.billingAssistant?.afterInference({
+            authorizationHeader: request.authorizationHeader,
+            modelReply: generated.reply,
+          })) ?? generated;
         const reply = result.reply.trim();
         if (!reply) throw new Error("empty strategy reply");
 
