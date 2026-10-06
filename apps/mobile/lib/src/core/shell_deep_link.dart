@@ -6,10 +6,15 @@
 /// route performs an authenticated, privacy-aware Gateway lookup before opening
 /// the canonical Character conversation.
 String? shellDeepLinkRoute(Uri uri) {
-  if (uri.userInfo.isNotEmpty || uri.hasPort) return null;
+  if (uri.userInfo.isNotEmpty || uri.hasPort || uri.fragment.isNotEmpty) {
+    return null;
+  }
 
-  if (uri.scheme == 'https' && uri.host.toLowerCase() == 'masanawa.com') {
-    if (uri.pathSegments.length != 2 || uri.pathSegments.first != 'twin') {
+  if (uri.scheme == 'https') {
+    if (uri.host.toLowerCase() != 'masanawa.com' ||
+        uri.queryParameters.isNotEmpty ||
+        uri.pathSegments.length != 2 ||
+        uri.pathSegments.first != 'twin') {
       return null;
     }
     final publicId = uri.pathSegments[1];
@@ -31,7 +36,9 @@ String? shellDeepLinkRoute(Uri uri) {
   }
 
   if (uri.host == 'twin') {
-    if (uri.pathSegments.length != 1) return null;
+    if (uri.pathSegments.length != 1 || uri.queryParameters.isNotEmpty) {
+      return null;
+    }
     final publicId = uri.pathSegments.single;
     if (!_validPublicTwinId(publicId)) return null;
     return '/twin/${Uri.encodeComponent(publicId)}';
@@ -50,42 +57,8 @@ String? shellDeepLinkRoute(Uri uri) {
     }
     final characterId = uri.pathSegments[0];
     final requestId = uri.pathSegments[1];
-    if (!RegExp(r'^character_[A-Za-z0-9_-]+
-  if (uri.host == 'chat') {
-    if (uri.pathSegments.length != 1) return null;
-    characterId = uri.pathSegments.single;
-  } else {
-    characterId = uri.queryParameters['characterId'];
-    if (characterId == null) return '/chats';
-  }
-  if (characterId == null ||
-      !RegExp(r'^character_[A-Za-z0-9_-]+$').hasMatch(characterId)) {
-    return null;
-  }
-  return '/chat/${Uri.encodeComponent(characterId)}';
-}
-
-bool _validPublicTwinId(String value) =>
-    RegExp(r'^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$').hasMatch(value);
-).hasMatch(characterId) ||
-        !RegExp(r'^[A-Za-z0-9_-]{8,256}
-  if (uri.host == 'chat') {
-    if (uri.pathSegments.length != 1) return null;
-    characterId = uri.pathSegments.single;
-  } else {
-    characterId = uri.queryParameters['characterId'];
-    if (characterId == null) return '/chats';
-  }
-  if (characterId == null ||
-      !RegExp(r'^character_[A-Za-z0-9_-]+$').hasMatch(characterId)) {
-    return null;
-  }
-  return '/chat/${Uri.encodeComponent(characterId)}';
-}
-
-bool _validPublicTwinId(String value) =>
-    RegExp(r'^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$').hasMatch(value);
-).hasMatch(requestId)) {
+    if (!_validCharacterId(characterId) ||
+        !RegExp(r'^[A-Za-z0-9_-]{8,256}$').hasMatch(requestId)) {
       return null;
     }
     return '/owner-session/' +
@@ -94,20 +67,24 @@ bool _validPublicTwinId(String value) =>
         Uri.encodeComponent(requestId);
   }
 
-  final String? characterId;
+  String? characterId;
   if (uri.host == 'chat') {
-    if (uri.pathSegments.length != 1) return null;
+    if (uri.pathSegments.length != 1 || uri.queryParameters.isNotEmpty) {
+      return null;
+    }
     characterId = uri.pathSegments.single;
   } else {
     characterId = uri.queryParameters['characterId'];
     if (characterId == null) return '/chats';
+    if (uri.queryParameters.length != 1) return null;
   }
-  if (characterId == null ||
-      !RegExp(r'^character_[A-Za-z0-9_-]+$').hasMatch(characterId)) {
-    return null;
-  }
+
+  if (!_validCharacterId(characterId)) return null;
   return '/chat/${Uri.encodeComponent(characterId)}';
 }
+
+bool _validCharacterId(String value) =>
+    RegExp(r'^character_[A-Za-z0-9_-]+$').hasMatch(value);
 
 bool _validPublicTwinId(String value) =>
     RegExp(r'^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$').hasMatch(value);
