@@ -148,8 +148,9 @@ function categoryCode(service: Extract<Directive, { type: "billing.quote" }>["se
   }
 }
 
-function confirmationReply(view: { quote: { itemName: string; customerId: string; totalAmount: string } }): string {
-  return `${view.quote.itemName} for ${view.quote.customerId} will cost ₦${view.quote.totalAmount}. Confirm?`;
+function confirmationReply(view: { quote: { itemName: string; customerId: string; totalAmountKobo: number } }): string {
+  const total = (view.quote.totalAmountKobo / 100).toFixed(2);
+  return `${view.quote.itemName} for ${view.quote.customerId} will cost ₦${total}. Confirm?`;
 }
 
 function walletReply(view: BillingWalletView): string {
