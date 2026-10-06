@@ -1,6 +1,7 @@
 import {
   PlatformError,
   createCanonicalId,
+  isCanonicalId,
   type TenantId,
 } from "@masanawa/contracts";
 import {
@@ -117,6 +118,7 @@ function parseAttemptReceipts(
     const payloadHash = raw.payloadHash;
     const kind = raw.kind;
     if (
+      !isCanonicalId("request", requestId) ||
       typeof payloadHash !== "string" ||
       !/^sha256:[0-9a-f]{64}$/u.test(payloadHash) ||
       (kind !== "selection" && kind !== "free-response")
@@ -191,6 +193,11 @@ async function findProgressRecord(
     );
   });
 
+  if (matches.length === 0 && records.length === 1000) {
+    throw invalidStoredProgress(
+      "Relationship Memory scan reached its safe bound before locating progress",
+    );
+  }
   if (matches.length > 1) {
     throw invalidStoredProgress(
       "multiple active records exist for one Relationship and SkillVersion",
@@ -213,6 +220,21 @@ function buildPayload(
   attempt: TeachingAttempt,
   previous: TeachingProgressPayload | null,
 ): TeachingProgressPayload {
+  if (
+    !/^sha256:[0-9a-f]{64}$/u.test(attempt.payloadHash) ||
+    !/^sha256:[0-9a-f]{64}$/u.test(attempt.planHash)
+  ) {
+    throw new TypeError("Teaching attempt hashes are invalid");
+  }
+  const normalizedProgress = normalizeTeachingProgressHandoff(attempt.progress);
+  if (
+    normalizedProgress.relationshipId !== attempt.relationshipId ||
+    normalizedProgress.skillVersionId !== attempt.skillVersionId
+  ) {
+    throw new TypeError(
+      "Teaching attempt progress must match Relationship and SkillVersion",
+    );
+  }
   if (previous !== null && previous.planHash !== attempt.planHash) {
     throw conflict(
       "teaching.plan_conflict",
@@ -247,7 +269,7 @@ function buildPayload(
     kind: teachingProgressKind,
     skillVersionId: attempt.skillVersionId,
     planHash: attempt.planHash,
-    progress: progressJson(attempt.progress),
+    progress: progressJson(normalizedProgress),
     attempts: Object.freeze({
       ...(previous?.attempts ?? {}),
       [attempt.requestId]: Object.freeze({
