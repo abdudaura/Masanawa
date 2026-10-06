@@ -158,6 +158,12 @@ Subsequent production hardening on the same owned branch now also includes:
   post-session dispute window; the requester can dispute before release, admin can
   deterministically release or refund, replay-safe ledger plans protect both paths, and
   undisputed earnings release automatically after the window.
+- root navigation was re-locked to **My Twin · Explore · Activity · Wallet** after a
+  transient Home-tab regression; newer Home/Rooms code remains preserved outside the
+  Twin root rather than replacing the locked Twin mental model;
+- TWIN-076 implementation hardening now lazily constructs root tabs so inactive
+  Explore/Activity/Wallet providers do not start work at launch, and My Twin/Activity
+  metrics plus primary actions wrap/stack on narrow Android widths instead of squeezing.
 
 The Phase-3 valuation contract now exists without inventing an exchange rate. An
 append-only provider-valuation policy maps one explicit provider/source-unit key to
@@ -189,7 +195,7 @@ Still required before marking TWIN production tasks complete or merging this veh
    provider-valuation immutability, owner-request CAS/lifecycle/latest-request,
    dispute/release/refund, private-room retention and immutability;
 4. run Flutter analyze/tests, including human-room, owner-access, paid-voice, production
-   transport and deep-link tests;
+   transport, deep-link, narrow-screen and lazy-root-tab tests;
 5. build `assembleRelease` from the exact qualified head and record APK checksum/artifact;
 6. install on a real Android device and exercise create/share/free-text, paid voice,
    transfer/gift, human text access/dispute, Wallet/Activity, notifications and
