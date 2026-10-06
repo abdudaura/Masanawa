@@ -560,6 +560,9 @@ function ownerLifecycleHarness(input: {
       async listOwnerAccessMessages() {
         return messages;
       },
+      async purgeExpiredOwnerAccessMessages() {
+        return 0;
+      },
       async readLedgerPlan() { return null; },
       async putLedgerPlan(plan: { readonly plan: unknown }) {
         return plan.plan;
@@ -947,6 +950,7 @@ describe("Twin production runtime composition", () => {
       scanned: 1,
       advanced: 1,
       failed: 0,
+      messagesPurged: 0,
     });
     expect(harness.current().state).toBe("refunded");
     expect(harness.transfers).toHaveLength(1);
