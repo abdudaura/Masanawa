@@ -31,9 +31,11 @@ Changed-file audit:
 
 Verification:
 - branch diff against Lane G exact head contains only the three owned paths above;
-- GitHub reported no workflow runs or combined status checks for implementation head `a2828a85f680079a78deaaa2e9797ff75c1b2fee` when inspected; no CI pass is claimed.
+- Foundation CI run `37451243172` on head `3b2ebdc6474de843ec9b9ac0c18dc23fe02bf6c5` completed `failure`, but its only `check` job (`112228058937`) has `steps = null` and no logs URL; this is runner/non-execution evidence, not an application test failure or pass.
 
 PR: #217, stacked on #214.
+
+Latest recorded implementation/handoff head before this documentation update: `3b2ebdc6474de843ec9b9ac0c18dc23fe02bf6c5`.
 
 Remaining dependencies:
 - durable Group Room repository storage requires canonical persistence plus coordinated migration ownership;
