@@ -200,6 +200,7 @@ export interface TwinProductionRuntime {
       scanned: number;
       advanced: number;
       failed: number;
+      messagesPurged: number;
     }>>;
   };
   readonly twinSafety: TwinSafetyService;
