@@ -468,10 +468,47 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
           } as const;
         };
 
+        const assistants = [];
+        const gwana = byRole("gwana");
+        const gwani = byRole("gwani");
+        if (gwana !== null) assistants.push(gwana);
+        if (gwani !== null) assistants.push(gwani);
+
+        const continuations: Array<Record<string, unknown>> = [];
+        if (options.storyRadio) {
+          try {
+            const storyHome = await options.storyRadio.home({
+              authorizationHeader: request.headers.authorization,
+            }) as {
+              readonly continueProgress?: Readonly<{
+                seriesId: string;
+                episodeId: string;
+                positionSeconds: number;
+                completed: boolean;
+              }> | null;
+            };
+            const progress = storyHome.continueProgress;
+            if (progress) {
+              continuations.push({
+                id: "story-radio:" + progress.episodeId,
+                title: "Continue Story Radio",
+                subtitle:
+                  progress.positionSeconds > 0
+                    ? "Resume where you stopped"
+                    : "Play the next episode",
+                kind: "story-radio",
+                roomId: "room.story-radio",
+              });
+            }
+          } catch {
+            // Home remains useful if the optional Story Radio projection is
+            // temporarily unavailable. Story Radio itself still reports its
+            // own bounded error on direct navigation.
+          }
+        }
+
         return {
-          assistants: [byRole("gwana"), byRole("gwani")].filter(
-            (item): item is NonNullable<typeof item> => item !== null,
-          ),
+          assistants,
           rooms: [
             {
               roomId: "room.internet-cafe",
@@ -530,7 +567,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
               isAvailable: false,
             },
           ],
-          continuations: [],
+          continuations,
         };
       },
     );
