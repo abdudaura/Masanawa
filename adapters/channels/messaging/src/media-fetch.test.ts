@@ -205,7 +205,7 @@ describe("authorized channel media fetch", () => {
       expect.unreachable();
     } catch (error) {
       expect(error).toMatchObject({
-        code: "channels.media_media_not_found",
+        code: "channels.media_provider_rejected",
         category: "not-found",
         retryable: false,
       });
