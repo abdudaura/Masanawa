@@ -1524,13 +1524,32 @@ export function createTwinProductionRuntime(input: {
     current: PersistedOwnerAccessRequest,
   ): Promise<PersistedOwnerAccessRequest> {
     if (
-      current.state !== "settled" ||
       current.chargeMode !== "paid" ||
       current.ownerEarningCredits <= 0 ||
       current.earningsReleasedAt
     ) {
       return current;
     }
+
+    let releasing = current;
+    if (current.state === "settled") {
+      const claimedState = {
+        ...current,
+        state: transitionOwnerAccess(current.state, "releasing"),
+      };
+      const claimed = await input.economy.transitionOwnerAccessRequest({
+        tenantId,
+        expectedState: "settled",
+        request: claimedState,
+        reservationId: current.reservationId,
+        reservedCredits: current.reservedCredits,
+      });
+      if (!claimed.applied) return claimed.request;
+      releasing = claimed.request;
+    } else if (current.state !== "releasing") {
+      return current;
+    }
+
     const plan = await ensurePlan(input.economy, {
       tenantId,
       planKey: `owner-access-earnings-release:${current.requestId}`,
@@ -1563,17 +1582,18 @@ export function createTwinProductionRuntime(input: {
       createdAt: plan.createdAt as never,
     });
     const changed = {
-      ...current,
+      ...releasing,
+      state: transitionOwnerAccess(releasing.state, "settled"),
       earningsReleasedAt: plan.createdAt,
     };
-    const claimed = await input.economy.transitionOwnerAccessRequest({
+    const finalized = await input.economy.transitionOwnerAccessRequest({
       tenantId,
-      expectedState: "settled",
+      expectedState: "releasing",
       request: changed,
-      reservationId: current.reservationId,
-      reservedCredits: current.reservedCredits,
+      reservationId: releasing.reservationId,
+      reservedCredits: releasing.reservedCredits,
     });
-    if (!claimed.applied) return claimed.request;
+    if (!finalized.applied) return finalized.request;
     await input.events.append({
       tenantId,
       payload: {
@@ -1595,7 +1615,7 @@ export function createTwinProductionRuntime(input: {
       `${current.ownerEarningCredits} Credits from a completed human session are now available.`,
       "masanawa://activity",
     );
-    return claimed.request;
+    return finalized.request;
   }
 
   async function refundDisputedOwnerAccess(
@@ -1825,6 +1845,10 @@ export function createTwinProductionRuntime(input: {
     tenantId: TenantId,
     current: PersistedOwnerAccessRequest,
   ): Promise<PersistedOwnerAccessRequest> {
+    if (current.state === "releasing") {
+      return releaseOwnerAccessEarnings(tenantId, current);
+    }
+
     if (
       current.state === "declined" ||
       current.state === "expired" ||
