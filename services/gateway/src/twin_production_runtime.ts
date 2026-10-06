@@ -2232,7 +2232,7 @@ export function createTwinProductionRuntime(input: {
           });
         }
         if (
-          request.action === "cancel" &&
+          (request.action === "cancel" || request.action === "dispute") &&
           current.requesterUserId !== request.actorUserId
         ) {
           throw Object.assign(new Error("Requester action required"), {
@@ -2267,12 +2267,27 @@ export function createTwinProductionRuntime(input: {
             );
           }
         }
+        if (request.action === "dispute") {
+          if (
+            current.state !== "settled" ||
+            current.chargeMode !== "paid" ||
+            current.earningsReleasedAt ||
+            !current.disputeBy ||
+            Date.parse(current.disputeBy) <= Date.now()
+          ) {
+            throw new Error("Owner access dispute window is closed");
+          }
+          if (!request.disputeReason) {
+            throw new Error("Owner access dispute reason is required");
+          }
+        }
         const next: import("@masanawa/commerce").OwnerAccessRequest["state"] =
           request.action === "accept" ? "accepted" :
           request.action === "decline" ? "declined" :
           request.action === "schedule" ? "scheduled" :
           request.action === "start" ? "active" :
-          request.action === "complete" ? "completed" : "cancelled";
+          request.action === "complete" ? "completed" :
+          request.action === "dispute" ? "disputed" : "cancelled";
         transitionOwnerAccess(current.state, next);
         if (
           request.action === "schedule" &&
@@ -2292,6 +2307,12 @@ export function createTwinProductionRuntime(input: {
           startedAt: request.action === "start" ? at() : current.startedAt,
           completedAt:
             request.action === "complete" ? at() : current.completedAt,
+          disputedAt:
+            request.action === "dispute" ? at() : current.disputedAt ?? null,
+          disputeReason:
+            request.action === "dispute"
+              ? request.disputeReason!
+              : current.disputeReason ?? null,
         };
         const claimed = await input.economy.transitionOwnerAccessRequest({
           tenantId: request.tenantId,
@@ -2330,6 +2351,14 @@ export function createTwinProductionRuntime(input: {
             current.ownerUserId as UserId,
             "Talk request cancelled",
             "The requester cancelled this talk request.",
+            "masanawa://activity",
+          );
+        } else if (request.action === "dispute") {
+          await notifyUser(
+            request.tenantId,
+            current.ownerUserId as UserId,
+            "Human session disputed",
+            "The requester opened a dispute. Earnings remain pending until an administrator resolves it.",
             "masanawa://activity",
           );
         } else {
