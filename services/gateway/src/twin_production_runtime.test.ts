@@ -97,9 +97,7 @@ function harness() {
       },
     } as never,
     publicTwinBaseUrl: "https://masanawa.com/twin",
-    adminPrincipals: input.admin
-      ? new Set<string>([String(input.actorUserId)])
-      : new Set<string>(),
+    adminPrincipals: new Set<string>(),
     voice: {
       unitSeconds: 60,
       priceCreditsPerUnit: 10,
@@ -229,7 +227,9 @@ function paidOrderingHarness(order: string[]) {
       async readPersonalClone() { return null; },
     } as never,
     publicTwinBaseUrl: "https://masanawa.com/twin",
-    adminPrincipals: new Set<string>(),
+    adminPrincipals: input.admin
+      ? new Set<string>([String(input.actorUserId)])
+      : new Set<string>(),
     voice: {
       unitSeconds: 60,
       priceCreditsPerUnit: 10,
