@@ -41,6 +41,8 @@ The current `Baatiku/OmniSIP` main head was inspected before implementation. Its
 - dispatch exceptions/ambiguous edge outcomes become `unknown` and are never blindly retried;
 - exact replay is a storage/composition responsibility; adapter exposes stable dispatch identity/evidence without owning another Operation state machine.
 
-State: CLAIMED. No implementation changes beyond this claim.
+State: IMPLEMENTING. OmniSIP provider readiness projection, explicit-SIM outbound SIP-edge dispatch, ambiguity handling and focused contract tests are committed. Inbound Character routing, SMS/USSD, durable Operation reconciliation and physical-device qualification remain excluded.
+
+Implementation head before handoff: `8edea2851e3d389fd233cf30be7ef4628b82d6d1`.
 
 Last update: 2026-10-06.
