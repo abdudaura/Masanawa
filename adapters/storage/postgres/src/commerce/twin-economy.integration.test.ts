@@ -314,6 +314,7 @@ describeDatabase("Twin economy PostgreSQL acceptance", () => {
       tenantId,
       at,
       startGraceMinutes: 15,
+      completionGraceMinutes: 15,
       limit: 100,
     });
     expect(new Set(candidates.map((item) => item.requestId))).toEqual(
