@@ -1344,11 +1344,22 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     );
   }
 
+  bool _ownerRequestCanDispute(OwnerAccessRequest request) {
+    final disputeBy = request.disputeBy;
+    return request.state == OwnerAccessState.settled &&
+        request.chargeMode == 'paid' &&
+        request.earningsReleasedAt == null &&
+        disputeBy != null &&
+        disputeBy.isAfter(DateTime.now());
+  }
+
   bool _ownerRequestIsLive(OwnerAccessRequest request) {
     return request.state == OwnerAccessState.requested ||
         request.state == OwnerAccessState.accepted ||
         request.state == OwnerAccessState.scheduled ||
-        request.state == OwnerAccessState.active;
+        request.state == OwnerAccessState.active ||
+        request.state == OwnerAccessState.disputed ||
+        _ownerRequestCanDispute(request);
   }
 
   String _ownerRequestStatus(OwnerAccessRequest request) {
@@ -1366,8 +1377,17 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       case OwnerAccessState.active:
         return 'Your session is in progress.';
       case OwnerAccessState.completed:
-      case OwnerAccessState.settled:
         return 'Your session was completed.';
+      case OwnerAccessState.settled:
+        final disputeBy = request.disputeBy;
+        if (_ownerRequestCanDispute(request) && disputeBy != null) {
+          return 'Your session was completed. You can dispute it until '
+              '${MaterialLocalizations.of(context).formatFullDate(disputeBy)} at '
+              '${TimeOfDay.fromDateTime(disputeBy).format(context)}.';
+        }
+        return request.earningsReleasedAt == null
+            ? 'Your session was completed.'
+            : 'Your session was completed and the payment was released.';
       case OwnerAccessState.declined:
         return 'The owner declined this request.';
       case OwnerAccessState.expired:
@@ -1412,6 +1432,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               onPressed: () => Navigator.of(dialogContext).pop('cancel'),
               child: const Text('Cancel request'),
             ),
+          if (_ownerRequestCanDispute(request))
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop('dispute'),
+              child: const Text('Dispute session'),
+            ),
           if (request.state == OwnerAccessState.active)
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop('open'),
@@ -1427,6 +1452,49 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             Uri.encodeComponent(agent.characterId) +
             '/' +
             Uri.encodeComponent(request.requestId),
+      );
+      return;
+    }
+    if (action == 'dispute') {
+      final reason = await showDialog<String>(
+        context: context,
+        builder: (dialogContext) => SimpleDialog(
+          title: const Text('Why are you disputing this session?'),
+          children: [
+            SimpleDialogOption(
+              onPressed: () =>
+                  Navigator.of(dialogContext).pop('service-not-delivered'),
+              child: const Text('The service was not delivered'),
+            ),
+            SimpleDialogOption(
+              onPressed: () =>
+                  Navigator.of(dialogContext).pop('service-quality'),
+              child: const Text('The service quality was unacceptable'),
+            ),
+            SimpleDialogOption(
+              onPressed: () => Navigator.of(dialogContext).pop('other'),
+              child: const Text('Other reason'),
+            ),
+          ],
+        ),
+      );
+      if (reason == null || !mounted) return;
+      final updated =
+          await ref.read(ownerAccessControllerProvider.notifier).act(
+                characterId: agent.characterId,
+                requestId: request.requestId,
+                action: 'dispute',
+                disputeReason: reason,
+              );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            updated == null
+                ? 'Could not open this dispute.'
+                : 'Dispute submitted. The payment remains pending during review.',
+          ),
+        ),
       );
       return;
     }
