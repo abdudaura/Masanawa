@@ -205,6 +205,27 @@ export interface OwnerAccessService {
     readonly authorizationHeader: string | undefined;
     readonly characterId: string;
   }): Promise<OwnerAccessRequest | null>;
+
+  heartbeat(input: {
+    readonly authorizationHeader: string | undefined;
+    readonly characterId: string;
+    readonly requestId: string;
+  }): Promise<OwnerAccessRoomStatus>;
+
+  messages(input: {
+    readonly authorizationHeader: string | undefined;
+    readonly characterId: string;
+    readonly requestId: string;
+    readonly limit: number;
+  }): Promise<readonly OwnerAccessRoomMessage[]>;
+
+  sendMessage(input: {
+    readonly authorizationHeader: string | undefined;
+    readonly characterId: string;
+    readonly requestId: string;
+    readonly messageId: string;
+    readonly body: string;
+  }): Promise<OwnerAccessRoomMessage>;
 }
 
 function duration(value: number): number {
