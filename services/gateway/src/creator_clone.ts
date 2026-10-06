@@ -69,6 +69,36 @@ function list(values: readonly string[], name: string, maxItems: number): readon
   return Object.freeze(normalized);
 }
 
+function assertProvisionScope(input: {
+  readonly tenantId: TenantId;
+  readonly userId: UserId;
+  readonly provision: Awaited<
+    ReturnType<PersonalCloneProvisioningRepository["getOrCreatePersonalClone"]>
+  >;
+}): void {
+  const { provision, tenantId, userId } = input;
+  const characterId = provision.character.characterId;
+
+  if (
+    provision.character.tenantId !== tenantId ||
+    provision.version.tenantId !== tenantId ||
+    provision.version.characterId !== characterId ||
+    provision.character.activeCharacterVersionId !==
+      provision.version.characterVersionId ||
+    provision.ownership.tenantId !== tenantId ||
+    provision.ownership.characterId !== characterId ||
+    provision.ownership.kind !== "personal-clone" ||
+    provision.ownership.ownerUserId !== userId ||
+    provision.relationship.tenantId !== tenantId ||
+    provision.relationship.characterId !== characterId ||
+    provision.relationship.userId !== userId
+  ) {
+    throw new Error(
+      "Personal clone provisioning returned an out-of-scope identity graph",
+    );
+  }
+}
+
 export function createCreatorCloneService(input: {
   readonly authorizer: CreatorAuthorizer;
   readonly personalClones: PersonalCloneProvisioningRepository;
@@ -111,6 +141,12 @@ export function createCreatorCloneService(input: {
           expertise,
         },
         createdAt: at,
+      });
+
+      assertProvisionScope({
+        tenantId: authority.tenantId,
+        userId: authority.userId,
+        provision,
       });
 
       const effectiveName = provision.version.constitution.displayName;
