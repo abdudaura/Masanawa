@@ -24,9 +24,9 @@ This lane implements an isolated evidence qualifier for Task 096. It does not ed
 - production environment, credentials and live queues;
 - PR #136 paths and every active Workflow owner branch.
 
-## Acceptance intent
+## Completed implementation
 
-The qualifier must fail closed unless production-like evidence proves:
+The qualifier requires production-like evidence for eight Task 096 scenario families:
 - transactional admission/replay;
 - lease/fencing crash recovery;
 - checkpoint/restart compatibility;
@@ -34,10 +34,47 @@ The qualifier must fail closed unless production-like evidence proves:
 - human approval restart;
 - schedule/timer restart;
 - cancellation/supersession recovery;
-- ambiguous consequential Operation reconciliation without duplicate effect.
+- ambiguous consequential Operation reconciliation.
 
-Every scenario must bind exact Workflow and Operation source heads, pass restart recovery, and prove no duplicate consequential side effect.
+For every scenario it:
+- binds the exact Workflow Git head;
+- binds the exact canonical Operation Git head;
+- requires functional success;
+- independently requires restart/recovery success;
+- independently requires no-duplicate-consequential-effect success;
+- requires SHA-256 evidence;
+- rejects unknown or duplicate scenarios;
+- rejects malformed or substituted source heads;
+- fails when blocking recovery issues remain.
 
-State: CLAIMED / IMPLEMENTATION IN PROGRESS.
+The result is only `READY`, `INCOMPLETE` or `FAILED`; missing evidence cannot silently pass. A CLI exits non-zero unless qualification is `READY`.
+
+Focused tests cover:
+- complete READY evidence;
+- missing scenario classification;
+- Workflow/Operation head substitution;
+- independent restart and duplicate-effect safety failures;
+- functional failure plus blocking recovery issues;
+- duplicate scenarios, malformed hashes and non-production-like evidence.
+
+## Verification
+
+- comparison against `main` at implementation head: ahead 4 / behind 0;
+- changed-file audit is exactly the three owned paths above;
+- PR #300 opened on implementation head `a74c61b09d3257f3530bcacc868efb7ed627f5cc`;
+- Foundation CI run `37490509838`, job `112361687457`, concluded `failure` with `steps = null`; checkout/install/typecheck/tests never executed, so no application failure or success is inferred.
+
+## Handoff
+
+- implementation head before this documentation update: `a74c61b09d3257f3530bcacc868efb7ed627f5cc`;
+- PR: #300 — Add Task 096 workflow restart qualification gate;
+- isolated implementation status: COMPLETE;
+- Production Task 096 status: NOT COMPLETE.
+
+## Remaining dependencies
+
+Task 096 becomes READY only after the canonical Workflow/Operation owners provide production-like restart/crash/replay evidence on exact reconciled heads. Persistent stores, live worker recovery and provider ambiguity remain with their canonical owners.
+
+State: ISOLATED COMPLETE / WAITING ON WORKFLOW + OPERATION PRODUCTION-LIKE EVIDENCE.
 
 Last update: 2026-10-06.
