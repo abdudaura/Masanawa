@@ -91,4 +91,44 @@ void main() {
     expect(find.text('Create your digital twin'), findsNothing);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('four-tab shell stays usable on a narrow Android viewport',
+      (tester) async {
+    tester.view.physicalSize = const Size(320, 568);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          isSignedInProvider.overrideWithValue(true),
+          twinDirectoryTransportProvider.overrideWithValue(
+            const UnavailableTwinDirectoryTransport(),
+          ),
+          twinActivityTransportProvider.overrideWithValue(
+            const UnavailableTwinActivityTransport(),
+          ),
+          walletTransportProvider.overrideWithValue(
+            const UnavailableWalletTransport(),
+          ),
+        ],
+        child: MaterialApp(
+          theme: buildMasanawaTheme(brightness: Brightness.light),
+          home: const TwinHomeShell(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('My Twin'), findsWidgets);
+    expect(find.text('Explore'), findsOneWidget);
+    expect(find.text('Activity'), findsOneWidget);
+    expect(find.text('Wallet'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
 }
