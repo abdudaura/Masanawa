@@ -95,7 +95,7 @@ void main() {
           id: 'story-radio:episode-1',
           title: 'Continue Night Stories',
           subtitle: 'Episode 2 · 05:12 remaining',
-          kind: 'story_radio',
+          kind: 'story-radio',
           roomId: 'room.story-radio',
         ),
         HomeContinuationModel(
@@ -130,7 +130,7 @@ void main() {
 
     expect(result, hasLength(3));
     expect(result[0].id, 'story-radio:episode-1');
-    expect(result[0].kind, 'story_radio');
+    expect(result[0].kind, 'story-radio');
     expect(result[1].id, 'chat:character-gwani');
     expect(result[1].title, 'Server conversation');
     expect(result[2].id, 'chat:character-gwana');
