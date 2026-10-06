@@ -83,6 +83,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   final Set<String> _selectedMessageIds = {};
   final Map<String, GlobalKey> _messageKeys = {};
   bool _finishingTwin = false;
+  Map<String, dynamic> _twinInterviewFacts = <String, dynamic>{};
 
   @override
   void initState() {
@@ -184,6 +185,12 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       _replyingTo = null;
       _pendingAttachments = const [];
     });
+
+    if (widget.twinSetup && attachments.isEmpty && text.trim().isNotEmpty) {
+      unawaited(_sendTwinInterviewText(text.trim(), reply));
+      return;
+    }
+
     if (attachments.isNotEmpty) {
       unawaited(
         ctl.sendAttachments(
@@ -216,6 +223,40 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 : 'Message'),
       ),
     );
+  }
+
+  Future<void> _sendTwinInterviewText(
+    String text,
+    AiChatMessage? reply,
+  ) async {
+    final ctl = ref.read(aiChatProvider.notifier);
+    try {
+      await ctl.sendText(
+        widget.characterId,
+        text,
+        replyToId: reply?.id,
+        replyPreview: reply == null
+            ? null
+            : (reply.text.isNotEmpty ? reply.text : 'Gwani'),
+        transportPrompt: ctl.twinInterviewTransportPrompt(
+          userAnswer: text,
+          facts: _twinInterviewFacts,
+        ),
+      );
+      final next = await ctl.extractTwinInterviewText(
+        characterId: widget.characterId,
+        userAnswer: text,
+        facts: _twinInterviewFacts,
+      );
+      if (mounted) setState(() => _twinInterviewFacts = next);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('I could not save that Twin setup answer. Please say it again.'),
+        ),
+      );
+    }
   }
 
   void _stageAttachments(List<ChatAttachment> attachments) {
@@ -607,6 +648,35 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     });
     final ctl = ref.read(aiChatProvider.notifier);
     ctl.setDraftVoice(widget.characterId, null);
+
+    if (widget.twinSetup) {
+      try {
+        await ctl.sendAttachment(
+          widget.characterId,
+          pending,
+          replyToId: reply?.id,
+          replyPreview: reply == null
+              ? null
+              : (reply.text.isNotEmpty ? reply.text : 'Gwani'),
+          transportPrompt: ctl.twinInterviewMediaPrompt(_twinInterviewFacts),
+        );
+        final next = await ctl.extractTwinInterviewVoice(
+          characterId: widget.characterId,
+          attachment: pending,
+          facts: _twinInterviewFacts,
+        );
+        if (mounted) setState(() => _twinInterviewFacts = next);
+      } catch (_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('I could not save that Twin setup answer. Please record it again.'),
+          ),
+        );
+      }
+      return;
+    }
+
     await ctl.sendAttachment(
       widget.characterId,
       pending,
@@ -662,7 +732,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     setState(() => _finishingTwin = true);
     try {
       final chat = ref.read(aiChatProvider.notifier);
-      final summary = await chat.summarizeTwinInterview(widget.characterId);
+      final summary = await chat.summarizeTwinInterview(
+        widget.characterId,
+        _twinInterviewFacts,
+      );
       final session = ref.read(sessionProvider);
       if (session is! SessionSignedIn) {
         throw StateError('Sign in is required');
