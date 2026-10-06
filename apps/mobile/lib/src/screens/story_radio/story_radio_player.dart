@@ -41,10 +41,9 @@ class _StoryRadioPlayerState extends ConsumerState<StoryRadioPlayer> {
   Future<void> _prepare() async {
     try {
       await _player.setUrl(widget.episode.audioUrl);
-      final initial = widget.initialPositionSeconds.clamp(
-        0,
-        widget.episode.durationSeconds,
-      );
+      final initial = widget.initialPositionSeconds
+          .clamp(0, widget.episode.durationSeconds)
+          .toInt();
       if (initial > 0) {
         await _player.seek(Duration(seconds: initial));
       }
@@ -52,10 +51,9 @@ class _StoryRadioPlayerState extends ConsumerState<StoryRadioPlayer> {
       _positionSubscription = _player.positionStream.listen((position) {
         if (!mounted) return;
         setState(() {});
-        final seconds = position.inSeconds.clamp(
-          0,
-          widget.episode.durationSeconds,
-        );
+        final seconds = position.inSeconds
+            .clamp(0, widget.episode.durationSeconds)
+            .toInt();
         if (seconds > 0 &&
             seconds != _lastSavedSecond &&
             seconds % 15 == 0) {
@@ -108,10 +106,9 @@ class _StoryRadioPlayerState extends ConsumerState<StoryRadioPlayer> {
   }
 
   Future<void> _persistNow() async {
-    final seconds = _player.position.inSeconds.clamp(
-      0,
-      widget.episode.durationSeconds,
-    );
+    final seconds = _player.position.inSeconds
+        .clamp(0, widget.episode.durationSeconds)
+        .toInt();
     await ref.read(storyRadioProvider.notifier).saveProgress(
           episode: widget.episode,
           positionSeconds: seconds,
@@ -120,10 +117,10 @@ class _StoryRadioPlayerState extends ConsumerState<StoryRadioPlayer> {
   }
 
   Future<void> _seek(double value) async {
-    final seconds = value.round().clamp(
-      0,
-      widget.episode.durationSeconds,
-    );
+    final seconds = value
+        .round()
+        .clamp(0, widget.episode.durationSeconds)
+        .toInt();
     await _player.seek(Duration(seconds: seconds));
     if (mounted) setState(() {});
   }
@@ -155,10 +152,9 @@ class _StoryRadioPlayerState extends ConsumerState<StoryRadioPlayer> {
       );
     }
 
-    final position = _player.position.inSeconds.clamp(
-      0,
-      widget.episode.durationSeconds,
-    );
+    final position = _player.position.inSeconds
+        .clamp(0, widget.episode.durationSeconds)
+        .toInt();
     final completed =
         _player.processingState == ProcessingState.completed;
 
@@ -197,7 +193,10 @@ class _StoryRadioPlayerState extends ConsumerState<StoryRadioPlayer> {
           ),
           const SizedBox(height: 5),
           Text(
-            'Episode ' + widget.episode.episodeNumber.toString(),
+            'Season ' +
+                widget.episode.seasonNumber.toString() +
+                ' · Episode ' +
+                widget.episode.episodeNumber.toString(),
             style: TextStyle(
               color: u.textMuted,
               fontSize: 12,
