@@ -5,7 +5,10 @@ import {
 import type { AgentRun } from "@masanawa/agents";
 import { describe, expect, it } from "vitest";
 
-import { projectWorkResearchRoom } from "./work_research_room.js";
+import {
+  projectWorkResearchRoom,
+  resolveWorkResearchQuickStart,
+} from "./work_research_room.js";
 
 function run(state: AgentRun["state"]): AgentRun {
   const agentRunId = createCanonicalId("agent-run");
@@ -194,6 +197,38 @@ describe("Work/Research room projection", () => {
         ],
       }),
     ).toThrow("artifact.uri must be HTTPS");
+  });
+
+  it("resolves only approved quick-start intents for the selected Room", () => {
+    expect(
+      resolveWorkResearchQuickStart({
+        roomKind: "work-business",
+        intentId: "work.proposal",
+      }),
+    ).toEqual({
+      roomKind: "work-business",
+      intentId: "work.proposal",
+    });
+
+    expect(() =>
+      resolveWorkResearchQuickStart({
+        roomKind: "work-business",
+        intentId: "research.latest",
+      }),
+    ).toThrow(
+      "Work/Research quick-start intent is not allowed for this Room",
+    );
+  });
+
+  it("rejects arbitrary forged runtime intents", () => {
+    expect(() =>
+      resolveWorkResearchQuickStart({
+        roomKind: "research-answers",
+        intentId: "provider.execute-arbitrary",
+      }),
+    ).toThrow(
+      "Work/Research quick-start intent is not allowed for this Room",
+    );
   });
 
   it("rejects inconsistent terminal progress", () => {
