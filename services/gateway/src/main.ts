@@ -1133,17 +1133,7 @@ export async function startGatewayService(
   const nowPaymentsApiKey = env.NOWPAYMENTS_API_KEY?.trim();
   const nowPaymentsIpnSecret = env.NOWPAYMENTS_IPN_SECRET?.trim();
   const nowPaymentsEmail = env.NOWPAYMENTS_PAYOUT_EMAIL?.trim();
-  const nowPaymentsPassword = env.NOWPAYMENTS_PAYOUT_PASSWORD?.trim();    if (database.ngnWallet && billingCustomerAuthorizer && flutterwaveFunding && composedBillingFinancial && webhookHash) {
-      composedBillingWallet ??= createBillingWalletService({
-        sessions: billingCustomerAuthorizer,
-        quotes: database.billingQuotes,
-        wallet: database.ngnWallet,
-        funding: flutterwaveFunding,
-        billing: composedBillingFinancial,
-        webhookSecretHash: webhookHash,
-      });
-    }
-
+  const nowPaymentsPassword = env.NOWPAYMENTS_PAYOUT_PASSWORD?.trim();
 
   const nowPaymentsRelayToken = env.MASANAWA_NOWPAYMENTS_RELAY_TOKEN?.trim();
   const nowPaymentsRelayBaseUrl =
@@ -1428,7 +1418,7 @@ export async function startGatewayService(
   const composedShellActionExecutor: AgentShellActionExecutor | undefined =
     composedBillingCheckout && composedBillingWallet
       ? Object.freeze({
-          async execute(request) {
+          async execute(request: Parameters<AgentShellActionExecutor["execute"]>[0]) {
             if (request.action.actionId === "billing.wallet.confirm") {
               const verified = await composedBillingCheckout.verifyWalletConfirmAction({
                 authorizationHeader: request.authorizationHeader,
