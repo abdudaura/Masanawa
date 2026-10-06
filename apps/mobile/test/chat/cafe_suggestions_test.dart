@@ -8,6 +8,7 @@ void main() {
       'Airtime',
       'Electricity',
       'TV',
+      'Crypto',
     ]);
   });
 
