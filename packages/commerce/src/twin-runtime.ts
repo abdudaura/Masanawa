@@ -367,6 +367,7 @@ export interface TwinRuntimeRepository {
   appendOwnerAccessMessage(input: {
     readonly tenantId: TenantId;
     readonly message: OwnerAccessSessionMessage;
+    readonly expiresAt: string;
   }): Promise<OwnerAccessSessionMessage>;
 
   listOwnerAccessMessages(input: {
@@ -374,6 +375,12 @@ export interface TwinRuntimeRepository {
     readonly requestId: string;
     readonly limit: number;
   }): Promise<readonly OwnerAccessSessionMessage[]>;
+
+  purgeExpiredOwnerAccessMessages(input: {
+    readonly tenantId: TenantId;
+    readonly at: string;
+    readonly limit: number;
+  }): Promise<number>;
 
   blockTwin(input: TwinSafetyBlock): Promise<void>;
   unblockTwin(input: {
