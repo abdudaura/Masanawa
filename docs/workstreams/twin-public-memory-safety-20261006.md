@@ -3,6 +3,7 @@
 Owner/window: ChatGPT continuation window / 2026-10-06
 Branch: `work/twin-public-memory-safety-20261006`
 Base SHA: `b8d415f09424ddf3e1a90a578f54c5792668bc3b`
+PR: #223
 Task: TWIN-093 — protect private owner memory from public Twin responses.
 Roadmap references: `docs/TWIN-TRANSFORMATION-TASKS.md`, `docs/TWIN-MULTI-WINDOW-EXECUTION.md`, PR #148 representational-memory handoff.
 
@@ -14,29 +15,43 @@ Roadmap references: `docs/TWIN-TRANSFORMATION-TASKS.md`, `docs/TWIN-MULTI-WINDOW
 
 ## Excluded/shared paths
 
-Not owned and must not be edited from this window:
+Not owned and not changed:
 
 - `services/gateway/src/app.ts`
 - `services/gateway/src/main.ts`
 - mobile router/chat/transport/APK paths
 - production environment/configuration
 - migrations and PostgreSQL repository schemas
-- `packages/memory/src/index.ts` root export seam unless ownership is explicitly extended
+- `packages/memory/src/index.ts` root export seam
 - Identity, Commerce, Billing, Crypto, Workflow and provider-owned paths
 - PR #136 production integration paths
 
-## Dependencies
+## Completed implementation
 
-- Existing canonical Memory model, scope predicates and context compiler on current `main`.
-- Existing PR #148 / merged-main `representation.ts` public-Twin scope invariant.
-- Final Gateway/runtime composition remains with the shared production owner.
+- Added a single public-Twin context compiler that constructs the authorized scope predicate internally from canonical `character-shared` Memory for the represented Character.
+- Rejects cross-tenant candidates, owner-private Character memory, Relationship-private memory and another Twin's shared memory before context compilation.
+- Rejects a mixed public/private candidate batch rather than silently filtering it.
+- Reuses the canonical `compileMemoryContext` path so token budgeting, deduplication and provenance remain unchanged.
+- Preserves exact Memory record/revision/source-content provenance in the compiled public context.
+- Added focused strict-TypeScript tests for the allowed path, each private/leakage path, mixed-batch rejection and provenance preservation.
 
-## Current state
+## Changed-file audit
 
-IMPLEMENTING. The public-Twin context compiler and focused leakage-resistance tests are committed; executable CI evidence is pending.
+PR #223 changes exactly the three owned paths above. No shared Gateway/mobile/router/APK, migration, production environment, Commerce or provider files are changed.
 
-Implementation target: add a single fail-closed public-Twin context compiler that only accepts the represented Twin's explicit `character-shared` scope, rejects caller-supplied broader predicates/private scopes, validates every candidate before context compilation, preserves canonical Memory provenance, and proves leakage resistance with focused tests.
+## Verification
 
-Current implementation head: `b6a1e790c3191f22b900da418ef51ca2e93487d6`.
+- Source/type audit completed against `packages/memory/tsconfig.json`, strict root TypeScript settings, canonical Memory fusion/context/projection contracts and the existing PR #148 representation boundary.
+- Foundation CI run `37452572382` on implementation head `4cd1c9cfc63e94faf77abd5b0298c682c787f3d1` failed before checkout with `runner_id=0` and `steps=[]`. No repository code executed, so this is recorded as hosted-runner non-execution rather than a code verdict.
+- Final branch head after this handoff update is the commit produced by this documentation update.
+
+## Remaining dependencies
+
+1. Memory/export owner: append-only export of the completed public context boundary through `@masanawa/memory` when shared root-export ownership is available.
+2. Shared Gateway/runtime owner (#136 or explicit successor): use this compiler for public Twin inference/retrieval composition; do not compose owner Relationship/private scopes.
+3. Executable CI remains needed when GitHub runner allocation recovers.
+
+State: ISOLATED COMPLETE / INTEGRATION READY.
+No further isolated implementation remains in this lane.
 
 Last update: 2026-10-06.
