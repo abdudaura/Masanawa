@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-
 import '../../agents/twin_directory.dart';
 import '../../state/twin_directory_state.dart';
 import '../../theme/masanawa_theme.dart';
@@ -10,9 +8,11 @@ class ExploreScreen extends ConsumerStatefulWidget {
   const ExploreScreen({
     super.key,
     this.onOpenTwin,
+    this.onOpenInternetCafe,
   });
 
   final void Function(TwinDirectoryEntry twin)? onOpenTwin;
+  final VoidCallback? onOpenInternetCafe;
 
   @override
   ConsumerState<ExploreScreen> createState() => _ExploreScreenState();
@@ -33,24 +33,6 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   void dispose() {
     _search.dispose();
     super.dispose();
-  }
-
-  /// Opens the Internet Cafe room: a Gwani chat with buying shortcuts.
-  void _openInternetCafe() {
-    TwinDirectoryEntry? gwani;
-    for (final twin in ref.read(twinDirectoryProvider).items) {
-      if (twin.displayName.trim().toLowerCase() == 'gwani') {
-        gwani = twin;
-        break;
-      }
-    }
-    if (gwani == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gwani isn’t available right now.')),
-      );
-      return;
-    }
-    context.push('/chat/${Uri.encodeComponent(gwani.characterId)}?entry=cafe');
   }
 
   @override
@@ -81,7 +63,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
               icon: Icons.language_outlined,
               title: 'Internet Cafe',
               subtitle: 'Data, airtime, electricity & TV with Gwani',
-              onTap: _openInternetCafe,
+              onTap: widget.onOpenInternetCafe,
             ),
             const SizedBox(height: 12),
             if (state.loading && state.items.isEmpty)
@@ -162,7 +144,7 @@ class _RoomCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -285,16 +267,6 @@ class _TwinCard extends StatelessWidget {
                           color: u.textMuted,
                           fontSize: 12,
                           height: 1.35,
-                        ),
-                      ),
-                    ],
-                    if (twin.languages.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        twin.languages.take(3).join(' · '),
-                        style: TextStyle(
-                          color: u.textMuted,
-                          fontSize: 11,
                         ),
                       ),
                     ],
