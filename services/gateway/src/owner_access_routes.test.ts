@@ -1,7 +1,10 @@
 import Fastify from "fastify";
 import { afterEach, describe, expect, it } from "vitest";
 import type { OwnerAccessService } from "./owner_access.js";
-import { registerOwnerAccessRoutes } from "./owner_access_routes.js";
+import {
+  registerOwnerAccessRoutes,
+  registerOwnerAccessDisputeAdminRoutes,
+} from "./owner_access_routes.js";
 
 const apps = new Array<ReturnType<typeof Fastify>>();
 
@@ -150,6 +153,100 @@ describe("owner access routes", () => {
       "heartbeat:" + requestId,
       "messages:" + requestId,
       "send:message-client-123",
+    ]);
+  });
+
+
+  it("routes requester dispute reason through the participant action endpoint", async () => {
+    let captured: Record<string, unknown> | null = null;
+    const service: OwnerAccessService = {
+      async quote() { throw new Error("not used"); },
+      async request() { throw new Error("not used"); },
+      async act(input) {
+        captured = input as unknown as Record<string, unknown>;
+        return {
+          requestId: input.requestId,
+          requesterUserId: "user-requester",
+          ownerUserId: "user-owner",
+          originatingCharacterId: input.characterId,
+          modality: "text",
+          durationMinutes: 15,
+          priceCredits: 100,
+          platformFeeCredits: 20,
+          ownerEarningCredits: 80,
+          chargeMode: "paid",
+          trialPolicyRevision: 1,
+          state: "disputed",
+          requestedAt: "2026-10-05T10:00:00Z",
+          acceptBy: "2026-10-05T11:00:00Z",
+          scheduledFor: null,
+          startedAt: "2026-10-05T10:10:00Z",
+          completedAt: "2026-10-05T10:25:00Z",
+          disputeBy: "2026-10-06T10:25:00Z",
+          disputedAt: "2026-10-05T10:30:00Z",
+          disputeReason: "service-quality",
+        };
+      },
+      async read() { return null; },
+      async latest() { return null; },
+      async heartbeat() { throw new Error("not used"); },
+      async messages() { return []; },
+      async sendMessage() { throw new Error("not used"); },
+    };
+    const app = Fastify();
+    apps.push(app);
+    registerOwnerAccessRoutes(app, service);
+    const characterId =
+      "character_00000000-0000-4000-8000-000000000003";
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/agent/twin/owner-access/owner-request-dispute-123/action",
+      payload: {
+        characterId,
+        action: "dispute",
+        disputeReason: "service-quality",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(captured).toEqual(
+      expect.objectContaining({
+        action: "dispute",
+        disputeReason: "service-quality",
+      }),
+    );
+  });
+
+  it("keeps admin dispute resolution on a separate route", async () => {
+    const calls: Array<Record<string, unknown>> = [];
+    const app = Fastify();
+    apps.push(app);
+    registerOwnerAccessDisputeAdminRoutes(app, {
+      async resolve(input) {
+        calls.push(input as unknown as Record<string, unknown>);
+        return { state: input.resolution === "refund" ? "refunded" : "settled" };
+      },
+    });
+    const characterId =
+      "character_00000000-0000-4000-8000-000000000003";
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/admin/twin/owner-access/owner-request-dispute-123/dispute",
+      payload: {
+        characterId,
+        resolution: "refund",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(calls).toEqual([
+      expect.objectContaining({
+        characterId,
+        requestId: "owner-request-dispute-123",
+        resolution: "refund",
+      }),
     ]);
   });
 
