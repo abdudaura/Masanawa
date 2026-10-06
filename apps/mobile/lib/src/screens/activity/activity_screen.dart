@@ -308,17 +308,39 @@ class _Summary extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: u.structuralBorder),
       ),
-      child: Row(
-        children: [
-          Expanded(child: _Metric(label: 'Visitors', value: '${summary.visitors}')),
-          Expanded(child: _Metric(label: 'Chats', value: '${summary.conversations}')),
-          Expanded(
-            child: _Metric(
-              label: 'Earned',
-              value: '${summary.earningsCredits} Cr',
-            ),
-          ),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final columns = constraints.maxWidth < 360 ? 2 : 3;
+          final width =
+              (constraints.maxWidth - ((columns - 1) * 12)) / columns;
+          return Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              SizedBox(
+                width: width,
+                child: _Metric(
+                  label: 'Visitors',
+                  value: '${summary.visitors}',
+                ),
+              ),
+              SizedBox(
+                width: width,
+                child: _Metric(
+                  label: 'Chats',
+                  value: '${summary.conversations}',
+                ),
+              ),
+              SizedBox(
+                width: width,
+                child: _Metric(
+                  label: 'Earned',
+                  value: '${summary.earningsCredits} Cr',
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
