@@ -48,4 +48,42 @@ void main() {
       throwsArgumentError,
     );
   });
+
+  test('rejects invalid mutation identity and revisions', () {
+    expect(
+      () => PublishingMutationIntent.setVisibility(
+        kind: PublishingMutationKind.setHomeRoomVisibility,
+        targetId: '   ',
+        visible: true,
+        expectedRevision: 1,
+      ),
+      throwsArgumentError,
+    );
+    expect(
+      () => PublishingMutationIntent.reorderRoom(
+        roomKey: 'study-center',
+        sortOrder: 1,
+        expectedRevision: 0,
+      ),
+      throwsArgumentError,
+    );
+    expect(
+      () => PublishingMutationIntent.pinNews(
+        categoryId: 'world',
+        itemId: '   ',
+        expectedRevision: 2,
+      ),
+      throwsArgumentError,
+    );
+    expect(
+      () => PublishingMutationIntent.updateAssistant(
+        characterId: 'character-1',
+        displayName: '   ',
+        position: 'left',
+        visible: true,
+        expectedRevision: 2,
+      ),
+      throwsArgumentError,
+    );
+  });
 }
