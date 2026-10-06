@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/core/network/api_client.dart';
 import 'package:masanawa/src/core/providers.dart';
+import 'package:masanawa/src/home/home_models.dart';
+import 'package:masanawa/src/home/home_state.dart';
 import 'package:masanawa/src/state/my_twin_state.dart';
 import 'package:masanawa/src/state/session_state.dart';
 import 'package:masanawa/src/state/twin_activity_state.dart';
@@ -44,6 +46,40 @@ void main() {
     dio.httpClientAdapter = _Adapter((options) async {
       seenPaths.add(options.path);
       switch (options.path) {
+        case '/home':
+          return _json({
+            'assistants': [
+              {
+                'role': 'gwana',
+                'characterId': 'character-gwana',
+                'displayName': 'Gwana',
+                'description': 'Platform assistant',
+                'voiceLabel': 'Sulafat',
+                'avatarUrl': null,
+                'isAvailable': true,
+              },
+              {
+                'role': 'gwani',
+                'characterId': 'character-gwani',
+                'displayName': 'Gwani',
+                'description': 'Platform assistant',
+                'voiceLabel': 'Bodi',
+                'avatarUrl': null,
+                'isAvailable': true,
+              },
+            ],
+            'rooms': [
+              {
+                'roomId': 'room.internet-cafe',
+                'title': 'Internet Cafe',
+                'description': 'Digital services',
+                'iconKey': 'internet_cafe',
+                'continuationLabel': null,
+                'isAvailable': true,
+              },
+            ],
+            'continuations': [],
+          });
         case '/v1/my-twin':
           return _json({
             'hasTwin': true,
@@ -110,6 +146,14 @@ void main() {
     expect(mine?.displayName, 'Amina Bello');
     expect(mine?.publicUrl, 'https://masanawa.com/amina-bello');
 
+    final home = await container.read(homeProvider.future);
+    expect(home.assistantFor(HomeAssistantRole.gwana)?.characterId,
+        'character-gwana');
+    expect(home.assistantFor(HomeAssistantRole.gwani)?.characterId,
+        'character-gwani');
+    expect(home.rooms.single.roomId, 'room.internet-cafe');
+    expect(home.myTwin?.characterId, 'character-owner');
+
     final directory = container.read(twinDirectoryProvider.notifier);
     await directory.loadInitial();
     expect(container.read(twinDirectoryProvider).items.single.publicId,
@@ -125,6 +169,7 @@ void main() {
     expect(
       seenPaths,
       containsAll(<String>[
+        '/home',
         '/v1/my-twin',
         '/agent/twins',
         '/agent/twin/activity',
