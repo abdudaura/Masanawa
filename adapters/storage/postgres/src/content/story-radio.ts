@@ -181,16 +181,52 @@ export function createPostgresStoryRadioRepository(pool: Pool): StoryRadioReposi
     },
 
     async setEpisodePublication(input) {
-      const result = await pool.query(
-        `UPDATE content.story_episodes
-            SET state=$3,
-                published_at=CASE WHEN $3='published' THEN COALESCE(published_at,$4::timestamptz) ELSE NULL END,
-                updated_at=$4
-          WHERE tenant_id=$1 AND episode_id=$2
-          RETURNING *`,
-        [input.tenantId,input.episodeId,input.published ? "published" : "draft",input.at],
-      );
-      return result.rows[0] ? episode(result.rows[0]) : null;
+      return withTransaction(pool, async (client) => {
+        if (!input.published) {
+          const current = await client.query<{
+            series_id: string;
+            episode_state: string;
+            series_state: string;
+          }>(
+            `SELECT e.series_id,
+                    e.state AS episode_state,
+                    s.state AS series_state
+               FROM content.story_episodes e
+               JOIN content.story_series s
+                 ON s.tenant_id=e.tenant_id AND s.series_id=e.series_id
+              WHERE e.tenant_id=$1 AND e.episode_id=$2
+              FOR UPDATE OF e,s`,
+            [input.tenantId,input.episodeId],
+          );
+          const row = current.rows[0];
+          if (
+            row?.episode_state === "published" &&
+            row.series_state === "published"
+          ) {
+            const count = await client.query<{ count: string }>(
+              `SELECT count(*)::text AS count
+                 FROM content.story_episodes
+                WHERE tenant_id=$1 AND series_id=$2 AND state='published'`,
+              [input.tenantId,row.series_id],
+            );
+            if (Number(count.rows[0]?.count ?? 0) <= 1) {
+              throw new Error(
+                "story_radio.episode.last_published_in_live_series",
+              );
+            }
+          }
+        }
+        const result = await client.query(
+          `UPDATE content.story_episodes
+              SET state=$3,
+                  published_at=CASE WHEN $3='published' THEN COALESCE(published_at,$4::timestamptz) ELSE NULL END,
+                  updated_at=$4
+            WHERE tenant_id=$1 AND episode_id=$2
+            RETURNING *`,
+          [input.tenantId,input.episodeId,input.published ? "published" : "draft",input.at],
+        );
+        return result.rows[0] ? episode(result.rows[0]) : null;
+      });
     },
 
     async listSeries(input) {
