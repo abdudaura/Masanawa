@@ -129,6 +129,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           final voice = thread.draftVoice;
           _pendingVoice =
               voice != null && File(voice.path).existsSync() ? voice : null;
+          if (widget.twinSetup) {
+            _twinInterviewFacts =
+                Map<String, dynamic>.from(thread.twinInterviewFacts);
+          }
         });
       }
       final offset = thread.scrollOffset;
@@ -248,7 +252,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         userAnswer: text,
         facts: _twinInterviewFacts,
       );
-      if (mounted) setState(() => _twinInterviewFacts = next);
+      if (mounted) {
+        setState(() => _twinInterviewFacts = next);
+        ctl.setTwinInterviewFacts(widget.characterId, next);
+      }
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -665,7 +672,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           attachment: pending,
           facts: _twinInterviewFacts,
         );
-        if (mounted) setState(() => _twinInterviewFacts = next);
+        if (mounted) {
+          setState(() => _twinInterviewFacts = next);
+          ctl.setTwinInterviewFacts(widget.characterId, next);
+        }
       } catch (_) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
