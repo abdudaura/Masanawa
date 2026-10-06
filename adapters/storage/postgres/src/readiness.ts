@@ -60,6 +60,10 @@ export function platformProductMigrationRoots(): readonly MigrationRoot[] {
   return Object.freeze([
     ...characterSessionMigrationRoots(),
     Object.freeze({
+      owner: "channels",
+      directory: packageMigrationDirectory("@masanawa/messaging-channels"),
+    }),
+    Object.freeze({
       owner: "commerce",
       directory: packageMigrationDirectory("@masanawa/commerce"),
     }),
