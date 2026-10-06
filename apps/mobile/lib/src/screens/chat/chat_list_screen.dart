@@ -8,6 +8,7 @@ import '../../state/agent_directory_state.dart';
 import '../../state/ai_chat_state.dart';
 import '../../state/session_state.dart';
 import '../../theme/masanawa_theme.dart';
+import '../../ui/components/platform_agent_avatar.dart';
 import '../../ui/components/masanawa_wordmark.dart';
 
 class ChatListScreen extends ConsumerWidget {
@@ -360,6 +361,11 @@ class ChatListScreen extends ConsumerWidget {
               onPressed: () => _showArchived(context, ref, directory),
             ),
           IconButton(
+            tooltip: 'Wallet',
+            icon: const Icon(Icons.account_balance_wallet_outlined),
+            onPressed: () => context.push('/wallet'),
+          ),
+          IconButton(
             tooltip: 'Agents',
             icon: const Icon(Icons.groups_outlined),
             onPressed: () => context.push('/agents'),
@@ -405,23 +411,7 @@ class ChatListScreen extends ConsumerWidget {
                       horizontal: 14,
                       vertical: 6,
                     ),
-                    leading: CircleAvatar(
-                      radius: 26,
-                      backgroundColor: u.brand,
-                      foregroundImage: agent.avatarUrl?.isNotEmpty == true
-                          ? NetworkImage(agent.avatarUrl!)
-                          : null,
-                      child: agent.avatarUrl?.isNotEmpty == true
-                          ? null
-                          : Text(
-                              agent.initial,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 20,
-                              ),
-                            ),
-                    ),
+                    leading: PlatformAgentAvatar(agent: agent, radius: 26),
                     title: Row(
                       children: [
                         if (thread.pinned) ...[
