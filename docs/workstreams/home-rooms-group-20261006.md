@@ -1,6 +1,6 @@
 # Home + Rooms — Lane G Group Rooms
 
-Status: IMPLEMENTATION COMPLETE — shared integration only
+Status: ACTIVE — backend contract continuation
 Owner/window: ChatGPT Group Rooms implementation window
 Branch: `work/home-rooms-group-20261006`
 Base: `docs/home-rooms-launch-20261006` @ `f3aea97a1cf74736c567950ca3091eef91806406`
@@ -12,6 +12,8 @@ Last update: 2026-10-06
 - `apps/mobile/lib/src/rooms/group_rooms/**`
 - `apps/mobile/test/rooms/group_rooms/**`
 - `docs/workstreams/home-rooms-group-20261006.md`
+- `packages/identity/src/group-room.ts`
+- `packages/identity/src/group-room.test.ts`
 
 ## Explicitly excluded
 
@@ -58,6 +60,10 @@ At implementation head `da4276044d55e5aa05c3f441182b8f8bff0255a8`, GitHub starte
 
 Both runs terminated before checkout/execution: their only jobs expose `steps = null` and no logs. This matches the repository's known hosted-runner allocation failure and is not an application test result. This environment has no repository checkout/Flutter SDK, so no local Flutter pass is fabricated.
 
+## Backend continuation
+
+Ownership expanded after confirming no competing Group Room backend claim. New work is limited to additive Identity files; existing Relationship files and package exports remain untouched.
+
 ## Remaining shared-owner integration dependencies
 
 Only work outside this lane remains:
@@ -67,7 +73,7 @@ Only work outside this lane remains:
 4. Shared transport maps canonical Character/Twin presentation references into the opaque `bindingRef` field.
 5. Production/APK owner performs end-to-end device qualification after composition.
 
-No further isolated Lane G implementation is required before those shared dependencies are available.
+Backend contract continuation is now in progress; this statement will be replaced by the final handoff.
 
 ## PR / handoff
 
