@@ -17,11 +17,14 @@ import {
   quoteTwinVoice,
   reverseCommission,
   settleVerifiedTwinVoiceUsage,
+  valueProviderAmount,
   transitionOwnerAccess,
   type CommerceRepository,
   type CommissionPolicy,
   type OwnerAccessPolicy,
   type PaidFeatureKey,
+  type ProviderValuationDecision,
+  type ProviderValuationPolicy,
   type TwinRuntimeRepository,
   type TwinVoicePricingPolicy,
 } from "@masanawa/commerce";
@@ -84,6 +87,9 @@ import {
   createCommissionPolicyAdminService,
   type TwinAttributionService,
 } from "./twin_attribution.js";
+import {
+  createProviderValuationPolicyAdminService,
+} from "./provider_valuation_admin.js";
 import {
   createPaidVoiceService,
   type PaidVoiceService,
@@ -181,6 +187,7 @@ export interface TwinProductionRuntime {
   readonly gifts: GiftService;
   readonly twinAttribution: TwinAttributionService;
   readonly commissionAdmin: ReturnType<typeof createCommissionPolicyAdminService>;
+  readonly providerValuationAdmin: ReturnType<typeof createProviderValuationPolicyAdminService>;
   readonly paidVoice: PaidVoiceService;
   readonly paidFeatureTrialAdmin: PaidFeatureTrialAdminService;
   readonly ownerAccess: OwnerAccessService;
@@ -237,6 +244,13 @@ export interface TwinProductionRuntime {
       readonly operationId: string;
       readonly expiresAt?: string | null;
     }): Promise<void>;
+    settleProviderValue(input: {
+      readonly tenantId: TenantId;
+      readonly valuationKey: string;
+      readonly eventType: "external-funding" | "commerce-purchase";
+      readonly operationId: string;
+      readonly sourceUnits: number;
+    }): Promise<ProviderValuationDecision>;
     settle(input: {
       readonly tenantId: TenantId;
       readonly eventType: "external-funding" | "commerce-purchase";
@@ -1024,6 +1038,59 @@ export function createTwinProductionRuntime(input: {
           minimumCommissionCredits: value.minimumCommissionCredits,
           maximumCommissionCredits: value.maximumCommissionCredits,
           effectiveAt: value.effectiveAt,
+        });
+      },
+    },
+  });
+
+  const providerValuationAdmin = createProviderValuationPolicyAdminService({
+    authorizer: adminAuthority,
+    store: {
+      async readActive(request) {
+        const value = await input.economy.readProviderValuationPolicy({
+          tenantId: request.tenantId as TenantId,
+          valuationKey: request.valuationKey,
+          eventType: request.eventType,
+          at: at(),
+        });
+        return value
+          ? Object.freeze({
+              valuationKey: value.valuationKey,
+              eventType: value.eventType,
+              revision: value.revision,
+              enabled: value.enabled,
+              sourceUnit: value.sourceUnit,
+              sourceUnitsPerStep: value.sourceUnitsPerStep,
+              creditUnitsPerStep: value.creditUnitsPerStep,
+              minimumSourceUnits: value.minimumSourceUnits,
+              maximumBaseCredits: value.maximumBaseCredits,
+              effectiveAt: value.effectiveAt,
+            })
+          : null;
+      },
+      async putRevision(request) {
+        const current = await input.economy.readProviderValuationPolicy({
+          tenantId: request.tenantId as TenantId,
+          valuationKey: request.valuationKey,
+          eventType: request.eventType,
+          at: "9999-12-31T23:59:59.999Z",
+        });
+        const policy: ProviderValuationPolicy = {
+          schemaVersion: 1,
+          revision: (current?.revision ?? 0) + 1,
+          enabled: request.enabled,
+          valuationKey: request.valuationKey,
+          eventType: request.eventType,
+          sourceUnit: request.sourceUnit,
+          sourceUnitsPerStep: request.sourceUnitsPerStep,
+          creditUnitsPerStep: request.creditUnitsPerStep,
+          minimumSourceUnits: request.minimumSourceUnits,
+          maximumBaseCredits: request.maximumBaseCredits,
+          effectiveAt: request.effectiveAt,
+        };
+        return input.economy.putProviderValuationPolicy({
+          tenantId: request.tenantId as TenantId,
+          policy,
         });
       },
     },
@@ -2960,6 +3027,42 @@ export function createTwinProductionRuntime(input: {
       });
     },
 
+    async settleProviderValue(request: {
+      readonly tenantId: TenantId;
+      readonly valuationKey: string;
+      readonly eventType: "external-funding" | "commerce-purchase";
+      readonly operationId: string;
+      readonly sourceUnits: number;
+    }) {
+      const policy = await input.economy.readProviderValuationPolicy({
+        tenantId: request.tenantId,
+        valuationKey: request.valuationKey,
+        eventType: request.eventType,
+        at: at(),
+      });
+      if (!policy) {
+        throw Object.assign(
+          new Error("Provider valuation policy is not configured"),
+          { statusCode: 409 },
+        );
+      }
+      const decision = valueProviderAmount({
+        policy,
+        valuationKey: request.valuationKey,
+        eventType: request.eventType,
+        sourceUnits: request.sourceUnits,
+      });
+      if (decision.eligible && decision.baseCredits > 0) {
+        await monetization.settle({
+          tenantId: request.tenantId,
+          eventType: request.eventType,
+          operationId: request.operationId,
+          baseCredits: decision.baseCredits,
+        });
+      }
+      return decision;
+    },
+
     async settle(request: {
       readonly tenantId: TenantId;
       readonly eventType: "external-funding" | "commerce-purchase";
@@ -3183,6 +3286,7 @@ export function createTwinProductionRuntime(input: {
     gifts,
     twinAttribution,
     commissionAdmin,
+    providerValuationAdmin,
     paidVoice,
     paidFeatureTrialAdmin,
     ownerAccess,
