@@ -89,6 +89,15 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   final Map<String, GlobalKey> _messageKeys = {};
   bool _initialEntryHandled = false;
   String? _cafeCategory;
+  LiveVoiceSession? _inlineVoiceSession;
+  StreamSubscription<String>? _inlineTranscriptSub;
+  StreamSubscription<LiveVoiceState>? _inlineVoiceStateSub;
+  PaidVoiceAdmission? _inlinePaidAdmission;
+  AgentShellTransport? _inlineShellTransport;
+  String? _inlineVoiceCharacterId;
+  String _inlineTranscript = '';
+  LiveVoiceState _inlineVoiceState = LiveVoiceState.idle;
+  bool _inlineVoiceClosing = false;
 
   @override
   void initState() {
@@ -162,6 +171,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     _ampTimer?.cancel();
     _scrollPersistTimer?.cancel();
     _walletRefreshTimer?.cancel();
+    _inlineTranscriptSub?.cancel();
+    _inlineVoiceStateSub?.cancel();
+    unawaited(_inlineVoiceSession?.close());
     _recorder.dispose();
     _input.dispose();
     _search.dispose();
@@ -850,7 +862,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             }
             break;
           case AiChatEntryMode.voiceNote:
-            unawaited(_startRecording());
+            unawaited(_startInlineLiveVoice(agent));
             break;
           case AiChatEntryMode.liveVoice:
             unawaited(_openLiveVoice(agent));
@@ -1207,6 +1219,15 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   ),
                 ),
               ),
+            if (_inlineVoiceSession != null)
+              _InlineVoicePanel(
+                agentName: agent.displayName,
+                transcript: _inlineTranscript,
+                state: _inlineVoiceState,
+                onStop: () => unawaited(
+                  _stopInlineLiveVoice(outcome: 'completed'),
+                ),
+              ),
             if (widget.entryMode == AiChatEntryMode.cafe)
               _CafeSuggestionBar(
                 selectedKey: _cafeCategory,
@@ -1269,10 +1290,12 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   ref.read(aiChatProvider.notifier).stopGeneration(widget.characterId);
                 },
                 onAttach: _openAttachSheet,
-                onMic: updateRequired ? () {} : _toggleRecording,
-                onMicHoldStart: _onMicHoldStart,
-                onMicHoldMove: _onMicHoldMove,
-                onMicHoldEnd: _onMicHoldEnd,
+                onMic: updateRequired
+                    ? () {}
+                    : () => unawaited(_startInlineLiveVoice(agent)),
+                onMicHoldStart: (_) {},
+                onMicHoldMove: (_) {},
+                onMicHoldEnd: (_) {},
                 onEmojiToggle: () {
                   if (_showEmoji) {
                     setState(() => _showEmoji = false);
@@ -1821,6 +1844,183 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       SnackBar(content: Text(ok ? 'Report submitted.' : 'Could not submit report.')),
     );
   }
+  Future<PaidVoiceAdmission?> _admitInlineVoice(
+    AgentDirectoryEntry agent,
+  ) async {
+    final ownedCharacterId = ref.read(myTwinProvider).valueOrNull?.characterId;
+    final requiresTwinAdmission =
+        !agent.supportAgent && ownedCharacterId != agent.characterId;
+    if (!requiresTwinAdmission) return null;
+
+    final controller = ref.read(paidVoiceControllerProvider.notifier);
+    final quote = await controller.quote(
+      characterId: agent.characterId,
+      expectedSeconds: 5 * 60,
+    );
+    if (quote == null) return null;
+    if (!mounted) return null;
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Voice with ${agent.displayName}'),
+        content: Text(
+          quote.isTrial
+              ? 'Your ${quote.trialDurationDays}-day voice trial covers this live conversation.'
+              : 'Reserve up to ${quote.spendCapCredits} Credits for about 5 minutes. Only verified live time is charged.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Not now'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(quote.isTrial ? 'Start voice' : 'Accept & start'),
+          ),
+        ],
+      ),
+    );
+    if (accepted != true) return null;
+    return controller.accept(characterId: agent.characterId);
+  }
+
+  Future<void> _startInlineLiveVoice(AgentDirectoryEntry agent) async {
+    if (_inlineVoiceSession != null) {
+      await _stopInlineLiveVoice(outcome: 'completed');
+      return;
+    }
+    if (!await _ensurePermission(AppPermission.microphone, 'Microphone')) {
+      return;
+    }
+    final transport = ref.read(agentTransportProvider);
+    if (transport is! AgentShellTransport) {
+      if (mounted) _comingSoon('Live voice');
+      return;
+    }
+    final paidAdmission = await _admitInlineVoice(agent);
+    if (!mounted) return;
+
+    final shellTransport = transport as AgentShellTransport;
+    LiveVoiceSession? session;
+    try {
+      await _activeVoiceBubble?._pauseFromAnotherBubble();
+      await shellTransport.setPresence(
+        characterId: agent.characterId,
+        state: 'on_call',
+        durationMs: 5 * 60 * 1000,
+      );
+      final grant = await shellTransport.mintLiveVoiceGrant(
+        agent.characterId,
+        admissionId: paidAdmission?.admissionId,
+      );
+      if (!mounted) return;
+      session = LiveVoiceSession(
+        grant: grant,
+        characterName: agent.displayName,
+      );
+
+      _inlineTranscriptSub?.cancel();
+      _inlineVoiceStateSub?.cancel();
+      _inlineTranscriptSub = session.transcripts.listen((chunk) {
+        if (!mounted || chunk.isEmpty) return;
+        setState(() {
+          _inlineTranscript = (_inlineTranscript + chunk);
+          if (_inlineTranscript.length > 6000) {
+            _inlineTranscript =
+                _inlineTranscript.substring(_inlineTranscript.length - 6000);
+          }
+        });
+      });
+      _inlineVoiceStateSub = session.states.listen((state) {
+        if (!mounted) return;
+        setState(() => _inlineVoiceState = state);
+        if (state == LiveVoiceState.failed || state == LiveVoiceState.ended) {
+          unawaited(_stopInlineLiveVoice(outcome: 'interrupted'));
+        }
+      });
+
+      setState(() {
+        _inlineVoiceSession = session;
+        _inlinePaidAdmission = paidAdmission;
+        _inlineShellTransport = shellTransport;
+        _inlineVoiceCharacterId = agent.characterId;
+        _inlineTranscript = '';
+        _inlineVoiceState = LiveVoiceState.connecting;
+      });
+
+      await Future.wait<void>([session.start(), session.ready]);
+      if (paidAdmission != null) {
+        await ref
+            .read(paidVoiceControllerProvider.notifier)
+            .mediaStarted(admissionId: paidAdmission.admissionId);
+      }
+    } catch (_) {
+      await session?.close();
+      if (mounted) {
+        setState(() {
+          _inlineVoiceSession = null;
+          _inlineVoiceState = LiveVoiceState.failed;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Live voice could not start. Check microphone access and connection.',
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _stopInlineLiveVoice({
+    required String outcome,
+  }) async {
+    if (_inlineVoiceClosing) return;
+    final session = _inlineVoiceSession;
+    if (session == null) return;
+    _inlineVoiceClosing = true;
+    final admission = _inlinePaidAdmission;
+    final shellTransport = _inlineShellTransport;
+    final characterId = _inlineVoiceCharacterId;
+    try {
+      await _inlineTranscriptSub?.cancel();
+      await _inlineVoiceStateSub?.cancel();
+      _inlineTranscriptSub = null;
+      _inlineVoiceStateSub = null;
+      await session.close();
+      if (admission != null) {
+        await ref
+            .read(paidVoiceControllerProvider.notifier)
+            .complete(
+              admissionId: admission.admissionId,
+              outcome: outcome,
+            )
+            .catchError((_) {});
+        unawaited(ref.read(walletProvider.notifier).refresh());
+      }
+      if (shellTransport != null && characterId != null) {
+        await shellTransport
+            .setPresence(
+              characterId: characterId,
+              state: 'available',
+              durationMs: 60 * 1000,
+            )
+            .catchError((_) {});
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _inlineVoiceSession = null;
+          _inlinePaidAdmission = null;
+          _inlineShellTransport = null;
+          _inlineVoiceCharacterId = null;
+          _inlineVoiceState = LiveVoiceState.idle;
+        });
+      }
+      _inlineVoiceClosing = false;
+    }
+  }
+
   Future<void> _openLiveVoice(AgentDirectoryEntry agent) async {
     if (!await _ensurePermission(AppPermission.microphone, 'Microphone')) {
       return;
@@ -2320,6 +2520,84 @@ class _AttachOption extends StatelessWidget {
             Text(label, style: TextStyle(color: u.textPrimary, fontSize: 12)),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _InlineVoicePanel extends StatelessWidget {
+  const _InlineVoicePanel({
+    required this.agentName,
+    required this.transcript,
+    required this.state,
+    required this.onStop,
+  });
+
+  final String agentName;
+  final String transcript;
+  final LiveVoiceState state;
+  final VoidCallback onStop;
+
+  String get _status => switch (state) {
+        LiveVoiceState.connecting => 'Connecting…',
+        LiveVoiceState.listening => 'Listening…',
+        LiveVoiceState.speaking => 'Speaking…',
+        LiveVoiceState.interrupted => 'Listening…',
+        LiveVoiceState.failed => 'Connection problem',
+        LiveVoiceState.ended => 'Ended',
+        LiveVoiceState.idle => 'Ready',
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(10, 6, 10, 2),
+      padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+      decoration: BoxDecoration(
+        color: u.surfaceCard,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: u.structuralBorder),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Icon(
+            state == LiveVoiceState.speaking
+                ? Icons.graphic_eq_rounded
+                : Icons.mic_rounded,
+            color: u.brand,
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 112),
+              child: SingleChildScrollView(
+                reverse: true,
+                child: Align(
+                  alignment: Alignment.bottomLeft,
+                  child: Text(
+                    transcript.trim().isEmpty
+                        ? '$agentName · $_status'
+                        : transcript.trim(),
+                    style: TextStyle(
+                      color: transcript.trim().isEmpty
+                          ? u.textMuted
+                          : u.textPrimary,
+                      fontSize: 13,
+                      height: 1.35,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: 'Stop voice',
+            onPressed: onStop,
+            icon: const Icon(Icons.stop_circle_outlined),
+          ),
+        ],
       ),
     );
   }
