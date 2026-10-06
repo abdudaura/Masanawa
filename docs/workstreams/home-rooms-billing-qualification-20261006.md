@@ -183,3 +183,46 @@ node scripts/flutterwave-billing-production-qualification.mjs
 ```
 
 inside an environment that already has the existing Flutterwave/relay variables plus non-secret validation targets. Exit 0 is required before public billing enablement. Exit 2 means billing remains disabled.
+
+
+## Updated coordination rules + live preflight — 2026-10-06
+
+Re-read the updated Home/Rooms coordination overlay from PR #198:
+- `docs/HOME-ROOMS-STATUS.md` is now the single status ledger;
+- Lane B remains **IMPLEMENTING**;
+- all other isolated lanes have reached isolated completion/integration-ready states;
+- PR #136 remains the protected shared production integration/APK owner.
+
+Additional read-only live evidence gathered:
+- dedicated production service `masanawa-gateway` exists and is the #136-owned Gateway;
+- production variable names now include the previously missing platform tenant, Resend and both billing fee-policy variables;
+- the DigitalOcean fixed-IP relay resources are still active;
+- `FLUTTERWAVE_QUALIFICATION_TARGETS_JSON` is **not** present on either `masanawa-gateway` or the legacy worker.
+
+Because real Cable/Electricity recipient identifiers must not be invented, the missing validation-target variable is now the precise provider-qualification blocker.
+
+The one-command production qualification runner was hardened at head
+`a32a6bca9eb702f2e51d9a12a3cfaafacdbbd452` to fail closed **before any provider request**
+unless `FLUTTERWAVE_QUALIFICATION_TARGETS_JSON` contains at least one
+`CABLEBILLS` and one `UTILITYBILLS` target. Malformed JSON fails as tooling/configuration
+error; structurally valid but incomplete target coverage exits as incomplete launch evidence.
+
+No production variables were changed, no identifiers were invented, no financial purchase was
+triggered, and no #136-owned service/configuration path was modified.
+
+Latest GitHub Foundation CI run for the prior exact head again failed before runner allocation:
+run `37447702375`, job `112216407067`, `steps = null`. This is not a code-test result.
+
+### Exact remaining Lane B blocker
+
+An authorized operator must provide real, non-secret Cable and Electricity recipient test
+identifiers through `FLUTTERWAVE_QUALIFICATION_TARGETS_JSON` in a safe execution environment
+that already has the existing Flutterwave/relay secrets, then run:
+
+```bash
+node scripts/flutterwave-billing-production-qualification.mjs
+```
+
+Until that happens, Lane B truthfully remains **IMPLEMENTING** and public billing must remain
+disabled. All safe code-side work needed to prevent partial qualification is present; the next
+step requires real provider/customer validation data rather than additional invented fixtures.
