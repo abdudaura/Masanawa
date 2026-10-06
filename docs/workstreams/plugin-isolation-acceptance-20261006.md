@@ -3,18 +3,36 @@
 Owner/window: ChatGPT continuation window (2026-10-06)
 Branch: `work/plugin-isolation-acceptance-20261006`
 Base SHA: `d68990a9c0f0c4ec22e9ff307cdac0362c3a4cd5` (Task 141 Plugin stack / PR #271)
+Acceptance head: `e5ece0b4a161c51b8b12af61b5fdf6536966a11c`
+PR: #275
 
-## Task references
-- `docs/PRODUCTION-MASTER-TASKS.md` — **144** Pass plugin isolation and no-silent-self-mutation acceptance tests.
-- Exercises Tasks 139-141.
+## Completed acceptance harness
+- Proves Plugin capability requests do not become grants.
+- Proves bridge descriptors cannot expose undeclared components or require undeclared capabilities.
+- Proves untrusted major-version self-upgrade is denied when policy requires verification.
+- Proves grant authority is bound to the exact installed Plugin version.
+- Proves update decisions do not mutate installation version/revision.
+- Proves uninstall planning returns explicit component-disable/capability-revoke instructions without silently changing lifecycle state.
+- Proves lifecycle removal requires an explicit transition and is terminal.
+- Proves expired grants collapse to zero authority even against an already-normalized manifest.
 
-## Owned paths
-- `tests/integration/plugin-isolation-acceptance.test.ts` (new)
-- `docs/workstreams/plugin-isolation-acceptance-20261006.md`
+## Changed-file audit
+Exactly two files:
+1. `docs/workstreams/plugin-isolation-acceptance-20261006.md`
+2. `tests/integration/plugin-isolation-acceptance.test.ts`
 
-## Excluded/shared paths
-- No runtime plugin host/loader, package manifests/lockfile, credentials, network execution, migrations or production config.
-- This harness cannot claim deployed-runtime pass until CI and runtime composition execute.
+No runtime plugin host/loader, package manifests/lockfile, credentials, live bridge execution, migrations or production config changed.
+
+## Verification
+Foundation CI run `37469311843`, job `112288325089` ended `failure` with `steps = null`. Checkout/install/typecheck/tests never executed. Therefore Task 144 is **not** recorded as production-passed from this branch; this is not application-failure evidence.
+
+## Remaining dependencies
+- PR #271/#269/#267 Plugin stack integrates first.
+- Runtime plugin host must enforce the same boundaries around actual loading/execution/unload.
+- CI runner allocation must execute the acceptance harness.
+- Production qualification must prove isolation against real plugin code/process/network adapters.
 
 ## Current state
-CLAIMED. Add integrated acceptance proving capability-request != grant, exact-version grants, bridge component/capability containment, denied self-upgrade paths, immutable decision APIs, explicit uninstall revocation ordering and terminal removal.
+**ISOLATED ACCEPTANCE HARNESS COMPLETE / EXECUTION BLOCKED BY CI + RUNTIME HOST INTEGRATION.**
+
+No further isolated implementation remains in this lane.
