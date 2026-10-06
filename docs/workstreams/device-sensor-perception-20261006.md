@@ -36,3 +36,20 @@ Security/privacy rules:
 - location retention is ephemeral/session only, never durable;
 - exact coordinates are admitted only when the observation declares precise permission;
 - dedupe identity is exact Device + sensor observation id.
+
+
+## Implementation checkpoint
+
+Completed:
+- notification admission with bounded app/key/title/body/category/ongoing facts;
+- explicit Device-state observation contract with no capability inference;
+- precise/coarse location admission with strict user-private, non-durable,
+  memory-forbidden policy;
+- coarse precision reduction and altitude/speed stripping;
+- deterministic Device + observation dedupe;
+- malformed permission, location privacy, empty state, notification bounds and coarse
+  precision regression coverage.
+
+No Task 109-111 source or shared package/export/composition path was edited.
+
+State: IMPLEMENTATION COMPLETE / VERIFICATION PENDING.
