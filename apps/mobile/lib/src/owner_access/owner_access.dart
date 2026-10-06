@@ -435,6 +435,7 @@ class UnavailableOwnerAccessTransport implements OwnerAccessTransport {
     required String requestId,
     required String action,
     DateTime? scheduledFor,
+    String? disputeReason,
   }) {
     throw StateError('Owner access is not connected to the Gateway yet');
   }
