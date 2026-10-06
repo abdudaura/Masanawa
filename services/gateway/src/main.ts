@@ -23,7 +23,7 @@ import type {
   UserRelationshipProvisioner,
   UserRelationshipReader,
 } from "@masanawa/identity";
-import type { BillingQuoteRepository, CommerceRepository, CryptoRepository } from "@masanawa/commerce";
+import type { BillingQuoteRepository, CommerceRepository, CryptoRepository, NgnWalletRepository } from "@masanawa/commerce";
 import {
   parseCanonicalId,
   readRequiredEnv,
@@ -70,6 +70,7 @@ import {
   createPostgresMobilePushRepository,
   createPostgresMobileAgentActivityRepository,
   createPostgresBillingQuoteRepository,
+  createPostgresNgnWalletRepository,
   createPostgresBillingFulfillmentStore,
   createPostgresBillingWebhookRepository,
   createPostgresTwinProfileRepository,
@@ -164,6 +165,15 @@ import {
   type BillingCheckoutService,
 } from "./billing_checkout.js";
 import {
+  createBillingWalletService,
+  type BillingWalletService,
+} from "./billing_wallet.js";
+import {
+  BILLING_AGENT_SYSTEM_INSTRUCTIONS,
+  createAgentBillingAssistant,
+  type AgentBillingAssistant,
+} from "./agent_billing_assistant.js";
+import {
   ensureDefaultPlatformAgents,
   type PlatformAgentIdentityProvisioner,
 } from "./platform_agent_bootstrap.js";
@@ -207,6 +217,7 @@ export interface ServiceDatabaseDependency {
     identity: Readonly<{ tenantId: string; userId: string }>,
   ) => BillingFulfillmentStore;
   readonly billingWebhooks?: ReturnType<typeof createPostgresBillingWebhookRepository>;
+  readonly ngnWallet?: NgnWalletRepository;
   readonly twinProfiles?: ReturnType<typeof createPostgresTwinProfileRepository>;
   readonly twinEconomy?: ReturnType<typeof createPostgresTwinRuntimeRepository>;
   readonly twinEvents?: ReturnType<typeof createPostgresTwinEconomyEventStore>;
@@ -346,6 +357,7 @@ function createDefaultDatabaseDependency(
     billingStore: (identity: Readonly<{ tenantId: string; userId: string }>) =>
       createPostgresBillingFulfillmentStore(database.pool, identity),
     billingWebhooks: createPostgresBillingWebhookRepository(database.pool),
+    ngnWallet: createPostgresNgnWalletRepository(database.pool),
     twinProfiles: createPostgresTwinProfileRepository(database.pool),
     twinEconomy: createPostgresTwinRuntimeRepository(database.pool),
     twinEvents: createPostgresTwinEconomyEventStore(database.pool),
@@ -959,6 +971,9 @@ export async function startGatewayService(
         }),
         skills: database.skills,
         guides: database.skillGuides,
+        ...(env.FLUTTERWAVE_BILLS_ENABLED === "true"
+          ? { systemInstructions: BILLING_AGENT_SYSTEM_INSTRUCTIONS }
+          : {}),
       });
     }
 
@@ -1037,27 +1052,36 @@ export async function startGatewayService(
     ? new FlutterwaveFundingClient({ secretKey: flutterwaveSecretKey, transport: flutterwaveTransport })
     : undefined;
 
-  let composedBillingFinancial: BillingFinancialService | undefined = options.appOptions?.billingFinancial;
-  let composedBillingCheckout: BillingCheckoutService | undefined = options.appOptions?.billingCheckout;
+  let composedBillingFinancial: BillingFinancialService | undefined =
+    options.appOptions?.billingFinancial;
+  let composedBillingCheckout: BillingCheckoutService | undefined =
+    options.appOptions?.billingCheckout;
+  let composedBillingWallet: BillingWalletService | undefined =
+    options.appOptions?.billingWallet;
+  let composedBillingAssistant: AgentBillingAssistant | undefined;
 
-  if (billingEnabled && (!composedBillingFinancial || !composedBillingCheckout)) {
-    const webhookHash = env.FLUTTERWAVE_WEBHOOK_SECRET_HASH?.trim();
-    const webhookUrl = env.FLUTTERWAVE_WEBHOOK_URL?.trim();
-    const actionSecret = env.MASANAWA_BILLING_ACTION_SECRET?.trim();
-    const redirectUrl = env.MASANAWA_BILLING_REDIRECT_URL?.trim() ||
-      (env.MASANAWA_PUBLIC_BASE_URL?.trim()
-        ? `${env.MASANAWA_PUBLIC_BASE_URL.trim().replace(/\/$/u, "")}/billing/return`
-        : "");
-    const feeBasisPoints = Number(env.MASANAWA_BILLING_FEE_BPS ?? "0");
-    const feeFixedKobo = Number(env.MASANAWA_BILLING_FEE_FIXED_KOBO ?? "0");
+  const webhookHash = env.FLUTTERWAVE_WEBHOOK_SECRET_HASH?.trim();
+  const webhookUrl = env.FLUTTERWAVE_WEBHOOK_URL?.trim();
+  const actionSecret = env.MASANAWA_BILLING_ACTION_SECRET?.trim();
+  const redirectUrl =
+    env.MASANAWA_BILLING_REDIRECT_URL?.trim() ||
+    (env.MASANAWA_PUBLIC_BASE_URL?.trim()
+      ? `${env.MASANAWA_PUBLIC_BASE_URL.trim().replace(/\/$/u, "")}/billing/return`
+      : "");
+  const feeBasisPoints = Number(env.MASANAWA_BILLING_FEE_BPS ?? "0");
+  const feeFixedKobo = Number(env.MASANAWA_BILLING_FEE_FIXED_KOBO ?? "0");
 
+  if (billingEnabled && (!composedBillingFinancial || !composedBillingCheckout || !composedBillingWallet)) {
     if (!billingCustomerAuthorizer || !billingFinancialAuthorizer || !database.billingStore ||
-        !database.billingQuotes || !database.billingWebhooks || !flutterwaveSecretKey ||
-        !flutterwaveBills || !flutterwaveFunding || !webhookHash || !webhookUrl ||
-        !actionSecret || !redirectUrl || !Number.isSafeInteger(feeBasisPoints) ||
-        feeBasisPoints < 0 || feeBasisPoints > 10_000 || !Number.isSafeInteger(feeFixedKobo) || feeFixedKobo < 0) {
+        !database.billingQuotes || !database.billingWebhooks || !database.ngnWallet ||
+        !flutterwaveSecretKey || !flutterwaveBills || !flutterwaveFunding || !webhookHash ||
+        !webhookUrl || !actionSecret || !redirectUrl ||
+        !Number.isSafeInteger(feeBasisPoints) || feeBasisPoints < 0 || feeBasisPoints > 10_000 ||
+        !Number.isSafeInteger(feeFixedKobo) || feeFixedKobo < 0) {
       await database.close().catch(() => undefined);
-      throw new TypeError("Billing is enabled but canonical customer auth or Flutterwave billing configuration is incomplete");
+      throw new TypeError(
+        "Billing is enabled but canonical customer auth, NGN wallet, or Flutterwave configuration is incomplete",
+      );
     }
 
     composedBillingFinancial ??= createBillingFinancialService({
@@ -1071,7 +1095,9 @@ export async function startGatewayService(
       billingFunding: database.billingQuotes,
       ...(flutterwaveRelayUrl ? { flutterwaveRelayUrl } : {}),
       ...(flutterwaveRelayToken ? { flutterwaveRelayToken } : {}),
-      ...(flutterwaveRelayProtocol === "dual-header" ? { flutterwaveRelayProtocol: "dual-header" as const } : {}),
+      ...(flutterwaveRelayProtocol === "dual-header"
+        ? { flutterwaveRelayProtocol: "dual-header" as const }
+        : {}),
     });
 
     composedBillingCheckout ??= createBillingCheckoutService({
@@ -1085,12 +1111,30 @@ export async function startGatewayService(
       feeBasisPoints,
       feeFixedKobo,
     });
+
+    composedBillingWallet ??= createBillingWalletService({
+      sessions: billingCustomerAuthorizer,
+      quotes: database.billingQuotes,
+      wallet: database.ngnWallet,
+      funding: flutterwaveFunding,
+      billing: composedBillingFinancial,
+      webhookSecretHash: webhookHash,
+    });
+  }
+
+  if (billingEnabled && composedBillingCheckout && composedBillingFinancial && composedBillingWallet) {
+    composedBillingAssistant = createAgentBillingAssistant({
+      checkout: composedBillingCheckout,
+      billing: composedBillingFinancial,
+      wallet: composedBillingWallet,
+    });
   }
 
   const nowPaymentsApiKey = env.NOWPAYMENTS_API_KEY?.trim();
   const nowPaymentsIpnSecret = env.NOWPAYMENTS_IPN_SECRET?.trim();
   const nowPaymentsEmail = env.NOWPAYMENTS_PAYOUT_EMAIL?.trim();
   const nowPaymentsPassword = env.NOWPAYMENTS_PAYOUT_PASSWORD?.trim();
+
   const nowPaymentsRelayToken = env.MASANAWA_NOWPAYMENTS_RELAY_TOKEN?.trim();
   const nowPaymentsRelayBaseUrl =
     env.NOWPAYMENTS_RELAY_URL?.trim() ||
@@ -1357,6 +1401,7 @@ export async function startGatewayService(
           ...(nativeAudio ? { nativeAudio } : {}),
           ...(database.mobileShell ? { mobileShell: database.mobileShell } : {}),
           ...(twinConversationObserver ? { twinObserver: twinConversationObserver } : {}),
+          ...(composedBillingAssistant ? { billingAssistant: composedBillingAssistant } : {}),
           sessionDurationMs: 24 * 60 * 60 * 1000,
         })
       : undefined);
@@ -1370,6 +1415,50 @@ export async function startGatewayService(
         })
       : undefined);
 
+  const composedShellActionExecutor: AgentShellActionExecutor | undefined =
+    composedBillingCheckout && composedBillingWallet
+      ? Object.freeze({
+          async execute(request: Parameters<AgentShellActionExecutor["execute"]>[0]) {
+            if (request.action.actionId === "billing.wallet.confirm") {
+              const verified = await composedBillingCheckout.verifyWalletConfirmAction({
+                authorizationHeader: request.authorizationHeader,
+                documentId: request.action.documentId,
+                revision: request.action.revision,
+                actionId: request.action.actionId,
+                token: request.action.token,
+              });
+              const view = await composedBillingWallet.confirmAndPurchase({
+                authorizationHeader: request.authorizationHeader,
+                quoteId: verified.quoteId,
+                quoteRevision: verified.quoteRevision,
+              });
+              return Object.freeze({
+                accepted: true,
+                phase:
+                  view.phase === "fulfilled"
+                    ? ("fulfilled" as const)
+                    : view.phase === "failed"
+                      ? ("failed" as const)
+                      : view.phase === "awaiting-funds"
+                        ? ("submitted" as const)
+                        : ("processing" as const),
+                document: view.document,
+                message:
+                  view.phase === "awaiting-funds"
+                    ? "Temporary funding account created in chat. Masanawa will continue automatically after verified funding."
+                    : view.phase === "fulfilled"
+                      ? "Bill completed successfully."
+                      : "Bill processing.",
+              });
+            }
+            if (options.agentShellActionExecutor) {
+              return options.agentShellActionExecutor.execute(request);
+            }
+            throw new Error("agents.shell_action_unavailable");
+          },
+        })
+      : options.agentShellActionExecutor;
+
   const composedShell =
     options.appOptions?.agentShell ??
     (conversationAuthorizer &&
@@ -1382,8 +1471,8 @@ export async function startGatewayService(
           ...(database.mobileActivity
             ? { activity: database.mobileActivity }
             : {}),
-          ...(options.agentShellActionExecutor
-            ? { actionExecutor: options.agentShellActionExecutor }
+          ...(composedShellActionExecutor
+            ? { actionExecutor: composedShellActionExecutor }
             : {}),
           minimumAppVersion: env.MASANAWA_MOBILE_MIN_VERSION ?? "1.0.0",
           recommendedAppVersion:
@@ -1400,6 +1489,7 @@ export async function startGatewayService(
       ...(customerAuth ? { customerAuth } : {}),
       ...(composedBillingFinancial ? { billingFinancial: composedBillingFinancial } : {}),
       ...(composedBillingCheckout ? { billingCheckout: composedBillingCheckout } : {}),
+      ...(composedBillingWallet ? { billingWallet: composedBillingWallet } : {}),
       ...(composedFinancial ? { financial: composedFinancial } : {}),
       ...(twinProduction ? { twinProduction } : {}),
       ...(composedDirectory ? { agentDirectory: composedDirectory } : {}),

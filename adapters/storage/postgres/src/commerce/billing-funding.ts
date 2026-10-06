@@ -334,14 +334,8 @@ export function createPostgresBillingQuoteRepository(pool: Pool): BillingQuoteRe
       await withTransaction(pool, async (client) => {
         const row = await locked(client, { tenantId,userId,quoteId });
         assertRevision(row, input.quoteRevision);
-        // Quote expiry prevents a customer from starting/confirming a new
-        // checkout. Once Flutterwave payment has been independently verified,
-        // fulfillment may happen later because live catalog/recipient terms are
-        // re-derived again immediately before dispatch. A changed fixed-price
-        // item therefore fails safely into refund custody instead of stranding
-        // paid funds solely because the hosted checkout crossed the quote TTL.
-        if (!row.confirmed_at || !row.payment_verified_at || !row.provider_transaction_id) {
-          throw new Error("financial.billing.funds_unverified");
+        if (!row.confirmed_at) {
+          throw new Error("financial.billing.quote_not_confirmed");
         }
         if (row.category_code !== input.categoryCode ||
             row.biller_code !== input.billerCode || row.item_code !== input.itemCode ||
@@ -354,12 +348,59 @@ export function createPostgresBillingQuoteRepository(pool: Pool): BillingQuoteRe
           if (row.fulfillment_reference !== input.fulfillmentReference) {
             throw new Error("financial.billing.reserve_replay_conflict");
           }
-          if (!["reserved","succeeded","refund-pending","refunded"].includes(row.state)) {
+          if (!["reserved","succeeded","refunded"].includes(row.state)) {
             throw new Error("financial.billing.reserve_state_invalid");
           }
           return;
         }
-        if (row.state !== "funded") throw new Error("financial.billing.funds_not_available");
+
+        // Legacy externally-paid quotes remain valid, but the customer-facing
+        // production path now funds from the canonical NGN wallet.
+        if (!row.payment_verified_at) {
+          if (row.state !== "confirmed") {
+            throw new Error("financial.billing.wallet_reserve_not_allowed");
+          }
+          await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+            `ngn-wallet:${tenantId}:${userId}`,
+          ]);
+          const existingReserve = await client.query<{ amount_kobo: string | number }>(
+            `SELECT amount_kobo FROM commerce.ngn_bill_reservations
+              WHERE tenant_id=$1 AND user_id=$2 AND quote_id=$3 FOR UPDATE`,
+            [tenantId,userId,quoteId],
+          );
+          const totalAmountKobo = integer(row.total_amount_kobo, "total_amount");
+          if (existingReserve.rows[0]) {
+            if (integer(existingReserve.rows[0].amount_kobo,"reservation_amount") !== totalAmountKobo) {
+              throw new Error("financial.billing.wallet_reserve_conflict");
+            }
+          } else {
+            const funds = await client.query<{ balance: string }>(
+              `SELECT COALESCE(SUM(CASE WHEN direction='credit' THEN amount_kobo ELSE -amount_kobo END),0)::text AS balance
+                 FROM commerce.ngn_wallet_entries
+                WHERE tenant_id=$1 AND user_id=$2`,
+              [tenantId,userId],
+            );
+            const available = integer(funds.rows[0]?.balance ?? "0","wallet_balance");
+            if (available < totalAmountKobo) {
+              throw new Error("financial.wallet.insufficient_balance");
+            }
+            await client.query(
+              `INSERT INTO commerce.ngn_bill_reservations(
+                 tenant_id,user_id,quote_id,amount_kobo,state,reserved_at
+               ) VALUES ($1,$2,$3,$4,'reserved',clock_timestamp())`,
+              [tenantId,userId,quoteId,totalAmountKobo],
+            );
+            await client.query(
+              `INSERT INTO commerce.ngn_wallet_entries(
+                 tenant_id,user_id,entry_id,direction,amount_kobo,reason,reference,created_at
+               ) VALUES ($1,$2,$3,'debit',$4,'bill-reserve',$5,clock_timestamp())`,
+              [tenantId,userId,`bill-reserve:${quoteId}`,totalAmountKobo,quoteId],
+            );
+          }
+        } else if (row.state !== "funded") {
+          throw new Error("financial.billing.funds_not_available");
+        }
+
         await client.query(
           `UPDATE commerce.billing_quotes
               SET fulfillment_reference=$4,state='reserved',updated_at=clock_timestamp()
@@ -380,6 +421,68 @@ export function createPostgresBillingQuoteRepository(pool: Pool): BillingQuoteRe
         if (!row) throw new Error("financial.billing.reserve_not_found");
         if (row.settlement_state === input.state &&
             (row.bill_provider_reference ?? null) === input.providerReference) return;
+
+        const walletReserve = await client.query<{ state: string; amount_kobo: string | number }>(
+          `SELECT state,amount_kobo FROM commerce.ngn_bill_reservations
+            WHERE tenant_id=$1 AND user_id=$2 AND quote_id=$3 FOR UPDATE`,
+          [input.tenantId,input.userId,row.quote_id],
+        );
+
+        if (walletReserve.rows[0]) {
+          await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+            `ngn-wallet:${input.tenantId}:${input.userId}`,
+          ]);
+          if (input.state === "succeeded") {
+            if (walletReserve.rows[0].state === "reserved") {
+              await client.query(
+                `UPDATE commerce.ngn_bill_reservations
+                    SET state='succeeded',settled_at=clock_timestamp()
+                  WHERE tenant_id=$1 AND user_id=$2 AND quote_id=$3`,
+                [input.tenantId,input.userId,row.quote_id],
+              );
+            }
+            await client.query(
+              `UPDATE commerce.billing_quotes
+                  SET state='succeeded',settlement_state='succeeded',
+                      bill_provider_reference=COALESCE($4,bill_provider_reference),
+                      updated_at=clock_timestamp()
+                WHERE tenant_id=$1 AND user_id=$2 AND fulfillment_reference=$3`,
+              [input.tenantId,input.userId,input.fulfillmentReference,input.providerReference],
+            );
+            return;
+          }
+
+          if (walletReserve.rows[0].state === "reserved") {
+            const amount = integer(walletReserve.rows[0].amount_kobo,"reservation_amount");
+            await client.query(
+              `INSERT INTO commerce.ngn_wallet_entries(
+                 tenant_id,user_id,entry_id,direction,amount_kobo,reason,reference,created_at
+               ) VALUES ($1,$2,$3,'credit',$4,'bill-refund',$5,clock_timestamp())
+               ON CONFLICT (tenant_id,user_id,reason,reference) DO NOTHING`,
+              [
+                input.tenantId,input.userId,`bill-refund:${row.quote_id}`,
+                amount,row.quote_id,
+              ],
+            );
+            await client.query(
+              `UPDATE commerce.ngn_bill_reservations
+                  SET state='refunded',settled_at=clock_timestamp()
+                WHERE tenant_id=$1 AND user_id=$2 AND quote_id=$3`,
+              [input.tenantId,input.userId,row.quote_id],
+            );
+          }
+          await client.query(
+            `UPDATE commerce.billing_quotes
+                SET state='refunded',settlement_state=$4,
+                    bill_provider_reference=COALESCE($5,bill_provider_reference),
+                    updated_at=clock_timestamp()
+              WHERE tenant_id=$1 AND user_id=$2 AND fulfillment_reference=$3`,
+            [input.tenantId,input.userId,input.fulfillmentReference,input.state,input.providerReference],
+          );
+          return;
+        }
+
+        // Compatibility for any historical hosted-checkout funded purchase.
         if (row.state === "refunded" || row.state === "refund-submitted" || row.state === "refund-dispatching") return;
         if (row.state === "succeeded" && input.state !== "reversed") {
           throw new Error("financial.billing.settlement_conflict");

@@ -14,6 +14,7 @@ export function createProductionAgentStrategy(input: {
   readonly inference: AgentInferenceProvider;
   readonly skills: SkillRepository;
   readonly guides: SkillGuideRepository;
+  readonly systemInstructions?: readonly string[];
 }): AgentStrategy {
   const strategy: AgentStrategy = {
     async execute(request) {
@@ -26,6 +27,7 @@ export function createProductionAgentStrategy(input: {
         "Follow the user's language and communication style unless they ask otherwise.",
         "Be helpful, accurate, and transparent.",
         "Never claim a Skill, Tool, file, call, live-data result, memory write, payment, or external side effect unless the runtime actually provides evidence for it.",
+        ...(input.systemInstructions ?? []),
       ];
 
       const userText =

@@ -195,3 +195,67 @@ String _formatKobo(int value) {
   final fraction = (value % 100).toString().padLeft(2, '0');
   return fraction == '00' ? '$whole' : '$whole.$fraction';
 }
+
+
+class BillingFundingAccount {
+  const BillingFundingAccount({
+    required this.fundingReference,
+    required this.amountKobo,
+    required this.accountNumber,
+    required this.bankName,
+    required this.expiresAt,
+  });
+
+  factory BillingFundingAccount.fromJson(Map<String, dynamic> json) =>
+      BillingFundingAccount(
+        fundingReference: json['fundingReference'] as String,
+        amountKobo: (json['amountKobo'] as num).toInt(),
+        accountNumber: json['accountNumber'] as String,
+        bankName: json['bankName'] as String,
+        expiresAt: json['expiresAt'] as String,
+      );
+
+  final String fundingReference;
+  final int amountKobo;
+  final String accountNumber;
+  final String bankName;
+  final String expiresAt;
+
+  String get amount => _formatKobo(amountKobo);
+}
+
+class BillingWalletActionView {
+  const BillingWalletActionView({
+    required this.balanceKobo,
+    required this.balance,
+    required this.phase,
+    required this.quoteId,
+    required this.funding,
+    required this.purchase,
+  });
+
+  factory BillingWalletActionView.fromJson(Map<String, dynamic> json) =>
+      BillingWalletActionView(
+        balanceKobo: (json['balanceKobo'] as num).toInt(),
+        balance: json['balance'].toString(),
+        phase: json['phase'] as String,
+        quoteId: json['quoteId'] as String?,
+        funding: json['funding'] is Map
+            ? BillingFundingAccount.fromJson(
+                (json['funding'] as Map).cast<String, dynamic>(),
+              )
+            : null,
+        purchase: json['purchase'] is Map
+            ? BillingPurchaseReceipt.fromJson(
+                (json['purchase'] as Map).cast<String, dynamic>(),
+              )
+            : null,
+      );
+
+  final int balanceKobo;
+  final String balance;
+  final String phase;
+  final String? quoteId;
+  final BillingFundingAccount? funding;
+  final BillingPurchaseReceipt? purchase;
+}

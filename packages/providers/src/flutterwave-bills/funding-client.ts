@@ -1,6 +1,15 @@
 import type { FlutterwaveBillsTransport } from "./client.js";
 type Json = Record<string, unknown>;
 export interface FlutterwaveCheckout { readonly txRef: string; readonly checkoutUrl: string; }
+export interface FlutterwaveDynamicVirtualAccount {
+  readonly txRef: string;
+  readonly accountNumber: string;
+  readonly bankName: string;
+  readonly orderRef: string | null;
+  readonly providerReference: string | null;
+  readonly expiryDate: string;
+  readonly amount: string;
+}
 export interface FlutterwaveVerifiedPayment {
   readonly transactionId: string; readonly txRef: string; readonly providerReference: string | null;
   readonly status: string; readonly amount: string; readonly currency: string;
@@ -63,6 +72,46 @@ export class FlutterwaveFundingClient {
     }
     return Object.freeze({ txRef: input.txRef, checkoutUrl: parsed.toString() });
   }
+  async createDynamicVirtualAccount(input: Readonly<{
+    txRef: string; amount: string; email: string; phone?: string;
+    firstName?: string; lastName?: string; expiresSeconds?: number; signal?: AbortSignal;
+  }>): Promise<FlutterwaveDynamicVirtualAccount> {
+    const expires = input.expiresSeconds ?? 30 * 60;
+    if (!Number.isSafeInteger(expires) || expires < 60 || expires > 5_270_401) {
+      throw new Error("flutterwave.funding.virtual_account_expiry_invalid");
+    }
+    const response = await this.#transport.request({
+      method: "POST", path: "/v3/virtual-account-numbers",
+      headers: providerHeaders(this.#secretKey),
+      body: {
+        email: textValue(input.email, "customer_email", 320),
+        currency: "NGN",
+        amount: decimal(input.amount, "amount"),
+        tx_ref: textValue(input.txRef, "tx_ref", 128),
+        is_permanent: false,
+        expires: String(expires),
+        narration: "Fund Masanawa wallet",
+        ...(input.phone?.trim() ? { phonenumber: textValue(input.phone, "customer_phone", 40) } : {}),
+        ...(input.firstName?.trim() ? { firstname: textValue(input.firstName, "customer_first_name", 120) } : {}),
+        ...(input.lastName?.trim() ? { lastname: textValue(input.lastName, "customer_last_name", 120) } : {}),
+      },
+      ...(input.signal ? { signal: input.signal } : {}),
+    });
+    if (response.status !== 200) throw new Error("flutterwave.funding.virtual_account_rejected");
+    const envelope = record(response.body, "virtual_account_envelope");
+    if (envelope.status !== "success") throw new Error("flutterwave.funding.virtual_account_rejected");
+    const data = record(envelope.data, "virtual_account_data");
+    return Object.freeze({
+      txRef: input.txRef,
+      accountNumber: textValue(data.account_number, "virtual_account_number", 32),
+      bankName: textValue(data.bank_name, "virtual_account_bank", 200),
+      orderRef: data.order_ref == null ? null : textValue(data.order_ref, "virtual_account_order_ref", 200),
+      providerReference: data.flw_ref == null ? null : textValue(data.flw_ref, "virtual_account_provider_reference", 200),
+      expiryDate: textValue(data.expiry_date, "virtual_account_expiry", 80),
+      amount: decimal(data.amount ?? input.amount, "virtual_account_amount"),
+    });
+  }
+
   async verifyByReference(txRef: string, signal?: AbortSignal): Promise<FlutterwaveVerifiedPayment> {
     const normalized = textValue(txRef, "tx_ref", 128);
     const response = await this.#transport.request({

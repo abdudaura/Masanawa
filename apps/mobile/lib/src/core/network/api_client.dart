@@ -204,6 +204,25 @@ class ApiClient {
     return BillingCheckoutView.fromJson(data);
   }
 
+  Future<BillingWalletActionView> confirmBillingFromWallet({
+    required String quoteId,
+    required int quoteRevision,
+  }) async {
+    final id = Uri.encodeComponent(quoteId);
+    final data = await _post(
+      '/v1/commerce/bills/quotes/$id/confirm-wallet',
+      {'quoteRevision': quoteRevision},
+    );
+    return BillingWalletActionView.fromJson(data);
+  }
+
+  Future<BillingWalletActionView> createWalletFunding({
+    required String amount,
+  }) async {
+    final data = await _post('/v1/wallet/ngn/funding', {'amount': amount});
+    return BillingWalletActionView.fromJson(data);
+  }
+
   Future<BillingCheckoutView> startBillingCheckout({
     required String quoteId,
     required int quoteRevision,

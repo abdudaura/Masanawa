@@ -43,6 +43,20 @@ export interface BillingFinancialService {
     recipientValidation?: "required" | "not-required";
     signal?: AbortSignal;
   }>): Promise<BillingFulfillmentRecord>;
+  purchaseOwned(input: Readonly<{
+    tenantId: string;
+    userId: string;
+    requestId: string;
+    quoteId: string;
+    quoteRevision: number;
+    categoryCode?: string;
+    billerCode: string;
+    itemCode: string;
+    itemName: string;
+    customerId: string;
+    amount: string;
+    signal?: AbortSignal;
+  }>): Promise<BillingFulfillmentRecord>;
   readPurchase(input: Readonly<{
     authorizationHeader: string | undefined;
     reference: string;
@@ -160,6 +174,87 @@ export function createBillingFinancialService(input: Readonly<{
     return reconciled;
   }
 
+  async function purchaseForIdentity(
+    identity: Readonly<{ tenantId: string; userId: string }>,
+    request: Readonly<{
+      requestId: string;
+      quoteId: string;
+      quoteRevision: number;
+      categoryCode?: string;
+      billerCode: string;
+      itemCode: string;
+      itemName: string;
+      customerId: string;
+      amount: string;
+      signal?: AbortSignal;
+    }>,
+  ): Promise<BillingFulfillmentRecord> {
+    if (!input.billingFunding) throw new Error("financial.billing.funding_unavailable");
+    if (!request.quoteId.trim() || !Number.isSafeInteger(request.quoteRevision) ||
+        request.quoteRevision < 1) throw new Error("financial.billing.confirmed_quote_required");
+    const items = await provider.listItems(request.billerCode, request.signal);
+    const selected = items.find((item) => item.itemCode === request.itemCode);
+    if (!selected || selected.billerCode !== request.billerCode) {
+      throw new Error("financial.billing.catalog_item_unavailable");
+    }
+    let recipientValidation: "required" | "not-required" = "required";
+    if (request.categoryCode) {
+      const categories = await provider.listCategories(request.signal);
+      const category = categories.find((entry) => entry.code === request.categoryCode);
+      if (!category) throw new Error("financial.billing.catalog_category_unavailable");
+      const billers = await provider.listBillers(category.code, request.signal);
+      if (!billers.some((entry) => entry.billerCode === selected.billerCode)) {
+        throw new Error("financial.billing.catalog_biller_mismatch");
+      }
+      if (category.code === "AIRTIME" || category.code === "MOBILEDATA") {
+        if (!/^(?:0[789]\d{9}|\+?234[789]\d{9})$/u.test(request.customerId)) {
+          throw new Error("financial.billing.phone_invalid");
+        }
+        recipientValidation = "not-required";
+      }
+    }
+    const service = orchestrator(identity);
+    const prepared = await service.prepare({
+      fulfillmentReference: request.requestId,
+      billerCode: selected.billerCode,
+      itemCode: selected.itemCode,
+      itemName: selected.name,
+      customerId: request.customerId,
+      amount: request.amount,
+      catalogAmount: selected.amount,
+      recipientValidation,
+      ...(request.signal === undefined ? {} : { signal: request.signal }),
+    });
+    await input.billingFunding.reserveConfirmedBill({
+      tenantId: identity.tenantId,
+      userId: identity.userId,
+      quoteId: request.quoteId,
+      quoteRevision: request.quoteRevision,
+      fulfillmentReference: prepared.fulfillmentReference,
+      categoryCode: request.categoryCode ?? null,
+      billerCode: prepared.billerCode,
+      itemCode: prepared.itemCode,
+      customerId: prepared.customerId,
+      amount: prepared.amount,
+      currency: "NGN",
+    });
+    if (
+      prepared.state === "succeeded" ||
+      prepared.state === "failed" ||
+      prepared.state === "reversed" ||
+      prepared.state === "manual_review"
+    ) {
+      await settle(identity, prepared);
+      return prepared;
+    }
+    const dispatched = await service.dispatch(prepared.fulfillmentReference, {
+      callbackUrl,
+      ...(request.signal === undefined ? {} : { signal: request.signal }),
+    });
+    await settle(identity, dispatched);
+    return dispatched;
+  }
+
   return Object.freeze<BillingFinancialService>({
     async listCategories(request) {
       await input.authorizer.authorize({ authorizationHeader: request.authorizationHeader });
@@ -177,64 +272,31 @@ export function createBillingFinancialService(input: Readonly<{
     },
 
     async purchase(request) {
-      const identity = await input.authorizer.authorize({ authorizationHeader: request.authorizationHeader });
-      if (!input.billingFunding) throw new Error("financial.billing.funding_unavailable");
-      if (!request.quoteId?.trim() || !Number.isSafeInteger(request.quoteRevision) ||
-          (request.quoteRevision ?? 0) < 1) throw new Error("financial.billing.confirmed_quote_required");
-      const items = await provider.listItems(request.billerCode, request.signal);
-      const selected = items.find((item) => item.itemCode === request.itemCode);
-      if (!selected || selected.billerCode !== request.billerCode) {
-        throw new Error("financial.billing.catalog_item_unavailable");
+      const identity = await input.authorizer.authorize({
+        authorizationHeader: request.authorizationHeader,
+      });
+      if (!request.quoteId?.trim() || !Number.isSafeInteger(request.quoteRevision)) {
+        throw new Error("financial.billing.confirmed_quote_required");
       }
-      let recipientValidation: "required" | "not-required" = "required";
-      if (request.categoryCode) {
-        const categories = await provider.listCategories(request.signal);
-        const category = categories.find((entry) => entry.code === request.categoryCode);
-        if (!category) throw new Error("financial.billing.catalog_category_unavailable");
-        const billers = await provider.listBillers(category.code, request.signal);
-        if (!billers.some((entry) => entry.billerCode === selected.billerCode)) throw new Error("financial.billing.catalog_biller_mismatch");
-        if (category.code === "AIRTIME" || category.code === "MOBILEDATA") {
-          if (!/^(?:0[789]\d{9}|\+?234[789]\d{9})$/u.test(request.customerId)) throw new Error("financial.billing.phone_invalid");
-          recipientValidation = "not-required";
-        }
-      }
-      const service = orchestrator(identity);
-      const prepared = await service.prepare({
-        fulfillmentReference: request.requestId,
-        billerCode: selected.billerCode,
-        itemCode: selected.itemCode,
-        itemName: selected.name,
+      return purchaseForIdentity(identity, {
+        requestId: request.requestId,
+        quoteId: request.quoteId,
+        quoteRevision: request.quoteRevision!,
+        ...(request.categoryCode ? { categoryCode: request.categoryCode } : {}),
+        billerCode: request.billerCode,
+        itemCode: request.itemCode,
+        itemName: request.itemName,
         customerId: request.customerId,
         amount: request.amount,
-        catalogAmount: selected.amount,
-        // Recipient validation policy must be supplied by trusted catalog policy,
-        // never overridden by a customer request.
-        recipientValidation,
-        ...(request.signal === undefined ? {} : { signal: request.signal }),
+        ...(request.signal ? { signal: request.signal } : {}),
       });
-      await input.billingFunding.reserveConfirmedBill({
-        tenantId: identity.tenantId, userId: identity.userId,
-        quoteId: request.quoteId, quoteRevision: request.quoteRevision!,
-        fulfillmentReference: prepared.fulfillmentReference,
-        categoryCode: request.categoryCode ?? null,
-        billerCode: prepared.billerCode, itemCode: prepared.itemCode,
-        customerId: prepared.customerId, amount: prepared.amount, currency: "NGN",
-      });
-      if (
-        prepared.state === "succeeded" ||
-        prepared.state === "failed" ||
-        prepared.state === "reversed" ||
-        prepared.state === "manual_review"
-      ) {
-        await settle(identity, prepared);
-        return prepared;
-      }
-      const dispatched = await service.dispatch(prepared.fulfillmentReference, {
-        callbackUrl,
-        ...(request.signal === undefined ? {} : { signal: request.signal }),
-      });
-      await settle(identity, dispatched);
-      return dispatched;
+    },
+
+    async purchaseOwned(request) {
+      return purchaseForIdentity(
+        { tenantId: request.tenantId, userId: request.userId },
+        request,
+      );
     },
 
     async readPurchase(request) {

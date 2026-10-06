@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
-
 import '../../core/api/billing_models.dart';
 import '../../core/network/api_client.dart';
 import '../../core/providers.dart';
-import '../../state/session_state.dart';
+import '../../state/wallet_state.dart';
 
 BillCategory? billingCategoryForHomeService(
   List<BillCategory> categories,
@@ -39,7 +37,6 @@ class BillingScreen extends ConsumerStatefulWidget {
 class _BillingScreenState extends ConsumerState<BillingScreen> {
   final customer = TextEditingController();
   final amount = TextEditingController();
-  final checkoutEmail = TextEditingController();
 
   List<BillCategory> categories = const [];
   List<BillBiller> billers = const [];
@@ -49,6 +46,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   BillBiller? biller;
   BillItem? item;
   BillingCheckoutView? current;
+  BillingWalletActionView? walletAction;
   bool busy = false;
   bool loading = true;
   String? error;
@@ -65,7 +63,6 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   void dispose() {
     customer.dispose();
     amount.dispose();
-    checkoutEmail.dispose();
     super.dispose();
   }
 
@@ -184,82 +181,34 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     }
   }
 
-  String? paymentEmail() {
-    final session = ref.read(sessionProvider);
-    if (session is SessionSignedIn) {
-      final known = session.user.email?.trim();
-      if (known != null && known.isNotEmpty) return known;
-    }
-    final typed = checkoutEmail.text.trim();
-    return typed.isEmpty ? null : typed;
-  }
-
-  Future<void> startCheckout() async {
-    final view = current;
-    if (view == null) return;
-    final email = paymentEmail();
-    if (email == null || !RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email)) {
-      setState(() => error = 'Enter a valid email for secure checkout.');
-      return;
-    }
-    setState(() { busy = true; error = null; });
-    try {
-      final next = await api.startBillingCheckout(
-        quoteId: view.quote.quoteId,
-        quoteRevision: view.quote.revision,
-        checkoutEmail: email,
-      );
-      if (!mounted) return;
-      setState(() => current = next);
-      await openCheckout(next.checkoutUrl);
-    } catch (value) {
-      if (mounted) setState(() => error = safeError(value, 'Could not start checkout.'));
-    } finally {
-      if (mounted) setState(() => busy = false);
-    }
-  }
-
-  Future<void> openCheckout(String? value) async {
-    final uri = value == null ? null : Uri.tryParse(value);
-    if (uri == null ||
-        uri.scheme != 'https' ||
-        !(uri.host == 'flutterwave.com' || uri.host.endsWith('.flutterwave.com'))) {
-      if (mounted) setState(() => error = 'The payment link could not be trusted.');
-      return;
-    }
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication) && mounted) {
-      setState(() => error = 'Could not open Flutterwave checkout.');
-    }
-  }
-
-  Future<void> verify() async {
+  Future<void> confirmFromWallet() async {
     final view = current;
     if (view == null) return;
     setState(() { busy = true; error = null; });
     try {
-      final next = await api.verifyBillingPayment(
+      final next = await api.confirmBillingFromWallet(
         quoteId: view.quote.quoteId,
         quoteRevision: view.quote.revision,
       );
       if (!mounted) return;
-      setState(() => current = next);
-      await reloadHistory();
+      setState(() => walletAction = next);
+      await ref.read(walletProvider.notifier).refresh();
+      await refreshCurrent(silent: true);
     } catch (value) {
       if (mounted) {
         setState(() => error = safeError(
           value,
-          'Payment is not verified yet. Try again after checkout.',
+          'Could not complete this purchase from your wallet.',
         ));
       }
     } finally {
       if (mounted) setState(() => busy = false);
     }
   }
-
-  Future<void> refreshCurrent() async {
+  Future<void> refreshCurrent({bool silent = false}) async {
     final view = current;
     if (view == null) return;
-    setState(() { busy = true; error = null; });
+    if (!silent) setState(() { busy = true; error = null; });
     try {
       final next = await api.billingQuote(view.quote.quoteId);
       if (mounted) setState(() => current = next);
@@ -267,7 +216,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     } catch (value) {
       if (mounted) setState(() => error = safeError(value, 'Could not refresh status.'));
     } finally {
-      if (mounted) setState(() => busy = false);
+      if (!silent && mounted) setState(() => busy = false);
     }
   }
 
@@ -300,16 +249,13 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       items = const [];
       customer.clear();
       amount.clear();
-      checkoutEmail.clear();
+      walletAction = null;
       error = null;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final session = ref.watch(sessionProvider);
-    final needsEmail =
-        session is SessionSignedIn && (session.user.email?.trim().isEmpty ?? true);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Bills & payments'),
@@ -340,9 +286,9 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
               const SizedBox(height: 12),
             ],
             if (current == null)
-              buildForm(needsEmail)
+              buildForm()
             else
-              buildTransaction(current!, needsEmail),
+              buildTransaction(current!),
             const SizedBox(height: 28),
             Row(
               children: [
@@ -381,14 +327,14 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     );
   }
 
-  Widget buildForm(bool needsEmail) {
+  Widget buildForm() {
     final selectedItem = item;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text('Pay a bill', style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 6),
-        const Text('Choose a live provider service. A quote is created before payment.'),
+        const Text('Choose a live provider service. Payment is completed from your Masanawa wallet inside the app.'),
         const SizedBox(height: 18),
         DropdownButtonFormField<BillCategory>(
           value: category,
@@ -449,15 +395,6 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                   : 'Fixed by the provider.',
             ),
           ),
-          if (needsEmail) ...[
-            const SizedBox(height: 12),
-            TextField(
-              controller: checkoutEmail,
-              keyboardType: TextInputType.emailAddress,
-              autocorrect: false,
-              decoration: const InputDecoration(labelText: 'Email for secure checkout'),
-            ),
-          ],
           const SizedBox(height: 18),
           FilledButton.icon(
             onPressed: busy ? null : createQuote,
@@ -469,52 +406,57 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     );
   }
 
-  Widget buildTransaction(BillingCheckoutView view, bool needsEmail) {
+  Widget buildTransaction(BillingCheckoutView view) {
     final quote = view.quote;
-    final canVerify =
-        view.phase == 'checkout' || view.phase == 'paid' || view.phase == 'processing';
+    final funding = walletAction?.funding;
+    final walletPhase = walletAction?.phase;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         BillDetails(view: view),
         if (view.phase == 'quoted') ...[
-          if (needsEmail) ...[
-            const SizedBox(height: 12),
-            TextField(
-              controller: checkoutEmail,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(labelText: 'Email for secure checkout'),
-            ),
-          ],
           const SizedBox(height: 14),
           FilledButton.icon(
-            onPressed: busy ? null : startCheckout,
-            icon: const Icon(Icons.open_in_new),
-            label: Text('Pay ₦' + quote.totalAmount + ' securely'),
+            onPressed: busy ? null : confirmFromWallet,
+            icon: const Icon(Icons.account_balance_wallet_outlined),
+            label: Text('Confirm ₦' + quote.totalAmount + ' from wallet'),
           ),
         ],
-        if (view.phase == 'checkout' && view.checkoutUrl != null) ...[
+        if (funding != null) ...[
+          const SizedBox(height: 14),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Add ₦' + funding.amount, style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 6),
+                  const Text('Transfer the exact amount below. Masanawa will continue this bill automatically after the transfer is verified.'),
+                  const SizedBox(height: 12),
+                  SelectableText(funding.bankName, style: const TextStyle(fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 4),
+                  SelectableText(funding.accountNumber, style: Theme.of(context).textTheme.headlineSmall),
+                  const SizedBox(height: 6),
+                  Text('Expires: ' + funding.expiresAt),
+                ],
+              ),
+            ),
+          ),
+        ],
+        if (walletPhase == 'fulfilled') ...[
           const SizedBox(height: 12),
-          FilledButton.icon(
-            onPressed: busy ? null : () => openCheckout(view.checkoutUrl),
-            icon: const Icon(Icons.open_in_new),
-            label: const Text('Open Flutterwave checkout'),
-          ),
+          const Card(child: Padding(padding: EdgeInsets.all(14), child: Text('Bill completed successfully.'))),
         ],
-        if (canVerify) ...[
+        if (view.phase == 'processing' || walletPhase == 'processing' || walletPhase == 'awaiting-funds') ...[
           const SizedBox(height: 10),
           OutlinedButton.icon(
-            onPressed: busy ? null : verify,
-            icon: const Icon(Icons.verified_outlined),
-            label: const Text('Verify payment'),
-          ),
-          TextButton.icon(
             onPressed: busy ? null : refreshCurrent,
             icon: const Icon(Icons.refresh),
             label: const Text('Refresh status'),
           ),
         ],
-        if (view.isTerminal) ...[
+        if (view.isTerminal || walletPhase == 'fulfilled' || walletPhase == 'failed') ...[
           const SizedBox(height: 10),
           OutlinedButton.icon(
             onPressed: busy ? null : newBill,
@@ -525,7 +467,6 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       ],
     );
   }
-
   String stateLabel(String state) => switch (state) {
         'quoted' => 'Quote ready',
         'checkout-created' => 'Awaiting payment',

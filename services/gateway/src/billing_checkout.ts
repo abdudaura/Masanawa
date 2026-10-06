@@ -144,7 +144,7 @@ function documentFor(
     { type: "metric", text: "Total", value: money(quote.totalAmountKobo), subtitle: "NGN" },
   ];
   if (phase === "quoted") {
-    const action = "billing.checkout.start";
+    const action = "billing.wallet.confirm";
     const actionExpiry = shellActionExpiry(quote,action);
     return Object.freeze({
       version: 1,
@@ -157,20 +157,12 @@ function documentFor(
         {
           type: "notice",
           tone: "warning",
-          text: "You will pay securely on Flutterwave before Masanawa sends this bill.",
+          text: "This purchase will be paid from your Masanawa wallet. If your balance is short, Masanawa will create a temporary bank account for only the missing amount.",
         },
-        ...(requireEmail ? [{
-          type: "input",
-          id: "checkoutEmail",
-          text: "Email for secure payment",
-          subtitle: "Flutterwave requires an email for hosted checkout.",
-          inputKind: "email",
-          required: true,
-        }] : []),
         {
           type: "button",
           id: "confirm-payment",
-          text: `Confirm & pay ${money(quote.totalAmountKobo)}`,
+          text: `Confirm purchase ${money(quote.totalAmountKobo)}`,
           action,
           token: mintBillingActionToken({
             secret: actionSecret,
@@ -354,6 +346,13 @@ export interface BillingCheckoutService {
     reference: string;
     signal?: AbortSignal;
   }>): Promise<BillingQuote | null>;
+  verifyWalletConfirmAction(request: Readonly<{
+    authorizationHeader: string | undefined;
+    documentId: string;
+    revision: number;
+    actionId: string;
+    token: string;
+  }>): Promise<Readonly<{ quoteId: string; quoteRevision: number }>>;
   executeShellAction(request: Readonly<{
     authorizationHeader: string | undefined;
     documentId: string;
@@ -844,6 +843,30 @@ export function createBillingCheckoutService(input: Readonly<{
         request.signal,
       );
       return reconciled.quote;
+    },
+
+    async verifyWalletConfirmAction(request) {
+      if (request.actionId !== "billing.wallet.confirm") {
+        throw new Error("financial.billing.shell_action_unavailable");
+      }
+      const owned = await ownedQuote(
+        request.authorizationHeader,
+        request.documentId.replace(/^billing:/u,""),
+      );
+      if (request.revision !== presentationRevision(owned.quote)) {
+        throw new Error("financial.billing.shell_revision_conflict");
+      }
+      verifyBillingActionToken({
+        secret: input.actionSecret,
+        quote: owned.quote,
+        action: request.actionId,
+        token: request.token,
+        at: now(),
+      });
+      return Object.freeze({
+        quoteId: owned.quote.quoteId,
+        quoteRevision: owned.quote.revision,
+      });
     },
 
     async executeShellAction(request) {

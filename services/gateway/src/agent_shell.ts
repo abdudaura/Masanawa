@@ -178,6 +178,7 @@ export function createAgentShellService(input: {
       let execution;
       try {
         execution = await input.actionExecutor.execute({
+          authorizationHeader: request.authorizationHeader,
           admission: admitted,
           session,
           action: request.action,
