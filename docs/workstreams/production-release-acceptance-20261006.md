@@ -29,18 +29,55 @@ This lane implements a deterministic release-acceptance evidence qualifier and o
 - production cutover/post-release checks are externally executed and supplied as evidence;
 - rollback authority and exact release/build/schema identity remain integration-owner evidence.
 
-## Acceptance intent
+## Completed implementation
 
-The qualifier must fail closed unless all required evidence is present and consistent:
-- exact release/build/schema/environment identity;
-- Task 149 pilot readiness evidence bound to the same release candidate;
-- explicit cutover completion and post-release health window;
-- required health dimensions passing;
-- zero blocking parity/incidents;
-- rollback remains available during the declared observation window;
-- first-generation audit families all present and passing;
-- SHA-256 evidence binding for every consequential claim.
+- added schema-v1 production release evidence normalization with strict types, bounded identifiers/timestamps/counts and SHA-256 evidence hashes;
+- requires Task 149 pilot status READY and binds pilot build/schema identity to the exact release;
+- requires explicit cutover completion and a configurable minimum post-release observation window;
+- requires availability, latency, errors, queues, realtime, channels, commerce and devices health evidence;
+- fails release on blocking parity items, active severity-one incidents, failed health checks or unavailable rollback;
+- requires rollback target to differ from the release build;
+- requires all first-generation acceptance audit families covering identity/memory, Skills/runtime/workflows, channels/devices, proactivity/presence, commerce/social/studio, plugins/evaluation/learning, hardening and pilot/cutover;
+- classifies missing evidence as INCOMPLETE and violated invariants as FAILED;
+- CLI exits non-zero unless qualification is READY.
 
-State: CLAIMED / IMPLEMENTATION IN PROGRESS.
+## Verification
+
+Focused executable test:
+- `node --test scripts/production-release-qualification.test.mjs`
+- result: **7 passed, 0 failed** after correcting invalid non-hex fixture characters.
+
+PR CI:
+- Foundation CI run `37477060924` on implementation head `4a8ca3a33151248a90d26462ed84ff0ef0abf599`;
+- conclusion: failure before repository steps executed;
+- job `112315109381` exposes **zero steps** and no retrievable job log blob, so this is not counted as an application/test failure or success.
+
+## Changed-file audit
+
+Comparison against `main` at the implementation head is ahead 4 / behind 0 and contains only:
+- `docs/workstreams/production-release-acceptance-20261006.md`;
+- `scripts/production-release-qualification.mjs`;
+- `scripts/production-release-qualification.test.mjs`.
+
+No protected/shared path is changed.
+
+## Handoff evidence
+
+- implementation/test head: `4a8ca3a33151248a90d26462ed84ff0ef0abf599`;
+- PR: #286 — Add production release acceptance qualification;
+- isolated implementation status: COMPLETE;
+- Task 150 production status: NOT COMPLETE.
+
+## Remaining dependencies
+
+Task 150 cannot be marked complete from this lane. Remaining work belongs to protected production/integration ownership or external execution:
+- Task 149 must produce READY production-like pilot evidence on the exact release candidate;
+- authorized owner must execute the real production cutover;
+- real post-release observation/health evidence must be collected;
+- rollback availability must be proven against a prior stable build;
+- any real parity or severity-one blocker must be resolved;
+- the first-generation acceptance audit must be populated with production evidence.
+
+State: ISOLATED COMPLETE / BLOCKED ON TASK 149 + PROTECTED PRODUCTION CUTOVER EVIDENCE.
 
 Last update: 2026-10-06.
