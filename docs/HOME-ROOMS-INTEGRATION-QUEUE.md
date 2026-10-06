@@ -24,7 +24,7 @@ This queue starts only after the isolated-feature move-on gate in
 | Order | Lane | PR | Exact head | Dependency note |
 | ---: | --- | ---: | --- | --- |
 | 1 | H — Home shell | #201 | `8dcee90e49c6773298398ffeed218ff25ddb3ecb` | based on docs overlay |
-| 2 | I — Internet Cafe | #203 | `c77dfc5320c2cfdb6865661370e1b98907b8cd61` | compose canonical billing/Skill refs only |
+| 2 | I — Internet Cafe | #203 | `4c3ac73796aff5ec05ee0875512cf294e92239e3` | compose canonical billing/Skill refs only |
 | 3 | S — Story Radio | #199 | `3445db59d2d1a1a64454273b42773cdfc2e047ed` | playback/audio transport remains shared |
 | 4 | N — News | #200 | `6ea84ea23a627fb3325bc00ec0b273bd8d2518b3` | evidence/audio transport remains shared |
 | 5 | T — Study Center | #205 | `e71111ab7ba6ec707c44ad9e671010194a6f2e87` | stacked on Core Teaching #96; preserve #94/#96 contracts |
