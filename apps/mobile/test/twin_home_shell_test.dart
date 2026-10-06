@@ -3,13 +3,43 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/agents/twin_activity.dart';
 import 'package:masanawa/src/agents/twin_directory.dart';
+import 'package:masanawa/src/agents/twin_profile.dart';
 import 'package:masanawa/src/commerce/wallet_models.dart';
 import 'package:masanawa/src/screens/twin/twin_home_shell.dart';
 import 'package:masanawa/src/state/session_state.dart';
+import 'package:masanawa/src/state/my_twin_state.dart';
 import 'package:masanawa/src/state/twin_activity_state.dart';
 import 'package:masanawa/src/state/twin_directory_state.dart';
 import 'package:masanawa/src/state/wallet_state.dart';
 import 'package:masanawa/src/theme/masanawa_theme.dart';
+
+class _EmptyTwinTransport implements TwinProfileTransport {
+  const _EmptyTwinTransport();
+
+  static const profile = TwinProfile(
+    hasTwin: false,
+    characterId: null,
+    displayName: '',
+    bio: '',
+    publicUrl: null,
+    discoverable: false,
+    voiceEnabled: false,
+    ownerAccessEnabled: false,
+    languages: [],
+    summary: TwinPerformanceSummary(
+      visitors: 0,
+      conversations: 0,
+      earningsCredits: 0,
+      pendingOwnerRequests: 0,
+    ),
+  );
+
+  @override
+  Future<TwinProfile> load() async => profile;
+
+  @override
+  Future<TwinProfile> setDiscoverable(bool discoverable) async => profile;
+}
 
 void main() {
   testWidgets('signed-in root exposes My Twin, Explore, Activity and Wallet',
@@ -18,6 +48,9 @@ void main() {
       ProviderScope(
         overrides: [
           isSignedInProvider.overrideWithValue(true),
+          twinProfileTransportProvider.overrideWithValue(
+            const _EmptyTwinTransport(),
+          ),
           twinDirectoryTransportProvider.overrideWithValue(
             const UnavailableTwinDirectoryTransport(),
           ),
@@ -68,6 +101,9 @@ void main() {
       ProviderScope(
         overrides: [
           isSignedInProvider.overrideWithValue(true),
+          twinProfileTransportProvider.overrideWithValue(
+            const _EmptyTwinTransport(),
+          ),
           twinDirectoryTransportProvider.overrideWithValue(
             const UnavailableTwinDirectoryTransport(),
           ),
@@ -105,6 +141,9 @@ void main() {
       ProviderScope(
         overrides: [
           isSignedInProvider.overrideWithValue(true),
+          twinProfileTransportProvider.overrideWithValue(
+            const _EmptyTwinTransport(),
+          ),
           twinDirectoryTransportProvider.overrideWithValue(
             const UnavailableTwinDirectoryTransport(),
           ),
