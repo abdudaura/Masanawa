@@ -11,6 +11,7 @@ import '../../state/creator_skills_state.dart';
 import '../../state/session_state.dart';
 import '../../core/providers.dart';
 import '../../theme/masanawa_theme.dart';
+import '../../ui/components/platform_agent_avatar.dart';
 import '../../tokens/masanawa_tokens.dart';
 import '../../core/mobile_push.dart';
 
@@ -403,13 +404,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 }
                               }
                             },
-                      secondary: CircleAvatar(
-                        backgroundColor: u.brand.withValues(alpha: 0.12),
-                        child: Text(
-                          agent.initial,
-                          style: TextStyle(color: u.brand),
-                        ),
-                      ),
+                      secondary: PlatformAgentAvatar(agent: agent, radius: 20),
                       title: Text(agent.displayName),
                       subtitle: Text(
                         voice == null
