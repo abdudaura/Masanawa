@@ -41,6 +41,8 @@ This extends the existing canonical Security system: a Device credential is an o
 - successful reconnect returns canonical strong Device authentication evidence only;
 - no Character/Tool/Operation authority is implied.
 
-State: CLAIMED. No implementation changes beyond this claim.
+State: IMPLEMENTING. Operational Device credential lifecycle, rotation, one-time reconnect challenge and proof-verification contract are committed with focused tests. Persistence/export/Gateway/device-keystore composition remain excluded shared seams.
+
+Implementation head before handoff: `a56990246712247b898417aa4a0045a0f8b39c40`.
 
 Last update: 2026-10-06.
