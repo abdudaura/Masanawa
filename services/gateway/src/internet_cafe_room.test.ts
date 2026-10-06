@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   projectInternetCafeRoom,
+  resolveInternetCafeIntent,
+  validateInternetCafeIntakeSubmission,
   type InternetCafeProjectionInput,
 } from "./internet_cafe_room.js";
 
@@ -119,6 +121,88 @@ describe("Internet Cafe room projection", () => {
         },
       }),
     ).toThrow("Internet Cafe selection references unknown service");
+  });
+
+  it("resolves only an exact server-owned service/intent pair", () => {
+    const room = projectInternetCafeRoom(input());
+
+    expect(
+      resolveInternetCafeIntent(room, {
+        serviceId: "data",
+        intentId: "internet-cafe.data",
+      }),
+    ).toEqual({
+      serviceId: "data",
+      intentId: "internet-cafe.data",
+      execution: {
+        kind: "billing",
+        billingServiceRef: "billing:data",
+      },
+    });
+
+    expect(() =>
+      resolveInternetCafeIntent(room, {
+        serviceId: "data",
+        intentId: "internet-cafe.airtime",
+      }),
+    ).toThrow("Internet Cafe service/intent binding is invalid");
+  });
+
+  it("revalidates task intake on the server and rejects forged fields", () => {
+    const room = projectInternetCafeRoom(input());
+
+    expect(
+      validateInternetCafeIntakeSubmission(room, {
+        serviceId: "job-application",
+        intentId: "internet-cafe.job-application",
+        values: {
+          goal: "Apply for the analyst role",
+          deadline: "2026-12-01",
+        },
+      }),
+    ).toMatchObject({
+      serviceId: "job-application",
+      intentId: "internet-cafe.job-application",
+      execution: {
+        kind: "skill",
+        skillRef: "skill:job-application",
+      },
+      values: {
+        goal: "Apply for the analyst role",
+        deadline: "2026-12-01",
+      },
+    });
+
+    expect(() =>
+      validateInternetCafeIntakeSubmission(room, {
+        serviceId: "job-application",
+        intentId: "internet-cafe.job-application",
+        values: {
+          goal: "Apply",
+          attackerField: "forged",
+        },
+      }),
+    ).toThrow("Internet Cafe intake contains unknown fields");
+  });
+
+  it("requires intake fields and rejects intake against billing services", () => {
+    const room = projectInternetCafeRoom(input());
+
+    expect(() =>
+      validateInternetCafeIntakeSubmission(room, {
+        serviceId: "job-application",
+        intentId: "internet-cafe.job-application",
+        values: {},
+      }),
+    ).toThrow("Required Internet Cafe intake field is missing: goal");
+
+    expect(() =>
+      validateInternetCafeIntakeSubmission(room, {
+        serviceId: "data",
+        intentId: "internet-cafe.data",
+        values: {},
+      }),
+    ).toThrow("Internet Cafe service does not accept task intake");
   });
 
   it("fails closed when a canonical execution reference is missing", () => {
