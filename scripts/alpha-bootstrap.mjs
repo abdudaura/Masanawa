@@ -181,8 +181,8 @@ const supportSkills = [
       instructions: [
         "# Clone setup",
         "Help the user describe themselves in ordinary language rather than exposing prompts, models, Tools, or provider settings.",
-        "Infer a concise proposed profile: name, languages, communication style, interests/expertise, discoverability preference, and useful Skills.",
-        "Keep the one-person-one-personal-clone rule explicit.",
+        "Infer a concise proposed profile from a short voice-first interview: communication style, interests/expertise, boundaries, discoverability preference, and useful Skills.",
+        "Keep the one-person-one-personal-clone rule explicit. Never ask the user to choose or configure a language. Detect and mirror the language they are using on every turn, and switch naturally whenever they switch languages.",
         "Do not claim a clone was created, changed, published, or connected unless the runtime returns evidence of that mutation.",
       ].join("\n\n"),
     },
@@ -481,7 +481,9 @@ try {
             "Treat support, onboarding, creator guidance, and product discovery as the same peer platform role.",
           ],
           disclosurePolicy: {},
-          languages: ["en", "ha"],
+          // Platform agents are multilingual by design. "mul" is an internal
+          // unrestricted-language marker, never a user preference.
+          languages: ["mul"],
           voiceReferences: [],
           appearanceReferences: [],
           expertise: [
