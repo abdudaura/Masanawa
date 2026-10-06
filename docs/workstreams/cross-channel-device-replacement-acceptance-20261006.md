@@ -44,6 +44,23 @@ Useful completed source is preserved; no stale branch is rewritten or force-push
 7. Replacement Device with healthy capability snapshot and fresh credential can authenticate and execute the allowed capability.
 8. Cross-Tenant/cross-Device substitution fails closed.
 
-State: CLAIMED.
+State: IMPLEMENTED / VERIFICATION PENDING.
+
+## Completed
+
+- reclaimed stale Tasks 100/104/105/106/107 contract lineage without rewriting their branches;
+- preserved PR #231 channel-binding implementation exactly on the Task 107 stack;
+- proves WhatsApp + Telegram proof-backed bindings converge on one canonical User while preserving distinct external identities;
+- revoking one channel removes only that binding's authority and leaves the other channel usable;
+- proves an old Character/Device assignment is allowed only while active/current/healthy;
+- models replacement with a fresh Device, assignment and operational credential while preserving exact Character identity;
+- revoked old assignment fails capability evaluation immediately;
+- revoked old credential cannot complete a previously issued reconnect challenge;
+- replacement credential completes strong device-key authentication;
+- cross-Tenant/cross-Device substitution fails closed.
+
+No active #136/#295 paths, provider adapters, migrations, production config or Android runtime code were modified.
+
+Implementation head before handoff: `cf1d5f5593b079df60f434cf1a264afe802aa0c9`.
 
 Last update: 2026-10-06.
