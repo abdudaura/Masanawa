@@ -186,6 +186,9 @@ function notificationEvent(input: {
     "category",
     120,
   );
+  if (typeof notification.ongoing !== "boolean") {
+    throw new TypeError("ongoing is invalid");
+  }
 
   if (title === null && body === null) {
     throw new Error("Notification perception requires title or body");
@@ -203,12 +206,12 @@ function notificationEvent(input: {
         title,
         body,
         category,
-        ongoing: notification.ongoing === true,
+        ongoing: notification.ongoing,
       }),
       attributes: {
         applicationId,
         notificationKey,
-        ongoing: String(notification.ongoing === true),
+        ongoing: String(notification.ongoing),
         ...(category === null ? {} : { category }),
       },
     },
