@@ -50,6 +50,7 @@ import {
   createPostgresUserAgentPreferenceRepository,
   createPostgresPersonalCloneProvisioningRepository,
   createPostgresTwinProfileRepository,
+  createPostgresTwinProfileImageRepository,
   createPostgresUserRelationshipReader,
   createPostgresUserRelationshipProvisioner,
   createPostgresPlatformSessionRepository,
@@ -133,6 +134,7 @@ export interface ServiceDatabaseDependency {
   readonly skillDistribution?: SkillDistributionRepository;
   readonly personalClones?: PersonalCloneProvisioningRepository;
   readonly twinProfiles?: TwinProfileRepository;
+  readonly twinImages?: ReturnType<typeof createPostgresTwinProfileImageRepository>;
   readonly relationships?: UserRelationshipReader;
   readonly relationshipProvisioner?: UserRelationshipProvisioner;
   readonly platformSessions?: PlatformSessionRepository;
@@ -223,6 +225,7 @@ function createDefaultDatabaseDependency(
     skillDistribution: createPostgresSkillDistributionRepository(database.pool),
     personalClones: createPostgresPersonalCloneProvisioningRepository(database.pool),
     twinProfiles: createPostgresTwinProfileRepository(database.pool),
+    twinImages: createPostgresTwinProfileImageRepository(database.pool),
     relationships: createPostgresUserRelationshipReader(database.pool),
     relationshipProvisioner:
       createPostgresUserRelationshipProvisioner(database.pool),
@@ -592,8 +595,24 @@ export async function startGatewayService(
           presentations: database.agentPresentations,
           skillAssignments: database.characterSkillAssignments,
           ...(database.twinProfiles ? { twinProfiles: database.twinProfiles } : {}),
+          ...(database.twinImages ? { twinImages: database.twinImages } : {}),
           publicBaseUrl:
             env.MASANAWA_PUBLIC_BASE_URL?.trim() || "https://masanawa.com",
+          ...(env.MASANAWA_PLATFORM_TENANT_ID?.trim()
+            ? {
+                publicTenantId: parseCanonicalId(
+                  "tenant",
+                  env.MASANAWA_PLATFORM_TENANT_ID.trim(),
+                ),
+              }
+            : env.MASANAWA_ALPHA_TENANT_ID?.trim()
+              ? {
+                  publicTenantId: parseCanonicalId(
+                    "tenant",
+                    env.MASANAWA_ALPHA_TENANT_ID.trim(),
+                  ),
+                }
+              : {}),
         })
       : undefined);
 
