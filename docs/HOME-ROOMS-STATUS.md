@@ -52,7 +52,7 @@ The lane handoff and PR must record:
 | S | Story Radio | #199 | ISOLATED COMPLETE | Admin publishing/audio/runtime + #136 |
 | N | News | #200 | ISOLATED COMPLETE | Admin/evidence/audio integration + #136 |
 | W | Work & Research | #202 | ISOLATED COMPLETE | #136 + canonical Workflow/research runtime |
-| G | Group Rooms | #204 | ISOLATED COMPLETE | Identity export/persistence/memory + #136 |
+| G | Group Rooms | #214 (supersedes #204) | INTEGRATION READY | Identity export/persistence/memory + #136 |
 | A | Admin publishing | #208 stacked on #129 | ISOLATED COMPLETE | #129/Ops canonical authorized-command composition |
 | P | Production integration + APK | #136, with Home integration #206 | IMPLEMENTING | #206 is integrating Lane H on #136; remaining shared Room composition/APK/device acceptance stays under #136 ownership |
 
