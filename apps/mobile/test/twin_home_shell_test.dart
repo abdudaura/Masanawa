@@ -117,7 +117,7 @@ void main() {
 
     await tester.tap(find.text('Explore'));
     await tester.pump();
-    expect(find.text('Search twins'), findsOneWidget);
+    expect(find.text('Meet someone new'), findsOneWidget);
 
     await tester.tap(find.text('Activity'));
     await tester.pump();
