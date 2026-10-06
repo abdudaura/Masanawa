@@ -465,10 +465,14 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
           } as const;
         };
 
+        const assistants = [];
+        const gwana = byRole("gwana");
+        const gwani = byRole("gwani");
+        if (gwana !== null) assistants.push(gwana);
+        if (gwani !== null) assistants.push(gwani);
+
         return {
-          assistants: [byRole("gwana"), byRole("gwani")].filter(
-            (item): item is NonNullable<typeof item> => item !== null,
-          ),
+          assistants,
           rooms: [
             {
               roomId: "room.internet-cafe",
