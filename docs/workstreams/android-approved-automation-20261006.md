@@ -34,9 +34,11 @@ Tasks 124–128 are active in PRs #253/#256/#257/#255/#258. No competing Task 12
 - notification reply additionally requires an explicit canonical ApprovalId when policy requires it;
 - no caller-supplied policy can expand itself: adapter receives a separately injected/current policy snapshot;
 - stale policy revision, wrong Tenant/Device, unavailable capability, unallowlisted target or missing approval fails before the platform edge;
-- execution exceptions become `unknown`, never blind retry authority;
-- observation/result data is bounded transport evidence and cannot mutate Memory/Commerce/Workflow truth.
+- this lane stops at a bounded execution plan; it does not perform native automation itself;
+- the later native executor must preserve canonical DeviceOperation custody/reconciliation and treat observations/results as bounded transport evidence only.
 
-State: CLAIMED. No implementation changes beyond this claim.
+State: IMPLEMENTING. Bounded current-policy automation admission/planning plus focused contract tests are committed. Native execution, Accessibility/browser/app adapters, observation custody and shared production composition remain excluded.
+
+Implementation head before handoff: `fe83a5f79ec087f150d4a8a4306f2b03a2e037dd`.
 
 Last update: 2026-10-06.
