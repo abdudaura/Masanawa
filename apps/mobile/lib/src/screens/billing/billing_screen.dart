@@ -7,6 +7,26 @@ import '../../core/network/api_client.dart';
 import '../../core/providers.dart';
 import '../../state/session_state.dart';
 
+BillCategory? billingCategoryForHomeService(
+  List<BillCategory> categories,
+  String? service,
+) {
+  final initial = service?.trim().toLowerCase();
+  if (initial == null || initial.isEmpty) return null;
+  final terms = switch (initial) {
+    'data' => const ['data', 'internet'],
+    'airtime' => const ['airtime', 'air time', 'mobile recharge'],
+    'electricity' => const ['electricity', 'power'],
+    'tv' => const ['tv', 'cable', 'television'],
+    _ => <String>[initial],
+  };
+  for (final value in categories) {
+    final haystack = (value.code + ' ' + value.name).toLowerCase();
+    if (terms.any(haystack.contains)) return value;
+  }
+  return null;
+}
+
 class BillingScreen extends ConsumerStatefulWidget {
   const BillingScreen({super.key, this.initialService});
 
@@ -65,27 +85,9 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
         history = nextHistory;
         loading = false;
       });
-      final initial = widget.initialService?.trim().toLowerCase();
-      if (initial != null && initial.isNotEmpty && category == null) {
-        BillCategory? matched;
-        bool matches(BillCategory value, List<String> terms) {
-          final haystack =
-              (value.code + ' ' + value.name).toLowerCase();
-          return terms.any(haystack.contains);
-        }
-        for (final value in nextCategories) {
-          final terms = switch (initial) {
-            'data' => const ['data', 'internet'],
-            'airtime' => const ['airtime', 'air time', 'mobile recharge'],
-            'electricity' => const ['electricity', 'power'],
-            'tv' => const ['tv', 'cable', 'television'],
-            _ => <String>[initial],
-          };
-          if (matches(value, terms)) {
-            matched = value;
-            break;
-          }
-        }
+      if (category == null) {
+        final matched =
+            billingCategoryForHomeService(nextCategories, widget.initialService);
         if (matched != null) await selectCategory(matched);
       }
     } catch (value) {
