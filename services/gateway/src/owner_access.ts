@@ -68,6 +68,7 @@ export interface OwnerAccessRoomPresence {
 export interface OwnerAccessRoomStatus {
   readonly attendanceVerified: boolean;
   readonly verifiedSeconds: number;
+  readonly sessionEndsAt: string | null;
   readonly presence: readonly OwnerAccessRoomPresence[];
 }
 
