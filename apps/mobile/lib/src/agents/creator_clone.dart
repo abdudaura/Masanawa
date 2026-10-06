@@ -5,6 +5,7 @@ class CreatorCloneResult {
     required this.characterVersionId,
     required this.relationshipId,
     required this.displayName,
+    this.publicUrl,
   });
 
   final bool created;
@@ -12,6 +13,7 @@ class CreatorCloneResult {
   final String characterVersionId;
   final String relationshipId;
   final String displayName;
+  final String? publicUrl;
 
   factory CreatorCloneResult.fromJson(Map<String, dynamic> json) {
     String requiredString(String key) {
@@ -28,6 +30,7 @@ class CreatorCloneResult {
       characterVersionId: requiredString('characterVersionId'),
       relationshipId: requiredString('relationshipId'),
       displayName: requiredString('displayName'),
+      publicUrl: (json['publicUrl'] as String?)?.trim(),
     );
   }
 }
