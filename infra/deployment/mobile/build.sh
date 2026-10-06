@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 # Does not seed the database or publish credentials. All build inputs are supplied by hosting.
+# Story Radio Railway validation revision: postgres typing sync
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 CACHE_DIR="${XDG_CACHE_HOME:-${HOME}/.cache}/masanawa-apk"
 ARTIFACT_DIR="${ROOT_DIR}/build-artifacts/mobile"
