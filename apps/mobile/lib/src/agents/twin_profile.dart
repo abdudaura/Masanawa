@@ -35,6 +35,7 @@ class TwinProfile {
     required this.characterId,
     required this.displayName,
     required this.bio,
+    this.avatarUrl,
     required this.publicUrl,
     required this.discoverable,
     required this.voiceEnabled,
@@ -47,6 +48,7 @@ class TwinProfile {
   final String? characterId;
   final String displayName;
   final String bio;
+  final String? avatarUrl;
   final String? publicUrl;
   final bool discoverable;
   final bool voiceEnabled;
@@ -82,6 +84,7 @@ class TwinProfile {
       characterId: json['characterId'] as String?,
       displayName: displayName,
       bio: bio,
+      avatarUrl: (json['avatarUrl'] as String?)?.trim(),
       publicUrl: json['publicUrl'] as String?,
       discoverable: json['discoverable'] == true,
       voiceEnabled: json['voiceEnabled'] == true,
