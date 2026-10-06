@@ -139,7 +139,7 @@ export async function ensureDefaultPlatformAgents(input: Readonly<{
             "Treat support, onboarding, creator guidance, and product discovery as the same peer platform role.",
           ]),
           disclosurePolicy: Object.freeze({}),
-          languages: Object.freeze(["en", "ha"]),
+          languages: Object.freeze(["mul"]),
           voiceReferences: Object.freeze([]),
           appearanceReferences: Object.freeze([]),
           expertise: Object.freeze([
