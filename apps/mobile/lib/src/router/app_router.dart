@@ -110,6 +110,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return AiChatScreen(
             characterId: state.pathParameters['id']!,
             entryMode: entry,
+            initialPrompt: state.uri.queryParameters['prompt'],
           );
         },
       ),
