@@ -217,7 +217,7 @@ export function createStoryRadioService(input: Readonly<{
     });
   }
 
-  return Object.freeze({
+  return Object.freeze<StoryRadioService>({
     async home(request) {
       const identity = await customer(request.authorizationHeader);
       const tenantId = String(identity.tenantId);
