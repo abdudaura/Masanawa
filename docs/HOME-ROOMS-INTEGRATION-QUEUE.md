@@ -29,7 +29,7 @@ This queue starts only after the isolated-feature move-on gate in
 | 4 | N — News | #200 | `6ea84ea23a627fb3325bc00ec0b273bd8d2518b3` | evidence/audio transport remains shared |
 | 5 | T — Study Center | #205 | `e71111ab7ba6ec707c44ad9e671010194a6f2e87` | stacked on Core Teaching #96; preserve #94/#96 contracts |
 | 6 | W — Work & Research | #202 | `14ef78f5acd218728fe51530a2153d7a2dc0bd34` | route opaque intents to canonical Workflow/research runtime |
-| 7 | G — Group Rooms | #204 | `01e8a799616754d6da044dd77b621413d8747e1c` | also needs Identity export/persistence/memory composition |
+| 7 | G — Group Rooms | #214 | `0a5b7722eacc920c135d951b7acd47ff5ef0938c` | supersedes conflicted #204; also needs Identity export/persistence/memory composition |
 | 8 | A — Admin publishing | #208 | `344e9eb31516c59a0425fc7e20d46962786e5fef` | stacked on admin #129; Ops command wiring, not customer app |
 
 Always refresh this file if any listed PR head changes before integration.
