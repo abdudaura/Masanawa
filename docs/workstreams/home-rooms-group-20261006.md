@@ -94,7 +94,7 @@ No additional isolated Lane G work remains without touching currently shared/cla
 
 ## PR / handoff
 
-PR: replacement PR pending; supersedes conflicted #204
+PR: #214 — `Reconcile Home/Rooms Lane G Group Rooms`; supersedes conflicted #204
 Implementation head before this handoff update: `da4276044d55e5aa05c3f441182b8f8bff0255a8`.
 
 
