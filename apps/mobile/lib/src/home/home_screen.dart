@@ -109,11 +109,6 @@ class _HomeReady extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
       children: [
-        const _SectionHeader(
-          title: 'Your assistants',
-          subtitle: 'Talk, send a voice note, or start live voice.',
-        ),
-        const SizedBox(height: 10),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -134,9 +129,7 @@ class _HomeReady extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 22),
-        const _SectionHeader(title: 'Quick services'),
-        const SizedBox(height: 10),
+        const SizedBox(height: 14),
         _QuickServices(onTap: onQuickService),
         if (snapshot.myTwin case final twin?) ...[
           const SizedBox(height: 22),
@@ -146,12 +139,7 @@ class _HomeReady extends StatelessWidget {
           ),
         ],
         if (snapshot.continuations.isNotEmpty) ...[
-          const SizedBox(height: 22),
-          const _SectionHeader(
-            title: 'Continue',
-            subtitle: 'Pick up where you left off.',
-          ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 14),
           ...snapshot.continuations.map(
             (item) => Padding(
               padding: const EdgeInsets.only(bottom: 8),
@@ -165,11 +153,6 @@ class _HomeReady extends StatelessWidget {
           ),
         ],
         const SizedBox(height: 14),
-        const _SectionHeader(
-          title: 'Rooms',
-          subtitle: 'Choose a space for what you want to do.',
-        ),
-        const SizedBox(height: 8),
         ...snapshot.rooms.map(
           (room) => Padding(
             padding: const EdgeInsets.only(bottom: 10),
@@ -335,6 +318,7 @@ class _QuickServices extends StatelessWidget {
     (HomeQuickService.airtime, 'Airtime', Icons.phone_android_outlined),
     (HomeQuickService.electricity, 'Electricity', Icons.bolt_outlined),
     (HomeQuickService.tv, 'TV', Icons.tv_outlined),
+    (HomeQuickService.crypto, 'Crypto Tokens', Icons.currency_bitcoin),
   ];
 
   @override
