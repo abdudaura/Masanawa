@@ -37,7 +37,8 @@ export interface CreatorCloneService {
     readonly authorizationHeader: string | undefined;
     readonly displayName: string;
     readonly biography: string;
-    readonly languages: readonly string[];
+    readonly gender: string;
+    readonly age: number;
     readonly personality: readonly string[];
     readonly expertise: readonly string[];
   }): Promise<{
@@ -83,7 +84,10 @@ export function createCreatorCloneService(input: {
       });
       const displayName = text(request.displayName, "displayName", 120);
       const biography = text(request.biography, "biography", 1000);
-      const languages = list(request.languages, "languages", 16);
+      const gender = text(request.gender, "gender", 32);
+      if (!Number.isSafeInteger(request.age) || request.age < 1 || request.age > 120) {
+        throw new RangeError("age is invalid");
+      }
       const personality = list(request.personality, "personality", 24);
       const expertise = list(request.expertise, "expertise", 32);
       const at = nowInstant();
@@ -97,7 +101,7 @@ export function createCreatorCloneService(input: {
         constitution: {
           schemaVersion: 1,
           displayName,
-          biography,
+          biography: `${biography}\n\nPhysical profile: ${gender}, age ${request.age}.`,
           personality,
           boundaries: [
             "Do not claim capabilities or completed actions without runtime evidence.",
@@ -105,7 +109,9 @@ export function createCreatorCloneService(input: {
             "Protect the owner's private information and follow explicit disclosure settings.",
           ],
           disclosurePolicy: {},
-          languages,
+          // "mul" means unrestricted multilingual behavior. Runtime responses
+          // mirror the language the user is currently using; it is not a preference.
+          languages: ["mul"],
           voiceReferences: [],
           appearanceReferences: [],
           expertise,
