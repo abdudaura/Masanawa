@@ -1017,6 +1017,22 @@ export async function startGatewayService(
   const flutterwaveBills = billingEnabled && flutterwaveSecretKey && flutterwaveTransport
     ? new FlutterwaveBillsClient({ secretKey: flutterwaveSecretKey, transport: flutterwaveTransport, country: "NG" })
     : undefined;
+
+  if (billingEnabled && flutterwaveBills && env.MASANAWA_FLUTTERWAVE_VERIFY_ON_START === "true") {
+    const categories = await flutterwaveBills.listCategories();
+    if (categories.length < 1) {
+      throw new Error("Flutterwave billing verification returned an empty catalog");
+    }
+    process.stdout.write(
+      `${JSON.stringify({
+        event: "flutterwave.billing_verified",
+        categoryCount: categories.length,
+        relay: Boolean(flutterwaveRelayUrl),
+        relayProtocol: flutterwaveRelayProtocol,
+      })}\n`,
+    );
+  }
+
   const flutterwaveFunding = billingEnabled && flutterwaveSecretKey && flutterwaveTransport
     ? new FlutterwaveFundingClient({ secretKey: flutterwaveSecretKey, transport: flutterwaveTransport })
     : undefined;
