@@ -231,60 +231,67 @@ class ActivityScreen extends ConsumerWidget {
             }
             final characterId = view.characterId;
             final pendingOwnerRequest = _firstPendingOwnerRequest(view.items);
-            return ListView(
+            final items = view.items;
+            return ListView.builder(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
-              children: [
-                _Summary(summary: view.summary),
-                const SizedBox(height: 18),
-                if (view.summary.pendingOwnerRequests > 0) ...[
-                  _NeedsYou(
-                    count: view.summary.pendingOwnerRequests,
-                    onTap: characterId != null && pendingOwnerRequest != null
+              itemCount: items.length + 1,
+              itemBuilder: (context, index) {
+                if (index > 0) {
+                  final item = items[index - 1];
+                  return _ActivityTile(
+                    item: item,
+                    onTap: characterId != null &&
+                            item.kind == TwinActivityKind.ownerRequest &&
+                            item.referenceId != null
                         ? () => _manageOwnerRequest(
                               context,
                               ref,
                               characterId: characterId,
-                              item: pendingOwnerRequest,
+                              item: item,
                             )
                         : null,
-                  ),
-                  const SizedBox(height: 18),
-                ],
-                Text(
-                  'Recent',
-                  style: TextStyle(
-                    color: u.textPrimary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                if (view.items.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 28),
-                    child: Text(
-                      'Nothing yet. Share your twin and activity will appear here.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: u.textMuted),
+                  );
+                }
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _Summary(summary: view.summary),
+                    const SizedBox(height: 18),
+                    if (view.summary.pendingOwnerRequests > 0) ...[
+                      _NeedsYou(
+                        count: view.summary.pendingOwnerRequests,
+                        onTap: characterId != null && pendingOwnerRequest != null
+                            ? () => _manageOwnerRequest(
+                                  context,
+                                  ref,
+                                  characterId: characterId,
+                                  item: pendingOwnerRequest,
+                                )
+                            : null,
+                      ),
+                      const SizedBox(height: 18),
+                    ],
+                    Text(
+                      'Recent',
+                      style: TextStyle(
+                        color: u.textPrimary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  )
-                else
-                  ...view.items.map(
-                    (item) => _ActivityTile(
-                      item: item,
-                      onTap: characterId != null &&
-                              item.kind == TwinActivityKind.ownerRequest &&
-                              item.referenceId != null
-                          ? () => _manageOwnerRequest(
-                                context,
-                                ref,
-                                characterId: characterId,
-                                item: item,
-                              )
-                          : null,
-                    ),
-                  ),
-              ],
+                    const SizedBox(height: 8),
+                    if (items.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 28),
+                        child: Text(
+                          'Nothing yet. Share your twin and activity will appear here.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: u.textMuted),
+                        ),
+                      ),
+                  ],
+                );
+              },
             );
           },
         ),
