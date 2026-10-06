@@ -23,7 +23,7 @@ import type {
   UserRelationshipProvisioner,
   UserRelationshipReader,
 } from "@masanawa/identity";
-import type { BillingQuoteRepository, CommerceRepository, CryptoRepository } from "@masanawa/commerce";
+import type { BillingQuoteRepository, CommerceRepository, CryptoRepository, NgnWalletRepository } from "@masanawa/commerce";
 import {
   parseCanonicalId,
   readRequiredEnv,
@@ -70,6 +70,7 @@ import {
   createPostgresMobilePushRepository,
   createPostgresMobileAgentActivityRepository,
   createPostgresBillingQuoteRepository,
+  createPostgresNgnWalletRepository,
   createPostgresBillingFulfillmentStore,
   createPostgresBillingWebhookRepository,
   createPostgresTwinProfileRepository,
@@ -164,6 +165,10 @@ import {
   type BillingCheckoutService,
 } from "./billing_checkout.js";
 import {
+  createBillingWalletService,
+  type BillingWalletService,
+} from "./billing_wallet.js";
+import {
   ensureDefaultPlatformAgents,
   type PlatformAgentIdentityProvisioner,
 } from "./platform_agent_bootstrap.js";
@@ -207,6 +212,7 @@ export interface ServiceDatabaseDependency {
     identity: Readonly<{ tenantId: string; userId: string }>,
   ) => BillingFulfillmentStore;
   readonly billingWebhooks?: ReturnType<typeof createPostgresBillingWebhookRepository>;
+  readonly ngnWallet?: NgnWalletRepository;
   readonly twinProfiles?: ReturnType<typeof createPostgresTwinProfileRepository>;
   readonly twinEconomy?: ReturnType<typeof createPostgresTwinRuntimeRepository>;
   readonly twinEvents?: ReturnType<typeof createPostgresTwinEconomyEventStore>;
@@ -346,6 +352,7 @@ function createDefaultDatabaseDependency(
     billingStore: (identity: Readonly<{ tenantId: string; userId: string }>) =>
       createPostgresBillingFulfillmentStore(database.pool, identity),
     billingWebhooks: createPostgresBillingWebhookRepository(database.pool),
+    ngnWallet: createPostgresNgnWalletRepository(database.pool),
     twinProfiles: createPostgresTwinProfileRepository(database.pool),
     twinEconomy: createPostgresTwinRuntimeRepository(database.pool),
     twinEvents: createPostgresTwinEconomyEventStore(database.pool),
@@ -1039,6 +1046,7 @@ export async function startGatewayService(
 
   let composedBillingFinancial: BillingFinancialService | undefined = options.appOptions?.billingFinancial;
   let composedBillingCheckout: BillingCheckoutService | undefined = options.appOptions?.billingCheckout;
+  let composedBillingWallet: BillingWalletService | undefined = options.appOptions?.billingWallet;
 
   if (billingEnabled && (!composedBillingFinancial || !composedBillingCheckout)) {
     const webhookHash = env.FLUTTERWAVE_WEBHOOK_SECRET_HASH?.trim();
@@ -1090,7 +1098,18 @@ export async function startGatewayService(
   const nowPaymentsApiKey = env.NOWPAYMENTS_API_KEY?.trim();
   const nowPaymentsIpnSecret = env.NOWPAYMENTS_IPN_SECRET?.trim();
   const nowPaymentsEmail = env.NOWPAYMENTS_PAYOUT_EMAIL?.trim();
-  const nowPaymentsPassword = env.NOWPAYMENTS_PAYOUT_PASSWORD?.trim();
+  const nowPaymentsPassword = env.NOWPAYMENTS_PAYOUT_PASSWORD?.trim();    if (database.ngnWallet && billingCustomerAuthorizer && flutterwaveFunding && composedBillingFinancial && webhookHash) {
+      composedBillingWallet ??= createBillingWalletService({
+        sessions: billingCustomerAuthorizer,
+        quotes: database.billingQuotes,
+        wallet: database.ngnWallet,
+        funding: flutterwaveFunding,
+        billing: composedBillingFinancial,
+        webhookSecretHash: webhookHash,
+      });
+    }
+
+
   const nowPaymentsRelayToken = env.MASANAWA_NOWPAYMENTS_RELAY_TOKEN?.trim();
   const nowPaymentsRelayBaseUrl =
     env.NOWPAYMENTS_RELAY_URL?.trim() ||
@@ -1400,6 +1419,7 @@ export async function startGatewayService(
       ...(customerAuth ? { customerAuth } : {}),
       ...(composedBillingFinancial ? { billingFinancial: composedBillingFinancial } : {}),
       ...(composedBillingCheckout ? { billingCheckout: composedBillingCheckout } : {}),
+      ...(composedBillingWallet ? { billingWallet: composedBillingWallet } : {}),
       ...(composedFinancial ? { financial: composedFinancial } : {}),
       ...(twinProduction ? { twinProduction } : {}),
       ...(composedDirectory ? { agentDirectory: composedDirectory } : {}),
