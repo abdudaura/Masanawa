@@ -91,7 +91,7 @@ class _EmptyTwin extends StatelessWidget {
         ),
         const SizedBox(height: 20),
         Text(
-          'Create your digital twin',
+          'Create your Twin',
           textAlign: TextAlign.center,
           style: TextStyle(
             color: u.textPrimary,
@@ -101,7 +101,7 @@ class _EmptyTwin extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Teach it about you, share it, and let people talk to your AI representative.',
+          'Set the basics, then talk with Gwani so your Twin can learn how you want it to behave.',
           textAlign: TextAlign.center,
           style: TextStyle(color: u.textMuted, height: 1.45),
         ),
@@ -485,30 +485,6 @@ class _TwinBody extends ConsumerWidget {
             );
           },
         ),
-        if (profile.languages.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          Text(
-            'Languages',
-            style: TextStyle(
-              color: u.textPrimary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: profile.languages
-                .map(
-                  (language) => Chip(
-                    label: Text(language),
-                    side: BorderSide(color: u.structuralBorder),
-                    backgroundColor: u.surfaceCard,
-                  ),
-                )
-                .toList(),
-          ),
-        ],
       ],
     );
   }
