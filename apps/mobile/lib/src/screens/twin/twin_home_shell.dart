@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -51,6 +53,37 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
     context.push('/chat/${Uri.encodeComponent(characterId)}?entry=teach');
   }
 
+  AgentDirectoryEntry? _supportAgent() {
+    final agents = ref.read(agentDirectoryProvider).agents;
+    for (final agent in agents) {
+      if (agent.defaultPlatformAgent) return agent;
+    }
+    for (final agent in agents) {
+      if (agent.supportAgent) return agent;
+    }
+    for (final agent in agents) {
+      if (agent.displayName.trim().toLowerCase() == 'gwani') return agent;
+    }
+    return null;
+  }
+
+  Future<void> _openInternetCafe() async {
+    var agent = _supportAgent();
+    if (agent == null) {
+      await ref.read(agentDirectoryProvider.notifier).refresh();
+      if (!mounted) return;
+      agent = _supportAgent();
+    }
+    if (agent == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gwani isn’t available right now.')),
+      );
+      return;
+    }
+    context.push(
+      '/chat/${Uri.encodeComponent(agent.characterId)}?entry=cafe',
+    );
+  }
 
   Future<void> _shareTwin(TwinProfile profile) async {
     final url = profile.publicUrl;
@@ -119,12 +152,15 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
           onShareTwin: _shareTwin,
           onOpenSettings: () => context.push('/settings'),
         ),
-      1 => ExploreScreen(onOpenTwin: _openTwin),
+      1 => ExploreScreen(
+          onOpenTwin: _openTwin,
+          onOpenInternetCafe: () => unawaited(_openInternetCafe()),
+        ),
       2 => const ActivityScreen(),
       3 => WalletScreen(
           onSend: _sendCredits,
           onWithdraw: () => context.push('/crypto'),
-          onBuyBills: () => context.push('/billing'),
+          onBuyBills: () => unawaited(_openInternetCafe()),
           onOpenCrypto: () => context.push('/crypto'),
         ),
       _ => const SizedBox.shrink(),
