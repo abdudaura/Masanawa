@@ -44,6 +44,8 @@ Current `Baatiku/OmniSIP` main exposes authenticated local-control endpoints for
 - USSD response text is transport evidence only, never billing/accounting truth;
 - control token remains behind the injected local-control edge and never enters command/result values.
 
-State: CLAIMED. No implementation changes beyond this claim.
+State: IMPLEMENTING. OmniSIP SMS/USSD command validation, explicit-SIM readiness admission, asynchronous USSD reconciliation, ambiguity handling and focused contract tests are committed. Inbound routing, Android permission wiring, durable reconciliation and shared production composition remain excluded.
+
+Implementation head before handoff: `f9a5bc86f39315394221e50db3be5a13d7fecc03`.
 
 Last update: 2026-10-06.
