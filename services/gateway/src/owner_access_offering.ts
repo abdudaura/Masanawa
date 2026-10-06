@@ -67,10 +67,7 @@ export function createOwnerAccessOfferingService(input: {
     if (
       modalities.length !== request.modalities.length ||
       modalities.length < 1 ||
-      modalities.some(
-        (value) =>
-          value !== "text" && value !== "voice" && value !== "video",
-      )
+      modalities.some((value) => value !== "text")
     ) {
       throw new TypeError("modalities are invalid");
     }
@@ -120,7 +117,7 @@ export function createOwnerAccessOfferingService(input: {
 
       return Object.freeze({
         enabled: false,
-        modalities: Object.freeze(["voice"] as const),
+        modalities: Object.freeze(["text"] as const),
         durationOptionsMinutes: Object.freeze([defaultDuration]),
         priceCreditsPerMinute: input.bounds.minPriceCreditsPerMinute,
         revision: 0,
