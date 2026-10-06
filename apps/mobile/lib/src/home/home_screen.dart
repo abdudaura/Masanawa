@@ -270,7 +270,7 @@ class _AssistantCard extends StatelessWidget {
                 enabled: available,
                 onTap: model == null || onAction == null
                     ? null
-                    : () => onAction!(model, HomeAssistantAction.voiceNote),
+                    : () => onAction!(model, HomeAssistantAction.talk),
               ),
               _AssistantAction(
                 tooltip: 'Live voice',
