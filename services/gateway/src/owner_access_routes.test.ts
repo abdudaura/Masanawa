@@ -43,6 +43,19 @@ describe("owner access routes", () => {
       async latest() {
         return null;
       },
+      async heartbeat() {
+        return {
+          attendanceVerified: false,
+          verifiedSeconds: 0,
+          presence: [],
+        };
+      },
+      async messages() {
+        return [];
+      },
+      async sendMessage() {
+        throw new Error("not used");
+      },
     };
     const app = Fastify();
     apps.push(app);
@@ -54,7 +67,7 @@ describe("owner access routes", () => {
       payload: {
         characterId:
           "character_00000000-0000-4000-8000-000000000003",
-        modality: "voice",
+        modality: "text",
         durationMinutes: 20,
       },
     });
@@ -63,4 +76,79 @@ describe("owner access routes", () => {
     expect(quoted).toBe(true);
     expect(response.json().trialDurationDays).toBe(7);
   });
+
+  it("routes private text-room heartbeat and messages", async () => {
+    const calls: string[] = [];
+    const service: OwnerAccessService = {
+      async quote() { throw new Error("not used"); },
+      async request() { throw new Error("not used"); },
+      async act() { throw new Error("not used"); },
+      async read() { return null; },
+      async latest() { return null; },
+      async heartbeat(input) {
+        calls.push("heartbeat:" + input.requestId);
+        return {
+          attendanceVerified: true,
+          verifiedSeconds: 70,
+          presence: [],
+        };
+      },
+      async messages(input) {
+        calls.push("messages:" + input.requestId);
+        return [];
+      },
+      async sendMessage(input) {
+        calls.push("send:" + input.messageId);
+        return {
+          requestId: input.requestId,
+          messageId: input.messageId,
+          senderUserId: "user-requester",
+          body: input.body,
+          sentAt: "2026-10-05T10:00:00Z",
+        };
+      },
+    };
+    const app = Fastify();
+    apps.push(app);
+    registerOwnerAccessRoutes(app, service);
+    const requestId = "owner-request-room-123";
+    const characterId =
+      "character_00000000-0000-4000-8000-000000000003";
+
+    const heartbeat = await app.inject({
+      method: "POST",
+      url: "/agent/twin/owner-access/" + requestId + "/heartbeat",
+      payload: { characterId },
+    });
+    expect(heartbeat.statusCode).toBe(200);
+    expect(heartbeat.json().attendanceVerified).toBe(true);
+
+    const messages = await app.inject({
+      method: "GET",
+      url:
+        "/agent/twin/owner-access/" +
+        requestId +
+        "/messages?characterId=" +
+        encodeURIComponent(characterId),
+    });
+    expect(messages.statusCode).toBe(200);
+
+    const sent = await app.inject({
+      method: "POST",
+      url: "/agent/twin/owner-access/" + requestId + "/messages",
+      payload: {
+        characterId,
+        messageId: "message-client-123",
+        body: "Hello",
+      },
+    });
+    expect(sent.statusCode).toBe(200);
+    expect(sent.json().body).toBe("Hello");
+    expect(calls).toEqual([
+      "heartbeat:" + requestId,
+      "messages:" + requestId,
+      "send:message-client-123",
+    ]);
+  });
+
 });
