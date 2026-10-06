@@ -211,6 +211,7 @@ class ChatThread {
     this.scrollOffset = 0,
     this.draftAttachments = const [],
     this.draftVoice,
+    this.twinInterviewFacts = const <String, dynamic>{},
   }) : updatedAt = updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
 
   final String characterId;
@@ -226,6 +227,7 @@ class ChatThread {
   final double scrollOffset;
   final List<ChatAttachment> draftAttachments;
   final ChatAttachment? draftVoice;
+  final Map<String, dynamic> twinInterviewFacts;
 
   AiChatMessage? get lastMessage => messages.isEmpty ? null : messages.last;
 
@@ -243,6 +245,7 @@ class ChatThread {
     List<ChatAttachment>? draftAttachments,
     ChatAttachment? draftVoice,
     bool clearDraftVoice = false,
+    Map<String, dynamic>? twinInterviewFacts,
   }) => ChatThread(
     characterId: characterId,
     messages: messages ?? this.messages,
@@ -257,6 +260,7 @@ class ChatThread {
     scrollOffset: scrollOffset ?? this.scrollOffset,
     draftAttachments: draftAttachments ?? this.draftAttachments,
     draftVoice: clearDraftVoice ? null : (draftVoice ?? this.draftVoice),
+    twinInterviewFacts: twinInterviewFacts ?? this.twinInterviewFacts,
   );
 
   Map<String, dynamic> toJson() => {
@@ -274,6 +278,8 @@ class ChatThread {
     if (draftAttachments.isNotEmpty)
       'draftAttachments': [for (final item in draftAttachments) item.toJson()],
     if (draftVoice != null) 'draftVoice': draftVoice!.toJson(),
+    if (twinInterviewFacts.isNotEmpty)
+      'twinInterviewFacts': twinInterviewFacts,
   };
 
   factory ChatThread.fromJson(Map<String, dynamic> json) {
@@ -303,6 +309,11 @@ class ChatThread {
               (json['draftVoice'] as Map).cast<String, dynamic>(),
             )
           : null,
+      twinInterviewFacts: json['twinInterviewFacts'] is Map
+          ? Map<String, dynamic>.unmodifiable(
+              (json['twinInterviewFacts'] as Map).cast<String, dynamic>(),
+            )
+          : const <String, dynamic>{},
     );
   }
 }
@@ -1702,6 +1713,23 @@ class AiChatController extends Notifier<AiChatState> {
         characterId: thread.copyWith(
           draftVoice: attachment,
           clearDraftVoice: attachment == null,
+        ),
+      },
+    );
+    _save();
+  }
+
+  void setTwinInterviewFacts(
+    String characterId,
+    Map<String, dynamic> facts,
+  ) {
+    final thread = threadOf(characterId);
+    state = state.copyWith(
+      threads: {
+        ...state.threads,
+        characterId: thread.copyWith(
+          twinInterviewFacts:
+              Map<String, dynamic>.unmodifiable(Map<String, dynamic>.from(facts)),
         ),
       },
     );
