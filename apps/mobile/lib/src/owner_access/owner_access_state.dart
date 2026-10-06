@@ -131,6 +131,7 @@ class OwnerAccessController extends StateNotifier<OwnerAccessUiState> {
     required String requestId,
     required String action,
     DateTime? scheduledFor,
+    String? disputeReason,
   }) async {
     state = OwnerAccessUiState(
       quote: state.quote,
@@ -143,6 +144,7 @@ class OwnerAccessController extends StateNotifier<OwnerAccessUiState> {
         requestId: requestId,
         action: action,
         scheduledFor: scheduledFor,
+        disputeReason: disputeReason,
       );
       state = OwnerAccessUiState(quote: state.quote, request: request);
       return request;
