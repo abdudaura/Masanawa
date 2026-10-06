@@ -15,7 +15,7 @@ export interface MyTwinProfileRecord {
   readonly publicId: string;
   readonly displayName: string;
   readonly bio: string;
-  readonly avatarUrl: string | null;
+  readonly avatarUrl?: string | null;
   readonly languages: readonly string[];
   readonly discoverable: boolean;
   readonly revision: number;
@@ -170,7 +170,7 @@ export function createMyTwinProjectionService(input: {
       characterId: profile.characterId,
       displayName: profile.displayName,
       bio: profile.bio,
-      avatarUrl: profile.avatarUrl,
+      avatarUrl: profile.avatarUrl ?? null,
       publicUrl: `${baseUrl}/${encodeURIComponent(profile.publicId)}`,
       discoverable: profile.discoverable,
       voiceEnabled: features.voiceEnabled === true,
