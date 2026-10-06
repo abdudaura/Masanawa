@@ -47,6 +47,10 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
     context.push('/chat/${Uri.encodeComponent(characterId)}');
   }
 
+  void _teachOwnedTwin(String characterId) {
+    context.push('/chat/${Uri.encodeComponent(characterId)}?entry=teach');
+  }
+
 
   Future<void> _shareTwin(TwinProfile profile) async {
     final url = profile.publicUrl;
@@ -111,7 +115,7 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
       0 => MyTwinScreen(
           onCreateTwin: () => context.push('/clone'),
           onTalkToTwin: _openOwnedTwin,
-          onTeachTwin: _openOwnedTwin,
+          onTeachTwin: _teachOwnedTwin,
           onShareTwin: _shareTwin,
           onOpenSettings: () => context.push('/settings'),
         ),
