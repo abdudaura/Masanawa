@@ -617,6 +617,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
                 characterVersionId: Type.String(),
                 relationshipId: Type.String(),
                 displayName: Type.String(),
+                publicUrl: Type.Union([Type.String(), Type.Null()]),
               },
               { additionalProperties: false },
             ),
