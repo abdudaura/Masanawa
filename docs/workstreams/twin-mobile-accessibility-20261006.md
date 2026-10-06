@@ -47,3 +47,21 @@ Implemented on PR #295:
 - GitHub Foundation CI and Mobile Build still terminate before producing downloadable job logs, matching the repository-wide runner failure.
 - The local execution container cannot resolve `github.com`, so an exact-head Flutter checkout cannot be run there.
 - TWIN-076 is therefore **implemented but not yet qualified**; do not mark it complete until Flutter analyze/tests and a real-device narrow-screen pass succeed.
+
+
+## Final implementation delta
+
+Additional hardening after the first checkpoint:
+
+- My Twin moves price detail into the subtitle at large text so trailing text cannot squeeze the setting title.
+- Explore removes the decorative chevron at large text to preserve content width.
+- Activity and Wallet entries expose explicit screen-reader labels with event/value context.
+- Activity and Wallet histories now use lazy `ListView.builder` construction, reducing widget work on long histories and low-end Android devices.
+- No text-scale clamping was introduced; system accessibility scaling remains authoritative.
+
+Integration dependency published on PR #136:
+
+- customer Settings still exposes `Default Masanawa agent`; TWIN-075 says ordinary Settings should be limited to account/privacy/security/language/help. #295 did not touch that #136-owned path.
+
+Implementation status: **complete on this lane**.
+Qualification status: **blocked externally** until a working Flutter runner/device is available.
