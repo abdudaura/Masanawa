@@ -15,7 +15,8 @@ one item explicitly listed in #92's handoff: authorized inbound media fetch.
 
 - `adapters/channels/messaging/src/media-fetch.ts` (new)
 - `adapters/channels/messaging/src/media-fetch.test.ts` (new)
-- `adapters/channels/messaging/src/index.ts` (media-fetch export only)
+- `adapters/channels/messaging/src/index.ts` (media-fetch/provider-edge exports only)
+- `adapters/channels/messaging/src/whatsapp-media-edge.ts` (new)
 - `docs/CHANNEL-MEDIA-FETCH.md` (new)
 - `docs/workstreams/channel-media-fetch-20261006.md`
 
@@ -63,3 +64,16 @@ Remaining integration:
 - persist admitted media linkage and feed returned bytes into canonical file/perception
   admission;
 - no live provider credential or webhook deployment is claimed here.
+
+
+## Active continuation — provider media orchestration
+
+The same lease is renewed to implement the concrete provider-side media orchestration
+behind the existing authenticated edge contract:
+
+- WhatsApp: exact file id metadata lookup -> authenticated opaque download reference ->
+  bounded byte fetch;
+- Telegram: exact file id getFile lookup -> opaque file path -> bounded byte fetch.
+
+Provider credentials, access tokens, signed URLs and raw download references remain inside
+the injected provider client. No Gateway/env/secret-store composition is added.
