@@ -163,7 +163,12 @@ Post-session dispute/reconciliation is now implemented for paid text Human Acces
 owner earnings remain pending through a configurable dispute window, requester disputes
 require a reason and must arrive before release, admin resolution can release or refund
 through replay-safe ledger plans, undisputed earnings release automatically after the
-window, and both parties receive lifecycle notifications. Still required: real
+window, and both parties receive lifecycle notifications. Human Access privacy is now explicit in the room heartbeat/mobile contract: it is a
+real-person private text session, Masanawa recording is disabled, and the configured
+message-retention period is disclosed to participants. This closes the implementation
+portion of TWIN-096 without claiming device/privacy acceptance.
+
+Still required: real
 voice/video human transport if/when added, plus production/device qualification.
 
 ### Phase 6 — Mobile simplification
