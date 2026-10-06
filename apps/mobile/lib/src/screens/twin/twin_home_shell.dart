@@ -31,7 +31,13 @@ class TwinHomeShell extends ConsumerStatefulWidget {
 }
 
 class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
-  late int _index = widget.initialIndex.clamp(0, 3).toInt();
+  late int _index;
+
+  @override
+  void initState() {
+    super.initState();
+    _index = widget.initialIndex.clamp(0, 3).toInt();
+  }
 
   void _openTwin(TwinDirectoryEntry twin) {
     ref.read(agentDirectoryProvider.notifier).primeTwin(twin);
@@ -106,6 +112,11 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
           : () => _openMyTwinSurface(home.valueOrNull!.myTwin!),
       onCreateMyTwin: () => context.push('/clone'),
       onOpenContinuation: (item) {
+        final characterId = item.characterId;
+        if (characterId != null && characterId.isNotEmpty) {
+          context.push('/chat/' + Uri.encodeComponent(characterId));
+          return;
+        }
         final roomId = item.roomId;
         if (roomId == 'room.internet-cafe') context.push('/billing');
       },
