@@ -109,11 +109,6 @@ class _HomeReady extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
       children: [
-        const _SectionHeader(
-          title: 'Your assistants',
-          subtitle: 'Talk, send a voice note, or start live voice.',
-        ),
-        const SizedBox(height: 10),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -134,9 +129,7 @@ class _HomeReady extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 22),
-        const _SectionHeader(title: 'Quick services'),
-        const SizedBox(height: 10),
+        const SizedBox(height: 14),
         _QuickServices(onTap: onQuickService),
         if (snapshot.myTwin case final twin?) ...[
           const SizedBox(height: 22),
@@ -146,12 +139,7 @@ class _HomeReady extends StatelessWidget {
           ),
         ],
         if (snapshot.continuations.isNotEmpty) ...[
-          const SizedBox(height: 22),
-          const _SectionHeader(
-            title: 'Continue',
-            subtitle: 'Pick up where you left off.',
-          ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 14),
           ...snapshot.continuations.map(
             (item) => Padding(
               padding: const EdgeInsets.only(bottom: 8),
@@ -165,20 +153,24 @@ class _HomeReady extends StatelessWidget {
           ),
         ],
         const SizedBox(height: 14),
-        const _SectionHeader(
-          title: 'Rooms',
-          subtitle: 'Choose a space for what you want to do.',
-        ),
-        const SizedBox(height: 8),
-        ...snapshot.rooms.map(
-          (room) => Padding(
+        for (final room in snapshot.rooms) ...[
+          Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: _RoomCard(
               room: room,
               onTap: onOpenRoom == null ? null : () => onOpenRoom!(room),
             ),
           ),
-        ),
+          if (room.iconKey == 'internet_cafe')
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _CryptoTokensCard(
+                onTap: onQuickService == null
+                    ? null
+                    : () => onQuickService!(HomeQuickService.crypto),
+              ),
+            ),
+        ],
       ],
     );
     return onRefresh == null
@@ -273,12 +265,12 @@ class _AssistantCard extends StatelessWidget {
                     : () => onAction!(model, HomeAssistantAction.chat),
               ),
               _AssistantAction(
-                tooltip: 'Voice note',
+                tooltip: 'Talk',
                 icon: Icons.mic_none_rounded,
                 enabled: available,
                 onTap: model == null || onAction == null
                     ? null
-                    : () => onAction!(model, HomeAssistantAction.voiceNote),
+                    : () => onAction!(model, HomeAssistantAction.talk),
               ),
               _AssistantAction(
                 tooltip: 'Live voice',
@@ -409,6 +401,34 @@ class _QuickServiceButton extends StatelessWidget {
   }
 }
 
+class _CryptoTokensCard extends StatelessWidget {
+  const _CryptoTokensCard({required this.onTap});
+
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    return Material(
+      color: u.surfaceCard,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(color: u.structuralBorder),
+      ),
+      child: ListTile(
+        key: const ValueKey('home-room-crypto-tokens'),
+        onTap: onTap,
+        leading: CircleAvatar(
+          backgroundColor: u.surfaceMuted,
+          child: Icon(Icons.currency_bitcoin, color: u.brand),
+        ),
+        title: const Text('Crypto Tokens'),
+        trailing: const Icon(Icons.chevron_right),
+      ),
+    );
+  }
+}
+
 class _TwinCard extends StatelessWidget {
   const _TwinCard({required this.model, required this.onOpen});
 
@@ -522,35 +542,6 @@ class _RoomCard extends StatelessWidget {
         'groups' => Icons.groups_outlined,
         _ => Icons.grid_view_outlined,
       };
-}
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title, this.subtitle});
-
-  final String title;
-  final String? subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    final u = context.masanawa;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            color: u.textPrimary,
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        if (subtitle case final value?) ...[
-          const SizedBox(height: 2),
-          Text(value, style: TextStyle(color: u.textMuted, fontSize: 12)),
-        ],
-      ],
-    );
-  }
 }
 
 class _HomeLoading extends StatelessWidget {

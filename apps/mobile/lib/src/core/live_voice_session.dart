@@ -32,6 +32,8 @@ class LiveVoiceSession with WidgetsBindingObserver {
   final AudioRecorder _recorder;
   final _state = StreamController<LiveVoiceState>.broadcast(sync: true);
   final _errors = StreamController<String>.broadcast(sync: true);
+  final _transcripts = StreamController<String>.broadcast(sync: true);
+  final _turnCompletions = StreamController<void>.broadcast(sync: true);
   final Completer<void> _ready = Completer<void>();
   WebSocket? _socket;
   StreamSubscription<Uint8List>? _micSub;
@@ -51,6 +53,8 @@ class LiveVoiceSession with WidgetsBindingObserver {
 
   Stream<LiveVoiceState> get states => _state.stream;
   Stream<String> get errors => _errors.stream;
+  Stream<String> get transcripts => _transcripts.stream;
+  Stream<void> get turnCompletions => _turnCompletions.stream;
   Future<void> get ready => _ready.future;
   bool get speakerEnabled => _speaker;
   bool get muted => _muted;
@@ -154,6 +158,7 @@ class LiveVoiceSession with WidgetsBindingObserver {
             'model': 'models/${grant.model}',
             'generationConfig': {
               'responseModalities': ['AUDIO'],
+              'outputAudioTranscription': {},
               'speechConfig': {
                 'voiceConfig': {
                   'prebuiltVoiceConfig': {'voiceName': grant.voiceName},
@@ -253,6 +258,28 @@ class LiveVoiceSession with WidgetsBindingObserver {
           throw StateError('Audio routing is unavailable.');
         }
         if (_closed) return;
+        // Only model output transcription is enabled. User microphone audio is
+        // intentionally never requested or rendered as text.
+        socket.add(
+          jsonEncode({
+            'clientContent': {
+              'turns': [
+                {
+                  'role': 'user',
+                  'parts': [
+                    {
+                      'text':
+                          'Start this live conversation now with a brief natural greeting, '
+                          'then ask how you can help. Speak in the language most appropriate '
+                          'for the user and keep the opening short.',
+                    },
+                  ],
+                },
+              ],
+              'turnComplete': true,
+            },
+          }),
+        );
         await _beginMicrophone();
         if (!_ready.isCompleted && !_closed) {
           _ready.complete();
@@ -272,6 +299,14 @@ class LiveVoiceSession with WidgetsBindingObserver {
         if (_closed) return;
         _state.add(LiveVoiceState.interrupted);
         return;
+      }
+
+      final outputTranscription = server['outputTranscription'];
+      if (outputTranscription is Map) {
+        final transcript = outputTranscription['text'];
+        if (transcript is String && transcript.isNotEmpty) {
+          _transcripts.add(transcript);
+        }
       }
 
       final modelTurn = server['modelTurn'];
@@ -302,6 +337,7 @@ class LiveVoiceSession with WidgetsBindingObserver {
         }
       }
       if (!_closed && server['turnComplete'] == true) {
+        _turnCompletions.add(null);
         _state.add(LiveVoiceState.listening);
       }
     } catch (_) {
@@ -392,5 +428,7 @@ class LiveVoiceSession with WidgetsBindingObserver {
     _state.add(LiveVoiceState.ended);
     await _state.close();
     await _errors.close();
+    await _transcripts.close();
+    await _turnCompletions.close();
   }
 }

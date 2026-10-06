@@ -11,8 +11,6 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:mime/mime.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:record/record.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:video_player/video_player.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -45,7 +43,7 @@ import '../../theme/masanawa_theme.dart';
 
 /// One Character conversation. Voice is the primary action while text,
 /// attachments and structured work results remain in the same timeline.
-enum AiChatEntryMode { chat, teach, voiceNote, liveVoice, cafe }
+enum AiChatEntryMode { chat, teach, liveTalk, liveVoice, cafe }
 
 class AiChatScreen extends ConsumerStatefulWidget {
   const AiChatScreen({
@@ -65,17 +63,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   final _input = TextEditingController();
   final _scroll = ScrollController();
   final _imagePicker = ImagePicker();
-  final _recorder = AudioRecorder();
   bool _showEmoji = false;
   bool _hasText = false;
-  bool _recording = false;
-  bool _recordingPaused = false;
-  bool _recordingLocked = false;
-  int _recSeconds = 0;
-  Timer? _recTimer;
-  Timer? _ampTimer;
-  final List<double> _amplitudes = [];
-  ChatAttachment? _pendingVoice;
   List<ChatAttachment> _pendingAttachments = const [];
   AiChatMessage? _replyingTo;
   bool _showSearch = false;
@@ -89,6 +78,18 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   final Map<String, GlobalKey> _messageKeys = {};
   bool _initialEntryHandled = false;
   String? _cafeCategory;
+  LiveVoiceSession? _inlineVoiceSession;
+  StreamSubscription<String>? _inlineTranscriptSub;
+  StreamSubscription<LiveVoiceState>? _inlineVoiceStateSub;
+  StreamSubscription<void>? _inlineTurnSub;
+  PaidVoiceAdmission? _inlinePaidAdmission;
+  AgentShellTransport? _inlineShellTransport;
+  String? _inlineVoiceCharacterId;
+  String _inlineTranscript = '';
+  String _inlineTranscriptHistory = '';
+  String _inlineCurrentTranscript = '';
+  LiveVoiceState _inlineVoiceState = LiveVoiceState.idle;
+  bool _inlineVoiceClosing = false;
 
   @override
   void initState() {
@@ -136,9 +137,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             for (final item in thread.draftAttachments)
               if (File(item.path).existsSync()) item,
           ];
-          final voice = thread.draftVoice;
-          _pendingVoice =
-              voice != null && File(voice.path).existsSync() ? voice : null;
         });
       }
       final offset = thread.scrollOffset;
@@ -158,11 +156,12 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
   @override
   void dispose() {
-    _recTimer?.cancel();
-    _ampTimer?.cancel();
     _scrollPersistTimer?.cancel();
     _walletRefreshTimer?.cancel();
-    _recorder.dispose();
+    _inlineTranscriptSub?.cancel();
+    _inlineVoiceStateSub?.cancel();
+    _inlineTurnSub?.cancel();
+    unawaited(_disposeInlineVoice());
     _input.dispose();
     _search.dispose();
     _scroll.dispose();
@@ -383,6 +382,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
   void _openAttachSheet() {
     FocusScope.of(context).unfocus();
+    final u = context.masanawa;
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -398,7 +398,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 // Token roles: brand → doc, verified → gallery, warning → camera.
                 _AttachOption(
                   icon: Icons.insert_drive_file,
-                  color: const Color(0xFF047857),
+                  color: u.success,
                   label: 'Document',
                   onTap: () {
                     Navigator.of(sheetContext).pop();
@@ -407,7 +407,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 ),
                 _AttachOption(
                   icon: Icons.photo,
-                  color: const Color(0xFF1D4ED8),
+                  color: u.brand,
                   label: 'Gallery',
                   onTap: () {
                     Navigator.of(sheetContext).pop();
@@ -416,7 +416,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 ),
                 _AttachOption(
                   icon: Icons.camera_alt,
-                  color: const Color(0xFFD97706),
+                  color: u.warning,
                   label: 'Camera',
                   onTap: () {
                     Navigator.of(sheetContext).pop();
@@ -425,7 +425,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 ),
                 _AttachOption(
                   icon: Icons.videocam_outlined,
-                  color: const Color(0xFF7C3AED),
+                  color: u.brandStrong,
                   label: 'Video',
                   onTap: () {
                     Navigator.of(sheetContext).pop();
@@ -551,214 +551,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     }
   }
 
-  // ---- Voice notes ---------------------------------------------------------
-
-  Future<void> _toggleRecording() async {
-    if (_recording) {
-      await _stopRecording(send: true);
-      return;
-    }
-    await _startRecording();
-  }
-
-  Future<void> _startRecording() async {
-    if (_recording) return;
-    if (!await _ensurePermission(AppPermission.microphone, 'Microphone')) {
-      return;
-    }
-    try {
-      await _activeVoiceBubble?._pauseFromAnotherBubble();
-      final session = await AudioSession.instance;
-      await session.configure(
-        AudioSessionConfiguration(
-          avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
-          avAudioSessionCategoryOptions:
-              AVAudioSessionCategoryOptions.allowBluetooth,
-          avAudioSessionMode: AVAudioSessionMode.spokenAudio,
-          androidAudioAttributes: const AndroidAudioAttributes(
-            contentType: AndroidAudioContentType.speech,
-            usage: AndroidAudioUsage.voiceCommunication,
-          ),
-          androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
-          androidWillPauseWhenDucked: true,
-        ),
-      );
-      final allowed = await _recorder.hasPermission();
-      if (!allowed) {
-        if (mounted) _comingSoon('Microphone access');
-        return;
-      }
-      final dir = await getTemporaryDirectory();
-      final path =
-          '${dir.path}/masanawa_voice_${DateTime.now().microsecondsSinceEpoch}.m4a';
-      await _recorder.start(
-        const RecordConfig(
-          encoder: AudioEncoder.aacLc,
-          bitRate: 64000,
-          sampleRate: 16000,
-          numChannels: 1,
-        ),
-        path: path,
-      );
-      if (!mounted) return;
-      setState(() {
-        _recording = true;
-        _recordingPaused = false;
-        _recordingLocked = false;
-        _pendingVoice = null;
-        _recSeconds = 0;
-        _amplitudes.clear();
-        _showEmoji = false;
-      });
-      ref.read(aiChatProvider.notifier).setDraftVoice(widget.characterId, null);
-      FocusScope.of(context).unfocus();
-      _recTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-        if (mounted && !_recordingPaused) setState(() => _recSeconds++);
-      });
-      _ampTimer = Timer.periodic(const Duration(milliseconds: 140), (_) async {
-        if (!_recording || _recordingPaused) return;
-        try {
-          final amp = await _recorder.getAmplitude();
-          if (!mounted) return;
-          setState(() {
-            final normalized =
-                ((amp.current + 55) / 55).clamp(0.08, 1.0).toDouble();
-            _amplitudes.add(normalized);
-            if (_amplitudes.length > 42) _amplitudes.removeAt(0);
-          });
-        } catch (_) {}
-      });
-    } catch (_) {
-      if (mounted) _comingSoon('Voice notes');
-    }
-  }
-
-  Future<void> _onMicHoldStart(LongPressStartDetails _) async {
-    await _startRecording();
-  }
-
-  Future<void> _onMicHoldMove(LongPressMoveUpdateDetails details) async {
-    if (!_recording || _recordingLocked) return;
-    final offset = details.offsetFromOrigin;
-    if (offset.dx < -72) {
-      await _stopRecording(send: false);
-      return;
-    }
-    if (offset.dy < -72 && mounted) {
-      setState(() => _recordingLocked = true);
-    }
-  }
-
-  Future<void> _onMicHoldEnd(LongPressEndDetails _) async {
-    if (!_recording || _recordingLocked) return;
-    await _stopRecording(send: true);
-  }
-
-  Future<void> _stopRecording({required bool send}) async {
-    _recTimer?.cancel();
-    _ampTimer?.cancel();
-    String? path;
-    try {
-      path = await _recorder.stop();
-    } catch (_) {
-      path = null;
-    }
-    final seconds = _recSeconds;
-    setState(() {
-      _recording = false;
-      _recSeconds = 0;
-    });
-    if (!send) {
-      if (path != null) {
-        try {
-          await File(path).delete();
-        } catch (_) {}
-      }
-      return;
-    }
-    if (path == null || path.isEmpty) return;
-    final attachment = ChatAttachment(
-      kind: 'voice',
-      path: path!,
-      durationMs: seconds * 1000,
-      waveform: _compactWaveform(_amplitudes),
-    );
-    setState(() {
-      _pendingVoice = attachment;
-    });
-    ref
-        .read(aiChatProvider.notifier)
-        .setDraftVoice(widget.characterId, attachment);
-  }
-
-  Future<void> _togglePauseRecording() async {
-    if (!_recording) return;
-    try {
-      if (_recordingPaused) {
-        await _recorder.resume();
-      } else {
-        await _recorder.pause();
-      }
-      if (mounted) setState(() => _recordingPaused = !_recordingPaused);
-    } catch (_) {}
-  }
-
-  Future<void> _sendPendingVoice() async {
-    final pending = _pendingVoice;
-    if (pending == null) return;
-    final reply = _replyingTo;
-    setState(() {
-      _pendingVoice = null;
-      _replyingTo = null;
-    });
-    final ctl = ref.read(aiChatProvider.notifier);
-    ctl.setDraftVoice(widget.characterId, null);
-    await ctl.sendAttachment(
-      widget.characterId,
-      pending,
-      replyToId: reply?.id,
-      replyPreview: reply == null
-          ? null
-          : (reply.text.isNotEmpty
-              ? reply.text
-              : reply.allAttachments.isNotEmpty
-              ? reply.allAttachments.first.label
-              : 'Message'),
-    );
-  }
-
-  Future<void> _deletePendingVoice() async {
-    final pending = _pendingVoice;
-    setState(() => _pendingVoice = null);
-    ref.read(aiChatProvider.notifier).setDraftVoice(widget.characterId, null);
-    if (pending != null) {
-      try { await File(pending.path).delete(); } catch (_) {}
-    }
-  }
-
-  List<double> _compactWaveform(List<double> source, {int bars = 36}) {
-    if (source.isEmpty) return const [];
-    if (source.length <= bars) return List.unmodifiable(source);
-    final result = <double>[];
-    final bucket = source.length / bars;
-    for (var i = 0; i < bars; i++) {
-      final start = (i * bucket).floor();
-      final end = ((i + 1) * bucket).ceil().clamp(start + 1, source.length);
-      var peak = 0.0;
-      for (var j = start; j < end; j++) {
-        if (source[j] > peak) peak = source[j];
-      }
-      result.add(peak.clamp(0.06, 1.0).toDouble());
-    }
-    return List.unmodifiable(result);
-  }
-
-  String get _recClock {
-    final m = _recSeconds ~/ 60;
-    final s = (_recSeconds % 60).toString().padLeft(2, '0');
-    return '$m:$s';
-  }
-
   // ---- Build ---------------------------------------------------------------
 
   @override
@@ -849,8 +641,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               _input.text = '';
             }
             break;
-          case AiChatEntryMode.voiceNote:
-            unawaited(_startRecording());
+          case AiChatEntryMode.liveTalk:
+            unawaited(_startInlineLiveVoice(agent));
             break;
           case AiChatEntryMode.liveVoice:
             unawaited(_openLiveVoice(agent));
@@ -1016,7 +808,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               ),
             ],
             IconButton(
-              tooltip: 'Live voice',
+              tooltip: 'Call',
               icon: const Icon(Icons.call_outlined),
               onPressed: updateRequired || !liveVoiceEnabled
                   ? null
@@ -1080,6 +872,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                     style: TextStyle(color: u.textPrimary, fontSize: 12),
                   ),
                 ),
+              ),
+            if (widget.entryMode == AiChatEntryMode.cafe)
+              _CafeSuggestionBar(
+                selectedKey: _cafeCategory,
+                onTap: _sendCafeSuggestion,
               ),
             Expanded(
               child: messages.isEmpty && !sending
@@ -1207,10 +1004,14 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   ),
                 ),
               ),
-            if (widget.entryMode == AiChatEntryMode.cafe)
-              _CafeSuggestionBar(
-                selectedKey: _cafeCategory,
-                onTap: _sendCafeSuggestion,
+            if (_inlineVoiceSession != null)
+              _InlineVoicePanel(
+                agentName: agent.displayName,
+                transcript: _inlineTranscript,
+                state: _inlineVoiceState,
+                onStop: () => unawaited(
+                  _stopInlineLiveVoice(outcome: 'completed'),
+                ),
               ),
             if (widget.entryMode == AiChatEntryMode.teach)
               Container(
@@ -1238,28 +1039,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 message: _replyingTo!,
                 onClose: () => setState(() => _replyingTo = null),
               ),
-            if (_recording)
-              _RecordingBar(
-                clock: _recClock,
-                amplitudes: _amplitudes,
-                recording: true,
-                paused: _recordingPaused,
-                locked: _recordingLocked,
-                onDelete: () => _stopRecording(send: false),
-                onPause: _togglePauseRecording,
-                onStop: () => _stopRecording(send: true),
-                onSend: null,
-                onCancelSwipe: () => _stopRecording(send: false),
-                onLockSwipe: () => setState(() => _recordingLocked = true),
-              )
-            else if (_pendingVoice != null)
-              _VoicePreviewBar(
-                attachment: _pendingVoice!,
-                onDelete: _deletePendingVoice,
-                onSend: _sendPendingVoice,
-              )
-            else
-              _Composer(
+            _Composer(
                 controller: _input,
                 hasText: _hasText || _pendingAttachments.isNotEmpty,
                 sending: sending || updateRequired,
@@ -1269,10 +1049,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   ref.read(aiChatProvider.notifier).stopGeneration(widget.characterId);
                 },
                 onAttach: _openAttachSheet,
-                onMic: updateRequired ? () {} : _toggleRecording,
-                onMicHoldStart: _onMicHoldStart,
-                onMicHoldMove: _onMicHoldMove,
-                onMicHoldEnd: _onMicHoldEnd,
+                onMic: updateRequired
+                    ? () {}
+                    : () => unawaited(_startInlineLiveVoice(agent)),
                 onEmojiToggle: () {
                   if (_showEmoji) {
                     setState(() => _showEmoji = false);
@@ -1283,7 +1062,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   }
                 },
               ),
-            if (_showEmoji && !_recording)
+            if (_showEmoji)
               SizedBox(
                 height: 270,
                 child: EmojiPicker(textEditingController: _input),
@@ -1821,6 +1600,268 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       SnackBar(content: Text(ok ? 'Report submitted.' : 'Could not submit report.')),
     );
   }
+  Future<(bool allowed, PaidVoiceAdmission? admission)> _admitInlineVoice(
+    AgentDirectoryEntry agent,
+  ) async {
+    final ownedCharacterId = ref.read(myTwinProvider).valueOrNull?.characterId;
+    final requiresTwinAdmission =
+        !agent.supportAgent && ownedCharacterId != agent.characterId;
+    if (!requiresTwinAdmission) return (true, null);
+
+    final controller = ref.read(paidVoiceControllerProvider.notifier);
+    final quote = await controller.quote(
+      characterId: agent.characterId,
+      expectedSeconds: 5 * 60,
+    );
+    if (quote == null || !mounted) return (false, null);
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Voice with ${agent.displayName}'),
+        content: Text(
+          quote.isTrial
+              ? 'Your ${quote.trialDurationDays}-day voice trial covers this live conversation.'
+              : 'Reserve up to ${quote.spendCapCredits} Credits for about 5 minutes. Only verified live time is charged.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Not now'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(quote.isTrial ? 'Start voice' : 'Accept & start'),
+          ),
+        ],
+      ),
+    );
+    if (accepted != true) return (false, null);
+    final admission = await controller.accept(characterId: agent.characterId);
+    return (admission != null, admission);
+  }
+
+  void _applyInlineTranscriptChunk(String chunk) {
+    final next = chunk.trim();
+    if (next.isEmpty || !mounted) return;
+    setState(() {
+      final current = _inlineCurrentTranscript;
+      if (current.isEmpty || next.startsWith(current)) {
+        _inlineCurrentTranscript = next;
+      } else if (!current.endsWith(next)) {
+        final separator =
+            current.endsWith(' ') || next.startsWith(' ') ? '' : ' ';
+        _inlineCurrentTranscript = current + separator + next;
+      }
+      _inlineTranscript = [
+        if (_inlineTranscriptHistory.trim().isNotEmpty)
+          _inlineTranscriptHistory.trim(),
+        if (_inlineCurrentTranscript.trim().isNotEmpty)
+          _inlineCurrentTranscript.trim(),
+      ].join('\n\n');
+    });
+  }
+
+  void _finishInlineTranscriptTurn() {
+    if (!mounted) return;
+    final current = _inlineCurrentTranscript.trim();
+    if (current.isEmpty) return;
+    setState(() {
+      _inlineTranscriptHistory = [
+        if (_inlineTranscriptHistory.trim().isNotEmpty)
+          _inlineTranscriptHistory.trim(),
+        current,
+      ].join('\n\n');
+      _inlineCurrentTranscript = '';
+      _inlineTranscript = _inlineTranscriptHistory;
+    });
+  }
+
+  Future<void> _disposeInlineVoice() async {
+    if (_inlineVoiceClosing) return;
+    final session = _inlineVoiceSession;
+    if (session == null) return;
+    _inlineVoiceClosing = true;
+    final admission = _inlinePaidAdmission;
+    final shellTransport = _inlineShellTransport;
+    final characterId = _inlineVoiceCharacterId;
+    final paidController = admission == null
+        ? null
+        : ref.read(paidVoiceControllerProvider.notifier);
+    final walletController = admission == null
+        ? null
+        : ref.read(walletProvider.notifier);
+    try {
+      await _inlineTranscriptSub?.cancel();
+      await _inlineVoiceStateSub?.cancel();
+      await _inlineTurnSub?.cancel();
+      _inlineTranscriptSub = null;
+      _inlineVoiceStateSub = null;
+      _inlineTurnSub = null;
+      await session.close();
+      if (admission != null && paidController != null) {
+        await paidController
+            .complete(
+              admissionId: admission.admissionId,
+              outcome: 'interrupted',
+            )
+            .catchError((_) {});
+        unawaited(walletController?.refresh() ?? Future<void>.value());
+      }
+      if (shellTransport != null && characterId != null) {
+        await shellTransport
+            .setPresence(
+              characterId: characterId,
+              state: 'available',
+              durationMs: 60 * 1000,
+            )
+            .catchError((_) {});
+      }
+    } finally {
+      _inlineVoiceSession = null;
+      _inlinePaidAdmission = null;
+      _inlineShellTransport = null;
+      _inlineVoiceCharacterId = null;
+      _inlineVoiceClosing = false;
+    }
+  }
+
+  Future<void> _startInlineLiveVoice(AgentDirectoryEntry agent) async {
+    if (_inlineVoiceSession != null) {
+      await _stopInlineLiveVoice(outcome: 'completed');
+      return;
+    }
+    if (!await _ensurePermission(AppPermission.microphone, 'Microphone')) {
+      return;
+    }
+    final transport = ref.read(agentTransportProvider);
+    if (transport is! AgentShellTransport) {
+      if (mounted) _comingSoon('Live voice');
+      return;
+    }
+    final admissionResult = await _admitInlineVoice(agent);
+    if (!mounted || !admissionResult.$1) return;
+    final paidAdmission = admissionResult.$2;
+
+    final shellTransport = transport as AgentShellTransport;
+    LiveVoiceSession? session;
+    try {
+      await _activeVoiceBubble?._pauseFromAnotherBubble();
+      await shellTransport.setPresence(
+        characterId: agent.characterId,
+        state: 'on_call',
+        durationMs: 5 * 60 * 1000,
+      );
+      final grant = await shellTransport.mintLiveVoiceGrant(
+        agent.characterId,
+        admissionId: paidAdmission?.admissionId,
+      );
+      if (!mounted) return;
+      session = LiveVoiceSession(
+        grant: grant,
+        characterName: agent.displayName,
+      );
+
+      _inlineTranscriptSub?.cancel();
+      _inlineVoiceStateSub?.cancel();
+      _inlineTurnSub?.cancel();
+      _inlineTranscriptSub =
+          session.transcripts.listen(_applyInlineTranscriptChunk);
+      _inlineTurnSub =
+          session.turnCompletions.listen((_) => _finishInlineTranscriptTurn());
+      _inlineVoiceStateSub = session.states.listen((state) {
+        if (!mounted) return;
+        setState(() => _inlineVoiceState = state);
+        if (state == LiveVoiceState.failed || state == LiveVoiceState.ended) {
+          unawaited(_stopInlineLiveVoice(outcome: 'interrupted'));
+        }
+      });
+
+      setState(() {
+        _inlineVoiceSession = session;
+        _inlinePaidAdmission = paidAdmission;
+        _inlineShellTransport = shellTransport;
+        _inlineVoiceCharacterId = agent.characterId;
+        _inlineTranscript = '';
+        _inlineTranscriptHistory = '';
+        _inlineCurrentTranscript = '';
+        _inlineVoiceState = LiveVoiceState.connecting;
+      });
+
+      await Future.wait<void>([session.start(), session.ready]);
+      if (paidAdmission != null) {
+        await ref
+            .read(paidVoiceControllerProvider.notifier)
+            .mediaStarted(admissionId: paidAdmission.admissionId);
+      }
+    } catch (_) {
+      await session?.close();
+      if (mounted) {
+        setState(() {
+          _inlineVoiceSession = null;
+          _inlineVoiceState = LiveVoiceState.failed;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Live voice could not start. Check microphone access and connection.',
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _stopInlineLiveVoice({
+    required String outcome,
+  }) async {
+    if (_inlineVoiceClosing) return;
+    final session = _inlineVoiceSession;
+    if (session == null) return;
+    _inlineVoiceClosing = true;
+    final admission = _inlinePaidAdmission;
+    final shellTransport = _inlineShellTransport;
+    final characterId = _inlineVoiceCharacterId;
+    try {
+      await _inlineTranscriptSub?.cancel();
+      await _inlineVoiceStateSub?.cancel();
+      await _inlineTurnSub?.cancel();
+      _inlineTranscriptSub = null;
+      _inlineVoiceStateSub = null;
+      _inlineTurnSub = null;
+      await session.close();
+      if (admission != null) {
+        await ref
+            .read(paidVoiceControllerProvider.notifier)
+            .complete(
+              admissionId: admission.admissionId,
+              outcome: outcome,
+            )
+            .catchError((_) {});
+        unawaited(ref.read(walletProvider.notifier).refresh());
+      }
+      if (shellTransport != null && characterId != null) {
+        await shellTransport
+            .setPresence(
+              characterId: characterId,
+              state: 'available',
+              durationMs: 60 * 1000,
+            )
+            .catchError((_) {});
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _inlineVoiceSession = null;
+          _inlinePaidAdmission = null;
+          _inlineShellTransport = null;
+          _inlineVoiceCharacterId = null;
+          _inlineVoiceState = LiveVoiceState.idle;
+        });
+      }
+      _inlineVoiceClosing = false;
+    }
+  }
+
   Future<void> _openLiveVoice(AgentDirectoryEntry agent) async {
     if (!await _ensurePermission(AppPermission.microphone, 'Microphone')) {
       return;
@@ -1902,7 +1943,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         context: context,
         isScrollControlled: true,
         enableDrag: false,
-        builder: (_) => _LiveVoiceSheet(
+        backgroundColor: Colors.transparent,
+        builder: (_) => FractionallySizedBox(
+          heightFactor: .92,
+          child: _LiveVoiceSheet(
           agent: agent,
           session: session!,
           maxDuration: paidAdmission == null
@@ -1936,6 +1980,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                     rethrow;
                   }
                 },
+          ),
         ),
       );
     } catch (_) {
@@ -2098,6 +2143,7 @@ class _LiveVoiceSheet extends StatefulWidget {
 }
 
 class _LiveVoiceSheetState extends State<_LiveVoiceSheet> {
+  bool _ringing = true;
   bool _muted = false;
   bool _speaker = true;
   String? _error;
@@ -2110,8 +2156,15 @@ class _LiveVoiceSheetState extends State<_LiveVoiceSheet> {
       if (mounted) setState(() => _error = message);
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(_startVerifiedSession());
+      unawaited(_beginCallExperience());
     });
+  }
+
+  Future<void> _beginCallExperience() async {
+    await Future<void>.delayed(const Duration(milliseconds: 850));
+    if (!mounted) return;
+    setState(() => _ringing = false);
+    await _startVerifiedSession();
   }
 
   Future<void> _startVerifiedSession() async {
@@ -2146,7 +2199,9 @@ class _LiveVoiceSheetState extends State<_LiveVoiceSheet> {
     super.dispose();
   }
 
-  String _label(LiveVoiceState state) => switch (state) {
+  String _label(LiveVoiceState state) {
+    if (_ringing) return 'Calling…';
+    return switch (state) {
         LiveVoiceState.connecting => 'Connecting…',
         LiveVoiceState.listening => _muted ? 'Muted' : 'Listening…',
         LiveVoiceState.speaking => 'Speaking…',
@@ -2155,14 +2210,18 @@ class _LiveVoiceSheetState extends State<_LiveVoiceSheet> {
         LiveVoiceState.ended => 'Call ended',
         LiveVoiceState.idle => 'Ready',
       };
+  }
 
   @override
   Widget build(BuildContext context) {
     final u = context.masanawa;
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 28, 24, 30),
-        child: StreamBuilder<LiveVoiceState>(
+    return Material(
+      color: u.surfaceBg,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 34, 24, 30),
+          child: StreamBuilder<LiveVoiceState>(
           stream: widget.session.states,
           initialData: LiveVoiceState.connecting,
           builder: (context, snapshot) {
@@ -2244,7 +2303,8 @@ class _LiveVoiceSheetState extends State<_LiveVoiceSheet> {
           },
         ),
       ),
-    );
+    ),
+  );
   }
 }
 
@@ -2325,6 +2385,83 @@ class _AttachOption extends StatelessWidget {
   }
 }
 
+class _InlineVoicePanel extends StatelessWidget {
+  const _InlineVoicePanel({
+    required this.agentName,
+    required this.transcript,
+    required this.state,
+    required this.onStop,
+  });
+
+  final String agentName;
+  final String transcript;
+  final LiveVoiceState state;
+  final VoidCallback onStop;
+
+  String get _status => switch (state) {
+        LiveVoiceState.connecting => 'Connecting…',
+        LiveVoiceState.listening => 'Listening…',
+        LiveVoiceState.speaking => 'Speaking…',
+        LiveVoiceState.interrupted => 'Listening…',
+        LiveVoiceState.failed => 'Connection problem',
+        LiveVoiceState.ended => 'Ended',
+        LiveVoiceState.idle => 'Ready',
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(10, 6, 10, 2),
+      padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+      decoration: BoxDecoration(
+        color: u.surfaceCard,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: u.structuralBorder),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Icon(
+            state == LiveVoiceState.speaking
+                ? Icons.graphic_eq_rounded
+                : Icons.mic_rounded,
+            color: u.brand,
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 112),
+              child: SingleChildScrollView(
+                reverse: true,
+                child: Align(
+                  alignment: Alignment.bottomLeft,
+                  child: Text(
+                    transcript.trim().isEmpty
+                        ? '$agentName · $_status'
+                        : transcript.trim(),
+                    style: TextStyle(
+                      color: transcript.trim().isEmpty
+                          ? u.textMuted
+                          : u.textPrimary,
+                      fontSize: 13,
+                      height: 1.35,
+                    ),
+                  ),
+                ),
+            ),
+          ),
+          IconButton(
+            tooltip: 'Stop voice',
+            onPressed: onStop,
+            icon: const Icon(Icons.stop_circle_outlined),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _CafeSuggestionBar extends StatelessWidget {
   const _CafeSuggestionBar({
     required this.selectedKey,
@@ -2339,38 +2476,32 @@ class _CafeSuggestionBar extends StatelessWidget {
     final u = context.masanawa;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            selectedKey == null
-                ? 'What would you like to do?'
-                : 'Changed your mind? Pick another service.',
-            style: TextStyle(
-              color: u.textMuted,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 7),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                for (final suggestion in kCafeSuggestions) ...[
-                  ChoiceChip(
-                    label: Text(suggestion.label),
-                    selected: selectedKey == suggestion.key,
-                    onSelected: (_) => onTap(suggestion),
-                    showCheckmark: false,
-                  ),
-                  const SizedBox(width: 7),
-                ],
+      padding: const EdgeInsets.fromLTRB(8, 7, 8, 5),
+      decoration: BoxDecoration(
+        color: u.surfaceCard,
+        border: Border(
+          bottom: BorderSide(color: u.structuralBorder),
+        ),
+      ),
+      child: Center(
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final suggestion in kCafeSuggestions) ...[
+                ChoiceChip(
+                  label: Text(suggestion.label),
+                  selected: selectedKey == suggestion.key,
+                  onSelected: (_) => onTap(suggestion),
+                  showCheckmark: false,
+                  visualDensity: VisualDensity.compact,
+                ),
+                const SizedBox(width: 6),
               ],
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -2385,9 +2516,6 @@ class _Composer extends StatelessWidget {
     required this.onStop,
     required this.onAttach,
     required this.onMic,
-    required this.onMicHoldStart,
-    required this.onMicHoldMove,
-    required this.onMicHoldEnd,
     required this.onEmojiToggle,
   });
 
@@ -2398,9 +2526,6 @@ class _Composer extends StatelessWidget {
   final VoidCallback onStop;
   final VoidCallback onAttach;
   final VoidCallback onMic;
-  final ValueChanged<LongPressStartDetails> onMicHoldStart;
-  final ValueChanged<LongPressMoveUpdateDetails> onMicHoldMove;
-  final ValueChanged<LongPressEndDetails> onMicHoldEnd;
   final VoidCallback onEmojiToggle;
 
   @override
@@ -2460,15 +2585,8 @@ class _Composer extends StatelessWidget {
             const SizedBox(width: 6),
             Semantics(
               button: true,
-              label: hasText ? 'Send message' : 'Record voice note',
-              child: GestureDetector(
-                onLongPressStart:
-                    sending || hasText ? null : onMicHoldStart,
-                onLongPressMoveUpdate:
-                    sending || hasText ? null : onMicHoldMove,
-                onLongPressEnd:
-                    sending || hasText ? null : onMicHoldEnd,
-                child: Material(
+              label: hasText ? 'Send message' : 'Start live voice',
+              child: Material(
                   color: u.brand,
                   shape: const CircleBorder(),
                   clipBehavior: Clip.antiAlias,
@@ -2525,194 +2643,6 @@ class _ComposerIcon extends StatelessWidget {
         visualDensity: VisualDensity.compact,
         icon: Icon(icon, color: u.textMuted, size: 22),
         onPressed: onPressed,
-      ),
-    );
-  }
-}
-
-class _RecordingBar extends StatelessWidget {
-  const _RecordingBar({
-    required this.clock,
-    required this.amplitudes,
-    required this.recording,
-    required this.paused,
-    required this.locked,
-    required this.onDelete,
-    required this.onPause,
-    required this.onStop,
-    required this.onSend,
-    required this.onCancelSwipe,
-    required this.onLockSwipe,
-  });
-
-  final String clock;
-  final List<double> amplitudes;
-  final bool recording;
-  final bool paused;
-  final bool locked;
-  final VoidCallback onDelete;
-  final VoidCallback? onPause;
-  final VoidCallback? onStop;
-  final VoidCallback? onSend;
-  final VoidCallback onCancelSwipe;
-  final VoidCallback onLockSwipe;
-
-  @override
-  Widget build(BuildContext context) {
-    final u = context.masanawa;
-    return SafeArea(
-      top: false,
-      child: GestureDetector(
-        onHorizontalDragEnd: locked
-            ? null
-            : (details) {
-                if ((details.primaryVelocity ?? 0) < -250) onCancelSwipe();
-              },
-        onVerticalDragEnd: locked
-            ? null
-            : (details) {
-                if ((details.primaryVelocity ?? 0) < -250) onLockSwipe();
-              },
-        child: Container(
-          margin: const EdgeInsets.fromLTRB(8, 6, 8, 8),
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-          decoration: BoxDecoration(
-            color: u.surfaceCard,
-            borderRadius: BorderRadius.circular(26),
-            border: Border.all(color: u.structuralBorder),
-          ),
-          child: Row(
-            children: [
-              IconButton(
-                tooltip: 'Delete recording',
-                icon: const Icon(Icons.delete_outline),
-                onPressed: onDelete,
-              ),
-              if (recording)
-                Icon(
-                  locked ? Icons.lock : Icons.lock_open,
-                  size: 17,
-                  color: u.textMuted,
-                ),
-              if (recording) const SizedBox(width: 6),
-              Container(
-                width: 9,
-                height: 9,
-                decoration: BoxDecoration(
-                  color: recording && !paused ? Colors.red : u.textMuted,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 7),
-              Text(
-                clock,
-                style: TextStyle(
-                  color: u.textPrimary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: SizedBox(
-                  height: 32,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      for (final value in amplitudes.take(28))
-                        Container(
-                          width: 2,
-                          height: 4 + (value * 22),
-                          decoration: BoxDecoration(
-                            color: u.brand.withValues(alpha: .75),
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                      if (amplitudes.isEmpty)
-                        Text(
-                          recording
-                              ? (locked ? 'Locked recording' : '← cancel   ↑ lock')
-                              : 'Voice note ready',
-                          style: TextStyle(color: u.textMuted, fontSize: 11),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-              if (onPause != null)
-                IconButton(
-                  tooltip: paused ? 'Resume' : 'Pause',
-                  icon: Icon(paused ? Icons.mic : Icons.pause),
-                  onPressed: onPause,
-                ),
-              if (onStop != null)
-                IconButton(
-                  tooltip: 'Preview',
-                  icon: const Icon(Icons.stop_circle_outlined),
-                  onPressed: onStop,
-                ),
-              if (onSend != null)
-                Material(
-                  color: u.brand,
-                  shape: const CircleBorder(),
-                  child: IconButton(
-                    tooltip: 'Send voice note',
-                    icon: const Icon(Icons.send_rounded, color: Colors.white),
-                    onPressed: onSend,
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _VoicePreviewBar extends StatelessWidget {
-  const _VoicePreviewBar({
-    required this.attachment,
-    required this.onDelete,
-    required this.onSend,
-  });
-
-  final ChatAttachment attachment;
-  final VoidCallback onDelete;
-  final VoidCallback onSend;
-
-  @override
-  Widget build(BuildContext context) {
-    final u = context.masanawa;
-    return SafeArea(
-      top: false,
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(8, 6, 8, 8),
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
-        decoration: BoxDecoration(
-          color: u.surfaceCard,
-          borderRadius: BorderRadius.circular(26),
-          border: Border.all(color: u.structuralBorder),
-        ),
-        child: Row(
-          children: [
-            IconButton(
-              tooltip: 'Discard',
-              icon: const Icon(Icons.delete_outline),
-              onPressed: onDelete,
-            ),
-            Expanded(child: _VoiceBubble(attachment: attachment)),
-            Material(
-              color: u.brand,
-              shape: const CircleBorder(),
-              child: IconButton(
-                tooltip: 'Send voice note',
-                icon: const Icon(Icons.send_rounded, color: Colors.white),
-                onPressed: onSend,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

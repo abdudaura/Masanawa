@@ -112,14 +112,10 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
     final channels = _availableChannels;
 
     return OnboardingScaffold(
-      title: channels == null
-          ? 'Sign in to Masanawa'
-          : _isEmail
-              ? 'What email should we use?'
-              : 'What number should we use?',
+      title: 'Welcome to Masanawa',
       subtitle: channels == null
-          ? 'Checking the available secure sign-in methods…'
-          : 'We will send a one-time code to verify it.',
+          ? 'Checking the available sign-in methods…'
+          : 'Use your email or phone. We will send a one-time code.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -169,12 +165,12 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
                         setState(() => _channel = selection.first);
                       },
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
             ],
             if (_isEmail)
               TextField(
                 controller: _email,
-                autofocus: true,
+                autofocus: false,
                 enabled: !sending,
                 keyboardType: TextInputType.emailAddress,
                 autocorrect: false,
@@ -183,6 +179,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
                 decoration: InputDecoration(
+                  labelText: 'Email',
                   hintText: 'you@example.com',
                   prefixIcon: Icon(
                     Icons.mail_outline,
@@ -211,7 +208,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
                 ),
               ),
             ],
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             PrimaryButton(
               label: sending
                   ? 'Sending code…'

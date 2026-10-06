@@ -398,13 +398,15 @@ class CryptoWalletScreen extends ConsumerWidget {
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
             children: [
+              _CryptoTokenStrip(
+                wallet: data,
+                onSelected: (value) {
+                  ref.read(cryptoWalletProvider.notifier).selectAsset(value);
+                },
+              ),
+              const SizedBox(height: 10),
               _BalanceCard(
                 wallet: data,
-                onAssetChanged: (value) {
-                  if (value != null) {
-                    ref.read(cryptoWalletProvider.notifier).selectAsset(value);
-                  }
-                },
                 onRefreshBalance: data.selectedProviderCode == null
                     ? null
                     : () =>
@@ -490,15 +492,48 @@ class CryptoWalletScreen extends ConsumerWidget {
   }
 }
 
+class _CryptoTokenStrip extends StatelessWidget {
+  const _CryptoTokenStrip({
+    required this.wallet,
+    required this.onSelected,
+  });
+
+  final CryptoWalletSnapshot wallet;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    if (wallet.depositRoutes.isEmpty) return const SizedBox.shrink();
+    return Center(
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final route in wallet.depositRoutes) ...[
+              ChoiceChip(
+                label: Text(route.label),
+                selected: wallet.selectedProviderCode == route.providerCode,
+                showCheckmark: false,
+                visualDensity: VisualDensity.compact,
+                onSelected: (_) => onSelected(route.providerCode),
+              ),
+              const SizedBox(width: 6),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _BalanceCard extends StatelessWidget {
   const _BalanceCard({
     required this.wallet,
-    required this.onAssetChanged,
     required this.onRefreshBalance,
   });
 
   final CryptoWalletSnapshot wallet;
-  final ValueChanged<String?> onAssetChanged;
   final VoidCallback? onRefreshBalance;
 
   @override
@@ -551,24 +586,6 @@ class _BalanceCard extends StatelessWidget {
               selected.label,
               style: const TextStyle(color: Colors.white, fontSize: 14),
             ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            value: wallet.selectedProviderCode,
-            dropdownColor: u.surfaceCard,
-            decoration: InputDecoration(
-              labelText: 'Asset',
-              filled: true,
-              fillColor: Colors.white.withValues(alpha: .94),
-            ),
-            items: [
-              for (final route in wallet.depositRoutes)
-                DropdownMenuItem(
-                  value: route.providerCode,
-                  child: Text(route.label),
-                ),
-            ],
-            onChanged: onAssetChanged,
-          ),
         ],
       ),
     );

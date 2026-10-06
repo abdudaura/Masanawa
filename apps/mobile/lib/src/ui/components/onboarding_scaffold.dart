@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -46,18 +44,16 @@ class OnboardingScaffold extends StatelessWidget {
         body: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
               final compact = constraints.maxHeight < 640;
-              final horizontalPadding = constraints.maxWidth >= 600 ? 40.0 : 24.0;
+              final horizontalPadding =
+                  constraints.maxWidth >= 600 ? 40.0 : 24.0;
               final verticalPadding = compact ? 16.0 : 28.0;
-              final bottomPadding = math.max(
-                verticalPadding,
-                keyboardInset > 0 ? keyboardInset + 16 : verticalPadding,
-              );
-              final minContentHeight = math.max(
-                0.0,
-                constraints.maxHeight - verticalPadding - bottomPadding,
-              );
+              // Scaffold.adjustResize already removes keyboard space. Adding
+              // viewInsets again here pushed auth fields upward twice.
+              final minContentHeight =
+                  (constraints.maxHeight - (verticalPadding * 2))
+                      .clamp(0.0, double.infinity)
+                      .toDouble();
 
               return SingleChildScrollView(
                 keyboardDismissBehavior:
@@ -66,7 +62,7 @@ class OnboardingScaffold extends StatelessWidget {
                   horizontalPadding,
                   verticalPadding,
                   horizontalPadding,
-                  bottomPadding,
+                  verticalPadding,
                 ),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(minHeight: minContentHeight),
