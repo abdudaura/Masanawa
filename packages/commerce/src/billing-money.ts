@@ -13,6 +13,7 @@ export interface BillingQuote {
   readonly quoteId: QuoteId;
   readonly revision: number;
   readonly categoryCode: string | null;
+  readonly originatingCharacterId: string | null;
   readonly billerCode: string;
   readonly itemCode: string;
   readonly itemName: string;
@@ -127,7 +128,8 @@ export function calculateBillingFeeKobo(
   return Number(fee);
 }
 export function createBillingQuote(input: Readonly<{
-  tenantId: TenantId; userId: UserId; categoryCode?: string | null; billerCode: string;
+  tenantId: TenantId; userId: UserId; categoryCode?: string | null;
+  originatingCharacterId?: string | null; billerCode: string;
   itemCode: string; itemName: string; customerId: string; serviceAmountKobo: number;
   feeAmountKobo: number; createdAt: string; expiresAt: string; quoteId?: QuoteId;
 }>): BillingQuote {
@@ -144,6 +146,10 @@ export function createBillingQuote(input: Readonly<{
     schemaVersion: 1 as const, tenantId: input.tenantId, userId: input.userId,
     quoteId: input.quoteId ?? createCanonicalId("quote"), revision: 1,
     categoryCode: input.categoryCode ? bounded(input.categoryCode, "categoryCode", 128) : null,
+    originatingCharacterId:
+      input.originatingCharacterId === null || input.originatingCharacterId === undefined
+        ? null
+        : bounded(input.originatingCharacterId, "originatingCharacterId", 180),
     billerCode: bounded(input.billerCode, "billerCode", 128),
     itemCode: bounded(input.itemCode, "itemCode", 128),
     itemName: bounded(input.itemName, "itemName", 300),
