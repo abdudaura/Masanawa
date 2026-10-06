@@ -142,13 +142,24 @@ Current #136 implementation:
 5. owner/requester FCM notifications reuse the existing mobile-push registration/sender;
 6. owner-access events feed Activity with durable request references and latest-status
    deduplication;
-7. Activity lets owners accept/decline/schedule/start/complete; chat lets requesters
-   resume/cancel the latest durable request after restart;
-8. Human Access configuration now lives in My Twin rather than legacy creator Settings.
+7. Human Access is launch-qualified as a private real-person **text** session only:
+   voice/video offerings are rejected/disabled until a real person-to-person media path
+   exists;
+8. active text sessions use a durable request-scoped room, server-timestamped participant
+   heartbeats and at least 60 seconds of two-party overlap as completion evidence;
+9. owners start/open the room from Activity; requesters resume/open it from Twin chat or a
+   direct authenticated notification deep link;
+10. booked duration plus configurable completion grace closes active sessions
+    deterministically: verified attendance auto-settles, missing attendance enters a
+    recoverable attendance-timeout reconciliation marker and auto-refunds;
+11. private room messages are not financial evidence, cannot be edited, default to
+    30-day retention (configurable 1-365 days) and are purged independently of durable
+    request/ledger records;
+12. Human Access configuration lives in My Twin rather than legacy creator Settings.
 
-Still required: a real participant session/attendance primitive (text can be implemented
-without pretending WebRTC exists; voice/video must remain unavailable until real media is
-present), dispute/reconciliation policy, and production/device qualification.
+Still required: general post-session dispute/reconciliation policy beyond the deterministic
+attendance-timeout refund, real voice/video human transport if/when added, and
+production/device qualification.
 
 ### Phase 6 — Mobile simplification
 Current #136 implementation:
