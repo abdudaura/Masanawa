@@ -5,7 +5,6 @@ import {
 import {
   parseCanonicalId,
   toInstant,
-  type Instant,
 } from "@masanawa/contracts";
 import type { Pool, PoolClient } from "pg";
 import { withTransaction } from "../transaction.js";
