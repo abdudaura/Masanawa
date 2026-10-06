@@ -136,3 +136,50 @@ verify variable names and logs but cannot read the secret values, and Railway ex
 safe one-off command primitive here that would run the repository script without changing
 service/deployment state. This lane therefore does not mutate production just to obtain
 qualification output.
+
+
+## Continued qualification evidence — 2026-10-06
+
+The live Railway project `empowering-education` was inspected read-only.
+
+Production environment:
+- project: `3ab9e6ec-a3fa-47c9-be81-4f12a315ca0b`
+- environment: `a7a29368-d2d5-4baf-b846-c570dfeaa6ba`
+- production Gateway service: `masanawa-gateway`
+- legacy billing branch service: `@nurain/worker`
+
+Both the production Gateway and legacy worker expose the complete required billing/auth variable **names**, including Flutterwave secret/relay/webhook configuration, Masanawa platform tenant, auth pepper/from address, billing action secret, billing fee policy, public/redirect URL and Resend. OAuth access redacts all values, so presence is verified but secrets were not read or copied.
+
+The latest legacy-worker deployment status is FAILED, but build logs prove that this is not a billing unit-test failure. On deployment `20c14144-d369-4752-9019-ae5bf5d8cf27`:
+- 39 Vitest files passed;
+- 368 tests passed;
+- Flutterwave billing/provider tests passed;
+- the deployment was stopped later by an unrelated NOWPayments custody smoke returning HTTP 403.
+
+Historical runtime logs also show earlier Flutterwave live-read probes were blocked by an older egress-quota restriction. That historical result must not be treated as current merchant qualification.
+
+Added `scripts/flutterwave-billing-production-qualification.mjs` as the safe one-command live qualification runner. It:
+1. runs only the read-only catalog/recipient-validation collector;
+2. parses the collector output before use;
+3. stores the temporary report with owner-only mode `0600`;
+4. runs the deterministic launch gate;
+5. preserves exit code 2 for structurally valid but incomplete launch evidence;
+6. deletes the temporary report directory in `finally`.
+
+Focused exact-source verification after the final regression fix:
+- both qualification scripts pass `node --check`;
+- both focused test files pass together: **9/9 tests**.
+
+A regression was found during exact-branch verification: an earlier commit had not preserved explicit-empty validation policy semantics. The live branch file was corrected at commit `cad5aa030e49cc105348c98ff42d435ac204f2a8` and the full 9-test suite passed against the corrected logic.
+
+### Remaining live-only blocker
+
+This connector cannot read the secret values and Railway exposes no safe one-off command execution surface here. Therefore the real collector cannot be executed from this session without either changing deployment state or copying secrets, both of which are outside this lane's safety boundary.
+
+The authorized production owner can now run exactly:
+
+```bash
+node scripts/flutterwave-billing-production-qualification.mjs
+```
+
+inside an environment that already has the existing Flutterwave/relay variables plus non-secret validation targets. Exit 0 is required before public billing enablement. Exit 2 means billing remains disabled.
