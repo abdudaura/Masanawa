@@ -19,7 +19,7 @@ org.gradle.workers.max=1
 org.gradle.parallel=false
 org.gradle.vfs.watch=false
 org.gradle.logging.stacktrace=all
-org.gradle.jvmargs=-Xmx224m -XX:MaxMetaspaceSize=256m -XX:ReservedCodeCacheSize=24m -Dfile.encoding=UTF-8
+org.gradle.jvmargs=-Xmx288m -XX:MaxMetaspaceSize=256m -XX:ReservedCodeCacheSize=24m -Dfile.encoding=UTF-8
 kotlin.compiler.execution.strategy=in-process
 kotlin.daemon.jvm.options=-Xmx96m
 PROPERTIES
