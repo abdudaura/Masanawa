@@ -28,6 +28,24 @@ Task: TWIN-106 — crashes/retries do not duplicate money or sessions.
 - replay preserves reason=gift, recipient Character and no-acquisition-commission semantics;
 - self-gift/non-personal destination remains rejected before any executor effect.
 
-State: CLAIMED.
+State: ISOLATED COMPLETE / INTEGRATION READY.
+
+## Completed acceptance evidence
+
+- exact gift retry under the same request identity applies sender debit and owner credit once;
+- simulated crash after executor effect but before caller acknowledgement does not duplicate balances;
+- changed amount under the same request identity fails closed;
+- replay preserves resolved owner, recipient Character, `reason=gift` execution semantics and no-acquisition-commission receipt semantics;
+- non-personal Character and self-gift rejection occur before any executor effect;
+- no production Gift, Commerce, Wallet, Event or Gateway source was modified.
+
+## Remaining production dependencies
+
+1. production Gift executor must persist request fingerprint + receipt atomically with ledger movement;
+2. Gift Wallet/Activity/Event emission must replay from the same canonical receipt;
+3. shared production composition remains #136/integration-owner work;
+4. executable CI and persistent-storage crash/restart evidence remain required.
+
+Implementation head before handoff: `aab7ad96f276f6e75be604d8803505c5be23e07a`.
 
 Last update: 2026-10-06.
