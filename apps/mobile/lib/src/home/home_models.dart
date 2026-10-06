@@ -167,6 +167,14 @@ class HomeSnapshot {
         continuations: continuations,
       );
 
+  HomeSnapshot withContinuations(List<HomeContinuationModel> next) =>
+      HomeSnapshot(
+        assistants: assistants,
+        rooms: rooms,
+        myTwin: myTwin,
+        continuations: List.unmodifiable(next),
+      );
+
   HomeAssistantCardModel? assistantFor(HomeAssistantRole role) {
     for (final assistant in assistants) {
       if (assistant.role == role) return assistant;
