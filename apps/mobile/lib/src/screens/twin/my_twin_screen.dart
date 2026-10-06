@@ -76,6 +76,60 @@ class _EmptyTwin extends StatelessWidget {
 
   final VoidCallback? onCreateTwin;
 
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(24),
+      children: [
+        const SizedBox(height: 80),
+        CircleAvatar(
+          radius: 42,
+          backgroundColor: u.brand.withValues(alpha: .10),
+          child: Icon(Icons.auto_awesome_outlined, color: u.brand, size: 36),
+        ),
+        const SizedBox(height: 20),
+        Text(
+          'Create your digital twin',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: u.textPrimary,
+            fontSize: 22,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Teach it about you, share it, and let people talk to your AI representative.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: u.textMuted, height: 1.45),
+        ),
+        const SizedBox(height: 24),
+        FilledButton(
+          onPressed: onCreateTwin,
+          child: const Text('Create my twin'),
+        ),
+      ],
+    );
+  }
+}
+
+class _TwinBody extends ConsumerWidget {
+  const _TwinBody({
+    required this.profile,
+    required this.onTalkToTwin,
+    required this.onTeachTwin,
+    required this.onShareTwin,
+    required this.onDiscoverableChanged,
+  });
+
+  final TwinProfile profile;
+  final void Function(String characterId)? onTalkToTwin;
+  final void Function(String characterId)? onTeachTwin;
+  final void Function(TwinProfile profile)? onShareTwin;
+  final ValueChanged<bool> onDiscoverableChanged;
+
   Future<int?> _askPrice(
     BuildContext context,
     int current,
@@ -211,7 +265,10 @@ class _EmptyTwin extends StatelessWidget {
     await _saveOffering(
       context,
       ref,
-      next.copyWith(enabled: enabled),
+      next.copyWith(
+        enabled: enabled,
+        modalities: const {OwnerAccessModality.text},
+      ),
     );
   }
 
@@ -219,60 +276,6 @@ class _EmptyTwin extends StatelessWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final u = context.masanawa;
     final humanAccess = ref.watch(ownerAccessOfferingProvider);
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(24),
-      children: [
-        const SizedBox(height: 80),
-        CircleAvatar(
-          radius: 42,
-          backgroundColor: u.brand.withValues(alpha: .10),
-          child: Icon(Icons.auto_awesome_outlined, color: u.brand, size: 36),
-        ),
-        const SizedBox(height: 20),
-        Text(
-          'Create your digital twin',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: u.textPrimary,
-            fontSize: 22,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Teach it about you, share it, and let people talk to your AI representative.',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: u.textMuted, height: 1.45),
-        ),
-        const SizedBox(height: 24),
-        FilledButton(
-          onPressed: onCreateTwin,
-          child: const Text('Create my twin'),
-        ),
-      ],
-    );
-  }
-}
-
-class _TwinBody extends ConsumerWidget {
-  const _TwinBody({
-    required this.profile,
-    required this.onTalkToTwin,
-    required this.onTeachTwin,
-    required this.onShareTwin,
-    required this.onDiscoverableChanged,
-  });
-
-  final TwinProfile profile;
-  final void Function(String characterId)? onTalkToTwin;
-  final void Function(String characterId)? onTeachTwin;
-  final void Function(TwinProfile profile)? onShareTwin;
-  final ValueChanged<bool> onDiscoverableChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final u = context.masanawa;
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
@@ -420,7 +423,7 @@ class _TwinBody extends ConsumerWidget {
                     title: const Text('Talk to me'),
                     subtitle: Text(
                       offering.enabled
-                          ? 'People can request a voice session with the real you'
+                          ? 'People can request a private text session with the real you'
                           : 'Keep real-person requests off until you are ready',
                     ),
                     value: offering.enabled,
