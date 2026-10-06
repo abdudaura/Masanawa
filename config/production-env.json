@@ -445,6 +445,13 @@
       "description": "Bounded graceful shutdown timeout."
     },
     {
+      "name": "MASANAWA_STORY_RADIO_ADMIN_USER_IDS",
+      "owner": "gateway/content",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Comma-separated authenticated platform UserIds allowed to administer Story Radio publication."
+    },
+    {
       "name": "MASANAWA_TEST_DATABASE_URL",
       "owner": "test",
       "classification": "secret",
