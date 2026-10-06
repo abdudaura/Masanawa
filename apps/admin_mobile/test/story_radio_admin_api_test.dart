@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,7 +13,7 @@ class _Adapter implements HttpClientAdapter {
   @override
   Future<ResponseBody> fetch(
     RequestOptions options,
-    Stream<List<int>>? requestStream,
+    Stream<Uint8List>? requestStream,
     Future<void>? cancelFuture,
   ) =>
       handler(options);
@@ -107,6 +108,4 @@ void main() {
     expect(requests, 2);
     expect(seenAuthorization, ['Bearer expired-token', 'Bearer fresh-token']);
   });
-
-
 }
