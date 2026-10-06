@@ -2,6 +2,7 @@
 
 Owner/window: ChatGPT continuation window / 2026-10-06
 Branch: `work/twin-credit-transfer-retry-recovery-20261006`
+PR: #292
 Base SHA: `b8d415f09424ddf3e1a90a578f54c5792668bc3b`
 Task: TWIN-106 — crashes/retries do not duplicate money or sessions.
 
@@ -50,3 +51,7 @@ State: ISOLATED COMPLETE / INTEGRATION READY.
 Implementation head before handoff: `120acd3af697c21bb03b0a07c131843d6de3d3d9`.
 
 Last update: 2026-10-06.
+
+## Verification
+
+- PR #292 is mergeable. CI failed before checkout with runner_id=0 and steps=[].
