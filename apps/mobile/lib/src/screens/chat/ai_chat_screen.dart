@@ -45,7 +45,7 @@ import '../../theme/masanawa_theme.dart';
 
 /// One Character conversation. Voice is the primary action while text,
 /// attachments and structured work results remain in the same timeline.
-enum AiChatEntryMode { chat, teach, voiceNote, liveVoice, cafe }
+enum AiChatEntryMode { chat, teach, liveTalk, liveVoice, cafe }
 
 class AiChatScreen extends ConsumerStatefulWidget {
   const AiChatScreen({
@@ -861,7 +861,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               _input.text = '';
             }
             break;
-          case AiChatEntryMode.voiceNote:
+          case AiChatEntryMode.liveTalk:
             unawaited(_startInlineLiveVoice(agent));
             break;
           case AiChatEntryMode.liveVoice:
