@@ -27,7 +27,7 @@ class _OwnerAccessOfferingAdapter implements HttpClientAdapter {
           }
         : {
             'enabled': options.method == 'PUT',
-            'modalities': ['voice'],
+            'modalities': ['text'],
             'durationOptionsMinutes': [15, 30],
             'priceCreditsPerMinute': options.method == 'PUT' ? 12 : 0,
             'revision': options.method == 'PUT' ? 2 : 1,
@@ -55,14 +55,14 @@ void main() {
 
     final initial = await transport.read();
     expect(initial.enabled, isFalse);
-    expect(initial.modalities, {OwnerAccessModality.voice});
+    expect(initial.modalities, {OwnerAccessModality.text});
     expect(initial.durationOptionsMinutes, [15, 30]);
     expect(initial.priceCreditsPerMinute, 0);
 
     final saved = await transport.update(
       const OwnerAccessOffering(
         enabled: true,
-        modalities: {OwnerAccessModality.voice},
+        modalities: {OwnerAccessModality.text},
         durationOptionsMinutes: [15, 30],
         priceCreditsPerMinute: 12,
       ),
@@ -83,7 +83,7 @@ void main() {
     );
     expect(adapter.requests.last.data, {
       'enabled': true,
-      'modalities': ['voice'],
+      'modalities': ['text'],
       'durationOptionsMinutes': [15, 30],
       'priceCreditsPerMinute': 12,
     });
