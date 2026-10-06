@@ -63,3 +63,15 @@ export {
   type ChannelInboundMediaKind,
   type ChannelMediaLimits,
 } from "./media-fetch.js";
+
+
+export {
+  createWhatsAppAuthenticatedMediaEdge,
+  type WhatsAppAuthenticatedMediaClient,
+} from "./whatsapp-media-edge.js";
+
+export {
+  createTelegramAuthenticatedMediaEdge,
+  telegramBotApiDownloadLimitBytes,
+  type TelegramAuthenticatedFileClient,
+} from "./telegram-media-edge.js";
