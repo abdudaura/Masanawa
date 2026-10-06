@@ -6,10 +6,10 @@ import {
   type AvatarProviderDescriptor,
 } from "../../services/presence/src/avatar-provider.js";
 
-const tenantId = "tenant_00000000-0000-4000-8000-000000000001" as never;
-const characterId = "character_00000000-0000-4000-8000-000000000002" as never;
+const tenantId = "tenant_018f6b2e-7c00-7001-8000-000000000001" as never;
+const characterId = "character_018f6b2e-7c00-7002-8000-000000000002" as never;
 const characterVersionId =
-  "character-version_00000000-0000-4000-8000-000000000003" as never;
+  "character-version_018f6b2e-7c00-7003-8000-000000000003" as never;
 const now = "2026-10-06T11:20:00.000Z" as never;
 
 function request(
@@ -221,7 +221,7 @@ describe("Task 123 renderer-neutral AvatarProvider", () => {
         lease: {
           ...baseLease,
           characterVersionId:
-            "character-version_00000000-0000-4000-8000-000000000999" as never,
+            "character-version_018f6b2e-7c00-7999-8000-000000000999" as never,
         },
       }),
     ).toThrow("crossed Character presentation scope");
