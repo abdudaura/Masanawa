@@ -36,6 +36,7 @@ export interface BillingWalletService {
   createFunding(input: Readonly<{
     authorizationHeader: string | undefined;
     amount: string;
+    originatingCharacterId?: string;
     signal?: AbortSignal;
   }>): Promise<BillingWalletView>;
 
@@ -155,6 +156,22 @@ export function createBillingWalletService(input: Readonly<{
   billing: BillingFinancialService;
   webhookSecretHash: string;
   fundingExpirySeconds?: number;
+  twinMonetization?: {
+    attribute(input: {
+      readonly tenantId: import("@masanawa/contracts").TenantId;
+      readonly customerUserId: import("@masanawa/contracts").UserId;
+      readonly characterId: import("@masanawa/contracts").CharacterId | null;
+      readonly eventType: "external-funding";
+      readonly operationId: string;
+    }): Promise<void>;
+    settleProviderValue(input: {
+      readonly tenantId: import("@masanawa/contracts").TenantId;
+      readonly valuationKey: string;
+      readonly eventType: "external-funding";
+      readonly operationId: string;
+      readonly sourceUnits: number;
+    }): Promise<unknown>;
+  };
 }>): BillingWalletService {
   const webhookSecretHash = input.webhookSecretHash.trim();
   if (!webhookSecretHash) throw new Error("financial.wallet.webhook_secret_required");
@@ -172,6 +189,7 @@ export function createBillingWalletService(input: Readonly<{
     identity: BillingCustomerIdentity,
     amountKobo: number,
     quoteId: string | null,
+    originatingCharacterId: string | null,
     signal?: AbortSignal,
   ): Promise<NgnFundingIntent> {
     const createdAt = new Date().toISOString();
@@ -185,6 +203,9 @@ export function createBillingWalletService(input: Readonly<{
       txRef: referenceTx,
       amountKobo,
       ...(quoteId ? { quoteId } : {}),
+      ...(!quoteId && originatingCharacterId
+        ? { originatingCharacterId }
+        : {}),
       expiresAt,
       createdAt,
     });
@@ -213,6 +234,38 @@ export function createBillingWalletService(input: Readonly<{
       providerReference: account.providerReference,
       providerExpiry: account.expiryDate,
       boundAt: new Date().toISOString(),
+    });
+  }
+
+  async function syncTwinFundingMonetization(
+    funding: NgnFundingIntent,
+  ): Promise<void> {
+    const origin = funding.originatingCharacterId?.trim() ?? "";
+    const monetization = input.twinMonetization;
+    if (
+      !monetization ||
+      !origin ||
+      funding.quoteId !== null ||
+      funding.state !== "credited"
+    ) {
+      return;
+    }
+    const tenantId = parseCanonicalId("tenant", funding.tenantId);
+    const userId = parseCanonicalId("user", funding.userId);
+    const operationId = `funding:${funding.fundingReference}`;
+    await monetization.attribute({
+      tenantId,
+      customerUserId: userId,
+      characterId: parseCanonicalId("character", origin),
+      eventType: "external-funding",
+      operationId,
+    });
+    await monetization.settleProviderValue({
+      tenantId,
+      valuationKey: "flutterwave:NGN:kobo",
+      eventType: "external-funding",
+      operationId,
+      sourceUnits: funding.amountKobo,
     });
   }
 
@@ -271,7 +324,13 @@ export function createBillingWalletService(input: Readonly<{
     async createFunding(request) {
       const identity = await owner(request.authorizationHeader);
       const amountKobo = parseNgnKobo(request.amount);
-      const funding = await createAccount(identity, amountKobo, null, request.signal);
+      const funding = await createAccount(
+        identity,
+        amountKobo,
+        null,
+        request.originatingCharacterId ?? null,
+        request.signal,
+      );
       const balanceKobo = await currentBalance(identity);
       return Object.freeze({
         balanceKobo,
@@ -290,7 +349,13 @@ export function createBillingWalletService(input: Readonly<{
       const balanceKobo = await currentBalance(identity);
       if (balanceKobo < quote.totalAmountKobo) {
         const shortfall = quote.totalAmountKobo - balanceKobo;
-        const funding = await createAccount(identity, shortfall, quote.quoteId, request.signal);
+        const funding = await createAccount(
+          identity,
+          shortfall,
+          quote.quoteId,
+          null,
+          request.signal,
+        );
         return Object.freeze({
           balanceKobo,
           balance: formatNgnKobo(balanceKobo),
@@ -336,6 +401,7 @@ export function createBillingWalletService(input: Readonly<{
         return Object.freeze({ handled: false, duplicate: false, resumed: false });
       }
       if (funding.state === "credited") {
+        await syncTwinFundingMonetization(funding).catch(() => undefined);
         return Object.freeze({ handled: true, duplicate: true, resumed: false });
       }
       const payment = await input.funding.verifyByReference(referenceTx);
@@ -352,6 +418,8 @@ export function createBillingWalletService(input: Readonly<{
         amountKobo: funding.amountKobo,
         creditedAt: new Date().toISOString(),
       });
+
+      await syncTwinFundingMonetization(credited).catch(() => undefined);
 
       let resumed = false;
       if (credited.quoteId) {
