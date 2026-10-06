@@ -5,10 +5,12 @@ Branch: `work/twin-attribution-acceptance-20261006`
 Base SHA: `b8d415f09424ddf3e1a90a578f54c5792668bc3b`
 Task reference: `docs/TWIN-TRANSFORMATION-TASKS.md` — TWIN-101.
 Roadmap reference: `docs/TWIN-INTEGRATION-MATRIX.md` Phase 3 Credits/gifts/commission.
+PR: #238
+Acceptance implementation commit: `29bf7a9290bf21bf83b8724771206b3b4ae53cce`
 
 ## Exact owned paths
 
-- `tests/integration/twin-attribution-commission-acceptance.test.ts` (new)
+- `tests/integration/twin-attribution-commission-acceptance.test.ts`
 - `docs/workstreams/twin-attribution-acceptance-20261006.md`
 
 ## Excluded/shared paths
@@ -19,11 +21,40 @@ Roadmap reference: `docs/TWIN-INTEGRATION-MATRIX.md` Phase 3 Credits/gifts/commi
 - migrations and production environment;
 - Event/Activity ownership.
 
-## Dependencies
+## Completed acceptance harness
 
-- merged originating-Twin attribution and configurable commission contracts from #152;
-- live funding/purchase capture, provider-success hooks, persistent attribution and canonical commission posting/reversal remain existing shared owners.
+- proves an eligible commerce purchase through the originating Twin receives only the configured purchase commission;
+- proves external funding uses its separately configured funding policy rather than a purchase policy;
+- preserves originating owner, Character, customer and operation identity in the acceptance fixture;
+- proves self-attribution, internal transfers and gifts cannot manufacture commission;
+- proves expired attribution is ineligible;
+- proves partial refunds create proportional negative commission reversals without mutating the original commission result;
+- proves full/oversized reversals can never claw back more than the original commission.
+
+## Changed-file audit
+
+Compare against current `main` reports the branch 2 commits ahead, 0 behind, with exactly:
+1. `docs/workstreams/twin-attribution-acceptance-20261006.md`
+2. `tests/integration/twin-attribution-commission-acceptance.test.ts`
+
+No protected/shared production implementation changed.
+
+## Verification
+
+Foundation CI run `37454288304` completed as `failure`, but its only job `112237970542` has `steps = null`. Checkout/install/typecheck/tests never executed. This is runner-allocation/non-execution evidence, not an application failure and not a test pass.
+
+No executable local checkout is available in this connector-only window, so no fabricated local test result is claimed.
+
+## Remaining dependencies
+
+- persist originating-Twin attribution through canonical storage;
+- capture attribution from real public-share/session origin and attach it only to qualifying provider-success funding/purchase operations;
+- post commission and refund/chargeback reversals through the canonical append-only Commerce ledger;
+- #136/shared production owner must compose authenticated routes/mobile surfaces;
+- Activity/Wallet projections and exact provider/release acceptance remain existing owners.
 
 ## Current state
 
-CLAIMED. Implement the safe TWIN-101 acceptance slice proving qualifying external funding and eligible commerce purchase attribution earn only the configured policy commission for the originating Twin, while self-attribution/internal value do not, and refund reversal creates a bounded offset instead of mutating historical earnings.
+**ISOLATED ACCEPTANCE HARNESS COMPLETE / PRODUCTION ACCEPTANCE BLOCKED ON SHARED OWNERS.**
+
+No further isolated implementation remains in this acceptance slice.
