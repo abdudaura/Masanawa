@@ -193,6 +193,34 @@ export function createPostgresStoryRadioRepository(pool: Pool): StoryRadioReposi
       return result.rows[0] ? episode(result.rows[0]) : null;
     },
 
+    async listSeries(input) {
+      const result = await pool.query(
+        `SELECT * FROM content.story_series
+          WHERE tenant_id=$1 ORDER BY updated_at DESC,series_id`,
+        [input.tenantId],
+      );
+      return Object.freeze(result.rows.map(series));
+    },
+
+    async getSeries(input) {
+      const result = await pool.query(
+        `SELECT * FROM content.story_series
+          WHERE tenant_id=$1 AND series_id=$2`,
+        [input.tenantId,input.seriesId],
+      );
+      return result.rows[0] ? series(result.rows[0]) : null;
+    },
+
+    async listEpisodes(input) {
+      const result = await pool.query(
+        `SELECT * FROM content.story_episodes
+          WHERE tenant_id=$1 AND series_id=$2
+          ORDER BY season_number,episode_number,episode_id`,
+        [input.tenantId,input.seriesId],
+      );
+      return Object.freeze(result.rows.map(episode));
+    },
+
     async listPublishedSeries(input) {
       const result = await pool.query(
         `SELECT s.*
