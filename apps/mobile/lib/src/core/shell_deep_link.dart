@@ -18,8 +18,15 @@ String? shellDeepLinkRoute(Uri uri) {
   }
 
   if (uri.scheme != 'masanawa' ||
-      !{'chat', 'work', 'approval', 'artifact', 'twin', 'activity'}
-          .contains(uri.host)) {
+      !{
+        'chat',
+        'work',
+        'approval',
+        'artifact',
+        'twin',
+        'activity',
+        'owner-session',
+      }.contains(uri.host)) {
     return null;
   }
 
@@ -35,6 +42,56 @@ String? shellDeepLinkRoute(Uri uri) {
       return null;
     }
     return '/home?tab=activity';
+  }
+
+  if (uri.host == 'owner-session') {
+    if (uri.pathSegments.length != 2 || uri.queryParameters.isNotEmpty) {
+      return null;
+    }
+    final characterId = uri.pathSegments[0];
+    final requestId = uri.pathSegments[1];
+    if (!RegExp(r'^character_[A-Za-z0-9_-]+
+  if (uri.host == 'chat') {
+    if (uri.pathSegments.length != 1) return null;
+    characterId = uri.pathSegments.single;
+  } else {
+    characterId = uri.queryParameters['characterId'];
+    if (characterId == null) return '/chats';
+  }
+  if (characterId == null ||
+      !RegExp(r'^character_[A-Za-z0-9_-]+$').hasMatch(characterId)) {
+    return null;
+  }
+  return '/chat/${Uri.encodeComponent(characterId)}';
+}
+
+bool _validPublicTwinId(String value) =>
+    RegExp(r'^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$').hasMatch(value);
+).hasMatch(characterId) ||
+        !RegExp(r'^[A-Za-z0-9_-]{8,256}
+  if (uri.host == 'chat') {
+    if (uri.pathSegments.length != 1) return null;
+    characterId = uri.pathSegments.single;
+  } else {
+    characterId = uri.queryParameters['characterId'];
+    if (characterId == null) return '/chats';
+  }
+  if (characterId == null ||
+      !RegExp(r'^character_[A-Za-z0-9_-]+$').hasMatch(characterId)) {
+    return null;
+  }
+  return '/chat/${Uri.encodeComponent(characterId)}';
+}
+
+bool _validPublicTwinId(String value) =>
+    RegExp(r'^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$').hasMatch(value);
+).hasMatch(requestId)) {
+      return null;
+    }
+    return '/owner-session/' +
+        Uri.encodeComponent(characterId) +
+        '/' +
+        Uri.encodeComponent(requestId);
   }
 
   final String? characterId;
