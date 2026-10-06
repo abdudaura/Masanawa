@@ -29,6 +29,17 @@ void main() {
     );
   });
 
+  test('started human session link opens the private room', () {
+    expect(
+      shellDeepLinkRoute(
+        Uri.parse(
+          'masanawa://owner-session/character_abc/request_owner_123',
+        ),
+      ),
+      '/owner-session/character_abc/request_owner_123',
+    );
+  });
+
   test('rejects foreign schemes, credentials, ports and malformed identities', () {
     for (final raw in [
       'https://chat/character_abc',
@@ -47,6 +58,10 @@ void main() {
       'masanawa://twin/amina/bello',
       'masanawa://activity/extra',
       'masanawa://activity?request=secret',
+      'masanawa://owner-session/character_abc',
+      'masanawa://owner-session/character_/request_owner_123',
+      'masanawa://owner-session/character_abc/bad',
+      'masanawa://owner-session/character_abc/request_owner_123?secret=1',
     ]) {
       expect(shellDeepLinkRoute(Uri.parse(raw)), isNull, reason: raw);
     }
