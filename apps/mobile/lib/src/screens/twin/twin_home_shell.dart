@@ -7,11 +7,9 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../agents/twin_directory.dart';
 import '../../agents/twin_profile.dart';
-import '../../state/wallet_state.dart';
 import '../../state/agent_directory_state.dart';
 import '../activity/activity_screen.dart';
 import '../explore/explore_screen.dart';
-import '../wallet/send_credits_sheet.dart';
 import '../wallet/wallet_screen.dart';
 import 'my_twin_screen.dart';
 import 'twin_share_sheet.dart';
@@ -106,40 +104,24 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
     );
   }
 
-  Future<void> _sendCredits() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (sheetContext) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,
-        ),
-        child: SendCreditsSheet(
-          onSend: (recipient, amountCredits) async {
-            final receipt = await ref
-                .read(walletProvider.notifier)
-                .sendCredits(
-                  recipient: recipient,
-                  amountCredits: amountCredits,
-                );
-            if (!sheetContext.mounted) return;
-            if (receipt == null) {
-              ScaffoldMessenger.of(sheetContext).showSnackBar(
-                const SnackBar(
-                  content: Text('Could not send Credits. Please try again.'),
-                ),
-              );
-              return;
-            }
-            Navigator.of(sheetContext).pop();
-            if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Credits sent.')),
-            );
-          },
-        ),
-      ),
+  Future<void> _openServiceChat([String? prompt]) async {
+    var agent = _supportAgent();
+    if (agent == null) {
+      await ref.read(agentDirectoryProvider.notifier).refresh();
+      if (!mounted) return;
+      agent = _supportAgent();
+    }
+    if (agent == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gwani isn’t available right now.')),
+      );
+      return;
+    }
+    final encodedPrompt = prompt == null || prompt.trim().isEmpty
+        ? ''
+        : '&prompt=${Uri.encodeQueryComponent(prompt.trim())}';
+    context.push(
+      '/chat/${Uri.encodeComponent(agent.characterId)}?entry=cafe$encodedPrompt',
     );
   }
 
@@ -158,10 +140,11 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
         ),
       2 => const ActivityScreen(),
       3 => WalletScreen(
-          onSend: _sendCredits,
-          onWithdraw: () => context.push('/crypto'),
+          onAddMoney: () => unawaited(_openServiceChat('Add money')),
+          onSend: () => unawaited(_openServiceChat('Send Credits')),
+          onWithdraw: () => unawaited(_openServiceChat('Withdraw money')),
           onBuyBills: () => unawaited(_openInternetCafe()),
-          onOpenCrypto: () => context.push('/crypto'),
+          onOpenCrypto: () => unawaited(_openServiceChat('Help me with crypto')),
         ),
       _ => const SizedBox.shrink(),
     };
