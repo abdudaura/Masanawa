@@ -390,7 +390,7 @@ class _TwinBody extends ConsumerWidget {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
                 SizedBox(width: 12),
-                Text('Loading Talk to me…'),
+                Expanded(child: Text('Loading Talk to me…')),
               ],
             ),
           ),
@@ -529,7 +529,8 @@ class _PrimaryActions extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth < 360) {
+        final textScale = MediaQuery.textScalerOf(context).scale(1);
+        if (constraints.maxWidth < 380 || textScale > 1.25) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -607,7 +608,12 @@ class _PerformanceCard extends StatelessWidget {
             if (summary.pendingOwnerRequests > 0)
               _Metric('Needs you', '${summary.pendingOwnerRequests}'),
           ];
-          final columns = constraints.maxWidth < 360 ? 2 : items.length;
+          final textScale = MediaQuery.textScalerOf(context).scale(1);
+          final columns = textScale > 1.6
+              ? 1
+              : constraints.maxWidth < 380 || textScale > 1.25
+                  ? 2
+                  : items.length;
           final width =
               (constraints.maxWidth - ((columns - 1) * 12)) / columns;
           return Wrap(
