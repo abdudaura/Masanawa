@@ -36,6 +36,7 @@ import type { BillingCheckoutService } from "./billing_checkout.js";
 import type { BillingFinancialService } from "./financial_billing.js";
 import type { MobilePushRegistrationService } from "./mobile_push.js";
 import type { FinancialService } from "./financial_service.js";
+import type { NewsRoomService } from "./news_room.js";
 import {
   CustomerAuthError,
   type CustomerAuthService,
@@ -71,6 +72,7 @@ export interface GatewayAppOptions {
   readonly billingCheckout?: BillingCheckoutService;
   readonly billingFinancial?: BillingFinancialService;
   readonly financial?: FinancialService;
+  readonly newsRoom?: NewsRoomService;
   readonly twinProduction?: TwinProductionRuntime;
 }
 
@@ -421,6 +423,36 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
 
 
 
+
+
+  if (options.newsRoom) {
+    const newsRoom = options.newsRoom;
+    app.get("/rooms/news", async (request, reply) => {
+      try {
+        return await newsRoom.read({
+          authorizationHeader: request.headers.authorization,
+        });
+      } catch (error) {
+        if (
+          typeof error === "object" &&
+          error !== null &&
+          "statusCode" in error &&
+          typeof (error as { statusCode?: unknown }).statusCode === "number"
+        ) {
+          throw error;
+        }
+        if (error instanceof Error && error.message === "news.feed.unavailable") {
+          return reply.code(503).send({
+            error: {
+              code: "NEWS_UNAVAILABLE",
+              message: "Current news is temporarily unavailable.",
+            },
+          });
+        }
+        throw error;
+      }
+    });
+  }
 
 
   if (options.commerceFulfillment) {
