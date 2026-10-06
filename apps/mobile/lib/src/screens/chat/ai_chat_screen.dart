@@ -378,6 +378,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
   void _openAttachSheet() {
     FocusScope.of(context).unfocus();
+    final u = context.masanawa;
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -393,7 +394,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 // Token roles: brand → doc, verified → gallery, warning → camera.
                 _AttachOption(
                   icon: Icons.insert_drive_file,
-                  color: const Color(0xFF047857),
+                  color: u.success,
                   label: 'Document',
                   onTap: () {
                     Navigator.of(sheetContext).pop();
@@ -402,7 +403,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 ),
                 _AttachOption(
                   icon: Icons.photo,
-                  color: const Color(0xFF1D4ED8),
+                  color: u.brand,
                   label: 'Gallery',
                   onTap: () {
                     Navigator.of(sheetContext).pop();
@@ -411,7 +412,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 ),
                 _AttachOption(
                   icon: Icons.camera_alt,
-                  color: const Color(0xFFD97706),
+                  color: u.warning,
                   label: 'Camera',
                   onTap: () {
                     Navigator.of(sheetContext).pop();
@@ -420,7 +421,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 ),
                 _AttachOption(
                   icon: Icons.videocam_outlined,
-                  color: const Color(0xFF7C3AED),
+                  color: u.brandStrong,
                   label: 'Video',
                   onTap: () {
                     Navigator.of(sheetContext).pop();
