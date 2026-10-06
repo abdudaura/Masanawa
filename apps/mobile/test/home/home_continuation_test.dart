@@ -86,4 +86,54 @@ void main() {
 
     expect(homeAssistantChatContinuations(snapshot, chat), isEmpty);
   });
+  test('preserves server continuations before local assistant chats', () {
+    const serverSnapshot = HomeSnapshot(
+      assistants: snapshot.assistants,
+      rooms: [],
+      continuations: [
+        HomeContinuationModel(
+          id: 'story-radio:episode-1',
+          title: 'Continue Night Stories',
+          subtitle: 'Episode 2 · 05:12 remaining',
+          kind: 'story_radio',
+          roomId: 'room.story-radio',
+        ),
+        HomeContinuationModel(
+          id: 'chat:character-gwani',
+          title: 'Server conversation',
+          subtitle: 'Keep this server projection',
+          kind: 'conversation',
+          characterId: 'character-gwani',
+        ),
+      ],
+    );
+    final chat = AiChatState(
+      threads: {
+        'character-gwani': ChatThread(
+          characterId: 'character-gwani',
+          updatedAt: DateTime.utc(2026, 10, 6, 10),
+          messages: [
+            message('m3', 'Local duplicate', DateTime.utc(2026, 10, 6, 10)),
+          ],
+        ),
+        'character-gwana': ChatThread(
+          characterId: 'character-gwana',
+          updatedAt: DateTime.utc(2026, 10, 6, 9),
+          messages: [
+            message('m4', 'Local unique', DateTime.utc(2026, 10, 6, 9)),
+          ],
+        ),
+      },
+    );
+
+    final result = mergeHomeContinuations(serverSnapshot, chat);
+
+    expect(result, hasLength(3));
+    expect(result[0].id, 'story-radio:episode-1');
+    expect(result[0].kind, 'story_radio');
+    expect(result[1].id, 'chat:character-gwani');
+    expect(result[1].title, 'Server conversation');
+    expect(result[2].id, 'chat:character-gwana');
+  });
+
 }
