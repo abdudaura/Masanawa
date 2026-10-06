@@ -7,6 +7,7 @@ import '../screens/billing/billing_screen.dart';
 import '../screens/onboarding/name_screen.dart';
 import '../screens/onboarding/otp_screen.dart';
 import '../screens/onboarding/phone_login_screen.dart';
+import '../screens/owner_access/owner_access_session_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/twin/twin_home_shell.dart';
 import '../finance/crypto_wallet_screen.dart';
@@ -65,6 +66,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path == '/chats' ||
           path.startsWith('/chat/') ||
           path.startsWith('/twin/') ||
+          path.startsWith('/owner-session/') ||
           path == '/agents' ||
           path == '/masana' ||
           path == '/settings' ||
@@ -99,6 +101,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/chat/:id',
         builder: (context, state) => AiChatScreen(
           characterId: state.pathParameters['id']!,
+        ),
+      ),
+      GoRoute(
+        path: '/owner-session/:characterId/:requestId',
+        builder: (context, state) => OwnerAccessSessionScreen(
+          characterId: state.pathParameters['characterId']!,
+          requestId: state.pathParameters['requestId']!,
         ),
       ),
       GoRoute(
