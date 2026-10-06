@@ -353,7 +353,13 @@ class _OwnerAccessSessionScreenState
                   ),
                   child: Text(
                     'You are talking to the real person, not their AI Twin. '
-                    'This private room is used only for this owner-access session.' +
+                    'This is a private text session. Masanawa does not provide '
+                    'recording for this session.' +
+                        (_status?.messageRetentionDays == null
+                            ? ''
+                            : ' Messages may be retained for up to ' +
+                                _status!.messageRetentionDays.toString() +
+                                ' days for session continuity and disputes.') +
                         (_status?.sessionEndsAt == null
                             ? ''
                             : ' The session closes automatically at ' +
