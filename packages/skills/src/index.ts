@@ -20,3 +20,5 @@ export * from "./distribution.js";
 export * from "./teaching.js";
 export * from "./teaching-runtime.js";
 export * from "./teaching-shell.js";
+
+export * from "./teaching-plan.js";
