@@ -20,7 +20,7 @@ class _OfferingGatewayAdapter implements HttpClientAdapter {
     final body = options.method == 'GET'
         ? {
             'enabled': false,
-            'modalities': ['voice'],
+            'modalities': ['text'],
             'durationOptionsMinutes': [15],
             'priceCreditsPerMinute': 0,
             'revision': 0,
@@ -48,7 +48,6 @@ void main() {
       enabled: true,
       modalities: {
         OwnerAccessModality.text,
-        OwnerAccessModality.voice,
       },
       durationOptionsMinutes: [15, 30],
       priceCreditsPerMinute: 20,
@@ -56,7 +55,7 @@ void main() {
 
     final disabled = offering.copyWith(enabled: false);
 
-    expect(offering.modalities.length, 2);
+    expect(offering.modalities.length, 1);
     expect(offering.durationOptionsMinutes, [15, 30]);
     expect(offering.priceCreditsPerMinute, 20);
     expect(disabled.enabled, isFalse);
@@ -72,7 +71,7 @@ void main() {
 
     final initial = await transport.read();
     expect(initial.enabled, isFalse);
-    expect(initial.modalities, {OwnerAccessModality.voice});
+    expect(initial.modalities, {OwnerAccessModality.text});
     expect(initial.durationOptionsMinutes, [15]);
     expect(initial.priceCreditsPerMinute, 0);
 
@@ -107,7 +106,7 @@ void main() {
     );
     expect(adapter.requests.last.data, {
       'enabled': true,
-      'modalities': ['voice'],
+      'modalities': ['text'],
       'durationOptionsMinutes': [15, 30, 60],
       'priceCreditsPerMinute': 12,
     });
