@@ -1,4 +1,11 @@
-import { toInstant, type CharacterId, type Instant, type TenantId, type UserId } from "@masanawa/contracts";
+import {
+  isCanonicalId,
+  toInstant,
+  type CharacterId,
+  type Instant,
+  type TenantId,
+  type UserId,
+} from "@masanawa/contracts";
 
 export const groupRoomParticipantKinds = ["human", "character", "twin"] as const;
 export type GroupRoomParticipantKind = (typeof groupRoomParticipantKinds)[number];
@@ -104,6 +111,13 @@ function normalizeParticipant(input: GroupRoomParticipant): GroupRoomParticipant
   const bindingRef = bounded(input.bindingRef, "group participant bindingRef", 512);
   const displayName = bounded(input.displayName, "group participant displayName", 200);
 
+  if (input.userId !== null && !isCanonicalId("user", input.userId)) {
+    throw new TypeError("group participant userId is invalid");
+  }
+  if (input.characterId !== null && !isCanonicalId("character", input.characterId)) {
+    throw new TypeError("group participant characterId is invalid");
+  }
+
   if (kind === "human") {
     if (input.userId === null || input.characterId !== null) {
       throw new TypeError("human group participant must bind exactly one User");
@@ -128,6 +142,9 @@ function normalizeParticipant(input: GroupRoomParticipant): GroupRoomParticipant
 }
 
 export function normalizeGroupRoom(input: GroupRoom): GroupRoom {
+  if (!isCanonicalId("tenant", input.tenantId)) {
+    throw new TypeError("Group Room tenantId is invalid");
+  }
   const participants = input.participants.map(normalizeParticipant);
   if (participants.length < 2 || participants.length > 128) {
     throw new TypeError("Group Room requires 2..128 participants");
