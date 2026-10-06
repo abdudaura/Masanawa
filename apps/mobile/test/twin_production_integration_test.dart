@@ -47,7 +47,7 @@ void main() {
     dio.httpClientAdapter = _Adapter((options) async {
       seenPaths.add(options.path);
       switch (options.path) {
-        case '/home':
+        case '/v1/home':
           return _json({
             'assistants': [
               {
@@ -170,7 +170,7 @@ void main() {
     expect(
       seenPaths,
       containsAll(<String>[
-        '/home',
+        '/v1/home',
         '/v1/my-twin',
         '/agent/twins',
         '/agent/twin/activity',
