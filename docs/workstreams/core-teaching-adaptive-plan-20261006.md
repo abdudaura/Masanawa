@@ -17,12 +17,15 @@ package-level capability. It does not overwrite those stale branches.
 - `packages/skills/src/teaching-plan.ts` (new)
 - `packages/skills/src/teaching-plan.test.ts` (new)
 - `packages/skills/src/index.ts` (single export only)
+- `packages/skills/src/teaching-runtime.ts` (adaptive planner composition only)
+- `packages/skills/src/teaching-runtime.test.ts` (focused planner composition coverage)
 - `docs/CORE-TEACHING-ADAPTIVE-PLAN.md` (new)
 - `docs/workstreams/core-teaching-adaptive-plan-20261006.md`
 
 ## Boundaries
 
 - no Gateway/app/main/mobile/channel/payment/memory/migration/deployment edits;
+- stale PR #96 Teaching runtime paths are explicitly reclaimed only for the adaptive-planner composition seam;
 - no second Teaching runtime or persistence authority;
 - plan proposal remains provider-neutral and does not grant evidence/tool authority;
 - final lesson plans must still pass existing `normalizeTeachingLessonPlan()`.
