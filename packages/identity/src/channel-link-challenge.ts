@@ -219,6 +219,12 @@ function normalizeChallenge(
   if (input.state === "locked" && observedAttempts < maxAttempts) {
     throw new TypeError("locked challenge must exhaust its attempt limit");
   }
+  if (input.state === "pending" && observedAttempts >= maxAttempts) {
+    throw new TypeError("pending challenge cannot exhaust its attempt limit");
+  }
+  if (input.state === "verified" && observedAttempts < 1) {
+    throw new TypeError("verified challenge must record a successful attempt");
+  }
 
   return Object.freeze({
     requestId: input.requestId,
@@ -331,6 +337,9 @@ export function verifyChannelLinkChallenge(input: {
   }
 
   const attemptedAt = toInstant(input.attemptedAt);
+  if (Date.parse(attemptedAt) < Date.parse(current.createdAt)) {
+    throw new Error("Channel link attempt predates challenge creation");
+  }
   const externalSubjectId = bounded(
     input.externalSubjectId,
     "externalSubjectId",
@@ -364,7 +373,7 @@ export function verifyChannelLinkChallenge(input: {
 
   if (
     current.state === "expired" ||
-    Date.parse(attemptedAt) > Date.parse(current.expiresAt)
+    Date.parse(attemptedAt) >= Date.parse(current.expiresAt)
   ) {
     const expired =
       current.state === "expired"
