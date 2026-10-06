@@ -51,6 +51,13 @@ class _OwnerAccessSessionScreenState
 
   bool get _active => _request?.state == OwnerAccessState.active;
 
+  void _stopActiveTimers() {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
+    _messageTimer?.cancel();
+    _messageTimer = null;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -92,6 +99,9 @@ class _OwnerAccessSessionScreenState
         _request = request;
         _error = request == null ? 'This human session is unavailable.' : null;
       });
+      if (request?.state != OwnerAccessState.active) {
+        _stopActiveTimers();
+      }
     } catch (_) {
       if (mounted) {
         setState(() => _error = 'Could not load this human session.');
@@ -214,8 +224,7 @@ class _OwnerAccessSessionScreenState
       );
       if (!mounted) return;
       setState(() => _request = updated);
-      _heartbeatTimer?.cancel();
-      _messageTimer?.cancel();
+      _stopActiveTimers();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Human session completed.')),
       );
@@ -233,8 +242,7 @@ class _OwnerAccessSessionScreenState
 
   @override
   void dispose() {
-    _heartbeatTimer?.cancel();
-    _messageTimer?.cancel();
+    _stopActiveTimers();
     _composer.dispose();
     _scroll.dispose();
     super.dispose();
