@@ -53,9 +53,14 @@ function fakeRepository(): StoryRadioRepository {
     },
     async setSeriesPublication(input) {
       const current = series.get(input.seriesId);
-      if (!current) return null;
+      if (!current || current.tenantId !== input.tenantId) return null;
       if (input.published &&
-          ![...episodes.values()].some(e => e.seriesId === input.seriesId && e.state === "published")) {
+          ![...episodes.values()].some(
+            e =>
+              e.tenantId === input.tenantId &&
+              e.seriesId === input.seriesId &&
+              e.state === "published",
+          )) {
         throw new Error("story_radio.series.requires_published_episode");
       }
       const next: StorySeries = Object.freeze({
@@ -87,12 +92,19 @@ function fakeRepository(): StoryRadioRepository {
     },
     async setEpisodePublication(input) {
       const current = episodes.get(input.episodeId);
-      if (!current) return null;
+      if (!current || current.tenantId !== input.tenantId) return null;
       const parent = series.get(current.seriesId);
-      if (!input.published && current.state === "published" && parent?.state === "published") {
+      if (
+        !input.published &&
+        current.state === "published" &&
+        parent?.tenantId === input.tenantId &&
+        parent.state === "published"
+      ) {
         const publishedCount = [...episodes.values()].filter(
           (item) =>
-            item.seriesId === current.seriesId && item.state === "published",
+            item.tenantId === input.tenantId &&
+            item.seriesId === current.seriesId &&
+            item.state === "published",
         ).length;
         if (publishedCount <= 1) {
           throw new Error("story_radio.episode.last_published_in_live_series");
@@ -158,7 +170,13 @@ function fakeRepository(): StoryRadioRepository {
     async saveProgress(input) {
       const e = episodes.get(input.episodeId);
       const s = e ? series.get(e.seriesId) : null;
-      if (!e || e.state !== "published" || s?.state !== "published") {
+      if (
+        !e ||
+        e.tenantId !== input.tenantId ||
+        e.state !== "published" ||
+        s?.tenantId !== input.tenantId ||
+        s.state !== "published"
+      ) {
         throw new Error("story_radio.episode.unavailable");
       }
       progress.set(
@@ -170,7 +188,13 @@ function fakeRepository(): StoryRadioRepository {
     async getReactionSummary(input) {
       const e = episodes.get(input.episodeId);
       const s = e ? series.get(e.seriesId) : null;
-      if (!e || e.state !== "published" || s?.state !== "published") {
+      if (
+        !e ||
+        e.tenantId !== input.tenantId ||
+        e.state !== "published" ||
+        s?.tenantId !== input.tenantId ||
+        s.state !== "published"
+      ) {
         throw new Error("story_radio.episode.unavailable");
       }
       return summary(input.tenantId, input.userId, input.episodeId);
@@ -178,7 +202,13 @@ function fakeRepository(): StoryRadioRepository {
     async setReaction(input) {
       const e = episodes.get(input.episodeId);
       const s = e ? series.get(e.seriesId) : null;
-      if (!e || e.state !== "published" || s?.state !== "published") {
+      if (
+        !e ||
+        e.tenantId !== input.tenantId ||
+        e.state !== "published" ||
+        s?.tenantId !== input.tenantId ||
+        s.state !== "published"
+      ) {
         throw new Error("story_radio.episode.unavailable");
       }
       reactions.set(
@@ -195,7 +225,7 @@ const session = (userId: string, tenantId = "tenant_test") => ({
     tenantId,
     userId,
     profile: {
-      tenantId: "tenant_test",
+      tenantId,
       userId,
       phone: null,
       email: null,
