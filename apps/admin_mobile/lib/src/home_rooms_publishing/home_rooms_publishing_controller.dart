@@ -69,6 +69,42 @@ class HomeRoomsPublishingController {
     return state;
   }
 
+  int _targetRevision(
+    HomeRoomsPublishingProjection projection,
+    PublishingMutationIntent intent,
+  ) {
+    switch (intent.kind) {
+      case PublishingMutationKind.setNewsCategoryVisibility:
+      case PublishingMutationKind.pinNewsItem:
+        final item = projection.newsCategories
+            .where((entry) => entry.categoryId == intent.targetId)
+            .firstOrNull;
+        if (item == null) {
+          throw StateError('News publishing target is unavailable');
+        }
+        return item.revision;
+
+      case PublishingMutationKind.setHomeRoomVisibility:
+      case PublishingMutationKind.reorderHomeRoom:
+        final item = projection.homeRooms
+            .where((entry) => entry.roomKey == intent.targetId)
+            .firstOrNull;
+        if (item == null) {
+          throw StateError('Home Room publishing target is unavailable');
+        }
+        return item.revision;
+
+      case PublishingMutationKind.updateAssistantPresentation:
+        final item = projection.assistants
+            .where((entry) => entry.characterId == intent.targetId)
+            .firstOrNull;
+        if (item == null) {
+          throw StateError('Assistant publishing target is unavailable');
+        }
+        return item.revision;
+    }
+  }
+
   Future<HomeRoomsPublishingState> apply(
     PublishingMutationIntent intent,
   ) async {
@@ -77,15 +113,18 @@ class HomeRoomsPublishingController {
     if (current == null) {
       throw StateError('Publishing projection is not loaded');
     }
-    if (intent.expectedRevision != current.revision) {
-      throw StateError('Publishing projection revision is stale');
+
+    final currentRevision = _targetRevision(current, intent);
+    if (intent.expectedRevision != currentRevision) {
+      throw StateError('Publishing target revision is stale');
     }
 
     state = state.copyWith(saving: true, clearError: true);
     try {
       final next = await transport.mutate(intent);
-      if (next.revision <= current.revision) {
-        throw StateError('Publishing mutation did not advance revision');
+      final nextRevision = _targetRevision(next, intent);
+      if (nextRevision <= currentRevision) {
+        throw StateError('Publishing target revision did not advance');
       }
       state = state.copyWith(
         saving: false,
@@ -99,5 +138,12 @@ class HomeRoomsPublishingController {
       );
     }
     return state;
+  }
+}
+
+extension _FirstOrNull<T> on Iterable<T> {
+  T? get firstOrNull {
+    final iterator = this.iterator;
+    return iterator.moveNext() ? iterator.current : null;
   }
 }
