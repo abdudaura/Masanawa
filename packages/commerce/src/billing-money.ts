@@ -13,7 +13,7 @@ export interface BillingQuote {
   readonly quoteId: QuoteId;
   readonly revision: number;
   readonly categoryCode: string | null;
-  readonly originatingCharacterId: string | null;
+  readonly originatingCharacterId?: string | null;
   readonly billerCode: string;
   readonly itemCode: string;
   readonly itemName: string;
