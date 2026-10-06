@@ -32,3 +32,18 @@ cross-Relationship action collisions.
 Make every staged multi-select storage operation carry enough canonical scope for a later
 durable adapter to enforce tenant-bound isolation and replay-safe CAS without inferring
 ownership from an opaque action key.
+
+
+## Implementation checkpoint
+
+Completed:
+- added `TeachingMultiSelectStageStorageScope`;
+- exact RelationshipId + SkillVersionId + RequestId + actionKey + bindingHash derived from
+  admitted runtime/action authority;
+- create/load/compare-and-set port calls now carry that scope;
+- coordinator constructs scope internally rather than accepting caller-defined storage scope;
+- in-memory contract harness now enforces exact scope and proves changed Relationship or
+  RequestId cannot load the same stage;
+- all existing stage revision/hash/idempotency behavior is preserved.
+
+State: IMPLEMENTATION COMPLETE / EXECUTABLE VERIFICATION PENDING.
