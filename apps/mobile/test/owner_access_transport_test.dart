@@ -39,6 +39,9 @@ class _OwnerAccessAdapter implements HttpClientAdapter {
         'attendanceVerified': true,
         'verifiedSeconds': 75,
         'sessionEndsAt': '2026-10-05T10:20:00Z',
+        'realPersonSession': true,
+        'recordingAllowed': false,
+        'messageRetentionDays': 30,
         'presence': [
           {
             'userId': 'user-requester',
@@ -134,6 +137,9 @@ void main() {
     expect(status.attendanceVerified, isTrue);
     expect(status.verifiedSeconds, 75);
     expect(status.sessionEndsAt, isNotNull);
+    expect(status.realPersonSession, isTrue);
+    expect(status.recordingAllowed, isFalse);
+    expect(status.messageRetentionDays, 30);
     expect(status.presence, hasLength(2));
 
     final messages = await transport.messages(
