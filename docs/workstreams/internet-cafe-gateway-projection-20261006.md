@@ -1,21 +1,54 @@
 # Internet Cafe Gateway projection seam
 
-Status: CLAIMED — 2026-10-06
+Status: ISOLATED SERVER PROJECTION COMPLETE — shared route/runtime composition remains
 Branch: `work/internet-cafe-gateway-projection-20261006`
-Base: PR #136 production integration head
+Base: `work/production-apk-integration-20261005` / PR #136
+PR: #218
 
-Owned paths only:
+## Ownership
+
+Changed paths only:
 - `services/gateway/src/internet_cafe_room.ts`
 - `services/gateway/src/internet_cafe_room.test.ts`
 - `docs/workstreams/internet-cafe-gateway-projection-20261006.md`
 
-No edits to Gateway `app.ts`/`main.ts`, mobile router/chat/transport, Billing/provider code, Skills implementation, Commerce/Event migrations, production environment or APK paths.
+No edits to Gateway `app.ts`/`main.ts`, mobile router/chat/transport, Billing/provider code,
+Skills implementation, Commerce/Event migrations, production environment or APK paths.
 
-Goal:
-- produce the exact Lane I Internet Cafe mobile projection;
-- keep Data/Airtime/Electricity/TV bound to opaque canonical billing references supplied by shared composition;
-- bind applications/business/documents/online-help services to opaque admitted Skill references supplied by shared composition;
-- provide server-owned quick starts, task intake and optional selection projections;
-- never invent price, provider success, receipt or financial state.
+## Completed
 
-The #136 owner mounts the route and resolves opaque references through canonical Billing/Skills.
+- Exact Lane I mobile projection contract for Internet Cafe.
+- Server-owned Room identity, title, subtitle, service sections and launch quick starts.
+- Data/Airtime/Electricity/TV are bound only to caller-supplied opaque canonical billing references.
+- Applications, Business Services, Documents and Online Help are bound only to caller-supplied opaque Skill references.
+- Launch service taxonomy covers the approved application/business/document/online-help categories without creating a specialist InternetCafe agent.
+- Server-owned task intake projections for application and document flows.
+- Optional server-owned selection projection with known-service and unique-option validation.
+- Duplicate service-id rejection.
+- Missing/blank execution reference rejection.
+- No price, provider success, receipt, checkout or transaction state is projected by this module.
+- Focused tests for billing-vs-Skill separation, launch quick starts, intake, active selections, unknown-service rejection and missing-reference rejection.
+
+## Architecture boundary
+
+This module is presentation/projection only. It does not query Flutterwave, choose billers,
+quote prices, dispatch purchases, admit Skills, run Workflows or write financial state.
+The owning shared composition supplies references only after canonical Billing/Skill
+eligibility/admission.
+
+## Verification
+
+- PR changed-file audit is exactly the three claimed files.
+- Foundation CI run `37451533622`, job `112229005652`, failed before checkout with
+  `steps = null`; no code/test verdict is fabricated.
+- Projection was checked against current Lane I head `4c3ac73796aff5ec05ee0875512cf294e92239e3`.
+
+## Remaining shared-owner work
+
+- #136: register the authenticated Internet Cafe route and mount navigation.
+- #210/#136: resolve billing references only from production-qualified canonical Billing catalog/composition.
+- Skill/runtime owner: resolve opaque Skill references after normal admission/readiness checks.
+- Shared attachment/artifact owner: handle uploaded documents and resulting artifacts.
+- #136: exact APK/device qualification including real Data + one additional bill family.
+
+**No further isolated implementation remains in this server projection slice.**
