@@ -10,6 +10,48 @@ function fail(message, code = 1) {
   throw error;
 }
 
+const REQUIRED_VALIDATION_CATEGORIES = Object.freeze(["CABLEBILLS", "UTILITYBILLS"]);
+
+export function validateProductionQualificationInputs(env = process.env) {
+  const raw = env.FLUTTERWAVE_QUALIFICATION_TARGETS_JSON?.trim() ?? "";
+  if (!raw) {
+    fail(
+      "FLUTTERWAVE_QUALIFICATION_TARGETS_JSON is required with real Cable and Electricity validation targets",
+      2,
+    );
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    fail("FLUTTERWAVE_QUALIFICATION_TARGETS_JSON is not valid JSON", 1);
+  }
+  if (!Array.isArray(parsed) || parsed.length === 0) {
+    fail("qualification targets must be a non-empty array", 2);
+  }
+
+  const categories = new Set(
+    parsed
+      .filter((entry) => entry && typeof entry === "object" && !Array.isArray(entry))
+      .map((entry) => String(entry.categoryCode ?? "").trim())
+      .filter(Boolean),
+  );
+
+  const missing = REQUIRED_VALIDATION_CATEGORIES.filter((code) => !categories.has(code));
+  if (missing.length > 0) {
+    fail(
+      `qualification targets are missing required categories: ${missing.join(",")}`,
+      2,
+    );
+  }
+
+  return Object.freeze({
+    targetCount: parsed.length,
+    requiredValidationCategories: REQUIRED_VALIDATION_CATEGORIES,
+  });
+}
+
 function run(command, args, options = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
@@ -29,6 +71,7 @@ function run(command, args, options = {}) {
 }
 
 async function main() {
+  validateProductionQualificationInputs();
   const dir = await mkdtemp(join(tmpdir(), "masanawa-billing-qualification-"));
   const reportPath = join(dir, "flutterwave-report.json");
   try {
