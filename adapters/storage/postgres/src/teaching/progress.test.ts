@@ -31,9 +31,11 @@ function progress(step = "step-1"): TeachingProgressHandoff {
     relationshipId,
     skillVersionId,
     lessonStepKey: step,
-    completedExerciseKeys: Object.freeze([]),
-    understanding: "unknown",
-    sequenceCompleted: false,
+    checkpointState: "ready-to-advance",
+    demonstratedUnderstanding: Object.freeze(["concept understood"]),
+    misconceptionsToRevisit: Object.freeze([]),
+    nextSteps: Object.freeze(["continue lesson"]),
+    recordedAt: toInstant(new Date("2026-10-06T10:00:00.000Z")),
   };
 }
 
@@ -50,10 +52,12 @@ function selectionAttempt(
     exerciseKey: "exercise-1",
     selectedOptionKeys: Object.freeze(["a"]),
     evaluation: Object.freeze({
-      correctness: "correct" as const,
-      understanding: "demonstrated" as const,
+      assessmentKind: "formative" as const,
+      correct: true,
       feedback: "Correct",
       misconception: null,
+      alternativeExplanation: null,
+      nextCheckpointState: "ready-to-advance" as const,
     }),
     progress: progress(),
     recordedAt: toInstant(new Date("2026-10-06T10:00:00.000Z")),
@@ -74,10 +78,12 @@ function freeAttempt(
     exerciseKey: "exercise-free",
     responseText: "My answer",
     evaluation: Object.freeze({
-      correctness: "correct" as const,
-      understanding: "demonstrated" as const,
+      assessmentKind: "formative" as const,
+      correct: true,
       feedback: "Good",
       misconception: null,
+      alternativeExplanation: null,
+      nextCheckpointState: "ready-to-advance" as const,
     }),
     progress: progress("step-2"),
     recordedAt: toInstant(new Date("2026-10-06T10:01:00.000Z")),
@@ -211,9 +217,9 @@ function harness() {
         client: {
           query: async (query: string, values?: readonly unknown[]) => {
             locks.push(String(values?.[0] ?? query));
-            return { rows: [], rowCount: 0 } as never;
+            return { rows: [], rowCount: 0 };
           },
-        },
+        } as unknown as TeachingMemoryTransaction["client"],
         memory,
       }),
   });
