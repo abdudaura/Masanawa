@@ -9,7 +9,9 @@ import {
   normalizePaidFeatureTrialPolicy,
   type CommissionPolicy,
   type OwnerAccessOffering,
+  type OwnerAccessParticipantPresence,
   type OwnerAccessRequest,
+  type OwnerAccessSessionMessage,
   type PaidFeatureKey,
   type PaidFeatureTrialPolicy,
   type TwinAttributionRecord,
@@ -962,6 +964,146 @@ export function createPostgresTwinRuntimeRepository(
             row.reservation_id,
             Number(row.reserved_credits),
           ),
+        ),
+      );
+    },
+
+    async touchOwnerAccessPresence(input) {
+      const result = await pool.query<{
+        request_id: string;
+        user_id: string;
+        first_seen_at: Date | string;
+        last_seen_at: Date | string;
+        heartbeat_count: string;
+      }>(
+        `INSERT INTO commerce.owner_access_presence(
+           tenant_id,request_id,user_id,first_seen_at,last_seen_at,heartbeat_count
+         ) VALUES ($1,$2,$3,$4,$4,1)
+         ON CONFLICT (tenant_id,request_id,user_id)
+         DO UPDATE SET
+           last_seen_at=GREATEST(
+             commerce.owner_access_presence.last_seen_at,
+             EXCLUDED.last_seen_at
+           ),
+           heartbeat_count=commerce.owner_access_presence.heartbeat_count+1
+         RETURNING request_id,user_id,first_seen_at,last_seen_at,
+                   heartbeat_count::text`,
+        [input.tenantId, input.requestId, input.userId, input.seenAt],
+      );
+      const row = result.rows[0];
+      if (!row) throw new Error("Owner access presence persistence failed");
+      return Object.freeze<OwnerAccessParticipantPresence>({
+        requestId: row.request_id,
+        userId: row.user_id as UserId,
+        firstSeenAt: iso(row.first_seen_at),
+        lastSeenAt: iso(row.last_seen_at),
+        heartbeatCount: Number(row.heartbeat_count),
+      });
+    },
+
+    async listOwnerAccessPresence(input) {
+      const result = await pool.query<{
+        request_id: string;
+        user_id: string;
+        first_seen_at: Date | string;
+        last_seen_at: Date | string;
+        heartbeat_count: string;
+      }>(
+        `SELECT request_id,user_id,first_seen_at,last_seen_at,
+                heartbeat_count::text
+           FROM commerce.owner_access_presence
+          WHERE tenant_id=$1 AND request_id=$2
+          ORDER BY first_seen_at ASC,user_id ASC`,
+        [input.tenantId, input.requestId],
+      );
+      return Object.freeze(
+        result.rows.map((row) =>
+          Object.freeze<OwnerAccessParticipantPresence>({
+            requestId: row.request_id,
+            userId: row.user_id as UserId,
+            firstSeenAt: iso(row.first_seen_at),
+            lastSeenAt: iso(row.last_seen_at),
+            heartbeatCount: Number(row.heartbeat_count),
+          }),
+        ),
+      );
+    },
+
+    async appendOwnerAccessMessage(input) {
+      const message = input.message;
+      await pool.query(
+        `INSERT INTO commerce.owner_access_messages(
+           tenant_id,request_id,message_id,sender_user_id,body,sent_at
+         ) VALUES ($1,$2,$3,$4,$5,$6)
+         ON CONFLICT DO NOTHING`,
+        [
+          input.tenantId,
+          message.requestId,
+          message.messageId,
+          message.senderUserId,
+          message.body,
+          message.sentAt,
+        ],
+      );
+      const result = await pool.query<{
+        request_id: string;
+        message_id: string;
+        sender_user_id: string;
+        body: string;
+        sent_at: Date | string;
+      }>(
+        `SELECT request_id,message_id,sender_user_id,body,sent_at
+           FROM commerce.owner_access_messages
+          WHERE tenant_id=$1 AND request_id=$2 AND message_id=$3`,
+        [input.tenantId, message.requestId, message.messageId],
+      );
+      const row = result.rows[0];
+      if (!row) throw new Error("Owner access message persistence failed");
+      const persisted = Object.freeze<OwnerAccessSessionMessage>({
+        requestId: row.request_id,
+        messageId: row.message_id,
+        senderUserId: row.sender_user_id as UserId,
+        body: row.body,
+        sentAt: iso(row.sent_at),
+      });
+      if (
+        persisted.senderUserId !== message.senderUserId ||
+        persisted.body !== message.body
+      ) {
+        throw new Error("Owner access message replay conflict");
+      }
+      return persisted;
+    },
+
+    async listOwnerAccessMessages(input) {
+      const limit = Math.max(1, Math.min(200, input.limit));
+      const result = await pool.query<{
+        request_id: string;
+        message_id: string;
+        sender_user_id: string;
+        body: string;
+        sent_at: Date | string;
+      }>(
+        `SELECT request_id,message_id,sender_user_id,body,sent_at
+           FROM (
+             SELECT request_id,message_id,sender_user_id,body,sent_at
+               FROM commerce.owner_access_messages
+              WHERE tenant_id=$1 AND request_id=$2
+              ORDER BY sent_at DESC,message_id DESC
+              LIMIT $3
+           ) recent
+          ORDER BY sent_at ASC,message_id ASC`,
+        [input.tenantId, input.requestId, limit],
+      );
+      return Object.freeze(
+        result.rows.map((row) =>
+          Object.freeze<OwnerAccessSessionMessage>({
+            requestId: row.request_id,
+            messageId: row.message_id,
+            senderUserId: row.sender_user_id as UserId,
+            body: row.body,
+            sentAt: iso(row.sent_at),
+          }),
         ),
       );
     },
