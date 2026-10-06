@@ -82,3 +82,25 @@ A typical flow is:
 7. only active proof-backed bindings may route channel traffic to the canonical User.
 
 Transport verification alone must never skip steps 2–6.
+
+
+## Durable CAS coordinator
+
+`ChannelLinkChallengeCoordinator` defines the required persistence behavior without
+choosing a database schema.
+
+The repository port has exactly three operations:
+
+- `create(challenge)`: canonical RequestId is the issuance idempotency key; exact replay
+  may return the existing challenge, but changed challenge state under that RequestId must
+  fail;
+- `load(requestId)`: always reload current state before verification;
+- `compareAndSet(requestId, expectedRevision, next)`: atomically persist exactly one
+  lifecycle transition and reject stale writers.
+
+The coordinator never returns a newly verified proof or failed-attempt transition until
+the returned repository state exactly matches the requested next state. Exact replay of an
+already verified challenge requires no second storage mutation.
+
+This is the concurrency boundary required before a real Gateway endpoint can use the
+challenge safely across multiple instances.
