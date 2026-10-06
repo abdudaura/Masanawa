@@ -36,3 +36,29 @@ integrates that workspace importer.
 - latest publication + health read is tenant/device isolated;
 - snapshot staleness is calculated from caller-supplied trusted time;
 - capability absence never implies support.
+
+
+## Implementation checkpoint
+
+Implemented on PR #317.
+
+Exact head: `c9210712e197467c21276679acdba567ed188487`.
+
+Completed:
+- PostgreSQL persistence for immutable complete capability generations;
+- exact replay for same generation/evidence;
+- conflict on changed same-generation evidence;
+- first generation = 1 and exact +1 generation progression;
+- active-Device gating and Tenant/Device isolation;
+- monotonic Device health with exact replay and same-timestamp conflict detection;
+- latest complete generation read plus current health and caller-time staleness;
+- capability absence remains absence (no inferred support);
+- focused disposable-Postgres acceptance coverage;
+- devices Postgres barrel export.
+
+Verification:
+- PR #317 is mergeable and changes exactly the four claimed paths.
+- Foundation CI run `37499420900` produced no downloadable job log. This is the same
+  repository-wide pre-execution runner failure and is not a test verdict.
+
+State: IMPLEMENTATION COMPLETE / EXECUTABLE VERIFICATION BLOCKED.
