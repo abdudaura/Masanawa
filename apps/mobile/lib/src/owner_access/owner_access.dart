@@ -130,6 +130,13 @@ class OwnerAccessRequest {
     required this.requestedAt,
     required this.acceptBy,
     required this.scheduledFor,
+    this.completedAt,
+    this.disputeBy,
+    this.disputedAt,
+    this.disputeReason,
+    this.earningsReleasedAt,
+    this.disputeResolvedAt,
+    this.disputeResolution,
   });
 
   final String requestId;
@@ -144,6 +151,13 @@ class OwnerAccessRequest {
   final DateTime requestedAt;
   final DateTime acceptBy;
   final DateTime? scheduledFor;
+  final DateTime? completedAt;
+  final DateTime? disputeBy;
+  final DateTime? disputedAt;
+  final String? disputeReason;
+  final DateTime? earningsReleasedAt;
+  final DateTime? disputeResolvedAt;
+  final String? disputeResolution;
 
   factory OwnerAccessRequest.fromJson(Map<String, dynamic> json) {
     final requestId = json['requestId'];
@@ -156,6 +170,13 @@ class OwnerAccessRequest {
     final requestedAt = json['requestedAt'];
     final acceptBy = json['acceptBy'];
     final scheduledFor = json['scheduledFor'];
+    final completedAt = json['completedAt'];
+    final disputeBy = json['disputeBy'];
+    final disputedAt = json['disputedAt'];
+    final disputeReason = json['disputeReason'];
+    final earningsReleasedAt = json['earningsReleasedAt'];
+    final disputeResolvedAt = json['disputeResolvedAt'];
+    final disputeResolution = json['disputeResolution'];
     final duration = json['durationMinutes'];
     final price = json['priceCredits'];
     if (requestId is! String ||
@@ -169,7 +190,14 @@ class OwnerAccessRequest {
         acceptBy is! String ||
         duration is! num ||
         price is! num ||
-        (scheduledFor != null && scheduledFor is! String)) {
+        (scheduledFor != null && scheduledFor is! String) ||
+        (completedAt != null && completedAt is! String) ||
+        (disputeBy != null && disputeBy is! String) ||
+        (disputedAt != null && disputedAt is! String) ||
+        (disputeReason != null && disputeReason is! String) ||
+        (earningsReleasedAt != null && earningsReleasedAt is! String) ||
+        (disputeResolvedAt != null && disputeResolvedAt is! String) ||
+        (disputeResolution != null && disputeResolution is! String)) {
       throw const FormatException('Invalid owner access request');
     }
     return OwnerAccessRequest(
@@ -186,6 +214,20 @@ class OwnerAccessRequest {
       acceptBy: DateTime.parse(acceptBy).toLocal(),
       scheduledFor:
           scheduledFor == null ? null : DateTime.parse(scheduledFor).toLocal(),
+      completedAt:
+          completedAt == null ? null : DateTime.parse(completedAt).toLocal(),
+      disputeBy:
+          disputeBy == null ? null : DateTime.parse(disputeBy).toLocal(),
+      disputedAt:
+          disputedAt == null ? null : DateTime.parse(disputedAt).toLocal(),
+      disputeReason: disputeReason as String?,
+      earningsReleasedAt: earningsReleasedAt == null
+          ? null
+          : DateTime.parse(earningsReleasedAt).toLocal(),
+      disputeResolvedAt: disputeResolvedAt == null
+          ? null
+          : DateTime.parse(disputeResolvedAt).toLocal(),
+      disputeResolution: disputeResolution as String?,
     );
   }
 }
@@ -328,6 +370,7 @@ abstract class OwnerAccessTransport {
     required String requestId,
     required String action,
     DateTime? scheduledFor,
+    String? disputeReason,
   });
 
   Future<OwnerAccessRoomStatus> heartbeat({
