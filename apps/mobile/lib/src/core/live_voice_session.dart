@@ -33,6 +33,7 @@ class LiveVoiceSession with WidgetsBindingObserver {
   final _state = StreamController<LiveVoiceState>.broadcast(sync: true);
   final _errors = StreamController<String>.broadcast(sync: true);
   final _transcripts = StreamController<String>.broadcast(sync: true);
+  final _turnCompletions = StreamController<void>.broadcast(sync: true);
   final Completer<void> _ready = Completer<void>();
   WebSocket? _socket;
   StreamSubscription<Uint8List>? _micSub;
@@ -53,6 +54,7 @@ class LiveVoiceSession with WidgetsBindingObserver {
   Stream<LiveVoiceState> get states => _state.stream;
   Stream<String> get errors => _errors.stream;
   Stream<String> get transcripts => _transcripts.stream;
+  Stream<void> get turnCompletions => _turnCompletions.stream;
   Future<void> get ready => _ready.future;
   bool get speakerEnabled => _speaker;
   bool get muted => _muted;
@@ -335,6 +337,7 @@ class LiveVoiceSession with WidgetsBindingObserver {
         }
       }
       if (!_closed && server['turnComplete'] == true) {
+        _turnCompletions.add(null);
         _state.add(LiveVoiceState.listening);
       }
     } catch (_) {
@@ -426,5 +429,6 @@ class LiveVoiceSession with WidgetsBindingObserver {
     await _state.close();
     await _errors.close();
     await _transcripts.close();
+    await _turnCompletions.close();
   }
 }
