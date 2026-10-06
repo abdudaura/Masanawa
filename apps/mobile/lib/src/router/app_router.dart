@@ -9,6 +9,7 @@ import '../screens/onboarding/otp_screen.dart';
 import '../screens/onboarding/phone_login_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/settings/clone_setup_screen.dart';
+import '../screens/wallet/wallet_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../state/session_state.dart';
 
@@ -59,6 +60,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           (path == '/agents' || path == '/masana') ||
           path == '/settings' ||
           path == '/clone' ||
+          path == '/wallet' ||
           path == '/profile';
       if (!isSignedIn && protected) return '/phone-login';
 
@@ -86,6 +88,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/masana', redirect: (_, __) => '/agents'),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
       GoRoute(path: '/clone', builder: (_, _) => const CloneSetupScreen()),
+      GoRoute(path: '/wallet', builder: (_, _) => const WalletScreen()),
       GoRoute(path: '/profile', builder: (_, _) => const SettingsScreen()),
     ],
   );
