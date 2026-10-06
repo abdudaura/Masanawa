@@ -41,6 +41,30 @@ No existing `packages/studio`, Studio branch, or Task 135 implementation PR was 
 - archived project cannot accept new artifacts;
 - no provider/runtime execution semantics inside the domain.
 
-State: CLAIMED.
+State: ISOLATED COMPLETE / INTEGRATION READY.
+
+## Completed implementation
+
+- added canonical `@masanawa/studio` domain package using existing `media-project` and `media-artifact` canonical IDs;
+- exact Tenant + Character project ownership scope;
+- active/archive project lifecycle with stale-revision protection;
+- immutable artifact revision records with bounded kind/media/content references;
+- explicit parent-artifact lineage and source evidence;
+- deterministic order-independent provenance hashing;
+- runtime validation for deserialized artifact/source enums and SHA-256 evidence;
+- archived projects reject new artifacts;
+- cross-project/Character scope mismatch fails closed;
+- self/same-future lineage and duplicate parents are rejected;
+- Task 136 provider/render execution is intentionally absent.
+
+## Remaining integration dependencies
+
+1. workspace/lockfile owner must add the new package importer for frozen install/build;
+2. storage owner must add repository/migrations for durable projects/artifact revisions;
+3. Task 136 must consume immutable Studio artifacts rather than mutate them in place;
+4. Social publishing may reference finalized artifacts but must not become Studio provenance truth;
+5. executable CI remains required because hosted runners are currently failing before checkout.
+
+Implementation head before handoff: `dd458052a1727d3253438d49e2c10b30f67cfffe`.
 
 Last update: 2026-10-06.
