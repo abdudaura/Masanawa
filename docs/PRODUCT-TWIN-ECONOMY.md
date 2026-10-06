@@ -1,5 +1,19 @@
 # Masanawa Digital Twin Economy
 
+## 2026-10-06 launch information-architecture overlay
+
+The Twin economy remains canonical, but the consumer app no longer opens on My Twin.
+Launch navigation is **Home · Explore · Activity · Wallet** and Home is utility-first:
+Gwana/Gwani, quick billing, service Rooms, then My Twin/recent continuation.
+
+This changes discovery/navigation, not economic truth. Preserve one Twin per user, free
+public Twin text, paid Twin voice/trials, gifts, owner access, Credits, attribution,
+commission, Wallet, Activity and public/private representational memory.
+
+For current launch UX, Room definitions, Story Radio, News and phased implementation,
+read `docs/HOME-ROOMS-LAUNCH.md`. Any older section below that calls My Twin the first
+primary destination is superseded only in navigation priority.
+
 Status: canonical product overlay, approved direction 2026-10-05.
 
 This document simplifies Masanawa's user-facing product. It does not delete canonical
