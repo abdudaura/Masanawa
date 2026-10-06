@@ -41,6 +41,8 @@ abstract class CreatorCloneTransport {
     required String biography,
     required String gender,
     required int age,
+    required String avatarBase64,
+    required String avatarMimeType,
     required List<String> personality,
     required List<String> expertise,
   });
@@ -55,6 +57,8 @@ class UnavailableCreatorCloneTransport implements CreatorCloneTransport {
     required String biography,
     required String gender,
     required int age,
+    required String avatarBase64,
+    required String avatarMimeType,
     required List<String> personality,
     required List<String> expertise,
   }) {
