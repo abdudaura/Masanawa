@@ -396,10 +396,12 @@ describeDatabase("Twin economy PostgreSQL acceptance", () => {
     const first = await repository.appendOwnerAccessMessage({
       tenantId,
       message,
+      expiresAt: "2026-11-04T12:10:05.000Z",
     });
     const replay = await repository.appendOwnerAccessMessage({
       tenantId,
       message,
+      expiresAt: "2026-11-04T12:10:05.000Z",
     });
     expect(replay).toEqual(first);
 
@@ -407,6 +409,7 @@ describeDatabase("Twin economy PostgreSQL acceptance", () => {
       repository.appendOwnerAccessMessage({
         tenantId,
         message: { ...message, body: "Different content" },
+        expiresAt: "2026-11-04T12:10:05.000Z",
       }),
     ).rejects.toThrow("replay conflict");
 
@@ -425,6 +428,84 @@ describeDatabase("Twin economy PostgreSQL acceptance", () => {
         [tenantId, requestId, message.messageId],
       ),
     ).rejects.toThrow("Twin economy history is immutable");
+  });
+
+  it("purges only expired private owner-session messages", async () => {
+    const repository = createPostgresTwinRuntimeRepository(pool);
+    const tenantId = createCanonicalId("tenant");
+    const requesterUserId = createCanonicalId("user");
+    const ownerUserId = createCanonicalId("user");
+    const characterId = createCanonicalId("character");
+    const requestId = "owner-room-retention-request";
+
+    await repository.putOwnerAccessRequest({
+      tenantId,
+      request: {
+        requestId,
+        requesterUserId,
+        ownerUserId,
+        originatingCharacterId: characterId,
+        modality: "text",
+        durationMinutes: 15,
+        priceCredits: 0,
+        platformFeeCredits: 0,
+        ownerEarningCredits: 0,
+        chargeMode: "trial",
+        trialPolicyRevision: 1,
+        state: "settled",
+        requestedAt: "2026-10-05T12:00:00.000Z",
+        acceptBy: "2026-10-05T13:00:00.000Z",
+        scheduledFor: null,
+        startedAt: "2026-10-05T12:10:00.000Z",
+        completedAt: "2026-10-05T12:20:00.000Z",
+      },
+      reservationId: null,
+      reservedCredits: 0,
+    });
+
+    await repository.appendOwnerAccessMessage({
+      tenantId,
+      message: {
+        requestId,
+        messageId: "message-expired-retention",
+        senderUserId: requesterUserId,
+        body: "Old private message",
+        sentAt: "2026-10-05T12:10:05.000Z",
+      },
+      expiresAt: "2026-10-06T12:10:05.000Z",
+    });
+    await repository.appendOwnerAccessMessage({
+      tenantId,
+      message: {
+        requestId,
+        messageId: "message-live-retention",
+        senderUserId: ownerUserId,
+        body: "Still retained",
+        sentAt: "2026-10-05T12:10:10.000Z",
+      },
+      expiresAt: "2026-11-05T12:10:10.000Z",
+    });
+
+    const purged = await repository.purgeExpiredOwnerAccessMessages({
+      tenantId,
+      at: "2026-10-07T00:00:00.000Z",
+      limit: 100,
+    });
+    expect(purged).toBe(1);
+
+    const messages = await repository.listOwnerAccessMessages({
+      tenantId,
+      requestId,
+      limit: 100,
+    });
+    expect(messages.map((message) => message.messageId)).toEqual([
+      "message-live-retention",
+    ]);
+    await expect(
+      repository.readOwnerAccessRequest({ tenantId, requestId }),
+    ).resolves.toEqual(
+      expect.objectContaining({ requestId, state: "settled" }),
+    );
   });
 
   it("tracks owner-session participant presence with server timestamps and monotonic heartbeats", async () => {
