@@ -1,5 +1,31 @@
 # Continue Here
 
+## Home + Rooms launch checkpoint — 2026-10-06
+
+The consumer launch priority has been narrowed again for speed-to-release.
+
+Read first:
+- `docs/HOME-ROOMS-LAUNCH.md`
+- `docs/HOME-ROOMS-MULTI-WINDOW.md`
+- `docs/MOBILE-AGENT-EXPERIENCE.md`
+- `docs/DIGITAL-COMMERCE-LAUNCH.md`
+
+Launch shell: **Home · Explore · Activity · Wallet**.
+
+Home is the first screen. It prominently shows **Gwana left and Gwani right**, each with
+Chat, Voice note and Live voice/call. Below them are Data/Airtime/Electricity/TV quick
+shortcuts and service Rooms: Internet Cafe, Study Center, Story Radio, Work & Business,
+Research & Answers, News and bounded Group Rooms.
+
+**Story Radio** is admin-curated serialized audio. Users listen, continue to the next
+episode and react; they do not create public stories or use a video/story creator at
+launch. **News** is a separate source-aware Room.
+
+Preserve all merged Twin economy work. My Twin remains core but no longer owns the first
+tab. PR #136 remains single owner of shared production Gateway/mobile/APK integration.
+Parallel windows must use the lane map and avoid its shared files.
+
+
 ## Twin economy transformation checkpoint — 2026-10-05
 
 The consumer product direction has changed and now takes precedence over older
