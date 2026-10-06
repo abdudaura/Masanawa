@@ -52,10 +52,12 @@ class AiChatScreen extends ConsumerStatefulWidget {
     super.key,
     required this.characterId,
     this.entryMode = AiChatEntryMode.chat,
+    this.initialPrompt,
   });
 
   final String characterId;
   final AiChatEntryMode entryMode;
+  final String? initialPrompt;
 
   @override
   ConsumerState<AiChatScreen> createState() => _AiChatScreenState();
@@ -859,6 +861,15 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             unawaited(_openLiveVoice(agent));
             break;
           case AiChatEntryMode.cafe:
+            final prompt = widget.initialPrompt?.trim();
+            if (prompt != null && prompt.isNotEmpty) {
+              unawaited(
+                ref.read(aiChatProvider.notifier).sendText(
+                      widget.characterId,
+                      prompt,
+                    ),
+              );
+            }
             break;
         }
       });
@@ -1238,8 +1249,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   border: Border.all(color: u.brand.withValues(alpha: .18)),
                 ),
                 child: Text(
-                  'Welcome to Internet Cafe. Buy data, airtime, electricity '
-                  'or TV right here — tap below or just type.',
+                  'Welcome to Internet Cafe. Ask for a Masanawa service here — '
+                  'tap a shortcut, type, or speak naturally.',
                   style:
                       TextStyle(color: u.textMuted, fontSize: 12, height: 1.35),
                 ),
