@@ -53,6 +53,8 @@ Verified against official LiveKit JS Server SDK v2.19.1 on 2026-10-06:
 - unsupported LiveKit events are ignored as transport evidence, never domain success;
 - adapter follows canonical media adapter topology and explicit registration.
 
-State: CLAIMED. No implementation changes beyond this claim.
+State: IMPLEMENTING. LiveKit media adapter registration, bounded join-token minting, authenticated raw-body lifecycle webhook normalization and focused tests are committed. Shared lockfile/Presence/Gateway/mobile composition remain excluded.
+
+Implementation head before handoff: `249a223c11e81a51f171285198b9634e7714ab8d`.
 
 Last update: 2026-10-06.
