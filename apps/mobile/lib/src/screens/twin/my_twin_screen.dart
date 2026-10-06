@@ -276,6 +276,7 @@ class _TwinBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final u = context.masanawa;
     final humanAccess = ref.watch(ownerAccessOfferingProvider);
+    final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.3;
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
@@ -437,12 +438,20 @@ class _TwinBody extends ConsumerWidget {
                   const Divider(height: 1),
                   ListTile(
                     title: const Text('Price after trial'),
-                    subtitle: const Text('Credits per minute'),
-                    trailing: Text(
-                      offering.priceCreditsPerMinute < 1
-                          ? 'Set price'
-                          : '${offering.priceCreditsPerMinute} Cr/min',
-                    ),
+                    subtitle: largeText
+                        ? Text(
+                            offering.priceCreditsPerMinute < 1
+                                ? 'Credits per minute · Set price'
+                                : 'Credits per minute · ${offering.priceCreditsPerMinute} Cr/min',
+                          )
+                        : const Text('Credits per minute'),
+                    trailing: largeText
+                        ? null
+                        : Text(
+                            offering.priceCreditsPerMinute < 1
+                                ? 'Set price'
+                                : '${offering.priceCreditsPerMinute} Cr/min',
+                          ),
                     onTap: () async {
                       final price = await _askPrice(
                         context,
