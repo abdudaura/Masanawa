@@ -7,6 +7,7 @@ enum OwnerAccessState {
   active,
   completed,
   settled,
+  releasing,
   declined,
   expired,
   cancelled,
@@ -32,6 +33,7 @@ OwnerAccessState _state(String value) {
     case 'active': return OwnerAccessState.active;
     case 'completed': return OwnerAccessState.completed;
     case 'settled': return OwnerAccessState.settled;
+    case 'releasing': return OwnerAccessState.releasing;
     case 'declined': return OwnerAccessState.declined;
     case 'expired': return OwnerAccessState.expired;
     case 'cancelled': return OwnerAccessState.cancelled;
