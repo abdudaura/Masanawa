@@ -360,12 +360,26 @@ export function createStoryRadioService(input: Readonly<{
 
     async adminSetSeriesPublication(request) {
       const identity = await admin(request.authorizationHeader);
-      const updated = await input.repository.setSeriesPublication({
-        tenantId: String(identity.tenantId),
-        seriesId: text(request.seriesId, "series_id", 128),
-        published: request.published,
-        at: now(),
-      });
+      let updated;
+      try {
+        updated = await input.repository.setSeriesPublication({
+          tenantId: String(identity.tenantId),
+          seriesId: text(request.seriesId, "series_id", 128),
+          published: request.published,
+          at: now(),
+        });
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          error.message === "story_radio.series.requires_published_episode"
+        ) {
+          throw new StoryRadioError(
+            "story_radio.series.requires_published_episode",
+            409,
+          );
+        }
+        throw error;
+      }
       if (!updated) throw new StoryRadioError("story_radio.series.not_found", 404);
       return updated;
     },
