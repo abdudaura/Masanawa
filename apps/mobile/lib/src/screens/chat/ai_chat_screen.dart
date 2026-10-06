@@ -1093,6 +1093,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   ),
                 ),
               ),
+            if (widget.entryMode == AiChatEntryMode.cafe)
+              _CafeSuggestionBar(
+                selectedKey: _cafeCategory,
+                onTap: _sendCafeSuggestion,
+              ),
             Expanded(
               child: messages.isEmpty && !sending
                   ? const SizedBox.shrink()
@@ -1227,11 +1232,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 onStop: () => unawaited(
                   _stopInlineLiveVoice(outcome: 'completed'),
                 ),
-              ),
-            if (widget.entryMode == AiChatEntryMode.cafe)
-              _CafeSuggestionBar(
-                selectedKey: _cafeCategory,
-                onTap: _sendCafeSuggestion,
               ),
             if (widget.entryMode == AiChatEntryMode.teach)
               Container(
@@ -2618,38 +2618,32 @@ class _CafeSuggestionBar extends StatelessWidget {
     final u = context.masanawa;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            selectedKey == null
-                ? 'What would you like to do?'
-                : 'Changed your mind? Pick another service.',
-            style: TextStyle(
-              color: u.textMuted,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 7),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                for (final suggestion in kCafeSuggestions) ...[
-                  ChoiceChip(
-                    label: Text(suggestion.label),
-                    selected: selectedKey == suggestion.key,
-                    onSelected: (_) => onTap(suggestion),
-                    showCheckmark: false,
-                  ),
-                  const SizedBox(width: 7),
-                ],
+      padding: const EdgeInsets.fromLTRB(8, 7, 8, 5),
+      decoration: BoxDecoration(
+        color: u.surfaceCard,
+        border: Border(
+          bottom: BorderSide(color: u.structuralBorder),
+        ),
+      ),
+      child: Center(
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final suggestion in kCafeSuggestions) ...[
+                ChoiceChip(
+                  label: Text(suggestion.label),
+                  selected: selectedKey == suggestion.key,
+                  onSelected: (_) => onTap(suggestion),
+                  showCheckmark: false,
+                  visualDensity: VisualDensity.compact,
+                ),
+                const SizedBox(width: 6),
               ],
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
