@@ -38,6 +38,19 @@ Before any presentation or Skill assignment read/write:
 - Relationship Tenant + Character + User match;
 - any mismatch fails closed and causes zero downstream Agent writes.
 
-State: CLAIMED.
+State: IMPLEMENTED / VERIFICATION PENDING.
+
+## Completed
+
+- validates the full PersonalCloneProvision graph before any Agent presentation/Skill repository access;
+- Character Tenant must match the authorized Tenant;
+- CharacterVersion Tenant/Character must match the returned Character;
+- Character.activeCharacterVersionId must equal the returned CharacterVersion identity;
+- ownership must be same Tenant/Character, kind=personal-clone, ownerUserId=authorized User;
+- Relationship must be same Tenant/Character/User;
+- forged Tenant, CharacterVersion, ownership User and Relationship User substitutions all fail closed;
+- regression tests prove zero downstream presentation/Skill reads or writes occur on rejected graphs.
+
+Implementation head before handoff: `fef4bfe54927c092bff45eebd0973d1942742d1a`.
 
 Last update: 2026-10-06.
