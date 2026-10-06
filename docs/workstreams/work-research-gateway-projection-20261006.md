@@ -1,22 +1,56 @@
 # Work/Research Gateway projection seam
 
-Status: CLAIMED — 2026-10-06
+Status: ISOLATED SERVER PROJECTION COMPLETE — shared route/runtime composition remains
 Branch: `work/work-research-gateway-projection-20261006`
-Base: PR #136 production integration head
+Base: `work/production-apk-integration-20261005` / PR #136
+PR: #216
 
-Owned paths only:
+## Ownership
+
+Changed paths only:
 - `services/gateway/src/work_research_room.ts`
 - `services/gateway/src/work_research_room.test.ts`
 - `docs/workstreams/work-research-gateway-projection-20261006.md`
 
-No edits to `services/gateway/src/app.ts`, `main.ts`, mobile router/chat/transport, migrations, production env, Commerce, or Workflow implementation.
+No edits to Gateway `app.ts`/`main.ts`, mobile router/chat/transport, migrations,
+production environment, Commerce, Workflow implementation or provider code.
 
-Goal:
-- produce server-owned Work & Business / Research & Answers room projections;
-- map canonical run/progress/artifact/evidence inputs into the mobile Lane W contract;
-- expose opaque quick-start intent ids only;
-- require HTTPS source/artifact URLs;
-- fail closed on malformed current-research evidence;
-- do not execute work, research, providers, or workflows here.
+## Completed
 
-Shared #136 owner mounts the route and resolves quick-start intents into the canonical runtime.
+- Exact server projection contract matching Lane W mobile wire models.
+- Work & Business and Research & Answers server-owned titles, subtitles and approved quick starts.
+- Opaque quick-start intent identifiers; this module grants no execution authority.
+- Canonical `AgentRun` lifecycle validation and mapping:
+  - running -> working
+  - completed -> completed
+  - failed -> failed
+- Explicit pending-runtime projection for queued/waiting before an AgentRun is available.
+- Fail-closed progress bounds and terminal-state consistency checks.
+- Typed artifact projection with HTTPS-only optional URI.
+- Typed evidence/source projection with HTTPS-only source URI and canonical Instant normalization.
+- Per-item `requiresEvidence` switch so current/specialist research fails closed without sources while file/document work is not forced to invent web citations.
+- Focused tests for quick starts, lifecycle mapping, pending states, sourced research, evidence-required rejection, insecure URL rejection and inconsistent terminal progress.
+
+## Architecture boundary
+
+This module does not execute Workflows, research, Tools or providers. The owning runtime
+supplies canonical AgentRuns, artifacts and evidence. It does not invent a second
+Workflow/research execution engine.
+
+## Verification
+
+- Gateway already declares `@masanawa/agents`, so this projection adds no workspace dependency.
+- PR diff remains exactly the three claimed files.
+- Foundation CI run `37451093045`, job `112227569248`, failed before checkout with
+  `steps = null`; no code/test verdict is fabricated.
+- Source was manually audited against the exact Lane W mobile wire contract and the current
+  PR #136 canonical AgentRun contract.
+
+## Remaining shared-owner work
+
+- #136: register the authenticated route and mount Work/Research navigation.
+- Canonical runtime owner: resolve opaque intent ids into existing Skill/Workflow/research execution.
+- #136/shared artifact handling: open/download canonical artifacts and HTTPS sources.
+- Activity/Wallet remain projections of canonical runtime/financial outcomes.
+
+**No further isolated implementation remains in this server projection slice.**
