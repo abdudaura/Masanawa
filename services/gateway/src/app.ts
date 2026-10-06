@@ -36,6 +36,7 @@ import type { BillingCheckoutService } from "./billing_checkout.js";
 import type { BillingFinancialService } from "./financial_billing.js";
 import type { MobilePushRegistrationService } from "./mobile_push.js";
 import type { FinancialService } from "./financial_service.js";
+import type { NewsService } from "./news_service.js";
 import type { NewsRoomService } from "./news_room.js";
 import {
   CustomerAuthError,
@@ -375,6 +376,54 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       });
       return { success: true as const };
     });
+  }
+
+  const NewsSourceSchema = Type.Object({
+    label: Type.String(),
+    publisher: Type.Union([Type.String(), Type.Null()]),
+    url: Type.String(),
+  }, { additionalProperties: false });
+
+  const NewsAudioSchema = Type.Object({
+    assetUrl: Type.String(),
+    durationSeconds: Type.Optional(Type.Integer({ minimum: 1 })),
+  }, { additionalProperties: false });
+
+  const NewsItemSchema = Type.Object({
+    id: Type.String(),
+    title: Type.String(),
+    summary: Type.String(),
+    body: Type.String(),
+    categoryId: Type.Union([Type.String(), Type.Null()]),
+    imageUrl: Type.Union([Type.String(), Type.Null()]),
+    sources: Type.Array(NewsSourceSchema, { minItems: 1 }),
+    evidenceRefs: Type.Array(Type.String()),
+    audio: Type.Union([NewsAudioSchema, Type.Null()]),
+    publishedAt: Type.String(),
+    visible: Type.Boolean(),
+    pinned: Type.Boolean(),
+  }, { additionalProperties: false });
+
+  const NewsRoomSchema = Type.Object({
+    updatedAt: Type.String(),
+    featuredItemId: Type.Union([Type.String(), Type.Null()]),
+    categories: Type.Array(Type.Object({
+      id: Type.String(),
+      label: Type.String(),
+      order: Type.Integer({ minimum: 0 }),
+      visible: Type.Boolean(),
+    }, { additionalProperties: false })),
+    items: Type.Array(NewsItemSchema),
+  }, { additionalProperties: false });
+
+  if (options.news) {
+    const news = options.news;
+    app.get(
+      "/rooms/news",
+      { schema: { response: { 200: NewsRoomSchema } } },
+      async (request) =>
+        news.load({ authorizationHeader: request.headers.authorization }),
+    );
   }
 
   if (options.agentDirectory) {
