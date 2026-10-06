@@ -777,6 +777,13 @@ export async function startGatewayService(
             180,
             "MASANAWA_OWNER_ACCESS_START_GRACE_MINUTES",
           ),
+          completionGraceMinutes: boundedEnvInteger(
+            env.MASANAWA_OWNER_ACCESS_COMPLETION_GRACE_MINUTES,
+            15,
+            1,
+            180,
+            "MASANAWA_OWNER_ACCESS_COMPLETION_GRACE_MINUTES",
+          ),
         },
       });
     }
