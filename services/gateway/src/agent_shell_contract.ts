@@ -34,6 +34,7 @@ export interface AgentShellActionExecution {
 
 export interface AgentShellActionExecutor {
   execute(input: {
+    readonly authorizationHeader: string | undefined;
     readonly admission: AgentConversationAdmission;
     readonly session: CharacterSession;
     readonly action: AgentShellActionInput;
