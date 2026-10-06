@@ -310,7 +310,12 @@ class _Summary extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final columns = constraints.maxWidth < 360 ? 2 : 3;
+          final textScale = MediaQuery.textScalerOf(context).scale(1);
+          final columns = textScale > 1.6
+              ? 1
+              : constraints.maxWidth < 380 || textScale > 1.25
+                  ? 2
+                  : 3;
           final width =
               (constraints.maxWidth - ((columns - 1) * 12)) / columns;
           return Wrap(
@@ -427,6 +432,7 @@ class _ActivityTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final u = context.masanawa;
     final amount = item.amountCredits;
+    final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.3;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
@@ -444,31 +450,51 @@ class _ActivityTile extends StatelessWidget {
           item.title,
           style: TextStyle(color: u.textPrimary, fontSize: 14, fontWeight: FontWeight.w500),
         ),
-        subtitle: Text(
-          item.detail,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(color: u.textMuted, fontSize: 12),
-        ),
-        trailing: amount == null
-            ? (onTap == null ? null : Icon(Icons.chevron_right, color: u.textMuted))
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '$amount Cr',
-                    style: TextStyle(
-                      color: u.textPrimary,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  if (onTap != null) ...[
-                    const SizedBox(width: 4),
-                    Icon(Icons.chevron_right, color: u.textMuted),
-                  ],
-                ],
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              item.detail,
+              maxLines: largeText ? 3 : 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: u.textMuted, fontSize: 12),
+            ),
+            if (largeText && amount != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                '$amount Cr',
+                style: TextStyle(
+                  color: u.textPrimary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
+            ],
+          ],
+        ),
+        trailing: largeText
+            ? (onTap == null ? null : Icon(Icons.chevron_right, color: u.textMuted))
+            : amount == null
+                ? (onTap == null
+                    ? null
+                    : Icon(Icons.chevron_right, color: u.textMuted))
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '$amount Cr',
+                        style: TextStyle(
+                          color: u.textPrimary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (onTap != null) ...[
+                        const SizedBox(width: 4),
+                        Icon(Icons.chevron_right, color: u.textMuted),
+                      ],
+                    ],
+                  ),
       ),
     );
   }
