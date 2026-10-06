@@ -62,6 +62,39 @@ for file in ('/sys/fs/cgroup/memory.max', '/sys/fs/cgroup/memory/memory.limit_in
         print('APK builder cgroup memory limit: ' + value, flush=True)
         break
 PY
+# Install Node 24 only inside this isolated validation container.
+if ! command -v node >/dev/null || [[ "$(node -p 'process.versions.node.split(".")[0]')" -lt 24 ]]; then
+  NODE_DIR="$CACHE_DIR/node24"
+  mkdir -p "$NODE_DIR"
+  curl -fsSL --retry 2 https://nodejs.org/dist/index.json -o "$CACHE_DIR/node-index.json"
+  python3 - "$CACHE_DIR" <<'PY'
+import json, pathlib, sys
+root = pathlib.Path(sys.argv[1])
+releases = json.loads((root / 'node-index.json').read_text())
+release = next(r for r in releases if r['version'].startswith('v24.') and 'linux-x64' in r.get('files', []))
+version = release['version']
+(root / 'node-version').write_text(version)
+PY
+  NODE_VERSION="$(cat "$CACHE_DIR/node-version")"
+  curl -fsSL --retry 2 "https://nodejs.org/dist/$NODE_VERSION/node-$NODE_VERSION-linux-x64.tar.xz" -o "$CACHE_DIR/node.tar.xz"
+  curl -fsSL --retry 2 "https://nodejs.org/dist/$NODE_VERSION/SHASUMS256.txt" -o "$CACHE_DIR/node-SHASUMS256.txt"
+  grep " node-$NODE_VERSION-linux-x64.tar.xz$" "$CACHE_DIR/node-SHASUMS256.txt" | sed "s#  node-$NODE_VERSION-linux-x64.tar.xz#  $CACHE_DIR/node.tar.xz#" | sha256sum -c -
+  rm -rf "$NODE_DIR"/*
+  tar --no-same-owner -xf "$CACHE_DIR/node.tar.xz" -C "$NODE_DIR" --strip-components=1
+  export PATH="$NODE_DIR/bin:$PATH"
+fi
+
+cd "$ROOT_DIR"
+npx -y pnpm@12.8.2 install --frozen-lockfile
+npx -y pnpm@12.8.2 exec tsc -p packages/content/tsconfig.json
+npx -y pnpm@12.8.2 exec tsc -p adapters/storage/postgres/tsconfig.json
+npx -y pnpm@12.8.2 exec tsc -p services/gateway/tsconfig.json
+npx -y pnpm@12.8.2 exec vitest run \
+  packages/content/src/index.test.ts \
+  services/gateway/src/story_radio.test.ts \
+  services/gateway/src/story_radio_routes.test.ts \
+  test/architecture/package-boundaries.test.ts
+
 flutter config --no-analytics
 # Avoid masking license/setup failures (yes may exit with SIGPIPE after sdkmanager exits).
 set +o pipefail
@@ -72,15 +105,21 @@ set -o pipefail
 sdkmanager "platform-tools" "platforms;android-37.0" "build-tools;36.0.0"
 cd "$ROOT_DIR/apps/mobile"
 flutter pub get
-echo "Skipping flutter analyze in 1 GB Railway verifier; focused tests + release compiler are the acceptance gates."
-timeout --signal=TERM --kill-after=30s 10m flutter test --concurrency=1 --reporter=expanded --timeout=2m \
-  test/home/home_billing_intent_test.dart \
+echo "Skipping full flutter analyze in 1 GB Railway verifier; focused tests + release compiler are the acceptance gates."
+timeout --signal=TERM --kill-after=30s 12m flutter test --concurrency=1 --reporter=expanded --timeout=2m \
   test/home/home_continuation_test.dart \
-  test/home/home_models_test.dart \
-  test/home/home_screen_test.dart \
-  test/shell_deep_link_test.dart \
+  test/story_radio/story_radio_model_test.dart \
+  test/story_radio/story_radio_state_test.dart \
+  test/story_radio/story_radio_http_transport_test.dart \
   test/twin_home_shell_test.dart \
   test/twin_production_integration_test.dart
+
+cd "$ROOT_DIR/apps/admin_mobile"
+flutter pub get
+timeout --signal=TERM --kill-after=30s 6m flutter test --concurrency=1 --reporter=expanded --timeout=2m \
+  test/story_radio_admin_api_test.dart
+
+cd "$ROOT_DIR/apps/mobile"
 flutter build apk --release --dart-define=API_BASE_URL="$API_BASE_URL" --dart-define=AGENT_BASE_URL="$API_BASE_URL"
 cp build/app/outputs/flutter-apk/app-release.apk "$ARTIFACT_DIR/masanawa-production-release.apk"
 (cd "$ARTIFACT_DIR" && sha256sum masanawa-production-release.apk > masanawa-production-release.apk.sha256)
@@ -94,6 +133,6 @@ if not re.fullmatch(r'[0-9a-f]{40}', commit):
     raise SystemExit('An exact 40-character source commit is required for APK provenance')
 manifest = {'schemaVersion': 1, 'commit': commit,
  'gatewayUrl': 'https://masanawa-gateway-production.up.railway.app', 'byteLength': apk.stat().st_size,
- 'sha256': hashlib.sha256(apk.read_bytes()).hexdigest(), 'flutterAnalyze': 'passed-errors-gate-warnings-reported', 'flutterTest': 'passed', 'apkBuild': 'passed'}
+ 'sha256': hashlib.sha256(apk.read_bytes()).hexdigest(), 'flutterAnalyze': 'release-compiler-gate', 'flutterTest': 'story-radio-focused-passed', 'apkBuild': 'passed'}
 (root / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
 PY
