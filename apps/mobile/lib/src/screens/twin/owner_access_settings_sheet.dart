@@ -30,7 +30,7 @@ class _OwnerAccessSettingsSheetState
   void initState() {
     super.initState();
     _enabled = widget.initial.enabled;
-    _modalities = {...widget.initial.modalities};
+    _modalities = {OwnerAccessModality.text};
     _durations = {...widget.initial.durationOptionsMinutes};
     _price = TextEditingController(
       text: widget.initial.priceCreditsPerMinute.toString(),
@@ -53,7 +53,7 @@ class _OwnerAccessSettingsSheetState
       await widget.onSave(
         OwnerAccessOffering(
           enabled: _enabled,
-          modalities: _modalities,
+          modalities: const {OwnerAccessModality.text},
           durationOptionsMinutes: _durations.toList()..sort(),
           priceCreditsPerMinute: price,
         ),
@@ -108,35 +108,15 @@ class _OwnerAccessSettingsSheetState
             ),
             if (_enabled) ...[
               const SizedBox(height: 8),
-              Text(
-                'Ways to talk',
-                style: TextStyle(
-                  color: u.textPrimary,
-                  fontWeight: FontWeight.w600,
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.chat_bubble_outline),
+                title: const Text('Private text session'),
+                subtitle: const Text(
+                  'Voice and video with the real person are not available yet.',
                 ),
               ),
               const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: OwnerAccessModality.values
-                    .map(
-                      (mode) => FilterChip(
-                        label: Text(mode.name),
-                        selected: _modalities.contains(mode),
-                        onSelected: (selected) {
-                          setState(() {
-                            if (selected) {
-                              _modalities.add(mode);
-                            } else {
-                              _modalities.remove(mode);
-                            }
-                          });
-                        },
-                      ),
-                    )
-                    .toList(),
-              ),
-              const SizedBox(height: 16),
               Text(
                 'Session lengths',
                 style: TextStyle(
