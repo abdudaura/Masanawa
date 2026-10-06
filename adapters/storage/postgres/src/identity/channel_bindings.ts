@@ -241,6 +241,9 @@ async function putAccount(
   ) {
     throw new Error("Channel account immutable identity changed");
   }
+  if (Date.parse(input.updatedAt) < Date.parse(current.updatedAt)) {
+    throw new Error("Channel account updatedAt cannot move backwards");
+  }
 
   const result = await client.query<ChannelAccountRow>(
     `UPDATE identity.channel_accounts
@@ -288,10 +291,19 @@ async function putBinding(
   ) {
     throw new Error("Channel binding immutable identity changed");
   }
+  if (Date.parse(input.updatedAt) < Date.parse(current.updatedAt)) {
+    throw new Error("Channel binding updatedAt cannot move backwards");
+  }
 
   const proof = input.proof === null
     ? null
     : normalizeChannelBindingProof(input.proof);
+  if (input.state === "active" && proof === null) {
+    throw new Error("Active channel binding requires proof");
+  }
+  if (input.state === "pending-proof" && proof !== null) {
+    throw new Error("Pending channel binding cannot carry proof");
+  }
 
   const result = await client.query<ChannelBindingRow>(
     `UPDATE identity.channel_bindings
