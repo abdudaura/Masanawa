@@ -66,6 +66,8 @@ export interface OwnerAccessRequest {
   readonly disputedAt?: string | null;
   readonly disputeReason?: "service-not-delivered" | "service-quality" | "other" | null;
   readonly earningsReleasedAt?: string | null;
+  readonly disputeResolvedAt?: string | null;
+  readonly disputeResolution?: "release" | "refund" | null;
 }
 
 export interface OwnerAccessSettlementDecision {
