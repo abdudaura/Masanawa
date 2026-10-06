@@ -33,3 +33,22 @@ Define a canonical bounded trigger model for:
 
 The model must be tenant/user scoped, replay/version safe, bounded in cadence, timezone
 explicit, and unable to directly carry secrets, Tool authority or arbitrary executable code.
+
+
+## Implementation checkpoint
+
+Completed:
+- new isolated `@masanawa/proactivity` package scaffold;
+- canonical Tenant/User/Character/Relationship trigger scope;
+- bounded triggerKey + revision lifecycle;
+- one-shot/interval/daily/weekly schedule contracts with IANA timezone validation;
+- event match contracts with bounded canonical filter keys;
+- typed condition-watch contracts with bounded evaluation cadence, consecutive matches
+  and cooldown;
+- fail-closed pause/resume/revoke/revision transitions;
+- no Tool/Provider/credential/code execution authority in trigger definitions;
+- focused unit coverage for schedules, events, conditions and lifecycle.
+
+Shared workspace lockfile activation remains with the integration owner.
+
+State: IMPLEMENTATION COMPLETE / EXECUTABLE VERIFICATION PENDING.
