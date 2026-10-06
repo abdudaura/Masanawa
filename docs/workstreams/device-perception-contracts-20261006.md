@@ -3,24 +3,36 @@
 Owner/window: ChatGPT continuation window (2026-10-06)
 Branch: `work/device-perception-contracts-20261006`
 Base SHA: `2e8a2efcbc8ba925dade2824a6e5826be6097e43` (Task 110 exact head / PR #232)
+Implementation commit: `e3b2da1ae99a4b17a2e4762f7d569e26b4c3f53b`
+PR: #234
 
-## Task references
-- `docs/PRODUCTION-MASTER-TASKS.md` — **111** Implement device microphone/camera/screen perception contracts.
-- Depends on Task 109 canonical PerceptionEvent and Task 110 admission stack.
+## Completed implementation
+- Microphone, camera and screen-capture admission contracts normalize into Task 109 PerceptionEvent.
+- All device captures require canonical Device ID plus `device-permission` evidence.
+- Capture payloads use content references only; raw media is never embedded.
+- Microphone duration/sample-rate/channel bounds are enforced.
+- Camera dimensions/facing and screen dimensions/video duration/frame-rate coherence are enforced.
+- Deterministic device/capture dedupe identity is preserved.
+- Root contract tests cover valid captures, permission failures and malformed metadata.
 
-## Owned paths
-- `packages/perception/src/device-capture-admission.ts` (new)
-- `tests/contracts/device-perception-admission.test.ts` (new)
-- `docs/workstreams/device-perception-contracts-20261006.md`
+## Changed-file audit
+Exactly three files:
+1. `docs/workstreams/device-perception-contracts-20261006.md`
+2. `packages/perception/src/device-capture-admission.ts`
+3. `tests/contracts/device-perception-admission.test.ts`
 
-## Excluded/shared paths
-- No edits to `packages/devices`, Android/mobile runtime, device credentials, Gateway, media storage/decoders, migrations, package manifests/lockfile, or PR #136-owned paths.
-- No device registration/capability/runtime implementation in this lane.
+No Device/Gateway/mobile/media/migration/package-manifest/lockfile paths changed.
 
-## Dependencies
-- Device owner supplies a registered canonical Device ID and current device-permission AuthorityContext.
-- Media owner supplies canonical content references after capture/storage admission.
-- Task 109 remains the only canonical PerceptionEvent normalizer.
+## Verification
+Foundation CI run `37454108371`, job `112237374358` ended `failure` with `steps = null`; checkout/install/tests never executed. Not a pass and not application-failure evidence.
+
+## Remaining dependencies
+- PR #232 / Task 110 and PR #228 / Task 109 integrate first.
+- Device owners provide registered IDs/current permissions; media owners provide stored content refs.
+- Workspace owner activates `packages/perception` when shared lockfile ownership clears.
+- Physical device capture qualification remains with Device/APK owners.
 
 ## Current state
-CLAIMED. Implement bounded microphone, camera and screen-capture descriptors that require device source + device-permission evidence, validate media-specific metadata, forbid inline raw capture bytes, preserve privacy scope and normalize to canonical PerceptionEvent.
+**ISOLATED COMPLETE / INTEGRATION READY.**
+
+No further isolated implementation remains in this lane.
