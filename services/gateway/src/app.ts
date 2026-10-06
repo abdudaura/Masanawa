@@ -596,10 +596,8 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
             {
               displayName: Type.String({ minLength: 1, maxLength: 120 }),
               biography: Type.String({ minLength: 1, maxLength: 1000 }),
-              languages: Type.Array(
-                Type.String({ minLength: 1, maxLength: 120 }),
-                { minItems: 1, maxItems: 16 },
-              ),
+              gender: Type.String({ minLength: 1, maxLength: 32 }),
+              age: Type.Integer({ minimum: 1, maximum: 120 }),
               personality: Type.Array(
                 Type.String({ minLength: 1, maxLength: 120 }),
                 { minItems: 1, maxItems: 24 },
