@@ -40,6 +40,29 @@ Lane H integration is actively owned by PR #206 at head `c97ad9d0fc1e19b5c52dd06
 
 Story Radio production integration PR #209 is also open at head `9b3490c6fe1d92b44c679c976cc3396535abb6b1` and touches shared #136-owned Gateway/router/production paths. Treat it as a coordinated #136-side integration branch, not a second independent shared owner. Do not mark Lane S **INTEGRATED** until its changes are reconciled onto the canonical #136 head. News integration PR #207 is closed and must not be treated as active integration ownership.
 
+## Additive server/runtime seams
+
+Before mounting the corresponding Rooms, consume these exact completed seams:
+
+- Teaching progress #215: `7bc1b574f9738f6e8108b3a8e422654b74043c3e`
+- Work/Research server #216: `27e45edc2b5b9cbf933cda3ffb50785c9a2f712c`
+- Internet Cafe server #218: `ada2ed3f08a9678b2c62def41fee4324b345a8b5`
+- Study Center server #220: `37edb1db2c14fe7d9a78a0601492a3cc0274a169`
+
+These seams deliberately avoid shared route files. The #136 integration owner should compose them
+rather than reimplementing their projection/validation logic.
+
+## Shared-branch collision warning
+
+Two active Story Radio production branches currently overlap shared Home/router/Gateway composition:
+
+- #209 `work/story-radio-production-integration-20261006`, based directly on #136;
+- #211 `work/story-radio-home-integration-20261006`, based on #206 and currently non-mergeable.
+
+Do not open another Story/shared-routing sibling. Reconcile #209/#211 with the #206 Home line
+before stacking further shared Room integrations. News #212 is already stacked on #206 and should
+not be independently duplicated.
+
 ## Billing gate
 
 Lane B is actively continued by PR #210 at head `cff18c160ebe1b7fecc0d3c3ae9b9e200655622e`, stacked on PR #126. Its deterministic qualification gate is implemented and tested, but Lane B is not production-complete merely because the gate exists.
