@@ -43,10 +43,17 @@ import '../../theme/masanawa_theme.dart';
 
 /// One Character conversation. Voice is the primary action while text,
 /// attachments and structured work results remain in the same timeline.
+enum AiChatEntryMode { chat, voiceNote, liveVoice }
+
 class AiChatScreen extends ConsumerStatefulWidget {
-  const AiChatScreen({super.key, required this.characterId});
+  const AiChatScreen({
+    super.key,
+    required this.characterId,
+    this.entryMode = AiChatEntryMode.chat,
+  });
 
   final String characterId;
+  final AiChatEntryMode entryMode;
 
   @override
   ConsumerState<AiChatScreen> createState() => _AiChatScreenState();
@@ -77,6 +84,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   Timer? _scrollPersistTimer;
   final Set<String> _selectedMessageIds = {};
   final Map<String, GlobalKey> _messageKeys = {};
+  bool _initialEntryHandled = false;
 
   @override
   void initState() {
@@ -722,6 +730,22 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           .read(aiChatProvider.notifier)
           .seedGreeting(agent.characterId, agent.greeting);
     });
+    if (!_initialEntryHandled) {
+      _initialEntryHandled = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        switch (widget.entryMode) {
+          case AiChatEntryMode.chat:
+            break;
+          case AiChatEntryMode.voiceNote:
+            unawaited(_startRecording());
+            break;
+          case AiChatEntryMode.liveVoice:
+            unawaited(_openLiveVoice(agent));
+            break;
+        }
+      });
+    }
 
     ref.listen(aiChatProvider, (prev, next) {
       final before = prev?.threads[widget.characterId]?.messages.length ?? 0;
