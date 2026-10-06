@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-source <(awk '/^# Install Node 24 only inside this isolated validation container\./ { exit } { print }' "$ROOT_DIR/infra/deployment/mobile/build.sh")
+source <(awk '/^CACHE_DIR=/ { emit=1 } /^# Install Node 24 only inside this isolated validation container\./ { exit } emit { print }' "$ROOT_DIR/infra/deployment/mobile/build.sh")
 
 flutter config --no-analytics
 set +o pipefail
