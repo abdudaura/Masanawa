@@ -766,6 +766,7 @@ describe("Twin production runtime composition", () => {
       "monetization",
       "myTwin",
       "ownerAccess",
+      "ownerAccessDisputes",
       "ownerAccessMaintenance",
       "ownerAccessOffering",
       "paidFeatureTrialAdmin",
