@@ -34,6 +34,7 @@ import { registerOwnerAccessOfferingRoutes } from "./owner_access_offering_route
 import { registerTwinSafetyRoutes } from "./twin_safety_routes.js";
 import type { BillingCheckoutService } from "./billing_checkout.js";
 import type { BillingFinancialService } from "./financial_billing.js";
+import type { BillingWalletService } from "./billing_wallet.js";
 import type { MobilePushRegistrationService } from "./mobile_push.js";
 import type { FinancialService } from "./financial_service.js";
 import {
@@ -70,6 +71,7 @@ export interface GatewayAppOptions {
   readonly customerAuth?: CustomerAuthService;
   readonly billingCheckout?: BillingCheckoutService;
   readonly billingFinancial?: BillingFinancialService;
+  readonly billingWallet?: BillingWalletService;
   readonly financial?: FinancialService;
   readonly twinProduction?: TwinProductionRuntime;
 }
@@ -1319,6 +1321,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
   registerBillingRoutes(app, {
     ...(options.billingCheckout ? { billingCheckout: options.billingCheckout } : {}),
     ...(options.billingFinancial ? { billingFinancial: options.billingFinancial } : {}),
+    ...(options.billingWallet ? { billingWallet: options.billingWallet } : {}),
   });
 
   if (options.twinProduction) {
