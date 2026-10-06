@@ -86,6 +86,7 @@ class GatewayOwnerAccessTransport implements OwnerAccessTransport {
     required String requestId,
     required String action,
     DateTime? scheduledFor,
+    String? disputeReason,
   }) async {
     final response = await api.dio.post<dynamic>(
       '/agent/twin/owner-access/$requestId/action',
@@ -94,6 +95,7 @@ class GatewayOwnerAccessTransport implements OwnerAccessTransport {
         'action': action,
         if (scheduledFor != null)
           'scheduledFor': scheduledFor.toUtc().toIso8601String(),
+        if (disputeReason != null) 'disputeReason': disputeReason,
       },
     );
     return OwnerAccessRequest.fromJson(_map(response.data));
