@@ -192,6 +192,20 @@ export function createStoryRadioService(input: Readonly<{
     return input.repository.listPublishedEpisodes({ tenantId, seriesId });
   }
 
+  async function customerEpisodeOperation<T>(operation: () => Promise<T>): Promise<T> {
+    try {
+      return await operation();
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message === "story_radio.episode.unavailable"
+      ) {
+        throw new StoryRadioError("story_radio.episode.unavailable", 404);
+      }
+      throw error;
+    }
+  }
+
   async function adminView(tenantId: string, s: StorySeries) {
     const episodes = await input.repository.listEpisodes({
       tenantId,
@@ -277,26 +291,30 @@ export function createStoryRadioService(input: Readonly<{
       ) {
         throw new StoryRadioError("story_radio.progress.invalid", 400);
       }
-      const saved = await input.repository.saveProgress({
-        tenantId,
-        userId: String(identity.userId),
-        seriesId,
-        episodeId,
-        positionSeconds: request.positionSeconds,
-        durationSeconds: request.durationSeconds,
-        completed: request.completed,
-        updatedAt: now(),
-      });
+      const saved = await customerEpisodeOperation(() =>
+        input.repository.saveProgress({
+          tenantId,
+          userId: String(identity.userId),
+          seriesId,
+          episodeId,
+          positionSeconds: request.positionSeconds,
+          durationSeconds: request.durationSeconds,
+          completed: request.completed,
+          updatedAt: now(),
+        }),
+      );
       return progressView(saved);
     },
 
     async reactions(request) {
       const identity = await customer(request.authorizationHeader);
-      return input.repository.getReactionSummary({
-        tenantId: String(identity.tenantId),
-        userId: String(identity.userId),
-        episodeId: text(request.episodeId, "episode_id", 128),
-      });
+      return customerEpisodeOperation(() =>
+        input.repository.getReactionSummary({
+          tenantId: String(identity.tenantId),
+          userId: String(identity.userId),
+          episodeId: text(request.episodeId, "episode_id", 128),
+        }),
+      );
     },
 
     async react(request) {
@@ -307,13 +325,15 @@ export function createStoryRadioService(input: Readonly<{
       } catch {
         throw new StoryRadioError("story_radio.reaction.invalid", 400);
       }
-      return input.repository.setReaction({
-        tenantId: String(identity.tenantId),
-        userId: String(identity.userId),
-        episodeId: text(request.episodeId, "episode_id", 128),
-        reaction,
-        updatedAt: now(),
-      });
+      return customerEpisodeOperation(() =>
+        input.repository.setReaction({
+          tenantId: String(identity.tenantId),
+          userId: String(identity.userId),
+          episodeId: text(request.episodeId, "episode_id", 128),
+          reaction,
+          updatedAt: now(),
+        }),
+      );
     },
 
     async adminList(request) {
