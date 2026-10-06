@@ -5,6 +5,7 @@ import {
   toInstant,
   type RequestId,
 } from "@masanawa/contracts";
+import { createTeachingAdaptivePlanner } from "./teaching-plan.js";
 import type {
   TeachingLessonPlan,
   TeachingProgressHandoff,
@@ -2053,5 +2054,128 @@ describe("Core Teaching durable multi-select stage coordinator", () => {
         now: toInstant("2026-10-05T21:32:00.000Z"),
       }),
     ).rejects.toThrow(/stage hash does not match payload|different state/);
+  });
+});
+
+
+describe("TeachingRuntimeCoordinator adaptive planning", () => {
+  it("prepares a canonical plan through the configured adaptive planner", async () => {
+    const active = lesson();
+    const coordinator = new TeachingRuntimeCoordinator({
+      progress: new MemoryProgressPort(),
+      adaptivePlanner: createTeachingAdaptivePlanner({
+        proposalPort: {
+          async propose(input) {
+            expect(input.learner.relationshipId).toBe(active.learner.relationshipId);
+            expect(input.learner.topic).toBe("Fractions");
+            expect(input.maximumSteps).toBe(8);
+            return {
+              sequenceTitle: active.sequenceTitle,
+              rationale: "Start with denominator equivalence before addition.",
+              steps: active.steps,
+              uncertaintyNotes: [],
+            };
+          },
+        },
+      }),
+    });
+
+    const result = await coordinator.preparePlan({
+      binding: binding(active),
+      intake: {
+        relationshipId: active.learner.relationshipId,
+        explicit: {
+          topic: "Fractions",
+          level: "beginner",
+          goals: active.learner.goals,
+          language: "en",
+          preferredModalities: ["text"],
+        },
+      },
+    });
+
+    expect(result.kind).toBe("plan");
+    if (result.kind === "plan") {
+      expect(result.plan.skillVersionId).toBe(active.skillVersionId);
+      expect(result.plan.learner.relationshipId).toBe(
+        active.learner.relationshipId,
+      );
+      expect(result.plan.steps).toHaveLength(2);
+    }
+  });
+
+  it("returns clarification without creating lesson progress", async () => {
+    const active = lesson();
+    const progress = new MemoryProgressPort();
+    let proposalCalls = 0;
+    const coordinator = new TeachingRuntimeCoordinator({
+      progress,
+      adaptivePlanner: createTeachingAdaptivePlanner({
+        proposalPort: {
+          async propose() {
+            proposalCalls += 1;
+            return {
+              sequenceTitle: active.sequenceTitle,
+              rationale: "unused",
+              steps: active.steps,
+              uncertaintyNotes: [],
+            };
+          },
+        },
+      }),
+    });
+
+    const result = await coordinator.preparePlan({
+      binding: binding(active),
+      intake: {
+        relationshipId: active.learner.relationshipId,
+        explicit: {},
+      },
+    });
+
+    expect(result.kind).toBe("clarification");
+    expect(proposalCalls).toBe(0);
+    expect(progress.progress).toBeNull();
+  });
+
+  it("rejects adaptive intake from another Relationship", async () => {
+    const active = lesson();
+    const coordinator = new TeachingRuntimeCoordinator({
+      progress: new MemoryProgressPort(),
+      adaptivePlanner: createTeachingAdaptivePlanner({
+        proposalPort: {
+          async propose() {
+            throw new Error("must not run");
+          },
+        },
+      }),
+    });
+
+    await expect(
+      coordinator.preparePlan({
+        binding: binding(active),
+        intake: {
+          relationshipId: createCanonicalId("relationship"),
+          explicit: { topic: "Fractions" },
+        },
+      }),
+    ).rejects.toThrow(/match the admitted Relationship/);
+  });
+
+  it("fails closed when no adaptive planner is configured", async () => {
+    const active = lesson();
+    const coordinator = new TeachingRuntimeCoordinator({
+      progress: new MemoryProgressPort(),
+    });
+
+    await expect(
+      coordinator.preparePlan({
+        binding: binding(active),
+        intake: {
+          relationshipId: active.learner.relationshipId,
+          explicit: { topic: "Fractions" },
+        },
+      }),
+    ).rejects.toThrow(/adaptive planner is not configured/);
   });
 });
