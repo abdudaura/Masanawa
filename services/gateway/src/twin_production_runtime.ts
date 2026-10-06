@@ -1762,9 +1762,26 @@ export function createTwinProductionRuntime(input: {
       attendanceTimeoutRefund ? "no-show" : current.state,
     );
     const finalState = isSettlement ? "settled" : "refunded";
+    const completedAt =
+      isSettlement ? current.completedAt ?? at() : current.completedAt;
     const finalized = {
       ...current,
       state: transitionOwnerAccess(current.state, finalState),
+      completedAt,
+      disputeBy:
+        isSettlement &&
+        current.chargeMode === "paid" &&
+        current.ownerEarningCredits > 0
+          ? plusMs(
+              completedAt!,
+              ownerDisputeWindowMinutes * 60_000,
+            )
+          : null,
+      disputedAt: current.disputedAt ?? null,
+      disputeReason: current.disputeReason ?? null,
+      earningsReleasedAt: current.earningsReleasedAt ?? null,
+      disputeResolvedAt: current.disputeResolvedAt ?? null,
+      disputeResolution: current.disputeResolution ?? null,
     };
     // Append before the final CAS. The event store is idempotent by
     // eventType/reference/Character, so a crash can safely retry this step.
@@ -1813,6 +1830,44 @@ export function createTwinProductionRuntime(input: {
     }
 
     const nowMs = Date.now();
+
+    if (
+      current.state === "settled" &&
+      current.chargeMode === "paid" &&
+      current.ownerEarningCredits > 0 &&
+      !current.earningsReleasedAt
+    ) {
+      let settled = current;
+      if (!settled.disputeBy) {
+        const base = settled.completedAt ?? settled.requestedAt;
+        const changed = {
+          ...settled,
+          disputeBy: plusMs(
+            base,
+            ownerDisputeWindowMinutes * 60_000,
+          ),
+        };
+        const claimed = await input.economy.transitionOwnerAccessRequest({
+          tenantId,
+          expectedState: "settled",
+          request: changed,
+          reservationId: settled.reservationId,
+          reservedCredits: settled.reservedCredits,
+        });
+        if (!claimed.applied) {
+          return refreshOwnerAccessLifecycle(tenantId, claimed.request);
+        }
+        settled = claimed.request;
+      }
+      if (
+        settled.disputeBy &&
+        Date.parse(settled.disputeBy) <= nowMs
+      ) {
+        return releaseOwnerAccessEarnings(tenantId, settled);
+      }
+      return settled;
+    }
+
     const activeTimedOut =
       current.state === "active" &&
       current.startedAt !== null &&
