@@ -172,6 +172,7 @@ import {
   createTwinProductionRuntime,
   type TwinProductionRuntime,
 } from "./twin_production_runtime.js";
+import { createNewsService, parseNewsConfig } from "./news_service.js";
 
 export type ServiceSignal = "SIGINT" | "SIGTERM";
 
@@ -1211,7 +1212,47 @@ export async function startGatewayService(
     });
   }
 
-    const composedDirectory =
+    const configuredNews = parseNewsConfig(env.MASANAWA_NEWS_CONFIG_JSON);
+  const newsConfig = configuredNews ?? Object.freeze({
+    categories: Object.freeze([
+      Object.freeze({ id: "top", label: "Top", order: 0 }),
+    ]),
+    feeds: Object.freeze([
+      Object.freeze({
+        id: "aljazeera",
+        label: "Al Jazeera",
+        publisher: "Al Jazeera",
+        url: "https://www.aljazeera.com/xml/rss/all.xml",
+        categoryId: "top",
+        pinLatest: true,
+      }),
+      Object.freeze({
+        id: "guardian-world",
+        label: "The Guardian",
+        publisher: "The Guardian",
+        url: "https://www.theguardian.com/world/rss",
+        categoryId: "top",
+      }),
+      Object.freeze({
+        id: "npr-news",
+        label: "NPR",
+        publisher: "NPR",
+        url: "https://feeds.npr.org/1001/rss.xml",
+        categoryId: "top",
+      }),
+    ]),
+  });
+  const composedNews =
+    options.appOptions?.news ??
+    (billingCustomerAuthorizer
+      ? createNewsService({
+          authorizer: billingCustomerAuthorizer,
+          categories: newsConfig.categories,
+          feeds: newsConfig.feeds,
+        })
+      : undefined);
+
+  const composedDirectory =
     options.appOptions?.agentDirectory ??
     (directoryAuthorizer && database.agentPresentations
       ? createAgentDirectoryService({
@@ -1394,6 +1435,7 @@ export async function startGatewayService(
       ...(composedBillingFinancial ? { billingFinancial: composedBillingFinancial } : {}),
       ...(composedBillingCheckout ? { billingCheckout: composedBillingCheckout } : {}),
       ...(composedFinancial ? { financial: composedFinancial } : {}),
+      ...(composedNews ? { news: composedNews } : {}),
       ...(twinProduction ? { twinProduction } : {}),
       ...(composedDirectory ? { agentDirectory: composedDirectory } : {}),
       ...(composedNewsRoom ? { newsRoom: composedNewsRoom } : {}),
