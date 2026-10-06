@@ -190,6 +190,109 @@ class OwnerAccessRequest {
   }
 }
 
+class OwnerAccessRoomMessage {
+  const OwnerAccessRoomMessage({
+    required this.requestId,
+    required this.messageId,
+    required this.senderUserId,
+    required this.body,
+    required this.sentAt,
+  });
+
+  final String requestId;
+  final String messageId;
+  final String senderUserId;
+  final String body;
+  final DateTime sentAt;
+
+  factory OwnerAccessRoomMessage.fromJson(Map<String, dynamic> json) {
+    final requestId = json['requestId'];
+    final messageId = json['messageId'];
+    final senderUserId = json['senderUserId'];
+    final body = json['body'];
+    final sentAt = json['sentAt'];
+    if (requestId is! String ||
+        messageId is! String ||
+        senderUserId is! String ||
+        body is! String ||
+        sentAt is! String) {
+      throw const FormatException('Invalid owner access room message');
+    }
+    return OwnerAccessRoomMessage(
+      requestId: requestId,
+      messageId: messageId,
+      senderUserId: senderUserId,
+      body: body,
+      sentAt: DateTime.parse(sentAt).toLocal(),
+    );
+  }
+}
+
+class OwnerAccessRoomPresence {
+  const OwnerAccessRoomPresence({
+    required this.userId,
+    required this.firstSeenAt,
+    required this.lastSeenAt,
+    required this.heartbeatCount,
+  });
+
+  final String userId;
+  final DateTime firstSeenAt;
+  final DateTime lastSeenAt;
+  final int heartbeatCount;
+
+  factory OwnerAccessRoomPresence.fromJson(Map<String, dynamic> json) {
+    final userId = json['userId'];
+    final firstSeenAt = json['firstSeenAt'];
+    final lastSeenAt = json['lastSeenAt'];
+    final heartbeatCount = json['heartbeatCount'];
+    if (userId is! String ||
+        firstSeenAt is! String ||
+        lastSeenAt is! String ||
+        heartbeatCount is! num) {
+      throw const FormatException('Invalid owner access room presence');
+    }
+    return OwnerAccessRoomPresence(
+      userId: userId,
+      firstSeenAt: DateTime.parse(firstSeenAt).toLocal(),
+      lastSeenAt: DateTime.parse(lastSeenAt).toLocal(),
+      heartbeatCount: heartbeatCount.toInt(),
+    );
+  }
+}
+
+class OwnerAccessRoomStatus {
+  const OwnerAccessRoomStatus({
+    required this.attendanceVerified,
+    required this.verifiedSeconds,
+    required this.presence,
+  });
+
+  final bool attendanceVerified;
+  final int verifiedSeconds;
+  final List<OwnerAccessRoomPresence> presence;
+
+  factory OwnerAccessRoomStatus.fromJson(Map<String, dynamic> json) {
+    final verified = json['attendanceVerified'];
+    final seconds = json['verifiedSeconds'];
+    final presence = json['presence'];
+    if (verified is! bool || seconds is! num || presence is! List) {
+      throw const FormatException('Invalid owner access room status');
+    }
+    return OwnerAccessRoomStatus(
+      attendanceVerified: verified,
+      verifiedSeconds: seconds.toInt(),
+      presence: List.unmodifiable(
+        presence.map(
+          (item) => OwnerAccessRoomPresence.fromJson(
+            (item as Map).cast<String, dynamic>(),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 abstract class OwnerAccessTransport {
   Future<OwnerAccessQuote> quote({
     required String characterId,
@@ -216,6 +319,24 @@ abstract class OwnerAccessTransport {
     required String requestId,
     required String action,
     DateTime? scheduledFor,
+  });
+
+  Future<OwnerAccessRoomStatus> heartbeat({
+    required String characterId,
+    required String requestId,
+  });
+
+  Future<List<OwnerAccessRoomMessage>> messages({
+    required String characterId,
+    required String requestId,
+    int limit = 100,
+  });
+
+  Future<OwnerAccessRoomMessage> sendMessage({
+    required String characterId,
+    required String requestId,
+    required String messageId,
+    required String body,
   });
 }
 
@@ -260,6 +381,33 @@ class UnavailableOwnerAccessTransport implements OwnerAccessTransport {
     required String requestId,
     required String action,
     DateTime? scheduledFor,
+  }) {
+    throw StateError('Owner access is not connected to the Gateway yet');
+  }
+
+  @override
+  Future<OwnerAccessRoomStatus> heartbeat({
+    required String characterId,
+    required String requestId,
+  }) {
+    throw StateError('Owner access is not connected to the Gateway yet');
+  }
+
+  @override
+  Future<List<OwnerAccessRoomMessage>> messages({
+    required String characterId,
+    required String requestId,
+    int limit = 100,
+  }) {
+    throw StateError('Owner access is not connected to the Gateway yet');
+  }
+
+  @override
+  Future<OwnerAccessRoomMessage> sendMessage({
+    required String characterId,
+    required String requestId,
+    required String messageId,
+    required String body,
   }) {
     throw StateError('Owner access is not connected to the Gateway yet');
   }
