@@ -145,7 +145,15 @@ Subsequent production hardening on the same owned branch now also includes:
   economy/Agent Float/Skill controls removed from ordinary Settings;
 - paid voice media-start evidence moved from token issuance to Gemini setup-complete +
   microphone readiness, with server timing and quote-duration caps;
-- full paid reservation refund when voice media never starts.
+- full paid reservation refund when voice media never starts;
+- real-human access constrained to an implemented private text room rather than
+  advertising nonexistent person-to-person voice/video;
+- request-scoped durable human messages plus server heartbeat attendance, with a minimum
+  one-minute two-party overlap required before owner completion;
+- automatic active-session close after booked duration + configurable grace: verified
+  attendance settles; missing attendance is crash-repairably refunded;
+- private human messages default to 30-day retention, are update-immutable, are never
+  settlement evidence, and are purged without deleting request/ledger history.
 
 A remaining Phase-3 commercial-contract blocker is now explicit: NGN billing and crypto
 asset quantities are canonically separate from AI Credits. The repository has no approved
@@ -165,19 +173,18 @@ evidence, not as an application test failure.
 
 Still required before marking TWIN production tasks complete or merging this vehicle:
 
-1. implement a real human-owner session/attendance primitive. A text session may ship
-   first; do not claim voice/video until an actual person-to-person media path exists;
-2. define an approved versioned fiat/crypto -> commission-Credit valuation policy before
+1. define an approved versioned fiat/crypto -> commission-Credit valuation policy before
    wiring real billing/crypto provider-success commission settlement;
-3. define dispute/reconciliation policy for owner sessions;
-4. run Gateway/package TypeScript typecheck + focused Twin tests on a working runner;
-5. run PostgreSQL acceptance with `MASANAWA_TEST_DATABASE_URL`, including Twin replay,
-   owner-request CAS/lifecycle/latest-request and immutability cases;
-6. run Flutter analyze/tests, including owner-access, paid-voice, production transport and
-   deep-link tests;
-7. build `assembleRelease` from the exact qualified head and record APK checksum/artifact;
-8. install on a real Android device and exercise create/share/free-text, paid voice,
-   transfer/gift, owner access, Wallet/Activity, notifications and restart/retry;
-9. qualify production deployment/readiness/rollback evidence before merge.
+2. define general post-session dispute/reconciliation policy beyond the deterministic
+   attendance-timeout auto-refund already implemented;
+3. run Gateway/package TypeScript typecheck + focused Twin tests on a working runner;
+4. run PostgreSQL acceptance with `MASANAWA_TEST_DATABASE_URL`, including Twin replay,
+   owner-request CAS/lifecycle/latest-request, private-room retention and immutability;
+5. run Flutter analyze/tests, including human-room, owner-access, paid-voice, production
+   transport and deep-link tests;
+6. build `assembleRelease` from the exact qualified head and record APK checksum/artifact;
+7. install on a real Android device and exercise create/share/free-text, paid voice,
+   transfer/gift, human text access, Wallet/Activity, notifications and restart/retry;
+8. qualify production deployment/readiness/rollback evidence before merge.
 
 Do not rewrite applied migrations or mark TWIN-100..109 complete from code presence alone.
