@@ -11,6 +11,7 @@ import '../screens/owner_access/owner_access_session_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../rooms/news/news_screen.dart';
 import '../screens/twin/twin_home_shell.dart';
+import '../screens/twin/my_twin_screen.dart';
 import '../finance/crypto_wallet_screen.dart';
 import '../screens/settings/clone_setup_screen.dart';
 import '../screens/splash/splash_screen.dart';
@@ -67,6 +68,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path == '/chats' ||
           path.startsWith('/chat/') ||
           path.startsWith('/twin/') ||
+          path == '/my-twin' ||
           path.startsWith('/owner-session/') ||
           path == '/agents' ||
           path == '/masana' ||
@@ -121,6 +123,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // Backwards-compatible legacy entry points now converge on the Twin shell.
       GoRoute(path: '/agents', redirect: (_, __) => '/home'),
       GoRoute(path: '/masana', redirect: (_, __) => '/home'),
+      GoRoute(
+        path: '/my-twin',
+        builder: (context, _) => MyTwinScreen(
+          onCreateTwin: () => context.push('/clone'),
+          onTalkToTwin: (characterId) => context.push(
+            '/chat/${Uri.encodeComponent(characterId)}',
+          ),
+          onTeachTwin: (characterId) => context.push(
+            '/chat/${Uri.encodeComponent(characterId)}',
+          ),
+          onOpenSettings: () => context.push('/settings'),
+        ),
+      ),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
       GoRoute(path: '/billing', builder: (_, _) => const BillingScreen()),
       GoRoute(path: '/news', builder: (_, _) => const NewsScreen()),
