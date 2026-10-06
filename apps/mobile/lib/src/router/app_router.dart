@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../screens/chat/ai_chat_screen.dart';
 import '../screens/billing/billing_screen.dart';
 import '../screens/onboarding/name_screen.dart';
+import '../screens/news/news_screen.dart';
 import '../screens/onboarding/otp_screen.dart';
 import '../screens/onboarding/phone_login_screen.dart';
 import '../screens/owner_access/owner_access_session_screen.dart';
@@ -138,6 +139,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
       GoRoute(path: '/billing', builder: (_, _) => const BillingScreen()),
+      GoRoute(path: '/news', builder: (_, _) => const NewsScreen()),
       GoRoute(path: '/news', builder: (_, _) => const NewsScreen()),
       GoRoute(path: '/crypto', builder: (_, _) => const CryptoWalletScreen()),
       GoRoute(path: '/clone', builder: (_, _) => const CloneSetupScreen()),
