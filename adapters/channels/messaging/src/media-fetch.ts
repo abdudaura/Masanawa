@@ -196,6 +196,19 @@ export function createAuthorizedChannelMediaFetcher(
         );
       }
 
+      if (
+        request.mediaKind !== "audio" &&
+        request.mediaKind !== "image" &&
+        request.mediaKind !== "video" &&
+        request.mediaKind !== "document"
+      ) {
+        throw mediaError(
+          "media_kind_invalid",
+          "validation",
+          "Channel media kind is invalid",
+        );
+      }
+
       const fileId = bounded(request.fileId, "fileId", 512);
       const declaredMimeType =
         request.declaredMimeType === undefined
