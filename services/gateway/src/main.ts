@@ -192,6 +192,11 @@ import {
 } from "./talk_library/service.js";
 import { createPostgresTalkLibraryRepository } from "./talk_library/postgres_repository.js";
 import {
+  createTalkGiftService,
+  type TalkGiftAuthorizer,
+} from "./talk_gifts/service.js";
+import { createPostgresTalkGiftRepository } from "./talk_gifts/postgres_repository.js";
+import {
   createGatewayApp,
   type GatewayAppOptions,
   type ReadinessCheck,
@@ -299,6 +304,7 @@ export interface ServiceDatabaseDependency {
   readonly talkActivity?: ReturnType<typeof createPostgresTalkActivityRepository>;
   readonly talkSearch?: ReturnType<typeof createPostgresTalkSearchRepository>;
   readonly talkLibrary?: ReturnType<typeof createPostgresTalkLibraryRepository>;
+  readonly talkGifts?: ReturnType<typeof createPostgresTalkGiftRepository>;
   close(): Promise<void>;
 }
 
@@ -451,6 +457,7 @@ function createDefaultDatabaseDependency(
     talkActivity: createPostgresTalkActivityRepository(database.pool),
     talkSearch: createPostgresTalkSearchRepository(database.pool),
     talkLibrary: createPostgresTalkLibraryRepository(database.pool),
+    talkGifts: createPostgresTalkGiftRepository(database.pool),
     close: database.close,
   });
 }
@@ -596,6 +603,7 @@ export async function startGatewayService(
   let talkActivityAuthorizer: TalkActivityAuthorizer | undefined;
   let talkSearchAuthorizer: TalkSearchAuthorizer | undefined;
   let talkLibraryAuthorizer: TalkLibraryAuthorizer | undefined;
+  let talkGiftAuthorizer: TalkGiftAuthorizer | undefined;
   let billingFinancialAuthorizer:
     | ReturnType<typeof createPlatformSessionFinancialAuthorizer>
     | undefined;
@@ -739,6 +747,7 @@ export async function startGatewayService(
     talkActivityAuthorizer = customerSessions;
     talkSearchAuthorizer = customerSessions;
     talkLibraryAuthorizer = customerSessions;
+    talkGiftAuthorizer = customerSessions;
     billingFinancialAuthorizer = createPlatformSessionFinancialAuthorizer({
       repository: database.platformSessions,
     });
@@ -1812,6 +1821,38 @@ export async function startGatewayService(
         })
       : undefined);
 
+  const composedTalkGifts =
+    options.appOptions?.talkGifts ??
+    (database.talkGifts && talkGiftAuthorizer && twinProduction?.creditGift
+      ? createTalkGiftService({
+          repository: database.talkGifts,
+          authorizer: talkGiftAuthorizer,
+          executor: twinProduction.creditGift,
+          ...(database.talkActivity
+            ? {
+                activity: {
+                  async append(request) {
+                    await database.talkActivity!.append({
+                      tenantId: request.tenantId,
+                      activityId: `talk-gift:${request.requestId}:recipient`,
+                      userId: request.recipientUserId,
+                      kind: "gift",
+                      title: "Gift received",
+                      detail: `From “${request.talkTitle}”.`,
+                      createdAt: request.completedAt,
+                      talkId: request.talkId,
+                      transactionId: request.giftId,
+                      amountLabel: `${request.amountCredits} Cr`,
+                      requiresAction: false,
+                      unread: true,
+                    });
+                  },
+                },
+              }
+            : {}),
+        })
+      : undefined);
+
   const liveKitServerUrl = env.LIVEKIT_URL?.trim();
   const liveKitApiKey = env.LIVEKIT_API_KEY?.trim();
   const liveKitApiSecret = env.LIVEKIT_API_SECRET?.trim();
@@ -1944,6 +1985,7 @@ export async function startGatewayService(
       ...(composedTalkActivity ? { talkActivity: composedTalkActivity } : {}),
       ...(composedTalkSearch ? { talkSearch: composedTalkSearch } : {}),
       ...(composedTalkLibrary ? { talkLibrary: composedTalkLibrary } : {}),
+      ...(composedTalkGifts ? { talkGifts: composedTalkGifts } : {}),
       ...(composedBillingFinancial ? { billingFinancial: composedBillingFinancial } : {}),
       ...(composedBillingCheckout ? { billingCheckout: composedBillingCheckout } : {}),
       ...(composedBillingWallet ? { billingWallet: composedBillingWallet } : {}),
