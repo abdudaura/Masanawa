@@ -14,6 +14,31 @@ function repository():TalkModerationRepository{
     async listQuestions(){return [{questionId:"question_1",authorName:"Listener",body:"What changed?",status:"pending",createdAt:"2026-10-07T10:00:00.000Z"}];},
     async resolveQuestion(){return [];},
     async hostControls(){return {requests:[],participants:[{participantId:"host_user_host",displayName:"Host",kind:"human",isHost:true,isMuted:false}]};},
+    async inviteHuman(input){return {
+      talkId:input.talkId,
+      talkTitle:"A live Talk",
+      hostName:"Host",
+      inviteeUserId:"user_amina",
+      inviteeHandle:input.handle,
+      inviteeDisplayName:"Amina",
+      status:"pending",
+      createdAt:input.now,
+      updatedAt:input.now,
+    };},
+    async respondHumanInvitation(input){return {
+      invitation:{
+        talkId:input.talkId,
+        talkTitle:"A live Talk",
+        hostName:"Host",
+        inviteeUserId:input.inviteeUserId,
+        inviteeHandle:"amina",
+        inviteeDisplayName:"Amina",
+        status:input.action==="accept" ? "accepted" : "declined",
+        createdAt:input.now,
+        updatedAt:input.now,
+      },
+      mediaActions:[],
+    };},
     async actOnRequest(){return {controls:{requests:[],participants:[]},mediaActions:[]};},
     async moderateParticipant(){return {controls:{requests:[],participants:[]},mediaActions:[]};},
     async endTalk(){return {mediaActions:[]};},
@@ -45,6 +70,44 @@ describe("Talk participation and moderation routes",()=>{
     const lowered=await server.inject({method:"POST",url:"/talks/talk_1/raise-hand",headers:{authorization:"Bearer ok"},payload:{raised:false}});
     expect(lowered.json()).toEqual({handStatus:"idle"});
   });
+  it("Host sends a free human invitation by profile handle",async()=>{
+    const response=await app("user_host").inject({
+      method:"POST",
+      url:"/talks/talk_1/invitations",
+      headers:{authorization:"Bearer ok"},
+      payload:{handle:"amina"},
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      talkId:"talk_1",
+      inviteeHandle:"amina",
+      status:"pending",
+    });
+  });
+
+  it("recipient accepts or declines only as their authenticated user",async()=>{
+    const accepted=await app("user_amina").inject({
+      method:"POST",
+      url:"/talks/talk_1/invitation-response",
+      headers:{authorization:"Bearer ok"},
+      payload:{action:"accept"},
+    });
+    expect(accepted.statusCode).toBe(200);
+    expect(accepted.json()).toMatchObject({
+      inviteeUserId:"user_amina",
+      status:"accepted",
+    });
+
+    const declined=await app("user_amina").inject({
+      method:"POST",
+      url:"/talks/talk_1/invitation-response",
+      headers:{authorization:"Bearer ok"},
+      payload:{action:"decline"},
+    });
+    expect(declined.statusCode).toBe(200);
+    expect(declined.json()).toMatchObject({status:"declined"});
+  });
+
   it("submits audience questions and exposes a Host-only queue contract",async()=>{
     const submitted=await app().inject({method:"POST",url:"/talks/talk_1/questions",headers:{authorization:"Bearer ok"},payload:{body:" What changed? "}});
     expect(submitted.statusCode).toBe(201);
