@@ -8,6 +8,10 @@ import type {
 
 export interface CustomerChannelBridge {
   handle(request: CustomerChannelInbound): Promise<CustomerChannelResult>;
+  delivered(input: Readonly<{
+    channel: "whatsapp" | "telegram";
+    messageId: string;
+  }>): Promise<void>;
 }
 
 export interface WhatsAppChannelConfig {
@@ -298,24 +302,23 @@ export function registerCustomerChannelRoutes(
                   ? message.text as Record<string, unknown>
                   : {};
               const text = typeof textNode.body === "string" ? textNode.body.trim() : "";
-              try {
-                const media = await whatsappMedia(config, message);
-                if (!text && !media) continue;
-                const result = await options.bridge.handle({
+              const media = await whatsappMedia(config, message);
+              if (!text && !media) continue;
+              const result = await options.bridge.handle({
+                channel: "whatsapp",
+                messageId: id,
+                externalUserId: from,
+                chatId: from,
+                phone: from,
+                text: text || "Please help me with this attachment.",
+                ...(media ? { media } : {}),
+              });
+              if (result.shouldDeliver && result.reply) {
+                await sendWhatsApp(config, from, result.reply);
+                await options.bridge.delivered({
                   channel: "whatsapp",
                   messageId: id,
-                  externalUserId: from,
-                  chatId: from,
-                  phone: from,
-                  text: text || "Please help me with this attachment.",
-                  ...(media ? { media } : {}),
                 });
-                if (!result.duplicate && result.reply) {
-                  await sendWhatsApp(config, from, result.reply);
-                }
-              } catch {
-                // Provider retries are safe because inbound message IDs are
-                // claimed durably by the shared channel bridge.
               }
             }
           }
@@ -365,29 +368,28 @@ export function registerCustomerChannelRoutes(
         (typeof message.text === "string" && message.text.trim()) ||
         (typeof message.caption === "string" && message.caption.trim()) ||
         (phone ? "Connect my Telegram account." : "");
-      try {
-        const media = await telegramMedia(config, message);
-        if (!text && !media && !phone) return { received: true };
-        const result = await options.bridge.handle({
+      const media = await telegramMedia(config, message);
+      if (!text && !media && !phone) return { received: true };
+      const result = await options.bridge.handle({
+        channel: "telegram",
+        messageId,
+        externalUserId: fromId,
+        chatId,
+        ...(phone ? { phone } : {}),
+        text: text || "Please help me with this attachment.",
+        ...(media ? { media } : {}),
+      });
+      if (result.shouldDeliver && result.reply) {
+        await sendTelegram(
+          config,
+          chatId,
+          result.reply,
+          result.requestContact,
+        );
+        await options.bridge.delivered({
           channel: "telegram",
           messageId,
-          externalUserId: fromId,
-          chatId,
-          ...(phone ? { phone } : {}),
-          text: text || "Please help me with this attachment.",
-          ...(media ? { media } : {}),
         });
-        if (!result.duplicate && result.reply) {
-          await sendTelegram(
-            config,
-            chatId,
-            result.reply,
-            result.requestContact,
-          );
-        }
-      } catch {
-        // Telegram will retry webhook delivery; channel message claiming is
-        // durable and failed claims are explicitly reclaimable.
       }
       return { received: true };
     });
