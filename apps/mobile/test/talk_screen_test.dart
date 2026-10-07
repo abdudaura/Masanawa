@@ -4,10 +4,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/screens/talks/talk_screen.dart';
 import 'package:masanawa/src/state/talk_ai_seat_state.dart';
 import 'package:masanawa/src/state/talk_host_controls_state.dart';
+import 'package:masanawa/src/state/talk_live_state.dart';
 import 'package:masanawa/src/state/talk_participation_state.dart';
 import 'package:masanawa/src/state/talk_state.dart';
 import 'package:masanawa/src/talks/talk_ai_seat.dart';
 import 'package:masanawa/src/talks/talk_host_controls.dart';
+import 'package:masanawa/src/talks/talk_live.dart';
+import 'package:masanawa/src/talks/talk_live_audio_session.dart';
 import 'package:masanawa/src/talks/talk_models.dart';
 import 'package:masanawa/src/talks/talk_participation.dart';
 import 'package:masanawa/src/theme/masanawa_theme.dart';
@@ -56,6 +59,55 @@ class _SeatTransport implements TalkAiSeatTransport {
         status: TalkAiSeatRequestStatus.pendingHost,
         message: 'Waiting for the Host.',
       );
+}
+
+class _FakeLiveAudioController implements TalkLiveAudioController {
+  _FakeLiveAudioController({
+    required this.role,
+    this.initialStatus = TalkLiveAudioStatus.listening,
+  });
+
+  @override
+  final TalkLiveRole role;
+  final TalkLiveAudioStatus initialStatus;
+  final _states = StreamController<TalkLiveAudioStatus>.broadcast(sync: true);
+  TalkLiveAudioStatus _status = TalkLiveAudioStatus.idle;
+  bool _muted = false;
+  int starts = 0;
+  int closes = 0;
+
+  @override
+  TalkLiveAudioStatus get status => _status;
+
+  @override
+  bool get muted => _muted;
+
+  @override
+  String? get errorMessage => null;
+
+  @override
+  Stream<TalkLiveAudioStatus> get states => _states.stream;
+
+  @override
+  Future<void> start() async {
+    starts += 1;
+    _status = initialStatus;
+    _states.add(_status);
+  }
+
+  @override
+  Future<void> setMuted(bool muted) async {
+    _muted = muted;
+    _status = TalkLiveAudioStatus.publishing;
+    _states.add(_status);
+  }
+
+  @override
+  Future<void> close() async {
+    closes += 1;
+    _status = TalkLiveAudioStatus.ended;
+    await _states.close();
+  }
 }
 
 class _HostControlsTransport implements TalkHostControlsTransport {
@@ -225,6 +277,7 @@ Widget _app({
   Widget? home,
   _ParticipationTransport? participation,
   _HostControlsTransport? hostControls,
+  _FakeLiveAudioController? liveAudio,
 }) {
   return ProviderScope(
     overrides: [
@@ -237,6 +290,10 @@ Widget _app({
       ),
       talkHostControlsTransportProvider.overrideWithValue(
         hostControls ?? _HostControlsTransport(),
+      ),
+      talkLiveAudioFactoryProvider.overrideWithValue(
+        (_) => liveAudio ??
+            _FakeLiveAudioController(role: TalkLiveRole.listener),
       ),
     ],
     child: MaterialApp(
@@ -361,6 +418,56 @@ void main() {
     expect(participation.raised, isFalse);
     expect(find.text('Raise hand'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('live listener auto-connects to Talk audio', (tester) async {
+    final transport = _TalkTransport();
+    final liveAudio = _FakeLiveAudioController(
+      role: TalkLiveRole.listener,
+      initialStatus: TalkLiveAudioStatus.listening,
+    );
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        liveAudio: liveAudio,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(liveAudio.starts, 1);
+    expect(find.text('Listening'), findsOneWidget);
+    expect(find.byKey(const ValueKey('talk-live-mic-toggle')), findsNothing);
+  });
+
+  testWidgets('Host live audio exposes microphone mute control', (tester) async {
+    final transport = _TalkTransport();
+    final liveAudio = _FakeLiveAudioController(
+      role: TalkLiveRole.host,
+      initialStatus: TalkLiveAudioStatus.publishing,
+    );
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        liveAudio: liveAudio,
+        home: const TalkScreen(
+          talkId: 'talk-1',
+          initialTalk: _TalkTransport.talk,
+          isHost: true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('On mic'), findsOneWidget);
+    expect(find.byKey(const ValueKey('talk-live-mic-toggle')), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('talk-live-mic-toggle')));
+    await tester.pumpAndSettle();
+
+    expect(liveAudio.muted, isTrue);
+    expect(find.text('Muted'), findsOneWidget);
   });
 
   testWidgets('Host sees moderation controls instead of Raise Hand',
