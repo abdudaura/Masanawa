@@ -22,6 +22,7 @@ describe("Talk safety enforcement integration", () => {
     const { pool, calls } = recordingPool();
     await createPostgresTalkRepository(pool).listTalks({
       tenantId: "tenant-a",
+      viewerUserId: "viewer-a",
       feed: "explore",
       limit: 50,
     });

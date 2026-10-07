@@ -34,7 +34,12 @@ function fixtureRepository(): TalkRepository {
       return [...talks.values()]
         .filter((talk) => talk.tenantId === input.tenantId)
         .filter((talk) => input.feed === "explore" || talk.state === "live")
-        .map((talk) => ({ talk, commentCount: comments.get(talk.talkId)?.length ?? 0 }));
+        .map((talk) => ({
+          talk,
+          commentCount: comments.get(talk.talkId)?.length ?? 0,
+          reactionCount: 0,
+          followedHost: false,
+        }));
     },
     async getTalk(input) {
       const talk = talks.get(input.talkId);

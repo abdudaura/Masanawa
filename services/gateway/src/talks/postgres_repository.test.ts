@@ -70,7 +70,11 @@ describe("Postgres Talk repository", () => {
         calls.push({ text, ...(values === undefined ? {} : { values }) });
         return {
           rowCount: 1,
-          rows: [row({ comment_count: 4 })] as unknown as Row[],
+          rows: [row({
+            comment_count: 4,
+            reaction_count: 7,
+            followed_host: true,
+          })] as unknown as Row[],
         };
       },
     };
@@ -78,19 +82,31 @@ describe("Postgres Talk repository", () => {
 
     const live = await repository.listTalks({
       tenantId: "tenant_a",
+      viewerUserId: "user_viewer",
       feed: "live",
       limit: 50,
     });
     const explore = await repository.listTalks({
       tenantId: "tenant_a",
+      viewerUserId: "user_viewer",
       feed: "explore",
       limit: 50,
     });
 
-    expect(live[0]).toMatchObject({ commentCount: 4 });
-    expect(explore[0]).toMatchObject({ commentCount: 4 });
-    expect(calls[0]?.values).toEqual(["tenant_a", "live", 50]);
-    expect(calls[1]?.values).toEqual(["tenant_a", "explore", 50]);
+    expect(live[0]).toMatchObject({
+      commentCount: 4,
+      reactionCount: 7,
+      followedHost: true,
+    });
+    expect(explore[0]).toMatchObject({
+      commentCount: 4,
+      reactionCount: 7,
+      followedHost: true,
+    });
+    expect(calls[0]?.values).toEqual(["tenant_a", "live", "user_viewer", 50]);
+    expect(calls[1]?.values).toEqual(["tenant_a", "explore", "user_viewer", 50]);
+    expect(calls[0]?.text).toContain("talks.participation");
+    expect(calls[0]?.text).toContain("talks.follows");
     expect(calls[0]?.text).toContain("tenant_id = $1");
     expect(calls[0]?.text).toContain("state = 'live'");
   });
