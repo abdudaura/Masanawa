@@ -3,7 +3,7 @@
 Owner: current Railway/APK repair window
 Branch: `fix/mobile-apk-build-20261007`
 Base: `bb3f6d204c2e53f21eaf2574311c7c0ef4cbf315`
-Last update: 2026-10-07T21:46:00Z
+Last update: 2026-10-07T21:55:00Z
 Status: active.
 
 ## Exact owned paths
@@ -69,3 +69,5 @@ All 310 Flutter tests pass locally. Flutter analyze --no-fatal-infos --no-fatal-
 The scratch source and intermediate mobile outputs survived the inactive interval, while /tmp SDKs, JDK and home-directory caches did not. No final APK was produced. Restore tools in the conversation workspace, verify sources against the published head, and finish the actual release build. No other open PR or active mobile repair lane exists at resume.
 
 SDK and full JDK restored; production readiness remains 200. Restore hosted dependencies directly from locked package archives with SHA-256 checks, then compile using the restored caches. No implementation scope expansion.
+
+Restored-environment verification: all 310 tests pass in 24 seconds. The integration fixture now supplies an isolated signed-in SessionController and asserts Authorization headers, avoiding native secure-storage access. Analyzer again reports no errors with 379 non-fatal existing/style notices. APK Gradle assembly is active with Android dependencies being cached; no final artifact yet.
