@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../state/talk_safety_state.dart';
+import '../../state/talk_social_profile_state.dart';
 import '../../state/talk_state.dart';
 import '../../talks/talk_models.dart';
 import '../../talks/talk_safety.dart';
@@ -44,6 +45,34 @@ class _TalkMoreSheetState extends ConsumerState<_TalkMoreSheet> {
       }
     }
     return null;
+  }
+
+  Future<void> _toggleFollowing({
+    required String hostUserId,
+    required bool following,
+  }) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      await ref.read(talkSocialProfileTransportProvider).setFollowingUserId(
+            userId: hostUserId,
+            following: following,
+          );
+      ref.invalidate(humanProfileByUserIdProvider(hostUserId));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(following ? 'Following Host.' : 'Unfollowed Host.'),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Couldn’t update Follow right now.')),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   Future<void> _setPreference({
@@ -143,6 +172,9 @@ class _TalkMoreSheetState extends ConsumerState<_TalkMoreSheet> {
     final preference = !widget.isHost && hostUserId != null
         ? ref.watch(talkSafetyPreferenceProvider(hostUserId))
         : null;
+    final hostProfile = !widget.isHost && hostUserId != null
+        ? ref.watch(humanProfileByUserIdProvider(hostUserId))
+        : null;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 22),
@@ -192,6 +224,43 @@ class _TalkMoreSheetState extends ConsumerState<_TalkMoreSheet> {
             onTap: _participants,
           ),
           if (!widget.isHost) ...[
+            if (hostUserId != null)
+              hostProfile!.when(
+                data: (profile) {
+                  if (profile == null) return const SizedBox.shrink();
+                  return ListTile(
+                    key: const ValueKey('talk-more-follow-host'),
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(
+                      profile.isFollowing
+                          ? Icons.person_remove_outlined
+                          : Icons.person_add_alt_1_outlined,
+                    ),
+                    title: Text(
+                      profile.isFollowing ? 'Following' : 'Follow Host',
+                    ),
+                    subtitle: Text(
+                      profile.isFollowing
+                          ? 'Tap to unfollow ${profile.displayName}'
+                          : 'See more Talks from ${profile.displayName}',
+                    ),
+                    onTap: _busy
+                        ? null
+                        : () => _toggleFollowing(
+                              hostUserId: hostUserId,
+                              following: !profile.isFollowing,
+                            ),
+                  );
+                },
+                loading: () => const ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.person_add_alt_1_outlined),
+                  title: Text('Follow Host'),
+                  subtitle: Text('Loading Host profile…'),
+                  enabled: false,
+                ),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
             ListTile(
               key: const ValueKey('talk-more-report'),
               contentPadding: EdgeInsets.zero,
