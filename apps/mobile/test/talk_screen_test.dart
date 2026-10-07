@@ -309,6 +309,15 @@ class _ReplayTalkTransport implements TalkTransport {
       talk;
 
   @override
+  Future<TalkDiscoveryItem> updateTalk({
+    required String talkId,
+    String? title,
+    String? topic,
+    String? summary,
+  }) async =>
+      talk;
+
+  @override
   Future<TalkComment> addComment({
     required String talkId,
     required String body,
@@ -612,6 +621,39 @@ class _TalkTransport implements TalkTransport {
     String? title,
   }) async =>
       talk;
+
+  final List<({
+    String talkId,
+    String? title,
+    String? topic,
+    String? summary,
+  })> updates = [];
+
+  @override
+  Future<TalkDiscoveryItem> updateTalk({
+    required String talkId,
+    String? title,
+    String? topic,
+    String? summary,
+  }) async {
+    updates.add((
+      talkId: talkId,
+      title: title,
+      topic: topic,
+      summary: summary,
+    ));
+    return TalkDiscoveryItem(
+      id: talk.id,
+      title: title ?? talk.title,
+      summary: summary ?? talk.summary,
+      hostName: talk.hostName,
+      topic: topic ?? talk.topic,
+      isLive: talk.isLive,
+      listenerCount: talk.listenerCount,
+      commentCount: talk.commentCount,
+      participants: talk.participants,
+    );
+  }
 
   @override
   Future<TalkComment> addComment({
