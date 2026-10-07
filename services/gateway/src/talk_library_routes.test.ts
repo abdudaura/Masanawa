@@ -127,7 +127,7 @@ describe("Talk library routes", () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual([
-      expect.objectContaining({ id: "talk_saved", viewerIsHost: undefined }),
+      expect.objectContaining({ id: "talk_saved", isLive: false }),
     ]);
   });
 
