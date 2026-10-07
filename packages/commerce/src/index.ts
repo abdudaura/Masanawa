@@ -19,3 +19,5 @@ export * from "./gifts.js";
 export * from "./billing-wallet.js";
 
 export * from "./provider-valuation.js";
+
+export * from "./crypto-chat.js";
