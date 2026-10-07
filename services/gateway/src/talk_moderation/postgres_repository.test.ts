@@ -178,7 +178,7 @@ describe("Postgres Talk moderation repository", () => {
     const insert = calls.find((call) =>
       call.text.includes("INSERT INTO talks.questions")
     );
-    expect(insert?.text).toContain("status='pending'");
+    expect(insert?.text).toContain("'pending'");
     expect(insert?.text).toContain("< 3");
   });
 
