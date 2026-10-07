@@ -156,6 +156,8 @@ import {
   createFcmPushSender,
   type MobilePushSender,
 } from "./mobile_push.js";
+import { createTalkService, type TalkAuthorizer } from "./talks/service.js";
+import { createPostgresTalkRepository } from "./talks/postgres_repository.js";
 import {
   createGatewayApp,
   type GatewayAppOptions,
@@ -255,6 +257,7 @@ export interface ServiceDatabaseDependency {
   readonly twinProfiles?: ReturnType<typeof createPostgresTwinProfileRepository>;
   readonly twinEconomy?: ReturnType<typeof createPostgresTwinRuntimeRepository>;
   readonly twinEvents?: ReturnType<typeof createPostgresTwinEconomyEventStore>;
+  readonly talks?: ReturnType<typeof createPostgresTalkRepository>;
   close(): Promise<void>;
 }
 
@@ -398,6 +401,7 @@ function createDefaultDatabaseDependency(
     twinProfiles: createPostgresTwinProfileRepository(database.pool),
     twinEconomy: createPostgresTwinRuntimeRepository(database.pool),
     twinEvents: createPostgresTwinEconomyEventStore(database.pool),
+    talks: createPostgresTalkRepository(database.pool),
     close: database.close,
   });
 }
@@ -534,6 +538,7 @@ export async function startGatewayService(
   let billingCustomerAuthorizer:
     | ReturnType<typeof createPlatformCustomerSessionAuthorizer>
     | undefined;
+  let talkAuthorizer: TalkAuthorizer | undefined;
   let billingFinancialAuthorizer:
     | ReturnType<typeof createPlatformSessionFinancialAuthorizer>
     | undefined;
@@ -668,6 +673,7 @@ export async function startGatewayService(
       repository: database.platformSessions,
     });
     billingCustomerAuthorizer = customerSessions;
+    talkAuthorizer = customerSessions;
     billingFinancialAuthorizer = createPlatformSessionFinancialAuthorizer({
       repository: database.platformSessions,
     });
@@ -1705,11 +1711,21 @@ export async function startGatewayService(
         })
       : undefined);
 
+  const composedTalks =
+    options.appOptions?.talks ??
+    (database.talks && talkAuthorizer
+      ? createTalkService({
+          repository: database.talks,
+          authorizer: talkAuthorizer,
+        })
+      : undefined);
+
   let app: ManagedNodeServer;
   try {
     app = appFactory({
       ...(options.appOptions ?? {}),
       ...(customerAuth ? { customerAuth } : {}),
+      ...(composedTalks ? { talks: composedTalks } : {}),
       ...(composedBillingFinancial ? { billingFinancial: composedBillingFinancial } : {}),
       ...(composedBillingCheckout ? { billingCheckout: composedBillingCheckout } : {}),
       ...(composedBillingWallet ? { billingWallet: composedBillingWallet } : {}),
