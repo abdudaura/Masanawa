@@ -83,6 +83,11 @@ class _SafetyTransport implements TalkSafetyTransport {
     bool isReplay,
     TalkSafetyReportReason reason,
   })> reports = [];
+  final List<({
+    TalkSafetyTargetKind targetKind,
+    String targetId,
+    TalkSafetyReportReason reason,
+  })> targetReports = [];
   final List<({String userId, bool blocked, bool muted})> preferences = [];
 
   @override
@@ -108,6 +113,20 @@ class _SafetyTransport implements TalkSafetyTransport {
     String? detail,
   }) async {
     reports.add((talkId: talkId, isReplay: isReplay, reason: reason));
+  }
+
+  @override
+  Future<void> reportTarget({
+    required TalkSafetyTargetKind targetKind,
+    required String targetId,
+    required TalkSafetyReportReason reason,
+    String? detail,
+  }) async {
+    targetReports.add((
+      targetKind: targetKind,
+      targetId: targetId,
+      reason: reason,
+    ));
   }
 }
 
