@@ -43,3 +43,72 @@ Only the real Host may publish microphone audio when `canPublishAudio=true`.
 Host reconnect state must be explicit; AI generation is never kept alive by a listener.
 
 Status: active.
+
+
+## Implementation checkpoint
+
+Implemented:
+- canonical mobile models for PR #345 live session/state/media envelopes;
+- exact Gateway transport for connect / heartbeat / disconnect / media-token / state;
+- LiveKit Flutter audio dependency (`livekit_client ^2.13.0`);
+- auto-subscribe LiveKit room connection for listeners;
+- microphone publication is enabled only when the backend returns both:
+  - `role=host`, and
+  - `canPublishAudio=true`;
+- listeners never request microphone publication;
+- Talk audio prefers the phone speaker while respecting wired/Bluetooth routes and restores
+  the system preference on room close;
+- 10-second server heartbeat, safely inside the 30-second default Host grace window;
+- reconnecting state is visible on the Talk screen;
+- Host microphone is stopped while the server reports reconnecting;
+- ended state closes LiveKit media instead of allowing synthetic continuation;
+- explicit server disconnect is attempted on Talk-screen disposal;
+- Talk screen automatically connects when entering a live Talk;
+- listeners see **Listening** and receive remote LiveKit audio;
+- Hosts see **On mic / Muted** with a real microphone toggle;
+- failed audio shows a friendly **Audio unavailable** retry affordance;
+- replay Talks never start a live media session;
+- iOS microphone usage copy now explicitly covers live Talks;
+- focused model, HTTP route, session lifecycle and Talk-screen tests.
+
+## Media authority
+
+The client does not decide who can publish. It consumes PR #345's short-lived LiveKit
+credential grant. The backend-generated token remains authoritative for room membership,
+subscription and microphone publication. A listener-side UI change cannot elevate a
+listener into a publisher.
+
+## Lifecycle
+
+1. Enter live Talk.
+2. `POST /talks/:id/live/connect`.
+3. Receive role/capabilities and a server-issued session id.
+4. `POST /talks/:id/live/media-token`.
+5. Join LiveKit room with auto-subscribe enabled.
+6. Publish microphone only for an authorized Host.
+7. Heartbeat every 10 seconds.
+8. If Host presence is reconnecting, project that state and stop Host microphone media.
+9. If Talk is ended, tear down media.
+10. On route disposal, close LiveKit and best-effort `/live/disconnect`.
+
+## Verification boundaries
+
+Unit/widget coverage uses an in-memory media-room seam, so tests prove that listeners
+cannot receive client-side publish authority and that Host/reconnect/end lifecycle behavior
+is deterministic without requiring a physical microphone.
+
+Final qualification still requires:
+- PR #345 merged/deployed with `LIVEKIT_URL`, `LIVEKIT_API_KEY`,
+  `LIVEKIT_API_SECRET`;
+- a real LiveKit room connection from Android;
+- two physical/logical clients confirming remote audio is audible;
+- Host microphone mute/unmute;
+- Host disconnect/reconnect grace;
+- listener never receiving microphone publication rights.
+
+The repository Mobile Build workflow currently has a known zero-step GitHub Actions failure
+pattern on main; branch qualification must distinguish that infrastructure failure from an
+actual Flutter analyze/test/build failure.
+
+Status: mobile live-audio implementation complete for the PR #345 contract; physical media
+qualification and backend deployment remain integration work.
