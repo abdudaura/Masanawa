@@ -36,9 +36,10 @@ import {
   readRequiredEnv,
   type TenantId,
 } from "@masanawa/contracts";
-import type {
-  CustomerChannelRepository,
-  PlatformSessionRepository,
+import {
+  hashPlatformSessionToken,
+  type CustomerChannelRepository,
+  type PlatformSessionRepository,
 } from "@masanawa/security";
 import {
   FlutterwaveBillsClient,
@@ -1529,9 +1530,19 @@ export async function startGatewayService(
       }
       const authDir = env.MASANAWA_WHATSAPP_AUTH_DIR?.trim();
       const adminToken = env.MASANAWA_WHATSAPP_ADMIN_TOKEN?.trim();
-      if (!authDir || !adminToken) {
+      const adminPrincipals = readPrincipalSet(
+        env.MASANAWA_ADMIN_PRINCIPALS ??
+          env.MASANAWA_ADMIN_USER_IDS ??
+          env.MASANAWA_ADMIN_EMAILS,
+      );
+      if (!authDir) {
         throw new TypeError(
-          "WhatsApp linked-device mode requires MASANAWA_WHATSAPP_AUTH_DIR and MASANAWA_WHATSAPP_ADMIN_TOKEN",
+          "WhatsApp linked-device mode requires MASANAWA_WHATSAPP_AUTH_DIR",
+        );
+      }
+      if (!adminToken && adminPrincipals.size === 0) {
+        throw new TypeError(
+          "WhatsApp linked-device administration requires MASANAWA_WHATSAPP_ADMIN_TOKEN or configured platform admin principals",
         );
       }
       linkedWhatsAppController = createLinkedWhatsAppController({
@@ -1540,7 +1551,38 @@ export async function startGatewayService(
       });
       linkedWhatsAppAdmin = Object.freeze({
         controller: linkedWhatsAppController,
-        adminToken,
+        ...(adminToken ? { adminToken } : {}),
+        ...(adminPrincipals.size > 0
+          ? {
+              async authorizeSession(authorizationHeader: string | undefined) {
+                const supplied = /^Bearer\s+(.+)$/iu.exec(
+                  authorizationHeader?.trim() ?? "",
+                )?.[1]?.trim();
+                if (!supplied) return false;
+                let accessHash: string;
+                try {
+                  accessHash = hashPlatformSessionToken(supplied);
+                } catch {
+                  return false;
+                }
+                const identity = await database.platformSessions!.resolveAccess({
+                  accessHash,
+                  at: new Date().toISOString(),
+                });
+                if (!identity || identity.tenantId !== platformTenantId) {
+                  return false;
+                }
+                const candidates = [
+                  identity.userId,
+                  identity.profile.email?.trim().toLowerCase() ?? "",
+                  identity.profile.phone?.trim() ?? "",
+                ].filter(Boolean);
+                return candidates.some((candidate) =>
+                  adminPrincipals.has(candidate),
+                );
+              },
+            }
+          : {}),
       });
     }
 
