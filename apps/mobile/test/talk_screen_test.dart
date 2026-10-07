@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:masanawa/src/library/talk_library.dart';
 import 'package:masanawa/src/screens/talks/talk_screen.dart';
 import 'package:masanawa/src/state/talk_ai_seat_state.dart';
 import 'package:masanawa/src/state/talk_host_controls_state.dart';
+import 'package:masanawa/src/state/talk_library_state.dart';
 import 'package:masanawa/src/state/talk_live_state.dart';
 import 'package:masanawa/src/state/talk_participation_state.dart';
 import 'package:masanawa/src/state/talk_state.dart';
@@ -175,6 +177,27 @@ class _HostControlsTransport implements TalkHostControlsTransport {
   }
 }
 
+class _LibraryTransport implements TalkLibraryTransport {
+  bool savedState = false;
+  int writes = 0;
+
+  @override
+  Future<MyTalksView> loadMyTalks() async => const MyTalksView();
+
+  @override
+  Future<List<TalkDiscoveryItem>> loadSavedTalks() async => const [];
+
+  @override
+  Future<bool> isSaved(String talkId) async => savedState;
+
+  @override
+  Future<bool> setSaved(String talkId, {required bool saved}) async {
+    writes += 1;
+    savedState = saved;
+    return savedState;
+  }
+}
+
 class _ParticipationTransport implements TalkParticipationTransport {
   TalkParticipationState state = const TalkParticipationState();
   String? reactedWith;
@@ -280,6 +303,7 @@ Widget _app({
   _ParticipationTransport? participation,
   _HostControlsTransport? hostControls,
   _FakeLiveAudioController? liveAudio,
+  _LibraryTransport? library,
 }) {
   return ProviderScope(
     overrides: [
@@ -296,6 +320,9 @@ Widget _app({
       talkLiveAudioFactoryProvider.overrideWithValue(
         (_) => liveAudio ??
             _FakeLiveAudioController(role: TalkLiveRole.listener),
+      ),
+      talkLibraryTransportProvider.overrideWithValue(
+        library ?? _LibraryTransport(),
       ),
     ],
     child: MaterialApp(
@@ -364,6 +391,43 @@ void main() {
     expect(find.text('Sponsor a Seat'), findsOneWidget);
     expect(find.text('Education Expert'), findsWidgets);
     expect(find.text('Sponsor'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Talk overflow saves and removes from Saved Talks',
+      (tester) async {
+    final transport = _TalkTransport();
+    final library = _LibraryTransport();
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        library: library,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('talk-more-menu')));
+    await tester.pumpAndSettle();
+    expect(find.text('Save Talk'), findsOneWidget);
+
+    await tester.tap(find.text('Save Talk'));
+    await tester.pumpAndSettle();
+
+    expect(library.savedState, isTrue);
+    expect(library.writes, 1);
+    expect(find.text('Talk saved.'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('talk-more-menu')));
+    await tester.pumpAndSettle();
+    expect(find.text('Remove from saved'), findsOneWidget);
+
+    await tester.tap(find.text('Remove from saved'));
+    await tester.pumpAndSettle();
+
+    expect(library.savedState, isFalse);
+    expect(library.writes, 2);
+    expect(find.text('Removed from Saved Talks.'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
