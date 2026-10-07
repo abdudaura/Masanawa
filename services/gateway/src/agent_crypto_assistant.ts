@@ -27,6 +27,11 @@ export interface AgentCryptoAssistant {
   }>): Promise<AgentCryptoResult | null>;
 }
 
+type CryptoBeforeInferenceInput =
+  Parameters<AgentCryptoAssistant["beforeInference"]>[0];
+type CryptoAfterInferenceInput =
+  Parameters<AgentCryptoAssistant["afterInference"]>[0];
+
 type Directive =
   | { type: "crypto.capabilities" }
   | { type: "crypto.routes"; operation: "deposit" | "convert" | "withdraw" }
@@ -392,7 +397,7 @@ export function createAgentCryptoAssistant(input: Readonly<{
   return Object.freeze({
     systemInstructions: CRYPTO_AGENT_SYSTEM_INSTRUCTIONS,
 
-    async beforeInference(request) {
+    async beforeInference(request: CryptoBeforeInferenceInput) {
       const phrase = confirmationPhrase(request.text);
       if (!phrase) return null;
       const pending = await input.pending.readCurrent(
@@ -405,7 +410,7 @@ export function createAgentCryptoAssistant(input: Readonly<{
         : completePending(request.authorizationHeader, pending);
     },
 
-    async afterInference(request) {
+    async afterInference(request: CryptoAfterInferenceInput) {
       const directive = parseDirective(request.modelReply);
       if (!directive) return null;
       return execute(request.authorizationHeader, request.scope, directive);
