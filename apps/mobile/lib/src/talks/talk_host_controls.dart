@@ -47,6 +47,9 @@ class TalkHostParticipant {
     required this.kind,
     required this.isHost,
     required this.isMuted,
+    this.userId,
+    this.profileHandle,
+    this.personaId,
     this.avatarUrl,
   });
 
@@ -55,6 +58,9 @@ class TalkHostParticipant {
   final TalkParticipantKind kind;
   final bool isHost;
   final bool isMuted;
+  final String? userId;
+  final String? profileHandle;
+  final String? personaId;
   final String? avatarUrl;
 
   factory TalkHostParticipant.fromJson(Map<String, dynamic> json) {
@@ -69,6 +75,9 @@ class TalkHostParticipant {
       kind: kind,
       isHost: json['isHost'] == true,
       isMuted: json['isMuted'] == true,
+      userId: json['userId'] as String?,
+      profileHandle: json['profileHandle'] as String?,
+      personaId: json['personaId'] as String?,
       avatarUrl: json['avatarUrl'] as String?,
     );
   }
