@@ -64,10 +64,22 @@ export interface TalkProfileRepository {
     viewerUserId: string;
     handle: string;
   }>): Promise<HumanProfileView | null>;
+  readHumanByUserId(input: Readonly<{
+    tenantId: string;
+    viewerUserId: string;
+    userId: string;
+  }>): Promise<HumanProfileView | null>;
   setFollowing(input: Readonly<{
     tenantId: string;
     viewerUserId: string;
     handle: string;
+    following: boolean;
+    changedAt: string;
+  }>): Promise<HumanProfileView | null>;
+  setFollowingByUserId(input: Readonly<{
+    tenantId: string;
+    viewerUserId: string;
+    userId: string;
     following: boolean;
     changedAt: string;
   }>): Promise<HumanProfileView | null>;

@@ -124,8 +124,15 @@ class PersonaProfile {
 abstract interface class TalkSocialProfileTransport {
   Future<HumanProfile?> loadHuman(String handle);
 
+  Future<HumanProfile?> loadHumanByUserId(String userId);
+
   Future<HumanProfile> setFollowing({
     required String handle,
+    required bool following,
+  });
+
+  Future<HumanProfile> setFollowingUserId({
+    required String userId,
     required bool following,
   });
 

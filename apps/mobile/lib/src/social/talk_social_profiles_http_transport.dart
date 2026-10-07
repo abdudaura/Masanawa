@@ -25,12 +25,43 @@ class GatewayTalkSocialProfileTransport implements TalkSocialProfileTransport {
   }
 
   @override
+  Future<HumanProfile?> loadHumanByUserId(String userId) async {
+    try {
+      final response = await api.dio.get<dynamic>(
+        '/profiles/by-user/' + Uri.encodeComponent(userId),
+      );
+      final data = response.data;
+      if (data is Map<String, dynamic>) return HumanProfile.fromJson(data);
+      if (data is Map) return HumanProfile.fromJson(data.cast<String, dynamic>());
+      throw const FormatException('Invalid human profile response');
+    } on DioException catch (error) {
+      if (error.response?.statusCode == 404) return null;
+      rethrow;
+    }
+  }
+
+  @override
   Future<HumanProfile> setFollowing({
     required String handle,
     required bool following,
   }) async {
     final response = await api.dio.post<dynamic>(
       '/profiles/' + Uri.encodeComponent(handle) + '/follow',
+      data: {'following': following},
+    );
+    final data = response.data;
+    if (data is Map<String, dynamic>) return HumanProfile.fromJson(data);
+    if (data is Map) return HumanProfile.fromJson(data.cast<String, dynamic>());
+    throw const FormatException('Invalid follow response');
+  }
+
+  @override
+  Future<HumanProfile> setFollowingUserId({
+    required String userId,
+    required bool following,
+  }) async {
+    final response = await api.dio.post<dynamic>(
+      '/profiles/by-user/' + Uri.encodeComponent(userId) + '/follow',
       data: {'following': following},
     );
     final data = response.data;

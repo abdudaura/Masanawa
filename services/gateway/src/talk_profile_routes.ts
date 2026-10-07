@@ -51,6 +51,50 @@ export function registerTalkProfileRoutes(
   );
 
   app.get(
+    "/profiles/by-user/:userId",
+    {
+      schema: {
+        params: Type.Object(
+          { userId: Type.String({ minLength: 3, maxLength: 256 }) },
+          { additionalProperties: false },
+        ),
+      },
+    },
+    async (request) => {
+      const { userId } = request.params as { userId: string };
+      return service.humanByUserId({
+        authorizationHeader: request.headers.authorization,
+        userId,
+      });
+    },
+  );
+
+  app.post(
+    "/profiles/by-user/:userId/follow",
+    {
+      schema: {
+        params: Type.Object(
+          { userId: Type.String({ minLength: 3, maxLength: 256 }) },
+          { additionalProperties: false },
+        ),
+        body: Type.Object(
+          { following: Type.Boolean() },
+          { additionalProperties: false },
+        ),
+      },
+    },
+    async (request) => {
+      const { userId } = request.params as { userId: string };
+      const { following } = request.body as { following: boolean };
+      return service.followUser({
+        authorizationHeader: request.headers.authorization,
+        userId,
+        following,
+      });
+    },
+  );
+
+  app.get(
     "/personas/:publicId",
     {
       schema: {

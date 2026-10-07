@@ -33,12 +33,25 @@ class _Profiles implements TalkSocialProfileTransport {
       );
 
   @override
+  Future<HumanProfile?> loadHumanByUserId(String userId) async =>
+      userId == 'user-amina' ? loadHuman('amina') : null;
+
+  @override
   Future<HumanProfile> setFollowing({
     required String handle,
     required bool following,
   }) async {
     this.following = following;
     return (await loadHuman(handle))!;
+  }
+
+  @override
+  Future<HumanProfile> setFollowingUserId({
+    required String userId,
+    required bool following,
+  }) async {
+    if (userId != 'user-amina') throw StateError('Unknown user');
+    return setFollowing(handle: 'amina', following: following);
   }
 
   @override
