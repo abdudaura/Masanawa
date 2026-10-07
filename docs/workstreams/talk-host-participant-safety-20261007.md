@@ -1,0 +1,29 @@
+# Host participant safety controls — 2026-10-07
+
+- Owner/window: current ChatGPT implementation window
+- Branch: `work/talk-host-participant-safety-20261007`
+- Base SHA: `6e7a7abae00116f3b797d9bd074d3a013fc6fe57`
+- Task: complete Host-side participant Report/Block controls with server enforcement.
+- Exact owned paths:
+  - `services/gateway/src/talk_moderation/model.ts`
+  - `services/gateway/src/talk_moderation/postgres_repository.ts`
+  - `services/gateway/src/talk_moderation/service.ts`
+  - focused moderation tests
+  - `services/gateway/src/talks/postgres_repository.ts`
+  - focused Talk repository comment-safety tests
+  - `apps/mobile/lib/src/talks/talk_host_controls.dart`
+  - `apps/mobile/lib/src/screens/talks/talk_host_controls_sheets.dart`
+  - `apps/mobile/lib/src/talks/talk_safety.dart`
+  - `apps/mobile/lib/src/talks/talk_safety_http_transport.dart`
+  - focused mobile Host-control/Talk tests
+  - this claim file
+- Contract:
+  - non-Host participants can be privately reported;
+  - human Speakers expose canonical user identity only to Host moderation UI;
+  - AI participants expose canonical persona identity for reporting;
+  - blocking a human Speaker sets the canonical safety preference, removes the active Seat, blocks future Raise Hand requests to that Host, and blocks further comments on that Host’s Talks;
+  - AI Seats are report/remove, not human-user block;
+  - Host Seat is immutable and cannot be self-reported/blocked through this surface.
+- Current step: add canonical participant identity projection and server block enforcement, then wire Host Manage actions.
+- Last update: 2026-10-07T13:03Z
+- Status: active
