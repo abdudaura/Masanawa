@@ -98,7 +98,7 @@ export function createTalkLiveService(input: Readonly<{
     }
   }
 
-  return Object.freeze({
+  return Object.freeze<TalkLiveService>({
     async connect(request) {
       const viewer = await identity(request.authorizationHeader);
       const connected = await input.repository.connect({
