@@ -60,6 +60,7 @@ class _SeatTransport implements TalkAiSeatTransport {
 
 class _HostControlsTransport implements TalkHostControlsTransport {
   int accepted = 0;
+  int muted = 0;
   int ended = 0;
 
   @override
@@ -106,8 +107,13 @@ class _HostControlsTransport implements TalkHostControlsTransport {
     required String talkId,
     required String participantId,
     required TalkHostParticipantAction action,
-  }) async =>
-      const TalkHostControlsView();
+  }) async {
+    if (participantId == 'speaker' &&
+        action == TalkHostParticipantAction.mute) {
+      muted += 1;
+    }
+    return await load(talkId);
+  }
 
   @override
   Future<void> endTalk(String talkId) async {
@@ -390,6 +396,41 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(host.accepted, 1);
+  });
+
+  testWidgets('Host can manage a Speaker but has no self-removal control',
+      (tester) async {
+    final transport = _TalkTransport();
+    final host = _HostControlsTransport();
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        hostControls: host,
+        home: const TalkScreen(
+          talkId: 'talk-1',
+          initialTalk: _TalkTransport.talk,
+          isHost: true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Manage'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Abdullahi'), findsOneWidget);
+    expect(find.text('Musa'), findsOneWidget);
+    expect(find.text('You'), findsOneWidget);
+    expect(find.byType(PopupMenuButton<TalkHostParticipantAction>), findsOneWidget);
+
+    await tester.tap(find.byType(PopupMenuButton<TalkHostParticipantAction>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Mute'));
+    await tester.pumpAndSettle();
+
+    expect(host.muted, 1);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('Host End Talk requires explicit confirmation', (tester) async {
