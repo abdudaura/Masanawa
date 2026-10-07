@@ -1,3 +1,10 @@
+import {
+  assertTalkLiveSession,
+  launchTalkLivePolicy,
+  transitionTalkLiveSession,
+  type TalkLiveSession as CanonicalTalkLiveSession,
+} from "@masanawa/agents";
+import { toInstant } from "@masanawa/contracts";
 import type {
   TalkLiveRepository,
   TalkLiveSessionView,
@@ -32,6 +39,68 @@ interface SessionRow extends Record<string, unknown> {
 interface RuntimeRow extends Record<string, unknown> {
   state: TalkLiveState;
   reconnect_grace_ends_at: string | Date | null;
+}
+
+interface CanonicalRuntimeRow extends Record<string, unknown> {
+  revision: number;
+  session_json: unknown;
+}
+
+async function syncCanonicalHostState(
+  pool: TalkLiveSqlPool,
+  tenantId: string,
+  talkId: string,
+  type: "host_disconnected" | "host_reconnected" | "host_grace_expired",
+  now: string,
+  reconnectGraceMs: number,
+): Promise<void> {
+  const policy = Object.freeze({
+    ...launchTalkLivePolicy,
+    hostReconnectGraceMs: reconnectGraceMs,
+  });
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const result = await pool.query<CanonicalRuntimeRow>(
+      `SELECT revision,session_json
+         FROM talks.live_canonical
+        WHERE tenant_id=$1 AND talk_id=$2
+        LIMIT 1`,
+      [tenantId, talkId],
+    );
+    const row = result.rows[0];
+    if (!row) return;
+    const session = row.session_json as CanonicalTalkLiveSession;
+    assertTalkLiveSession(session, policy);
+
+    if (type === "host_disconnected" && session.state !== "live") return;
+    if (type === "host_reconnected" && session.state !== "host_reconnecting") return;
+    if (type === "host_grace_expired") {
+      if (session.state !== "host_reconnecting" || session.hostReconnectDeadline === null) return;
+      if (Date.parse(now) < Date.parse(session.hostReconnectDeadline)) return;
+    }
+
+    const transitioned = transitionTalkLiveSession(
+      session,
+      { type, expectedRevision: session.revision },
+      toInstant(now),
+      policy,
+    );
+    const updated = await pool.query(
+      `UPDATE talks.live_canonical
+          SET revision=$4,session_json=$5::jsonb,updated_at=$6
+        WHERE tenant_id=$1 AND talk_id=$2 AND revision=$3`,
+      [
+        tenantId,
+        talkId,
+        session.revision,
+        transitioned.session.revision,
+        JSON.stringify(transitioned.session),
+        now,
+      ],
+    );
+    if ((updated.rowCount ?? 0) > 0) return;
+  }
+  throw new Error("Talk live revision conflict");
 }
 
 function iso(value: string | Date | null): string | null {
@@ -88,6 +157,14 @@ async function currentState(
           AND state <> 'ended'`,
       [tenantId, talkId, now],
     );
+    await syncCanonicalHostState(
+      pool,
+      tenantId,
+      talkId,
+      "host_disconnected",
+      now,
+      reconnectGraceMs,
+    );
   }
 
   const runtime = await pool.query<RuntimeRow>(
@@ -123,6 +200,14 @@ async function currentState(
         WHERE tenant_id = $1 AND talk_id = $2
           AND state <> 'ended'`,
       [tenantId, talkId, now],
+    );
+    await syncCanonicalHostState(
+      pool,
+      tenantId,
+      talkId,
+      "host_grace_expired",
+      now,
+      reconnectGraceMs,
     );
     state = "ended";
     grace = null;
@@ -183,6 +268,15 @@ export function createPostgresTalkLiveRepository(
       if (!talkRow) return null;
       if (talkRow.state === "ended") throw new Error("talks.live.ended");
 
+      const before = await currentState(
+        pool,
+        input.tenantId,
+        input.talkId,
+        input.now,
+        input.reconnectGraceMs,
+      );
+      if (before?.state === "ended") throw new Error("talks.live.ended");
+
       let role: "host" | "speaker" | "listener" =
         talkRow.host_user_id === input.userId ? "host" : "listener";
       let isMuted = false;
@@ -238,6 +332,14 @@ export function createPostgresTalkLiveRepository(
             WHERE tenant_id = $1 AND talk_id = $2`,
           [input.tenantId, input.talkId, input.now],
         );
+        await syncCanonicalHostState(
+          pool,
+          input.tenantId,
+          input.talkId,
+          "host_reconnected",
+          input.now,
+          input.reconnectGraceMs,
+        );
       }
 
       const state = await currentState(pool, input.tenantId, input.talkId, input.now, input.reconnectGraceMs);
@@ -254,6 +356,15 @@ export function createPostgresTalkLiveRepository(
     },
 
     async heartbeat(input) {
+      const before = await currentState(
+        pool,
+        input.tenantId,
+        input.talkId,
+        input.now,
+        input.reconnectGraceMs,
+      );
+      if (!before || before.state === "ended") return null;
+
       const session = await pool.query<SessionRow>(
         `UPDATE talks.live_sessions
             SET last_seen_at = $5,
@@ -291,6 +402,14 @@ export function createPostgresTalkLiveRepository(
             WHERE tenant_id = $1 AND talk_id = $2
               AND state <> 'ended'`,
           [input.tenantId, input.talkId, input.now],
+        );
+        await syncCanonicalHostState(
+          pool,
+          input.tenantId,
+          input.talkId,
+          "host_reconnected",
+          input.now,
+          input.reconnectGraceMs,
         );
       }
 
@@ -340,6 +459,14 @@ export function createPostgresTalkLiveRepository(
             WHERE tenant_id = $1 AND talk_id = $2
               AND state <> 'ended'`,
           [input.tenantId, input.talkId, input.now],
+        );
+        await syncCanonicalHostState(
+          pool,
+          input.tenantId,
+          input.talkId,
+          "host_disconnected",
+          input.now,
+          input.reconnectGraceMs,
         );
       }
 
