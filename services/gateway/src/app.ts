@@ -16,6 +16,8 @@ import type {
 } from "./agent_shell_contract.js";
 import { registerAgentShellRoutes } from "./agent_shell_routes.js";
 import { registerBillingRoutes } from "./billing_routes.js";
+import { registerTalkRoutes } from "./talk_routes.js";
+import type { TalkService } from "./talks/service.js";
 import type { TwinProductionRuntime } from "./twin_production_runtime.js";
 import { registerTwinProfileRoutes } from "./twin_profile_routes.js";
 import { registerTwinDirectoryRoutes } from "./twin_directory_routes.js";
@@ -76,6 +78,7 @@ export interface GatewayAppOptions {
   readonly liveVoiceTokens?: LiveVoiceTokenService;
   readonly mobilePush?: MobilePushRegistrationService;
   readonly customerAuth?: CustomerAuthService;
+  readonly talks?: TalkService;
   readonly billingCheckout?: BillingCheckoutService;
   readonly billingFinancial?: BillingFinancialService;
   readonly billingWallet?: BillingWalletService;
@@ -1342,6 +1345,10 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       : {}),
     ...(options.mobilePush ? { mobilePush: options.mobilePush } : {}),
   });
+
+  if (options.talks) {
+    registerTalkRoutes(app, options.talks);
+  }
 
   registerBillingRoutes(app, {
     ...(options.billingCheckout ? { billingCheckout: options.billingCheckout } : {}),
