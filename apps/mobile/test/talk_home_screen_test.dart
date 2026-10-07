@@ -46,6 +46,15 @@ class _FeedTransport implements TalkTransport {
       first;
 
   @override
+  Future<TalkDiscoveryItem> updateTalk({
+    required String talkId,
+    String? title,
+    String? topic,
+    String? summary,
+  }) async =>
+      first;
+
+  @override
   Future<TalkComment> addComment({
     required String talkId,
     required String body,
