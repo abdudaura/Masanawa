@@ -57,7 +57,7 @@ def _voice(runtime: PersonaRuntime) -> str:
     if "gwana" in normalized:
         return os.getenv("MASANAWA_TALK_GWANA_VOICE", "Sulafat")
     if "gwani" in normalized:
-        return os.getenv("MASANAWA_TALK_GWANI_VOICE", "Bodi")
+        return os.getenv("MASANAWA_TALK_GWANI_VOICE", "Charon")
     return os.getenv("MASANAWA_TALK_DEFAULT_AI_VOICE", "Puck")
 
 
@@ -165,12 +165,18 @@ async def entrypoint(ctx: JobContext) -> None:
             "MASANAWA_TALK_GEMINI_LIVE_MODEL",
             "gemini-3.1-flash-live-preview",
         )
+        google_api_key = (
+            os.environ.get("GOOGLE_API_KEY")
+            or os.environ.get("MASANAWA_GEMINI_API_KEY")
+        )
+        if not google_api_key:
+            raise RuntimeError("GOOGLE_API_KEY or MASANAWA_GEMINI_API_KEY is required")
+
         session = AgentSession(
             llm=google.beta.realtime.RealtimeModel(
                 model=model,
                 voice=_voice(initial),
-                api_key=os.environ.get("GOOGLE_API_KEY")
-                or os.environ.get("MASANAWA_GEMINI_API_KEY"),
+                api_key=google_api_key,
                 instructions=_instructions(initial),
             ),
         )
