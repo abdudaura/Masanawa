@@ -1,4 +1,4 @@
-import type { Pool, PoolClient } from "pg";
+import type { Pool, PoolClient } from "@masanawa/postgres";
 import {
   assertTalkAiSeatQuote,
   createTalkAiSeatQuote,
@@ -682,7 +682,7 @@ function currentStatus(quote: TalkAiSeatQuote): TalkAiSeatRequestStatus | null {
 export function createPostgresTalkAiSeatRepository(
   pool: Pool,
 ): TalkAiSeatRepository {
-  return Object.freeze({
+  return Object.freeze<TalkAiSeatRepository>({
     async listCandidates(input) {
       return withTransaction(
         pool,
