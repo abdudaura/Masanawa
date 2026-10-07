@@ -19,12 +19,17 @@ class LiveKitTalkLiveRoom implements TalkLiveRoom {
 
   static Future<void>? _initializing;
 
-  static Future<void> _initializeLiveKit() {
+  static Future<void> _initializeLiveKit() async {
     final active = _initializing;
     if (active != null) return active;
     final future = LiveKitClient.initialize();
     _initializing = future;
-    return future;
+    try {
+      await future;
+    } catch (_) {
+      if (identical(_initializing, future)) _initializing = null;
+      rethrow;
+    }
   }
 
   @override
@@ -63,6 +68,13 @@ class LiveKitTalkLiveRoom implements TalkLiveRoom {
       _room = null;
       _mayPublishMicrophone = false;
       await room.dispose();
+      if (AudioManager.instance.canSwitchSpeakerphone) {
+        try {
+          await AudioManager.instance.setSpeakerOutputPreferred(false);
+        } catch (_) {
+          // Best-effort route restoration after failed media setup.
+        }
+      }
       rethrow;
     }
   }
