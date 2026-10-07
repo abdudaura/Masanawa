@@ -485,30 +485,7 @@ class _TwinBody extends ConsumerWidget {
             );
           },
         ),
-        if (profile.languages.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          Text(
-            'Languages',
-            style: TextStyle(
-              color: u.textPrimary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: profile.languages
-                .map(
-                  (language) => Chip(
-                    label: Text(language),
-                    side: BorderSide(color: u.structuralBorder),
-                    backgroundColor: u.surfaceCard,
-                  ),
-                )
-                .toList(),
-          ),
-        ],
+
       ],
     );
   }
