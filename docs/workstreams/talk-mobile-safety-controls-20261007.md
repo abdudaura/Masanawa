@@ -8,6 +8,8 @@
   - `services/gateway/src/talk_safety/service.ts`
   - `services/gateway/src/talk_safety/repository.ts`
   - `services/gateway/src/talk_safety_routes.ts`
+  - `services/gateway/src/talks/postgres_repository.ts`
+  - focused Talk repository preference-enforcement tests
   - focused Talk safety route/service/repository tests
   - `apps/mobile/lib/src/talks/talk_safety.dart`
   - `apps/mobile/lib/src/talks/talk_safety_http_transport.dart`
@@ -24,7 +26,7 @@
   - Mute/unmute Host;
   - View participants with clear Human / Expert / Twin labels;
   - no financial or moderation authority is delegated to listeners.
-- Current step: add verified user-ID preference addressing on the canonical safety backend, then map report/block/mute/participants to the mobile More sheet.
+- Current step: enforce viewer block/mute preferences in canonical Talk feed/detail/comment access, then map report/block/mute/participants to the mobile More sheet.
 - Last update: 2026-10-07T11:46Z
 - Implementation status: claimed
 - Verification status: pending
