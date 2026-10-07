@@ -88,17 +88,23 @@ export function createTalkGiftService(input: Readonly<{
       }
 
       if (!moved.replayed && input.activity) {
-        await input.activity.append({
-          tenantId: viewer.tenantId,
-          requestId,
-          recipientUserId: target.hostUserId,
-          senderUserId: viewer.userId,
-          talkId,
-          talkTitle: target.talkTitle,
-          giftId: moved.giftId,
-          amountCredits,
-          completedAt: moved.completedAt,
-        });
+        try {
+          await input.activity.append({
+            tenantId: viewer.tenantId,
+            requestId,
+            recipientUserId: target.hostUserId,
+            senderUserId: viewer.userId,
+            talkId,
+            talkTitle: target.talkTitle,
+            giftId: moved.giftId,
+            amountCredits,
+            completedAt: moved.completedAt,
+          });
+        } catch {
+          // Activity is a rebuildable projection. A completed canonical ledger
+          // transfer must never be reported as failed because its feed receipt
+          // could not be appended.
+        }
       }
 
       return Object.freeze({
