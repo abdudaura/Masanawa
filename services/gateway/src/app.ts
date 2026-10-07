@@ -42,6 +42,8 @@ import {
   registerCustomerChannelRoutes,
   type CustomerChannelOptions,
 } from "./customer_channel_routes.js";
+import type { LinkedWhatsAppController } from "./whatsapp_linked_device.js";
+import { registerLinkedWhatsAppAdminRoutes } from "./whatsapp_linked_device_routes.js";
 import {
   CustomerAuthError,
   type CustomerAuthService,
