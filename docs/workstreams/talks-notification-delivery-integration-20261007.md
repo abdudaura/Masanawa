@@ -2,15 +2,21 @@
 
 - **Owner:** current ChatGPT Talks implementation window
 - **Branch:** `work/talks-notification-delivery-integration-20261007`
-- **Base:** `52e1f04b11a4a2c96239e93c9acb0ea5c9537ea1`
-- **Lane:** durable Talk push dedupe + production Gateway composition using existing push sender
-- **Owned paths:**
-  - `services/gateway/src/talk_notifications/**`
-  - `packages/talks/migrations/0010_talk_notifications.sql`
-  - isolated Talk-notification composition in `services/gateway/src/main.ts`
-  - focused notification integration tests
-  - this workstream
-- **Reuses:** merged Talk notification policy/delivery coordinator and existing MobilePushSender.
-- **Not owned:** Firebase credentials, mobile notification settings UI, unrelated producers, Billing/Crypto/Twin/channel code.
-- **Rules:** no push before committed domain events; durable dedupe precedes send; absence of push credentials remains explicit fail-soft.
-- **Status:** active.
+- **Original base:** `52e1f04b11a4a2c96239e93c9acb0ea5c9537ea1`
+
+## Outcome
+
+While this lane was in progress, newer `main` landed a stronger durable dedupe implementation in:
+- `packages/talks/migrations/0010_talk_push_dedupe.sql`
+- `services/gateway/src/talk_notifications/postgres_dedupe.ts`
+
+That mainline implementation adds validation, configurable retention, and bounded purge maintenance. It supersedes this branch's duplicate dedupe/migration files.
+
+No duplicate PR should be opened from this branch.
+
+A fresh integration lane should reuse mainline `createPostgresTalkPushDedupeRepository` and implement only:
+- Gateway composition with existing FCM sender;
+- runtime exposure for committed-domain producers;
+- bounded purge scheduling/lifecycle cleanup.
+
+**Status:** superseded in part by newer mainline dedupe; claim released.
