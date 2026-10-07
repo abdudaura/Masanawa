@@ -1120,6 +1120,16 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
       })),
     }));
 
+    app.get("/v1/financial/crypto/withdrawal-routes", async (request) => ({
+      routes: (await financial.listWithdrawalRoutes({
+        authorizationHeader: auth(request),
+      })).map((route) => ({
+        providerCode: route.providerCode,
+        asset: route.asset,
+        network: route.network,
+      })),
+    }));
+
     app.post(
       "/v1/financial/crypto/deposits",
       { schema: { body: Type.Object({
