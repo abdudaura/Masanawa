@@ -1,6 +1,6 @@
 # Talks Product Contract
 
-Status: **canonical product behavior — 2026-10-07**
+Status: **canonical product behavior — 2026-10-08**
 
 This document defines the user-facing behavior of Masanawa Talks. It is a product
 contract, not a low-level API schema.
@@ -113,6 +113,10 @@ An Expert profile should communicate only what listeners/hosts need:
 
 Do not expose model/provider/Skill internals.
 
+The launch roster and full runtime profiles are in `DEFAULT-AI-PERSONAS.md`. Catalog,
+Create/Add AI, public profile/search and audio worker must resolve the same canonical
+persona. Visibility is not proof of readiness; give clear unavailable/retry states.
+
 ## 7. Twins
 
 A Twin is a user's own AI persona.
@@ -187,7 +191,10 @@ Secondary actions can live behind “More”:
 - Block/mute
 - View participants
 
-Comments belong to the Talk itself and remain available during Live and Replay. They must not automatically become spoken content or AI context. Do not put every capability on the main live screen.
+Comments belong to the Talk itself and remain available during Live and Replay. They
+are not automatically spoken. Relevant moderated public comments may enter bounded AI
+context as untrusted data under the current event policy; private chats never do.
+Do not put every capability on the main live screen.
 
 ## 10. Host controls
 
@@ -280,3 +287,29 @@ The ranking system must not reward:
 
 Prefer fraud-resistant human/audience signals such as retained listening, follows,
 meaningful reactions, gifts, repeat listeners and legitimate Seat purchases.
+
+## 16. Complete action and audio contracts
+
+Create's Add Expert, Invite person and Add My Twin must open real selectors/invitation
+flows and preserve the draft. AI selection requires a fresh explicit Seat quote at
+admission, not a charge for opening a picker. Human invitations are free. No Twin opens
+creation and returns to the draft. Live controls reconcile canonical request/Seat state.
+
+A created live Talk must give the Human Host microphone publication and listeners usable
+playback, with connecting/muted/reconnecting/permission/failure states and recovery.
+Host audio does not depend on an AI Seat. Selected/admitted AI must actually join and
+respond; worker registration or an empty picker does not satisfy this contract.
+
+## 17. Participation context and gifts
+
+AI Seats know Masanawa, their identity/role, Talk topic/lifecycle, real Host, active stage,
+current addressed speaker and permitted recent events. React, Raise hand, Ask, Add AI,
+Invite, Gift, Poll and relevant moderated public comments reach a bounded, authorized,
+ordered/deduped context adapter. Only confirmed money events represent completed gifts.
+No event grants stage authority or causes an inference request on every tap. Private
+financial/assistant data and Direct Twin input for another persona are excluded.
+
+Gift uses a server catalog and fresh exact price, explicit confirmation, canonical
+idempotent settlement and synchronized short stage/receipt animations. Provide low-end
+and reduced-motion fallback; avoid blocking controls, audio interruptions or false thanks.
+See R09/R10 in `MOBILE-READINESS-PLAN.md` for event semantics and acceptance.
