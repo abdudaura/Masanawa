@@ -1,0 +1,138 @@
+import { randomUUID } from "node:crypto";
+import type { PlatformSessionIdentity } from "@masanawa/security";
+import {
+  toTalkCommentView,
+  toTalkDiscoveryItem,
+  type TalkCommentView,
+  type TalkDetailView,
+  type TalkDiscoveryItem,
+  type TalkFeedKind,
+  type TalkRepository,
+} from "./model.js";
+
+export interface TalkAuthorizer {
+  authorize(input: Readonly<{
+    authorizationHeader: string | undefined;
+  }>): Promise<PlatformSessionIdentity>;
+}
+
+export class TalkServiceError extends Error {
+  constructor(
+    readonly code: string,
+    readonly statusCode: number,
+  ) {
+    super(code);
+    this.name = "TalkServiceError";
+  }
+}
+
+export interface TalkService {
+  list(input: Readonly<{
+    authorizationHeader: string | undefined;
+    feed: TalkFeedKind;
+  }>): Promise<readonly TalkDiscoveryItem[]>;
+  create(input: Readonly<{
+    authorizationHeader: string | undefined;
+    topic: string;
+    title?: string;
+  }>): Promise<TalkDiscoveryItem>;
+  detail(input: Readonly<{
+    authorizationHeader: string | undefined;
+    talkId: string;
+  }>): Promise<TalkDetailView>;
+  comment(input: Readonly<{
+    authorizationHeader: string | undefined;
+    talkId: string;
+    body: string;
+  }>): Promise<TalkCommentView>;
+}
+
+function normalizeText(value: string, field: string, maxLength: number): string {
+  const normalized = value.trim().replace(/\s+/gu, " ");
+  if (!normalized || normalized.length > maxLength) {
+    throw new TalkServiceError(`talks.${field}_invalid`, 400);
+  }
+  return normalized;
+}
+
+export function createTalkService(input: Readonly<{
+  repository: TalkRepository;
+  authorizer: TalkAuthorizer;
+  now?: () => string;
+  createId?: (kind: "talk" | "comment") => string;
+}>): TalkService {
+  const now = input.now ?? (() => new Date().toISOString());
+  const createId =
+    input.createId ??
+    ((kind: "talk" | "comment") =>
+      kind === "talk" ? `talk_${randomUUID()}` : `talk-comment_${randomUUID()}`);
+
+  async function identity(authorizationHeader: string | undefined) {
+    return input.authorizer.authorize({ authorizationHeader });
+  }
+
+  return Object.freeze({
+    async list(request) {
+      const viewer = await identity(request.authorizationHeader);
+      const rows = await input.repository.listTalks({
+        tenantId: viewer.tenantId,
+        feed: request.feed,
+        limit: 50,
+      });
+      return Object.freeze(rows.map(toTalkDiscoveryItem));
+    },
+
+    async create(request) {
+      const host = await identity(request.authorizationHeader);
+      const topic = normalizeText(request.topic, "topic", 240);
+      const title = request.title === undefined
+        ? topic
+        : normalizeText(request.title, "title", 160);
+      const createdAt = now();
+      const record = await input.repository.createTalk({
+        tenantId: host.tenantId,
+        talkId: createId("talk"),
+        hostUserId: host.userId,
+        hostName: normalizeText(host.profile.name, "host_name", 160),
+        title,
+        topic,
+        createdAt,
+      });
+      return toTalkDiscoveryItem({ talk: record, commentCount: 0 });
+    },
+
+    async detail(request) {
+      const viewer = await identity(request.authorizationHeader);
+      const found = await input.repository.getTalk({
+        tenantId: viewer.tenantId,
+        talkId: request.talkId,
+      });
+      if (!found) throw new TalkServiceError("talks.not_found", 404);
+      const comments = await input.repository.listComments({
+        tenantId: viewer.tenantId,
+        talkId: request.talkId,
+        limit: 200,
+      });
+      return Object.freeze({
+        talk: toTalkDiscoveryItem(found),
+        comments: Object.freeze(comments.map(toTalkCommentView)),
+      });
+    },
+
+    async comment(request) {
+      const author = await identity(request.authorizationHeader);
+      const body = normalizeText(request.body, "comment", 2000);
+      const created = await input.repository.addComment({
+        tenantId: author.tenantId,
+        talkId: request.talkId,
+        commentId: createId("comment"),
+        authorUserId: author.userId,
+        authorName: normalizeText(author.profile.name, "author_name", 160),
+        body,
+        createdAt: now(),
+      });
+      if (!created) throw new TalkServiceError("talks.not_found", 404);
+      return toTalkCommentView(created);
+    },
+  });
+}

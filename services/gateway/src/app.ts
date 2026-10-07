@@ -15,7 +15,7 @@ import type {
   LiveVoiceTokenService,
 } from "./agent_shell_contract.js";
 import { registerAgentShellRoutes } from "./agent_shell_routes.js";
-import { registerBillingRoutes } from "./billing_routes.js";
+import { registerBillingRoutes } from "./billing_routes.js";\nimport { registerTalkRoutes } from "./talk_routes.js";\nimport type { TalkService } from "./talks/service.js";
 import type { TwinProductionRuntime } from "./twin_production_runtime.js";
 import { registerTwinProfileRoutes } from "./twin_profile_routes.js";
 import { registerTwinDirectoryRoutes } from "./twin_directory_routes.js";
@@ -1343,7 +1343,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
     ...(options.mobilePush ? { mobilePush: options.mobilePush } : {}),
   });
 
-  registerBillingRoutes(app, {
+  if (options.talks) {\n    registerTalkRoutes(app, options.talks);\n  }\n\n  registerBillingRoutes(app, {
     ...(options.billingCheckout ? { billingCheckout: options.billingCheckout } : {}),
     ...(options.billingFinancial ? { billingFinancial: options.billingFinancial } : {}),
     ...(options.billingWallet ? { billingWallet: options.billingWallet } : {}),
