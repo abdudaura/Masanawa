@@ -92,7 +92,11 @@ export function createTalkService(input: Readonly<{
         rows.map((row) => Object.freeze({
           talkId: row.talk.talkId,
           hostId: row.talk.hostUserId,
-          state: row.talk.state === "draft" ? "ended" as const : row.talk.state,
+          state: row.talk.state === "live"
+            ? "live" as const
+            : row.talk.state === "reconnecting"
+              ? "reconnecting" as const
+              : "ended" as const,
           listenerCount: row.talk.listenerCount,
           commentCount: row.commentCount,
           reactionCount: row.reactionCount,
