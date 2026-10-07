@@ -120,6 +120,20 @@ function mapRepositoryError(error: unknown): never {
 export function createTalkModerationService(input: Readonly<{
   repository: TalkModerationRepository;
   authorizer: TalkModerationAuthorizer;
+  invitationActivity?: Readonly<{
+    append(input: Readonly<{
+      tenantId: string;
+      activityId: string;
+      userId: string;
+      title: string;
+      detail: string;
+      createdAt: string;
+      talkId: string;
+      requiresAction: boolean;
+      actionLabel?: string;
+      unread: boolean;
+    }>): Promise<void>;
+  }>;
   now?: () => string;
   mediaAdmin?: TalkMediaAdmin;
   aiSeats?: TalkAiSeatHostBridge;
@@ -231,6 +245,20 @@ export function createTalkModerationService(input: Readonly<{
         now:now(),
       }));
       if(!result) throw new TalkModerationError("talks.not_found",404);
+      if(input.invitationActivity){
+        await input.invitationActivity.append({
+          tenantId:viewer.tenantId,
+          activityId:`talk-invite:${result.talkId}:${result.inviteeUserId}`,
+          userId:result.inviteeUserId,
+          title:`${result.hostName} invited you to speak`,
+          detail:`Join “${result.talkTitle}” as a free human Speaker.`,
+          createdAt:result.updatedAt,
+          talkId:result.talkId,
+          requiresAction:true,
+          actionLabel:"Respond",
+          unread:true,
+        });
+      }
       return result;
     },
     async respondHumanInvitation(request){
@@ -244,6 +272,22 @@ export function createTalkModerationService(input: Readonly<{
       }));
       if(!result) throw new TalkModerationError("talks.not_found",404);
       await applyMedia(request.talkId,result.mediaActions);
+      if(input.invitationActivity){
+        const accepted=result.invitation.status==="accepted";
+        await input.invitationActivity.append({
+          tenantId:viewer.tenantId,
+          activityId:`talk-invite:${result.invitation.talkId}:${result.invitation.inviteeUserId}`,
+          userId:result.invitation.inviteeUserId,
+          title:accepted ? "Talk invitation accepted" : "Talk invitation declined",
+          detail:accepted
+            ? `You joined “${result.invitation.talkTitle}” as a Speaker.`
+            : `You declined ${result.invitation.hostName}’s invitation to “${result.invitation.talkTitle}”.`,
+          createdAt:result.invitation.updatedAt,
+          talkId:result.invitation.talkId,
+          requiresAction:false,
+          unread:false,
+        });
+      }
       return result.invitation;
     },
     async hostRequest(request){
