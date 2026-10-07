@@ -69,6 +69,12 @@ export function createTalkLiveService(input: Readonly<{
   reconnectGraceMs?: number;
   createSessionId?: () => string;
   mediaTokens?: TalkMediaTokenIssuer;
+  onTalkEnded?: (input: Readonly<{
+    tenantId:string;
+    talkId:string;
+    reason:"host_grace_expired"|"host_ended"|"platform_ended";
+    now:string;
+  }>)=>Promise<void>;
 }>): TalkLiveService {
   const now = input.now ?? (() => new Date().toISOString());
   const reconnectGraceMs = input.reconnectGraceMs ?? 30_000;
@@ -80,6 +86,16 @@ export function createTalkLiveService(input: Readonly<{
 
   async function identity(header: string | undefined) {
     return input.authorizer.authorize({ authorizationHeader: header });
+  }
+  async function finalizeIfEnded(
+    tenantId:string,
+    talkIdValue:string,
+    state:Readonly<{state:string;endReason:"host_grace_expired"|"host_ended"|"platform_ended"|null}>,
+    at:string,
+  ):Promise<void>{
+    if(state.state==="ended"&&state.endReason&&input.onTalkEnded){
+      await input.onTalkEnded({tenantId,talkId:talkIdValue,reason:state.endReason,now:at});
+    }
   }
 
   return Object.freeze({
@@ -99,29 +115,35 @@ export function createTalkLiveService(input: Readonly<{
 
     async heartbeat(request) {
       const viewer = await identity(request.authorizationHeader);
+      const at=now();
+      const talkIdValue=talkId(request.talkId);
       const connected = await input.repository.heartbeat({
         tenantId: viewer.tenantId,
         userId: viewer.userId,
-        talkId: talkId(request.talkId),
+        talkId: talkIdValue,
         sessionId: sessionId(request.sessionId),
-        now: now(),
+        now: at,
         reconnectGraceMs,
       });
       if (!connected) throw new TalkLiveError("talks.live.session_not_found", 404);
+      await finalizeIfEnded(viewer.tenantId,talkIdValue,connected,at);
       return connected;
     },
 
     async disconnect(request) {
       const viewer = await identity(request.authorizationHeader);
+      const at=now();
+      const talkIdValue=talkId(request.talkId);
       const state = await input.repository.disconnect({
         tenantId: viewer.tenantId,
         userId: viewer.userId,
-        talkId: talkId(request.talkId),
+        talkId: talkIdValue,
         sessionId: sessionId(request.sessionId),
-        now: now(),
+        now: at,
         reconnectGraceMs,
       });
       if (!state) throw new TalkLiveError("talks.live.session_not_found", 404);
+      await finalizeIfEnded(viewer.tenantId,talkIdValue,state,at);
       return state;
     },
 
@@ -130,15 +152,18 @@ export function createTalkLiveService(input: Readonly<{
         throw new TalkLiveError("talks.live.media_unavailable", 503);
       }
       const viewer = await identity(request.authorizationHeader);
+      const at=now();
+      const talkIdValue=talkId(request.talkId);
       const connected = await input.repository.heartbeat({
         tenantId: viewer.tenantId,
         userId: viewer.userId,
-        talkId: talkId(request.talkId),
+        talkId: talkIdValue,
         sessionId: sessionId(request.sessionId),
-        now: now(),
+        now: at,
         reconnectGraceMs,
       });
       if (!connected) throw new TalkLiveError("talks.live.session_not_found", 404);
+      await finalizeIfEnded(viewer.tenantId,talkIdValue,connected,at);
       if (connected.state === "ended") {
         throw new TalkLiveError("talks.live.ended", 409);
       }
@@ -153,14 +178,17 @@ export function createTalkLiveService(input: Readonly<{
 
     async state(request) {
       const viewer = await identity(request.authorizationHeader);
+      const at=now();
+      const talkIdValue=talkId(request.talkId);
       const state = await input.repository.state({
         tenantId: viewer.tenantId,
         userId: viewer.userId,
-        talkId: talkId(request.talkId),
-        now: now(),
+        talkId: talkIdValue,
+        now: at,
         reconnectGraceMs,
       });
       if (!state) throw new TalkLiveError("talks.not_found", 404);
+      await finalizeIfEnded(viewer.tenantId,talkIdValue,state,at);
       return state;
     },
   });
