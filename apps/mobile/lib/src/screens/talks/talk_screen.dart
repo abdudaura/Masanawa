@@ -19,7 +19,6 @@ import '../../talks/talk_host_controls.dart';
 import '../../talks/talk_live.dart';
 import '../../talks/talk_live_audio_session.dart';
 import '../../talks/talk_participation.dart';
-import '../../talks/talk_questions.dart';
 import '../../talks/talk_replay_playback.dart';
 import '../../talks/talk_models.dart';
 import '../../theme/masanawa_theme.dart';
@@ -1449,6 +1448,7 @@ class _ActionButton extends StatelessWidget {
             Text(
               label,
               maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(color: u.textMuted, fontSize: 10.5),
             ),
           ],
