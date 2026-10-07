@@ -13,6 +13,7 @@ function row(overrides: Record<string, unknown> = {}) {
     state: "live",
     listener_count: 3,
     duration_seconds: null,
+    started_at: "2026-10-07T09:00:00.000Z",
     created_at: "2026-10-07T09:00:00.000Z",
     updated_at: "2026-10-07T09:00:00.000Z",
     ...overrides,
@@ -49,8 +50,10 @@ describe("Postgres Talk repository", () => {
       hostUserId: "user_host",
       hostName: "Host",
       state: "live",
+      startedAt: "2026-10-07T09:00:00.000Z",
     });
     expect(calls[0]?.text).toContain("started_at");
+    expect(calls[0]?.text).toContain("duration_seconds, started_at");
     expect(calls[0]?.text).toContain("'live'");
     expect(calls[0]?.values).toEqual([
       "tenant_a",
