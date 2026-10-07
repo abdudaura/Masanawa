@@ -12,6 +12,7 @@ import '../screens/owner_access/owner_access_session_screen.dart';
 import '../screens/profile/person_profile_screen.dart';
 import '../screens/profile/persona_profile_screen.dart';
 import '../screens/settings/clone_setup_screen.dart';
+import '../screens/search/talk_search_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../screens/talks/create_talk_screen.dart';
@@ -62,6 +63,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       final protected = path == '/home' ||
+          path == '/search' ||
           path == '/chats' ||
           path.startsWith('/chat/') ||
           path.startsWith('/talk/') ||
@@ -101,6 +103,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           };
           return TwinHomeShell(initialIndex: index);
         },
+      ),
+      GoRoute(
+        path: '/search',
+        builder: (context, state) => TalkSearchScreen(
+          initialQuery: state.uri.queryParameters['q'],
+          onOpenTalk: (talk) => context.push(
+            '/talk/' + Uri.encodeComponent(talk.id),
+            extra: talk,
+          ),
+          onOpenPerson: (handle) => context.push(
+            '/u/' + Uri.encodeComponent(handle),
+          ),
+          onOpenPersona: (publicId) => context.push(
+            '/persona/' + Uri.encodeComponent(publicId),
+          ),
+        ),
       ),
       GoRoute(
         path: '/talk/create',
