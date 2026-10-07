@@ -45,7 +45,7 @@ export function createPostgresTalkPushDedupeRepository(
     365,
   );
 
-  return Object.freeze({
+  return Object.freeze<PostgresTalkPushDedupeRepository>({
     async claim(input){
       const tenantId=text(input.tenantId,"tenantId",256);
       const userId=text(input.userId,"userId",256);
