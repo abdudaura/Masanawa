@@ -55,7 +55,7 @@ export function createPostgresCryptoChatActionRepository(
     FROM commerce.crypto_chat_actions`;
 
   return Object.freeze({
-    async put(value) {
+    async put(value: CryptoChatAction) {
       const action = normalizeCryptoChatAction(value);
       await pool.query(
         `INSERT INTO commerce.crypto_chat_actions(
