@@ -531,6 +531,21 @@ export function createPostgresTalkModerationRepository(
 
       if(invitation.status==="declined") throw new Error("talks.invitation_resolved");
       if(talk.state==="ended") throw new Error("talks.not_live");
+      const relationshipBlock=await pool.query<{blocked:boolean}>(
+        `SELECT true AS blocked
+           FROM talks.safety_preferences
+          WHERE tenant_id=$1
+            AND (
+              (viewer_user_id=$2 AND subject_user_id=$3 AND blocked=true)
+              OR
+              (viewer_user_id=$3 AND subject_user_id=$2 AND (blocked=true OR muted=true))
+            )
+          LIMIT 1`,
+        [input.tenantId,talk.host_user_id,input.inviteeUserId],
+      );
+      if(relationshipBlock.rows[0]?.blocked===true){
+        throw new Error("talks.invitee_unavailable");
+      }
       await requireLiveRuntime(pool,input.tenantId,input.talkId);
 
       const participantId=`invite_${input.inviteeUserId}`;
