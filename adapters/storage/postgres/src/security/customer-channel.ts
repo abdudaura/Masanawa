@@ -105,9 +105,12 @@ export function createPostgresCustomerChannelRepository(
         }
       }
       return Object.freeze({
-        state: row?.state === "completed"
-          ? ("completed" as const)
-          : ("processing" as const),
+        state:
+          row?.state === "delivered"
+            ? ("delivered" as const)
+            : row?.state === "completed"
+              ? ("completed" as const)
+              : ("processing" as const),
         reply: row?.reply ?? null,
       });
     },
@@ -118,6 +121,15 @@ export function createPostgresCustomerChannelRepository(
             SET state='completed',reply=$3,updated_at=$4
           WHERE channel=$1 AND message_id=$2`,
         [input.channel,input.messageId,input.reply,input.completedAt],
+      );
+    },
+
+    async markDelivered(input) {
+      await pool.query(
+        `UPDATE security.customer_channel_messages
+            SET state='delivered',updated_at=$3
+          WHERE channel=$1 AND message_id=$2 AND state='completed'`,
+        [input.channel,input.messageId,input.deliveredAt],
       );
     },
 
