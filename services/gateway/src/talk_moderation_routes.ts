@@ -60,6 +60,42 @@ export function registerTalkModerationRoutes(app:FastifyInstance,service:TalkMod
     return service.hostControls({authorizationHeader:request.headers.authorization,talkId});
   });
 
+  app.post("/talks/:talkId/invitations",{
+    schema:{
+      params:TalkParams,
+      body:Type.Object(
+        {handle:Type.String({minLength:1,maxLength:160})},
+        {additionalProperties:false},
+      ),
+    },
+  },async request=>{
+    const {talkId}=request.params as {talkId:string};
+    const {handle}=request.body as {handle:string};
+    return service.inviteHuman({
+      authorizationHeader:request.headers.authorization,
+      talkId,
+      handle,
+    });
+  });
+
+  app.post("/talks/:talkId/invitation-response",{
+    schema:{
+      params:TalkParams,
+      body:Type.Object(
+        {action:Type.Union([Type.Literal("accept"),Type.Literal("decline")])},
+        {additionalProperties:false},
+      ),
+    },
+  },async request=>{
+    const {talkId}=request.params as {talkId:string};
+    const {action}=request.body as {action:"accept"|"decline"};
+    return service.respondHumanInvitation({
+      authorizationHeader:request.headers.authorization,
+      talkId,
+      action,
+    });
+  });
+
   app.post("/talks/:talkId/host-requests/:requestId",{
     schema:{
       params:Type.Object({talkId:Type.String({minLength:1,maxLength:160}),requestId:Type.String({minLength:1,maxLength:160})},{additionalProperties:false}),
