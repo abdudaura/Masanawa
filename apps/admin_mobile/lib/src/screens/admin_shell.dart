@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/admin_api.dart';
 import '../theme/masanawa_theme.dart';
 import 'platform_pages.dart';
+import 'whatsapp_channel_page.dart';
 import 'admin_agents_page.dart';
 import 'decision_center_page.dart';
 
@@ -36,6 +37,7 @@ class _AdminShellState extends State<AdminShell> {
     _AdminSection('Operations', Icons.rule_outlined),
     _AdminSection('Providers', Icons.hub_outlined),
     _AdminSection('System', Icons.settings_suggest_outlined),
+    _AdminSection('Channels', Icons.forum_outlined),
     _AdminSection('Modules', Icons.grid_view_outlined),
     _AdminSection('Audit', Icons.fact_check_outlined),
   ];
@@ -52,6 +54,7 @@ class _AdminShellState extends State<AdminShell> {
         OperationsAdminPage(api: widget.api),
         ProvidersAdminPage(api: widget.api),
         SystemAdminPage(api: widget.api),
+        WhatsAppChannelPage(adminApi: widget.api),
         const ModulesAdminPage(),
         AuditAdminPage(api: widget.api),
       ];
