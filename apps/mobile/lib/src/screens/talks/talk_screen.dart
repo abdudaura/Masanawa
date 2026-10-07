@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../state/talk_host_controls_state.dart';
+import '../../state/talk_library_state.dart';
 import '../../state/talk_live_state.dart';
 import '../../state/talk_participation_state.dart';
 import '../../state/talk_state.dart';
@@ -46,6 +47,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
   bool _reacting = false;
   bool _handBusy = false;
   bool _endingTalk = false;
+  bool _savingTalk = false;
   TalkLiveAudioController? _liveAudio;
   StreamSubscription<TalkLiveAudioStatus>? _liveAudioSub;
   TalkLiveAudioStatus _liveAudioStatus = TalkLiveAudioStatus.idle;
@@ -296,6 +298,34 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
     }
   }
 
+  Future<void> _toggleSaved(bool isSaved) async {
+    if (_savingTalk) return;
+    setState(() => _savingTalk = true);
+    try {
+      final next = await ref.read(talkLibraryTransportProvider).setSaved(
+            talkId: widget.talkId,
+            saved: !isSaved,
+          );
+      ref.invalidate(talkSavedStateProvider(widget.talkId));
+      ref.invalidate(savedTalksProvider);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            next.saved ? 'Talk saved.' : 'Removed from Saved Talks.',
+          ),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Couldn’t update Saved Talks right now.')),
+      );
+    } finally {
+      if (mounted) setState(() => _savingTalk = false);
+    }
+  }
+
   Future<void> _postComment() async {
     final body = _commentController.text.trim();
     if (body.isEmpty || _postingComment) return;
@@ -322,6 +352,10 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
   @override
   Widget build(BuildContext context) {
     final detail = ref.watch(talkDetailProvider(widget.talkId));
+    final isSaved = ref.watch(talkSavedStateProvider(widget.talkId)).maybeWhen(
+          data: (value) => value.saved,
+          orElse: () => false,
+        );
     final participation =
         ref.watch(talkParticipationProvider(widget.talkId)).maybeWhen(
               data: (value) => value,
@@ -349,6 +383,9 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
         controller: _commentController,
         postingComment: _postingComment,
         onPostComment: _postComment,
+        isSaved: isSaved,
+        savingTalk: _savingTalk,
+        onToggleSaved: () => _toggleSaved(isSaved),
         isHost: widget.isHost,
         liveAudioStatus: _liveAudioStatus,
         liveAudioRole: _liveAudioRole,
@@ -379,6 +416,9 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             controller: _commentController,
             postingComment: _postingComment,
             onPostComment: _postComment,
+            isSaved: isSaved,
+            savingTalk: _savingTalk,
+            onToggleSaved: () => _toggleSaved(isSaved),
             isHost: widget.isHost,
             liveAudioStatus: _liveAudioStatus,
             liveAudioRole: _liveAudioRole,
@@ -414,6 +454,9 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             controller: _commentController,
             postingComment: _postingComment,
             onPostComment: _postComment,
+            isSaved: isSaved,
+            savingTalk: _savingTalk,
+            onToggleSaved: () => _toggleSaved(isSaved),
             isHost: widget.isHost,
             liveAudioStatus: _liveAudioStatus,
             liveAudioRole: _liveAudioRole,
@@ -456,6 +499,9 @@ class _TalkBody extends StatelessWidget {
     required this.onPostComment,
     this.loadingComments = false,
     this.commentsUnavailable = false,
+    this.isSaved = false,
+    this.savingTalk = false,
+    this.onToggleSaved,
     this.isHost = false,
     this.liveAudioStatus = TalkLiveAudioStatus.idle,
     this.liveAudioRole,
@@ -483,6 +529,9 @@ class _TalkBody extends StatelessWidget {
   final VoidCallback onPostComment;
   final bool loadingComments;
   final bool commentsUnavailable;
+  final bool isSaved;
+  final bool savingTalk;
+  final VoidCallback? onToggleSaved;
   final bool isHost;
   final TalkLiveAudioStatus liveAudioStatus;
   final TalkLiveRole? liveAudioRole;
@@ -515,9 +564,20 @@ class _TalkBody extends StatelessWidget {
         ),
         actions: [
           IconButton(
-            tooltip: 'More',
-            onPressed: () {},
-            icon: const Icon(Icons.more_vert_rounded),
+            key: const ValueKey('talk-save-toggle'),
+            tooltip: isSaved ? 'Remove from Saved' : 'Save Talk',
+            onPressed: savingTalk ? null : onToggleSaved,
+            icon: savingTalk
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Icon(
+                    isSaved
+                        ? Icons.bookmark_rounded
+                        : Icons.bookmark_border_rounded,
+                  ),
           ),
         ],
       ),
