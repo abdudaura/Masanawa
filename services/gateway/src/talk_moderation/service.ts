@@ -38,6 +38,10 @@ export interface TalkModerationService {
     talkId: string;
     raised: boolean;
   }>): Promise<TalkParticipationView>;
+  leaveSeat(input: Readonly<{
+    authorizationHeader: string | undefined;
+    talkId: string;
+  }>): Promise<TalkParticipationView>;
   question(input: Readonly<{
     authorizationHeader: string | undefined;
     talkId: string;
@@ -107,6 +111,7 @@ function mapRepositoryError(error: unknown): never {
     code === "talks.question_not_found" || code === "talks.invitation_not_found" ||
     code === "profiles.not_found" ? 404 :
     code === "talks.host_immutable" || code === "talks.not_live" ||
+    code === "talks.not_speaker" ||
     code === "talks.ai_commerce_required" || code === "talks.cannot_invite_self" ||
     code === "talks.invitee_unavailable" || code === "talks.already_participant" ||
     code === "talks.invitation_resolved" || code === "talks.invitation_invalid" ||
@@ -193,6 +198,18 @@ export function createTalkModerationService(input: Readonly<{
       }));
       if(!result) throw new TalkModerationError("talks.not_found",404);
       return result;
+    },
+    async leaveSeat(request){
+      const viewer=await identity(request.authorizationHeader);
+      const result=await guarded(()=>input.repository.leaveHumanSeat({
+        tenantId:viewer.tenantId,
+        userId:viewer.userId,
+        talkId:bounded(request.talkId,"talk_id"),
+        now:now(),
+      }));
+      if(!result) throw new TalkModerationError("talks.not_found",404);
+      await applyMedia(request.talkId,result.mediaActions);
+      return result.participation;
     },
     async question(request){
       const viewer=await identity(request.authorizationHeader);
