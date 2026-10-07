@@ -106,6 +106,7 @@ export function createTalkService(input: Readonly<{
       const found = await input.repository.getTalk({
         tenantId: viewer.tenantId,
         talkId: request.talkId,
+        viewerUserId: viewer.userId,
       });
       if (!found) throw new TalkServiceError("talks.not_found", 404);
       const comments = await input.repository.listComments({
