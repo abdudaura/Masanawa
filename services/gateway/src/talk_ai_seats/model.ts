@@ -53,6 +53,14 @@ export interface TalkAiSeatConfirmView {
   readonly message: string;
 }
 
+export interface TalkAiRuntimeSeat {
+  readonly tenantId: string;
+  readonly talkId: string;
+  readonly seatId: string;
+  readonly personaId: string;
+  readonly kind: TalkAiSeatPersonaKind;
+}
+
 export interface TalkAiSeatRepository {
   listCandidates(input: Readonly<{
     tenantId: string;
@@ -103,4 +111,10 @@ export interface TalkAiSeatRepository {
     now: string;
     limit: number;
   }>): Promise<number>;
+
+  readRuntimeSeat(input: Readonly<{
+    tenantId: string;
+    talkId: string;
+    requestId: string;
+  }>): Promise<TalkAiRuntimeSeat | null>;
 }
