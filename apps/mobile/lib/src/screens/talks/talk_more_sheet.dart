@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../state/talk_safety_state.dart';
+import '../../state/talk_state.dart';
 import '../../talks/talk_models.dart';
 import '../../talks/talk_safety.dart';
 import '../../theme/masanawa_theme.dart';
@@ -110,6 +111,23 @@ class _TalkMoreSheetState extends ConsumerState<_TalkMoreSheet> {
     }
   }
 
+  Future<void> _editDetails() async {
+    final updated = await showEditTalkDetailsSheet(
+      context,
+      talk: widget.talk,
+      onSave: ({required title, required topic, required summary}) async {
+        await ref.read(talkTransportProvider).updateTalk(
+              talkId: widget.talk.id,
+              title: title,
+              topic: topic,
+              summary: summary,
+            );
+      },
+    );
+    if (!mounted || updated != true) return;
+    Navigator.of(context).pop();
+  }
+
   Future<void> _participants() {
     return showTalkParticipantsSheet(
       context,
@@ -152,6 +170,15 @@ class _TalkMoreSheetState extends ConsumerState<_TalkMoreSheet> {
             ),
           ),
           const SizedBox(height: 8),
+          if (widget.isHost)
+            ListTile(
+              key: const ValueKey('talk-more-edit'),
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.edit_outlined),
+              title: const Text('Edit Talk details'),
+              subtitle: const Text('Change title, topic or replay summary'),
+              onTap: _busy ? null : _editDetails,
+            ),
           ListTile(
             key: const ValueKey('talk-more-participants'),
             contentPadding: EdgeInsets.zero,
@@ -351,4 +378,152 @@ Future<void> showTalkParticipantsSheet(
       );
     },
   );
+}
+
+
+typedef TalkDetailsSave = Future<void> Function({
+  required String title,
+  required String topic,
+  required String summary,
+});
+
+Future<bool?> showEditTalkDetailsSheet(
+  BuildContext context, {
+  required TalkDiscoveryItem talk,
+  required TalkDetailsSave onSave,
+}) {
+  return showModalBottomSheet<bool>(
+    context: context,
+    useSafeArea: true,
+    isScrollControlled: true,
+    builder: (_) => _EditTalkDetailsSheet(talk: talk, onSave: onSave),
+  );
+}
+
+class _EditTalkDetailsSheet extends StatefulWidget {
+  const _EditTalkDetailsSheet({
+    required this.talk,
+    required this.onSave,
+  });
+
+  final TalkDiscoveryItem talk;
+  final TalkDetailsSave onSave;
+
+  @override
+  State<_EditTalkDetailsSheet> createState() => _EditTalkDetailsSheetState();
+}
+
+class _EditTalkDetailsSheetState extends State<_EditTalkDetailsSheet> {
+  late final TextEditingController _title;
+  late final TextEditingController _topic;
+  late final TextEditingController _summary;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _title = TextEditingController(text: widget.talk.title);
+    _topic = TextEditingController(text: widget.talk.topic ?? '');
+    _summary = TextEditingController(text: widget.talk.summary);
+  }
+
+  @override
+  void dispose() {
+    _title.dispose();
+    _topic.dispose();
+    _summary.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (_saving) return;
+    final title = _title.text.trim();
+    final topic = _topic.text.trim();
+    final summary = _summary.text.trim();
+    if (title.isEmpty || topic.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Title and topic are required.')),
+      );
+      return;
+    }
+    setState(() => _saving = true);
+    try {
+      await widget.onSave(title: title, topic: topic, summary: summary);
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Couldn’t update the Talk right now.')),
+      );
+      setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        18,
+        20,
+        18 + MediaQuery.viewInsetsOf(context).bottom,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Edit Talk details',
+              style: TextStyle(
+                color: u.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              key: const ValueKey('talk-edit-title'),
+              controller: _title,
+              maxLength: 160,
+              decoration: const InputDecoration(labelText: 'Title'),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              key: const ValueKey('talk-edit-topic'),
+              controller: _topic,
+              maxLength: 240,
+              decoration: const InputDecoration(labelText: 'Topic'),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              key: const ValueKey('talk-edit-summary'),
+              controller: _summary,
+              maxLength: 1000,
+              minLines: 3,
+              maxLines: 5,
+              decoration: const InputDecoration(
+                labelText: 'Summary',
+                hintText: 'Useful context for people finding the replay later',
+              ),
+            ),
+            const SizedBox(height: 12),
+            FilledButton(
+              key: const ValueKey('talk-edit-save'),
+              onPressed: _saving ? null : _save,
+              child: _saving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Save changes'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
