@@ -13,6 +13,7 @@ function talkRow() {
   return {
     host_user_id: "user_host",
     host_name: "Host",
+    title: "A live Talk",
     state: "live",
     started_at: "2026-10-07T10:00:00.000Z",
   };
@@ -89,6 +90,7 @@ describe("Postgres Talk moderation repository", () => {
               kind: "human",
               user_id: "user_speaker",
               persona_id: null,
+              profile_handle: "speaker",
               display_name: "Speaker",
               avatar_url: null,
               is_host: false,
@@ -132,6 +134,145 @@ describe("Postgres Talk moderation repository", () => {
       { type: "publish", identity: "user_speaker:session_1", canPublish: true },
     ]);
     expect(calls.some((text) => text.includes("revision=$4"))).toBe(true);
+  });
+
+  it("creates a durable pending human invitation for a verified profile", async () => {
+    const calls: Array<{ text: string; values?: unknown[] }> = [];
+    const pool: TalkModerationSqlPool = {
+      async query<Row>(text: string, values?: unknown[]) {
+        calls.push({ text, values });
+        if (text.includes("FROM talks.talks")) {
+          return { rowCount: 1, rows: [talkRow()] as unknown as Row[] };
+        }
+        if (text.includes("FROM talks.live_runtime")) {
+          return { rowCount: 1, rows: [{ state: "live" }] as unknown as Row[] };
+        }
+        if (text.includes("FROM talks.public_profiles")) {
+          return {
+            rowCount: 1,
+            rows: [{
+              user_id: "user_amina",
+              handle: "amina",
+              display_name: "Amina",
+              avatar_url: null,
+            }] as unknown as Row[],
+          };
+        }
+        if (text.includes("FROM talks.safety_preferences")) {
+          return { rowCount: 0, rows: [] as unknown as Row[] };
+        }
+        if (text.includes("FROM talks.talk_seats")) {
+          return { rowCount: 0, rows: [] as unknown as Row[] };
+        }
+        if (text.includes("INSERT INTO talks.human_invitations")) {
+          return {
+            rowCount: 1,
+            rows: [{
+              talk_id: "talk_1",
+              host_user_id: "user_host",
+              invitee_user_id: "user_amina",
+              invitee_handle: "amina",
+              invitee_display_name: "Amina",
+              status: "pending",
+              created_at: "2026-10-07T10:03:00.000Z",
+              updated_at: "2026-10-07T10:03:00.000Z",
+            }] as unknown as Row[],
+          };
+        }
+        return { rowCount: 0, rows: [] as unknown as Row[] };
+      },
+    };
+
+    const invitation =
+        await createPostgresTalkModerationRepository(pool).inviteHuman({
+      tenantId: "tenant_1",
+      hostUserId: "user_host",
+      talkId: "talk_1",
+      handle: "amina",
+      now: "2026-10-07T10:03:00.000Z",
+    });
+
+    expect(invitation).toMatchObject({
+      talkId: "talk_1",
+      inviteeUserId: "user_amina",
+      inviteeHandle: "amina",
+      status: "pending",
+    });
+    expect(
+      calls.some((call) => call.text.includes("talks.human_invitations")),
+    ).toBe(true);
+  });
+
+  it("accepts a human invitation through canonical free Speaker admission", async () => {
+    const initial = createTalkLiveSession({
+      tenantId: "tenant_1" as never,
+      talkId: "talk_1" as never,
+      hostUserId: "user_host" as never,
+      hostSeatId: "host_user_host" as never,
+      startedAt: toInstant("2026-10-07T10:00:00.000Z"),
+    });
+    let invitationReads = 0;
+    const calls: string[] = [];
+    const pool: TalkModerationSqlPool = {
+      async query<Row>(text: string) {
+        calls.push(text);
+        if (text.includes("FROM talks.talks")) {
+          return { rowCount: 1, rows: [talkRow()] as unknown as Row[] };
+        }
+        if (text.includes("FROM talks.human_invitations")) {
+          invitationReads += 1;
+          return {
+            rowCount: 1,
+            rows: [{
+              talk_id: "talk_1",
+              host_user_id: "user_host",
+              invitee_user_id: "user_amina",
+              invitee_handle: "amina",
+              invitee_display_name: "Amina",
+              status: invitationReads > 1 ? "accepted" : "pending",
+              created_at: "2026-10-07T10:03:00.000Z",
+              updated_at: "2026-10-07T10:04:00.000Z",
+            }] as unknown as Row[],
+          };
+        }
+        if (text.includes("FROM talks.live_runtime")) {
+          return { rowCount: 1, rows: [{ state: "live" }] as unknown as Row[] };
+        }
+        if (text.includes("SELECT revision,session_json")) {
+          return {
+            rowCount: 1,
+            rows: [{ revision: initial.revision, session_json: initial }] as unknown as Row[],
+          };
+        }
+        if (text.includes("WITH canonical AS") && text.includes("human_invitations")) {
+          return { rowCount: 1, rows: [{ applied: true }] as unknown as Row[] };
+        }
+        if (text.includes("UPDATE talks.live_sessions")) {
+          return {
+            rowCount: 1,
+            rows: [{ user_id: "user_amina", session_id: "session_2" }] as unknown as Row[],
+          };
+        }
+        return { rowCount: 0, rows: [] as unknown as Row[] };
+      },
+    };
+
+    const result =
+        await createPostgresTalkModerationRepository(pool).respondHumanInvitation({
+      tenantId: "tenant_1",
+      inviteeUserId: "user_amina",
+      talkId: "talk_1",
+      action: "accept",
+      now: "2026-10-07T10:04:00.000Z",
+    });
+
+    expect(result?.invitation.status).toBe("accepted");
+    expect(result?.mediaActions).toEqual([
+      { type: "publish", identity: "user_amina:session_2", canPublish: true },
+    ]);
+    expect(calls.some((text) => text.includes("human_seat_admitted"))).toBe(false);
+    expect(calls.some((text) => text.includes("talks.live_canonical"))).toBe(true);
+    expect(calls.some((text) => text.includes("talks.talk_seats"))).toBe(true);
   });
 
   it("rejects Raise Hand when the human Host has blocked that user", async () => {
