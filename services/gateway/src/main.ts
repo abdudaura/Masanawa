@@ -1800,6 +1800,7 @@ export async function startGatewayService(
       ? createTalkModerationService({
           repository: database.talkModeration,
           authorizer: talkModerationAuthorizer,
+          ...(talkMediaAdmin ? { mediaAdmin: talkMediaAdmin } : {}),
         })
       : undefined);
 

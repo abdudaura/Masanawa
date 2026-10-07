@@ -1,4 +1,5 @@
 import type { PlatformSessionIdentity } from "@masanawa/security";
+import type { TalkMediaAdmin } from "./livekit_admin.js";
 import type {
   HostControlsView,
   TalkModerationRepository,
@@ -81,6 +82,7 @@ export function createTalkModerationService(input: Readonly<{
   repository: TalkModerationRepository;
   authorizer: TalkModerationAuthorizer;
   now?: () => string;
+  mediaAdmin?: TalkMediaAdmin;
 }>): TalkModerationService {
   const now=input.now ?? (()=>new Date().toISOString());
 
@@ -89,6 +91,20 @@ export function createTalkModerationService(input: Readonly<{
   }
   async function guarded<T>(operation:()=>Promise<T>):Promise<T>{
     try{return await operation();}catch(error){return mapRepositoryError(error);}
+  }
+  async function applyMedia(talkId:string, actions: readonly import("./model.js").TalkMediaAction[]):Promise<void>{
+    if(!input.mediaAdmin) return;
+    try{
+      for(const action of actions){
+        if(action.type==="publish"){
+          await input.mediaAdmin.setCanPublish({room:talkId,identity:action.identity,canPublish:action.canPublish});
+        }else{
+          await input.mediaAdmin.removeParticipant({room:talkId,identity:action.identity});
+        }
+      }
+    }catch{
+      throw new TalkModerationError("talks.media_admin_failed",502);
+    }
   }
 
   return Object.freeze({
@@ -133,7 +149,8 @@ export function createTalkModerationService(input: Readonly<{
         requestId:bounded(request.requestId,"request_id"),action:request.action,now:now(),
       }));
       if(!result) throw new TalkModerationError("talks.not_found",404);
-      return result;
+      await applyMedia(request.talkId,result.mediaActions);
+      return result.controls;
     },
     async hostParticipant(request){
       const viewer=await identity(request.authorizationHeader);
@@ -142,7 +159,8 @@ export function createTalkModerationService(input: Readonly<{
         participantId:bounded(request.participantId,"participant_id"),action:request.action,now:now(),
       }));
       if(!result) throw new TalkModerationError("talks.not_found",404);
-      return result;
+      await applyMedia(request.talkId,result.mediaActions);
+      return result.controls;
     },
     async end(request){
       const viewer=await identity(request.authorizationHeader);
@@ -150,6 +168,7 @@ export function createTalkModerationService(input: Readonly<{
         tenantId:viewer.tenantId,hostUserId:viewer.userId,talkId:bounded(request.talkId,"talk_id"),now:now(),
       }));
       if(result===null) throw new TalkModerationError("talks.not_found",404);
+      await applyMedia(request.talkId,result.mediaActions);
       return Object.freeze({ended:true as const});
     },
   });

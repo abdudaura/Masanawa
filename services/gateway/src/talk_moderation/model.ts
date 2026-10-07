@@ -31,6 +31,19 @@ export interface HostControlsView {
   readonly participants: readonly HostParticipantView[];
 }
 
+export type TalkMediaAction =
+  | Readonly<{ type: "publish"; identity: string; canPublish: boolean }>
+  | Readonly<{ type: "remove"; identity: string }>;
+
+export interface HostMutationResult {
+  readonly controls: HostControlsView;
+  readonly mediaActions: readonly TalkMediaAction[];
+}
+
+export interface EndTalkResult {
+  readonly mediaActions: readonly TalkMediaAction[];
+}
+
 export interface TalkModerationRepository {
   participation(input: Readonly<{
     tenantId: string;
@@ -65,7 +78,7 @@ export interface TalkModerationRepository {
     requestId: string;
     action: "accept" | "decline";
     now: string;
-  }>): Promise<HostControlsView | null>;
+  }>): Promise<HostMutationResult | null>;
   moderateParticipant(input: Readonly<{
     tenantId: string;
     hostUserId: string;
@@ -73,11 +86,11 @@ export interface TalkModerationRepository {
     participantId: string;
     action: "mute" | "unmute" | "remove";
     now: string;
-  }>): Promise<HostControlsView | null>;
+  }>): Promise<HostMutationResult | null>;
   endTalk(input: Readonly<{
     tenantId: string;
     hostUserId: string;
     talkId: string;
     now: string;
-  }>): Promise<void | null>;
+  }>): Promise<EndTalkResult | null>;
 }
