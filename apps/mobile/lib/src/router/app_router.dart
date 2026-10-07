@@ -9,12 +9,17 @@ import '../screens/onboarding/name_screen.dart';
 import '../screens/onboarding/otp_screen.dart';
 import '../screens/onboarding/phone_login_screen.dart';
 import '../screens/owner_access/owner_access_session_screen.dart';
+import '../screens/profile/person_profile_screen.dart';
+import '../screens/profile/persona_profile_screen.dart';
 import '../screens/settings/clone_setup_screen.dart';
+import '../screens/search/talk_search_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../screens/talks/create_talk_screen.dart';
 import '../screens/talks/talk_screen.dart';
 import '../screens/twin/twin_home_shell.dart';
+import '../screens/you/my_talks_screen.dart';
+import '../screens/you/saved_talks_screen.dart';
 import '../screens/wallet/wallet_screen.dart';
 import '../state/session_state.dart';
 import '../state/twin_directory_state.dart';
@@ -60,15 +65,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       final protected = path == '/home' ||
+          path == '/search' ||
           path == '/chats' ||
           path.startsWith('/chat/') ||
           path.startsWith('/talk/') ||
+          path.startsWith('/u/') ||
+          path.startsWith('/persona/') ||
           path.startsWith('/twin/') ||
           path.startsWith('/owner-session/') ||
           path == '/agents' ||
           path == '/masana' ||
           path == '/settings' ||
           path == '/my-twin' ||
+          path == '/my-talks' ||
+          path == '/saved-talks' ||
           path == '/wallet' ||
           path == '/billing' ||
           path == '/crypto' ||
@@ -99,10 +109,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
+        path: '/search',
+        builder: (context, state) => TalkSearchScreen(
+          initialQuery: state.uri.queryParameters['q'],
+          onOpenTalk: (talk) => context.push(
+            '/talk/' + Uri.encodeComponent(talk.id),
+            extra: talk,
+          ),
+          onOpenPerson: (handle) => context.push(
+            '/u/' + Uri.encodeComponent(handle),
+          ),
+          onOpenPersona: (publicId) => context.push(
+            '/persona/' + Uri.encodeComponent(publicId),
+          ),
+        ),
+      ),
+      GoRoute(
         path: '/talk/create',
         builder: (context, _) => CreateTalkScreen(
           onCreated: (talk) => context.go(
-            '/talk/' + Uri.encodeComponent(talk.id),
+            '/talk/' + Uri.encodeComponent(talk.id) + '?host=1',
             extra: talk,
           ),
         ),
@@ -111,11 +137,48 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/talk/:id',
         builder: (context, state) {
           final extra = state.extra;
+          final initialTalk = extra is TalkDiscoveryItem ? extra : null;
           return TalkScreen(
             talkId: state.pathParameters['id']!,
-            initialTalk: extra is TalkDiscoveryItem ? extra : null,
+            initialTalk: initialTalk,
+            isHost: state.uri.queryParameters['host'] == '1' ||
+                initialTalk?.viewerIsHost == true,
           );
         },
+      ),
+      GoRoute(
+        path: '/u/:handle',
+        builder: (context, state) => PersonProfileScreen(
+          handle: state.pathParameters['handle']!,
+          onOpenTalk: (talkId) => context.push('/talk/' + Uri.encodeComponent(talkId)),
+          onOpenTwin: (publicId) => context.push('/persona/' + Uri.encodeComponent(publicId)),
+        ),
+      ),
+      GoRoute(
+        path: '/persona/:publicId',
+        builder: (context, state) => PersonaProfileScreen(
+          publicId: state.pathParameters['publicId']!,
+          onOpenTalk: (talkId) => context.push('/talk/' + Uri.encodeComponent(talkId)),
+          onOpenOwner: (handle) => context.push('/u/' + Uri.encodeComponent(handle)),
+        ),
+      ),
+      GoRoute(
+        path: '/my-talks',
+        builder: (context, _) => MyTalksScreen(
+          onOpenTalk: (talk) => context.push(
+            '/talk/' + Uri.encodeComponent(talk.id),
+            extra: talk,
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/saved-talks',
+        builder: (context, _) => SavedTalksScreen(
+          onOpenTalk: (talk) => context.push(
+            '/talk/' + Uri.encodeComponent(talk.id),
+            extra: talk,
+          ),
+        ),
       ),
       GoRoute(
         path: '/my-twin',
