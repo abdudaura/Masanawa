@@ -90,7 +90,7 @@ export function createTalkLiveService(input: Readonly<{
   async function finalizeIfEnded(
     tenantId:string,
     talkIdValue:string,
-    state:Readonly<{state:string;endReason:"host_grace_expired"|"host_ended"|"platform_ended"|null}>,
+    state:Readonly<{state:string;endReason?:"host_grace_expired"|"host_ended"|"platform_ended"|null}>,
     at:string,
   ):Promise<void>{
     if(state.state==="ended"&&state.endReason&&input.onTalkEnded){
