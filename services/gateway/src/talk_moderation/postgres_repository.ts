@@ -408,7 +408,29 @@ export function createPostgresTalkModerationRepository(
           WHERE tenant_id=$1 AND talk_id=$2 AND participant_id=$3 AND active=true LIMIT 1`,
         [input.tenantId,input.talkId,input.participantId],
       );
-      const seat=seatResult.rows[0];
+      let seat=seatResult.rows[0];
+      if(!seat && input.action==="remove"){
+        const removed=await pool.query<SeatRow>(
+          `SELECT participant_id,kind,user_id,persona_id,display_name,avatar_url,is_host,is_muted
+             FROM talks.talk_seats
+            WHERE tenant_id=$1 AND talk_id=$2 AND participant_id=$3 AND active=false LIMIT 1`,
+          [input.tenantId,input.talkId,input.participantId],
+        );
+        seat=removed.rows[0];
+        if(seat){
+          const sessions=seat.user_id ? await pool.query<SessionIdentityRow>(
+            `SELECT user_id,session_id FROM talks.live_sessions
+              WHERE tenant_id=$1 AND talk_id=$2 AND user_id=$3`,
+            [input.tenantId,input.talkId,seat.user_id],
+          ) : {rows:[],rowCount:0};
+          return Object.freeze({
+            controls:await controls(pool,input.tenantId,input.talkId,talk),
+            mediaActions:Object.freeze(mediaIdentities(sessions.rows).map(identity=>
+              Object.freeze({type:"remove" as const,identity}),
+            )),
+          });
+        }
+      }
       if(!seat) throw new Error("talks.participant_not_found");
       if(seat.is_host) throw new Error("talks.host_immutable");
 
@@ -488,7 +510,18 @@ export function createPostgresTalkModerationRepository(
       const talk=await readTalk(pool,input.tenantId,input.talkId);
       if(!talk) return null;
       requireHost(talk,input.hostUserId);
-      if(talk.state==="ended") return Object.freeze({mediaActions:Object.freeze([])});
+      if(talk.state==="ended"){
+        const sessions=await pool.query<SessionIdentityRow>(
+          `SELECT user_id,session_id FROM talks.live_sessions
+            WHERE tenant_id=$1 AND talk_id=$2`,
+          [input.tenantId,input.talkId],
+        );
+        return Object.freeze({
+          mediaActions:Object.freeze(mediaIdentities(sessions.rows).map(identity=>
+            Object.freeze({type:"remove" as const,identity}),
+          )),
+        });
+      }
 
       const session=await canonical(pool,input.tenantId,input.talkId,talk,input.now);
       const ended=session.state==="ended" ? session : transitionTalkLiveSession(
