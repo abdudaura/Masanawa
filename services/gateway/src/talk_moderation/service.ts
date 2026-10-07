@@ -1,6 +1,7 @@
 import type { PlatformSessionIdentity } from "@masanawa/security";
 import type { TalkMediaAdmin } from "./livekit_admin.js";
 import type { TalkAiSeatHostBridge } from "../talk_ai_seats/service.js";
+import type { TalkReplayCoordinator } from "../talk_replay/service.js";
 import type {
   HostControlsView,
   TalkModerationRepository,
@@ -85,6 +86,7 @@ export function createTalkModerationService(input: Readonly<{
   now?: () => string;
   mediaAdmin?: TalkMediaAdmin;
   aiSeats?: TalkAiSeatHostBridge;
+  replay?: TalkReplayCoordinator;
 }>): TalkModerationService {
   const now=input.now ?? (()=>new Date().toISOString());
 
@@ -194,6 +196,12 @@ export function createTalkModerationService(input: Readonly<{
       }));
       if(result===null) throw new TalkModerationError("talks.not_found",404);
       await applyMedia(request.talkId,result.mediaActions);
+      if(input.replay){
+        await input.replay.stopForTalk({
+          tenantId:viewer.tenantId,
+          talkId:request.talkId,
+        });
+      }
       return Object.freeze({ended:true as const});
     },
   });
