@@ -18,8 +18,9 @@ Owned:
   `services/gateway/src/main.ts`
 - this handoff
 
-Mobile save-state transport and compact Talk Save/Remove UI are owned by the earlier
-end-to-end PR #355 and are intentionally not duplicated here.
+PR #355 was closed with zero commits, so its stale mobile claim no longer owns any
+implementation. This lane reclaimed and completed the mobile save-state transport and
+compact Talk Save/Remove action on the same branch.
 
 Not owned:
 - replay recording PR/runtime
@@ -60,6 +61,12 @@ Implemented:
 - Gateway route registration and production `main.ts` composition;
 - focused route and PostgreSQL tenant/user isolation tests.
 
-Mobile Save/Remove wiring continues in PR #355 against this backend contract.
+Mobile integration completed here:
+- saved-state GET projection;
+- idempotent PUT save / DELETE unsave transport;
+- Riverpod saved-state provider;
+- Talk app-bar bookmark replacing the previous dead More action;
+- Saved Talks cache invalidation after mutations;
+- focused widget coverage for save/unsave.
 
-Status: backend complete; ready to merge.
+Status: backend + mobile library integration complete; ready for qualification/merge.
