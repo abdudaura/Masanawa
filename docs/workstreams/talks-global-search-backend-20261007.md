@@ -48,4 +48,31 @@ Rules:
 - deterministic limits and ranking;
 - `all` uses a balanced bounded result budget rather than returning limit results per category.
 
-Status: active.
+## Implementation checkpoint
+
+Implemented:
+- authenticated `GET /search` Gateway route;
+- filters: **all · talks · people · experts · twins**;
+- normalized 2–120 character queries and bounded 1–50 result limits;
+- literal escaping for PostgreSQL `ILIKE` metacharacters `%`, `_`, and `\\`;
+- balanced `all` budget so the caller limit is the total result budget rather than
+  multiplying by three categories;
+- tenant-scoped Talk search over title/topic/summary/Host name;
+- Talk ordering prioritizes **live → reconnecting → ended**, then exact/prefix relevance,
+  listener count and recency;
+- Host avatar projection from the canonical public human profile;
+- public People search over handle/display name/bio with live state validated against the
+  canonical Talk lifecycle instead of trusting a stale profile pointer;
+- persona search over display name/role/bio/topics;
+- exact Expert/Twin kind filtering;
+- unverified Expert rows excluded from discovery;
+- available/verified personas ranked before unavailable/unverified equivalents;
+- no migration and no search copy of private Agent/Skill/provider/runtime state;
+- focused service, repository and HTTP-route tests;
+- production composition through the same platform-session authorizer and PostgreSQL pool
+  used by Talks/Profiles/Activity.
+
+No schema migration is required for launch. If measured production search volume later
+justifies trigram/FTS indexes, that should be a separate evidence-backed optimization.
+
+Status: implementation complete and ready for merge.
