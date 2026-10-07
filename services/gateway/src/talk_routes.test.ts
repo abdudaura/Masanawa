@@ -47,6 +47,23 @@ function fixtureRepository(): TalkRepository {
         ? { talk, commentCount: comments.get(talk.talkId)?.length ?? 0 }
         : null;
     },
+    async updateMetadata(input) {
+      const current = talks.get(input.talkId);
+      if (
+        !current ||
+        current.tenantId !== input.tenantId ||
+        current.hostUserId !== input.hostUserId
+      ) return null;
+      const updated: TalkRecord = Object.freeze({
+        ...current,
+        ...(input.title === undefined ? {} : { title: input.title }),
+        ...(input.topic === undefined ? {} : { topic: input.topic }),
+        ...(input.summary === undefined ? {} : { summary: input.summary }),
+        updatedAt: input.updatedAt,
+      });
+      talks.set(input.talkId, updated);
+      return updated;
+    },
     async listComments(input) {
       return comments.get(input.talkId) ?? [];
     },
@@ -164,6 +181,44 @@ describe("Talk HTTP API", () => {
       talk: { id: talkId, commentCount: 1 },
       comments: [{ body: "Great point." }],
     });
+  });
+
+  it("lets the authenticated Host edit simple Talk metadata", async () => {
+    const server = app();
+    const created = await server.inject({
+      method: "POST",
+      url: "/talks",
+      headers: { authorization: "Bearer human" },
+      payload: { topic: "Football", title: "Old title" },
+    });
+    const talkId = created.json().id as string;
+
+    const updated = await server.inject({
+      method: "PATCH",
+      url: `/talks/${talkId}`,
+      headers: { authorization: "Bearer human" },
+      payload: {
+        title: " New title ",
+        topic: " New topic ",
+        summary: " A useful replay summary ",
+      },
+    });
+
+    expect(updated.statusCode).toBe(200);
+    expect(updated.json()).toMatchObject({
+      id: talkId,
+      title: "New title",
+      topic: "New topic",
+      summary: "A useful replay summary",
+    });
+
+    const empty = await server.inject({
+      method: "PATCH",
+      url: `/talks/${talkId}`,
+      headers: { authorization: "Bearer human" },
+      payload: {},
+    });
+    expect(empty.statusCode).toBe(400);
   });
 
   it("returns not found for an unknown Talk", async () => {
