@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../state/talk_host_controls_state.dart';
 import '../../state/talk_participation_state.dart';
 import '../../state/talk_state.dart';
 import '../../talks/talk_ai_seat.dart';
+import '../../talks/talk_host_controls.dart';
 import '../../talks/talk_participation.dart';
 import '../../talks/talk_models.dart';
 import '../../theme/masanawa_theme.dart';
 import 'add_ai_seat_sheet.dart';
+import 'talk_host_controls_sheets.dart';
 import 'talk_participation_sheets.dart';
 
 class TalkScreen extends ConsumerStatefulWidget {
@@ -37,6 +40,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
   bool _postingComment = false;
   bool _reacting = false;
   bool _handBusy = false;
+  bool _endingTalk = false;
 
   @override
   void dispose() {
@@ -146,6 +150,51 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
     }
   }
 
+  Future<void> _openHostRequests() async {
+    await showTalkHostRequestsSheet(
+      context,
+      talkId: widget.talkId,
+    );
+    ref.invalidate(talkHostControlsProvider(widget.talkId));
+    ref.invalidate(talkDetailProvider(widget.talkId));
+  }
+
+  Future<void> _openHostManage() async {
+    await showTalkHostManageSheet(
+      context,
+      talkId: widget.talkId,
+    );
+    ref.invalidate(talkHostControlsProvider(widget.talkId));
+    ref.invalidate(talkDetailProvider(widget.talkId));
+  }
+
+  Future<void> _endTalk() async {
+    if (_endingTalk || !widget.isHost) return;
+    final confirmed = await confirmEndTalk(context);
+    if (!mounted || !confirmed) return;
+    setState(() => _endingTalk = true);
+    try {
+      await ref.read(talkHostControlsTransportProvider).endTalk(widget.talkId);
+      ref.invalidate(talkDetailProvider(widget.talkId));
+      ref.invalidate(talkFeedProvider(TalkFeedKind.explore));
+      ref.invalidate(talkFeedProvider(TalkFeedKind.live));
+      if (!mounted) return;
+      final popped = await Navigator.of(context).maybePop();
+      if (!popped && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Talk ended.')),
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Couldn’t end the Talk right now.')),
+      );
+    } finally {
+      if (mounted) setState(() => _endingTalk = false);
+    }
+  }
+
   Future<void> _postComment() async {
     final body = _commentController.text.trim();
     if (body.isEmpty || _postingComment) return;
@@ -177,6 +226,12 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
               data: (value) => value,
               orElse: () => const TalkParticipationState(),
             );
+    final hostControls = widget.isHost
+        ? ref.watch(talkHostControlsProvider(widget.talkId)).maybeWhen(
+              data: (value) => value,
+              orElse: () => const TalkHostControlsView(),
+            )
+        : const TalkHostControlsView();
     final fallback = widget.initialTalk;
 
     return detail.when(
@@ -186,6 +241,11 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
         controller: _commentController,
         postingComment: _postingComment,
         onPostComment: _postComment,
+        isHost: widget.isHost,
+        hostRequestCount: hostControls.requests.length,
+        onHostRequests: _openHostRequests,
+        onHostManage: _openHostManage,
+        onEndTalk: _endingTalk ? null : _endTalk,
         onReact: _react,
         reaction: participation.reaction,
         onAddAi: _openAiSeatSheet,
@@ -205,6 +265,11 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             controller: _commentController,
             postingComment: _postingComment,
             onPostComment: _postComment,
+            isHost: widget.isHost,
+            hostRequestCount: hostControls.requests.length,
+            onHostRequests: _openHostRequests,
+            onHostManage: _openHostManage,
+            onEndTalk: _endingTalk ? null : _endTalk,
             onReact: _react,
             reaction: participation.reaction,
             onAddAi: _openAiSeatSheet,
@@ -229,6 +294,11 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             controller: _commentController,
             postingComment: _postingComment,
             onPostComment: _postComment,
+            isHost: widget.isHost,
+            hostRequestCount: hostControls.requests.length,
+            onHostRequests: _openHostRequests,
+            onHostManage: _openHostManage,
+            onEndTalk: _endingTalk ? null : _endTalk,
             onReact: _react,
             reaction: participation.reaction,
             onAddAi: _openAiSeatSheet,
@@ -260,6 +330,11 @@ class _TalkBody extends StatelessWidget {
     required this.onPostComment,
     this.loadingComments = false,
     this.commentsUnavailable = false,
+    this.isHost = false,
+    this.hostRequestCount = 0,
+    this.onHostRequests,
+    this.onHostManage,
+    this.onEndTalk,
     this.onReact,
     this.reaction,
     this.onAddAi,
@@ -276,6 +351,11 @@ class _TalkBody extends StatelessWidget {
   final VoidCallback onPostComment;
   final bool loadingComments;
   final bool commentsUnavailable;
+  final bool isHost;
+  final int hostRequestCount;
+  final VoidCallback? onHostRequests;
+  final VoidCallback? onHostManage;
+  final VoidCallback? onEndTalk;
   final VoidCallback? onReact;
   final String? reaction;
   final VoidCallback? onAddAi;
@@ -311,6 +391,11 @@ class _TalkBody extends StatelessWidget {
                 SliverToBoxAdapter(
                   child: _TalkStage(
                     talk: talk,
+                    isHost: isHost,
+                    hostRequestCount: hostRequestCount,
+                    onHostRequests: onHostRequests,
+                    onHostManage: onHostManage,
+                    onEndTalk: onEndTalk,
                     onReact: onReact,
                     reaction: reaction,
                     onAddAi: onAddAi,
@@ -408,6 +493,11 @@ class _TalkBody extends StatelessWidget {
 class _TalkStage extends StatelessWidget {
   const _TalkStage({
     required this.talk,
+    this.isHost = false,
+    this.hostRequestCount = 0,
+    this.onHostRequests,
+    this.onHostManage,
+    this.onEndTalk,
     this.onReact,
     this.reaction,
     this.onAddAi,
@@ -418,6 +508,11 @@ class _TalkStage extends StatelessWidget {
   });
 
   final TalkDiscoveryItem talk;
+  final bool isHost;
+  final int hostRequestCount;
+  final VoidCallback? onHostRequests;
+  final VoidCallback? onHostManage;
+  final VoidCallback? onEndTalk;
   final VoidCallback? onReact;
   final String? reaction;
   final VoidCallback? onAddAi;
@@ -503,50 +598,86 @@ class _TalkStage extends StatelessWidget {
               ],
             ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _ActionButton(
-                  icon: reaction == null
-                      ? Icons.favorite_border_rounded
-                      : Icons.favorite_rounded,
-                  label: reaction ?? 'React',
-                  onTap: onReact,
+          if (isHost)
+            Row(
+              children: [
+                Expanded(
+                  child: _ActionButton(
+                    icon: Icons.inbox_outlined,
+                    label: hostRequestCount > 0
+                        ? 'Requests ' + hostRequestCount.toString()
+                        : 'Requests',
+                    onTap: onHostRequests,
+                  ),
                 ),
-              ),
-              Expanded(
-                child: _ActionButton(
-                  icon: handStatus == TalkHandStatus.raised
-                      ? Icons.back_hand_rounded
-                      : handStatus == TalkHandStatus.accepted
-                          ? Icons.mic_rounded
-                          : Icons.back_hand_outlined,
-                  label: handBusy
-                      ? 'Updating…'
-                      : handStatus == TalkHandStatus.raised
-                          ? 'Hand raised'
-                          : handStatus == TalkHandStatus.accepted
-                              ? 'Speaker'
-                              : 'Raise hand',
-                  onTap: onRaiseHand,
+                Expanded(
+                  child: _ActionButton(
+                    icon: Icons.person_add_alt_1_rounded,
+                    label: 'Add AI',
+                    onTap: onAddAi,
+                  ),
                 ),
-              ),
-              Expanded(
-                child: _ActionButton(
-                  icon: Icons.person_add_alt_1_rounded,
-                  label: 'Add AI',
-                  onTap: onAddAi,
+                Expanded(
+                  child: _ActionButton(
+                    icon: Icons.manage_accounts_outlined,
+                    label: 'Manage',
+                    onTap: onHostManage,
+                  ),
                 ),
-              ),
-              Expanded(
-                child: _ActionButton(
-                  icon: Icons.card_giftcard_rounded,
-                  label: 'Gift',
-                  onTap: onGift,
+                Expanded(
+                  child: _ActionButton(
+                    icon: Icons.stop_circle_outlined,
+                    label: 'End',
+                    onTap: onEndTalk,
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            )
+          else
+            Row(
+              children: [
+                Expanded(
+                  child: _ActionButton(
+                    icon: reaction == null
+                        ? Icons.favorite_border_rounded
+                        : Icons.favorite_rounded,
+                    label: reaction ?? 'React',
+                    onTap: onReact,
+                  ),
+                ),
+                Expanded(
+                  child: _ActionButton(
+                    icon: handStatus == TalkHandStatus.raised
+                        ? Icons.back_hand_rounded
+                        : handStatus == TalkHandStatus.accepted
+                            ? Icons.mic_rounded
+                            : Icons.back_hand_outlined,
+                    label: handBusy
+                        ? 'Updating…'
+                        : handStatus == TalkHandStatus.raised
+                            ? 'Hand raised'
+                            : handStatus == TalkHandStatus.accepted
+                                ? 'Speaker'
+                                : 'Raise hand',
+                    onTap: onRaiseHand,
+                  ),
+                ),
+                Expanded(
+                  child: _ActionButton(
+                    icon: Icons.person_add_alt_1_rounded,
+                    label: 'Add AI',
+                    onTap: onAddAi,
+                  ),
+                ),
+                Expanded(
+                  child: _ActionButton(
+                    icon: Icons.card_giftcard_rounded,
+                    label: 'Gift',
+                    onTap: onGift,
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );
