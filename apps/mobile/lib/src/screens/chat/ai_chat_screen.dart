@@ -2083,7 +2083,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         admissionId: paidAdmission?.admissionId,
         purpose: widget.twinSetup ? 'twin-setup' : 'conversation',
       );
-      if (!mounted) return;
+      if (!mounted) {
+        throw StateError('Voice screen closed before session start');
+      }
       session = LiveVoiceSession(
         grant: grant,
         characterName: agent.displayName,
@@ -2292,7 +2294,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         agent.characterId,
         admissionId: paidAdmission?.admissionId,
       );
-      if (!mounted) return;
+      if (!mounted) {
+        throw StateError('Voice screen closed before call start');
+      }
       session = LiveVoiceSession(
         grant: grant,
         characterName: agent.displayName,
