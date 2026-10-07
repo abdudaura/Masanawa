@@ -33,3 +33,19 @@ Gateway startup repair already merged via PR #399 and verified deployed; this la
 - apps/mobile/test/home/home_continuation_test.dart: retired Home continuation API
 
 Analyzer confirms compile blockers in these exact paths. Product behavior and other active lanes remain preserved.
+
+## Runtime test-owned paths (2026-10-07T16:39Z)
+
+- apps/mobile/lib/src/talks/talk_live.dart
+- apps/mobile/lib/src/talks/talk_live_audio_session.dart
+- apps/mobile/test/talk_live_audio_session_test.dart
+- apps/mobile/lib/src/core/live_voice_session.dart
+- apps/mobile/test/live_voice_session_test.dart
+- apps/mobile/lib/src/widgets/onboarding_scaffold.dart
+- apps/mobile/test/twin_identity_banner_test.dart
+- apps/mobile/test/twin_chat_actions_sheet_test.dart
+- apps/mobile/test/twin_share_sheet_test.dart
+- apps/mobile/test/twin_production_integration_test.dart
+- apps/mobile/test/twin_teaching_test.dart
+
+Evidence: speaker role referenced by live screen but absent from model; speaker publishing/mute must preserve server canPublishAudio grant. Closing a never-started LiveVoiceSession completes an unobserved readiness future with an error. Widget tests omit required app theme, onboarding is vertically imbalanced, and legacy language-teaching expectation conflicts with dynamic language policy. Apply bounded corrections and rerun suite.
