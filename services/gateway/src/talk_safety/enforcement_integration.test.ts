@@ -82,7 +82,6 @@ describe("Talk safety enforcement integration", () => {
     await repository.searchPersonas({
       tenantId: "tenant-a",
       query: "history",
-      kind: null,
       limit: 5,
     });
 
