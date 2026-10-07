@@ -1,26 +1,26 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../agents/agent_directory.dart';
 import '../../agents/twin_directory.dart';
 import '../../agents/twin_profile.dart';
-import '../../state/wallet_state.dart';
+import '../../home/home_models.dart';
+import '../../home/home_screen.dart';
+import '../../home/home_state.dart';
 import '../../state/agent_directory_state.dart';
+import '../../state/my_twin_state.dart';
 import '../activity/activity_screen.dart';
 import '../explore/explore_screen.dart';
-import '../wallet/send_credits_sheet.dart';
 import '../wallet/wallet_screen.dart';
 import 'my_twin_screen.dart';
 import 'twin_share_sheet.dart';
 
-/// Consumer-facing Masanawa root.
-///
-/// Runtime details such as Characters, Skills, Agent Float and providers stay behind
-/// this shell. The ordinary user navigates My Twin, Explore, Activity and Wallet.
 class TwinHomeShell extends ConsumerStatefulWidget {
   const TwinHomeShell({super.key, this.initialIndex = 0});
-
   final int initialIndex;
 
   @override
@@ -43,89 +43,153 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
     context.push('/chat/${Uri.encodeComponent(twin.characterId)}');
   }
 
-  void _openOwnedTwin(String characterId) {
-    context.push('/chat/${Uri.encodeComponent(characterId)}');
+  AgentDirectoryEntry? _supportAgent() {
+    final directory = ref.read(agentDirectoryProvider);
+    for (final agent in directory.agents) {
+      if (agent.defaultPlatformAgent) return agent;
+    }
+    for (final agent in directory.agents) {
+      if (agent.supportAgent &&
+          agent.displayName.trim().toLowerCase() == 'gwani') {
+        return agent;
+      }
+    }
+    for (final agent in directory.agents) {
+      if (agent.supportAgent) return agent;
+    }
+    return null;
   }
 
-  void _teachOwnedTwin(String characterId) {
-    context.push('/chat/${Uri.encodeComponent(characterId)}?entry=teach');
+  Future<AgentDirectoryEntry?> _ensureSupportAgent() async {
+    var agent = _supportAgent();
+    if (agent != null) return agent;
+    await ref.read(agentDirectoryProvider.notifier).refresh();
+    return _supportAgent();
   }
 
+  Future<void> _openServiceChat({
+    String? prompt,
+    String? entry,
+  }) async {
+    final agent = await _ensureSupportAgent();
+    if (!mounted) return;
+    if (agent == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gwani is unavailable. Try again shortly.')),
+      );
+      return;
+    }
+    final params = <String, String>{};
+    if (entry != null && entry.isNotEmpty) params['entry'] = entry;
+    if (prompt != null && prompt.trim().isNotEmpty) params['prompt'] = prompt.trim();
+    final query = params.isEmpty ? '' : '?${Uri(queryParameters: params).query}';
+    context.push('/chat/${Uri.encodeComponent(agent.characterId)}$query');
+  }
 
-  Future<void> _shareTwin(TwinProfile profile) async {
-    final url = profile.publicUrl;
-    if (url == null || url.isEmpty) return;
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: false,
-      builder: (sheetContext) => TwinShareSheet(
-        displayName: profile.displayName,
-        publicUrl: url,
-        onShare: (value) async {
-          await SharePlus.instance.share(
-            ShareParams(
-              text: 'Talk to ${profile.displayName} on Masanawa: $value',
-            ),
-          );
-        },
-      ),
+  void _assistantAction(
+    HomeAssistantCardModel assistant,
+    HomeAssistantAction action,
+  ) {
+    final entry = switch (action) {
+      HomeAssistantAction.chat => null,
+      HomeAssistantAction.talk => 'live-talk',
+      HomeAssistantAction.liveVoice => 'live-voice',
+    };
+    final query = entry == null ? '' : '?entry=$entry';
+    context.push('/chat/${Uri.encodeComponent(assistant.characterId)}$query');
+  }
+
+  void _quickService(HomeQuickService service) {
+    switch (service) {
+      case HomeQuickService.data:
+        unawaited(_openServiceChat(prompt: 'I want to buy data.', entry: 'cafe'));
+      case HomeQuickService.airtime:
+        unawaited(_openServiceChat(prompt: 'I want to buy airtime.', entry: 'cafe'));
+      case HomeQuickService.electricity:
+        unawaited(_openServiceChat(
+          prompt: 'I want to pay for electricity.',
+          entry: 'cafe',
+        ));
+      case HomeQuickService.tv:
+        unawaited(_openServiceChat(prompt: 'I want to pay for TV.', entry: 'cafe'));
+      case HomeQuickService.crypto:
+        unawaited(_openServiceChat(prompt: 'Help me with crypto.'));
+    }
+  }
+
+  void _openRoom(HomeRoomCardModel room) {
+    switch (room.iconKey) {
+      case 'internet_cafe':
+        unawaited(_openServiceChat(entry: 'cafe'));
+      case 'study':
+        unawaited(_openServiceChat(
+          entry: 'teach',
+          prompt: 'I want to learn something. Help me start a lesson.',
+        ));
+      case 'story_radio':
+        unawaited(_openServiceChat(prompt: 'Open Story Radio for me.'));
+      case 'news':
+        unawaited(_openServiceChat(prompt: 'Show me the latest news.'));
+      default:
+        unawaited(_openServiceChat(
+          prompt: 'Open ${room.title} and help me with what I need there.',
+        ));
+    }
+  }
+
+  void _openContinuation(HomeContinuationModel item) {
+    final characterId = item.characterId;
+    if (characterId != null && characterId.isNotEmpty) {
+      context.push('/chat/${Uri.encodeComponent(characterId)}');
+      return;
+    }
+    final roomId = item.roomId;
+    if (roomId != null && roomId.isNotEmpty) {
+      unawaited(_openServiceChat(prompt: 'Continue my work in $roomId.'));
+    }
+  }
+
+  Future<void> _openMyTwin() async {
+    final twin = await ref.read(myTwinProvider.future);
+    if (!mounted) return;
+    if (twin == null || !twin.hasTwin) {
+      context.push('/clone');
+      return;
+    }
+    context.push('/my-twin');
+  }
+
+  Widget _home() {
+    final asyncHome = ref.watch(homeProvider);
+    final state = asyncHome.when(
+      loading: () => const HomeViewState.loading(),
+      error: (error, _) => HomeViewState.error(error.toString()),
+      data: HomeViewState.ready,
     );
-  }
-
-  Future<void> _sendCredits() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (sheetContext) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,
-        ),
-        child: SendCreditsSheet(
-          onSend: (recipient, amountCredits) async {
-            final receipt = await ref
-                .read(walletProvider.notifier)
-                .sendCredits(
-                  recipient: recipient,
-                  amountCredits: amountCredits,
-                );
-            if (!sheetContext.mounted) return;
-            if (receipt == null) {
-              ScaffoldMessenger.of(sheetContext).showSnackBar(
-                const SnackBar(
-                  content: Text('Could not send Credits. Please try again.'),
-                ),
-              );
-              return;
-            }
-            Navigator.of(sheetContext).pop();
-            if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Credits sent.')),
-            );
-          },
-        ),
-      ),
+    return HomeScreen(
+      state: state,
+      onRetry: () => unawaited(ref.read(homeProvider.notifier).refresh()),
+      onRefresh: () => ref.read(homeProvider.notifier).refresh(),
+      onAssistantAction: _assistantAction,
+      onQuickService: _quickService,
+      onOpenRoom: _openRoom,
+      onOpenMyTwin: _openMyTwin,
+      onCreateMyTwin: () => context.push('/clone'),
+      onOpenContinuation: _openContinuation,
+      onOpenProfile: () => context.push('/settings'),
     );
   }
 
   Widget _page(int index) {
     return switch (index) {
-      0 => MyTwinScreen(
-          onCreateTwin: () => context.push('/clone'),
-          onTalkToTwin: _openOwnedTwin,
-          onTeachTwin: _teachOwnedTwin,
-          onShareTwin: _shareTwin,
-          onOpenSettings: () => context.push('/settings'),
-        ),
+      0 => _home(),
       1 => ExploreScreen(onOpenTwin: _openTwin),
       2 => const ActivityScreen(),
       3 => WalletScreen(
-          onSend: _sendCredits,
-          onWithdraw: () => context.push('/crypto'),
-          onBuyBills: () => context.push('/billing'),
-          onOpenCrypto: () => context.push('/crypto'),
+          onSend: () => unawaited(_openServiceChat(prompt: 'Send Credits')),
+          onWithdraw: () => unawaited(_openServiceChat(prompt: 'Withdraw money')),
+          onBuyBills: () => unawaited(_openServiceChat(entry: 'cafe')),
+          onOpenCrypto: () => unawaited(_openServiceChat(prompt: 'Help me with crypto')),
         ),
       _ => const SizedBox.shrink(),
     };
@@ -153,9 +217,9 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
         },
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.auto_awesome_outlined),
-            selectedIcon: Icon(Icons.auto_awesome),
-            label: 'My Twin',
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Home',
           ),
           NavigationDestination(
             icon: Icon(Icons.explore_outlined),
@@ -174,6 +238,34 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class MyTwinRouteScreen extends ConsumerWidget {
+  const MyTwinRouteScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    void openChat(String characterId, {bool teach = false}) {
+      final query = teach ? '?entry=teach' : '';
+      context.push('/chat/${Uri.encodeComponent(characterId)}$query');
+    }
+
+    Future<void> share(TwinProfile profile) async {
+      final url = profile.publicUrl;
+      if (url == null || url.isEmpty) return;
+      await SharePlus.instance.share(
+        ShareParams(text: 'Talk to ${profile.displayName} on Masanawa: $url'),
+      );
+    }
+
+    return MyTwinScreen(
+      onCreateTwin: () => context.push('/clone'),
+      onTalkToTwin: (id) => openChat(id),
+      onTeachTwin: (id) => openChat(id, teach: true),
+      onShareTwin: share,
+      onOpenSettings: () => context.push('/settings'),
     );
   }
 }
