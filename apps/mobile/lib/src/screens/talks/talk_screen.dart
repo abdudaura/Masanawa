@@ -16,12 +16,8 @@ class TalkScreen extends ConsumerStatefulWidget {
     required this.talkId,
     this.initialTalk,
     this.isHost = false,
-    this.onReact,
-    this.reaction,
     this.onAddAi,
     this.onGift,
-    this.handStatus = TalkHandStatus.idle,
-    this.handBusy = false,
     this.onRaiseHand,
   });
 
@@ -207,9 +203,15 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             controller: _commentController,
             postingComment: _postingComment,
             onPostComment: _postComment,
+            onReact: _react,
+            reaction: participation.reaction,
             onAddAi: _openAiSeatSheet,
             onGift: widget.onGift,
-            onRaiseHand: widget.onRaiseHand,
+            handStatus: participation.handStatus,
+            handBusy: _handBusy,
+            onRaiseHand: widget.isHost
+                ? null
+                : () => _raiseHand(participation.handStatus),
           );
         }
         return const Scaffold(
@@ -225,9 +227,15 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             controller: _commentController,
             postingComment: _postingComment,
             onPostComment: _postComment,
+            onReact: _react,
+            reaction: participation.reaction,
             onAddAi: _openAiSeatSheet,
             onGift: widget.onGift,
-            onRaiseHand: widget.onRaiseHand,
+            handStatus: participation.handStatus,
+            handBusy: _handBusy,
+            onRaiseHand: widget.isHost
+                ? null
+                : () => _raiseHand(participation.handStatus),
           );
         }
         return Scaffold(
@@ -250,8 +258,12 @@ class _TalkBody extends StatelessWidget {
     required this.onPostComment,
     this.loadingComments = false,
     this.commentsUnavailable = false,
+    this.onReact,
+    this.reaction,
     this.onAddAi,
     this.onGift,
+    this.handStatus = TalkHandStatus.idle,
+    this.handBusy = false,
     this.onRaiseHand,
   });
 
