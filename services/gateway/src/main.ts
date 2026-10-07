@@ -164,6 +164,11 @@ import {
 } from "./talk_profiles/service.js";
 import { createPostgresTalkProfileRepository } from "./talk_profiles/postgres_repository.js";
 import {
+  createTalkActivityService,
+  type TalkActivityAuthorizer,
+} from "./talk_activity/service.js";
+import { createPostgresTalkActivityRepository } from "./talk_activity/postgres_repository.js";
+import {
   createGatewayApp,
   type GatewayAppOptions,
   type ReadinessCheck,
@@ -264,6 +269,7 @@ export interface ServiceDatabaseDependency {
   readonly twinEvents?: ReturnType<typeof createPostgresTwinEconomyEventStore>;
   readonly talks?: ReturnType<typeof createPostgresTalkRepository>;
   readonly talkProfiles?: ReturnType<typeof createPostgresTalkProfileRepository>;
+  readonly talkActivity?: ReturnType<typeof createPostgresTalkActivityRepository>;
   close(): Promise<void>;
 }
 
@@ -409,6 +415,7 @@ function createDefaultDatabaseDependency(
     twinEvents: createPostgresTwinEconomyEventStore(database.pool),
     talks: createPostgresTalkRepository(database.pool),
     talkProfiles: createPostgresTalkProfileRepository(database.pool),
+    talkActivity: createPostgresTalkActivityRepository(database.pool),
     close: database.close,
   });
 }
@@ -547,6 +554,7 @@ export async function startGatewayService(
     | undefined;
   let talkAuthorizer: TalkAuthorizer | undefined;
   let talkProfileAuthorizer: TalkProfileAuthorizer | undefined;
+  let talkActivityAuthorizer: TalkActivityAuthorizer | undefined;
   let billingFinancialAuthorizer:
     | ReturnType<typeof createPlatformSessionFinancialAuthorizer>
     | undefined;
@@ -683,6 +691,7 @@ export async function startGatewayService(
     billingCustomerAuthorizer = customerSessions;
     talkAuthorizer = customerSessions;
     talkProfileAuthorizer = customerSessions;
+    talkActivityAuthorizer = customerSessions;
     billingFinancialAuthorizer = createPlatformSessionFinancialAuthorizer({
       repository: database.platformSessions,
     });
@@ -1720,6 +1729,15 @@ export async function startGatewayService(
         })
       : undefined);
 
+  const composedTalkActivity =
+    options.appOptions?.talkActivity ??
+    (database.talkActivity && talkActivityAuthorizer
+      ? createTalkActivityService({
+          repository: database.talkActivity,
+          authorizer: talkActivityAuthorizer,
+        })
+      : undefined);
+
   const composedTalkProfiles =
     options.appOptions?.talkProfiles ??
     (database.talkProfiles && talkProfileAuthorizer
@@ -1745,6 +1763,7 @@ export async function startGatewayService(
       ...(customerAuth ? { customerAuth } : {}),
       ...(composedTalks ? { talks: composedTalks } : {}),
       ...(composedTalkProfiles ? { talkProfiles: composedTalkProfiles } : {}),
+      ...(composedTalkActivity ? { talkActivity: composedTalkActivity } : {}),
       ...(composedBillingFinancial ? { billingFinancial: composedBillingFinancial } : {}),
       ...(composedBillingCheckout ? { billingCheckout: composedBillingCheckout } : {}),
       ...(composedBillingWallet ? { billingWallet: composedBillingWallet } : {}),
