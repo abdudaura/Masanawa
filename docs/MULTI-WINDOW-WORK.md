@@ -1,24 +1,21 @@
 # Multi-window Work Coordination
 
-## Twin transformation overlay — 2026-10-05
+## Current product coordination overlay — 2026-10-07
 
-For digital-twin transformation work, also read:
-`docs/PRODUCT-TWIN-ECONOMY.md`,
-`docs/TWIN-TRANSFORMATION-MASTER-PLAN.md`,
-`docs/TWIN-TRANSFORMATION-TASKS.md`, and
-`docs/TWIN-MULTI-WINDOW-EXECUTION.md`.
+Consumer work must follow `CONTINUE-HERE.md`, `docs/PRODUCT-NORTH-STAR.md`,
+`docs/TALKS-PRODUCT.md`, `docs/MOBILE-SCREEN-ARCHITECTURE.md` and
+`docs/CONSUMER-SERVICES.md`.
 
-The TWIN lane map is an additional collision-prevention overlay. It does not replace
-existing billing/crypto/channel ownership. New twin work must not steal paths from active
-PRs. In particular, shared Gateway composition, mobile router/chat, Commerce model/
-repository and migration numbering require explicit ownership before edits.
+Older Twin-first and Room-first product plans are no longer canonical. Preserve reusable
+Twin/runtime/commerce implementation, but translate it into the current
+Talk/Seat/Expert/Twin product rather than restoring deleted product direction.
 
-Status: mandatory implementation coordination guidance, 2026-10-04.
+Status: mandatory implementation coordination guidance.
 
 ## Read and recover before editing
 
 1. Read CONTINUE-HERE.md, including newer checkpoints.
-2. Read docs/DIGITAL-COMMERCE-LAUNCH.md and docs/CREATOR-CLONE-ECONOMY.md.
+2. Read docs/PRODUCT-NORTH-STAR.md, docs/TALKS-PRODUCT.md and docs/CONSUMER-SERVICES.md.
 3. Follow the handoff's canonical architecture/task read order.
 4. Inspect current main HEAD, relevant active branches/PRs and CI.
 5. Inspect docs/workstreams/ claims before selecting a workstream.

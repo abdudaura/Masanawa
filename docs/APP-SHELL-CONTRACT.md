@@ -4,112 +4,87 @@ Status: **canonical consumer shell — 2026-10-07**
 
 ## Primary navigation
 
-The consumer app has five primary destinations:
+The consumer app has exactly four root destinations:
 
-- **For You**
-- **Live**
+- **Home**
 - **Create**
 - **Activity**
 - **You**
 
-No sixth primary destination should be added without explicit product approval.
+No fifth root destination should be added without explicit product approval.
 
-Create is a prominent center action that opens the Talk composer. It does not need to
-behave like a normal persistent tab.
+## Home
 
-## Surface responsibilities
+Home contains exactly two primary tabs:
 
-### For You
-Personalized discovery of Live Talks and strong replays.
+1. **Explore** — personalized discovery of Live Talks and strong replays.
+2. **Live Talks** — conversations happening now.
 
-### Live
-Intentional browsing of conversations happening now, with compact topic/following filters.
+Both tabs use the same discovery rule:
 
-### Create
-Start a human-hosted public Talk with a spoken or typed topic and optional participants.
+> **one full-width Talk card after another in a vertical scroll.**
 
-### Activity
-Unified social/Talk/money events: invitations, Seat requests, follows, gifts, sponsored
-AI requests, Twin hires and creator-earning events.
+Do not use horizontal content rails, horizontal card grids, sideways carousels or a directory-style home. Topic filters may be compact horizontal chips, but the actual Talk content remains a vertical list.
 
-### You
-Profile, My Talks, My Twin, Saved, Wallet/Earnings, Services and Settings.
+The discovery rhythm should feel closer to TikTok than to a dashboard: the user keeps moving down into the next conversation.
+
+## Create
+
+Create starts a human-hosted public Talk with a spoken or typed topic and optional participants.
+
+## Activity
+
+Unified social/Talk/money events: invitations, Seat requests, follows, gifts, sponsored AI requests, Twin hires and creator-earning events.
+
+## You
+
+Profile, My Talks, My Twin, Saved Talks, Wallet/Earnings, Billing, Crypto and Settings.
+
+Wallet is not a root tab.
 
 ## Global private Gwani
 
-A private Gwani affordance is available throughout the ordinary shell.
+A private Gwani affordance is available throughout the ordinary shell without occupying a root tab.
 
-It opens as a sheet and can expand when a longer private conversation is needed.
-
-Gwani can:
-- operate the app;
-- prepare/start Talks;
-- find Experts/Twins;
-- perform non-financial AI capabilities;
-- initiate private Billing/Crypto flows.
-
-The current public Talk must remain audible/returnable when a lightweight private Gwani
-sheet is used, unless device/audio constraints require pausing playback.
+Gwani can operate the app, prepare Talks, find Experts/Twins, perform general AI capabilities and initiate private Billing/Crypto flows.
 
 ## Talk route
 
-The Talk screen is immersive and may temporarily hide the ordinary bottom navigation.
+The Talk screen is immersive and may hide root navigation. One Talk route adapts to listener, Host, human Speaker, Twin Director and replay roles.
 
-One Talk route adapts to:
-- listener;
-- Host;
-- human Speaker;
-- Twin Director;
-- replay listener.
-
-Do not create separate Host Room / Audience Room / Speaker Room products.
+A public **Comments** section is part of the Talk experience. It is visible beneath/alongside the live stage without replacing the live audio experience. Comments are not AI speech and do not automatically enter AI context.
 
 ## No Rooms
 
-The shell must not expose:
-- Internet Cafe;
-- Study Room;
-- Story Radio;
-- News Room;
-- Research Room;
-- Work Room;
-- Teaching Room.
-
-Their useful capabilities survive through Gwani/Experts/Talks.
+The shell must not expose Internet Cafe, Study Room, Story Radio, News Room, Research Room, Work Room or Teaching Room. Their useful capabilities survive through Gwani/Experts/Talks.
 
 ## Services
 
-A Services entry may exist under You and Wallet, but it contains only:
-- Bills
-- Crypto
+Only Bills and Crypto are standalone service families, reached from You/Wallet or private Gwani.
 
 ## Visual simplicity
 
-Shell rules:
 - compact app bars;
 - minimal explanatory copy;
-- no oversized feature cards;
-- use familiar icons plus short labels;
-- avoid nested dashboard grids;
-- prefer lists/chips/sheets;
-- show only the primary action for the current context;
-- empty/error/loading are states of a screen, not separate destinations.
+- no oversized dashboard grids;
+- no horizontal Talk card rails;
+- familiar icons plus short labels;
+- sheets for secondary actions;
+- loading/error/empty are states, not destinations.
 
 ## Suggested routes
 
-- `/for-you`
-- `/live`
+- `/home`
 - `/talk/create`
 - `/talk/:talkId`
 - `/activity`
 - `/you`
 - `/u/:handle`
 - `/persona/:publicId`
-- `/twin`
+- `/my-twin`
 - `/wallet`
-- `/services`
-- `/services/bills`
-- `/services/crypto`
+- `/billing`
+- `/crypto`
 - `/settings`
 
 See `MOBILE-SCREEN-ARCHITECTURE.md` for the full inventory.

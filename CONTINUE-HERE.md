@@ -40,7 +40,7 @@ Read these first for any consumer-product work:
 - Financial actions are always private, confirmed and server-authorized. They never leak
   into the public Talk transcript/audio simply because the user invokes Gwani.
 - Private assistant conversations and public Talks are explicitly separate modes.
-- The primary mobile shell is **For You · Live · Create · Activity · You**.
+- The primary mobile shell is **Home · Create · Activity · You**. Home contains two tabs: **Explore** and **Live Talks**.
 - A private Gwani entry point is globally reachable without creating another top-level tab.
 - Simplicity is a product requirement: prefer one adaptive screen plus sheets/states over
   several nearly identical screens.
@@ -100,8 +100,7 @@ the current product documents listed above.
 ## Immediate product sequence
 
 1. Keep documentation consistent with this reset.
-2. Produce high-fidelity mockups for the complete screen architecture.
-3. Validate the Talk/Seat/Expert/Twin interaction model visually before rebuilding the
-   current mobile shell.
-4. Implement the new shell and Talk runtime incrementally without deleting reusable
+2. Keep Home discovery single-column and vertical: **never horizontal Talk rails, grids or carousels**.
+3. Implement the approved **Home · Create · Activity · You** shell and Talk experience incrementally.
+4. Build durable Talk persistence/live-audio behind the mobile contracts without deleting reusable
    Billing, Crypto, Twin identity, voice, channel or agent-runtime foundations.
