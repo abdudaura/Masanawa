@@ -42,6 +42,14 @@ export interface CustomerChannelResult {
   readonly shouldDeliver: boolean;
 }
 
+export interface CustomerChannelBridge {
+  handle(request: CustomerChannelInbound): Promise<CustomerChannelResult>;
+  delivered(input: Readonly<{
+    channel: CustomerChannel;
+    messageId: string;
+  }>): Promise<void>;
+}
+
 function instant(offsetMs = 0): string {
   return new Date(Date.now() + offsetMs).toISOString();
 }
