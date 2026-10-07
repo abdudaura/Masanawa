@@ -3,7 +3,7 @@
 Owner: current Railway/APK repair window
 Branch: `fix/mobile-apk-build-20261007`
 Base: `bb3f6d204c2e53f21eaf2574311c7c0ef4cbf315`
-Last update: 2026-10-07T22:14:49.020Z
+Last update: 2026-10-07T22:22:18.220Z
 Status: active.
 
 ## Exact owned paths
@@ -79,3 +79,5 @@ Native assembly diagnosis: Android SDK platform 35 was installed inside a nested
 User additionally requested real LiveKit configuration and chose a new LiveKit Cloud project. Railway gateway/call-gateway/worker have no LIVEKIT_URL/API_KEY/API_SECRET, and no existing LiveKit server is present in the connected infrastructure. Cloud signup is open in the browser and awaits the user's secure account/terms step. Continue independent APK work before handing signup over. Production LiveKit configuration will be applied only using the actual created project's credentials.
 
 APK assembly has passed dependency-graph resolution after the SDK repair. Flutter release code and icon assets compiled; CMake 3.22.1 installed successfully. Native output continues growing (935 MB); await APK packaging and signature validation. LiveKit Cloud remains at the initial signup screen for secure user completion.
+
+LiveKit project Masanawa p_5gjzrshbvnb is now signed in, with an existing API key. Its secret is creation-only and cannot be retrieved later. Preparing the bounded server credential setup. APK packaging is resumed offline after verifying Google's core-ktx 1.16.0 AAR against its published SHA-1; build environment repository override uses the exact cached official artifact.
