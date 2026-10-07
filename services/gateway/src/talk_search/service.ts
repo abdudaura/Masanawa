@@ -60,7 +60,7 @@ export function createTalkSearchService(input: Readonly<{
   repository: TalkSearchRepository;
   authorizer: TalkSearchAuthorizer;
 }>): TalkSearchService {
-  return Object.freeze({
+  return Object.freeze<TalkSearchService>({
     async search(request) {
       const viewer = await input.authorizer.authorize({
         authorizationHeader: request.authorizationHeader,
