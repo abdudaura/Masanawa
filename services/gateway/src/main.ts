@@ -1892,6 +1892,17 @@ export async function startGatewayService(
           repository: database.talkLive,
           authorizer: talkLiveAuthorizer,
           ...(talkMediaTokens ? { mediaTokens: talkMediaTokens } : {}),
+          ...(database.talkReplay
+            ? {
+                onTalkEnded: async ({tenantId,talkId,reason,now}) => {
+                  if(talkReplayCoordinator){
+                    await talkReplayCoordinator.finalize({tenantId,talkId,reason,now});
+                  }else{
+                    await database.talkReplay!.finalizeFromLive({tenantId,talkId,reason,now});
+                  }
+                },
+              }
+            : {}),
         })
       : undefined);
 
