@@ -125,7 +125,9 @@ Added:
 - GET webhook challenge verification;
 - text/audio/image/document ingress;
 - media retrieval;
-- exact-once inbound message claim;
+- exact-once Agent/financial execution for inbound message IDs;
+- separate durable outbound-delivery state: failed provider sends retry delivery
+  without repeating the Agent/billing/crypto turn;
 - canonical Masanawa phone-identity linking;
 - same Agent conversation/Skills/Commerce/Wallet runtime as mobile;
 - outbound text delivery/chunking;
@@ -147,7 +149,8 @@ Added:
 - Telegram file retrieval;
 - contact ownership validation (`contact.user_id == sender`);
 - link only when the shared phone matches an existing Masanawa phone identity;
-- durable canonical session continuity and exact-once message claims;
+- durable canonical session continuity and exact-once Agent execution;
+- durable outbound delivery acknowledgement/retry;
 - outbound text delivery and request-contact keyboard;
 - fail-fast environment configuration.
 
@@ -201,7 +204,7 @@ production Gemini/Twin economy runtime.
 Focused deterministic tests were added for:
 - hidden Teaching-state stripping/persistence;
 - crypto confirmation reusing the exact persisted request ID;
-- duplicate channel webhook idempotency;
+- duplicate channel execution idempotency and completed-vs-delivered retry behavior;
 - expired conversation sessions failing before inference/financial execution;
 - Cafe Crypto shortcut expectation.
 
