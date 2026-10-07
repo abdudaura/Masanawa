@@ -100,8 +100,7 @@ the current product documents listed above.
 ## Immediate product sequence
 
 1. Keep documentation consistent with this reset.
-2. Produce high-fidelity mockups for the complete screen architecture.
-3. Validate the Talk/Seat/Expert/Twin interaction model visually before rebuilding the
-   current mobile shell.
-4. Implement the new shell and Talk runtime incrementally without deleting reusable
+2. Keep Home discovery single-column and vertical: **never horizontal Talk rails, grids or carousels**.
+3. Implement the approved **Home · Create · Activity · You** shell and Talk experience incrementally.
+4. Build durable Talk persistence/live-audio behind the mobile contracts without deleting reusable
    Billing, Crypto, Twin identity, voice, channel or agent-runtime foundations.
