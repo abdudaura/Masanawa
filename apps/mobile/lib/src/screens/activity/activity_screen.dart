@@ -6,6 +6,8 @@ import '../../agents/twin_activity.dart';
 import '../../owner_access/owner_access.dart';
 import '../../owner_access/owner_access_state.dart';
 import '../../state/twin_activity_state.dart';
+import '../../state/ai_chat_state.dart';
+import '../../state/agent_directory_state.dart';
 import '../../theme/masanawa_theme.dart';
 
 class ActivityScreen extends ConsumerWidget {
@@ -185,108 +187,224 @@ class ActivityScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final u = context.masanawa;
     final activity = ref.watch(twinActivityProvider);
+    final chat = ref.watch(aiChatProvider);
+    final directory = ref.watch(agentDirectoryProvider);
+
+    String nameFor(String characterId, String? title) {
+      final custom = title?.trim();
+      if (custom != null && custom.isNotEmpty) return custom;
+      final agent = directory.find(characterId);
+      return agent?.displayName ?? 'Conversation';
+    }
+
+    Future<void> refreshAll() async {
+      await Future.wait<void>([
+        ref.read(twinActivityProvider.notifier).refresh().catchError((_) {}),
+        ref.read(agentDirectoryProvider.notifier).refresh().catchError((_) {}),
+      ]);
+    }
+
+    final threads = chat.chatList;
 
     return Scaffold(
       backgroundColor: u.surfaceBg,
-      appBar: AppBar(
-        backgroundColor: u.surfaceCard,
-        elevation: 0,
-        title: Text(
-          'Activity',
-          style: TextStyle(
-            color: u.textPrimary,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
+      appBar: const AppBar(title: Text('Activity')),
+      body: RefreshIndicator(
+        onRefresh: refreshAll,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: 28),
+          children: [
+            if (threads.isEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 36, 20, 28),
+                child: Text(
+                  'Your conversations will appear here.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: u.textMuted, fontSize: 14),
+                ),
+              )
+            else
+              for (final thread in threads)
+                _ConversationTile(
+                  name: nameFor(thread.characterId, thread.title),
+                  preview: thread.lastMessage?.text ?? '',
+                  updatedAt: thread.updatedAt,
+                  unread: thread.unread,
+                  onTap: () => context.push(
+                    '/chat/' + Uri.encodeComponent(thread.characterId),
+                  ),
+                ),
+            activity.when(
+              loading: () => threads.isEmpty
+                  ? const Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  : const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
+              data: (view) {
+                if (view == null || !view.hasTwin) {
+                  return const SizedBox.shrink();
+                }
+                final characterId = view.characterId;
+                final pendingOwnerRequest = _firstPendingOwnerRequest(view.items);
+                return Column(
+                  children: [
+                    const Divider(height: 16),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+                      child: _Summary(summary: view.summary),
+                    ),
+                    if (view.summary.pendingOwnerRequests > 0)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                        child: _NeedsYou(
+                          count: view.summary.pendingOwnerRequests,
+                          onTap: characterId != null && pendingOwnerRequest != null
+                              ? () => _manageOwnerRequest(
+                                  context,
+                                  ref,
+                                  characterId: characterId,
+                                  item: pendingOwnerRequest,
+                                )
+                              : null,
+                        ),
+                      ),
+                    for (final item in view.items)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: _ActivityTile(
+                          item: item,
+                          onTap: characterId != null &&
+                                  item.kind == TwinActivityKind.ownerRequest &&
+                                  item.referenceId != null
+                              ? () => _manageOwnerRequest(
+                                  context,
+                                  ref,
+                                  characterId: characterId,
+                                  item: item,
+                                )
+                              : null,
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ],
         ),
       ),
-      body: RefreshIndicator(
-        onRefresh: () => ref.read(twinActivityProvider.notifier).refresh(),
-        child: activity.when(
-          loading: () => const _ScrollableCenter(
-            child: CircularProgressIndicator(),
-          ),
-          error: (error, _) => _ScrollableCenter(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Text(
-                'Activity is not available yet.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: u.textMuted),
-              ),
+    );
+  }
+}
+
+class _ConversationTile extends StatelessWidget {
+  const _ConversationTile({
+    required this.name,
+    required this.preview,
+    required this.updatedAt,
+    required this.unread,
+    required this.onTap,
+  });
+
+  final String name;
+  final String preview;
+  final DateTime updatedAt;
+  final int unread;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    final local = updatedAt.toLocal();
+    final time = local.hour.toString().padLeft(2, '0') + ':' +
+        local.minute.toString().padLeft(2, '0');
+    return Material(
+      color: u.surfaceCard,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(color: u.structuralBorder, width: .7),
             ),
           ),
-          data: (view) {
-            if (view == null || !view.hasTwin) {
-              return _ScrollableCenter(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Text(
-                    'Create your twin to start seeing activity here.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: u.textMuted),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 24,
+                backgroundColor: u.brandStrong,
+                child: Text(
+                  name.isEmpty ? 'M' : name.substring(0, 1).toUpperCase(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-              );
-            }
-            final characterId = view.characterId;
-            final pendingOwnerRequest = _firstPendingOwnerRequest(view.items);
-            return ListView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
-              children: [
-                _Summary(summary: view.summary),
-                const SizedBox(height: 18),
-                if (view.summary.pendingOwnerRequests > 0) ...[
-                  _NeedsYou(
-                    count: view.summary.pendingOwnerRequests,
-                    onTap: characterId != null && pendingOwnerRequest != null
-                        ? () => _manageOwnerRequest(
-                              context,
-                              ref,
-                              characterId: characterId,
-                              item: pendingOwnerRequest,
-                            )
-                        : null,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: u.textPrimary,
+                        fontSize: 15.5,
+                        fontWeight: unread > 0
+                            ? FontWeight.w700
+                            : FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      preview.trim().isEmpty ? 'Open conversation' : preview,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: u.textMuted, fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Column(
+                children: [
+                  Text(
+                    time,
+                    style: TextStyle(
+                      color: unread > 0 ? u.brandStrong : u.textMuted,
+                      fontSize: 11,
+                    ),
                   ),
-                  const SizedBox(height: 18),
+                  if (unread > 0) ...[
+                    const SizedBox(height: 5),
+                    Container(
+                      constraints: const BoxConstraints(minWidth: 20),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: u.brand,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        unread > 99 ? '99+' : unread.toString(),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
-                Text(
-                  'Recent',
-                  style: TextStyle(
-                    color: u.textPrimary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                if (view.items.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 28),
-                    child: Text(
-                      'Nothing yet. Share your twin and activity will appear here.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: u.textMuted),
-                    ),
-                  )
-                else
-                  ...view.items.map(
-                    (item) => _ActivityTile(
-                      item: item,
-                      onTap: characterId != null &&
-                              item.kind == TwinActivityKind.ownerRequest &&
-                              item.referenceId != null
-                          ? () => _manageOwnerRequest(
-                                context,
-                                ref,
-                                characterId: characterId,
-                                item: item,
-                              )
-                          : null,
-                    ),
-                  ),
-              ],
-            );
-          },
+              ),
+            ],
+          ),
         ),
       ),
     );
