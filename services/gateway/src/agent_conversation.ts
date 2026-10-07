@@ -240,6 +240,8 @@ export function createAgentConversationService(input: {
           characterVersionId: session.characterVersionId,
           skillVersionIds: session.bindings.skillVersionIds,
           presentation: admission.presentation,
+          surface: request.surface ?? "mobile",
+          representation: request.representation ?? "platform-agent",
           ...(request.signal ? { signal: request.signal } : {}),
           // Machine directives are stripped after inference. Do not stream
           // them into the user-visible chat before server consumption.
@@ -441,6 +443,8 @@ export function createAgentConversationService(input: {
           characterVersionId: session.characterVersionId,
           skillVersionIds: session.bindings.skillVersionIds,
           presentation: admission.presentation,
+          surface: request.surface ?? "mobile",
+          representation: request.representation ?? "platform-agent",
           ...(request.signal ? { signal: request.signal } : {}),
           input: Object.freeze({
             kind: "media" as const,
@@ -632,6 +636,8 @@ export function createAgentConversationService(input: {
           characterVersionId: session.characterVersionId,
           skillVersionIds: session.bindings.skillVersionIds,
           presentation: admission.presentation,
+          surface: request.surface ?? "mobile",
+          representation: request.representation ?? "platform-agent",
           ...(request.signal ? { signal: request.signal } : {}),
           input: Object.freeze({
             kind: "media-set" as const,
