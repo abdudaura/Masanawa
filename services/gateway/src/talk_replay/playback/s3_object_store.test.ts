@@ -25,6 +25,32 @@ describe("Replay private object store",()=>{
     expect(calls[0]?.url).toContain("/private/talk-replays/talk/replay.ogg");
   });
 
+  it("retries boundedly while a just-stopped egress object becomes visible",async()=>{
+    let attempts=0;
+    const delays:number[]=[];
+    const bytes=new TextEncoder().encode("ready");
+    const store=createReplayObjectStore({
+      endpoint:"https://s3.example.test",
+      region:"test",
+      bucket:"private",
+      accessKey:"access",
+      secret:"0123456789abcdef",
+      availabilityAttempts:3,
+      availabilityDelayMs:10,
+      sleep:async milliseconds=>{delays.push(milliseconds);},
+      fetchImpl:async()=>{
+        attempts+=1;
+        return attempts<3
+          ? new Response(null,{status:404})
+          : new Response(bytes,{status:200,headers:{"content-length":String(bytes.byteLength)}});
+      },
+    });
+    await expect(store.checksumSha256("talk-replays/talk/replay.ogg"))
+      .resolves.toBe(createHash("sha256").update(bytes).digest("hex"));
+    expect(attempts).toBe(3);
+    expect(delays).toEqual([10,20]);
+  });
+
   it("creates a short-lived SigV4 URL without exposing the secret",async()=>{
     const store=createReplayObjectStore({
       endpoint:"https://ams3.digitaloceanspaces.com",
