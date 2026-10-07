@@ -8,7 +8,8 @@
   - `apps/mobile/lib/src/talks/talk_safety.dart`
   - `apps/mobile/lib/src/talks/talk_safety_http_transport.dart`
   - `apps/mobile/lib/src/state/talk_safety_state.dart`
-  - isolated Talk/replay/profile safety UI additions under `apps/mobile/lib/src/screens/talks/**`
+  - isolated Talk/replay safety UI additions under `apps/mobile/lib/src/screens/talks/**`
+  - isolated profile safety UI additions in `apps/mobile/lib/src/screens/profile/person_profile_screen.dart` and `persona_profile_screen.dart`
   - focused mobile tests
   - this workstream
 - **Reuses:** merged `/safety/reports` and `/safety/profiles/:handle/preference` routes.
