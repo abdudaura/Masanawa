@@ -270,6 +270,13 @@
       "description": "Production configuration for MASANAWA_FLUTTERWAVE_RELAY_TOKEN."
     },
     {
+      "name": "MASANAWA_FLUTTERWAVE_VERIFY_ON_START",
+      "owner": "gateway/billing",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "When true, verifies the live Flutterwave bills catalog during Gateway startup."
+    },
+    {
       "name": "MASANAWA_GATEWAY_HOST",
       "owner": "gateway",
       "classification": "public",
