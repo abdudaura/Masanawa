@@ -1,5 +1,6 @@
 import type { PlatformSessionIdentity } from "@masanawa/security";
 import type { TalkMediaAdmin } from "./livekit_admin.js";
+import type { TalkAiSeatHostBridge } from "../talk_ai_seats/service.js";
 import type {
   HostControlsView,
   TalkModerationRepository,
@@ -83,6 +84,7 @@ export function createTalkModerationService(input: Readonly<{
   authorizer: TalkModerationAuthorizer;
   now?: () => string;
   mediaAdmin?: TalkMediaAdmin;
+  aiSeats?: TalkAiSeatHostBridge;
 }>): TalkModerationService {
   const now=input.now ?? (()=>new Date().toISOString());
 
@@ -136,6 +138,12 @@ export function createTalkModerationService(input: Readonly<{
     },
     async hostControls(request){
       const viewer=await identity(request.authorizationHeader);
+      if(input.aiSeats){
+        await input.aiSeats.sweep({
+          authorizationHeader:request.authorizationHeader,
+          talkId:request.talkId,
+        });
+      }
       const result=await guarded(()=>input.repository.hostControls({
         tenantId:viewer.tenantId,hostUserId:viewer.userId,talkId:bounded(request.talkId,"talk_id"),
       }));
@@ -144,6 +152,23 @@ export function createTalkModerationService(input: Readonly<{
     },
     async hostRequest(request){
       const viewer=await identity(request.authorizationHeader);
+      if(input.aiSeats){
+        const ai=await input.aiSeats.decide({
+          authorizationHeader:request.authorizationHeader,
+          talkId:request.talkId,
+          requestId:request.requestId,
+          action:request.action,
+        });
+        if(ai.handled){
+          const controls=await guarded(()=>input.repository.hostControls({
+            tenantId:viewer.tenantId,
+            hostUserId:viewer.userId,
+            talkId:bounded(request.talkId,"talk_id"),
+          }));
+          if(!controls) throw new TalkModerationError("talks.not_found",404);
+          return controls;
+        }
+      }
       const result=await guarded(()=>input.repository.actOnRequest({
         tenantId:viewer.tenantId,hostUserId:viewer.userId,talkId:bounded(request.talkId,"talk_id"),
         requestId:bounded(request.requestId,"request_id"),action:request.action,now:now(),
