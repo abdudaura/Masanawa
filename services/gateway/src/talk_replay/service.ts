@@ -73,10 +73,11 @@ function publicView(
   record: TalkReplayRecord | null,
   viewerUserId: string,
   storage: ReplayObjectStorage,
+  fallbackTalkId = "",
 ): TalkReplayView {
   if (!record) {
     return Object.freeze({
-      talkId: "",
+      talkId: fallbackTalkId,
       status: "unavailable",
       published: false,
     });
@@ -333,13 +334,42 @@ export function createTalkReplayService(input: Readonly<{
           const stopped = await input.egress.stop({
             egressId: record.egressId,
           });
+          const stoppedAt = now();
+          if (stopped.status === "complete") {
+            const verified = await input.storage.sha256({
+              objectKey: record.objectKey,
+            });
+            await input.repository.finalizeSuccess({
+              tenantId: record.tenantId,
+              talkId: record.talkId,
+              startedAt: stopped.startedAt ?? record.session.startedAt,
+              endedAt: stopped.endedAt ?? stoppedAt,
+              checksumSha256: verified.checksumSha256,
+              now: stoppedAt,
+            });
+            return;
+          }
+          if (
+            stopped.status === "failed" ||
+            stopped.status === "aborted" ||
+            stopped.status === "limit_reached"
+          ) {
+            await input.repository.finalizeFailure({
+              tenantId: record.tenantId,
+              talkId: record.talkId,
+              providerStatus: stopped.status,
+              ...(stopped.error ? { providerError: stopped.error } : {}),
+              now: stoppedAt,
+            });
+            return;
+          }
           record =
             (await input.repository.markProvider({
               tenantId: record.tenantId,
               talkId: record.talkId,
               providerStatus: stopped.status,
               ...(stopped.error ? { providerError: stopped.error } : {}),
-              now: now(),
+              now: stoppedAt,
             })) ?? record;
         } catch {
           // Template Egress is tied to the room lifecycle and may already be ending.
@@ -367,7 +397,7 @@ export function createTalkReplayService(input: Readonly<{
           talkId,
         });
         const reconciled = record ? await reconcileRecord(record) : null;
-        return publicView(reconciled, viewer.userId, input.storage);
+        return publicView(reconciled, viewer.userId, input.storage, talkId);
       } catch (error) {
         return mapError(error);
       }
