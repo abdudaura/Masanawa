@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
@@ -50,10 +51,20 @@ class AiChatScreen extends ConsumerStatefulWidget {
     super.key,
     required this.characterId,
     this.entryMode = AiChatEntryMode.chat,
+    this.initialPrompt,
+    this.twinSetup = false,
+    this.twinGender,
+    this.twinAge,
+    this.twinPhotoPath,
   });
 
   final String characterId;
   final AiChatEntryMode entryMode;
+  final String? initialPrompt;
+  final bool twinSetup;
+  final String? twinGender;
+  final int? twinAge;
+  final String? twinPhotoPath;
 
   @override
   ConsumerState<AiChatScreen> createState() => _AiChatScreenState();
@@ -77,6 +88,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   final Set<String> _selectedMessageIds = {};
   final Map<String, GlobalKey> _messageKeys = {};
   bool _initialEntryHandled = false;
+  bool _finishingTwin = false;
+  Map<String, dynamic> _twinInterviewFacts = <String, dynamic>{};
   String? _cafeCategory;
   LiveVoiceSession? _inlineVoiceSession;
   StreamSubscription<String>? _inlineTranscriptSub;
@@ -137,6 +150,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             for (final item in thread.draftAttachments)
               if (File(item.path).existsSync()) item,
           ];
+          if (widget.twinSetup) {
+            _twinInterviewFacts =
+                Map<String, dynamic>.from(thread.twinInterviewFacts);
+          }
         });
       }
       final offset = thread.scrollOffset;
@@ -186,6 +203,18 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     final attachments = _pendingAttachments;
     if (text.trim().isEmpty && attachments.isEmpty) return;
     final reply = _replyingTo;
+    if (widget.twinSetup &&
+        attachments.isEmpty &&
+        text.trim().isNotEmpty) {
+      unawaited(_sendTwinInterviewText(text.trim(), reply));
+      _input.clear();
+      ref.read(aiChatProvider.notifier).setDraft(widget.characterId, '');
+      setState(() {
+        _showEmoji = false;
+        _replyingTo = null;
+      });
+      return;
+    }
     if (widget.entryMode == AiChatEntryMode.teach &&
         attachments.isEmpty &&
         text.trim().isNotEmpty) {
@@ -204,6 +233,44 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             suggestion.message,
           ),
     );
+  }
+
+  Future<void> _sendTwinInterviewText(
+    String text,
+    AiChatMessage? reply,
+  ) async {
+    final ctl = ref.read(aiChatProvider.notifier);
+    try {
+      await ctl.sendText(
+        widget.characterId,
+        text,
+        replyToId: reply?.id,
+        replyPreview: reply == null
+            ? null
+            : (reply.text.isNotEmpty ? reply.text : 'Gwani'),
+        transportPrompt: ctl.twinInterviewTransportPrompt(
+          userAnswer: text,
+          facts: _twinInterviewFacts,
+        ),
+      );
+      final next = await ctl.extractTwinInterviewText(
+        characterId: widget.characterId,
+        userAnswer: text,
+        facts: _twinInterviewFacts,
+      );
+      if (!mounted) return;
+      setState(() => _twinInterviewFacts = next);
+      ctl.setTwinInterviewFacts(widget.characterId, next);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'I could not save that Twin setup answer. Please say it again.',
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _teachThenSend(
@@ -551,6 +618,135 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     }
   }
 
+  Future<void> _finishTwinSetup(AgentDirectoryEntry guide) async {
+    if (_finishingTwin) return;
+    final gender = widget.twinGender;
+    final age = widget.twinAge;
+    if (gender == null || age == null) return;
+
+    setState(() => _finishingTwin = true);
+    try {
+      final chat = ref.read(aiChatProvider.notifier);
+      final summary = await chat.summarizeTwinInterview(
+        widget.characterId,
+        _twinInterviewFacts,
+      );
+      final session = ref.read(sessionProvider);
+      if (session is! SessionSignedIn) {
+        throw StateError('Sign in is required');
+      }
+      final ownerName = session.user.name.trim();
+      final photoPath = widget.twinPhotoPath?.trim();
+      if (photoPath == null || photoPath.isEmpty) {
+        throw StateError('Twin photo is missing');
+      }
+      final photo = File(photoPath);
+      final bytes = await photo.readAsBytes();
+      if (bytes.isEmpty || bytes.length > 4 * 1024 * 1024) {
+        throw StateError('Twin photo is too large');
+      }
+      final mimeType = lookupMimeType(
+            photoPath,
+            headerBytes: bytes.take(16).toList(),
+          ) ??
+          'image/jpeg';
+      if (!{'image/jpeg', 'image/png', 'image/webp'}.contains(mimeType)) {
+        throw StateError('Twin photo format is unsupported');
+      }
+      final result = await ref.read(creatorCloneTransportProvider).create(
+            displayName: ownerName.isEmpty ? 'My Twin' : '$ownerName Twin',
+            biography: summary['biography'] as String,
+            gender: gender,
+            age: age,
+            avatarBase64: base64Encode(bytes),
+            avatarMimeType: mimeType,
+            personality: List<String>.from(summary['personality'] as List),
+            expertise: List<String>.from(summary['expertise'] as List),
+          );
+      await ref.read(agentDirectoryProvider.notifier).refresh();
+      await ref.read(myTwinProvider.notifier).refresh();
+      chat.setTwinInterviewFacts(widget.characterId, const <String, dynamic>{});
+      if (mounted) {
+        setState(() => _twinInterviewFacts = <String, dynamic>{});
+      }
+      await chat.announceTwinReady(
+        guide.characterId,
+        displayName: result.displayName,
+        publicUrl: result.publicUrl,
+      );
+      if (!mounted) return;
+      final link = result.publicUrl;
+      await showModalBottomSheet<void>(
+        context: context,
+        showDragHandle: true,
+        builder: (sheetContext) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Icon(
+                  Icons.check_circle_rounded,
+                  size: 52,
+                  color: context.masanawa.brand,
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Your Twin is ready',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(sheetContext).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  link == null || link.isEmpty
+                      ? 'Gwani will tell you how to use your Twin. The public link is still syncing.'
+                      : 'Share this link so anyone can talk to your Twin:',
+                  textAlign: TextAlign.center,
+                ),
+                if (link != null && link.isNotEmpty) ...[
+                  const SizedBox(height: 14),
+                  SelectableText(
+                    link,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    onPressed: () async {
+                      await Clipboard.setData(ClipboardData(text: link));
+                      if (sheetContext.mounted) {
+                        ScaffoldMessenger.of(sheetContext).showSnackBar(
+                          const SnackBar(content: Text('Twin link copied')),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.copy_rounded),
+                    label: const Text('Copy Twin link'),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      );
+      if (mounted) context.go('/my-twin');
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'I could not finish the Twin yet. Keep this chat and try again.',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _finishingTwin = false);
+    }
+  }
+
   // ---- Build ---------------------------------------------------------------
 
   @override
@@ -633,6 +829,15 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       _initialEntryHandled = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
+        final prompt = widget.initialPrompt?.trim();
+        if (prompt != null && prompt.isNotEmpty) {
+          unawaited(
+            ref.read(aiChatProvider.notifier).sendText(
+                  widget.characterId,
+                  prompt,
+                ),
+          );
+        }
         switch (widget.entryMode) {
           case AiChatEntryMode.chat:
             break;
@@ -761,6 +966,22 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             ),
           ),
           actions: [
+            if (widget.twinSetup &&
+                _selectedMessageIds.isEmpty &&
+                !_showSearch)
+              TextButton.icon(
+                onPressed: _finishingTwin || _twinInterviewFacts.isEmpty
+                    ? null
+                    : () => _finishTwinSetup(agent),
+                icon: _finishingTwin
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.check_rounded),
+                label: const Text('Finish Twin'),
+              ),
             if (_selectedMessageIds.isNotEmpty) ...[
               IconButton(
                 tooltip: 'Copy selected',
@@ -848,6 +1069,27 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         ),
         body: Column(
           children: [
+            if (widget.twinSetup)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
+                color: u.brand.withValues(alpha: .08),
+                child: Row(
+                  children: [
+                    Icon(Icons.mic_rounded, color: u.brand, size: 18),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Twin interview · talk naturally. Your speech is not shown as text.',
+                        style: TextStyle(fontSize: 12.5),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             if (updateRequired)
               MaterialBanner(
                 content: Text(
