@@ -199,6 +199,10 @@ import {
 } from "./agent_crypto_assistant.js";
 import type { CustomerChannelOptions } from "./customer_channel_routes.js";
 import {
+  createLinkedWhatsAppController,
+  type LinkedWhatsAppController,
+} from "./whatsapp_linked_device.js";
+import {
   ensureDefaultPlatformAgents,
   type PlatformAgentIdentityProvisioner,
 } from "./platform_agent_bootstrap.js";
@@ -1483,6 +1487,10 @@ export async function startGatewayService(
 
   let composedCustomerChannels: CustomerChannelOptions | undefined =
     options.appOptions?.customerChannels;
+  let linkedWhatsAppController: LinkedWhatsAppController | undefined;
+  let linkedWhatsAppAdmin:
+    | NonNullable<GatewayAppOptions["linkedWhatsApp"]>
+    | undefined;
   const whatsappEnabled = env.MASANAWA_WHATSAPP_ENABLED === "true";
   const telegramEnabled = env.MASANAWA_TELEGRAM_ENABLED === "true";
   if (
@@ -1512,22 +1520,27 @@ export async function startGatewayService(
       conversation: composedConversation,
     });
 
-    let whatsapp: CustomerChannelOptions["whatsapp"];
     if (whatsappEnabled) {
-      const verifyToken = env.MASANAWA_WHATSAPP_VERIFY_TOKEN?.trim();
-      const appSecret = env.MASANAWA_WHATSAPP_APP_SECRET?.trim();
-      const accessToken = env.MASANAWA_WHATSAPP_ACCESS_TOKEN?.trim();
-      const phoneNumberId = env.MASANAWA_WHATSAPP_PHONE_NUMBER_ID?.trim();
-      const graphVersion = env.MASANAWA_WHATSAPP_GRAPH_VERSION?.trim();
-      if (!verifyToken || !appSecret || !accessToken || !phoneNumberId || !graphVersion) {
-        throw new TypeError("WhatsApp is enabled but webhook/delivery configuration is incomplete");
+      const mode = env.MASANAWA_WHATSAPP_MODE?.trim() || "linked-device";
+      if (mode !== "linked-device") {
+        throw new TypeError(
+          "MASANAWA_WHATSAPP_MODE must be linked-device; Meta Cloud transport is not the production WhatsApp mode",
+        );
       }
-      whatsapp = Object.freeze({
-        verifyToken,
-        appSecret,
-        accessToken,
-        phoneNumberId,
-        graphVersion,
+      const authDir = env.MASANAWA_WHATSAPP_AUTH_DIR?.trim();
+      const adminToken = env.MASANAWA_WHATSAPP_ADMIN_TOKEN?.trim();
+      if (!authDir || !adminToken) {
+        throw new TypeError(
+          "WhatsApp linked-device mode requires MASANAWA_WHATSAPP_AUTH_DIR and MASANAWA_WHATSAPP_ADMIN_TOKEN",
+        );
+      }
+      linkedWhatsAppController = createLinkedWhatsAppController({
+        bridge,
+        authDir,
+      });
+      linkedWhatsAppAdmin = Object.freeze({
+        controller: linkedWhatsAppController,
+        adminToken,
       });
     }
 
@@ -1543,7 +1556,6 @@ export async function startGatewayService(
 
     composedCustomerChannels = Object.freeze({
       bridge,
-      ...(whatsapp ? { whatsapp } : {}),
       ...(telegram ? { telegram } : {}),
     });
   }
@@ -1636,6 +1648,9 @@ export async function startGatewayService(
       ...(composedCustomerChannels
         ? { customerChannels: composedCustomerChannels }
         : {}),
+      ...(linkedWhatsAppAdmin
+        ? { linkedWhatsApp: linkedWhatsAppAdmin }
+        : {}),
       ...(twinProduction ? { twinProduction } : {}),
       ...(composedDirectory ? { agentDirectory: composedDirectory } : {}),
       ...(composedConversation
@@ -1667,6 +1682,15 @@ export async function startGatewayService(
     throw error;
   }
 
+  if (linkedWhatsAppController) {
+    try {
+      await linkedWhatsAppController.start();
+    } catch (error) {
+      await database.close().catch(() => undefined);
+      throw error;
+    }
+  }
+
   const lifecycle = await startNodeService({
     serviceName: "gateway",
     server: app,
@@ -1675,12 +1699,18 @@ export async function startGatewayService(
     ...(options.logger ? { logger: options.logger } : {}),
     onDraining: () => {
       drain.beginDraining();
+      if (linkedWhatsAppController) {
+        void linkedWhatsAppController.stop().catch(() => undefined);
+      }
       if (ownerAccessSweepTimer) {
         clearInterval(ownerAccessSweepTimer);
         ownerAccessSweepTimer = undefined;
       }
     },
     onAfterClose: async () => {
+      if (linkedWhatsAppController) {
+        await linkedWhatsAppController.stop().catch(() => undefined);
+      }
       if (ownerAccessSweepTimer) {
         clearInterval(ownerAccessSweepTimer);
         ownerAccessSweepTimer = undefined;
