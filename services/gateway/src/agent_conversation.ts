@@ -17,6 +17,7 @@ import type {
 } from "./agent_conversation_contract.js";
 import type { NativeAudioRenderer } from "./native_audio.js";
 import type { AgentBillingAssistant } from "./agent_billing_assistant.js";
+import type { AgentTeachingAssistant } from "./agent_teaching_assistant.js";
 
 function hashTurnPayload(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex");
@@ -74,6 +75,7 @@ export function createAgentConversationService(input: {
   readonly mobileShell?: MobileShellRepository;
   readonly twinObserver?: TwinConversationObserver;
   readonly billingAssistant?: AgentBillingAssistant;
+  readonly teachingAssistant?: AgentTeachingAssistant;
   readonly sessionDurationMs: number;
 }): AgentConversationService {
   if (
@@ -189,11 +191,18 @@ export function createAgentConversationService(input: {
       });
 
       try {
-        const direct = await input.billingAssistant?.beforeInference({
-          authorizationHeader: request.authorizationHeader,
-          characterId: admission.scope.characterId,
+        const teachingPreparation = await input.teachingAssistant?.prepare({
+          scope: admission.scope,
           text,
         });
+        const direct = teachingPreparation
+          ? null
+          : await input.billingAssistant?.beforeInference({
+              authorizationHeader: request.authorizationHeader,
+              characterId: admission.scope.characterId,
+              text,
+            });
+        const inferenceText = teachingPreparation?.text ?? text;
         const generated = direct ?? await input.strategy.execute({
           agentRunId,
           characterSessionId,
@@ -201,20 +210,27 @@ export function createAgentConversationService(input: {
           skillVersionIds: session.bindings.skillVersionIds,
           presentation: admission.presentation,
           ...(request.signal ? { signal: request.signal } : {}),
-          // Billing directives are server-consumed machine output. Avoid
-          // streaming raw directives into the visible chat before execution.
-          ...(!input.billingAssistant && request.onTextDelta
+          // Machine directives are stripped after inference. Do not stream
+          // them into the user-visible chat before server consumption.
+          ...(!input.billingAssistant &&
+              !teachingPreparation &&
+              request.onTextDelta
             ? { onTextDelta: request.onTextDelta }
             : {}),
-          input: Object.freeze({ kind: "text" as const, text }),
+          input: Object.freeze({ kind: "text" as const, text: inferenceText }),
         });
         const result = direct
           ? direct
-          : (await input.billingAssistant?.afterInference({
-              authorizationHeader: request.authorizationHeader,
-              characterId: admission.scope.characterId,
-              modelReply: generated.reply,
-            })) ?? generated;
+          : teachingPreparation && input.teachingAssistant
+            ? await input.teachingAssistant.finish({
+                preparation: teachingPreparation,
+                modelReply: generated.reply,
+              })
+            : (await input.billingAssistant?.afterInference({
+                authorizationHeader: request.authorizationHeader,
+                characterId: admission.scope.characterId,
+                modelReply: generated.reply,
+              })) ?? generated;
         const reply = result.reply.trim();
         if (!reply) throw new Error("empty strategy reply");
 
