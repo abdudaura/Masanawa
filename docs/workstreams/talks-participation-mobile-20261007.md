@@ -34,3 +34,47 @@ Not owned:
 - Raw network/provider failures must never appear to the user.
 
 Status: active.
+
+
+## Implementation checkpoint
+
+Implemented:
+- lightweight reaction picker with ❤️ 👏 😂 💯 🤔 🔥;
+- reaction mutation wired from the existing Talk **React** control;
+- current viewer reaction projected back into the Talk control;
+- Raise Hand sheet explaining that human Speaker Seats are free and Host-controlled;
+- raise / lower hand mutation wired from the existing control;
+- distinct idle / raised / accepted / declined participation states;
+- accepted state projects **Speaker** instead of pretending the user is still waiting;
+- friendly action failures with no raw transport/provider exception text;
+- existing custom callbacks remain supported for compatibility;
+- focused interaction and model tests.
+
+## Mobile-facing backend contract
+
+`GET /talks/:talkId/participation`
+
+Response:
+- `handStatus: idle|raised|accepted|declined`
+- optional `reaction`
+
+`POST /talks/:talkId/reactions`
+- request: `{ reaction }`
+- response: current viewer participation projection.
+
+`POST /talks/:talkId/raise-hand`
+- request: `{ raised: boolean }`
+- response: current viewer participation projection.
+
+Backend invariants:
+- human Raise Hand is free;
+- raising a hand never grants a Speaker Seat by itself;
+- Host acceptance remains authoritative;
+- requests/mutations are authenticated and idempotent;
+- reaction values are allowlisted/rate-limited;
+- reactions and Raise Hand state are not silently injected into AI context.
+
+A 404 on participation read fails soft to idle state during rollout; mutations do not
+pretend success when the backend route is unavailable.
+
+Status: mobile Talk participation slice implemented; backend participation mutation/projection remains independent work.
