@@ -34,4 +34,9 @@ const List<CafeSuggestion> kCafeSuggestions = [
     label: 'TV',
     message: 'I want to pay for TV.',
   ),
+  CafeSuggestion(
+    key: 'crypto',
+    label: 'Crypto',
+    message: 'Help me with crypto',
+  ),
 ];
