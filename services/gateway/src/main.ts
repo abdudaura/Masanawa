@@ -195,6 +195,8 @@ import {
   type TalkLibraryAuthorizer,
 } from "./talk_library/service.js";
 import { createPostgresTalkLibraryRepository } from "./talk_library/postgres_repository.js";
+import { createPostgresTalkPushDedupeRepository } from "./talk_notifications/postgres_dedupe.js";
+import { createTalkPushDeliveryRuntime, type TalkPushDeliveryRuntime } from "./talk_notifications/runtime.js";
 import {
   createTalkGiftService,
   type TalkGiftAuthorizer,
@@ -310,6 +312,7 @@ export interface ServiceDatabaseDependency {
   readonly talkSearch?: ReturnType<typeof createPostgresTalkSearchRepository>;
   readonly talkLibrary?: ReturnType<typeof createPostgresTalkLibraryRepository>;
   readonly talkGifts?: ReturnType<typeof createPostgresTalkGiftRepository>;
+  readonly talkPushDedupe?: ReturnType<typeof createPostgresTalkPushDedupeRepository>;
   close(): Promise<void>;
 }
 
@@ -340,6 +343,7 @@ export interface GatewayServiceRuntime {
   readonly address: string;
   readonly app: ManagedNodeServer;
   readonly pushSender?: MobilePushSender;
+  readonly talkPushDelivery?: TalkPushDeliveryRuntime;
   isDraining(): boolean;
   drain(): void;
   shutdown(reason?: ServiceSignal | "manual"): Promise<void>;
@@ -463,6 +467,7 @@ function createDefaultDatabaseDependency(
     talkActivity: createPostgresTalkActivityRepository(database.pool),
     talkSearch: createPostgresTalkSearchRepository(database.pool),
     talkLibrary: createPostgresTalkLibraryRepository(database.pool),
+    talkPushDedupe: createPostgresTalkPushDedupeRepository(database.pool),
     talkGifts: createPostgresTalkGiftRepository(database.pool),
     close: database.close,
   });
@@ -595,6 +600,8 @@ export async function startGatewayService(
   let ownerAccessSweepTenantId: TenantId | undefined;
   let ownerAccessSweepTimer: ReturnType<typeof setInterval> | undefined;
   let ownerAccessSweepRunning = false;
+  let talkPushDedupePurgeTimer: ReturnType<typeof setInterval> | undefined;
+  let talkPushDedupePurgeRunning = false;
   let customerAuth: CustomerAuthService | undefined =
     options.appOptions?.customerAuth;
   let billingCustomerAuthorizer:
@@ -626,6 +633,11 @@ export async function startGatewayService(
       repository: database.mobilePush,
     });
   }
+
+  const talkPushDelivery = createTalkPushDeliveryRuntime({
+    ...(pushSender ? { sender: pushSender } : {}),
+    ...(database.talkPushDedupe ? { dedupe: database.talkPushDedupe } : {}),
+  });
 
   if (alphaEnabled(env)) {
     if (
@@ -2138,6 +2150,10 @@ export async function startGatewayService(
         clearInterval(ownerAccessSweepTimer);
         ownerAccessSweepTimer = undefined;
       }
+      if (talkPushDedupePurgeTimer) {
+        clearInterval(talkPushDedupePurgeTimer);
+        talkPushDedupePurgeTimer = undefined;
+      }
     },
     onAfterClose: async () => {
       if (linkedWhatsAppController) {
@@ -2146,6 +2162,10 @@ export async function startGatewayService(
       if (ownerAccessSweepTimer) {
         clearInterval(ownerAccessSweepTimer);
         ownerAccessSweepTimer = undefined;
+      }
+      if (talkPushDedupePurgeTimer) {
+        clearInterval(talkPushDedupePurgeTimer);
+        talkPushDedupePurgeTimer = undefined;
       }
       await database.close();
     },
@@ -2161,6 +2181,35 @@ export async function startGatewayService(
       await lifecycle.stop("manual").catch(() => undefined);
       throw error;
     }
+  }
+
+  const runTalkPushDedupePurge = async () => {
+    if (
+      talkPushDedupePurgeRunning ||
+      drain.isDraining() ||
+      !database.talkPushDedupe
+    ) {
+      return;
+    }
+    talkPushDedupePurgeRunning = true;
+    try {
+      await database.talkPushDedupe.purgeExpired({
+        before: new Date().toISOString(),
+        limit: 1000,
+      });
+    } catch {
+      // Push remains best effort. Retention cleanup must never crash Gateway.
+    } finally {
+      talkPushDedupePurgeRunning = false;
+    }
+  };
+
+  if (database.talkPushDedupe) {
+    talkPushDedupePurgeTimer = setInterval(() => {
+      void runTalkPushDedupePurge();
+    }, 6 * 60 * 60 * 1000);
+    talkPushDedupePurgeTimer.unref();
+    void runTalkPushDedupePurge();
   }
 
   const runOwnerAccessSweep = async () => {
@@ -2199,6 +2248,7 @@ export async function startGatewayService(
     address: lifecycle.address,
     app,
     ...(pushSender ? { pushSender } : {}),
+    ...(talkPushDelivery ? { talkPushDelivery } : {}),
     isDraining: drain.isDraining,
     drain: drain.beginDraining,
     shutdown: (reason: ServiceSignal | "manual" = "manual") =>
