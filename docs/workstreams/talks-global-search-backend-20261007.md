@@ -65,6 +65,7 @@ Implemented:
   canonical Talk lifecycle instead of trusting a stale profile pointer;
 - persona search over display name/role/bio/topics;
 - exact Expert/Twin kind filtering;
+- Twin results require a matching canonical `identity.twin_profiles` row with `discoverable=true`;
 - unverified Expert rows excluded from discovery;
 - available/verified personas ranked before unavailable/unverified equivalents;
 - no migration and no search copy of private Agent/Skill/provider/runtime state;
