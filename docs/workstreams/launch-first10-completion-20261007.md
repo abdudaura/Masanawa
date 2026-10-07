@@ -328,3 +328,22 @@ authority and excludes the Ethereum network by default.
 Foundation CI now includes these provider-qualification tooling tests. Hosted CI runner
 allocation is still a separate external blocker; no green run is claimed until a runner
 actually executes steps.
+
+
+### Channel admission acceptance continuation
+
+Added `services/gateway/src/customer_channel_routes.test.ts` to exercise the actual
+launch webhook routes rather than only the bridge abstraction.
+
+The suite covers:
+
+- WhatsApp GET verification challenge and bad-token rejection;
+- WhatsApp POST rejection before Agent execution on a bad raw-body HMAC;
+- exactly signed WhatsApp message admission with preserved provider message/user identity;
+- Telegram webhook-secret rejection before Agent execution;
+- valid Telegram text admission with preserved sender/chat/message identity;
+- Telegram contact phone ownership enforcement, so a contact whose `user_id` differs
+  from the sender can never link that phone to the sender.
+
+This complements the existing bridge tests for duplicate execution and outbound-delivery
+retries. Live provider registration/delivery remains external qualification.
