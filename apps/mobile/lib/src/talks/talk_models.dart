@@ -46,6 +46,7 @@ class TalkDiscoveryItem {
     this.hostAvatarUrl,
     this.commentCount = 0,
     this.durationSeconds,
+    this.viewerIsHost = false,
     this.participants = const [],
   });
 
@@ -60,6 +61,7 @@ class TalkDiscoveryItem {
   final int listenerCount;
   final int commentCount;
   final int? durationSeconds;
+  final bool viewerIsHost;
   final List<TalkParticipantPreview> participants;
 
   factory TalkDiscoveryItem.fromJson(Map<String, dynamic> json) {
@@ -76,6 +78,7 @@ class TalkDiscoveryItem {
       listenerCount: (json['listenerCount'] as num?)?.toInt() ?? 0,
       commentCount: (json['commentCount'] as num?)?.toInt() ?? 0,
       durationSeconds: (json['durationSeconds'] as num?)?.toInt(),
+      viewerIsHost: json['viewerIsHost'] == true,
       participants: rawParticipants is List
           ? [
               for (final item in rawParticipants)
