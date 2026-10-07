@@ -37,7 +37,11 @@ describe("production strategy surface guidance", () => {
   });
 
   it("uses Telegram-specific guidance without pretending app UI exists", async () => {
-    const generate = vi.fn(async () => ({ text: "reply" }));
+    const generate = vi.fn(
+      async (_request: { systemInstructions: readonly string[] }) => ({
+        text: "reply",
+      }),
+    );
     const strategy = createProductionAgentStrategy({
       inference: { generate } as never,
       skills: {} as never,
