@@ -129,6 +129,17 @@ export function createPostgresTalkSearchRepository(
         WHERE t.tenant_id = $1
           AND t.state IN ('live','reconnecting','ended')
           AND (
+            t.state <> 'ended'
+            OR EXISTS (
+              SELECT 1
+                FROM talks.replays replay
+               WHERE replay.tenant_id=t.tenant_id
+                 AND replay.talk_id=t.talk_id
+                 AND replay.provider_status='complete'
+                 AND replay.session_json->>'publicationState'='published'
+            )
+          )
+          AND (
             t.title ILIKE $2 ESCAPE '\\'
             OR t.topic ILIKE $2 ESCAPE '\\'
             OR t.summary ILIKE $2 ESCAPE '\\'
