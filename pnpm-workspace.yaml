@@ -5,6 +5,6 @@ packages:
   - "adapters/*/*"
   - "infra/*/*"
 
-onlyBuiltDependencies:
-  - "@whiskeysockets/baileys"
-  - "protobufjs"
+allowBuilds:
+  '@whiskeysockets/baileys': true
+  protobufjs: true
