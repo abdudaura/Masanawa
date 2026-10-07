@@ -414,6 +414,7 @@ export function transitionTalkAiSeatQuote(
       }
       const expected = quote.mode === "sponsor" ? "pending_host" : "pending_admission";
       if (quote.state !== expected) throw new Error("AI Seat is not awaiting a Host decision");
+      if (at >= quote.expiresAt) throw new Error("AI Seat authorization has expired");
       const updated = next(quote, { state: "declined", declinedAt: at }, at);
       return Object.freeze({
         quote: updated,
