@@ -6,10 +6,13 @@
 - Task: implement durable audience questions for live Talks, including authenticated submit/list, Host visibility, and native mobile submission.
 - Exact owned paths:
   - `packages/talks/migrations/0006_talk_questions.sql`
-  - `services/gateway/src/talk_questions/**`
-  - `services/gateway/src/talk_question_routes.ts`
-  - focused Gateway composition/tests required to register the route
+  - `services/gateway/src/talk_moderation/model.ts`
+  - `services/gateway/src/talk_moderation/postgres_repository.ts`
+  - `services/gateway/src/talk_moderation/service.ts`
+  - `services/gateway/src/talk_moderation_routes.ts`
+  - focused Talk moderation tests
   - `apps/mobile/lib/src/talks/talk_questions.dart`
+  - `apps/mobile/lib/src/talks/talk_questions_http_transport.dart`
   - `apps/mobile/lib/src/state/talk_question_state.dart`
   - `apps/mobile/lib/src/screens/talks/talk_question_sheet.dart`
   - focused wiring/tests in `apps/mobile/lib/src/screens/talks/talk_screen.dart`
