@@ -79,9 +79,15 @@ async function syncCanonicalHostState(
       if (Date.parse(now) < Date.parse(session.hostReconnectDeadline)) return;
     }
 
+    const command =
+      type === "host_disconnected"
+        ? ({ type: "host_disconnected", expectedRevision: session.revision } as const)
+        : type === "host_reconnected"
+          ? ({ type: "host_reconnected", expectedRevision: session.revision } as const)
+          : ({ type: "host_grace_expired", expectedRevision: session.revision } as const);
     const transitioned = transitionTalkLiveSession(
       session,
-      { type, expectedRevision: session.revision },
+      command,
       toInstant(now),
       policy,
     );
