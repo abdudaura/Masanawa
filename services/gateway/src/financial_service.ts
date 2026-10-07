@@ -138,6 +138,9 @@ export interface FinancialService {
   listConversionRoutes(input: {
     readonly authorizationHeader: string | undefined;
   }): Promise<readonly NowPaymentsCurrencyEvidence[]>;
+  listWithdrawalRoutes(input: {
+    readonly authorizationHeader: string | undefined;
+  }): Promise<readonly NowPaymentsCurrencyEvidence[]>;
   createDeposit(input: {
     readonly authorizationHeader: string | undefined;
     readonly requestId: string;
@@ -857,6 +860,11 @@ export function createFinancialService(input: {
     async listConversionRoutes(request) {
       await authority(request.authorizationHeader);
       return Object.freeze((await qualifiedConversionRoutes()) ?? []);
+    },
+
+    async listWithdrawalRoutes(request) {
+      await authority(request.authorizationHeader);
+      return Object.freeze((await qualifiedWithdrawalRoutes()) ?? []);
     },
 
     async createDeposit(request) {
