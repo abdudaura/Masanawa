@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/screens/talks/talk_screen.dart';
 import 'package:masanawa/src/state/talk_ai_seat_state.dart';
+import 'package:masanawa/src/state/talk_participation_state.dart';
 import 'package:masanawa/src/state/talk_state.dart';
 import 'package:masanawa/src/talks/talk_ai_seat.dart';
 import 'package:masanawa/src/talks/talk_models.dart';
+import 'package:masanawa/src/talks/talk_participation.dart';
 import 'package:masanawa/src/theme/masanawa_theme.dart';
 
 class _SeatTransport implements TalkAiSeatTransport {
@@ -52,6 +54,41 @@ class _SeatTransport implements TalkAiSeatTransport {
         status: TalkAiSeatRequestStatus.pendingHost,
         message: 'Waiting for the Host.',
       );
+}
+
+class _ParticipationTransport implements TalkParticipationTransport {
+  TalkParticipationState state = const TalkParticipationState();
+  String? reactedWith;
+  bool? raised;
+
+  @override
+  Future<TalkParticipationState> load(String talkId) async => state;
+
+  @override
+  Future<TalkParticipationState> react({
+    required String talkId,
+    required String reaction,
+  }) async {
+    reactedWith = reaction;
+    state = TalkParticipationState(
+      handStatus: state.handStatus,
+      reaction: reaction,
+    );
+    return state;
+  }
+
+  @override
+  Future<TalkParticipationState> setHandRaised({
+    required String talkId,
+    required bool raised,
+  }) async {
+    this.raised = raised;
+    state = TalkParticipationState(
+      handStatus: raised ? TalkHandStatus.raised : TalkHandStatus.idle,
+      reaction: state.reaction,
+    );
+    return state;
+  }
 }
 
 class _TalkTransport implements TalkTransport {
@@ -121,12 +158,16 @@ class _TalkTransport implements TalkTransport {
 Widget _app({
   required TalkTransport talkTransport,
   Widget? home,
+  _ParticipationTransport? participation,
 }) {
   return ProviderScope(
     overrides: [
       talkTransportProvider.overrideWithValue(talkTransport),
       talkAiSeatTransportProvider.overrideWithValue(
         const _SeatTransport(),
+      ),
+      talkParticipationTransportProvider.overrideWithValue(
+        participation ?? _ParticipationTransport(),
       ),
     ],
     child: MaterialApp(
@@ -195,6 +236,61 @@ void main() {
     expect(find.text('Sponsor a Seat'), findsOneWidget);
     expect(find.text('Education Expert'), findsWidgets);
     expect(find.text('Sponsor'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('listener can react without leaving the Talk', (tester) async {
+    final transport = _TalkTransport();
+    final participation = _ParticipationTransport();
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        participation: participation,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('React'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('talk-reaction-❤️')));
+    await tester.pumpAndSettle();
+
+    expect(participation.reactedWith, '❤️');
+    expect(find.text('❤️'), findsWidgets);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('listener raises and lowers hand through Host-controlled request',
+      (tester) async {
+    final transport = _TalkTransport();
+    final participation = _ParticipationTransport();
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        participation: participation,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Raise hand'));
+    await tester.pumpAndSettle();
+    expect(find.text('Ask to speak?'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('raise-hand-confirm')));
+    await tester.pumpAndSettle();
+
+    expect(participation.raised, isTrue);
+    expect(find.text('Hand raised'), findsOneWidget);
+
+    await tester.tap(find.text('Hand raised'));
+    await tester.pumpAndSettle();
+    expect(find.text('Your hand is raised'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('raise-hand-confirm')));
+    await tester.pumpAndSettle();
+
+    expect(participation.raised, isFalse);
+    expect(find.text('Raise hand'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
