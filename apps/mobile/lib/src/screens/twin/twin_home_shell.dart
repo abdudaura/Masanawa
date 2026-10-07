@@ -109,7 +109,11 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
     return switch (index) {
       0 => _home(),
       1 => _create(),
-      2 => const ActivityScreen(),
+      2 => ActivityScreen(
+          onOpenTalk: (talkId) => context.push(
+            '/talk/' + Uri.encodeComponent(talkId),
+          ),
+        ),
       3 => _you(),
       _ => const SizedBox.shrink(),
     };

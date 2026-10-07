@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:masanawa/src/agents/twin_activity.dart';
+import 'package:masanawa/src/activity/talk_activity.dart';
 import 'package:masanawa/src/screens/twin/twin_home_shell.dart';
+import 'package:masanawa/src/state/talk_activity_state.dart';
 import 'package:masanawa/src/state/talk_state.dart';
-import 'package:masanawa/src/state/twin_activity_state.dart';
 import 'package:masanawa/src/talks/talk_models.dart';
 import 'package:masanawa/src/theme/masanawa_theme.dart';
 
@@ -50,6 +50,7 @@ class _FakeTalkTransport implements TalkTransport {
       hostName: 'You',
       isLive: true,
       listenerCount: 0,
+      viewerIsHost: true,
     );
   }
 
@@ -67,34 +68,29 @@ class _FakeTalkTransport implements TalkTransport {
   }
 }
 
-class _CountingActivityTransport implements TwinActivityTransport {
+class _CountingActivityTransport implements TalkActivityTransport {
   int loads = 0;
 
   @override
-  Future<TwinActivityView> load({int limit = 50}) async {
+  Future<List<TalkActivityItem>> load({
+    required TalkActivityFilter filter,
+    int limit = 60,
+  }) async {
     loads += 1;
-    return const TwinActivityView(
-      hasTwin: false,
-      characterId: null,
-      summary: TwinActivitySummary(
-        visitors: 0,
-        conversations: 0,
-        earningsCredits: 0,
-        pendingOwnerRequests: 0,
-      ),
-      items: [],
-    );
+    return const [];
   }
 }
 
 Widget _app({
-  TwinActivityTransport activity = const UnavailableTwinActivityTransport(),
+  TalkActivityTransport? activity,
   int initialIndex = 0,
 }) {
   return ProviderScope(
     overrides: [
       talkTransportProvider.overrideWithValue(const _FakeTalkTransport()),
-      twinActivityTransportProvider.overrideWithValue(activity),
+      talkActivityTransportProvider.overrideWithValue(
+        activity ?? _CountingActivityTransport(),
+      ),
     ],
     child: MaterialApp(
       theme: buildMasanawaTheme(brightness: Brightness.light),
@@ -138,11 +134,16 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('initial Activity tab opens Activity directly', (tester) async {
+  testWidgets('initial Activity tab opens new Activity directly', (tester) async {
     await tester.pumpWidget(_app(initialIndex: 2));
     await tester.pumpAndSettle();
 
-    expect(find.text('Your conversations will appear here.'), findsOneWidget);
+    expect(find.text('Nothing here yet.'), findsOneWidget);
+    expect(find.text('All'), findsOneWidget);
+    expect(find.text('Talks'), findsOneWidget);
+    expect(find.text('Money'), findsOneWidget);
+    expect(find.text('Social'), findsOneWidget);
+    expect(find.text('Your conversations will appear here.'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
