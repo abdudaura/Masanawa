@@ -202,7 +202,7 @@ export function createTalkAiSeatService(input: Readonly<{
     }
   }
 
-  return Object.freeze({
+  return Object.freeze<TalkAiSeatService>({
     async candidates(request) {
       const viewer = await identity(request.authorizationHeader);
       const talkId = bounded(request.talkId, "talk_id");
