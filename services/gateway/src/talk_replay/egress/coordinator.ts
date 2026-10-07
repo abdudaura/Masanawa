@@ -31,7 +31,7 @@ export function createTalkReplayCoordinator(input:Readonly<{
   objects:ReplayObjectStore;
   playbackTtlSeconds:number;
 }>):TalkReplayCoordinator{
-  return Object.freeze({
+  return Object.freeze<TalkReplayCoordinator>({
     async start(request){
       const existing=await input.media.current({
         tenantId:request.tenantId,talkId:request.talkId,recordingId:request.recordingId,
