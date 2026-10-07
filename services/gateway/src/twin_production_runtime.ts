@@ -185,6 +185,21 @@ export interface TwinProductionRuntime {
   readonly wallet: WalletProjectionService;
   readonly creditTransfer: CreditTransferService;
   readonly gifts: GiftService;
+  readonly creditGift?: {
+    execute(input: Readonly<{
+      tenantId: string;
+      requestId: string;
+      senderUserId: string;
+      recipientUserId: string;
+      amountCredits: number;
+    }>): Promise<Readonly<{
+      giftId: string;
+      amountCredits: number;
+      status: "completed";
+      completedAt: string;
+      replayed: boolean;
+    }>>;
+  };
   readonly twinAttribution: TwinAttributionService;
   readonly commissionAdmin: ReturnType<typeof createCommissionPolicyAdminService>;
   readonly providerValuationAdmin: ReturnType<typeof createProviderValuationPolicyAdminService>;
@@ -948,6 +963,46 @@ export function createTwinProductionRuntime(input: {
           completedAt: receipt.completedAt,
         });
       },
+    },
+  });
+
+  const creditGift = Object.freeze({
+    async execute(request: Readonly<{
+      tenantId: string;
+      requestId: string;
+      senderUserId: string;
+      recipientUserId: string;
+      amountCredits: number;
+    }>) {
+      if (request.senderUserId === request.recipientUserId) {
+        throw new Error("Cannot gift yourself");
+      }
+      const tenantId = request.tenantId as TenantId;
+      const senderUserId = request.senderUserId as UserId;
+      const recipientUserId = request.recipientUserId as UserId;
+      await guardMoney({
+        tenantId,
+        actorUserId: senderUserId,
+        recipientUserId,
+        amountCredits: request.amountCredits,
+        operation: "gift",
+      });
+      const { receipt, replayed } = await executeCreditMove({
+        tenantId,
+        requestId: request.requestId,
+        kind: "gift",
+        senderUserId,
+        recipientUserId,
+        characterId: null,
+        amountCredits: request.amountCredits,
+      });
+      return Object.freeze({
+        giftId: receipt.ledgerEntryId,
+        amountCredits: receipt.amountCredits,
+        status: "completed" as const,
+        completedAt: receipt.completedAt,
+        replayed,
+      });
     },
   });
 
@@ -3310,6 +3365,7 @@ export function createTwinProductionRuntime(input: {
     wallet,
     creditTransfer,
     gifts,
+    creditGift,
     twinAttribution,
     commissionAdmin,
     providerValuationAdmin,

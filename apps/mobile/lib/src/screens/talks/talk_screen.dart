@@ -4,13 +4,16 @@ import 'dart:ui' show FontFeature;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../state/talk_gift_state.dart';
 import '../../state/talk_host_controls_state.dart';
 import '../../state/talk_library_state.dart';
 import '../../state/talk_live_state.dart';
 import '../../state/talk_participation_state.dart';
 import '../../state/talk_replay_playback_state.dart';
 import '../../state/talk_state.dart';
+import '../../state/wallet_state.dart';
 import '../../talks/talk_ai_seat.dart';
+import '../../talks/talk_gift.dart';
 import '../../talks/talk_host_controls.dart';
 import '../../talks/talk_live.dart';
 import '../../talks/talk_live_audio_session.dart';
@@ -19,6 +22,7 @@ import '../../talks/talk_replay_playback.dart';
 import '../../talks/talk_models.dart';
 import '../../theme/masanawa_theme.dart';
 import 'add_ai_seat_sheet.dart';
+import 'talk_gift_sheet.dart';
 import 'talk_host_controls_sheets.dart';
 import 'talk_participation_sheets.dart';
 
@@ -345,6 +349,48 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
     }
   }
 
+  Future<void> _openGift(String hostName) async {
+    final callback = widget.onGift;
+    if (callback != null) {
+      callback();
+      return;
+    }
+
+    TalkGiftReceipt? receipt;
+    final sent = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (context) => TalkGiftSheet(
+        hostName: hostName,
+        onGift: (amountCredits) async {
+          try {
+            receipt = await ref.read(talkGiftTransportProvider).sendGift(
+                  talkId: widget.talkId,
+                  amountCredits: amountCredits,
+                );
+            ref.invalidate(walletProvider);
+            return true;
+          } catch (_) {
+            return false;
+          }
+        },
+      ),
+    );
+
+    if (!mounted || sent != true || receipt == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          receipt!.amountCredits.toString() +
+              ' Cr sent to ' +
+              receipt!.recipientName +
+              '.',
+        ),
+      ),
+    );
+  }
+
   Future<void> _toggleSaved(bool isSaved) async {
     if (_savingTalk) return;
     setState(() => _savingTalk = true);
@@ -451,7 +497,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
         onReact: _react,
         reaction: participation.reaction,
         onAddAi: _openAiSeatSheet,
-        onGift: widget.onGift,
+        onGift: widget.isHost ? null : () => _openGift(value.talk.hostName),
         handStatus: participation.handStatus,
         handBusy: _handBusy,
         onRaiseHand: widget.isHost
@@ -488,7 +534,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             onReact: _react,
             reaction: participation.reaction,
             onAddAi: _openAiSeatSheet,
-            onGift: widget.onGift,
+            onGift: widget.isHost ? null : () => _openGift(fallback.hostName),
             handStatus: participation.handStatus,
             handBusy: _handBusy,
             onRaiseHand: widget.isHost
@@ -530,7 +576,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             onReact: _react,
             reaction: participation.reaction,
             onAddAi: _openAiSeatSheet,
-            onGift: widget.onGift,
+            onGift: widget.isHost ? null : () => _openGift(fallback.hostName),
             handStatus: participation.handStatus,
             handBusy: _handBusy,
             onRaiseHand: widget.isHost

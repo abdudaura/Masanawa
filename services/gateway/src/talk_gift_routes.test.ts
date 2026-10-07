@@ -1,0 +1,214 @@
+import { describe, expect, it } from "vitest";
+import Fastify from "fastify";
+import type {
+  TalkGiftActivitySink,
+  TalkGiftExecutor,
+  TalkGiftRepository,
+} from "./talk_gifts/model.js";
+import { createTalkGiftService } from "./talk_gifts/service.js";
+import { registerTalkGiftRoutes } from "./talk_gift_routes.js";
+
+function app(input: Readonly<{
+  viewerUserId?: string;
+  replayed?: boolean;
+  fail?: Error;
+  activityFail?: boolean;
+}> = {}) {
+  const activity: Parameters<TalkGiftActivitySink["append"]>[0][] = [];
+  const executions: Parameters<TalkGiftExecutor["execute"]>[0][] = [];
+
+  const repository: TalkGiftRepository = {
+    async resolveTarget({ tenantId, talkId }) {
+      expect(tenantId).toBe("tenant_1");
+      if (talkId === "talk_missing") return null;
+      return Object.freeze({
+        talkId,
+        talkTitle: "Can AI create more jobs?",
+        hostUserId: "host_1",
+        hostName: "Amina",
+      });
+    },
+  };
+
+  const executor: TalkGiftExecutor = {
+    async execute(request) {
+      executions.push(request);
+      if (input.fail) throw input.fail;
+      return Object.freeze({
+        giftId: "ledger_1",
+        amountCredits: request.amountCredits,
+        status: "completed" as const,
+        completedAt: "2026-10-07T10:00:00.000Z",
+        replayed: input.replayed ?? false,
+      });
+    },
+  };
+
+  const server = Fastify();
+  registerTalkGiftRoutes(
+    server,
+    createTalkGiftService({
+      repository,
+      authorizer: {
+        async authorize({ authorizationHeader }) {
+          if (authorizationHeader !== "Bearer viewer") {
+            throw Object.assign(new Error("UNAUTHORIZED"), { statusCode: 401 });
+          }
+          return {
+            tenantId: "tenant_1" as never,
+            userId: (input.viewerUserId ?? "listener_1") as never,
+            profile: {
+              tenantId: "tenant_1" as never,
+              userId: (input.viewerUserId ?? "listener_1") as never,
+              name: "Listener",
+              email: null,
+              phone: null,
+              locale: "en",
+              createdAt: "2026-10-07T00:00:00.000Z",
+            },
+          };
+        },
+      },
+      executor,
+      activity: {
+        async append(event) {
+          if (input.activityFail) throw new Error('activity unavailable');
+          activity.push(event);
+        },
+      },
+    }),
+  );
+
+  return { server, activity, executions };
+}
+
+describe("Talk Host gift route", () => {
+  it("resolves the real Host server-side and sends exact Credits", async () => {
+    const { server, activity, executions } = app();
+
+    const response = await server.inject({
+      method: "POST",
+      url: "/talks/talk_12345678/gifts",
+      headers: { authorization: "Bearer viewer" },
+      payload: {
+        requestId: "gift-request-1",
+        amountCredits: 100,
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      giftId: "ledger_1",
+      talkId: "talk_12345678",
+      recipientUserId: "host_1",
+      recipientName: "Amina",
+      amountCredits: 100,
+      status: "completed",
+      completedAt: "2026-10-07T10:00:00.000Z",
+    });
+    expect(executions).toEqual([
+      {
+        tenantId: "tenant_1",
+        requestId: "gift-request-1",
+        senderUserId: "listener_1",
+        recipientUserId: "host_1",
+        amountCredits: 100,
+      },
+    ]);
+    expect(activity).toHaveLength(1);
+    expect(activity[0]).toMatchObject({
+      recipientUserId: "host_1",
+      senderUserId: "listener_1",
+      talkId: "talk_12345678",
+      amountCredits: 100,
+    });
+  });
+
+  it("rejects client-supplied recipient authority", async () => {
+    const { server, executions } = app();
+    const response = await server.inject({
+      method: "POST",
+      url: "/talks/talk_12345678/gifts",
+      headers: { authorization: "Bearer viewer" },
+      payload: {
+        requestId: "gift-request-1",
+        amountCredits: 100,
+        recipientUserId: "attacker_selected",
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(executions).toHaveLength(0);
+  });
+
+  it("forbids gifting your own Talk", async () => {
+    const { server, executions } = app({ viewerUserId: "host_1" });
+    const response = await server.inject({
+      method: "POST",
+      url: "/talks/talk_12345678/gifts",
+      headers: { authorization: "Bearer viewer" },
+      payload: {
+        requestId: "gift-request-self",
+        amountCredits: 50,
+      },
+    });
+
+    expect(response.statusCode).toBe(409);
+    expect(executions).toHaveLength(0);
+  });
+
+  it("does not append duplicate Activity on an idempotent replay", async () => {
+    const { server, activity } = app({ replayed: true });
+    const response = await server.inject({
+      method: "POST",
+      url: "/talks/talk_12345678/gifts",
+      headers: { authorization: "Bearer viewer" },
+      payload: {
+        requestId: "gift-request-replay",
+        amountCredits: 500,
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(activity).toHaveLength(0);
+  });
+
+  it("does not turn a completed ledger gift into failure if Activity is down", async () => {
+    const { server, executions } = app({ activityFail: true });
+    const response = await server.inject({
+      method: "POST",
+      url: "/talks/talk_12345678/gifts",
+      headers: { authorization: "Bearer viewer" },
+      payload: {
+        requestId: "gift-request-activity-down",
+        amountCredits: 100,
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(executions).toHaveLength(1);
+    expect(response.json()).toMatchObject({
+      giftId: "ledger_1",
+      amountCredits: 100,
+      status: "completed",
+    });
+  });
+
+  it("returns a friendly conflict for insufficient Credits", async () => {
+    const { server } = app({ fail: new Error("Insufficient customer-credit balance") });
+    const response = await server.inject({
+      method: "POST",
+      url: "/talks/talk_12345678/gifts",
+      headers: { authorization: "Bearer viewer" },
+      payload: {
+        requestId: "gift-request-low-balance",
+        amountCredits: 1000,
+      },
+    });
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toMatchObject({
+      message: "talks.gift.insufficient_credits",
+    });
+  });
+});
