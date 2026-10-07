@@ -445,6 +445,27 @@
       "description": "Bounded graceful shutdown timeout."
     },
     {
+      "name": "MASANAWA_TELEGRAM_BOT_TOKEN",
+      "owner": "gateway/channels",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Telegram Bot API token used only when MASANAWA_TELEGRAM_ENABLED is true."
+    },
+    {
+      "name": "MASANAWA_TELEGRAM_ENABLED",
+      "owner": "gateway/channels",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Enables the Telegram customer channel webhook and delivery adapter."
+    },
+    {
+      "name": "MASANAWA_TELEGRAM_WEBHOOK_SECRET",
+      "owner": "gateway/channels",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Telegram webhook secret token validated on every inbound update."
+    },
+    {
       "name": "MASANAWA_TEST_DATABASE_URL",
       "owner": "test",
       "classification": "secret",
@@ -480,6 +501,48 @@
       "classification": "public",
       "requiredIn": [],
       "description": "Twin paid-voice metering unit duration in seconds."
+    },
+    {
+      "name": "MASANAWA_WHATSAPP_ACCESS_TOKEN",
+      "owner": "gateway/channels",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Meta WhatsApp Cloud API access token used for media retrieval and outbound delivery."
+    },
+    {
+      "name": "MASANAWA_WHATSAPP_APP_SECRET",
+      "owner": "gateway/channels",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Meta application secret used to verify WhatsApp webhook HMAC signatures."
+    },
+    {
+      "name": "MASANAWA_WHATSAPP_ENABLED",
+      "owner": "gateway/channels",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Enables the WhatsApp customer channel webhook and delivery adapter."
+    },
+    {
+      "name": "MASANAWA_WHATSAPP_GRAPH_VERSION",
+      "owner": "gateway/channels",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Explicit Meta Graph API version used by the WhatsApp channel adapter."
+    },
+    {
+      "name": "MASANAWA_WHATSAPP_PHONE_NUMBER_ID",
+      "owner": "gateway/channels",
+      "classification": "public",
+      "requiredIn": [],
+      "description": "Meta WhatsApp Cloud API phone-number identifier used for outbound messages."
+    },
+    {
+      "name": "MASANAWA_WHATSAPP_VERIFY_TOKEN",
+      "owner": "gateway/channels",
+      "classification": "secret",
+      "requiredIn": [],
+      "description": "Private challenge token used when Meta verifies the WhatsApp webhook endpoint."
     },
     {
       "name": "MASANAWA_WORKER_HOST",
