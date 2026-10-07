@@ -53,6 +53,41 @@ async function currentState(
   );
   if (!talk.rows[0]) return null;
 
+  const staleBefore = new Date(Date.parse(now) - 15_000).toISOString();
+  const stale = await pool.query<{ role: "host" | "listener" }>(
+    `UPDATE talks.live_sessions
+        SET connection_state = 'disconnected',
+            disconnected_at = COALESCE(disconnected_at, $3)
+      WHERE tenant_id = $1
+        AND talk_id = $2
+        AND connection_state = 'connected'
+        AND last_seen_at < $4
+      RETURNING role`,
+    [tenantId, talkId, now, staleBefore],
+  );
+  if (stale.rows.some((row) => row.role === "host")) {
+    const graceEndsAt = new Date(Date.parse(now) + 30_000).toISOString();
+    await pool.query(
+      `INSERT INTO talks.live_runtime (
+        tenant_id, talk_id, host_user_id, state,
+        reconnect_grace_ends_at, updated_at
+      ) VALUES ($1,$2,$3,'reconnecting',$4,$5)
+      ON CONFLICT (tenant_id, talk_id) DO UPDATE
+        SET state = 'reconnecting',
+            reconnect_grace_ends_at = EXCLUDED.reconnect_grace_ends_at,
+            updated_at = EXCLUDED.updated_at`,
+      [tenantId, talkId, talk.rows[0].host_user_id, graceEndsAt, now],
+    );
+    await pool.query(
+      `UPDATE talks.talks
+          SET state = 'reconnecting',
+              updated_at = $3
+        WHERE tenant_id = $1 AND talk_id = $2
+          AND state <> 'ended'`,
+      [tenantId, talkId, now],
+    );
+  }
+
   const runtime = await pool.query<RuntimeRow>(
     `SELECT state, reconnect_grace_ends_at
        FROM talks.live_runtime
