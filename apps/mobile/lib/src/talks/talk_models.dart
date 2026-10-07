@@ -154,6 +154,7 @@ abstract interface class TalkTransport {
   Future<TalkDiscoveryItem> createTalk({
     required String topic,
     String? title,
+    bool recordReplay = false,
   });
   Future<TalkComment> addComment({
     required String talkId,
