@@ -11,6 +11,7 @@ import 'package:masanawa/src/state/talk_library_state.dart';
 import 'package:masanawa/src/state/talk_host_controls_state.dart';
 import 'package:masanawa/src/state/talk_live_state.dart';
 import 'package:masanawa/src/state/talk_participation_state.dart';
+import 'package:masanawa/src/state/talk_poll_state.dart';
 import 'package:masanawa/src/state/talk_question_state.dart';
 import 'package:masanawa/src/state/talk_replay_playback_state.dart';
 import 'package:masanawa/src/state/talk_state.dart';
@@ -21,6 +22,7 @@ import 'package:masanawa/src/talks/talk_live.dart';
 import 'package:masanawa/src/talks/talk_live_audio_session.dart';
 import 'package:masanawa/src/talks/talk_models.dart';
 import 'package:masanawa/src/talks/talk_participation.dart';
+import 'package:masanawa/src/talks/talk_polls.dart';
 import 'package:masanawa/src/talks/talk_questions.dart';
 import 'package:masanawa/src/talks/talk_replay_playback.dart';
 import 'package:masanawa/src/theme/masanawa_theme.dart';
@@ -369,6 +371,108 @@ class _ParticipationTransport implements TalkParticipationTransport {
   }
 }
 
+class _PollTransport implements TalkPollTransport {
+  _PollTransport({this.current});
+
+  TalkPoll? current;
+  final List<({String question, List<String> options})> created = [];
+  final List<String> voted = [];
+  int closed = 0;
+
+  static TalkPoll active() => TalkPoll(
+        pollId: 'poll-1',
+        question: 'Which topic next?',
+        isOpen: true,
+        options: const [
+          TalkPollOption(optionId: 'jobs', label: 'Jobs', voteCount: 2),
+          TalkPollOption(
+            optionId: 'education',
+            label: 'Education',
+            voteCount: 1,
+          ),
+        ],
+        totalVotes: 3,
+        createdAt: DateTime(2026, 10, 7, 11, 30),
+      );
+
+  @override
+  Future<TalkPoll?> load(String talkId) async => current;
+
+  @override
+  Future<TalkPoll> create({
+    required String talkId,
+    required String question,
+    required List<String> options,
+  }) async {
+    created.add((question: question, options: List.of(options)));
+    current = TalkPoll(
+      pollId: 'poll-created',
+      question: question,
+      isOpen: true,
+      options: [
+        for (var i = 0; i < options.length; i++)
+          TalkPollOption(
+            optionId: 'created-$i',
+            label: options[i],
+            voteCount: 0,
+          ),
+      ],
+      totalVotes: 0,
+      createdAt: DateTime(2026, 10, 7, 11, 31),
+    );
+    return current!;
+  }
+
+  @override
+  Future<TalkPoll> vote({
+    required String talkId,
+    required String pollId,
+    required String optionId,
+  }) async {
+    voted.add(optionId);
+    final source = current!;
+    current = TalkPoll(
+      pollId: source.pollId,
+      question: source.question,
+      isOpen: source.isOpen,
+      options: [
+        for (final option in source.options)
+          TalkPollOption(
+            optionId: option.optionId,
+            label: option.label,
+            voteCount:
+                option.optionId == optionId ? option.voteCount + 1 : option.voteCount,
+          ),
+      ],
+      totalVotes: source.totalVotes + 1,
+      myOptionId: optionId,
+      createdAt: source.createdAt,
+    );
+    return current!;
+  }
+
+  @override
+  Future<TalkPoll> close({
+    required String talkId,
+    required String pollId,
+  }) async {
+    closed += 1;
+    final source = current!;
+    final result = TalkPoll(
+      pollId: source.pollId,
+      question: source.question,
+      isOpen: false,
+      options: source.options,
+      totalVotes: source.totalVotes,
+      myOptionId: source.myOptionId,
+      createdAt: source.createdAt,
+      closedAt: DateTime(2026, 10, 7, 11, 32),
+    );
+    current = null;
+    return result;
+  }
+}
+
 class _QuestionTransport implements TalkQuestionTransport {
   final List<String> submitted = [];
   List<TalkQuestion> queue = [
@@ -482,6 +586,7 @@ Widget _app({
   Widget? home,
   _ParticipationTransport? participation,
   _HostControlsTransport? hostControls,
+  _PollTransport? polls,
   _QuestionTransport? questions,
   _FakeLiveAudioController? liveAudio,
   _FakeReplayPlaybackController? replayPlayback,
@@ -499,6 +604,9 @@ Widget _app({
       ),
       talkHostControlsTransportProvider.overrideWithValue(
         hostControls ?? _HostControlsTransport(),
+      ),
+      talkPollTransportProvider.overrideWithValue(
+        polls ?? _PollTransport(),
       ),
       talkQuestionTransportProvider.overrideWithValue(
         questions ?? _QuestionTransport(),
@@ -606,6 +714,78 @@ void main() {
 
     expect(questions.submitted, ['What evidence supports that?']);
     expect(find.text('Question sent to the Host.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('listener can vote in the active Talk poll', (tester) async {
+    final transport = _TalkTransport();
+    final polls = _PollTransport(current: _PollTransport.active());
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        polls: polls,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('talk-poll-card')), findsOneWidget);
+    expect(find.text('Which topic next?'), findsOneWidget);
+    await tester.tap(
+      find.byKey(const ValueKey('talk-poll-option-education')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(polls.voted, ['education']);
+    expect(find.text('4 votes'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Host can start and close an inline Talk poll', (tester) async {
+    final transport = _TalkTransport();
+    final polls = _PollTransport();
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        polls: polls,
+        home: const TalkScreen(
+          talkId: 'talk-1',
+          initialTalk: _TalkTransport.talk,
+          isHost: true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('talk-poll-start')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('talk-poll-start')));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const ValueKey('talk-poll-question')),
+      'Which topic next?',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('talk-poll-option-0')),
+      'Jobs',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('talk-poll-option-1')),
+      'Education',
+    );
+    await tester.tap(find.byKey(const ValueKey('talk-poll-create')));
+    await tester.pumpAndSettle();
+
+    expect(polls.created.single.question, 'Which topic next?');
+    expect(polls.created.single.options, ['Jobs', 'Education']);
+    expect(find.byKey(const ValueKey('talk-poll-card')), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('talk-poll-close')));
+    await tester.pumpAndSettle();
+
+    expect(polls.closed, 1);
+    expect(find.byKey(const ValueKey('talk-poll-start')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
