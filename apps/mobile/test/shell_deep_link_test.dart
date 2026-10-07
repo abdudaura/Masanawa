@@ -22,6 +22,17 @@ void main() {
     );
   });
 
+  test('public Talk links resolve to the canonical Talk route', () {
+    expect(
+      shellDeepLinkRoute(Uri.parse('https://masanawa.com/talk/talk-123')),
+      '/talk/talk-123',
+    );
+    expect(
+      shellDeepLinkRoute(Uri.parse('masanawa://talk/talk-123')),
+      '/talk/talk-123',
+    );
+  });
+
   test('owner request notification opens the Activity tab', () {
     expect(
       shellDeepLinkRoute(Uri.parse('masanawa://activity')),
@@ -48,6 +59,13 @@ void main() {
       'https://masanawa.com:444/twin/amina_bello',
       'https://masanawa.com/twin/ab',
       'https://masanawa.com/twin/amina/bello',
+      'https://masanawa.com/talk/ab',
+      'https://masanawa.com/talk/talk-123?host=1',
+      'https://masanawa.com/talk/talk%2Fsecret',
+      'https://evil.example/talk/talk-123',
+      'masanawa://talk/ab',
+      'masanawa://talk/talk-123/extra',
+      'masanawa://talk/talk-123?host=1',
       'masanawa://evil/character_abc',
       'masanawa://user@chat/character_abc',
       'masanawa://chat:42/character_abc',
@@ -87,6 +105,17 @@ void main() {
     expect(
       shellDeepLinkRoute(pending.take(ready: true)!),
       '/twin/amina_bello',
+    );
+    expect(pending.take(ready: true), isNull);
+  });
+
+  test('cold-start public Talk link also waits for authentication', () {
+    final pending = PendingDeepLink();
+    pending.offer(Uri.parse('https://masanawa.com/talk/talk-123'));
+    expect(pending.take(ready: false), isNull);
+    expect(
+      shellDeepLinkRoute(pending.take(ready: true)!),
+      '/talk/talk-123',
     );
     expect(pending.take(ready: true), isNull);
   });
