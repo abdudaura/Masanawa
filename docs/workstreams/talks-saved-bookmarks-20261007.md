@@ -9,9 +9,9 @@
   - `apps/mobile/lib/**` only where required for Talk save UI/state
   - this claim file
 - Shared-contract dependencies: existing Talk identity/authentication and public safety enforcement; no migration registry or provider changes unless unavoidable.
-- Current step: inspect existing Talk service/repository/routes/mobile contracts and implement the smallest durable end-to-end save primitive without overlapping active lanes.
+- Current step: released after repository audit found saved/bookmark implementation already merged as `db68cdc450de891bfa5db7ce9217584870a04190`.
 - Last update: 2026-10-07T11:13:00Z
-- Implementation status: claimed
-- Verification status: pending
+- Implementation status: no implementation changes made; claim released
+- Verification status: overlap check complete
 - Deployment status: not deployed
-- Handoff evidence: pending
+- Handoff evidence: merged saved/bookmark work already exists; do not continue this branch.
