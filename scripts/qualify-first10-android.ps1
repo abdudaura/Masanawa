@@ -41,11 +41,18 @@ try {
   if ($LASTEXITCODE -ne 0) { throw "Unable to determine Git HEAD." }
   Write-Host "HEAD: $head"
 
-  Invoke-Checked git status --short
+  $dirty = (& git status --porcelain -- apps/mobile).Trim()
+  if ($LASTEXITCODE -ne 0) { throw "Unable to inspect mobile working tree." }
+  if (-not [string]::IsNullOrWhiteSpace($dirty)) {
+    Write-Host $dirty -ForegroundColor Red
+    throw "Refusing to build: apps/mobile contains uncommitted or untracked changes. Clean/revert the rejected local edits first."
+  }
+
   Invoke-Checked flutter --version
 
   Push-Location $mobileDir
   try {
+    Invoke-Checked flutter clean
     Invoke-Checked flutter pub get
     Invoke-Checked flutter analyze
     Invoke-Checked flutter test
