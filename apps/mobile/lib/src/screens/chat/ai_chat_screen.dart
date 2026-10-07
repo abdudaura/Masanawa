@@ -652,6 +652,12 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
     setState(() => _finishingTwin = true);
     try {
+      if (_inlineVoiceSession != null) {
+        await _stopInlineLiveVoice(outcome: 'completed');
+      }
+      _consumeHiddenTwinInput();
+      await _twinFactExtraction;
+      if (!mounted) return;
       final chat = ref.read(aiChatProvider.notifier);
       final summary = await chat.summarizeTwinInterview(
         widget.characterId,
@@ -2181,6 +2187,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     final shellTransport = _inlineShellTransport;
     final characterId = _inlineVoiceCharacterId;
     try {
+      _consumeHiddenTwinInput();
       await _inlineTranscriptSub?.cancel();
       await _inlineInputTranscriptSub?.cancel();
       await _inlineVoiceStateSub?.cancel();
