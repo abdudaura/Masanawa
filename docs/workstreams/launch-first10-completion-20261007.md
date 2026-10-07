@@ -106,9 +106,11 @@ The old language/form onboarding was replaced by:
 
 Only Twin-setup Live sessions receive input transcription. That transcript is
 never displayed or stored as chat text; it is reduced into bounded structured
-Twin facts. Finish Twin now stops/flushed the live interview, waits for the
-last fact extraction, summarizes the interview and provisions the canonical
-Twin profile/avatar/public link.
+Twin facts. Once Gwani has durable facts for personality, boundaries, purpose
+and interaction style, setup completes automatically: the live interview is
+stopped/flushed, the last fact extraction is awaited, the interview is
+summarized and the canonical Twin profile/avatar/public link is provisioned.
+The visible Finish Twin action remains only as a recovery fallback.
 
 ### 6. Twin share / deep link / free public chat — code complete
 
@@ -220,6 +222,7 @@ available.
 ## Production environment additions
 
 Registered/documented:
+- `MASANAWA_FLUTTERWAVE_VERIFY_ON_START`
 - `MASANAWA_WHATSAPP_ENABLED`
 - `MASANAWA_WHATSAPP_VERIFY_TOKEN`
 - `MASANAWA_WHATSAPP_APP_SECRET`
