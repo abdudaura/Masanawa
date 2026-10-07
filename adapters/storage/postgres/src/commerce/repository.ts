@@ -56,7 +56,7 @@ const protectedDebitKinds = new Set<CommerceAccountRef["kind"]>([
   "available-earnings",
 ]);
 
-async function readBalanceWithClient(
+export async function readCommerceBalanceWithClient(
   client: import("pg").PoolClient,
   account: CommerceAccountRef,
 ): Promise<number> {
@@ -86,7 +86,7 @@ async function readBalanceWithClient(
   return balance;
 }
 
-async function postTransferWithClient(
+export async function postCommerceTransferWithClient(
   client: import("pg").PoolClient,
   transferInput: CommerceLedgerTransfer,
 ): Promise<CommerceLedgerTransfer> {
@@ -114,7 +114,7 @@ async function postTransferWithClient(
     await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
       `commerce:account:${transfer.debit.tenantId}:${transfer.debit.kind}:${transfer.debit.userId ?? "-"}:${transfer.debit.characterId ?? "-"}`,
     ]);
-    const balance = await readBalanceWithClient(client, transfer.debit);
+    const balance = await readCommerceBalanceWithClient(client, transfer.debit);
     if (balance < transfer.amountCredits) {
       throw conflict(
         "commerce.insufficient_balance",
@@ -356,7 +356,7 @@ export function createPostgresCommerceRepository(pool: Pool): CommerceRepository
               "Fulfillment admission transfer does not match admission identity",
             );
           }
-          await postTransferWithClient(client, transfer);
+          await postCommerceTransferWithClient(client, transfer);
         }
 
         return fulfillmentFromDefinition(inserted.rows[0]!.definition);
@@ -465,7 +465,7 @@ export function createPostgresCommerceRepository(pool: Pool): CommerceRepository
               "Settlement transfer does not match fulfillment completion",
             );
           }
-          await postTransferWithClient(client, transfer);
+          await postCommerceTransferWithClient(client, transfer);
         }
 
         return completionFromDefinition(inserted.rows[0]!.definition);
@@ -475,7 +475,7 @@ export function createPostgresCommerceRepository(pool: Pool): CommerceRepository
     async postTransfer(input) {
       return withTransaction(
         pool,
-        (client) => postTransferWithClient(client, input),
+        (client) => postCommerceTransferWithClient(client, input),
       );
     },
 
@@ -483,7 +483,7 @@ export function createPostgresCommerceRepository(pool: Pool): CommerceRepository
       const account = normalizeCommerceAccountRef(input);
       return withTransaction(
         pool,
-        (client) => readBalanceWithClient(client, account),
+        (client) => readCommerceBalanceWithClient(client, account),
         { isolation: "repeatable read", readOnly: true },
       );
     },
@@ -499,7 +499,7 @@ export function createPostgresCommerceRepository(pool: Pool): CommerceRepository
         async (client) =>
           Promise.all(
             refs.map((ref) =>
-              readBalanceWithClient(client, normalizeCommerceAccountRef(ref)),
+              readCommerceBalanceWithClient(client, normalizeCommerceAccountRef(ref)),
             ),
           ),
         { isolation: "repeatable read", readOnly: true },

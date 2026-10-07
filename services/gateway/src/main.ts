@@ -167,6 +167,8 @@ import { createLiveKitTalkMediaTokenIssuer } from "./talk_live/livekit_media.js"
 import { createLiveKitTalkMediaAdmin } from "./talk_moderation/livekit_admin.js";
 import { createTalkModerationService, type TalkModerationAuthorizer } from "./talk_moderation/service.js";
 import { createPostgresTalkModerationRepository } from "./talk_moderation/postgres_repository.js";
+import { createTalkAiSeatService, type TalkAiSeatAuthorizer } from "./talk_ai_seats/service.js";
+import { createPostgresTalkAiSeatRepository } from "./talk_ai_seats/postgres_repository.js";
 import {
   createTalkProfileService,
   type TalkProfileAuthorizer,
@@ -284,6 +286,7 @@ export interface ServiceDatabaseDependency {
   readonly talks?: ReturnType<typeof createPostgresTalkRepository>;
   readonly talkLive?: ReturnType<typeof createPostgresTalkLiveRepository>;
   readonly talkModeration?: ReturnType<typeof createPostgresTalkModerationRepository>;
+  readonly talkAiSeats?: ReturnType<typeof createPostgresTalkAiSeatRepository>;
   readonly talkProfiles?: ReturnType<typeof createPostgresTalkProfileRepository>;
   readonly talkActivity?: ReturnType<typeof createPostgresTalkActivityRepository>;
   readonly talkSearch?: ReturnType<typeof createPostgresTalkSearchRepository>;
@@ -433,6 +436,7 @@ function createDefaultDatabaseDependency(
     talks: createPostgresTalkRepository(database.pool),
     talkLive: createPostgresTalkLiveRepository(database.pool),
     talkModeration: createPostgresTalkModerationRepository(database.pool),
+    talkAiSeats: createPostgresTalkAiSeatRepository(database.pool),
     talkProfiles: createPostgresTalkProfileRepository(database.pool),
     talkActivity: createPostgresTalkActivityRepository(database.pool),
     talkSearch: createPostgresTalkSearchRepository(database.pool),
@@ -575,6 +579,7 @@ export async function startGatewayService(
   let talkAuthorizer: TalkAuthorizer | undefined;
   let talkLiveAuthorizer: TalkLiveAuthorizer | undefined;
   let talkModerationAuthorizer: TalkModerationAuthorizer | undefined;
+  let talkAiSeatAuthorizer: TalkAiSeatAuthorizer | undefined;
   let talkProfileAuthorizer: TalkProfileAuthorizer | undefined;
   let talkActivityAuthorizer: TalkActivityAuthorizer | undefined;
   let talkSearchAuthorizer: TalkSearchAuthorizer | undefined;
@@ -715,6 +720,7 @@ export async function startGatewayService(
     talkAuthorizer = customerSessions;
     talkLiveAuthorizer = customerSessions;
     talkModerationAuthorizer = customerSessions;
+    talkAiSeatAuthorizer = customerSessions;
     talkProfileAuthorizer = customerSessions;
     talkActivityAuthorizer = customerSessions;
     talkSearchAuthorizer = customerSessions;
@@ -1812,6 +1818,58 @@ export async function startGatewayService(
         })
       : undefined);
 
+  const talkAiSeatHostShareBps = boundedEnvInteger(
+    env.MASANAWA_TALK_AI_SEAT_HOST_SHARE_BPS,
+    2000,
+    0,
+    10_000,
+    "MASANAWA_TALK_AI_SEAT_HOST_SHARE_BPS",
+  );
+  const talkTwinOwnerShareBps = boundedEnvInteger(
+    env.MASANAWA_TALK_TWIN_OWNER_SHARE_BPS,
+    5000,
+    0,
+    10_000,
+    "MASANAWA_TALK_TWIN_OWNER_SHARE_BPS",
+  );
+  if (talkAiSeatHostShareBps + talkTwinOwnerShareBps > 10_000) {
+    throw new TypeError("Talk AI Seat Host and Twin owner shares cannot exceed 100%");
+  }
+
+  const composedTalkAiSeats =
+    options.appOptions?.talkAiSeats ??
+    (database.talkAiSeats && talkAiSeatAuthorizer
+      ? createTalkAiSeatService({
+          repository: database.talkAiSeats,
+          authorizer: talkAiSeatAuthorizer,
+          pricing: {
+            expertPriceCredits: boundedEnvInteger(
+              env.MASANAWA_TALK_EXPERT_SEAT_PRICE_CREDITS,
+              100,
+              1,
+              1_000_000_000,
+              "MASANAWA_TALK_EXPERT_SEAT_PRICE_CREDITS",
+            ),
+            twinPriceCredits: boundedEnvInteger(
+              env.MASANAWA_TALK_TWIN_SEAT_PRICE_CREDITS,
+              120,
+              1,
+              1_000_000_000,
+              "MASANAWA_TALK_TWIN_SEAT_PRICE_CREDITS",
+            ),
+            hostShareBasisPoints: talkAiSeatHostShareBps,
+            twinOwnerShareBasisPoints: talkTwinOwnerShareBps,
+            quoteTtlSeconds: boundedEnvInteger(
+              env.MASANAWA_TALK_AI_SEAT_QUOTE_TTL_SECONDS,
+              120,
+              15,
+              3600,
+              "MASANAWA_TALK_AI_SEAT_QUOTE_TTL_SECONDS",
+            ),
+          },
+        })
+      : undefined);
+
   const composedTalkModeration =
     options.appOptions?.talkModeration ??
     (database.talkModeration && talkModerationAuthorizer
@@ -1819,6 +1877,7 @@ export async function startGatewayService(
           repository: database.talkModeration,
           authorizer: talkModerationAuthorizer,
           ...(talkMediaAdmin ? { mediaAdmin: talkMediaAdmin } : {}),
+          ...(composedTalkAiSeats ? { aiSeats: composedTalkAiSeats } : {}),
         })
       : undefined);
 
@@ -1838,6 +1897,7 @@ export async function startGatewayService(
       ...(customerAuth ? { customerAuth } : {}),
       ...(composedTalks ? { talks: composedTalks } : {}),
       ...(composedTalkModeration ? { talkModeration: composedTalkModeration } : {}),
+      ...(composedTalkAiSeats ? { talkAiSeats: composedTalkAiSeats } : {}),
       ...(composedTalkLive ? { talkLive: composedTalkLive } : {}),
       ...(composedTalkProfiles ? { talkProfiles: composedTalkProfiles } : {}),
       ...(composedTalkActivity ? { talkActivity: composedTalkActivity } : {}),
