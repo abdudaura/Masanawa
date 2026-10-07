@@ -2,7 +2,7 @@
 
 ## Canonical branch rule — 2026-10-07
 
-**`main` is the only canonical product branch for local pulls/builds after the current consolidation lands.**
+**`main` is the only canonical product branch for local pulls/builds.**
 Work/release branches are implementation history and must never be described as “latest” to a local developer.
 New work may use isolated branches, but it must merge back to `main`; local APK/build instructions target
 `origin/main` unless an explicit temporary development task says otherwise.
