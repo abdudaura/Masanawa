@@ -50,7 +50,11 @@ class LiveKitTalkLiveRoom implements TalkLiveRoom {
       _room = room;
       _mayPublishMicrophone = publishMicrophone;
       if (publishMicrophone) {
-        await room.localParticipant.setMicrophoneEnabled(true);
+        final participant = room.localParticipant;
+        if (participant == null) {
+          throw StateError('Live audio participant is unavailable.');
+        }
+        await participant.setMicrophoneEnabled(true);
       }
     } catch (_) {
       await room.dispose();
@@ -65,7 +69,9 @@ class LiveKitTalkLiveRoom implements TalkLiveRoom {
     if (!_mayPublishMicrophone && enabled) {
       throw StateError('This listener cannot publish microphone audio.');
     }
-    await room.localParticipant.setMicrophoneEnabled(
+    final participant = room.localParticipant;
+    if (participant == null) return;
+    await participant.setMicrophoneEnabled(
       enabled && _mayPublishMicrophone,
     );
   }
@@ -76,8 +82,9 @@ class LiveKitTalkLiveRoom implements TalkLiveRoom {
     _room = null;
     if (room == null) return;
     try {
-      if (_mayPublishMicrophone) {
-        await room.localParticipant.setMicrophoneEnabled(false);
+      final participant = room.localParticipant;
+      if (_mayPublishMicrophone && participant != null) {
+        await participant.setMicrophoneEnabled(false);
       }
     } catch (_) {
       // The room may already be disconnected.
