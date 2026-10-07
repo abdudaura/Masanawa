@@ -160,6 +160,10 @@ import { createTalkService, type TalkAuthorizer } from "./talks/service.js";
 import { createPostgresTalkRepository } from "./talks/postgres_repository.js";
 import { createTalkReplayService, type TalkReplayAuthorizer } from "./talk_replay/service.js";
 import { createPostgresTalkReplayRepository } from "./talk_replay/postgres_repository.js";
+import { createPostgresReplayMediaRepository } from "./talk_replay/egress/postgres_media_repository.js";
+import { createLiveKitReplayEgress } from "./talk_replay/egress/livekit_egress.js";
+import { createReplayObjectStore } from "./talk_replay/playback/s3_object_store.js";
+import { createTalkReplayCoordinator } from "./talk_replay/egress/coordinator.js";
 import {
   createTalkLiveService,
   type TalkLiveAuthorizer,
@@ -287,6 +291,7 @@ export interface ServiceDatabaseDependency {
   readonly twinEvents?: ReturnType<typeof createPostgresTwinEconomyEventStore>;
   readonly talks?: ReturnType<typeof createPostgresTalkRepository>;
   readonly talkReplay?: ReturnType<typeof createPostgresTalkReplayRepository>;
+  readonly talkReplayMedia?: ReturnType<typeof createPostgresReplayMediaRepository>;
   readonly talkLive?: ReturnType<typeof createPostgresTalkLiveRepository>;
   readonly talkModeration?: ReturnType<typeof createPostgresTalkModerationRepository>;
   readonly talkAiSeats?: ReturnType<typeof createPostgresTalkAiSeatRepository>;
@@ -438,6 +443,7 @@ function createDefaultDatabaseDependency(
     twinEvents: createPostgresTwinEconomyEventStore(database.pool),
     talks: createPostgresTalkRepository(database.pool),
     talkReplay: createPostgresTalkReplayRepository(database.pool),
+    talkReplayMedia: createPostgresReplayMediaRepository(database.pool),
     talkLive: createPostgresTalkLiveRepository(database.pool),
     talkModeration: createPostgresTalkModerationRepository(database.pool),
     talkAiSeats: createPostgresTalkAiSeatRepository(database.pool),
