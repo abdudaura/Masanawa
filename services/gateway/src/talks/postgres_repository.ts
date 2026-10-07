@@ -32,6 +32,7 @@ interface TalkRow extends Record<string, unknown> {
   comment_count?: string | number;
   reaction_count?: string | number;
   followed_host?: boolean;
+  participants_json?: unknown;
 }
 
 interface CommentRow extends Record<string, unknown> {
@@ -64,6 +65,55 @@ function mapTalk(row: TalkRow): TalkRecord {
     updatedAt: iso(row.updated_at),
   });
 }
+
+
+function mapParticipants(value: unknown): readonly import("./model.js").TalkParticipantPreview[] {
+  if (!Array.isArray(value)) return Object.freeze([]);
+  const participants = value.flatMap((item) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return [];
+    const row = item as Record<string, unknown>;
+    const id = typeof row.id === "string" ? row.id.trim() : "";
+    const name = typeof row.name === "string" ? row.name.trim() : "";
+    const kind =
+      row.kind === "expert" || row.kind === "twin" || row.kind === "human"
+        ? row.kind
+        : null;
+    if (!id || !name || kind === null) return [];
+    return [Object.freeze({
+      id,
+      name,
+      kind,
+      avatarUrl: typeof row.avatarUrl === "string" ? row.avatarUrl : null,
+      isHost: false,
+    })];
+  });
+  return Object.freeze(participants);
+}
+
+const participantProjectionSql = `
+  COALESCE((
+    SELECT jsonb_agg(
+      jsonb_build_object(
+        'id', CASE WHEN s.kind='human' THEN s.user_id ELSE s.persona_id END,
+        'name', s.display_name,
+        'kind', s.kind,
+        'avatarUrl', s.avatar_url,
+        'isHost', false
+      )
+      ORDER BY s.admitted_at ASC, s.participant_id ASC
+    )
+      FROM talks.talk_seats s
+     WHERE s.tenant_id=t.tenant_id
+       AND s.talk_id=t.talk_id
+       AND s.is_host=false
+       AND (s.active=true OR t.state='ended')
+       AND (
+         (s.kind='human' AND s.user_id IS NOT NULL)
+         OR
+         (s.kind IN ('expert','twin') AND s.persona_id IS NOT NULL)
+       )
+  ), '[]'::jsonb) AS participants_json
+`;
 
 function mapComment(row: CommentRow): TalkCommentRecord {
   return Object.freeze({
@@ -107,6 +157,7 @@ export function createPostgresTalkRepository(pool: TalkSqlPool): TalkRepository 
     async listTalks(input) {
       const result = await pool.query<TalkRow>(
         `SELECT ${talkColumns},
+                ${participantProjectionSql},
                 (SELECT count(*)::int FROM talks.comments c
                   WHERE c.tenant_id = t.tenant_id AND c.talk_id = t.talk_id) AS comment_count,
                 (SELECT count(*)::int FROM talks.participation p
@@ -160,6 +211,7 @@ export function createPostgresTalkRepository(pool: TalkSqlPool): TalkRepository 
           commentCount: Number(row.comment_count ?? 0),
           reactionCount: Number(row.reaction_count ?? 0),
           followedHost: row.followed_host === true,
+          participants: mapParticipants(row.participants_json),
         })
       ));
     },
@@ -167,6 +219,7 @@ export function createPostgresTalkRepository(pool: TalkSqlPool): TalkRepository 
     async getTalk(input) {
       const result = await pool.query<TalkRow>(
         `SELECT ${talkColumns},
+                ${participantProjectionSql},
                 (SELECT count(*)::int FROM talks.comments c
                   WHERE c.tenant_id = t.tenant_id AND c.talk_id = t.talk_id) AS comment_count
            FROM talks.talks t
@@ -206,7 +259,11 @@ export function createPostgresTalkRepository(pool: TalkSqlPool): TalkRepository 
       );
       const row = result.rows[0];
       return row
-        ? Object.freeze({ talk: mapTalk(row), commentCount: Number(row.comment_count ?? 0) })
+        ? Object.freeze({
+            talk: mapTalk(row),
+            commentCount: Number(row.comment_count ?? 0),
+            participants: mapParticipants(row.participants_json),
+          })
         : null;
     },
 
