@@ -14,14 +14,39 @@
   - Talk Share additions only in `apps/mobile/lib/src/screens/talks/talk_screen.dart`
   - focused `apps/mobile/test/talk_screen_test.dart`
   - this claim file
-- No Gateway authority change: shared links only navigate; authenticated Talk read remains canonical authority.
-- Contract:
-  - canonical URL `https://masanawa.com/talk/<talkId>`;
-  - native share text contains Talk title, Host, and canonical URL;
-  - HTTPS and `masanawa://talk/<talkId>` resolve only after strict validation;
-  - credentials, ports, fragments, query-bearing links, malformed IDs and foreign hosts are rejected;
-  - live/replay Talks share the same stable identity;
-  - deep links continue through existing pending-authentication handling.
-- Current step: transplant stale inbound-link work onto current main, add missing native Share UX and tests, then close stale PR #374 and open a clean current-main PR.
-- Last update: 2026-10-07T11:43Z
-- Status: active.
+- No Gateway mutation: shared links only navigate; authenticated Talk read remains canonical authority.
+
+## Implemented
+
+- Canonical public URL: `https://masanawa.com/talk/<talkId>`.
+- Native Talk app-bar Share action for both live Talks and replays.
+- Share payload includes Talk title, human Host name and canonical URL.
+- Uses current `share_plus` `SharePlus.instance.share(ShareParams(...))` API.
+- System sharing is behind a tiny `TalkShareService` boundary for deterministic widget testing.
+- Trusted HTTPS Talk links route to authenticated `/talk/<talkId>`.
+- `masanawa://talk/<talkId>` is supported for app/internal links.
+- Credentials, ports, fragments, query-bearing links, malformed Talk IDs and foreign hosts are rejected.
+- Cold-start Talk links remain queued through the existing pending-authentication deep-link path.
+- Android manifest registers verified `https://masanawa.com/talk/` app links alongside existing Twin links.
+
+## Verification coverage
+
+- Valid public HTTPS and custom-scheme Talk routes.
+- Rejection of malformed/foreign/credentialed/ported/query-bearing Talk links.
+- Cold-start Talk link waits for authentication and is consumed once.
+- Live Talk Share emits exact title + Host + canonical URL.
+- Replay Share uses the same stable Talk identity/link shape.
+- Existing poll, question, gift, replay and save behavior remains on the same current-main Talk screen.
+
+## Integration audit
+
+- Branch was created directly from current main `233ef88eaf55c8affbed4f0101a88afd175daca9`.
+- No Gateway/database migration required.
+- The old PR #374 is superseded and should be closed once this current-main PR is opened.
+- Android app-link automatic verification still requires `masanawa.com/.well-known/assetlinks.json` to contain the production signing certificate; the manifest change is ready but domain verification is deployment/release work.
+
+## Status
+
+- Implementation status: complete pending PR/CI evidence.
+- Verification status: focused deep-link and Talk Share widget tests written; GitHub execution evidence pending.
+- Deployment status: app-link domain verification remains release infrastructure work.
