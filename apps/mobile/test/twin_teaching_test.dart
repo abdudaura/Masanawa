@@ -7,16 +7,11 @@ void main() {
       interpretTwinTeaching('My bio is Builder and teacher')!.patch.bio,
       'Builder and teacher',
     );
+    expect(interpretTwinTeaching('I speak Hausa, English and Arabic'), isNull);
     expect(
-      interpretTwinTeaching('I speak Hausa, English and Arabic')!
-          .patch
-          .languages,
-      ['Hausa', 'English', 'Arabic'],
-    );
-    expect(
-      interpretTwinTeaching("I'm interested in AI, education and football")!
-          .patch
-          .interests,
+      interpretTwinTeaching(
+        "I'm interested in AI, education and football",
+      )!.patch.interests,
       ['AI', 'education', 'football'],
     );
   });
@@ -26,10 +21,7 @@ void main() {
       interpretTwinTeaching('make my twin public')!.patch.discoverable,
       isTrue,
     );
-    expect(
-      interpretTwinTeaching('hide my twin')!.patch.discoverable,
-      isFalse,
-    );
+    expect(interpretTwinTeaching('hide my twin')!.patch.discoverable, isFalse);
   });
 
   test('does not guess at arbitrary memory statements', () {

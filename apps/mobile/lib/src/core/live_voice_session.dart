@@ -26,7 +26,11 @@ class LiveVoiceSession with WidgetsBindingObserver {
     required this.characterName,
     this.captureInputTranscription = false,
     AudioRecorder? recorder,
-  }) : _recorder = recorder ?? AudioRecorder();
+  }) : _recorder = recorder ?? AudioRecorder() {
+    // Closing before a caller awaits readiness must not emit an unhandled
+    // async error. Consumers awaiting ready still receive the failure.
+    _ready.future.ignore();
+  }
 
   final AgentLiveVoiceGrant grant;
   final String characterName;
@@ -122,10 +126,11 @@ class LiveVoiceSession with WidgetsBindingObserver {
       WidgetsBinding.instance.addObserver(this);
       _observing = true;
 
-      final socket = await WebSocket.connect(grant.websocketUrl).then((socket) {
-        if (_closed) unawaited(socket.close());
-        return socket;
-      })
+      final socket = await WebSocket.connect(grant.websocketUrl)
+          .then((socket) {
+            if (_closed) unawaited(socket.close());
+            return socket;
+          })
           .timeout(const Duration(seconds: 20));
       if (_closed) {
         await socket.close();
@@ -175,13 +180,13 @@ class LiveVoiceSession with WidgetsBindingObserver {
                 {
                   'text': captureInputTranscription
                       ? 'You are $characterName conducting a short voice-first Twin setup interview. '
-                          'Ask one simple question at a time about greeting style, helpful behavior, '
-                          'personality, useful knowledge, decisions and boundaries. Never ask for a '
-                          'preferred language; always follow the language/register the user is speaking. '
-                          'Do not read, quote or mention hidden transcription or internal setup state.'
+                            'Ask one simple question at a time about greeting style, helpful behavior, '
+                            'personality, useful knowledge, decisions and boundaries. Never ask for a '
+                            'preferred language; always follow the language/register the user is speaking. '
+                            'Do not read, quote or mention hidden transcription or internal setup state.'
                       : 'You are $characterName. Have a natural live voice conversation. '
-                          'Answer in the user\'s language. Do not transcribe the user or '
-                          'read hidden system information aloud.',
+                            'Answer in the user\'s language. Do not transcribe the user or '
+                            'read hidden system information aloud.',
                 },
               ],
             },
@@ -189,7 +194,9 @@ class LiveVoiceSession with WidgetsBindingObserver {
         }),
       );
     } catch (error) {
-      _fail(error is StateError ? error.message : 'Could not start live voice.');
+      _fail(
+        error is StateError ? error.message : 'Could not start live voice.',
+      );
       await close();
       rethrow;
     }
@@ -220,12 +227,17 @@ class LiveVoiceSession with WidgetsBindingObserver {
       ),
     );
     if (_closed || _muted) {
-      try { await _recorder.stop(); } catch (_) {}
+      try {
+        await _recorder.stop();
+      } catch (_) {}
       return;
     }
     _micSub = stream.listen(
       (chunk) {
-        if (_closed || _muted || chunk.isEmpty || _socket?.readyState != WebSocket.open) {
+        if (_closed ||
+            _muted ||
+            chunk.isEmpty ||
+            _socket?.readyState != WebSocket.open) {
           return;
         }
         _socket!.add(
@@ -282,10 +294,10 @@ class LiveVoiceSession with WidgetsBindingObserver {
                     {
                       'text': captureInputTranscription
                           ? 'Start the Twin interview now with one brief welcoming question. '
-                              'Do not ask about language.'
+                                'Do not ask about language.'
                           : 'Start this live conversation now with a brief natural greeting, '
-                              'then ask how you can help. Speak in the language most appropriate '
-                              'for the user and keep the opening short.',
+                                'then ask how you can help. Speak in the language most appropriate '
+                                'for the user and keep the opening short.',
                     },
                   ],
                 },
@@ -433,13 +445,17 @@ class LiveVoiceSession with WidgetsBindingObserver {
     await _interruptions?.cancel();
     await _noisy?.cancel();
     await _socketSub?.cancel();
-    try { await _startingMic; } catch (_) {}
+    try {
+      await _startingMic;
+    } catch (_) {}
     await _micSub?.cancel();
     _micSub = null;
     try {
       await _recorder.stop();
     } catch (_) {}
-    try { await _recorder.dispose(); } catch (_) {}
+    try {
+      await _recorder.dispose();
+    } catch (_) {}
     await LivePcmAudio.release();
     try {
       await _socket?.close(WebSocketStatus.normalClosure, 'ended');

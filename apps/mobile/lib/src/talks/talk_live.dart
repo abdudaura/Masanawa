@@ -1,4 +1,4 @@
-enum TalkLiveRole { host, listener }
+enum TalkLiveRole { host, speaker, listener }
 
 enum TalkLiveLifecycle { live, reconnecting, ended }
 
@@ -27,9 +27,11 @@ class TalkLiveSessionView {
     return TalkLiveSessionView(
       sessionId: json['sessionId'] as String? ?? '',
       talkId: json['talkId'] as String? ?? '',
-      role: json['role'] == 'host'
-          ? TalkLiveRole.host
-          : TalkLiveRole.listener,
+      role: switch (json['role']) {
+        'host' => TalkLiveRole.host,
+        'speaker' => TalkLiveRole.speaker,
+        _ => TalkLiveRole.listener,
+      },
       state: _lifecycle(json['state']),
       canPublishAudio: json['canPublishAudio'] == true,
       canHearAudio: json['canHearAudio'] != false,
@@ -89,7 +91,8 @@ class TalkLiveMediaCredentials {
       participantToken: json['participant_token'] as String? ?? '',
       roomName: json['room_name'] as String? ?? '',
       participantIdentity: json['participant_identity'] as String? ?? '',
-      expiresAt: DateTime.tryParse(json['expires_at'] as String? ?? '') ??
+      expiresAt:
+          DateTime.tryParse(json['expires_at'] as String? ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
     );
   }
@@ -117,10 +120,10 @@ abstract interface class TalkLiveTransport {
 }
 
 TalkLiveLifecycle _lifecycle(Object? raw) => switch (raw) {
-      'reconnecting' => TalkLiveLifecycle.reconnecting,
-      'ended' => TalkLiveLifecycle.ended,
-      _ => TalkLiveLifecycle.live,
-    };
+  'reconnecting' => TalkLiveLifecycle.reconnecting,
+  'ended' => TalkLiveLifecycle.ended,
+  _ => TalkLiveLifecycle.live,
+};
 
 DateTime? _date(Object? raw) {
   if (raw is! String || raw.isEmpty) return null;

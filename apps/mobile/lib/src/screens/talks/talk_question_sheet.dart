@@ -6,63 +6,80 @@ import '../../talks/talk_questions.dart';
 import '../../theme/masanawa_theme.dart';
 
 Future<String?> showTalkQuestionSheet(BuildContext context) {
-  final controller = TextEditingController();
   return showModalBottomSheet<String>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
-    builder: (context) {
-      final u = context.masanawa;
-      return Padding(
-        padding: EdgeInsets.fromLTRB(
-          20,
-          18,
-          20,
-          18 + MediaQuery.viewInsetsOf(context).bottom,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Ask the Host',
-              style: TextStyle(
-                color: u.textPrimary,
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-              ),
+    builder: (_) => const _TalkQuestionComposer(),
+  );
+}
+
+class _TalkQuestionComposer extends StatefulWidget {
+  const _TalkQuestionComposer();
+  @override
+  State<_TalkQuestionComposer> createState() => _TalkQuestionComposerState();
+}
+
+class _TalkQuestionComposerState extends State<_TalkQuestionComposer> {
+  final controller = TextEditingController();
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        18,
+        20,
+        18 + MediaQuery.viewInsetsOf(context).bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Ask the Host',
+            style: TextStyle(
+              color: u.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
             ),
-            const SizedBox(height: 6),
-            Text(
-              'Your question goes to the Host’s live question queue.',
-              style: TextStyle(color: u.textMuted, fontSize: 13),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Your question goes to the Host’s live question queue.',
+            style: TextStyle(color: u.textMuted, fontSize: 13),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            key: const ValueKey('talk-question-input'),
+            controller: controller,
+            autofocus: true,
+            maxLength: 500,
+            minLines: 2,
+            maxLines: 5,
+            decoration: const InputDecoration(
+              hintText: 'What would you like them to address?',
             ),
-            const SizedBox(height: 14),
-            TextField(
-              key: const ValueKey('talk-question-input'),
-              controller: controller,
-              autofocus: true,
-              maxLength: 500,
-              minLines: 2,
-              maxLines: 5,
-              decoration: const InputDecoration(
-                hintText: 'What would you like them to address?',
-              ),
-            ),
-            const SizedBox(height: 10),
-            FilledButton(
-              key: const ValueKey('talk-question-submit'),
-              onPressed: () {
-                final body = controller.text.trim();
-                if (body.isNotEmpty) Navigator.of(context).pop(body);
-              },
-              child: const Text('Send question'),
-            ),
-          ],
-        ),
-      );
-    },
-  ).whenComplete(controller.dispose);
+          ),
+          const SizedBox(height: 10),
+          FilledButton(
+            key: const ValueKey('talk-question-submit'),
+            onPressed: () {
+              final body = controller.text.trim();
+              if (body.isNotEmpty) Navigator.of(context).pop(body);
+            },
+            child: const Text('Send question'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 Future<void> showTalkHostQuestionsSheet(
@@ -89,7 +106,9 @@ class _TalkHostQuestionsSheet extends ConsumerWidget {
     TalkQuestionStatus status,
   ) async {
     try {
-      await ref.read(talkQuestionTransportProvider).resolve(
+      await ref
+          .read(talkQuestionTransportProvider)
+          .resolve(
             talkId: talkId,
             questionId: question.questionId,
             status: status,
@@ -210,8 +229,7 @@ class _TalkHostQuestionsSheet extends ConsumerWidget {
                         );
                       },
                     ),
-              loading: () =>
-                  const Center(child: CircularProgressIndicator()),
+              loading: () => const Center(child: CircularProgressIndicator()),
               error: (_, __) => Center(
                 child: TextButton(
                   onPressed: () =>

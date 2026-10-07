@@ -47,6 +47,7 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
   TalkLiveRole? _role;
   TalkLiveAudioStatus _status = TalkLiveAudioStatus.idle;
   bool _muted = false;
+  bool _canPublishAudio = false;
   bool _closed = false;
   String? _errorMessage;
 
@@ -89,8 +90,7 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
       _sessionId = session.sessionId;
       _role = session.role;
 
-      if (session.state == TalkLiveLifecycle.ended ||
-          !session.canHearAudio) {
+      if (session.state == TalkLiveLifecycle.ended || !session.canHearAudio) {
         _setStatus(TalkLiveAudioStatus.ended);
         return;
       }
@@ -101,9 +101,11 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
       );
       if (_closed) return;
 
-      final mayPublish = session.role == TalkLiveRole.host &&
+      final mayPublish =
+          session.role != TalkLiveRole.listener &&
           session.canPublishAudio &&
           session.state == TalkLiveLifecycle.live;
+      _canPublishAudio = mayPublish;
       await room.connect(
         credentials: credentials,
         publishMicrophone: mayPublish,
@@ -115,8 +117,8 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
         session.state == TalkLiveLifecycle.reconnecting
             ? TalkLiveAudioStatus.reconnecting
             : mayPublish
-                ? TalkLiveAudioStatus.publishing
-                : TalkLiveAudioStatus.listening,
+            ? TalkLiveAudioStatus.publishing
+            : TalkLiveAudioStatus.listening,
       );
 
       _heartbeatTimer = Timer.periodic(
@@ -153,8 +155,7 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
       if (_closed) return;
 
       _role = session.role;
-      if (session.state == TalkLiveLifecycle.ended ||
-          !session.canHearAudio) {
+      if (session.state == TalkLiveLifecycle.ended || !session.canHearAudio) {
         _setStatus(TalkLiveAudioStatus.ended);
         _heartbeatTimer?.cancel();
         await _closeMediaOnly();
@@ -162,7 +163,8 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
       }
 
       if (session.state == TalkLiveLifecycle.reconnecting) {
-        if (session.role == TalkLiveRole.host) {
+        _canPublishAudio = false;
+        if (session.role != TalkLiveRole.listener) {
           try {
             await room.setMicrophoneEnabled(false);
           } catch (_) {
@@ -175,11 +177,13 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
       }
 
       final mayPublish =
-          session.role == TalkLiveRole.host && session.canPublishAudio;
+          session.role != TalkLiveRole.listener && session.canPublishAudio;
+      _canPublishAudio = mayPublish;
       if (mayPublish) {
         await room.setMicrophoneEnabled(!_muted);
         _setStatus(TalkLiveAudioStatus.publishing);
       } else {
+        await room.setMicrophoneEnabled(false);
         _setStatus(TalkLiveAudioStatus.listening);
       }
     } catch (_) {
@@ -190,7 +194,9 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
 
   @override
   Future<void> setMuted(bool muted) async {
-    if (_closed || _role != TalkLiveRole.host) return;
+    if (_closed || _role == null || _role == TalkLiveRole.listener) return;
+    _muted = muted;
+    if (!_canPublishAudio) return;
     try {
       await room.setMicrophoneEnabled(!muted);
       _muted = muted;
@@ -248,10 +254,7 @@ class TalkLiveAudioSession implements TalkLiveAudioController {
 
     if (sessionId != null) {
       try {
-        await transport.disconnect(
-          talkId: talkId,
-          sessionId: sessionId,
-        );
+        await transport.disconnect(talkId: talkId, sessionId: sessionId);
       } catch (_) {
         // App teardown is best effort. Server heartbeat expiry remains the
         // authority if this final packet cannot be delivered.

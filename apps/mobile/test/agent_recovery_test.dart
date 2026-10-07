@@ -40,7 +40,8 @@ const _directoryTokens = AuthTokens(
 
 class _SignedInSessionController extends SessionController {
   @override
-  SessionState build() => const SessionSignedIn(_directoryUser, _directoryTokens);
+  SessionState build() =>
+      const SessionSignedIn(_directoryUser, _directoryTokens);
 }
 
 class _SignedOutSessionController extends SessionController {
@@ -75,10 +76,7 @@ class _NoopDirectoryCache implements AgentDirectoryCache {
   Future<List<AgentDirectoryEntry>?> read(String ownerId) async => null;
 
   @override
-  Future<void> write(
-    String ownerId,
-    List<AgentDirectoryEntry> agents,
-  ) async {}
+  Future<void> write(String ownerId, List<AgentDirectoryEntry> agents) async {}
 
   @override
   Future<void> clear() async {}
@@ -88,7 +86,11 @@ Future<void> _waitForDirectoryRequests(
   FakeDirectory transport,
   int count,
 ) async {
-  for (var attempt = 0; attempt < 20 && transport.requests.length < count; attempt++) {
+  for (
+    var attempt = 0;
+    attempt < 20 && transport.requests.length < count;
+    attempt++
+  ) {
     await Future<void>.delayed(Duration.zero);
   }
   expect(transport.requests, hasLength(count));
@@ -128,10 +130,7 @@ class RecoveringTransport implements AgentTransport {
     if (turns == 1) throw const ApiException('private vendor failure');
     const reply = 'Real Gateway reply';
     onTextDelta?.call(reply);
-    return const AgentTurnResult(
-      text: reply,
-      agentRunId: 'run-2',
-    );
+    return const AgentTurnResult(text: reply, agentRunId: 'run-2');
   }
 
   @override
@@ -146,6 +145,7 @@ class RecoveringTransport implements AgentTransport {
     onUploadProgress?.call(bytes.length, bytes.length);
     return const AgentTurnResult(text: 'Media reply');
   }
+
   @override
   Future<AgentTurnResult> sendMediaSetTurn({
     required AgentSessionBinding binding,
@@ -182,20 +182,20 @@ class GatewayContractAdapter implements HttpClientAdapter {
     final Map<String, dynamic> body = switch (path) {
       '/creator/skills' => {'skills': <Object>[]},
       '/creator/economy' || '/creator/float' => {
-          'hasClone': false,
-          'characterId': null,
-          'customerCredits': 0,
-          'agentFloatCredits': 0,
-          'pendingEarningsCredits': 0,
-          'availableEarningsCredits': 0,
-        },
+        'hasClone': false,
+        'characterId': null,
+        'customerCredits': 0,
+        'agentFloatCredits': 0,
+        'pendingEarningsCredits': 0,
+        'availableEarningsCredits': 0,
+      },
       '/creator/clone' => {
-          'created': true,
-          'characterId': 'character-clone',
-          'characterVersionId': 'version-clone',
-          'relationshipId': 'relationship-clone',
-          'displayName': 'Clone',
-        },
+        'created': true,
+        'characterId': 'character-clone',
+        'characterVersionId': 'version-clone',
+        'relationshipId': 'relationship-clone',
+        'displayName': 'Clone',
+      },
       _ => <String, dynamic>{},
     };
     return ResponseBody.fromString(
@@ -298,7 +298,9 @@ void main() {
         ProviderScope(
           overrides: [
             agentDirectoryTransportProvider.overrideWithValue(directory),
-            agentDirectoryCacheProvider.overrideWithValue(_NoopDirectoryCache()),
+            agentDirectoryCacheProvider.overrideWithValue(
+              _NoopDirectoryCache(),
+            ),
             sessionProvider.overrideWith(_SignedInSessionController.new),
           ],
           child: MaterialApp(
@@ -382,9 +384,9 @@ void main() {
     final transport = FakeDirectory();
     final c = ProviderContainer(
       overrides: [
-      agentDirectoryTransportProvider.overrideWithValue(transport),
-      sessionProvider.overrideWith(_SignedInSessionController.new),
-    ],
+        agentDirectoryTransportProvider.overrideWithValue(transport),
+        sessionProvider.overrideWith(_SignedInSessionController.new),
+      ],
     );
     addTearDown(c.dispose);
     c.read(agentDirectoryProvider);
@@ -405,9 +407,9 @@ void main() {
       final transport = RecoveringTransport();
       final c = ProviderContainer(
         overrides: [
-        agentTransportProvider.overrideWithValue(transport),
-        sessionProvider.overrideWith(_SignedOutSessionController.new),
-      ],
+          agentTransportProvider.overrideWithValue(transport),
+          sessionProvider.overrideWith(_SignedOutSessionController.new),
+        ],
       );
       addTearDown(c.dispose);
       final controller = c.read(aiChatProvider.notifier);
@@ -456,110 +458,116 @@ void main() {
     expect(c.read(aiChatProvider).sendingIn, isEmpty);
   });
 
-  test('clear all closes canonical CharacterSessions before dropping local state', () async {
-    final transport = RecoveringTransport();
-    final c = ProviderContainer(
-      overrides: [
-        agentTransportProvider.overrideWithValue(transport),
-        sessionProvider.overrideWith(_SignedOutSessionController.new),
-      ],
-    );
-    addTearDown(c.dispose);
-    final controller = c.read(aiChatProvider.notifier);
-    await Future<void>.delayed(Duration.zero);
-    await controller.sendText('character-1', 'hello');
-    expect(c.read(aiChatProvider).threads, isNotEmpty);
+  test(
+    'clear all closes canonical CharacterSessions before dropping local state',
+    () async {
+      final transport = RecoveringTransport();
+      final c = ProviderContainer(
+        overrides: [
+          agentTransportProvider.overrideWithValue(transport),
+          sessionProvider.overrideWith(_SignedOutSessionController.new),
+        ],
+      );
+      addTearDown(c.dispose);
+      final controller = c.read(aiChatProvider.notifier);
+      await Future<void>.delayed(Duration.zero);
+      await controller.sendText('character-1', 'hello');
+      expect(c.read(aiChatProvider).threads, isNotEmpty);
 
-    await controller.clearAll();
+      await controller.clearAll();
 
-    expect(transport.closedSessions, 1);
-    expect(c.read(aiChatProvider).threads, isEmpty);
-  });
+      expect(transport.closedSessions, 1);
+      expect(c.read(aiChatProvider).threads, isEmpty);
+    },
+  );
 
   test('hosted Gateway is the default local connection address', () {
-    expect(
-      kAgentBaseUrl,
-      'https://masanawa-gateway-production.up.railway.app',
-    );
+    expect(kAgentBaseUrl, 'https://masanawa-gateway-production.up.railway.app');
   });
 
-  test('Agent transport refreshes an expired production session and retries once',
-      () async {
-    final adapter = RotatingAuthAdapter();
-    final dio = Dio();
-    dio.httpClientAdapter = adapter;
-    var token = 'expired-token';
-    var refreshes = 0;
-    final transport = MasanawaAgentDirectoryTransport(
-      dio: dio,
-      baseUrl: 'https://gateway.test',
-      readAccessToken: () => token,
-      refreshAccessToken: () async {
-        refreshes += 1;
-        token = 'fresh-token';
-        return token;
-      },
-    );
+  test(
+    'Agent transport refreshes an expired production session and retries once',
+    () async {
+      final adapter = RotatingAuthAdapter();
+      final dio = Dio();
+      dio.httpClientAdapter = adapter;
+      var token = 'expired-token';
+      var refreshes = 0;
+      final transport = MasanawaAgentDirectoryTransport(
+        dio: dio,
+        baseUrl: 'https://gateway.test',
+        readAccessToken: () => token,
+        refreshAccessToken: () async {
+          refreshes += 1;
+          token = 'fresh-token';
+          return token;
+        },
+      );
 
-    final agents = await transport.loadDirectory();
+      final agents = await transport.loadDirectory();
 
-    expect(refreshes, 1);
-    expect(agents.single.displayName, 'Amina');
-    expect(adapter.authorizations, [
-      'Bearer expired-token',
-      'Bearer fresh-token',
-    ]);
-  });
+      expect(refreshes, 1);
+      expect(agents.single.displayName, 'Amina');
+      expect(adapter.authorizations, [
+        'Bearer expired-token',
+        'Bearer fresh-token',
+      ]);
+    },
+  );
 
-  test('creator transports use the canonical Gateway route namespace', () async {
-    final adapter = GatewayContractAdapter();
-    final dio = Dio();
-    dio.httpClientAdapter = adapter;
+  test(
+    'creator transports use the canonical Gateway route namespace',
+    () async {
+      final adapter = GatewayContractAdapter();
+      final dio = Dio();
+      dio.httpClientAdapter = adapter;
 
-    final skills = MasanawaCreatorSkillTransport(
-      dio: dio,
-      baseUrl: 'https://gateway.test',
-      readAccessToken: () => 'private-token',
-    );
-    await skills.load();
-    await skills.setEnabled('skill-version-1', true);
+      final skills = MasanawaCreatorSkillTransport(
+        dio: dio,
+        baseUrl: 'https://gateway.test',
+        readAccessToken: () => 'private-token',
+      );
+      await skills.load();
+      await skills.setEnabled('skill-version-1', true);
 
-    final economy = MasanawaCreatorEconomyTransport(
-      dio: dio,
-      baseUrl: 'https://gateway.test',
-      readAccessToken: () => 'private-token',
-    );
-    await economy.load();
-    await economy.allocateFloat(10);
+      final economy = MasanawaCreatorEconomyTransport(
+        dio: dio,
+        baseUrl: 'https://gateway.test',
+        readAccessToken: () => 'private-token',
+      );
+      await economy.load();
+      await economy.allocateFloat(10);
 
-    final clone = MasanawaCreatorCloneTransport(
-      dio: dio,
-      baseUrl: 'https://gateway.test',
-      readAccessToken: () => 'private-token',
-    );
-    await clone.create(
-      displayName: 'Clone',
-      biography: 'Helpful assistant',
-      languages: const ['English'],
-      personality: const ['Calm'],
-      expertise: const ['General'],
-    );
+      final clone = MasanawaCreatorCloneTransport(
+        dio: dio,
+        baseUrl: 'https://gateway.test',
+        readAccessToken: () => 'private-token',
+      );
+      await clone.create(
+        displayName: 'Clone',
+        biography: 'Helpful assistant',
+        gender: 'male',
+        age: 30,
+        avatarBase64: 'aW1hZ2U=',
+        avatarMimeType: 'image/png',
+        personality: const ['Calm'],
+        expertise: const ['General'],
+      );
 
-    expect(
-      adapter.requests.map((request) => request.uri.path).toList(),
-      [
+      expect(adapter.requests.map((request) => request.uri.path).toList(), [
         '/creator/skills',
         '/creator/skills',
         '/creator/economy',
         '/creator/float',
         '/creator/clone',
-      ],
-    );
-    for (final request in adapter.requests) {
-      expect(request.headers['Authorization'], 'Bearer private-token');
-      expect(request.uri.path, isNot(startsWith('/v1/creator/')));
-    }
-  });
+        '/agent/twin/profile',
+      ]);
+      for (final request in adapter.requests) {
+        expect(request.headers['Authorization'], 'Bearer private-token');
+        expect(request.uri.path, isNot(startsWith('/v1/creator/')));
+      }
+    },
+  );
 
   test(
     'chat transport keeps production authorization and waits for server deadline',

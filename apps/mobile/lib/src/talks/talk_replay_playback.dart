@@ -54,7 +54,9 @@ class TalkReplayPlaybackSnapshot {
 
   double get progress {
     if (duration.inMilliseconds <= 0) return 0;
-    return (position.inMilliseconds / duration.inMilliseconds)\n        .clamp(0.0, 1.0)\n        .toDouble();
+    return (position.inMilliseconds / duration.inMilliseconds)
+        .clamp(0.0, 1.0)
+        .toDouble();
   }
 
   TalkReplayPlaybackSnapshot copyWith({
@@ -114,8 +116,9 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
   final TalkReplayPlaybackTransport transport;
   final TalkReplayAudioPlayer player;
 
-  final _snapshots =
-      StreamController<TalkReplayPlaybackSnapshot>.broadcast(sync: true);
+  final _snapshots = StreamController<TalkReplayPlaybackSnapshot>.broadcast(
+    sync: true,
+  );
   final List<StreamSubscription<dynamic>> _subscriptions = [];
   TalkReplayPlaybackSnapshot _snapshot = const TalkReplayPlaybackSnapshot();
   Future<void>? _operation;
@@ -146,10 +149,12 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
   void _playerStateChanged(TalkReplayPlayerState state) {
     switch (state) {
       case TalkReplayPlayerState.playing:
-        _emit(_snapshot.copyWith(
-          status: TalkReplayPlaybackStatus.playing,
-          clearError: true,
-        ));
+        _emit(
+          _snapshot.copyWith(
+            status: TalkReplayPlaybackStatus.playing,
+            clearError: true,
+          ),
+        );
         return;
       case TalkReplayPlayerState.paused:
         if (_snapshot.status != TalkReplayPlaybackStatus.loading &&
@@ -158,20 +163,24 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
         }
         return;
       case TalkReplayPlayerState.completed:
-        _emit(_snapshot.copyWith(
-          status: TalkReplayPlaybackStatus.completed,
-          position: _snapshot.duration,
-        ));
+        _emit(
+          _snapshot.copyWith(
+            status: TalkReplayPlaybackStatus.completed,
+            position: _snapshot.duration,
+          ),
+        );
         return;
     }
   }
 
   void _fail() {
     _loaded = false;
-    _emit(_snapshot.copyWith(
-      status: TalkReplayPlaybackStatus.failed,
-      errorMessage: 'Replay audio is unavailable right now.',
-    ));
+    _emit(
+      _snapshot.copyWith(
+        status: TalkReplayPlaybackStatus.failed,
+        errorMessage: 'Replay audio is unavailable right now.',
+      ),
+    );
   }
 
   Future<void> _serialize(Future<void> Function() action) async {
@@ -189,19 +198,23 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
   Future<void> _loadFreshAndPlay() async {
     if (_closed) return;
     _loaded = false;
-    _emit(const TalkReplayPlaybackSnapshot(
-      status: TalkReplayPlaybackStatus.loading,
-    ));
+    _emit(
+      const TalkReplayPlaybackSnapshot(
+        status: TalkReplayPlaybackStatus.loading,
+      ),
+    );
     try {
       final credentials = await transport.load(talkId);
       if (_closed) return;
       final duration = await player.load(credentials.url);
       if (_closed) return;
       _loaded = true;
-      _emit(TalkReplayPlaybackSnapshot(
-        status: TalkReplayPlaybackStatus.paused,
-        duration: duration ?? Duration.zero,
-      ));
+      _emit(
+        TalkReplayPlaybackSnapshot(
+          status: TalkReplayPlaybackStatus.paused,
+          duration: duration ?? Duration.zero,
+        ),
+      );
       await player.play();
     } catch (_) {
       _fail();
@@ -210,51 +223,50 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
 
   @override
   Future<void> toggle() => _serialize(() async {
-        if (_closed) return;
-        switch (_snapshot.status) {
-          case TalkReplayPlaybackStatus.playing:
-            try {
-              await player.pause();
-            } catch (_) {
-              _fail();
-            }
-            return;
-          case TalkReplayPlaybackStatus.paused:
-            if (!_loaded) {
-              await _loadFreshAndPlay();
-              return;
-            }
-            try {
-              await player.play();
-            } catch (_) {
-              _fail();
-            }
-            return;
-          case TalkReplayPlaybackStatus.idle:
-          case TalkReplayPlaybackStatus.completed:
-          case TalkReplayPlaybackStatus.failed:
-            await _loadFreshAndPlay();
-            return;
-          case TalkReplayPlaybackStatus.loading:
-            return;
+    if (_closed) return;
+    switch (_snapshot.status) {
+      case TalkReplayPlaybackStatus.playing:
+        try {
+          await player.pause();
+        } catch (_) {
+          _fail();
         }
-      });
+        return;
+      case TalkReplayPlaybackStatus.paused:
+        if (!_loaded) {
+          await _loadFreshAndPlay();
+          return;
+        }
+        try {
+          await player.play();
+        } catch (_) {
+          _fail();
+        }
+        return;
+      case TalkReplayPlaybackStatus.idle:
+      case TalkReplayPlaybackStatus.completed:
+      case TalkReplayPlaybackStatus.failed:
+        await _loadFreshAndPlay();
+        return;
+      case TalkReplayPlaybackStatus.loading:
+        return;
+    }
+  });
 
   @override
   Future<void> retry() => _serialize(_loadFreshAndPlay);
 
   @override
   Future<void> seekTo(double fraction) => _serialize(() async {
-        if (_closed || !_loaded || _snapshot.duration <= Duration.zero) return;
-        final value = fraction.clamp(0.0, 1.0);
-        final milliseconds =
-            (_snapshot.duration.inMilliseconds * value).round();
-        try {
-          await player.seek(Duration(milliseconds: milliseconds));
-        } catch (_) {
-          _fail();
-        }
-      });
+    if (_closed || !_loaded || _snapshot.duration <= Duration.zero) return;
+    final value = fraction.clamp(0.0, 1.0);
+    final milliseconds = (_snapshot.duration.inMilliseconds * value).round();
+    try {
+      await player.seek(Duration(milliseconds: milliseconds));
+    } catch (_) {
+      _fail();
+    }
+  });
 
   @override
   Future<void> close() async {

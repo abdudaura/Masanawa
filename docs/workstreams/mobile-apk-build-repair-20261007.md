@@ -1,0 +1,105 @@
+# Mobile APK compilation repair — 2026-10-07
+
+Owner: current Railway/APK repair window
+Branch: `fix/mobile-apk-build-20261007`
+Base: `bb3f6d204c2e53f21eaf2574311c7c0ef4cbf315`
+Last update: 2026-10-07T23:14:41.895Z
+Status: completed.
+
+## Exact owned paths
+
+- apps/mobile/lib/src/screens/activity/activity_screen.dart
+- apps/mobile/lib/src/screens/you/you_screen.dart
+- apps/mobile/lib/src/screens/talks/create_talk_screen.dart
+- apps/mobile/lib/src/talks/talk_replay_playback.dart
+- apps/mobile/test/twin_home_shell_test.dart
+- apps/mobile/pubspec.lock
+- this claim
+
+## Evidence
+
+First real local test compilation found invalid const AppBar constructors, literal escaped newlines in replay playback Dart source, and stale fake transport interfaces. Fix these compile blockers without product redesign. Fresh dependency resolution includes previously missing LiveKit dependencies. Preserve other work and extend exact ownership only if further compiler evidence requires it. Mobile Build CI has no allocated runner. Flutter 3.47.6, Dart 3.13.5, Android 37.0, Java 17 and Gradle 9.1.0 are available locally. Use CI=true to prevent Flutter's cloud metadata environment probe.
+
+Gateway startup repair already merged via PR #399 and verified deployed; this lane owns mobile compilation only.
+
+## Additional compiler-owned paths (2026-10-07T16:37Z)
+
+- apps/mobile/lib/src/screens/explore/explore_screen.dart
+- apps/mobile/lib/src/screens/you/my_talks_screen.dart
+- apps/mobile/lib/src/screens/you/saved_talks_screen.dart
+- apps/mobile/lib/src/screens/talks/talk_screen.dart: wrong live role enum only
+- apps/mobile/test/talk_screen_test.dart: same live role enum
+- apps/mobile/test/agent_recovery_test.dart: onboarding fake data arguments
+- apps/mobile/test/home/home_continuation_test.dart: retired Home continuation API
+
+Analyzer confirms compile blockers in these exact paths. Product behavior and other active lanes remain preserved.
+
+## Runtime test-owned paths (2026-10-07T16:39Z)
+
+- apps/mobile/lib/src/talks/talk_live.dart
+- apps/mobile/lib/src/talks/talk_live_audio_session.dart
+- apps/mobile/test/talk_live_audio_session_test.dart
+- apps/mobile/lib/src/core/live_voice_session.dart
+- apps/mobile/test/live_voice_session_test.dart
+- apps/mobile/lib/src/ui/components/onboarding_scaffold.dart
+- apps/mobile/test/twin_identity_banner_test.dart
+- apps/mobile/test/twin_chat_actions_sheet_test.dart
+- apps/mobile/test/twin_share_sheet_test.dart
+- apps/mobile/test/twin_production_integration_test.dart
+- apps/mobile/test/twin_teaching_test.dart
+
+Evidence: speaker role referenced by live screen but absent from model; speaker publishing/mute must preserve server canPublishAudio grant. Closing a never-started LiveVoiceSession completes an unobserved readiness future with an error. Widget tests omit required app theme, onboarding is vertically imbalanced, and legacy language-teaching expectation conflicts with dynamic language policy. Apply bounded corrections and rerun suite.
+
+## Talk interaction regression ownership (2026-10-07T16:45Z)
+
+- apps/mobile/lib/src/screens/talks/talk_question_sheet.dart
+- apps/mobile/lib/src/screens/talks/talk_host_controls_sheets.dart
+- apps/mobile/lib/src/screens/talks/talk_screen.dart: question control propagation and tested interaction wiring
+- apps/mobile/test/talk_screen_test.dart: current sheet controls and interaction frames
+- apps/mobile/test/app_mount_test.dart: current auth title
+
+Local tests reproduce disposed TextEditingControllers during question/invitation dismissal, missing Host question control propagation, duplicate feedback from nested sheet Scaffolds, stale test navigation/selectors, and stale creator follow-up route expectations. Preserve product contracts; fix the lifecycle and fixture evidence rather than reintroducing retired UI.
+
+## Verification checkpoint
+
+All 310 Flutter tests pass locally. Flutter analyze --no-fatal-infos --no-fatal-warnings reports no errors (379 pre-existing/style notices remain). Host poll interaction scrolls clear of the fixed comment composer. Leaving a Speaker seat completes participation state before audio reconnection and reports reconnection failures as audio failures. Release APK build is in progress after installing the missing full Java 17 compiler; initial environment had JRE only.
+
+## Resumed APK compilation
+
+The scratch source and intermediate mobile outputs survived the inactive interval, while /tmp SDKs, JDK and home-directory caches did not. No final APK was produced. Restore tools in the conversation workspace, verify sources against the published head, and finish the actual release build. No other open PR or active mobile repair lane exists at resume.
+
+SDK and full JDK restored; production readiness remains 200. Restore hosted dependencies directly from locked package archives with SHA-256 checks, then compile using the restored caches. No implementation scope expansion.
+
+Restored-environment verification: all 310 tests pass in 24 seconds. The integration fixture now supplies an isolated signed-in SessionController and asserts Authorization headers, avoiding native secure-storage access. Analyzer again reports no errors with 379 non-fatal existing/style notices. APK Gradle assembly is active with Android dependencies being cached; no final artifact yet.
+
+Release assembly remains active while Gradle restores native plugin build-tool dependencies (multiple Android/Kotlin plugin versions). Cache has reached 3.5 GB and Java compiler activity is ongoing. All 310 tests and no-error analyzer verification remain valid; no production source edits since the last successful checks.
+
+Native assembly diagnosis: Android SDK platform 35 was installed inside a nested android-35 directory, leaving the target android.jar absent. Repaired the local SDK layout using its API-35 source.properties and restarted the cached build. No repository source change was needed.
+
+User additionally requested real LiveKit configuration and chose a new LiveKit Cloud project. Railway gateway/call-gateway/worker have no LIVEKIT_URL/API_KEY/API_SECRET, and no existing LiveKit server is present in the connected infrastructure. Cloud signup is open in the browser and awaits the user's secure account/terms step. Continue independent APK work before handing signup over. Production LiveKit configuration will be applied only using the actual created project's credentials.
+
+APK assembly has passed dependency-graph resolution after the SDK repair. Flutter release code and icon assets compiled; CMake 3.22.1 installed successfully. Native output continues growing (935 MB); await APK packaging and signature validation. LiveKit Cloud remains at the initial signup screen for secure user completion.
+
+LiveKit project Masanawa p_5gjzrshbvnb is now signed in, with an existing API key. Its secret is creation-only and cannot be retrieved later. Preparing the bounded server credential setup. APK packaging is resumed offline after verifying Google's core-ktx 1.16.0 AAR against its published SHA-1; build environment repository override uses the exact cached official artifact.
+
+APK build dependencies now also include checksum-verified official annotation-jvm 1.8.2 metadata/JAR in the local build-only repository; resuming cached assembly. No source changes. LiveKit new-key form is prepared for browser security confirmation; the existing secret is unrecoverable by provider design. Gateway remains ready with database schema healthy.
+
+LiveKit credentials configured only on production gateway. Authenticated RoomService ListRooms returned 200. Railway deployment d8cece1b-eaab-433d-ad1a-beb8fbc4e5cf succeeded; logs show Talk Presence enabled and masanawa-talk-ai worker registered (Germany 2). APK compile is completing offline using locally exposed exact cached Maven coordinates; no repository source changes for this build environment repair.
+
+Final build dependency resolution still active: project-plugin configurations require additional legacy AndroidX versions and Kotlin coroutines 1.7.3. Resolve the exact official Maven coordinates with checksum verification and bounded retries for intermittent vendor 502s. Local Maven repository exposes cached artifacts without changes to application manifests or dependencies. LiveKit dashboard also confirms the self-hosted agent with one worker.
+
+All declared AndroidX archive gaps in the restored cache were checksum-verified and filled in a batch. Native plugin compilation is now resolving its final Kotlin coroutines 1.8.1 platform dependencies. Continue bounded packaging attempts and signature verification; do not claim APK completion before the artifact exists. LiveKit worker remains registered and verified.
+
+Resumed packaging from the preserved local caches after the last process ended. The current remaining missing coordinate is Kotlin coroutines Android 1.8.1, needed by url_launcher_android. No app source changes. Do not restart SDK/dependency restoration; use the preserved workspace build-tools and official verified local Maven artifacts. Final APK and signature checks are still pending.
+
+## Packaging asset repair ownership
+
+AAPT2 reproducibly segfaults compiling the committed launcher PNG; Pillow cannot decode the brand logo or 30 copied launcher/splash PNGs. Their bytes match repository blobs: this is committed asset corruption, not a download error. PNG IDAT declares 65536 bytes but the file is only 5621 bytes and has no IEND. Recovered the actual approved blue agent-conversation logo from the user's original /Masanawa/logo.png; it decodes correctly (136x110 RGBA, 8000 bytes). Own apps/mobile/assets/brand/masanawa_agent_logo.png and the generated launcher/splash PNGs and XML under apps/mobile/android/app/src/main/res/ for bounded regeneration using the existing official Flutter asset generators. No logo redesign, theme change, or overlapping active PR exists.
+
+Packaging asset repair is published in 1064674554b02c524567adcecd3c9c57b27c44a0: restored approved original logo, regenerated density-specific Android launcher/splash assets, all 34 PNG resources decode, and formerly crashing AAPT2 compile now succeeds. Release assembly continues restoring standalone plugin dependency versions (including profileinstaller and Java annotations); no source dependency changes. No APK yet; continue using the preserved workspace tools.
+
+## Completed release verification
+
+Universal Android release APK 1.0.1+2 built successfully with Flutter 3.47.6 / Dart 3.13.5, Java 17, Android compile SDK 37 / target SDK 36. Artifact size 109174964 bytes; SHA-256 402293f8e774e96adcfcb39d92ba743ccc0ee229d232b915b195294a60e2ff12. ZIP CRC and APK v2 signature verification pass; ARM64, ARMv7 and x86_64 included. Release uses the repository's debug signing fallback for installation testing; no production signing keystore was supplied. API_BASE_URL and AGENT_BASE_URL use the healthy generated Railway domain. LiveKit API secrets exist only in Railway variables, never in the APK.
+
+All 310 Flutter tests passed; analyzer reported zero errors with 379 non-fatal existing/style notices. All regenerated Android PNGs decode and AAPT2 resource compilation passes. LiveKit authenticated RoomService returned 200, production deployment succeeded, and masanawa-talk-ai registered; dashboard shows one worker. Physical handset installation and end-to-end microphone/speaker testing remain for the user. Preserve existing main product direction and no application dependency upgrades were made.

@@ -11,15 +11,16 @@ import 'package:masanawa/src/core/providers.dart';
 
 class _AuthCapabilitiesClient extends ApiClient {
   _AuthCapabilitiesClient()
-      : super(dio: Dio(BaseOptions(baseUrl: 'https://example.test')));
+    : super(dio: Dio(BaseOptions(baseUrl: 'https://example.test')));
 
   @override
   Future<List<OtpChannel>> authOtpChannels() async => const [OtpChannel.sms];
 }
 
 void main() {
-  const storageChannel =
-      MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
+  const storageChannel = MethodChannel(
+    'plugins.it_nomads.com/flutter_secure_storage',
+  );
 
   setUp(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -30,8 +31,9 @@ void main() {
         .setMockMethodCallHandler(storageChannel, null);
   });
 
-  testWidgets('fresh install shows the brand then opens phone login',
-      (tester) async {
+  testWidgets('fresh install shows the brand then opens phone login', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -48,15 +50,16 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1300));
     await tester.pumpAndSettle();
     expect(find.byType(PhoneLoginScreen), findsOneWidget);
-    expect(find.text('What number should we use?'), findsOneWidget);
+    expect(find.text('Welcome to Masanawa'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
   });
 
-  testWidgets('disposing splash before the brand delay cancels its timers',
-      (tester) async {
+  testWidgets('disposing splash before the brand delay cancels its timers', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -72,5 +75,3 @@ void main() {
     expect(find.byType(PhoneLoginScreen), findsNothing);
   });
 }
-
-

@@ -7,10 +7,7 @@ import '../../theme/masanawa_theme.dart';
 import '../talks/talk_home_screen.dart';
 
 class SavedTalksScreen extends ConsumerWidget {
-  const SavedTalksScreen({
-    super.key,
-    this.onOpenTalk,
-  });
+  const SavedTalksScreen({super.key, this.onOpenTalk});
 
   final void Function(TalkDiscoveryItem talk)? onOpenTalk;
 
@@ -27,7 +24,7 @@ class SavedTalksScreen extends ConsumerWidget {
     return Scaffold(
       key: const ValueKey('saved-talks-screen'),
       backgroundColor: u.surfaceBg,
-      appBar: const AppBar(title: Text('Saved Talks')),
+      appBar: AppBar(title: const Text('Saved Talks')),
       body: RefreshIndicator(
         onRefresh: refresh,
         child: asyncTalks.when(
@@ -61,8 +58,7 @@ class SavedTalksScreen extends ConsumerWidget {
                 return TalkFeedCard(
                   key: ValueKey('saved-talk-' + talk.id),
                   talk: talk,
-                  onTap:
-                      onOpenTalk == null ? null : () => onOpenTalk!(talk),
+                  onTap: onOpenTalk == null ? null : () => onOpenTalk!(talk),
                 );
               },
             );
