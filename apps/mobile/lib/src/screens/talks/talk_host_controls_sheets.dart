@@ -271,6 +271,67 @@ class _HostManageSheet extends ConsumerStatefulWidget {
 class _HostManageSheetState extends ConsumerState<_HostManageSheet> {
   String? _busyId;
 
+  Future<void> _inviteHuman() async {
+    if (_busyId != null) return;
+    final controller = TextEditingController();
+    final handle = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Invite human'),
+        content: TextField(
+          key: const ValueKey('host-invite-human-handle'),
+          controller: controller,
+          autofocus: true,
+          textInputAction: TextInputAction.done,
+          decoration: const InputDecoration(
+            labelText: 'Profile handle',
+            hintText: '@amina',
+          ),
+          onSubmitted: (value) {
+            final normalized = value.trim().replaceFirst(RegExp(r'^@'), '');
+            if (normalized.isNotEmpty) Navigator.of(context).pop(normalized);
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            key: const ValueKey('host-invite-human-send'),
+            onPressed: () {
+              final normalized =
+                  controller.text.trim().replaceFirst(RegExp(r'^@'), '');
+              if (normalized.isNotEmpty) Navigator.of(context).pop(normalized);
+            },
+            child: const Text('Send invite'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (!mounted || handle == null || handle.isEmpty) return;
+
+    setState(() => _busyId = 'invite-human');
+    try {
+      await ref.read(talkHostControlsTransportProvider).inviteHuman(
+            talkId: widget.talkId,
+            handle: handle,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Invitation sent to @$handle.')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Couldn’t send this invitation.')),
+      );
+    } finally {
+      if (mounted) setState(() => _busyId = null);
+    }
+  }
+
   Future<void> _report(TalkHostParticipant participant) async {
     if (_busyId != null || participant.isHost) return;
     final targetKind = participant.kind == TalkParticipantKind.human
@@ -429,6 +490,15 @@ class _HostManageSheetState extends ConsumerState<_HostManageSheet> {
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.close_rounded),
         ),
+        actions: [
+          TextButton.icon(
+            key: const ValueKey('host-invite-human'),
+            onPressed: _busyId == null ? _inviteHuman : null,
+            icon: const Icon(Icons.person_add_alt_1_rounded),
+            label: const Text('Invite'),
+          ),
+          const SizedBox(width: 4),
+        ],
       ),
       body: asyncView.when(
         loading: () => const Center(child: CircularProgressIndicator()),
