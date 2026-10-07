@@ -4,7 +4,7 @@ export interface ReplayMediaJob {
   readonly recordingId:string;
   readonly egressId:string;
   readonly objectKey:string;
-  readonly status:"recording"|"ready";
+  readonly status:"recording"|"ready"|"aborted";
   readonly startedAt:string;
   readonly completedAt:string|null;
   readonly checksumSha256:string|null;
@@ -26,7 +26,7 @@ interface JobRow extends Record<string,unknown>{
   recording_id:string;
   egress_id:string;
   object_key:string;
-  status:"recording"|"ready";
+  status:"recording"|"ready"|"aborted";
   started_at:string|Date;
   completed_at:string|Date|null;
   checksum_sha256:string|null;
@@ -57,6 +57,9 @@ export interface ReplayMediaRepository{
   }>):Promise<ReplayMediaJob>;
   markReady(input:Readonly<{
     tenantId:string;talkId:string;recordingId:string;checksumSha256:string;completedAt:string;
+  }>):Promise<void>;
+  markAborted(input:Readonly<{
+    tenantId:string;talkId:string;recordingId:string;completedAt:string;
   }>):Promise<void>;
   playbackObject(input:Readonly<{
     tenantId:string;talkId:string;viewerUserId:string;
@@ -109,6 +112,15 @@ export function createPostgresReplayMediaRepository(pool:ReplayMediaSqlPool):Rep
             SET status='ready',checksum_sha256=$4,completed_at=$5
           WHERE tenant_id=$1 AND talk_id=$2 AND recording_id=$3`,
         [input.tenantId,input.talkId,input.recordingId,input.checksumSha256,input.completedAt],
+      );
+      if((result.rowCount??0)!==1) throw new Error("talks.replay.media_not_found");
+    },
+    async markAborted(input){
+      const result=await pool.query(
+        `UPDATE talks.replay_media_jobs
+            SET status='aborted',completed_at=$4
+          WHERE tenant_id=$1 AND talk_id=$2 AND recording_id=$3`,
+        [input.tenantId,input.talkId,input.recordingId,input.completedAt],
       );
       if((result.rowCount??0)!==1) throw new Error("talks.replay.media_not_found");
     },
