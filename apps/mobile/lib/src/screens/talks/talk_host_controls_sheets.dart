@@ -458,7 +458,8 @@ class _HostManageSheetState extends ConsumerState<_HostManageSheet> {
                 busy: busy,
                 onReport: () => _report(participant),
                 onBlock: participant.kind == TalkParticipantKind.human &&
-                        participant.userId?.trim().isNotEmpty == true
+                        participant.userId?.trim().isNotEmpty == true &&
+                        participant.profileHandle?.trim().isNotEmpty == true
                     ? () => _block(participant)
                     : null,
                 onMuteToggle: () => _act(
