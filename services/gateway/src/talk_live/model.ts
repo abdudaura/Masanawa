@@ -10,6 +10,7 @@ export interface TalkLiveSessionView {
   readonly canHearAudio: boolean;
   readonly aiGenerationAllowed: boolean;
   readonly reconnectGraceEndsAt: string | null;
+  readonly endReason: "host_grace_expired" | "host_ended" | "platform_ended" | null;
 }
 
 export interface TalkLiveStateView {
@@ -19,6 +20,7 @@ export interface TalkLiveStateView {
   readonly listenerCount: number;
   readonly aiGenerationAllowed: boolean;
   readonly reconnectGraceEndsAt: string | null;
+  readonly endReason: "host_grace_expired" | "host_ended" | "platform_ended" | null;
 }
 
 export interface TalkLiveRepository {
