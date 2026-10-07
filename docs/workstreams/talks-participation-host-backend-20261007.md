@@ -56,4 +56,11 @@ Host:
 - ending a Talk updates the canonical Talk lifecycle and invalidates live participation;
 - no participation or reaction state is injected into AI prompts by this service.
 
-Status: active.
+Status: superseded — do not merge.
+
+A newer, stronger implementation landed on main as PR #353
+(`talks-participation-host-moderation-backend-20261007`) while this lane was active.
+PR #353 includes the same mobile contracts plus canonical live-state integration,
+real human Speaker media promotion, LiveKit mute/remove enforcement, idempotent
+SFU retries, and merged AI Seat Commerce coordination. This branch is retained
+only as recoverable history and must not become a second moderation authority.
