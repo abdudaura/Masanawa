@@ -5,6 +5,7 @@ import {
   type TalkReplaySession,
 } from "@masanawa/agents";
 import { toInstant } from "@masanawa/contracts";
+import type { TalkSafetyService } from "./service.js";
 
 interface SqlResult<Row> {
   readonly rows: Row[];
@@ -103,6 +104,30 @@ export function createPostgresTalkSafetyReplayBridge(
       }
 
       throw new Error("Talk replay revision conflict");
+    },
+  });
+}
+
+
+export function withReplayBlockSynchronization(
+  service: TalkSafetyService,
+  bridge: TalkSafetyReplayBridge,
+): TalkSafetyService {
+  return Object.freeze({
+    ...service,
+    async setEnforcement(request) {
+      const result = await service.setEnforcement(request);
+      if (
+        result.target.kind === "replay" &&
+        result.visibility === "blocked"
+      ) {
+        await bridge.blockByRecording({
+          tenantId: result.tenantId,
+          recordingId: result.target.id,
+          now: result.updatedAt,
+        });
+      }
+      return result;
     },
   });
 }
