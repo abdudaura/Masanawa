@@ -25,7 +25,17 @@ import 'package:masanawa/src/talks/talk_participation.dart';
 import 'package:masanawa/src/talks/talk_polls.dart';
 import 'package:masanawa/src/talks/talk_questions.dart';
 import 'package:masanawa/src/talks/talk_replay_playback.dart';
+import 'package:masanawa/src/talks/talk_share.dart';
 import 'package:masanawa/src/theme/masanawa_theme.dart';
+
+class _ShareService implements TalkShareService {
+  final List<TalkSharePayload> payloads = [];
+
+  @override
+  Future<void> share(TalkSharePayload payload) async {
+    payloads.add(payload);
+  }
+}
 
 class _GiftTransport implements TalkGiftTransport {
   _GiftTransport({this.fail = false});
@@ -592,6 +602,7 @@ Widget _app({
   _FakeReplayPlaybackController? replayPlayback,
   _LibraryTransport? library,
   _GiftTransport? gift,
+  _ShareService? share,
 }) {
   return ProviderScope(
     overrides: [
@@ -616,6 +627,9 @@ Widget _app({
       ),
       talkGiftTransportProvider.overrideWithValue(
         gift ?? _GiftTransport(),
+      ),
+      talkShareServiceProvider.overrideWithValue(
+        share ?? _ShareService(),
       ),
       talkLiveAudioFactoryProvider.overrideWithValue(
         (_) => liveAudio ??
@@ -687,6 +701,68 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Share your thoughts…'), findsOneWidget);
+  });
+
+  testWidgets('live Talk shares canonical public URL with title and Host',
+      (tester) async {
+    final transport = _TalkTransport();
+    final share = _ShareService();
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        share: share,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('talk-share')));
+    await tester.pumpAndSettle();
+
+    expect(share.payloads, hasLength(1));
+    expect(share.payloads.single.talkId, 'talk-1');
+    expect(
+      share.payloads.single.text,
+      'Will AI make education more equal?\n'
+      'Hosted by Abdullahi\n'
+      'https://masanawa.com/talk/talk-1',
+    );
+    expect(
+      share.payloads.single.url.toString(),
+      'https://masanawa.com/talk/talk-1',
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('replay shares the same stable Talk deep-link shape',
+      (tester) async {
+    final transport = _ReplayTalkTransport();
+    final share = _ShareService();
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        share: share,
+        home: const TalkScreen(
+          talkId: 'replay-1',
+          initialTalk: _ReplayTalkTransport.talk,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('talk-share')));
+    await tester.pumpAndSettle();
+
+    expect(share.payloads, hasLength(1));
+    expect(share.payloads.single.talkId, 'replay-1');
+    expect(
+      share.payloads.single.text,
+      'A finished Talk worth hearing again\n'
+      'Hosted by Amina\n'
+      'https://masanawa.com/talk/replay-1',
+    );
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('listener can send a live question to the Host', (tester) async {

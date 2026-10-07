@@ -13,13 +13,20 @@ String? shellDeepLinkRoute(Uri uri) {
   if (uri.scheme == 'https') {
     if (uri.host.toLowerCase() != 'masanawa.com' ||
         uri.queryParameters.isNotEmpty ||
-        uri.pathSegments.length != 2 ||
-        uri.pathSegments.first != 'twin') {
+        uri.pathSegments.length != 2) {
       return null;
     }
-    final publicId = uri.pathSegments[1];
-    if (!_validPublicTwinId(publicId)) return null;
-    return '/twin/${Uri.encodeComponent(publicId)}';
+    final kind = uri.pathSegments.first;
+    final id = uri.pathSegments[1];
+    if (kind == 'twin') {
+      if (!_validPublicTwinId(id)) return null;
+      return '/twin/${Uri.encodeComponent(id)}';
+    }
+    if (kind == 'talk') {
+      if (!_validTalkId(id)) return null;
+      return '/talk/${Uri.encodeComponent(id)}';
+    }
+    return null;
   }
 
   if (uri.scheme != 'masanawa' ||
@@ -29,6 +36,7 @@ String? shellDeepLinkRoute(Uri uri) {
         'approval',
         'artifact',
         'twin',
+        'talk',
         'activity',
         'owner-session',
       }.contains(uri.host)) {
@@ -42,6 +50,15 @@ String? shellDeepLinkRoute(Uri uri) {
     final publicId = uri.pathSegments.single;
     if (!_validPublicTwinId(publicId)) return null;
     return '/twin/${Uri.encodeComponent(publicId)}';
+  }
+
+  if (uri.host == 'talk') {
+    if (uri.pathSegments.length != 1 || uri.queryParameters.isNotEmpty) {
+      return null;
+    }
+    final talkId = uri.pathSegments.single;
+    if (!_validTalkId(talkId)) return null;
+    return '/talk/${Uri.encodeComponent(talkId)}';
   }
 
   if (uri.host == 'activity') {
@@ -88,3 +105,6 @@ bool _validCharacterId(String value) =>
 
 bool _validPublicTwinId(String value) =>
     RegExp(r'^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$').hasMatch(value);
+
+bool _validTalkId(String value) =>
+    RegExp(r'^[A-Za-z0-9][A-Za-z0-9_-]{2,159}$').hasMatch(value);
