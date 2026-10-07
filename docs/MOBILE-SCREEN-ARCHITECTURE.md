@@ -1,6 +1,6 @@
 # Masanawa Mobile Screen Architecture
 
-Status: **canonical screen plan — 2026-10-07**
+Status: **canonical screen plan — 2026-10-08**
 
 Goal: design every consumer surface we expect to need without turning every state/action
 into a separate screen.
@@ -16,6 +16,11 @@ The consumer app does not expose Rooms, Skills, Workflows, AgentRuns, provider s
 or internal execution concepts.
 
 The separate Masanawa Admin app is out of scope here.
+
+The default is WhatsApp-style white/light with vibrant green, compact rows and sheets.
+The existing app is already implemented; continue integration using
+`MOBILE-READINESS-PLAN.md`, not a new mockup approval cycle. Locale, conversation
+language, country and currency are independent; support localized/RTL layouts.
 
 ---
 
@@ -177,6 +182,11 @@ One short composer:
 - optional initial participants;
 - visibility/replay setting if necessary;
 - **Go Live**.
+
+Add Expert, Invite person and Add My Twin open working sheets and preserve the draft;
+no optional callback may leave a visible inert action. A missing Twin routes through
+creation and returns. AI fees are explicitly confirmed at admission. Audio states and
+recoverable permissions are part of this screen, not separate destinations.
 
 The user should be able to say one sentence and launch.
 
@@ -364,6 +374,7 @@ be a filter/state inside Saved/For You.
 # I. Wallet and creator money
 
 Money concepts must stay distinct:
+- qualified fiat balances by native currency (NGN is one market adapter);
 - spendable Masanawa balance/credits if used;
 - creator earnings;
 - crypto assets.
@@ -371,9 +382,10 @@ Money concepts must stay distinct:
 ### S70 — Wallet
 
 Overview:
-- spendable balance;
+- each supported native fiat balance and optional labeled display-currency estimate;
+- spendable Credits balance;
 - creator earnings available/pending;
-- Add funds;
+- working Add funds/Send/Withdraw based on exact server capability;
 - Withdraw eligible earnings;
 - Services;
 - Transaction history.
@@ -382,7 +394,8 @@ Crypto is linked as a service/asset area rather than merged into a fiat/credit n
 
 ### S71 — Add funds
 
-Amount + supported funding method + confirmation.
+Native currency/amount + qualified region/funding method + confirmation + resumable
+pending details. No promise that an unqualified currency can be funded.
 
 ### S72 — Withdraw earnings
 
@@ -449,7 +462,7 @@ Recent/favorite recipients may appear below if safely implemented.
 
 ### S82 — Bill purchase
 
-One adaptive screen changes fields by product:
+One adaptive screen changes fields by qualified country/catalog/product:
 - recipient/phone/account/meter;
 - network/provider;
 - plan/package where required;
@@ -664,5 +677,25 @@ Design in this order because these screens define the whole product:
 14. Crypto
 15. Onboarding/settings
 
-Do not implement the new mobile shell until the first ten mockups prove the hierarchy is
-clear and visually simple.
+The shell exists. Preserve it and finish the action/audio/services integration described
+in `MOBILE-READINESS-PLAN.md`; do not restart implementation or block fixes on another
+mockup approval cycle.
+
+## Current settings, feedback and transaction states
+
+Settings contains UI language/locale (device default + override), privacy/recording,
+notifications, support/report feedback, account security/session controls and
+**Account -> Delete account**. Use sheets within Settings for explanation, recent
+reauthentication and request progress. Provide a working external deletion request
+page without requiring reinstall; account/server cleanup and retention follow R12.
+Conversation language remains dynamic, independent of Settings locale.
+
+Billing/Crypto/Wallet reuse existing adaptive screens for exact quotes, funding,
+confirmation, pending/unknown/final/refunded status and receipt. Restore owned funding
+instructions after restart and hide them when terminal. Return to the active Talk;
+private values never become public stage content.
+
+Gift sheets show a localized server catalog with animation previews, exact price and
+confirmation. Stage animation, activity and agent event agree on authoritative success;
+reduced-motion users receive a static equivalent. Persona profiles use the full defaults
+in `DEFAULT-AI-PERSONAS.md` without adding another root directory.
