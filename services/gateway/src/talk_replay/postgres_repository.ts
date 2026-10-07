@@ -79,6 +79,7 @@ function discovery(row:TalkRow):TalkDiscoveryItem {
     listenerCount:Number(row.listener_count),
     commentCount:Number(row.comment_count ?? 0),
     durationSeconds:row.duration_seconds===null?null:Number(row.duration_seconds),
+    viewerIsHost:true,
     participants:Object.freeze([
       Object.freeze({
         id:row.host_user_id,
@@ -219,13 +220,37 @@ export function createPostgresTalkReplayRepository(
             ? {type:"unpublish" as const,expectedRevision:current.revision,requesterUserId:input.hostUserId as UserId}
             : {type:"discard" as const,expectedRevision:current.revision,requesterUserId:input.hostUserId as UserId};
       const transitioned=transitionTalkReplaySession(current,command,toInstant(input.now),launchTalkReplayPolicy);
-      await persistTransition(pool,current,transitioned.session,input.now);
       if(transitioned.session.recordingState==="discarded"){
-        await pool.query(
-          `DELETE FROM talks.replay_segments
-            WHERE tenant_id=$1 AND talk_id=$2`,
-          [input.tenantId,input.talkId],
+        const applied=await pool.query<{ applied:boolean }>(
+          `WITH replay AS (
+             UPDATE talks.replay_sessions
+                SET revision=$4,
+                    recording_state=$5,
+                    publication_state=$6,
+                    publication_preference=$7,
+                    session_json=$8::jsonb,
+                    updated_at=$9,
+                    finalized_at=$10,
+                    published_at=$11
+              WHERE tenant_id=$1 AND talk_id=$2 AND revision=$3
+              RETURNING 1
+           ), segments AS (
+             DELETE FROM talks.replay_segments
+              WHERE tenant_id=$1 AND talk_id=$2
+                AND EXISTS(SELECT 1 FROM replay)
+             RETURNING 1
+           )
+           SELECT EXISTS(SELECT 1 FROM replay) AS applied`,
+          [
+            input.tenantId,current.talkId,current.revision,transitioned.session.revision,
+            transitioned.session.recordingState,transitioned.session.publicationState,
+            transitioned.session.publicationPreference,JSON.stringify(transitioned.session),
+            input.now,transitioned.session.finalizedAt,transitioned.session.publishedAt,
+          ],
         );
+        if(!applied.rows[0]?.applied) throw new Error("Talk replay revision conflict");
+      }else{
+        await persistTransition(pool,current,transitioned.session,input.now);
       }
       return view(transitioned.session);
     },
@@ -313,14 +338,38 @@ export function createPostgresTalkReplayRepository(
         toInstant(input.now),
         launchTalkReplayPolicy,
       );
-      await persistTransition(pool,current,transitioned.session,input.now);
       const totalMs=transitioned.session.segments.reduce((sum,segment)=>sum+segment.durationMs,0);
-      await pool.query(
-        `UPDATE talks.talks
-            SET duration_seconds=$3,updated_at=GREATEST(updated_at,$4::timestamptz)
-          WHERE tenant_id=$1 AND talk_id=$2`,
-        [input.tenantId,input.talkId,Math.round(totalMs/1000),input.now],
+      const applied=await pool.query<{ applied:boolean }>(
+        `WITH replay AS (
+           UPDATE talks.replay_sessions
+              SET revision=$4,
+                  recording_state=$5,
+                  publication_state=$6,
+                  publication_preference=$7,
+                  session_json=$8::jsonb,
+                  updated_at=$9,
+                  finalized_at=$10,
+                  published_at=$11
+            WHERE tenant_id=$1 AND talk_id=$2 AND revision=$3
+            RETURNING 1
+         ), talk AS (
+           UPDATE talks.talks
+              SET duration_seconds=$12,
+                  updated_at=GREATEST(updated_at,$9::timestamptz)
+            WHERE tenant_id=$1 AND talk_id=$2
+              AND EXISTS(SELECT 1 FROM replay)
+            RETURNING 1
+         )
+         SELECT EXISTS(SELECT 1 FROM replay) AND EXISTS(SELECT 1 FROM talk) AS applied`,
+        [
+          input.tenantId,input.talkId,current.revision,transitioned.session.revision,
+          transitioned.session.recordingState,transitioned.session.publicationState,
+          transitioned.session.publicationPreference,JSON.stringify(transitioned.session),
+          input.now,transitioned.session.finalizedAt,transitioned.session.publishedAt,
+          Math.round(totalMs/1000),
+        ],
       );
+      if(!applied.rows[0]?.applied) throw new Error("Talk replay revision conflict");
       return view(transitioned.session);
     },
 
