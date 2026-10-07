@@ -10,6 +10,8 @@ import {
 import { toInstant, type TenantId, type UserId } from "@masanawa/contracts";
 import type {
   EndTalkResult,
+  HumanInvitationDecision,
+  HumanInvitationView,
   HostControlsView,
   HostMutationResult,
   HostParticipantView,
@@ -33,8 +35,25 @@ export interface TalkModerationSqlPool {
 interface TalkRow extends Record<string,unknown>{
   host_user_id:string;
   host_name:string;
+  title:string;
   state:string;
   started_at:string|Date|null;
+}
+interface InvitationRow extends Record<string,unknown>{
+  talk_id:string;
+  host_user_id:string;
+  invitee_user_id:string;
+  invitee_handle:string;
+  invitee_display_name:string;
+  status:"pending"|"accepted"|"declined";
+  created_at:string|Date;
+  updated_at:string|Date;
+}
+interface PublicProfileRow extends Record<string,unknown>{
+  user_id:string;
+  handle:string;
+  display_name:string;
+  avatar_url:string|null;
 }
 interface ParticipationRow extends Record<string,unknown>{
   hand_status:"idle"|"raised"|"accepted"|"declined";
@@ -80,6 +99,21 @@ interface SessionIdentityRow extends Record<string,unknown>{
   session_id:string;
 }
 
+function invitationView(row:InvitationRow,talk:TalkRow):HumanInvitationView{
+  const createdAt=row.created_at instanceof Date ? row.created_at.toISOString() : new Date(row.created_at).toISOString();
+  const updatedAt=row.updated_at instanceof Date ? row.updated_at.toISOString() : new Date(row.updated_at).toISOString();
+  return Object.freeze({
+    talkId:row.talk_id,
+    talkTitle:talk.title,
+    hostName:talk.host_name,
+    inviteeUserId:row.invitee_user_id,
+    inviteeHandle:row.invitee_handle,
+    inviteeDisplayName:row.invitee_display_name,
+    status:row.status,
+    createdAt,
+    updatedAt,
+  });
+}
 function participationView(row:ParticipationRow|undefined):TalkParticipationView{
   if(!row) return Object.freeze({handStatus:"idle" as const});
   return Object.freeze({
@@ -136,7 +170,7 @@ function seatView(row:SeatRow):HostParticipantView{
 
 async function readTalk(pool:TalkModerationSqlPool,tenantId:string,talkId:string):Promise<TalkRow|null>{
   const result=await pool.query<TalkRow>(
-    `SELECT host_user_id,host_name,state,started_at
+    `SELECT host_user_id,host_name,title,state,started_at
        FROM talks.talks
       WHERE tenant_id=$1 AND talk_id=$2 LIMIT 1`,
     [tenantId,talkId],
@@ -387,6 +421,198 @@ export function createPostgresTalkModerationRepository(
       if(!talk) return null;
       requireHost(talk,input.hostUserId);
       return controls(pool,input.tenantId,input.talkId,talk);
+    },
+
+    async inviteHuman(input){
+      const talk=await readTalk(pool,input.tenantId,input.talkId);
+      if(!talk) return null;
+      requireHost(talk,input.hostUserId);
+      if(talk.state==="ended") throw new Error("talks.not_live");
+      await requireLiveRuntime(pool,input.tenantId,input.talkId);
+
+      const profileResult=await pool.query<PublicProfileRow>(
+        `SELECT user_id,handle,display_name,avatar_url
+           FROM talks.public_profiles
+          WHERE tenant_id=$1 AND handle=$2
+          LIMIT 1`,
+        [input.tenantId,input.handle],
+      );
+      const profile=profileResult.rows[0];
+      if(!profile) throw new Error("profiles.not_found");
+      if(profile.user_id===talk.host_user_id) throw new Error("talks.cannot_invite_self");
+
+      const relationshipBlock=await pool.query<{blocked:boolean}>(
+        `SELECT true AS blocked
+           FROM talks.safety_preferences
+          WHERE tenant_id=$1
+            AND (
+              (viewer_user_id=$2 AND subject_user_id=$3 AND blocked=true)
+              OR
+              (viewer_user_id=$3 AND subject_user_id=$2 AND (blocked=true OR muted=true))
+            )
+          LIMIT 1`,
+        [input.tenantId,talk.host_user_id,profile.user_id],
+      );
+      if(relationshipBlock.rows[0]?.blocked===true){
+        throw new Error("talks.invitee_unavailable");
+      }
+
+      const active=await pool.query<{participant_id:string}>(
+        `SELECT participant_id FROM talks.talk_seats
+          WHERE tenant_id=$1 AND talk_id=$2 AND user_id=$3 AND active=true
+          LIMIT 1`,
+        [input.tenantId,input.talkId,profile.user_id],
+      );
+      if(active.rows[0]) throw new Error("talks.already_participant");
+
+      const result=await pool.query<InvitationRow>(
+        `INSERT INTO talks.human_invitations(
+           tenant_id,talk_id,host_user_id,invitee_user_id,invitee_handle,
+           invitee_display_name,status,created_at,updated_at
+         ) VALUES($1,$2,$3,$4,$5,$6,'pending',$7,$7)
+         ON CONFLICT(tenant_id,talk_id,invitee_user_id) DO UPDATE
+           SET host_user_id=EXCLUDED.host_user_id,
+               invitee_handle=EXCLUDED.invitee_handle,
+               invitee_display_name=EXCLUDED.invitee_display_name,
+               status='pending',
+               updated_at=EXCLUDED.updated_at
+         WHERE talks.human_invitations.status<>'accepted'
+         RETURNING talk_id,host_user_id,invitee_user_id,invitee_handle,
+                   invitee_display_name,status,created_at,updated_at`,
+        [
+          input.tenantId,input.talkId,talk.host_user_id,profile.user_id,
+          profile.handle,profile.display_name,input.now,
+        ],
+      );
+      const invitation=result.rows[0];
+      if(!invitation) throw new Error("talks.already_participant");
+      return invitationView(invitation,talk);
+    },
+
+    async respondHumanInvitation(input){
+      const talk=await readTalk(pool,input.tenantId,input.talkId);
+      if(!talk) return null;
+      const invitationResult=await pool.query<InvitationRow>(
+        `SELECT talk_id,host_user_id,invitee_user_id,invitee_handle,
+                invitee_display_name,status,created_at,updated_at
+           FROM talks.human_invitations
+          WHERE tenant_id=$1 AND talk_id=$2 AND invitee_user_id=$3
+          LIMIT 1`,
+        [input.tenantId,input.talkId,input.inviteeUserId],
+      );
+      const invitation=invitationResult.rows[0];
+      if(!invitation) throw new Error("talks.invitation_not_found");
+      if(invitation.host_user_id!==talk.host_user_id) throw new Error("talks.invitation_invalid");
+
+      if(input.action==="decline"){
+        if(invitation.status==="accepted") throw new Error("talks.invitation_resolved");
+        if(invitation.status==="pending"){
+          const updated=await pool.query<InvitationRow>(
+            `UPDATE talks.human_invitations
+                SET status='declined',updated_at=$4
+              WHERE tenant_id=$1 AND talk_id=$2 AND invitee_user_id=$3
+                AND status='pending'
+              RETURNING talk_id,host_user_id,invitee_user_id,invitee_handle,
+                        invitee_display_name,status,created_at,updated_at`,
+            [input.tenantId,input.talkId,input.inviteeUserId,input.now],
+          );
+          if(updated.rows[0]){
+            return Object.freeze({
+              invitation:invitationView(updated.rows[0],talk),
+              mediaActions:Object.freeze([]),
+            });
+          }
+        }
+        return Object.freeze({
+          invitation:invitationView(invitation,talk),
+          mediaActions:Object.freeze([]),
+        });
+      }
+
+      if(invitation.status==="declined") throw new Error("talks.invitation_resolved");
+      if(talk.state==="ended") throw new Error("talks.not_live");
+      await requireLiveRuntime(pool,input.tenantId,input.talkId);
+
+      const participantId=`invite_${input.inviteeUserId}`;
+      if(invitation.status!=="accepted"){
+        const session=await canonical(pool,input.tenantId,input.talkId,talk,input.now);
+        const transitioned=transitionTalkLiveSession(
+          session,
+          {
+            type:"human_seat_admitted",
+            expectedRevision:session.revision,
+            seatId:participantId as TalkSeatId,
+            userId:input.inviteeUserId as UserId,
+          },
+          toInstant(input.now),
+          launchTalkLivePolicy,
+        );
+        const applied=await pool.query<{applied:boolean}>(
+          `WITH canonical AS (
+             UPDATE talks.live_canonical
+                SET revision=$4,session_json=$5::jsonb,updated_at=$6
+              WHERE tenant_id=$1 AND talk_id=$2 AND revision=$3
+              RETURNING 1
+           ), seat AS (
+             INSERT INTO talks.talk_seats(
+               tenant_id,talk_id,participant_id,kind,user_id,display_name,
+               avatar_url,is_host,is_muted,active,admitted_at
+             )
+             SELECT $1,$2,$7,'human',$8,$9,NULL,false,false,true,$6 FROM canonical
+             ON CONFLICT(tenant_id,talk_id,participant_id) DO UPDATE
+               SET active=true,is_muted=false,removed_at=NULL,display_name=EXCLUDED.display_name
+             RETURNING 1
+           ), invitation AS (
+             UPDATE talks.human_invitations
+                SET status='accepted',updated_at=$6
+              WHERE tenant_id=$1 AND talk_id=$2 AND invitee_user_id=$8
+                AND status='pending' AND EXISTS(SELECT 1 FROM canonical)
+             RETURNING 1
+           ), participation AS (
+             INSERT INTO talks.participation(
+               tenant_id,talk_id,user_id,display_name,hand_status,updated_at
+             )
+             SELECT $1,$2,$8,$9,'accepted',$6 FROM canonical
+             ON CONFLICT(tenant_id,talk_id,user_id) DO UPDATE
+               SET display_name=EXCLUDED.display_name,
+                   hand_status='accepted',
+                   updated_at=EXCLUDED.updated_at
+             RETURNING 1
+           )
+           SELECT EXISTS(SELECT 1 FROM canonical) AS applied`,
+          [
+            input.tenantId,input.talkId,session.revision,transitioned.session.revision,
+            JSON.stringify(transitioned.session),input.now,participantId,
+            input.inviteeUserId,invitation.invitee_display_name,
+          ],
+        );
+        if(!applied.rows[0]?.applied) throw new Error("Talk live revision conflict");
+      }
+
+      const sessions=await pool.query<SessionIdentityRow>(
+        `UPDATE talks.live_sessions
+            SET role='speaker',is_muted=false
+          WHERE tenant_id=$1 AND talk_id=$2 AND user_id=$3
+            AND connection_state='connected'
+          RETURNING user_id,session_id`,
+        [input.tenantId,input.talkId,input.inviteeUserId],
+      );
+      const refreshed=await pool.query<InvitationRow>(
+        `SELECT talk_id,host_user_id,invitee_user_id,invitee_handle,
+                invitee_display_name,status,created_at,updated_at
+           FROM talks.human_invitations
+          WHERE tenant_id=$1 AND talk_id=$2 AND invitee_user_id=$3
+          LIMIT 1`,
+        [input.tenantId,input.talkId,input.inviteeUserId],
+      );
+      const accepted=refreshed.rows[0];
+      if(!accepted) throw new Error("talks.invitation_not_found");
+      return Object.freeze({
+        invitation:invitationView(accepted,talk),
+        mediaActions:Object.freeze(mediaIdentities(sessions.rows).map(identity=>
+          Object.freeze({type:"publish" as const,identity,canPublish:true}),
+        )),
+      });
     },
 
     async actOnRequest(input){
