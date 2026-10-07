@@ -30,6 +30,8 @@ interface TalkRow extends Record<string, unknown> {
   created_at: string | Date;
   updated_at: string | Date;
   comment_count?: string | number;
+  reaction_count?: string | number;
+  followed_host?: boolean;
 }
 
 interface CommentRow extends Record<string, unknown> {
@@ -106,7 +108,17 @@ export function createPostgresTalkRepository(pool: TalkSqlPool): TalkRepository 
       const result = await pool.query<TalkRow>(
         `SELECT ${talkColumns},
                 (SELECT count(*)::int FROM talks.comments c
-                  WHERE c.tenant_id = t.tenant_id AND c.talk_id = t.talk_id) AS comment_count
+                  WHERE c.tenant_id = t.tenant_id AND c.talk_id = t.talk_id) AS comment_count,
+                (SELECT count(*)::int FROM talks.participation p
+                  WHERE p.tenant_id = t.tenant_id
+                    AND p.talk_id = t.talk_id
+                    AND p.reaction IS NOT NULL) AS reaction_count,
+                EXISTS (
+                  SELECT 1 FROM talks.follows f
+                   WHERE f.tenant_id = t.tenant_id
+                     AND f.follower_user_id = $3
+                     AND f.followed_user_id = t.host_user_id
+                ) AS followed_host
            FROM talks.talks t
           WHERE t.tenant_id = $1
             AND ($2::text = 'explore' OR t.state = 'live')
@@ -132,11 +144,16 @@ export function createPostgresTalkRepository(pool: TalkSqlPool): TalkRepository 
             )
           ORDER BY CASE WHEN state = 'live' THEN 0 ELSE 1 END,
                    COALESCE(started_at, created_at) DESC
-          LIMIT $3`,
-        [input.tenantId, input.feed, input.limit],
+          LIMIT $4`,
+        [input.tenantId, input.feed, input.viewerUserId, input.limit],
       );
       return Object.freeze(result.rows.map((row) =>
-        Object.freeze({ talk: mapTalk(row), commentCount: Number(row.comment_count ?? 0) })
+        Object.freeze({
+          talk: mapTalk(row),
+          commentCount: Number(row.comment_count ?? 0),
+          reactionCount: Number(row.reaction_count ?? 0),
+          followedHost: row.followed_host === true,
+        })
       ));
     },
 
