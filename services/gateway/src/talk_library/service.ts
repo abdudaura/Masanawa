@@ -54,6 +54,7 @@ function owned(
 ): OwnedTalkDiscoveryItem {
   return Object.freeze({
     ...toTalkDiscoveryItem(row),
+    isLive: row.talk.state === "live" || row.talk.state === "reconnecting",
     viewerIsHost: true as const,
   });
 }
