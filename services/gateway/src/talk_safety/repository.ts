@@ -104,7 +104,7 @@ function enforcement(row:EnforcementRow):TalkSafetyEnforcement{
 export function createPostgresTalkSafetyRepository(
   pool:TalkSafetySqlPool,
 ):TalkSafetyRepository{
-  return Object.freeze({
+  return Object.freeze<TalkSafetyRepository>({
     async appendReport(input){
       const normalized=normalizeTalkSafetyReport(input);
       const result=await pool.query<ReportRow>(
