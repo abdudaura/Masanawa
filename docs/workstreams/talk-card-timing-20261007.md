@@ -1,0 +1,23 @@
+# Talk card timing — 2026-10-07
+
+- Owner/window: current ChatGPT implementation window
+- Branch: `work/talk-card-timing-20261007`
+- Base SHA: `880c799159e2a3c0173cce3e295997502d7b128a`
+- Task: complete minimum Talk discovery metadata with live elapsed time and replay duration.
+- Exact owned paths:
+  - `services/gateway/src/talks/model.ts`
+  - `services/gateway/src/talks/postgres_repository.ts`
+  - focused Talk backend tests
+  - `apps/mobile/lib/src/talks/talk_models.dart`
+  - `apps/mobile/lib/src/screens/talks/talk_home_screen.dart`
+  - focused Talk Home/model tests
+  - this claim file
+- Contract:
+  - backend exposes canonical Talk start time;
+  - live card shows compact elapsed time;
+  - replay card shows compact duration;
+  - timing hides when unavailable rather than inventing values;
+  - existing single-column card hierarchy and Listen/Play action remain unchanged.
+- Current step: carry started_at through discovery API, parse it on mobile, render timing beside audience signal.
+- Last update: 2026-10-07T15:20Z
+- Status: active
