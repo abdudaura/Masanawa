@@ -24,10 +24,10 @@ describe("Postgres Talk repository", () => {
     const calls: Array<{ text: string; values?: unknown[] }> = [];
     const pool: TalkSqlPool = {
       async query<Row>(text: string, values?: unknown[]) {
-        calls.push({ text, values });
+        calls.push({ text, ...(values === undefined ? {} : { values }) });
         return {
           rowCount: 1,
-          rows: [row()] as Row[],
+          rows: [row()] as unknown as Row[],
         };
       },
     };
@@ -67,10 +67,10 @@ describe("Postgres Talk repository", () => {
     const calls: Array<{ text: string; values?: unknown[] }> = [];
     const pool: TalkSqlPool = {
       async query<Row>(text: string, values?: unknown[]) {
-        calls.push({ text, values });
+        calls.push({ text, ...(values === undefined ? {} : { values }) });
         return {
           rowCount: 1,
-          rows: [row({ comment_count: 4 })] as Row[],
+          rows: [row({ comment_count: 4 })] as unknown as Row[],
         };
       },
     };
@@ -98,7 +98,7 @@ describe("Postgres Talk repository", () => {
   it("returns null when a comment target Talk does not exist", async () => {
     const pool: TalkSqlPool = {
       async query<Row>() {
-        return { rowCount: 0, rows: [] as Row[] };
+        return { rowCount: 0, rows: [] as unknown as Row[] };
       },
     };
     const repository = createPostgresTalkRepository(pool);
