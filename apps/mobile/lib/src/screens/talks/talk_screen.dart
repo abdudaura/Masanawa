@@ -9,6 +9,7 @@ import '../../state/talk_host_controls_state.dart';
 import '../../state/talk_library_state.dart';
 import '../../state/talk_live_state.dart';
 import '../../state/talk_participation_state.dart';
+import '../../state/talk_question_state.dart';
 import '../../state/talk_replay_playback_state.dart';
 import '../../state/talk_state.dart';
 import '../../state/wallet_state.dart';
@@ -25,6 +26,7 @@ import 'add_ai_seat_sheet.dart';
 import 'talk_gift_sheet.dart';
 import 'talk_host_controls_sheets.dart';
 import 'talk_participation_sheets.dart';
+import 'talk_question_sheet.dart';
 
 class TalkScreen extends ConsumerStatefulWidget {
   const TalkScreen({
@@ -302,6 +304,33 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
     }
   }
 
+  Future<void> _askQuestion() async {
+    if (widget.isHost) return;
+    final body = await showTalkQuestionSheet(context);
+    if (!mounted || body == null) return;
+    try {
+      await ref.read(talkQuestionTransportProvider).submit(
+            talkId: widget.talkId,
+            body: body,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Question sent to the Host.')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Couldn’t send your question right now.')),
+      );
+    }
+  }
+
+  Future<void> _openHostQuestions() async {
+    await showTalkHostQuestionsSheet(context, talkId: widget.talkId);
+    if (!mounted) return;
+    ref.invalidate(talkHostQuestionsProvider(widget.talkId));
+  }
+
   Future<void> _openHostRequests() async {
     await showTalkHostRequestsSheet(
       context,
@@ -460,6 +489,12 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
               orElse: () => const TalkHostControlsView(),
             )
         : const TalkHostControlsView();
+    final hostQuestionCount = widget.isHost
+        ? ref.watch(talkHostQuestionsProvider(widget.talkId)).maybeWhen(
+              data: (value) => value.length,
+              orElse: () => 0,
+            )
+        : 0;
     final fallback = widget.initialTalk;
     final projectedTalk = detail.maybeWhen(
       data: (value) => value.talk,
@@ -491,6 +526,8 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
         onRetryReplay: _retryReplayPlayback,
         onSeekReplay: _seekReplayPlayback,
         hostRequestCount: hostControls.requests.length,
+        hostQuestionCount: hostQuestionCount,
+        onHostQuestions: _openHostQuestions,
         onHostRequests: _openHostRequests,
         onHostManage: _openHostManage,
         onEndTalk: _endingTalk ? null : _endTalk,
@@ -498,6 +535,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
         reaction: participation.reaction,
         onAddAi: _openAiSeatSheet,
         onGift: widget.isHost ? null : () => _openGift(value.talk.hostName),
+        onAskQuestion: value.talk.isLive && !widget.isHost ? _askQuestion : null,
         handStatus: participation.handStatus,
         handBusy: _handBusy,
         onRaiseHand: widget.isHost
@@ -535,6 +573,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             reaction: participation.reaction,
             onAddAi: _openAiSeatSheet,
             onGift: widget.isHost ? null : () => _openGift(fallback.hostName),
+            onAskQuestion: fallback.isLive && !widget.isHost ? _askQuestion : null,
             handStatus: participation.handStatus,
             handBusy: _handBusy,
             onRaiseHand: widget.isHost
@@ -577,6 +616,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             reaction: participation.reaction,
             onAddAi: _openAiSeatSheet,
             onGift: widget.isHost ? null : () => _openGift(fallback.hostName),
+            onAskQuestion: fallback.isLive && !widget.isHost ? _askQuestion : null,
             handStatus: participation.handStatus,
             handBusy: _handBusy,
             onRaiseHand: widget.isHost
@@ -619,6 +659,8 @@ class _TalkBody extends StatelessWidget {
     this.onRetryReplay,
     this.onSeekReplay,
     this.hostRequestCount = 0,
+    this.hostQuestionCount = 0,
+    this.onHostQuestions,
     this.onHostRequests,
     this.onHostManage,
     this.onEndTalk,
@@ -626,6 +668,7 @@ class _TalkBody extends StatelessWidget {
     this.reaction,
     this.onAddAi,
     this.onGift,
+    this.onAskQuestion,
     this.handStatus = TalkHandStatus.idle,
     this.handBusy = false,
     this.onRaiseHand,
@@ -653,6 +696,8 @@ class _TalkBody extends StatelessWidget {
   final VoidCallback? onRetryReplay;
   final ValueChanged<double>? onSeekReplay;
   final int hostRequestCount;
+  final int hostQuestionCount;
+  final VoidCallback? onHostQuestions;
   final VoidCallback? onHostRequests;
   final VoidCallback? onHostManage;
   final VoidCallback? onEndTalk;
@@ -660,6 +705,7 @@ class _TalkBody extends StatelessWidget {
   final String? reaction;
   final VoidCallback? onAddAi;
   final VoidCallback? onGift;
+  final VoidCallback? onAskQuestion;
   final TalkHandStatus handStatus;
   final bool handBusy;
   final VoidCallback? onRaiseHand;
@@ -724,6 +770,7 @@ class _TalkBody extends StatelessWidget {
                     reaction: reaction,
                     onAddAi: onAddAi,
                     onGift: onGift,
+                    onAskQuestion: onAskQuestion,
                     handStatus: handStatus,
                     handBusy: handBusy,
                     onRaiseHand: onRaiseHand,
@@ -829,6 +876,8 @@ class _TalkStage extends StatelessWidget {
     this.onRetryReplay,
     this.onSeekReplay,
     this.hostRequestCount = 0,
+    this.hostQuestionCount = 0,
+    this.onHostQuestions,
     this.onHostRequests,
     this.onHostManage,
     this.onEndTalk,
@@ -836,6 +885,7 @@ class _TalkStage extends StatelessWidget {
     this.reaction,
     this.onAddAi,
     this.onGift,
+    this.onAskQuestion,
     this.handStatus = TalkHandStatus.idle,
     this.handBusy = false,
     this.onRaiseHand,
@@ -854,6 +904,8 @@ class _TalkStage extends StatelessWidget {
   final VoidCallback? onRetryReplay;
   final ValueChanged<double>? onSeekReplay;
   final int hostRequestCount;
+  final int hostQuestionCount;
+  final VoidCallback? onHostQuestions;
   final VoidCallback? onHostRequests;
   final VoidCallback? onHostManage;
   final VoidCallback? onEndTalk;
@@ -861,6 +913,7 @@ class _TalkStage extends StatelessWidget {
   final String? reaction;
   final VoidCallback? onAddAi;
   final VoidCallback? onGift;
+  final VoidCallback? onAskQuestion;
   final TalkHandStatus handStatus;
   final bool handBusy;
   final VoidCallback? onRaiseHand;
@@ -994,6 +1047,15 @@ class _TalkStage extends StatelessWidget {
                 ),
                 Expanded(
                   child: _ActionButton(
+                    icon: Icons.question_answer_outlined,
+                    label: hostQuestionCount > 0
+                        ? 'Questions ' + hostQuestionCount.toString()
+                        : 'Questions',
+                    onTap: onHostQuestions,
+                  ),
+                ),
+                Expanded(
+                  child: _ActionButton(
                     icon: Icons.person_add_alt_1_rounded,
                     label: 'Add AI',
                     onTap: onAddAi,
@@ -1042,6 +1104,13 @@ class _TalkStage extends StatelessWidget {
                                 ? 'Speaker'
                                 : 'Raise hand',
                     onTap: onRaiseHand,
+                  ),
+                ),
+                Expanded(
+                  child: _ActionButton(
+                    icon: Icons.question_answer_outlined,
+                    label: 'Ask',
+                    onTap: onAskQuestion,
                   ),
                 ),
                 Expanded(
@@ -1379,6 +1448,7 @@ class _ActionButton extends StatelessWidget {
             Text(
               label,
               maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(color: u.textMuted, fontSize: 10.5),
             ),
           ],

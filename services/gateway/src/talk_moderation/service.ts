@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { PlatformSessionIdentity } from "@masanawa/security";
 import type { TalkMediaAdmin } from "./livekit_admin.js";
 import type { TalkAiSeatHostBridge } from "../talk_ai_seats/service.js";
@@ -5,6 +6,7 @@ import type {
   HostControlsView,
   TalkModerationRepository,
   TalkParticipationView,
+  TalkQuestionView,
   TalkReaction,
 } from "./model.js";
 
@@ -36,6 +38,21 @@ export interface TalkModerationService {
     talkId: string;
     raised: boolean;
   }>): Promise<TalkParticipationView>;
+  question(input: Readonly<{
+    authorizationHeader: string | undefined;
+    talkId: string;
+    body: string;
+  }>): Promise<TalkQuestionView>;
+  hostQuestions(input: Readonly<{
+    authorizationHeader: string | undefined;
+    talkId: string;
+  }>): Promise<readonly TalkQuestionView[]>;
+  hostQuestion(input: Readonly<{
+    authorizationHeader: string | undefined;
+    talkId: string;
+    questionId: string;
+    action: "answered" | "dismissed";
+  }>): Promise<readonly TalkQuestionView[]>;
   hostControls(input: Readonly<{
     authorizationHeader: string | undefined;
     talkId: string;
@@ -64,16 +81,23 @@ function bounded(value: string, label: string): string {
   return normalized;
 }
 
+function boundedQuestion(value: string): string {
+  const normalized=value.trim().replace(/\s+/gu," ");
+  if(!normalized || normalized.length>500) throw new TalkModerationError("talks.question_invalid",400);
+  return normalized;
+}
+
 function mapRepositoryError(error: unknown): never {
   if (error instanceof TalkModerationError) throw error;
   const code=error instanceof Error ? error.message : "talks.moderation_failed";
   const status =
     code === "talks.host_forbidden" ? 403 :
     code === "talks.not_found" ? 404 :
-    code === "talks.request_not_found" || code === "talks.participant_not_found" ? 404 :
+    code === "talks.request_not_found" || code === "talks.participant_not_found" ||
+    code === "talks.question_not_found" ? 404 :
     code === "talks.host_immutable" || code === "talks.not_live" ||
     code === "talks.ai_commerce_required" || code === "Talk live revision conflict" ? 409 :
-    code === "talks.reaction_rate_limited" ? 429 :
+    code === "talks.reaction_rate_limited" || code === "talks.question_rate_limited" ? 429 :
     code.includes("capacity") ? 409 :
     400;
   throw new TalkModerationError(code,status);
@@ -85,6 +109,12 @@ export function createTalkModerationService(input: Readonly<{
   now?: () => string;
   mediaAdmin?: TalkMediaAdmin;
   aiSeats?: TalkAiSeatHostBridge;
+  onTalkEnded?: (input: Readonly<{
+    tenantId: string;
+    talkId: string;
+    reason: "host_ended";
+    now: string;
+  }>) => Promise<void>;
 }>): TalkModerationService {
   const now=input.now ?? (()=>new Date().toISOString());
 
@@ -132,6 +162,33 @@ export function createTalkModerationService(input: Readonly<{
       const result=await guarded(()=>input.repository.setRaised({
         tenantId:viewer.tenantId,userId:viewer.userId,displayName:viewer.profile.name,
         talkId:bounded(request.talkId,"talk_id"),raised:request.raised,now:now(),
+      }));
+      if(!result) throw new TalkModerationError("talks.not_found",404);
+      return result;
+    },
+    async question(request){
+      const viewer=await identity(request.authorizationHeader);
+      const result=await guarded(()=>input.repository.submitQuestion({
+        tenantId:viewer.tenantId,userId:viewer.userId,displayName:viewer.profile.name,
+        talkId:bounded(request.talkId,"talk_id"),questionId:`question_${randomUUID()}`,
+        body:boundedQuestion(request.body),now:now(),
+      }));
+      if(!result) throw new TalkModerationError("talks.not_found",404);
+      return result;
+    },
+    async hostQuestions(request){
+      const viewer=await identity(request.authorizationHeader);
+      const result=await guarded(()=>input.repository.listQuestions({
+        tenantId:viewer.tenantId,hostUserId:viewer.userId,talkId:bounded(request.talkId,"talk_id"),
+      }));
+      if(!result) throw new TalkModerationError("talks.not_found",404);
+      return result;
+    },
+    async hostQuestion(request){
+      const viewer=await identity(request.authorizationHeader);
+      const result=await guarded(()=>input.repository.resolveQuestion({
+        tenantId:viewer.tenantId,hostUserId:viewer.userId,talkId:bounded(request.talkId,"talk_id"),
+        questionId:bounded(request.questionId,"question_id"),action:request.action,now:now(),
       }));
       if(!result) throw new TalkModerationError("talks.not_found",404);
       return result;

@@ -29,6 +29,32 @@ export function registerTalkModerationRoutes(app:FastifyInstance,service:TalkMod
     return service.raiseHand({authorizationHeader:request.headers.authorization,talkId,raised});
   });
 
+  app.post("/talks/:talkId/questions",{
+    schema:{params:TalkParams,body:Type.Object({body:Type.String({minLength:1,maxLength:500})},{additionalProperties:false})},
+  },async (request,reply)=>{
+    const {talkId}=request.params as {talkId:string};
+    const {body}=request.body as {body:string};
+    const question=await service.question({authorizationHeader:request.headers.authorization,talkId,body});
+    reply.code(201);
+    return question;
+  });
+
+  app.get("/talks/:talkId/host-questions",{schema:{params:TalkParams}},async request=>{
+    const {talkId}=request.params as {talkId:string};
+    return service.hostQuestions({authorizationHeader:request.headers.authorization,talkId});
+  });
+
+  app.post("/talks/:talkId/host-questions/:questionId",{
+    schema:{
+      params:Type.Object({talkId:Type.String({minLength:1,maxLength:160}),questionId:Type.String({minLength:1,maxLength:160})},{additionalProperties:false}),
+      body:Type.Object({action:Type.Union([Type.Literal("answered"),Type.Literal("dismissed")])},{additionalProperties:false}),
+    },
+  },async request=>{
+    const {talkId,questionId}=request.params as {talkId:string;questionId:string};
+    const {action}=request.body as {action:"answered"|"dismissed"};
+    return service.hostQuestion({authorizationHeader:request.headers.authorization,talkId,questionId,action});
+  });
+
   app.get("/talks/:talkId/host-controls",{schema:{params:TalkParams}},async request=>{
     const {talkId}=request.params as {talkId:string};
     return service.hostControls({authorizationHeader:request.headers.authorization,talkId});
