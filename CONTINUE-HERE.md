@@ -87,8 +87,17 @@ Masanawa app where live audience/Seat controls can be represented correctly.
 
 ## Canonical branch and parallel-work rules
 
-`main` is the only canonical product branch for local pulls/builds. Work branches are
-temporary implementation lanes and must merge back to `main`.
+`main` is the **only** canonical product branch for local pulls, APK builds, deployment
+qualification and product continuation. Work branches are temporary implementation lanes:
+they are never a second source of truth and completed work must merge back to `main`.
+
+For a normal local update, use `git checkout main` followed by `git pull origin main`.
+Do not pull, merge or build from old `work/*`, `ci/*`, `phase*`, `docs/*` or archived
+branches unless a current active workstream explicitly requires repository recovery.
+
+Open PRs from product directions that predate the 2026-10-07 Talk reset are archival and
+must be closed rather than treated as pending product work. Historical branches may remain
+only to preserve recoverable commits; their existence does not make them canonical.
 
 Read `docs/MULTI-WINDOW-WORK.md` before editing. A workstream claim expires after
 5 minutes without repository-visible work. Preserve useful work from stale branches, but
