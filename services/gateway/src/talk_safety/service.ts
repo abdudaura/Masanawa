@@ -106,7 +106,7 @@ export function createTalkSafetyService(input:Readonly<{
     return input.platformAuthority.authorize({authorizationHeader:header});
   }
 
-  return Object.freeze({
+  return Object.freeze<TalkSafetyService>({
     async report(request){
       const reporter=await customer(request.authorizationHeader);
       const report=normalizeTalkSafetyReport({
