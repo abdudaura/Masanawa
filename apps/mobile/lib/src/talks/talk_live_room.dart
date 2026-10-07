@@ -47,6 +47,9 @@ class LiveKitTalkLiveRoom implements TalkLiveRoom {
         credentials.participantToken,
         connectOptions: const ConnectOptions(autoSubscribe: true),
       );
+      if (AudioManager.instance.canSwitchSpeakerphone) {
+        await AudioManager.instance.setSpeakerOutputPreferred(true);
+      }
       _mayPublishMicrophone = publishMicrophone;
       if (publishMicrophone) {
         final participant = room.localParticipant;
@@ -97,6 +100,13 @@ class LiveKitTalkLiveRoom implements TalkLiveRoom {
       // Best-effort media disconnect.
     }
     await room.dispose();
+    if (AudioManager.instance.canSwitchSpeakerphone) {
+      try {
+        await AudioManager.instance.setSpeakerOutputPreferred(false);
+      } catch (_) {
+        // Audio routing may already have returned to the system default.
+      }
+    }
     _mayPublishMicrophone = false;
   }
 }
