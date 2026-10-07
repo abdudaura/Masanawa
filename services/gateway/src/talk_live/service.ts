@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { PlatformSessionIdentity } from "@masanawa/security";
 import type { TalkMediaTokenIssuer, TalkMediaCredentials } from "./livekit_media.js";
+import type { TalkReplayCoordinator } from "../talk_replay/service.js";
 import type {
   TalkLiveRepository,
   TalkLiveSessionView,
@@ -69,6 +70,7 @@ export function createTalkLiveService(input: Readonly<{
   reconnectGraceMs?: number;
   createSessionId?: () => string;
   mediaTokens?: TalkMediaTokenIssuer;
+  replay?: TalkReplayCoordinator;
 }>): TalkLiveService {
   const now = input.now ?? (() => new Date().toISOString());
   const reconnectGraceMs = input.reconnectGraceMs ?? 30_000;
@@ -94,6 +96,19 @@ export function createTalkLiveService(input: Readonly<{
         reconnectGraceMs,
       });
       if (!connected) throw new TalkLiveError("talks.not_found", 404);
+      if (connected.role === "host" && input.replay) {
+        await input.replay.ensureStarted({
+          tenantId: viewer.tenantId,
+          hostUserId: viewer.userId,
+          talkId: connected.talkId,
+        });
+      }
+      if (connected.state === "ended" && input.replay) {
+        await input.replay.stopForTalk({
+          tenantId: viewer.tenantId,
+          talkId: connected.talkId,
+        });
+      }
       return connected;
     },
 
@@ -108,6 +123,12 @@ export function createTalkLiveService(input: Readonly<{
         reconnectGraceMs,
       });
       if (!connected) throw new TalkLiveError("talks.live.session_not_found", 404);
+      if (connected.state === "ended" && input.replay) {
+        await input.replay.stopForTalk({
+          tenantId: viewer.tenantId,
+          talkId: connected.talkId,
+        });
+      }
       return connected;
     },
 
@@ -122,6 +143,12 @@ export function createTalkLiveService(input: Readonly<{
         reconnectGraceMs,
       });
       if (!state) throw new TalkLiveError("talks.live.session_not_found", 404);
+      if (state.state === "ended" && input.replay) {
+        await input.replay.stopForTalk({
+          tenantId: viewer.tenantId,
+          talkId: state.talkId,
+        });
+      }
       return state;
     },
 
@@ -161,6 +188,12 @@ export function createTalkLiveService(input: Readonly<{
         reconnectGraceMs,
       });
       if (!state) throw new TalkLiveError("talks.not_found", 404);
+      if (state.state === "ended" && input.replay) {
+        await input.replay.stopForTalk({
+          tenantId: viewer.tenantId,
+          talkId: state.talkId,
+        });
+      }
       return state;
     },
   });
