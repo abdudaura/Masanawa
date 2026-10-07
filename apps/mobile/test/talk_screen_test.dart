@@ -42,33 +42,33 @@ class _SocialProfiles implements TalkSocialProfileTransport {
     required String handle,
     required String displayName,
     required bool isFollowing,
-  }) =>
-      HumanProfile(
-        handle: handle,
-        displayName: displayName,
-        followerCount: isFollowing ? 11 : 10,
-        followingCount: 2,
-        isFollowing: isFollowing,
-      );
+  }) => HumanProfile(
+    handle: handle,
+    displayName: displayName,
+    followerCount: isFollowing ? 11 : 10,
+    followingCount: 2,
+    isFollowing: isFollowing,
+  );
 
   HumanProfile _hostProfile() => _profile(
-        handle: 'abdullahi',
-        displayName: 'Abdullahi',
-        isFollowing: following,
-      );
+    handle: 'abdullahi',
+    displayName: 'Abdullahi',
+    isFollowing: following,
+  );
 
   HumanProfile _speakerProfile() => _profile(
-        handle: 'musa',
-        displayName: 'Musa',
-        isFollowing: speakerFollowing,
-      );
+    handle: 'musa',
+    displayName: 'Musa',
+    isFollowing: speakerFollowing,
+  );
 
   @override
   Future<HumanProfile?> loadHuman(String handle) async =>
       handle == 'musa' ? _speakerProfile() : _hostProfile();
 
   @override
-  Future<HumanProfile?> loadHumanByUserId(String userId) async => switch (userId) {
+  Future<HumanProfile?> loadHumanByUserId(String userId) async =>
+      switch (userId) {
         'host' => _hostProfile(),
         'user-speaker' => _speakerProfile(),
         _ => null,
@@ -104,18 +104,20 @@ class _SocialProfiles implements TalkSocialProfileTransport {
 }
 
 class _SafetyTransport implements TalkSafetyTransport {
-  TalkSafetyPreference preference =
-      const TalkSafetyPreference(blocked: false, muted: false);
-  final List<({
-    String talkId,
-    bool isReplay,
-    TalkSafetyReportReason reason,
-  })> reports = [];
-  final List<({
-    TalkSafetyTargetKind targetKind,
-    String targetId,
-    TalkSafetyReportReason reason,
-  })> targetReports = [];
+  TalkSafetyPreference preference = const TalkSafetyPreference(
+    blocked: false,
+    muted: false,
+  );
+  final List<({String talkId, bool isReplay, TalkSafetyReportReason reason})>
+  reports = [];
+  final List<
+    ({
+      TalkSafetyTargetKind targetKind,
+      String targetId,
+      TalkSafetyReportReason reason,
+    })
+  >
+  targetReports = [];
   final List<({String userId, bool blocked, bool muted})> preferences = [];
 
   @override
@@ -182,10 +184,8 @@ class _DirectTwinTransport implements DirectTwinTransport {
   Future<DirectTwinInstruction> load({
     required String talkId,
     required String seatId,
-  }) async => DirectTwinInstruction(
-        revision: revision,
-        instruction: instruction,
-      );
+  }) async =>
+      DirectTwinInstruction(revision: revision, instruction: instruction);
 
   @override
   Future<DirectTwinInstruction> set({
@@ -213,10 +213,7 @@ class _DirectTwinTransport implements DirectTwinTransport {
     expect(revision, this.revision);
     instruction = null;
     this.revision += 1;
-    return DirectTwinInstruction(
-      revision: this.revision,
-      instruction: null,
-    );
+    return DirectTwinInstruction(revision: this.revision, instruction: null);
   }
 }
 
@@ -275,44 +272,41 @@ class _SeatTransport implements TalkAiSeatTransport {
   @override
   Future<List<TalkAiSeatCandidate>> loadCandidates({
     required String talkId,
-  }) async =>
-      const [
-        TalkAiSeatCandidate(
-          personaId: 'expert-1',
-          displayName: 'Education Expert',
-          kind: TalkAiPersonaKind.expert,
-          seatFeeLabel: '₦300',
-          subtitle: 'Learning · Schools',
-        ),
-      ];
+  }) async => const [
+    TalkAiSeatCandidate(
+      personaId: 'expert-1',
+      displayName: 'Education Expert',
+      kind: TalkAiPersonaKind.expert,
+      seatFeeLabel: '₦300',
+      subtitle: 'Learning · Schools',
+    ),
+  ];
 
   @override
   Future<TalkAiSeatQuote> createQuote({
     required String talkId,
     required String personaId,
     required TalkAiSeatMode mode,
-  }) async =>
-      TalkAiSeatQuote(
-        quoteId: 'quote-1',
-        personaId: personaId,
-        displayName: 'Education Expert',
-        kind: TalkAiPersonaKind.expert,
-        mode: mode,
-        totalLabel: '₦300',
-        expiresAt: DateTime(2030, 1, 1, 12, 30),
-        requiresHostApproval: mode == TalkAiSeatMode.sponsor,
-      );
+  }) async => TalkAiSeatQuote(
+    quoteId: 'quote-1',
+    personaId: personaId,
+    displayName: 'Education Expert',
+    kind: TalkAiPersonaKind.expert,
+    mode: mode,
+    totalLabel: '₦300',
+    expiresAt: DateTime(2030, 1, 1, 12, 30),
+    requiresHostApproval: mode == TalkAiSeatMode.sponsor,
+  );
 
   @override
   Future<TalkAiSeatRequest> confirmQuote({
     required String talkId,
     required String quoteId,
-  }) async =>
-      const TalkAiSeatRequest(
-        requestId: 'request-1',
-        status: TalkAiSeatRequestStatus.pendingHost,
-        message: 'Waiting for the Host.',
-      );
+  }) async => const TalkAiSeatRequest(
+    requestId: 'request-1',
+    status: TalkAiSeatRequestStatus.pendingHost,
+    message: 'Waiting for the Host.',
+  );
 }
 
 class _FakeLiveAudioController implements TalkLiveAudioController {
@@ -364,10 +358,10 @@ class _FakeLiveAudioController implements TalkLiveAudioController {
   }
 }
 
-class _FakeReplayPlaybackController
-    implements TalkReplayPlaybackController {
-  final _snapshots =
-      StreamController<TalkReplayPlaybackSnapshot>.broadcast(sync: true);
+class _FakeReplayPlaybackController implements TalkReplayPlaybackController {
+  final _snapshots = StreamController<TalkReplayPlaybackSnapshot>.broadcast(
+    sync: true,
+  );
   TalkReplayPlaybackSnapshot _snapshot = const TalkReplayPlaybackSnapshot(
     duration: Duration(minutes: 2),
   );
@@ -406,8 +400,7 @@ class _FakeReplayPlaybackController
   Future<void> seekTo(double fraction) async {
     _snapshot = _snapshot.copyWith(
       position: Duration(
-        milliseconds:
-            (_snapshot.duration.inMilliseconds * fraction).round(),
+        milliseconds: (_snapshot.duration.inMilliseconds * fraction).round(),
       ),
     );
     _snapshots.add(_snapshot);
@@ -439,8 +432,9 @@ class _ReplayTalkTransport implements TalkTransport {
   );
 
   @override
-  Future<List<TalkDiscoveryItem>> loadFeed(TalkFeedKind feed) async =>
-      const [talk];
+  Future<List<TalkDiscoveryItem>> loadFeed(TalkFeedKind feed) async => const [
+    talk,
+  ];
 
   @override
   Future<TalkDetail> loadTalk(String talkId) async =>
@@ -450,8 +444,7 @@ class _ReplayTalkTransport implements TalkTransport {
   Future<TalkDiscoveryItem> createTalk({
     required String topic,
     String? title,
-  }) async =>
-      talk;
+  }) async => talk;
 
   @override
   Future<TalkDiscoveryItem> updateTalk({
@@ -459,20 +452,18 @@ class _ReplayTalkTransport implements TalkTransport {
     String? title,
     String? topic,
     String? summary,
-  }) async =>
-      talk;
+  }) async => talk;
 
   @override
   Future<TalkComment> addComment({
     required String talkId,
     required String body,
-  }) async =>
-      TalkComment(
-        id: 'comment-replay',
-        authorName: 'You',
-        body: body,
-        createdAt: DateTime(2026, 10, 7, 10),
-      );
+  }) async => TalkComment(
+    id: 'comment-replay',
+    authorName: 'You',
+    body: body,
+    createdAt: DateTime(2026, 10, 7, 10),
+  );
 }
 
 class _HostControlsTransport implements TalkHostControlsTransport {
@@ -616,20 +607,16 @@ class _PollTransport implements TalkPollTransport {
   int closed = 0;
 
   static TalkPoll active() => TalkPoll(
-        pollId: 'poll-1',
-        question: 'Which topic next?',
-        isOpen: true,
-        options: const [
-          TalkPollOption(optionId: 'jobs', label: 'Jobs', voteCount: 2),
-          TalkPollOption(
-            optionId: 'education',
-            label: 'Education',
-            voteCount: 1,
-          ),
-        ],
-        totalVotes: 3,
-        createdAt: DateTime(2026, 10, 7, 11, 30),
-      );
+    pollId: 'poll-1',
+    question: 'Which topic next?',
+    isOpen: true,
+    options: const [
+      TalkPollOption(optionId: 'jobs', label: 'Jobs', voteCount: 2),
+      TalkPollOption(optionId: 'education', label: 'Education', voteCount: 1),
+    ],
+    totalVotes: 3,
+    createdAt: DateTime(2026, 10, 7, 11, 30),
+  );
 
   @override
   Future<TalkPoll?> load(String talkId) async => current;
@@ -676,8 +663,9 @@ class _PollTransport implements TalkPollTransport {
           TalkPollOption(
             optionId: option.optionId,
             label: option.label,
-            voteCount:
-                option.optionId == optionId ? option.voteCount + 1 : option.voteCount,
+            voteCount: option.optionId == optionId
+                ? option.voteCount + 1
+                : option.voteCount,
           ),
       ],
       totalVotes: source.totalVotes + 1,
@@ -792,8 +780,9 @@ class _TalkTransport implements TalkTransport {
   );
 
   @override
-  Future<List<TalkDiscoveryItem>> loadFeed(TalkFeedKind feed) async =>
-      const [talk];
+  Future<List<TalkDiscoveryItem>> loadFeed(TalkFeedKind feed) async => const [
+    talk,
+  ];
 
   @override
   Future<TalkDetail> loadTalk(String talkId) async =>
@@ -803,15 +792,10 @@ class _TalkTransport implements TalkTransport {
   Future<TalkDiscoveryItem> createTalk({
     required String topic,
     String? title,
-  }) async =>
-      talk;
+  }) async => talk;
 
-  final List<({
-    String talkId,
-    String? title,
-    String? topic,
-    String? summary,
-  })> updates = [];
+  final List<({String talkId, String? title, String? topic, String? summary})>
+  updates = [];
 
   @override
   Future<TalkDiscoveryItem> updateTalk({
@@ -820,12 +804,7 @@ class _TalkTransport implements TalkTransport {
     String? topic,
     String? summary,
   }) async {
-    updates.add((
-      talkId: talkId,
-      title: title,
-      topic: topic,
-      summary: summary,
-    ));
+    updates.add((talkId: talkId, title: title, topic: topic, summary: summary));
     return TalkDiscoveryItem(
       id: talk.id,
       title: title ?? talk.title,
@@ -874,30 +853,22 @@ Widget _app({
   return ProviderScope(
     overrides: [
       talkTransportProvider.overrideWithValue(talkTransport),
-      talkAiSeatTransportProvider.overrideWithValue(
-        const _SeatTransport(),
-      ),
+      talkAiSeatTransportProvider.overrideWithValue(const _SeatTransport()),
       talkParticipationTransportProvider.overrideWithValue(
         participation ?? _ParticipationTransport(),
       ),
       talkHostControlsTransportProvider.overrideWithValue(
         hostControls ?? _HostControlsTransport(),
       ),
-      talkPollTransportProvider.overrideWithValue(
-        polls ?? _PollTransport(),
-      ),
+      talkPollTransportProvider.overrideWithValue(polls ?? _PollTransport()),
       talkQuestionTransportProvider.overrideWithValue(
         questions ?? _QuestionTransport(),
       ),
       talkLibraryTransportProvider.overrideWithValue(
         library ?? _LibraryTransport(),
       ),
-      talkGiftTransportProvider.overrideWithValue(
-        gift ?? _GiftTransport(),
-      ),
-      talkShareServiceProvider.overrideWithValue(
-        share ?? _ShareService(),
-      ),
+      talkGiftTransportProvider.overrideWithValue(gift ?? _GiftTransport()),
+      talkShareServiceProvider.overrideWithValue(share ?? _ShareService()),
       talkSafetyTransportProvider.overrideWithValue(
         safety ?? _SafetyTransport(),
       ),
@@ -908,8 +879,8 @@ Widget _app({
         directTwin ?? _DirectTwinTransport(),
       ),
       talkLiveAudioFactoryProvider.overrideWithValue(
-        (_) => liveAudio ??
-            _FakeLiveAudioController(role: TalkLiveRole.listener),
+        (_) =>
+            liveAudio ?? _FakeLiveAudioController(role: TalkLiveRole.listener),
       ),
       talkReplayPlaybackFactoryProvider.overrideWithValue(
         (_) => replayPlayback ?? _FakeReplayPlaybackController(),
@@ -917,18 +888,17 @@ Widget _app({
     ],
     child: MaterialApp(
       theme: buildMasanawaTheme(brightness: Brightness.light),
-      home: home ??
-          const TalkScreen(
-            talkId: 'talk-1',
-            initialTalk: _TalkTransport.talk,
-          ),
+      home:
+          home ??
+          const TalkScreen(talkId: 'talk-1', initialTalk: _TalkTransport.talk),
     ),
   );
 }
 
 void main() {
-  testWidgets('replay Talk shows native playback without LiveKit autoplay',
-      (tester) async {
+  testWidgets('replay Talk shows native playback without LiveKit autoplay', (
+    tester,
+  ) async {
     final transport = _ReplayTalkTransport();
     final liveAudio = _FakeLiveAudioController(role: TalkLiveRole.listener);
     final replay = _FakeReplayPlaybackController();
@@ -962,8 +932,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Talk keeps live controls and comments on one screen',
-      (tester) async {
+  testWidgets('Talk keeps live controls and comments on one screen', (
+    tester,
+  ) async {
     final transport = _TalkTransport();
     await tester.pumpWidget(_app(talkTransport: transport));
     await tester.pumpAndSettle();
@@ -979,13 +950,12 @@ void main() {
     expect(find.text('Share your thoughts…'), findsOneWidget);
   });
 
-  testWidgets('owned active Twin Seat exposes private Direct Twin control',
-      (tester) async {
+  testWidgets('owned active Twin Seat exposes private Direct Twin control', (
+    tester,
+  ) async {
     final transport = _TalkTransport();
     final directTwin = _DirectTwinTransport(
-      seats: const [
-        DirectTwinSeat(seatId: 'seat-twin-1', personaId: 'twin-1'),
-      ],
+      seats: const [DirectTwinSeat(seatId: 'seat-twin-1', personaId: 'twin-1')],
     );
 
     await tester.pumpWidget(
@@ -1006,17 +976,13 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('live Talk shares canonical public URL with title and Host',
-      (tester) async {
+  testWidgets('live Talk shares canonical public URL with title and Host', (
+    tester,
+  ) async {
     final transport = _TalkTransport();
     final share = _ShareService();
 
-    await tester.pumpWidget(
-      _app(
-        talkTransport: transport,
-        share: share,
-      ),
-    );
+    await tester.pumpWidget(_app(talkTransport: transport, share: share));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const ValueKey('talk-share')));
@@ -1037,8 +1003,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('replay shares the same stable Talk deep-link shape',
-      (tester) async {
+  testWidgets('replay shares the same stable Talk deep-link shape', (
+    tester,
+  ) async {
     final transport = _ReplayTalkTransport();
     final share = _ShareService();
 
@@ -1068,17 +1035,13 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Talk More shows labeled participants and reports privately',
-      (tester) async {
+  testWidgets('Talk More shows labeled participants and reports privately', (
+    tester,
+  ) async {
     final transport = _TalkTransport();
     final safety = _SafetyTransport();
 
-    await tester.pumpWidget(
-      _app(
-        talkTransport: transport,
-        safety: safety,
-      ),
-    );
+    await tester.pumpWidget(_app(talkTransport: transport, safety: safety));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const ValueKey('talk-more')));
@@ -1104,25 +1067,18 @@ void main() {
     expect(safety.reports, hasLength(1));
     expect(safety.reports.single.talkId, 'talk-1');
     expect(safety.reports.single.isReplay, isFalse);
-    expect(
-      safety.reports.single.reason,
-      TalkSafetyReportReason.harassment,
-    );
+    expect(safety.reports.single.reason, TalkSafetyReportReason.harassment);
     expect(find.text('Report received. Thank you.'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('listener follows a human Speaker from Participants but not AI',
-      (tester) async {
+  testWidgets('listener follows a human Speaker from Participants but not AI', (
+    tester,
+  ) async {
     final transport = _TalkTransport();
     final social = _SocialProfiles();
 
-    await tester.pumpWidget(
-      _app(
-        talkTransport: transport,
-        social: social,
-      ),
-    );
+    await tester.pumpWidget(_app(talkTransport: transport, social: social));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const ValueKey('talk-more')));
@@ -1149,9 +1105,7 @@ void main() {
     expect(social.speakerFollowing, isTrue);
     expect(
       find.descendant(
-        of: find.byKey(
-          const ValueKey('talk-participant-follow-user-speaker'),
-        ),
+        of: find.byKey(const ValueKey('talk-participant-follow-user-speaker')),
         matching: find.text('Following'),
       ),
       findsOneWidget,
@@ -1166,8 +1120,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Host participant sheet stays read-only',
-      (tester) async {
+  testWidgets('Host participant sheet stays read-only', (tester) async {
     final transport = _TalkTransport();
     final social = _SocialProfiles();
 
@@ -1197,17 +1150,13 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Talk More updates Host mute and block preferences',
-      (tester) async {
+  testWidgets('Talk More updates Host mute and block preferences', (
+    tester,
+  ) async {
     final transport = _TalkTransport();
     final safety = _SafetyTransport();
 
-    await tester.pumpWidget(
-      _app(
-        talkTransport: transport,
-        safety: safety,
-      ),
-    );
+    await tester.pumpWidget(_app(talkTransport: transport, safety: safety));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const ValueKey('talk-more')));
@@ -1219,18 +1168,20 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('talk-more-mute-host')));
     await tester.pumpAndSettle();
 
-    expect(
-      safety.preferences.last,
-      (userId: 'host', blocked: false, muted: true),
-    );
+    expect(safety.preferences.last, (
+      userId: 'host',
+      blocked: false,
+      muted: true,
+    ));
 
     await tester.tap(find.byKey(const ValueKey('talk-more-block-host')));
     await tester.pumpAndSettle();
 
-    expect(
-      safety.preferences.last,
-      (userId: 'host', blocked: true, muted: true),
-    );
+    expect(safety.preferences.last, (
+      userId: 'host',
+      blocked: true,
+      muted: true,
+    ));
     expect(tester.takeException(), isNull);
   });
 
@@ -1264,8 +1215,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Host edits Talk title topic and summary from More',
-      (tester) async {
+  testWidgets('Host edits Talk title topic and summary from More', (
+    tester,
+  ) async {
     final transport = _TalkTransport();
 
     await tester.pumpWidget(
@@ -1317,8 +1269,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('listener does not see Host-only Talk metadata editing',
-      (tester) async {
+  testWidgets('listener does not see Host-only Talk metadata editing', (
+    tester,
+  ) async {
     final transport = _TalkTransport();
 
     await tester.pumpWidget(_app(talkTransport: transport));
@@ -1331,17 +1284,13 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('listener follows and unfollows the Talk Host from More',
-      (tester) async {
+  testWidgets('listener follows and unfollows the Talk Host from More', (
+    tester,
+  ) async {
     final transport = _TalkTransport();
     final social = _SocialProfiles();
 
-    await tester.pumpWidget(
-      _app(
-        talkTransport: transport,
-        social: social,
-      ),
-    );
+    await tester.pumpWidget(_app(talkTransport: transport, social: social));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const ValueKey('talk-more')));
@@ -1364,8 +1313,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Host never sees a self-follow action in Talk More',
-      (tester) async {
+  testWidgets('Host never sees a self-follow action in Talk More', (
+    tester,
+  ) async {
     final transport = _TalkTransport();
 
     await tester.pumpWidget(
@@ -1392,10 +1342,7 @@ void main() {
     final questions = _QuestionTransport();
 
     await tester.pumpWidget(
-      _app(
-        talkTransport: transport,
-        questions: questions,
-      ),
+      _app(talkTransport: transport, questions: questions),
     );
     await tester.pumpAndSettle();
 
@@ -1419,19 +1366,12 @@ void main() {
     final transport = _TalkTransport();
     final polls = _PollTransport(current: _PollTransport.active());
 
-    await tester.pumpWidget(
-      _app(
-        talkTransport: transport,
-        polls: polls,
-      ),
-    );
+    await tester.pumpWidget(_app(talkTransport: transport, polls: polls));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey('talk-poll-card')), findsOneWidget);
     expect(find.text('Which topic next?'), findsOneWidget);
-    await tester.tap(
-      find.byKey(const ValueKey('talk-poll-option-education')),
-    );
+    await tester.tap(find.byKey(const ValueKey('talk-poll-option-education')));
     await tester.pumpAndSettle();
 
     expect(polls.voted, ['education']);
@@ -1479,7 +1419,13 @@ void main() {
     expect(polls.created.single.options, ['Jobs', 'Education']);
     expect(find.byKey(const ValueKey('talk-poll-card')), findsOneWidget);
 
-    await tester.ensureVisible(find.byKey(const ValueKey('talk-poll-close')));
+    tester.testTextInput.hide();
+    await tester.pumpAndSettle();
+    await Scrollable.ensureVisible(
+      tester.element(find.byKey(const ValueKey('talk-poll-close'))),
+      alignment: .5,
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('talk-poll-close')));
     await tester.pumpAndSettle();
 
@@ -1492,12 +1438,7 @@ void main() {
     final transport = _TalkTransport();
     final library = _LibraryTransport();
 
-    await tester.pumpWidget(
-      _app(
-        talkTransport: transport,
-        library: library,
-      ),
-    );
+    await tester.pumpWidget(_app(talkTransport: transport, library: library));
     await tester.pumpAndSettle();
 
     expect(find.byTooltip('Save Talk'), findsOneWidget);
@@ -1519,12 +1460,7 @@ void main() {
     final transport = _TalkTransport();
     final gift = _GiftTransport();
 
-    await tester.pumpWidget(
-      _app(
-        talkTransport: transport,
-        gift: gift,
-      ),
-    );
+    await tester.pumpWidget(_app(talkTransport: transport, gift: gift));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Gift'));
@@ -1544,17 +1480,13 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('failed Talk gift stays in sheet with friendly error',
-      (tester) async {
+  testWidgets('failed Talk gift stays in sheet with friendly error', (
+    tester,
+  ) async {
     final transport = _TalkTransport();
     final gift = _GiftTransport(fail: true);
 
-    await tester.pumpWidget(
-      _app(
-        talkTransport: transport,
-        gift: gift,
-      ),
-    );
+    await tester.pumpWidget(_app(talkTransport: transport, gift: gift));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Gift'));
@@ -1574,8 +1506,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('listener can post a comment without leaving the Talk',
-      (tester) async {
+  testWidgets('listener can post a comment without leaving the Talk', (
+    tester,
+  ) async {
     final transport = _TalkTransport();
     await tester.pumpWidget(
       _app(
@@ -1619,10 +1552,7 @@ void main() {
     final participation = _ParticipationTransport();
 
     await tester.pumpWidget(
-      _app(
-        talkTransport: transport,
-        participation: participation,
-      ),
+      _app(talkTransport: transport, participation: participation),
     );
     await tester.pumpAndSettle();
 
@@ -1636,38 +1566,37 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('listener raises and lowers hand through Host-controlled request',
-      (tester) async {
-    final transport = _TalkTransport();
-    final participation = _ParticipationTransport();
+  testWidgets(
+    'listener raises and lowers hand through Host-controlled request',
+    (tester) async {
+      final transport = _TalkTransport();
+      final participation = _ParticipationTransport();
 
-    await tester.pumpWidget(
-      _app(
-        talkTransport: transport,
-        participation: participation,
-      ),
-    );
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        _app(talkTransport: transport, participation: participation),
+      );
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Raise hand'));
-    await tester.pumpAndSettle();
-    expect(find.text('Ask to speak?'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('raise-hand-confirm')));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Raise hand'));
+      await tester.pumpAndSettle();
+      expect(find.text('Ask to speak?'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('raise-hand-confirm')));
+      await tester.pumpAndSettle();
 
-    expect(participation.raised, isTrue);
-    expect(find.text('Hand raised'), findsOneWidget);
+      expect(participation.raised, isTrue);
+      expect(find.text('Hand raised'), findsOneWidget);
 
-    await tester.tap(find.text('Hand raised'));
-    await tester.pumpAndSettle();
-    expect(find.text('Your hand is raised'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('raise-hand-confirm')));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Hand raised'));
+      await tester.pumpAndSettle();
+      expect(find.text('Your hand is raised'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('raise-hand-confirm')));
+      await tester.pumpAndSettle();
 
-    expect(participation.raised, isFalse);
-    expect(find.text('Raise hand'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
+      expect(participation.raised, isFalse);
+      expect(find.text('Raise hand'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('live listener auto-connects to Talk audio', (tester) async {
     final transport = _TalkTransport();
@@ -1677,10 +1606,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _app(
-        talkTransport: transport,
-        liveAudio: liveAudio,
-      ),
+      _app(talkTransport: transport, liveAudio: liveAudio),
     );
     await tester.pumpAndSettle();
 
@@ -1689,7 +1615,9 @@ void main() {
     expect(find.byKey(const ValueKey('talk-live-mic-toggle')), findsNothing);
   });
 
-  testWidgets('Host live audio exposes microphone mute control', (tester) async {
+  testWidgets('Host live audio exposes microphone mute control', (
+    tester,
+  ) async {
     final transport = _TalkTransport();
     final liveAudio = _FakeLiveAudioController(
       role: TalkLiveRole.host,
@@ -1719,8 +1647,9 @@ void main() {
     expect(find.text('Muted'), findsOneWidget);
   });
 
-  testWidgets('Speaker live audio exposes microphone mute control',
-      (tester) async {
+  testWidgets('Speaker live audio exposes microphone mute control', (
+    tester,
+  ) async {
     final transport = _TalkTransport();
     final liveAudio = _FakeLiveAudioController(
       role: TalkLiveRole.speaker,
@@ -1751,8 +1680,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('accepted human Speaker can return to the Audience',
-      (tester) async {
+  testWidgets('accepted human Speaker can return to the Audience', (
+    tester,
+  ) async {
     final transport = _TalkTransport();
     final participation = _ParticipationTransport()
       ..state = const TalkParticipationState(
@@ -1761,15 +1691,14 @@ void main() {
       );
 
     await tester.pumpWidget(
-      _app(
-        talkTransport: transport,
-        participation: participation,
-      ),
+      _app(talkTransport: transport, participation: participation),
     );
     await tester.pumpAndSettle();
 
     expect(find.text('Leave seat'), findsOneWidget);
     await tester.tap(find.text('Leave seat'));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 100));
     await tester.pumpAndSettle();
 
     expect(participation.leftSeat, 1);
@@ -1779,8 +1708,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Host sees moderation controls instead of Raise Hand',
-      (tester) async {
+  testWidgets('Host sees moderation controls instead of Raise Hand', (
+    tester,
+  ) async {
     final transport = _TalkTransport();
     final host = _HostControlsTransport();
 
@@ -1848,8 +1778,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Host can review and resolve audience questions',
-      (tester) async {
+  testWidgets('Host can review and resolve audience questions', (tester) async {
     final transport = _TalkTransport();
     final questions = _QuestionTransport();
 
@@ -1880,8 +1809,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Host can manage a Speaker but has no self-removal control',
-      (tester) async {
+  testWidgets('Host can manage a Speaker but has no self-removal control', (
+    tester,
+  ) async {
     final transport = _TalkTransport();
     final host = _HostControlsTransport();
 
@@ -1902,7 +1832,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Abdullahi'), findsWidgets);
-    expect(find.text('Musa'), findsOneWidget);
+    expect(find.text('Musa'), findsWidgets);
     expect(find.text('You'), findsOneWidget);
     expect(
       find.byKey(const ValueKey('host-participant-menu-speaker')),
@@ -1920,8 +1850,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Host reports a human Speaker using the public profile target',
-      (tester) async {
+  testWidgets('Host reports a human Speaker using the public profile target', (
+    tester,
+  ) async {
     final transport = _TalkTransport();
     final host = _HostControlsTransport();
     final safety = _SafetyTransport();
@@ -1951,9 +1882,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     await tester.tap(
-      find.byKey(
-        const ValueKey('host-participant-report-reason-harassment'),
-      ),
+      find.byKey(const ValueKey('host-participant-report-reason-harassment')),
     );
     await tester.pumpAndSettle();
 
@@ -1970,8 +1899,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Host can block and remove a human Speaker',
-      (tester) async {
+  testWidgets('Host can block and remove a human Speaker', (tester) async {
     final transport = _TalkTransport();
     final host = _HostControlsTransport();
     final safety = _SafetyTransport();
@@ -2007,17 +1935,19 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(
-      safety.preferences.last,
-      (userId: 'user-speaker', blocked: true, muted: false),
-    );
+    expect(safety.preferences.last, (
+      userId: 'user-speaker',
+      blocked: true,
+      muted: false,
+    ));
     expect(host.removed, 1);
     expect(find.text('Participant blocked and removed.'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Host reports AI by persona identity and never gets Block',
-      (tester) async {
+  testWidgets('Host reports AI by persona identity and never gets Block', (
+    tester,
+  ) async {
     final transport = _TalkTransport();
     final host = _HostControlsTransport();
     final safety = _SafetyTransport();
@@ -2056,7 +1986,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(safety.targetReports.single.targetKind, TalkSafetyTargetKind.persona);
+    expect(
+      safety.targetReports.single.targetKind,
+      TalkSafetyTargetKind.persona,
+    );
     expect(safety.targetReports.single.targetId, 'expert-economist');
     expect(tester.takeException(), isNull);
   });

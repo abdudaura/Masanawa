@@ -3,7 +3,7 @@
 Owner: current Railway/APK repair window
 Branch: `fix/mobile-apk-build-20261007`
 Base: `bb3f6d204c2e53f21eaf2574311c7c0ef4cbf315`
-Last update: 2026-10-07T16:37:00Z
+Last update: 2026-10-07T16:52:00Z
 Status: active.
 
 ## Exact owned paths
@@ -59,3 +59,7 @@ Evidence: speaker role referenced by live screen but absent from model; speaker 
 - apps/mobile/test/app_mount_test.dart: current auth title
 
 Local tests reproduce disposed TextEditingControllers during question/invitation dismissal, missing Host question control propagation, duplicate feedback from nested sheet Scaffolds, stale test navigation/selectors, and stale creator follow-up route expectations. Preserve product contracts; fix the lifecycle and fixture evidence rather than reintroducing retired UI.
+
+## Verification checkpoint
+
+All 310 Flutter tests pass locally. Flutter analyze --no-fatal-infos --no-fatal-warnings reports no errors (379 pre-existing/style notices remain). Host poll interaction scrolls clear of the fixed comment composer. Leaving a Speaker seat completes participation state before audio reconnection and reports reconnection failures as audio failures. Release APK build is in progress after installing the missing full Java 17 compiler; initial environment had JRE only.

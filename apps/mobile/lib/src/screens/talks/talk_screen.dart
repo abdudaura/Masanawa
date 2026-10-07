@@ -289,7 +289,6 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
           .read(talkParticipationTransportProvider)
           .leaveSeat(widget.talkId);
       ref.invalidate(talkParticipationProvider(widget.talkId));
-      await _retryLiveAudio();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('You’re back in the Audience.')),
@@ -299,8 +298,19 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Couldn’t leave the Speaker seat.')),
       );
+      return;
     } finally {
       if (mounted) setState(() => _handBusy = false);
+    }
+    // The seat change is complete even if reconnecting listener audio fails.
+    try {
+      await _retryLiveAudio();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _liveAudioStatus = TalkLiveAudioStatus.failed;
+        _liveAudioError = 'Live audio is unavailable right now.';
+      });
     }
   }
 
