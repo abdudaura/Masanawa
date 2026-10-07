@@ -1,0 +1,23 @@
+# Talk audience questions — 2026-10-07
+
+- Owner/window: current ChatGPT implementation window
+- Branch: `work/talks-audience-questions-20261007`
+- Base SHA: `25ef7be2cef9047c25696a30f5d918634a1e2f52`
+- Task: implement durable audience questions for live Talks, including authenticated submit/list, Host visibility, and native mobile submission.
+- Exact owned paths:
+  - `packages/talks/migrations/0006_talk_questions.sql`
+  - `services/gateway/src/talk_questions/**`
+  - `services/gateway/src/talk_question_routes.ts`
+  - focused Gateway composition/tests required to register the route
+  - `apps/mobile/lib/src/talks/talk_questions.dart`
+  - `apps/mobile/lib/src/state/talk_question_state.dart`
+  - `apps/mobile/lib/src/screens/talks/talk_question_sheet.dart`
+  - focused wiring/tests in `apps/mobile/lib/src/screens/talks/talk_screen.dart`
+  - this claim file
+- Shared-contract dependencies: existing Talk authentication, live/reconnecting visibility and safety enforcement. No changes to Billing/Crypto, ranking, gifts, replay, or AI Seat commerce.
+- Current step: inspect current moderation/mobile transport seams, then implement a bounded durable question queue with Host-owned resolution state.
+- Last update: 2026-10-07T11:14:00Z
+- Implementation status: claimed
+- Verification status: pending
+- Deployment status: not deployed
+- Handoff evidence: pending
