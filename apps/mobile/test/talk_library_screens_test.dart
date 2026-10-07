@@ -50,6 +50,17 @@ class _LibraryTransport implements TalkLibraryTransport {
 
   @override
   Future<List<TalkDiscoveryItem>> loadSavedTalks() async => const [saved];
+
+  @override
+  Future<TalkSavedState> loadSavedState(String talkId) async =>
+      TalkSavedState(talkId: talkId, saved: talkId == saved.id);
+
+  @override
+  Future<TalkSavedState> setSaved({
+    required String talkId,
+    required bool saved,
+  }) async =>
+      TalkSavedState(talkId: talkId, saved: saved);
 }
 
 Widget _app({
