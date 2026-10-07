@@ -3,7 +3,7 @@
 Owner: current Railway/APK repair window
 Branch: `fix/mobile-apk-build-20261007`
 Base: `bb3f6d204c2e53f21eaf2574311c7c0ef4cbf315`
-Last update: 2026-10-07T22:00:28.630Z
+Last update: 2026-10-07T22:09:30.790Z
 Status: active.
 
 ## Exact owned paths
@@ -73,3 +73,7 @@ SDK and full JDK restored; production readiness remains 200. Restore hosted depe
 Restored-environment verification: all 310 tests pass in 24 seconds. The integration fixture now supplies an isolated signed-in SessionController and asserts Authorization headers, avoiding native secure-storage access. Analyzer again reports no errors with 379 non-fatal existing/style notices. APK Gradle assembly is active with Android dependencies being cached; no final artifact yet.
 
 Release assembly remains active while Gradle restores native plugin build-tool dependencies (multiple Android/Kotlin plugin versions). Cache has reached 3.5 GB and Java compiler activity is ongoing. All 310 tests and no-error analyzer verification remain valid; no production source edits since the last successful checks.
+
+Native assembly diagnosis: Android SDK platform 35 was installed inside a nested android-35 directory, leaving the target android.jar absent. Repaired the local SDK layout using its API-35 source.properties and restarted the cached build. No repository source change was needed.
+
+User additionally requested real LiveKit configuration and chose a new LiveKit Cloud project. Railway gateway/call-gateway/worker have no LIVEKIT_URL/API_KEY/API_SECRET, and no existing LiveKit server is present in the connected infrastructure. Cloud signup is open in the browser and awaits the user's secure account/terms step. Continue independent APK work before handing signup over. Production LiveKit configuration will be applied only using the actual created project's credentials.
