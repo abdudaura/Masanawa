@@ -11,6 +11,7 @@ import 'package:masanawa/src/state/talk_library_state.dart';
 import 'package:masanawa/src/state/talk_host_controls_state.dart';
 import 'package:masanawa/src/state/talk_live_state.dart';
 import 'package:masanawa/src/state/talk_participation_state.dart';
+import 'package:masanawa/src/state/talk_question_state.dart';
 import 'package:masanawa/src/state/talk_replay_playback_state.dart';
 import 'package:masanawa/src/state/talk_state.dart';
 import 'package:masanawa/src/talks/talk_ai_seat.dart';
@@ -20,6 +21,7 @@ import 'package:masanawa/src/talks/talk_live.dart';
 import 'package:masanawa/src/talks/talk_live_audio_session.dart';
 import 'package:masanawa/src/talks/talk_models.dart';
 import 'package:masanawa/src/talks/talk_participation.dart';
+import 'package:masanawa/src/talks/talk_questions.dart';
 import 'package:masanawa/src/talks/talk_replay_playback.dart';
 import 'package:masanawa/src/theme/masanawa_theme.dart';
 
@@ -367,6 +369,50 @@ class _ParticipationTransport implements TalkParticipationTransport {
   }
 }
 
+class _QuestionTransport implements TalkQuestionTransport {
+  final List<String> submitted = [];
+  List<TalkQuestion> queue = [
+    TalkQuestion(
+      questionId: 'question-1',
+      authorName: 'Zainab',
+      body: 'Can you explain the evidence?',
+      status: TalkQuestionStatus.pending,
+      createdAt: DateTime(2026, 10, 7, 10),
+    ),
+  ];
+  int resolved = 0;
+
+  @override
+  Future<TalkQuestion> submit({
+    required String talkId,
+    required String body,
+  }) async {
+    submitted.add(body);
+    return TalkQuestion(
+      questionId: 'question-new',
+      authorName: 'You',
+      body: body,
+      status: TalkQuestionStatus.pending,
+      createdAt: DateTime(2026, 10, 7, 10, 1),
+    );
+  }
+
+  @override
+  Future<List<TalkQuestion>> loadHostQueue(String talkId) async =>
+      List.unmodifiable(queue);
+
+  @override
+  Future<List<TalkQuestion>> resolve({
+    required String talkId,
+    required String questionId,
+    required TalkQuestionStatus status,
+  }) async {
+    resolved += 1;
+    queue = queue.where((item) => item.questionId != questionId).toList();
+    return List.unmodifiable(queue);
+  }
+}
+
 class _TalkTransport implements TalkTransport {
   final List<TalkComment> comments = [
     TalkComment(
@@ -436,6 +482,7 @@ Widget _app({
   Widget? home,
   _ParticipationTransport? participation,
   _HostControlsTransport? hostControls,
+  _QuestionTransport? questions,
   _FakeLiveAudioController? liveAudio,
   _FakeReplayPlaybackController? replayPlayback,
   _LibraryTransport? library,
@@ -452,6 +499,9 @@ Widget _app({
       ),
       talkHostControlsTransportProvider.overrideWithValue(
         hostControls ?? _HostControlsTransport(),
+      ),
+      talkQuestionTransportProvider.overrideWithValue(
+        questions ?? _QuestionTransport(),
       ),
       talkLibraryTransportProvider.overrideWithValue(
         library ?? _LibraryTransport(),
@@ -529,6 +579,34 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Share your thoughts…'), findsOneWidget);
+  });
+
+  testWidgets('listener can send a live question to the Host', (tester) async {
+    final transport = _TalkTransport();
+    final questions = _QuestionTransport();
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        questions: questions,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ask'), findsOneWidget);
+    await tester.tap(find.text('Ask'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const ValueKey('talk-question-input')),
+      'What evidence supports that?',
+    );
+    await tester.tap(find.byKey(const ValueKey('talk-question-submit')));
+    await tester.pumpAndSettle();
+
+    expect(questions.submitted, ['What evidence supports that?']);
+    expect(find.text('Question sent to the Host.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('Talk can be saved and unsaved from the app bar', (tester) async {
@@ -793,6 +871,38 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(host.accepted, 1);
+  });
+
+  testWidgets('Host can review and resolve audience questions',
+      (tester) async {
+    final transport = _TalkTransport();
+    final questions = _QuestionTransport();
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        questions: questions,
+        home: const TalkScreen(
+          talkId: 'talk-1',
+          initialTalk: _TalkTransport.talk,
+          isHost: true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Questions 1'), findsOneWidget);
+    await tester.tap(find.text('Questions 1'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Zainab'), findsOneWidget);
+    expect(find.text('Can you explain the evidence?'), findsOneWidget);
+    await tester.tap(find.text('Answered'));
+    await tester.pumpAndSettle();
+
+    expect(questions.resolved, 1);
+    expect(find.text('No questions waiting.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('Host can manage a Speaker but has no self-removal control',
