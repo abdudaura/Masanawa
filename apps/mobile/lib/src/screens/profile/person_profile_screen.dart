@@ -26,6 +26,12 @@ class _PersonProfileScreenState extends ConsumerState<PersonProfileScreen> {
   HumanProfile? _local;
   bool _followBusy = false;
 
+  Future<void> _refresh() async {
+    setState(() => _local = null);
+    ref.invalidate(humanProfileProvider(widget.handle));
+    await ref.read(humanProfileProvider(widget.handle).future);
+  }
+
   Future<void> _toggleFollow(HumanProfile profile) async {
     if (_followBusy) return;
     setState(() => _followBusy = true);
@@ -68,6 +74,7 @@ class _PersonProfileScreenState extends ConsumerState<PersonProfileScreen> {
           profile: profile,
           followBusy: _followBusy,
           onFollow: () => _toggleFollow(profile),
+          onRefresh: _refresh,
           onOpenTalk: widget.onOpenTalk,
           onOpenTwin: widget.onOpenTwin,
         );
@@ -81,6 +88,7 @@ class _PersonProfileBody extends StatelessWidget {
     required this.profile,
     required this.followBusy,
     required this.onFollow,
+    required this.onRefresh,
     this.onOpenTalk,
     this.onOpenTwin,
   });
@@ -88,6 +96,7 @@ class _PersonProfileBody extends StatelessWidget {
   final HumanProfile profile;
   final bool followBusy;
   final VoidCallback onFollow;
+  final Future<void> Function() onRefresh;
   final void Function(String talkId)? onOpenTalk;
   final void Function(String publicId)? onOpenTwin;
 
@@ -101,7 +110,7 @@ class _PersonProfileBody extends StatelessWidget {
       backgroundColor: u.surfaceBg,
       appBar: AppBar(title: Text('@' + profile.handle)),
       body: RefreshIndicator(
-        onRefresh: () async {},
+        onRefresh: onRefresh,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(12, 16, 12, 28),
