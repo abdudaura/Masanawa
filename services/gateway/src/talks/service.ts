@@ -45,11 +45,26 @@ export interface TalkService {
     authorizationHeader: string | undefined;
     talkId: string;
   }>): Promise<TalkDetailView>;
+  update(input: Readonly<{
+    authorizationHeader: string | undefined;
+    talkId: string;
+    title?: string;
+    topic?: string;
+    summary?: string;
+  }>): Promise<TalkDiscoveryItem>;
   comment(input: Readonly<{
     authorizationHeader: string | undefined;
     talkId: string;
     body: string;
   }>): Promise<TalkCommentView>;
+}
+
+function normalizeSummary(value: string): string {
+  const normalized = value.trim().replace(/\s+/gu, " ");
+  if (normalized.length > 1000) {
+    throw new TalkServiceError("talks.summary_invalid", 400);
+  }
+  return normalized;
 }
 
 function normalizeText(value: string, field: string, maxLength: number): string {
@@ -156,6 +171,40 @@ export function createTalkService(input: Readonly<{
         talk: toTalkDiscoveryItem(found),
         comments: Object.freeze(comments.map(toTalkCommentView)),
       });
+    },
+
+    async update(request) {
+      const host = await identity(request.authorizationHeader);
+      if (
+        request.title === undefined &&
+        request.topic === undefined &&
+        request.summary === undefined
+      ) {
+        throw new TalkServiceError("talks.metadata_empty", 400);
+      }
+      const updated = await input.repository.updateMetadata({
+        tenantId: host.tenantId,
+        talkId: request.talkId,
+        hostUserId: host.userId,
+        ...(request.title === undefined
+          ? {}
+          : { title: normalizeText(request.title, "title", 160) }),
+        ...(request.topic === undefined
+          ? {}
+          : { topic: normalizeText(request.topic, "topic", 240) }),
+        ...(request.summary === undefined
+          ? {}
+          : { summary: normalizeSummary(request.summary) }),
+        updatedAt: now(),
+      });
+      if (!updated) throw new TalkServiceError("talks.host_forbidden", 403);
+      const refreshed = await input.repository.getTalk({
+        tenantId: host.tenantId,
+        talkId: request.talkId,
+        viewerUserId: host.userId,
+      });
+      if (!refreshed) throw new TalkServiceError("talks.not_found", 404);
+      return toTalkDiscoveryItem(refreshed);
     },
 
     async comment(request) {
