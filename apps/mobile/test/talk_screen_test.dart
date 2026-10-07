@@ -6,18 +6,44 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/library/talk_library.dart';
 import 'package:masanawa/src/screens/talks/talk_screen.dart';
 import 'package:masanawa/src/state/talk_ai_seat_state.dart';
+import 'package:masanawa/src/state/talk_gift_state.dart';
 import 'package:masanawa/src/state/talk_library_state.dart';
 import 'package:masanawa/src/state/talk_host_controls_state.dart';
 import 'package:masanawa/src/state/talk_live_state.dart';
 import 'package:masanawa/src/state/talk_participation_state.dart';
 import 'package:masanawa/src/state/talk_state.dart';
 import 'package:masanawa/src/talks/talk_ai_seat.dart';
+import 'package:masanawa/src/talks/talk_gift.dart';
 import 'package:masanawa/src/talks/talk_host_controls.dart';
 import 'package:masanawa/src/talks/talk_live.dart';
 import 'package:masanawa/src/talks/talk_live_audio_session.dart';
 import 'package:masanawa/src/talks/talk_models.dart';
 import 'package:masanawa/src/talks/talk_participation.dart';
 import 'package:masanawa/src/theme/masanawa_theme.dart';
+
+class _GiftTransport implements TalkGiftTransport {
+  _GiftTransport({this.fail = false});
+
+  final bool fail;
+  final List<({String talkId, int amountCredits})> calls = [];
+
+  @override
+  Future<TalkGiftReceipt> sendGift({
+    required String talkId,
+    required int amountCredits,
+  }) async {
+    calls.add((talkId: talkId, amountCredits: amountCredits));
+    if (fail) throw Exception('DioException private transport detail');
+    return TalkGiftReceipt(
+      giftId: 'gift-1',
+      talkId: talkId,
+      recipientUserId: 'host-user',
+      recipientName: 'Abdullahi',
+      amountCredits: amountCredits,
+      completedAt: DateTime(2026, 10, 7, 10),
+    );
+  }
+}
 
 class _LibraryTransport implements TalkLibraryTransport {
   bool saved;
@@ -308,6 +334,7 @@ Widget _app({
   _HostControlsTransport? hostControls,
   _FakeLiveAudioController? liveAudio,
   _LibraryTransport? library,
+  _GiftTransport? gift,
 }) {
   return ProviderScope(
     overrides: [
@@ -323,6 +350,9 @@ Widget _app({
       ),
       talkLibraryTransportProvider.overrideWithValue(
         library ?? _LibraryTransport(),
+      ),
+      talkGiftTransportProvider.overrideWithValue(
+        gift ?? _GiftTransport(),
       ),
       talkLiveAudioFactoryProvider.overrideWithValue(
         (_) => liveAudio ??
@@ -382,6 +412,63 @@ void main() {
 
     expect(library.saved, isFalse);
     expect(find.byTooltip('Save Talk'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('listener can send a Credit gift to the Host', (tester) async {
+    final transport = _TalkTransport();
+    final gift = _GiftTransport();
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        gift: gift,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Gift'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Gift Abdullahi'), findsOneWidget);
+    expect(find.text('Send Credits to the Host.'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('talk-gift-100')));
+    await tester.tap(find.byKey(const ValueKey('talk-gift-send')));
+    await tester.pumpAndSettle();
+
+    expect(gift.calls, [(talkId: 'talk-1', amountCredits: 100)]);
+    expect(find.text('100 Cr sent to Abdullahi.'), findsOneWidget);
+    expect(find.text('Gift Abdullahi'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('failed Talk gift stays in sheet with friendly error',
+      (tester) async {
+    final transport = _TalkTransport();
+    final gift = _GiftTransport(fail: true);
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        gift: gift,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Gift'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('talk-gift-50')));
+    await tester.tap(find.byKey(const ValueKey('talk-gift-send')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('talk-gift-error')), findsOneWidget);
+    expect(
+      find.text('Gift couldn’t be sent. Check your balance and try again.'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('DioException'), findsNothing);
+    expect(find.text('Gift Abdullahi'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
