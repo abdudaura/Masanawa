@@ -210,6 +210,30 @@ export function createPostgresTalkRepository(pool: TalkSqlPool): TalkRepository 
         : null;
     },
 
+    async updateMetadata(input) {
+      const result = await pool.query<TalkRow>(
+        `UPDATE talks.talks
+            SET title=COALESCE($4,title),
+                topic=COALESCE($5,topic),
+                summary=COALESCE($6,summary),
+                updated_at=$7
+          WHERE tenant_id=$1
+            AND talk_id=$2
+            AND host_user_id=$3
+          RETURNING ${talkColumns}`,
+        [
+          input.tenantId,
+          input.talkId,
+          input.hostUserId,
+          input.title ?? null,
+          input.topic ?? null,
+          input.summary ?? null,
+          input.updatedAt,
+        ],
+      );
+      return result.rows[0] ? mapTalk(result.rows[0]) : null;
+    },
+
     async listComments(input) {
       const result = await pool.query<CommentRow>(
         `SELECT tenant_id, talk_id, comment_id, author_user_id, author_name, body, created_at
