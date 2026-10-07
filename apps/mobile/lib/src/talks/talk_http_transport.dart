@@ -50,12 +50,14 @@ class GatewayTalkTransport implements TalkTransport {
   Future<TalkDiscoveryItem> createTalk({
     required String topic,
     String? title,
+    bool recordReplay = false,
   }) async {
     final response = await api.dio.post<dynamic>(
       '/talks',
       data: {
         'topic': topic.trim(),
         if (title != null && title.trim().isNotEmpty) 'title': title.trim(),
+        'recordReplay': recordReplay,
       },
     );
     final data = response.data;
