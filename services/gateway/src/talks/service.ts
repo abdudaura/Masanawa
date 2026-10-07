@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { PlatformSessionIdentity } from "@masanawa/security";
+import type { TalkReplayCoordinator } from "../talk_replay/service.js";
 import {
   toTalkCommentView,
   toTalkDiscoveryItem,
@@ -35,6 +36,7 @@ export interface TalkService {
     authorizationHeader: string | undefined;
     topic: string;
     title?: string;
+    recordReplay?: boolean;
   }>): Promise<TalkDiscoveryItem>;
   detail(input: Readonly<{
     authorizationHeader: string | undefined;
@@ -60,6 +62,7 @@ export function createTalkService(input: Readonly<{
   authorizer: TalkAuthorizer;
   now?: () => string;
   createId?: (kind: "talk" | "comment") => string;
+  replay?: TalkReplayCoordinator;
 }>): TalkService {
   const now = input.now ?? (() => new Date().toISOString());
   const createId =
@@ -98,6 +101,17 @@ export function createTalkService(input: Readonly<{
         topic,
         createdAt,
       });
+      if (request.recordReplay === true && input.replay) {
+        // Live Talk creation stays authoritative even if the external recorder
+        // is temporarily unavailable. Consent is persisted and Host connect
+        // retries provider startup.
+        await input.replay.requestForHost({
+          tenantId: host.tenantId,
+          hostUserId: host.userId,
+          talkId: record.talkId,
+          publicationPreference: "publish",
+        }).catch(() => undefined);
+      }
       return toTalkDiscoveryItem({ talk: record, commentCount: 0 });
     },
 
