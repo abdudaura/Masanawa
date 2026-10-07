@@ -491,7 +491,7 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
               description: "Lessons, homework help and exam preparation",
               iconKey: "study",
               continuationLabel: null,
-              isAvailable: false,
+              isAvailable: true,
             },
             {
               roomId: "room.story-radio",
