@@ -22,7 +22,7 @@ function Invoke-Checked {
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $mobileDir = Join-Path $repoRoot "apps\mobile"
-$expectedBranch = "work/launch-first10-completion-20261007"
+$expectedBranch = "main"
 $packageName = "ng.unigeria.unigeria"
 
 Push-Location $repoRoot
