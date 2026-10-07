@@ -252,3 +252,40 @@ Remaining work is qualification/deployment evidence:
 5. Meta WhatsApp registration + webhook delivery test;
 6. Telegram bot webhook delivery test;
 7. paid/trial Twin realtime voice settlement test on device.
+
+
+## Continuation after exhausted window — 2026-10-07
+
+The continuation window resumed from PR #329 at head `4fa62739b9866ee0511ec970dbd82bafc82e91d0`.
+
+Hosted CI was retried for both Mobile Build and Foundation CI. Both retries again failed
+before a runner was assigned: `runner_id=0`, no runner name and `steps=[]`. This
+continues to indicate GitHub runner allocation/non-execution rather than an application
+compile/test result.
+
+Three stale/reclaimable acceptance suites were reconciled into this launch branch:
+
+- `tests/integration/twin-public-share-free-text.test.ts`
+  - stable public Twin share identity;
+  - owner identity not leaked;
+  - another user's public text remains zero-charge;
+  - paid voice evidence cannot make text billable;
+  - hidden/non-discoverable Twins do not project publicly.
+- `tests/integration/twin-paid-voice-acceptance.test.ts`
+  - configurable seven-day trial remains zero-charge;
+  - paid verified usage settles inside reservation;
+  - unused reserve is refunded;
+  - ambiguous/over-reservation usage goes to reconciliation;
+  - paid voice admission cannot affect free text.
+- `tests/recovery/twin-paid-voice-retry-acceptance.test.ts`
+  - crash-after-settlement exact replay is idempotent;
+  - changed retry payload fails closed;
+  - ambiguous usage cannot post money;
+  - trial units are consumed once;
+  - failed-before-media consumes no trial and posts no charge.
+
+These tests were preserved from stale acceptance PRs #226/#233/#291 and now travel with
+the actual first-ten integration branch instead of remaining disconnected acceptance work.
+
+The branch remains draft because executable CI, Android device validation and live provider
+qualification are still external evidence requirements; no test pass is fabricated.
