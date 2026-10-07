@@ -34,6 +34,7 @@ export interface HostParticipantView {
   readonly isHost: boolean;
   readonly isMuted: boolean;
   readonly userId?: string;
+  readonly profileHandle?: string;
   readonly personaId?: string;
   readonly avatarUrl?: string;
 }
