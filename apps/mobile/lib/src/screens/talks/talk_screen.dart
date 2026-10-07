@@ -229,16 +229,20 @@ class _TalkBody extends StatelessWidget {
                     ),
                   )
                 else
-                  SliverList.separated(
-                    itemCount: comments.length,
-                    separatorBuilder: (_, __) => Divider(
-                      height: 1,
-                      indent: 64,
-                      color: u.structuralBorder,
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        if (index.isOdd) {
+                          return Divider(
+                            height: 1,
+                            indent: 64,
+                            color: u.structuralBorder,
+                          );
+                        }
+                        return _CommentTile(comment: comments[index ~/ 2]);
+                      },
+                      childCount: comments.length * 2 - 1,
                     ),
-                    itemBuilder: (context, index) {
-                      return _CommentTile(comment: comments[index]);
-                    },
                   ),
                 const SliverToBoxAdapter(child: SizedBox(height: 18)),
               ],
