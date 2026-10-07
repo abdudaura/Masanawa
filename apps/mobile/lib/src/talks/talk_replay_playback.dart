@@ -150,16 +150,19 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
           status: TalkReplayPlaybackStatus.playing,
           clearError: true,
         ));
+        return;
       case TalkReplayPlayerState.paused:
         if (_snapshot.status != TalkReplayPlaybackStatus.loading &&
             _snapshot.status != TalkReplayPlaybackStatus.idle) {
           _emit(_snapshot.copyWith(status: TalkReplayPlaybackStatus.paused));
         }
+        return;
       case TalkReplayPlayerState.completed:
         _emit(_snapshot.copyWith(
           status: TalkReplayPlaybackStatus.completed,
           position: _snapshot.duration,
         ));
+        return;
     }
   }
 
@@ -215,6 +218,7 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
             } catch (_) {
               _fail();
             }
+            return;
           case TalkReplayPlaybackStatus.paused:
             if (!_loaded) {
               await _loadFreshAndPlay();
@@ -225,10 +229,12 @@ class TalkReplayPlaybackSession implements TalkReplayPlaybackController {
             } catch (_) {
               _fail();
             }
+            return;
           case TalkReplayPlaybackStatus.idle:
           case TalkReplayPlaybackStatus.completed:
           case TalkReplayPlaybackStatus.failed:
             await _loadFreshAndPlay();
+            return;
           case TalkReplayPlaybackStatus.loading:
             return;
         }
