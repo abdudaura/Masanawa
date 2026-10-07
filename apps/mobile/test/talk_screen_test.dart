@@ -36,21 +36,43 @@ import 'package:masanawa/src/theme/masanawa_theme.dart';
 
 class _SocialProfiles implements TalkSocialProfileTransport {
   bool following = false;
+  bool speakerFollowing = false;
 
-  HumanProfile _profile() => HumanProfile(
+  HumanProfile _profile({
+    required String handle,
+    required String displayName,
+    required bool isFollowing,
+  }) =>
+      HumanProfile(
+        handle: handle,
+        displayName: displayName,
+        followerCount: isFollowing ? 11 : 10,
+        followingCount: 2,
+        isFollowing: isFollowing,
+      );
+
+  HumanProfile _hostProfile() => _profile(
         handle: 'abdullahi',
         displayName: 'Abdullahi',
-        followerCount: following ? 11 : 10,
-        followingCount: 2,
         isFollowing: following,
       );
 
-  @override
-  Future<HumanProfile?> loadHuman(String handle) async => _profile();
+  HumanProfile _speakerProfile() => _profile(
+        handle: 'musa',
+        displayName: 'Musa',
+        isFollowing: speakerFollowing,
+      );
 
   @override
-  Future<HumanProfile?> loadHumanByUserId(String userId) async =>
-      userId == 'host' ? _profile() : null;
+  Future<HumanProfile?> loadHuman(String handle) async =>
+      handle == 'musa' ? _speakerProfile() : _hostProfile();
+
+  @override
+  Future<HumanProfile?> loadHumanByUserId(String userId) async => switch (userId) {
+        'host' => _hostProfile(),
+        'user-speaker' => _speakerProfile(),
+        _ => null,
+      };
 
   @override
   Future<HumanProfile> setFollowing({
@@ -58,7 +80,7 @@ class _SocialProfiles implements TalkSocialProfileTransport {
     required bool following,
   }) async {
     this.following = following;
-    return _profile();
+    return _hostProfile();
   }
 
   @override
@@ -66,9 +88,15 @@ class _SocialProfiles implements TalkSocialProfileTransport {
     required String userId,
     required bool following,
   }) async {
-    if (userId != 'host') throw StateError('Unknown Host');
-    this.following = following;
-    return _profile();
+    if (userId == 'host') {
+      this.following = following;
+      return _hostProfile();
+    }
+    if (userId == 'user-speaker') {
+      speakerFollowing = following;
+      return _speakerProfile();
+    }
+    throw StateError('Unknown human participant');
   }
 
   @override
@@ -751,6 +779,11 @@ class _TalkTransport implements TalkTransport {
         isHost: true,
       ),
       TalkParticipantPreview(
+        id: 'user-speaker',
+        name: 'Musa',
+        kind: TalkParticipantKind.human,
+      ),
+      TalkParticipantPreview(
         id: 'expert',
         name: 'Education Expert',
         kind: TalkParticipantKind.expert,
@@ -1076,6 +1109,91 @@ void main() {
       TalkSafetyReportReason.harassment,
     );
     expect(find.text('Report received. Thank you.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('listener follows a human Speaker from Participants but not AI',
+      (tester) async {
+    final transport = _TalkTransport();
+    final social = _SocialProfiles();
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        social: social,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('talk-more')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('talk-more-participants')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Human · Speaker'), findsOneWidget);
+    expect(find.text('Masanawa Expert · AI'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('talk-participant-follow-user-speaker')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('talk-participant-follow-expert')),
+      findsNothing,
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey('talk-participant-follow-user-speaker')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(social.speakerFollowing, isTrue);
+    expect(
+      find.descendant(
+        of: find.byKey(
+          const ValueKey('talk-participant-follow-user-speaker'),
+        ),
+        matching: find.text('Following'),
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey('talk-participant-follow-user-speaker')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(social.speakerFollowing, isFalse);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Host participant sheet stays read-only',
+      (tester) async {
+    final transport = _TalkTransport();
+    final social = _SocialProfiles();
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        social: social,
+        home: const TalkScreen(
+          talkId: 'talk-1',
+          initialTalk: _TalkTransport.talk,
+          isHost: true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('talk-more')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('talk-more-participants')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Human · Speaker'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('talk-participant-follow-user-speaker')),
+      findsNothing,
+    );
     expect(tester.takeException(), isNull);
   });
 

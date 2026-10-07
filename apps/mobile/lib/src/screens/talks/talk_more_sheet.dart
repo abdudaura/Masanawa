@@ -162,6 +162,7 @@ class _TalkMoreSheetState extends ConsumerState<_TalkMoreSheet> {
       context,
       participants: widget.talk.participants,
       fallbackHostName: widget.talk.hostName,
+      allowFollow: !widget.isHost,
     );
   }
 
@@ -386,67 +387,191 @@ Future<void> showTalkParticipantsSheet(
   BuildContext context, {
   required List<TalkParticipantPreview> participants,
   required String fallbackHostName,
+  bool allowFollow = false,
 }) {
   return showModalBottomSheet<void>(
     context: context,
     useSafeArea: true,
-    builder: (context) {
-      final u = context.masanawa;
-      final effective = participants.isEmpty
-          ? [
-              TalkParticipantPreview(
-                id: 'host',
-                name: fallbackHostName.isEmpty ? 'Host' : fallbackHostName,
-                kind: TalkParticipantKind.human,
-                isHost: true,
-              ),
-            ]
-          : participants;
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 22),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Participants',
-              style: TextStyle(
-                color: u.textPrimary,
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-              ),
+    builder: (_) => _TalkParticipantsSheet(
+      participants: participants,
+      fallbackHostName: fallbackHostName,
+      allowFollow: allowFollow,
+    ),
+  );
+}
+
+class _TalkParticipantsSheet extends StatelessWidget {
+  const _TalkParticipantsSheet({
+    required this.participants,
+    required this.fallbackHostName,
+    required this.allowFollow,
+  });
+
+  final List<TalkParticipantPreview> participants;
+  final String fallbackHostName;
+  final bool allowFollow;
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    final effective = participants.isEmpty
+        ? [
+            TalkParticipantPreview(
+              id: 'host',
+              name: fallbackHostName.isEmpty ? 'Host' : fallbackHostName,
+              kind: TalkParticipantKind.human,
+              isHost: true,
             ),
-            const SizedBox(height: 8),
-            for (final participant in effective)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: CircleAvatar(
-                  backgroundColor: u.surfaceMuted,
-                  child: Icon(
-                    switch (participant.kind) {
-                      TalkParticipantKind.human => Icons.person_rounded,
-                      TalkParticipantKind.expert => Icons.verified_rounded,
-                      TalkParticipantKind.twin => Icons.auto_awesome_rounded,
-                    },
-                    color: u.brandStrong,
+          ]
+        : participants;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 22),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Participants',
+            style: TextStyle(
+              color: u.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Flexible(
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                for (final participant in effective)
+                  _TalkParticipantTile(
+                    participant: participant,
+                    allowFollow: allowFollow,
                   ),
-                ),
-                title: Text(participant.name.isEmpty ? 'Participant' : participant.name),
-                subtitle: Text(
-                  participant.isHost
-                      ? 'Human · Host'
-                      : switch (participant.kind) {
-                          TalkParticipantKind.human => 'Human · Speaker',
-                          TalkParticipantKind.expert => 'Masanawa Expert · AI',
-                          TalkParticipantKind.twin => 'Twin · AI',
-                        },
-                ),
-              ),
-          ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TalkParticipantTile extends ConsumerStatefulWidget {
+  const _TalkParticipantTile({
+    required this.participant,
+    required this.allowFollow,
+  });
+
+  final TalkParticipantPreview participant;
+  final bool allowFollow;
+
+  @override
+  ConsumerState<_TalkParticipantTile> createState() =>
+      _TalkParticipantTileState();
+}
+
+class _TalkParticipantTileState
+    extends ConsumerState<_TalkParticipantTile> {
+  bool _busy = false;
+
+  Future<void> _toggle(bool following) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      await ref.read(talkSocialProfileTransportProvider).setFollowingUserId(
+            userId: widget.participant.id,
+            following: following,
+          );
+      ref.invalidate(
+        humanProfileByUserIdProvider(widget.participant.id),
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            following
+                ? 'Following ${widget.participant.name}.'
+                : 'Unfollowed ${widget.participant.name}.',
+          ),
         ),
       );
-    },
-  );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Couldn’t update Follow right now.')),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    final participant = widget.participant;
+    final canResolveHuman = widget.allowFollow &&
+        participant.kind == TalkParticipantKind.human &&
+        participant.id.trim().isNotEmpty;
+    final profile = canResolveHuman
+        ? ref.watch(humanProfileByUserIdProvider(participant.id))
+        : null;
+
+    Widget? trailing;
+    if (profile != null) {
+      trailing = profile.when(
+        data: (value) {
+          if (value == null) return const SizedBox.shrink();
+          return TextButton(
+            key: ValueKey('talk-participant-follow-${participant.id}'),
+            onPressed: _busy ? null : () => _toggle(!value.isFollowing),
+            child: Text(value.isFollowing ? 'Following' : 'Follow'),
+          );
+        },
+        loading: () => const SizedBox(
+          width: 18,
+          height: 18,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+        error: (_, __) => const SizedBox.shrink(),
+      );
+    }
+
+    return ListTile(
+      key: ValueKey('talk-participant-${participant.id}'),
+      contentPadding: EdgeInsets.zero,
+      leading: CircleAvatar(
+        backgroundColor: u.surfaceMuted,
+        backgroundImage: participant.avatarUrl?.trim().isNotEmpty == true
+            ? NetworkImage(participant.avatarUrl!)
+            : null,
+        child: participant.avatarUrl?.trim().isNotEmpty == true
+            ? null
+            : Icon(
+                switch (participant.kind) {
+                  TalkParticipantKind.human => Icons.person_rounded,
+                  TalkParticipantKind.expert => Icons.verified_rounded,
+                  TalkParticipantKind.twin => Icons.auto_awesome_rounded,
+                },
+                color: u.brandStrong,
+              ),
+      ),
+      title: Text(
+        participant.name.isEmpty ? 'Participant' : participant.name,
+      ),
+      subtitle: Text(
+        participant.isHost
+            ? 'Human · Host'
+            : switch (participant.kind) {
+                TalkParticipantKind.human => 'Human · Speaker',
+                TalkParticipantKind.expert => 'Masanawa Expert · AI',
+                TalkParticipantKind.twin => 'Twin · AI',
+              },
+      ),
+      trailing: trailing,
+    );
+  }
 }
 
 
