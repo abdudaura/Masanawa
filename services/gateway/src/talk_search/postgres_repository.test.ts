@@ -24,6 +24,9 @@ describe("Postgres Talk search repository", () => {
     expect(call.text).toContain("t.tenant_id = $1");
     expect(call.text).toContain("ESCAPE");
     expect(call.text).toContain("t.state IN ('live','reconnecting','ended')");
+    expect(call.text).toContain("talks.replays");
+    expect(call.text).toContain("publicationState");
+    expect(call.text).toContain("provider_status='complete'");
     expect(call.values).toEqual([
       "tenant_a",
       "%50\\%\\_off\\\\today%",
