@@ -199,9 +199,14 @@ export function createPostgresTalkSearchRepository(
            p.public_id, p.display_name, p.kind, p.seat_fee_label,
            p.is_available, p.role, p.avatar_url, p.is_verified
          FROM talks.persona_profiles p
+         LEFT JOIN identity.twin_profiles twin
+           ON twin.tenant_id = p.tenant_id
+          AND twin.public_id = p.public_id
+          AND twin.discoverable = true
         WHERE p.tenant_id = $1
           AND ($3::text IS NULL OR p.kind = $3)
           AND (p.kind <> 'expert' OR p.is_verified = true)
+          AND (p.kind <> 'twin' OR twin.public_id IS NOT NULL)
           AND (
             p.display_name ILIKE $2 ESCAPE '\\'
             OR p.role ILIKE $2 ESCAPE '\\'
