@@ -185,6 +185,11 @@ import {
 } from "./talk_search/service.js";
 import { createPostgresTalkSearchRepository } from "./talk_search/postgres_repository.js";
 import {
+  createTalkLibraryService,
+  type TalkLibraryAuthorizer,
+} from "./talk_library/service.js";
+import { createPostgresTalkLibraryRepository } from "./talk_library/postgres_repository.js";
+import {
   createGatewayApp,
   type GatewayAppOptions,
   type ReadinessCheck,
@@ -290,6 +295,7 @@ export interface ServiceDatabaseDependency {
   readonly talkProfiles?: ReturnType<typeof createPostgresTalkProfileRepository>;
   readonly talkActivity?: ReturnType<typeof createPostgresTalkActivityRepository>;
   readonly talkSearch?: ReturnType<typeof createPostgresTalkSearchRepository>;
+  readonly talkLibrary?: ReturnType<typeof createPostgresTalkLibraryRepository>;
   close(): Promise<void>;
 }
 
@@ -440,6 +446,7 @@ function createDefaultDatabaseDependency(
     talkProfiles: createPostgresTalkProfileRepository(database.pool),
     talkActivity: createPostgresTalkActivityRepository(database.pool),
     talkSearch: createPostgresTalkSearchRepository(database.pool),
+    talkLibrary: createPostgresTalkLibraryRepository(database.pool),
     close: database.close,
   });
 }
@@ -583,6 +590,7 @@ export async function startGatewayService(
   let talkProfileAuthorizer: TalkProfileAuthorizer | undefined;
   let talkActivityAuthorizer: TalkActivityAuthorizer | undefined;
   let talkSearchAuthorizer: TalkSearchAuthorizer | undefined;
+  let talkLibraryAuthorizer: TalkLibraryAuthorizer | undefined;
   let billingFinancialAuthorizer:
     | ReturnType<typeof createPlatformSessionFinancialAuthorizer>
     | undefined;
@@ -724,6 +732,7 @@ export async function startGatewayService(
     talkProfileAuthorizer = customerSessions;
     talkActivityAuthorizer = customerSessions;
     talkSearchAuthorizer = customerSessions;
+    talkLibraryAuthorizer = customerSessions;
     billingFinancialAuthorizer = createPlatformSessionFinancialAuthorizer({
       repository: database.platformSessions,
     });
@@ -1788,6 +1797,15 @@ export async function startGatewayService(
         })
       : undefined);
 
+  const composedTalkLibrary =
+    options.appOptions?.talkLibrary ??
+    (database.talkLibrary && talkLibraryAuthorizer
+      ? createTalkLibraryService({
+          repository: database.talkLibrary,
+          authorizer: talkLibraryAuthorizer,
+        })
+      : undefined);
+
   const liveKitServerUrl = env.LIVEKIT_URL?.trim();
   const liveKitApiKey = env.LIVEKIT_API_KEY?.trim();
   const liveKitApiSecret = env.LIVEKIT_API_SECRET?.trim();
@@ -1902,6 +1920,7 @@ export async function startGatewayService(
       ...(composedTalkProfiles ? { talkProfiles: composedTalkProfiles } : {}),
       ...(composedTalkActivity ? { talkActivity: composedTalkActivity } : {}),
       ...(composedTalkSearch ? { talkSearch: composedTalkSearch } : {}),
+      ...(composedTalkLibrary ? { talkLibrary: composedTalkLibrary } : {}),
       ...(composedBillingFinancial ? { billingFinancial: composedBillingFinancial } : {}),
       ...(composedBillingCheckout ? { billingCheckout: composedBillingCheckout } : {}),
       ...(composedBillingWallet ? { billingWallet: composedBillingWallet } : {}),
