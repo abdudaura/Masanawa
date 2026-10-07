@@ -1117,6 +1117,38 @@ export function createPostgresTalkAiSeatRepository(
       });
     },
 
+    async readRuntimeSeat(input) {
+      const seatId = `seat_${input.requestId}`;
+      const result = await pool.query<{
+        tenant_id: string;
+        talk_id: string;
+        participant_id: string;
+        persona_id: string;
+        kind: "expert" | "twin";
+      }>(
+        `SELECT tenant_id,talk_id,participant_id,persona_id,kind
+           FROM talks.talk_seats
+          WHERE tenant_id=$1
+            AND talk_id=$2
+            AND participant_id=$3
+            AND kind IN ('expert','twin')
+            AND active=TRUE
+            AND removed_at IS NULL
+          LIMIT 1`,
+        [input.tenantId, input.talkId, seatId],
+      );
+      const row = result.rows[0];
+      return row
+        ? Object.freeze({
+            tenantId: row.tenant_id,
+            talkId: row.talk_id,
+            seatId: row.participant_id,
+            personaId: row.persona_id,
+            kind: row.kind,
+          })
+        : null;
+    },
+
     async sweepExpired(input) {
       return withTransaction(pool, async (client) => {
         const due = await client.query<QuoteRow>(
