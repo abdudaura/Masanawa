@@ -44,7 +44,7 @@ class HomeScreen extends StatelessWidget {
       key: const ValueKey('home-screen'),
       backgroundColor: u.surfaceBg,
       appBar: AppBar(
-        title: const Text('Home'),
+        title: const Text('Masanawa'),
         actions: [
           IconButton(
             tooltip: 'Profile',
@@ -153,11 +153,12 @@ class _HomeReady extends StatelessWidget {
           ),
         ],
         const SizedBox(height: 14),
-        for (final room in snapshot.rooms) ...[
+        for (final room in _orderedRooms(snapshot.rooms)) ...[
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: _RoomCard(
               room: room,
+              displayTitle: _roomDisplayTitle(room),
               onTap: onOpenRoom == null ? null : () => onOpenRoom!(room),
             ),
           ),
@@ -199,7 +200,7 @@ class _AssistantCard extends StatelessWidget {
 
     return Container(
       key: ValueKey('home-assistant-' + role.name),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: u.surfaceCard,
         borderRadius: BorderRadius.circular(20),
@@ -208,7 +209,7 @@ class _AssistantCard extends StatelessWidget {
       child: Column(
         children: [
           CircleAvatar(
-            radius: 28,
+            radius: 24,
             backgroundColor: u.brand.withValues(alpha: .12),
             child: Text(
               model?.initials ?? fallbackName.substring(0, 1),
@@ -219,7 +220,7 @@ class _AssistantCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 9),
+          const SizedBox(height: 6),
           Text(
             model?.displayName ?? fallbackName,
             maxLines: 1,
@@ -227,18 +228,6 @@ class _AssistantCard extends StatelessWidget {
             style: TextStyle(
               color: u.textPrimary,
               fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            available ? model!.description : 'Temporarily unavailable',
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: u.textMuted,
-              fontSize: 12,
-              height: 1.3,
             ),
           ),
           if (available && model!.voiceLabel?.trim().isNotEmpty == true) ...[
@@ -250,7 +239,7 @@ class _AssistantCard extends StatelessWidget {
               style: TextStyle(color: u.textMuted, fontSize: 11),
             ),
           ],
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Wrap(
             alignment: WrapAlignment.center,
             spacing: 4,
@@ -331,25 +320,21 @@ class _QuickServices extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final itemWidth = (constraints.maxWidth - 24) / 4;
-        return Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: _items.map((item) {
-            return SizedBox(
-              width: itemWidth,
-              child: _QuickServiceButton(
-                service: item.$1,
-                label: item.$2,
-                icon: item.$3,
-                onTap: onTap == null ? null : () => onTap!(item.$1),
-              ),
-            );
-          }).toList(),
-        );
-      },
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (final item in _items) ...[
+            _QuickServiceButton(
+              service: item.$1,
+              label: item.$2,
+              icon: item.$3,
+              onTap: onTap == null ? null : () => onTap!(item.$1),
+            ),
+            const SizedBox(width: 8),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -371,27 +356,30 @@ class _QuickServiceButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final u = context.masanawa;
     return Material(
-      color: u.surfaceCard,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: u.structuralBorder),
-      ),
+      color: u.surfaceMuted,
+      borderRadius: BorderRadius.circular(999),
       child: InkWell(
         key: ValueKey('home-quick-' + service.name),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(999),
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-          child: Column(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: u.structuralBorder),
+          ),
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: u.brand),
-              const SizedBox(height: 6),
+              Icon(icon, color: u.brand, size: 17),
+              const SizedBox(width: 6),
               Text(
                 label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: u.textPrimary, fontSize: 11),
+                style: TextStyle(
+                  color: u.textPrimary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
@@ -493,6 +481,23 @@ class _ContinuationCard extends StatelessWidget {
   }
 }
 
+String _roomDisplayTitle(HomeRoomCardModel room) => switch (room.iconKey) {
+      'story_radio' => 'Audio Stories',
+      'news' => 'News Updates',
+      _ => room.title,
+    };
+
+List<HomeRoomCardModel> _orderedRooms(List<HomeRoomCardModel> rooms) {
+  const order = ['story_radio', 'news'];
+  int rank(HomeRoomCardModel room) {
+    final index = order.indexOf(room.iconKey);
+    return index == -1 ? order.length : index;
+  }
+  final sorted = [...rooms];
+  sorted.sort((a, b) => rank(a).compareTo(rank(b)));
+  return sorted;
+}
+
 class _RoomCard extends StatelessWidget {
   const _RoomCard({required this.room, required this.onTap});
 
@@ -517,7 +522,7 @@ class _RoomCard extends StatelessWidget {
           backgroundColor: u.surfaceMuted,
           child: Icon(_roomIcon(room.iconKey), color: u.brand),
         ),
-        title: Text(room.title),
+        title: Text(displayTitle),
         subtitle: Text(
           room.continuationLabel?.trim().isNotEmpty == true
               ? room.continuationLabel!
