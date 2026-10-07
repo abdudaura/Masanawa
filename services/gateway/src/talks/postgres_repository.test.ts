@@ -63,6 +63,44 @@ describe("Postgres Talk repository", () => {
     ]);
   });
 
+  it("updates metadata only for the canonical human Host", async () => {
+    let call: { text: string; values?: unknown[] } | undefined;
+    const pool: TalkSqlPool = {
+      async query<Row>(text: string, values?: unknown[]) {
+        call = { text, values };
+        return {
+          rowCount: 1,
+          rows: [row({
+            title: "New title",
+            topic: "New topic",
+            summary: "Replay summary",
+            updated_at: "2026-10-07T12:06:00.000Z",
+          })] as unknown as Row[],
+        };
+      },
+    };
+    const repository = createPostgresTalkRepository(pool);
+    const updated = await repository.updateMetadata({
+      tenantId: "tenant_a",
+      talkId: "talk_a",
+      hostUserId: "user_host",
+      title: "New title",
+      topic: "New topic",
+      summary: "Replay summary",
+      updatedAt: "2026-10-07T12:06:00.000Z",
+    });
+    expect(updated).toMatchObject({
+      title: "New title",
+      topic: "New topic",
+      summary: "Replay summary",
+    });
+    expect(call?.text).toContain("AND host_user_id=$3");
+    expect(call?.values).toEqual([
+      "tenant_a","talk_a","user_host","New title","New topic",
+      "Replay summary","2026-10-07T12:06:00.000Z",
+    ]);
+  });
+
   it("keeps feed reads tenant scoped and distinguishes Explore from Live", async () => {
     const calls: Array<{ text: string; values?: unknown[] }> = [];
     const pool: TalkSqlPool = {
