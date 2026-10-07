@@ -59,9 +59,9 @@ export function createTalkReplayCoordinator(input:Readonly<{
       const media=await input.media.current(request);
       if(!media) return;
       if(media.status==="recording"){
-        await input.egress.stop(stoppedMedia.egressId);
+        await input.egress.stop(media.egressId);
       }
-      await input.objects.deleteObject(stoppedMedia.objectKey);
+      await input.objects.deleteObject(media.objectKey);
       await input.media.markAborted({
         tenantId:request.tenantId,talkId:request.talkId,recordingId:request.recordingId,
         completedAt:new Date().toISOString(),
