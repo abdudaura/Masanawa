@@ -1,0 +1,28 @@
+# Follow Host from Talk More — 2026-10-07
+
+- Owner/window: current ChatGPT implementation window
+- Branch: `work/talk-follow-host-more-main-20261007`
+- Base SHA: `8a173d8336115efae95d109bc0103e69c42e04a7`
+- Task: expose canonical Host follow/unfollow directly from a Talk without guessing a public handle.
+- Exact owned paths:
+  - `services/gateway/src/talk_profiles/model.ts`
+  - `services/gateway/src/talk_profiles/postgres_repository.ts`
+  - `services/gateway/src/talk_profiles/service.ts`
+  - `services/gateway/src/talk_profile_routes.ts`
+  - focused Talk profile route/repository tests
+  - `apps/mobile/lib/src/social/talk_social_profiles.dart`
+  - `apps/mobile/lib/src/social/talk_social_profiles_http_transport.dart`
+  - `apps/mobile/lib/src/state/talk_social_profile_state.dart`
+  - Follow additions only in `apps/mobile/lib/src/screens/talks/talk_more_sheet.dart`
+  - focused mobile Talk tests
+  - this claim file
+- Contract:
+  - Talk Host canonical user ID is resolved through existing `talks.public_profiles`;
+  - same `talks.follows` table and idempotent semantics;
+  - self-follow remains rejected;
+  - listener More shows Follow Host / Following;
+  - Host never sees self-follow control;
+  - no new social graph authority or migration.
+- Current step: add verified user-ID profile/follow addressing, then wire listener More.
+- Last update: 2026-10-07T12:54Z
+- Status: active
