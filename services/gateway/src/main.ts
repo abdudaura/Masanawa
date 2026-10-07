@@ -205,7 +205,7 @@ import { createPostgresTalkGiftRepository } from "./talk_gifts/postgres_reposito
 import { createPostgresTalkSafetyRepository } from "./talk_safety/repository.js";
 import { createTalkSafetyService, type TalkSafetyCustomerAuthorizer, type TalkSafetyPlatformAuthority } from "./talk_safety/service.js";
 import { createPrincipalTalkSafetyPlatformAuthority } from "./talk_safety/platform_authority.js";
-import { createPostgresTalkSafetyReplayBridge } from "./talk_safety/replay_bridge.js";
+import { createPostgresTalkSafetyReplayBridge, withReplayBlockSynchronization } from "./talk_safety/replay_bridge.js";
 import {
   createGatewayApp,
   type GatewayAppOptions,
@@ -1869,26 +1869,9 @@ export async function startGatewayService(
             customerAuthorizer: talkSafetyCustomerAuthorizer!,
             platformAuthority: talkSafetyPlatformAuthority!,
           });
-          if (!database.talkSafetyReplay) return base;
-          return Object.freeze({
-            ...base,
-            async setEnforcement(
-              request: Parameters<typeof base.setEnforcement>[0],
-            ) {
-              const result = await base.setEnforcement(request);
-              if (
-                result.target.kind === "replay" &&
-                result.visibility === "blocked"
-              ) {
-                await database.talkSafetyReplay!.blockByRecording({
-                  tenantId: result.tenantId,
-                  recordingId: result.target.id,
-                  now: result.updatedAt,
-                });
-              }
-              return result;
-            },
-          });
+          return database.talkSafetyReplay
+            ? withReplayBlockSynchronization(base, database.talkSafetyReplay)
+            : base;
         })()
       : undefined);
 
