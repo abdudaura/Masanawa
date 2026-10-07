@@ -48,10 +48,6 @@ interface ReplayRow extends Record<string, unknown> {
   session_json: unknown;
 }
 
-function iso(value:string|Date):string {
-  return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
-}
-
 function view(session:TalkReplaySession):TalkReplayHostView {
   const durationMs=session.segments.reduce((sum,segment)=>sum+segment.durationMs,0);
   return Object.freeze({
@@ -253,29 +249,57 @@ export function createPostgresTalkReplayRepository(
         launchTalkReplayPolicy,
       );
       const segment=transitioned.session.segments.at(-1)!;
-      const inserted=await pool.query(
-        `INSERT INTO talks.replay_segments(
-          tenant_id,talk_id,recording_id,segment_id,sequence,
-          started_at,ended_at,duration_ms,media_ref,checksum_sha256,created_at
-        )
-        SELECT $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11
-         WHERE EXISTS(
-           SELECT 1 FROM talks.replay_sessions
-            WHERE tenant_id=$1 AND talk_id=$2 AND revision=$12
+      const applied=await pool.query<{ applied:boolean }>(
+        `WITH replay AS (
+           UPDATE talks.replay_sessions
+              SET revision=$4,
+                  recording_state=$5,
+                  publication_state=$6,
+                  publication_preference=$7,
+                  session_json=$8::jsonb,
+                  updated_at=$9,
+                  finalized_at=$10,
+                  published_at=$11
+            WHERE tenant_id=$1 AND talk_id=$2 AND revision=$3
+            RETURNING 1
+         ), segment AS (
+           INSERT INTO talks.replay_segments(
+             tenant_id,talk_id,recording_id,segment_id,sequence,
+             started_at,ended_at,duration_ms,media_ref,checksum_sha256,created_at
+           )
+           SELECT $1,$2,$12,$13,$14,$15,$16,$17,$18,$19,$9
+             FROM replay
+           ON CONFLICT(tenant_id,talk_id,segment_id) DO NOTHING
+           RETURNING 1
          )
-        ON CONFLICT(tenant_id,talk_id,segment_id) DO NOTHING`,
+         SELECT EXISTS(SELECT 1 FROM replay) AND EXISTS(SELECT 1 FROM segment) AS applied`,
         [
-          input.tenantId,input.talkId,current.recordingId,input.segmentId,segment.sequence,
-          segment.startedAt,segment.endedAt,segment.durationMs,segment.mediaRef,segment.checksumSha256,
-          input.now,current.revision,
+          input.tenantId,
+          input.talkId,
+          current.revision,
+          transitioned.session.revision,
+          transitioned.session.recordingState,
+          transitioned.session.publicationState,
+          transitioned.session.publicationPreference,
+          JSON.stringify(transitioned.session),
+          input.now,
+          transitioned.session.finalizedAt,
+          transitioned.session.publishedAt,
+          current.recordingId,
+          input.segmentId,
+          segment.sequence,
+          segment.startedAt,
+          segment.endedAt,
+          segment.durationMs,
+          segment.mediaRef,
+          segment.checksumSha256,
         ],
       );
-      if((inserted.rowCount??0)!==1){
+      if(!applied.rows[0]?.applied){
         const replay=await session(pool,input.tenantId,input.talkId);
         if(replay?.segments.some(item=>item.segmentId===input.segmentId)) return view(replay);
         throw new Error("Talk replay revision conflict");
       }
-      await persistTransition(pool,current,transitioned.session,input.now);
       return view(transitioned.session);
     },
 
@@ -290,7 +314,6 @@ export function createPostgresTalkReplayRepository(
         launchTalkReplayPolicy,
       );
       await persistTransition(pool,current,transitioned.session,input.now);
-      if(transitioned.session.durationSeconds!==undefined){}
       const totalMs=transitioned.session.segments.reduce((sum,segment)=>sum+segment.durationMs,0);
       await pool.query(
         `UPDATE talks.talks
