@@ -75,6 +75,7 @@ function mapError(error: unknown): never {
   const status =
     code === "talks.not_found" ? 404 :
     code === "talks.host_forbidden" ? 403 :
+    code === "talks.not_live" ||
     code === "talks.poll.not_open" || code === "talks.poll.option_not_found" ? 409 :
     code === "talks.poll.open_exists" || postgresCode === "23505" ? 409 :
     400;
