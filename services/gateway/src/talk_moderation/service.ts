@@ -57,6 +57,16 @@ export interface TalkModerationService {
     authorizationHeader: string | undefined;
     talkId: string;
   }>): Promise<HostControlsView>;
+  inviteHuman(input: Readonly<{
+    authorizationHeader: string | undefined;
+    talkId: string;
+    handle: string;
+  }>): Promise<import("./model.js").HumanInvitationView>;
+  respondHumanInvitation(input: Readonly<{
+    authorizationHeader: string | undefined;
+    talkId: string;
+    action: "accept" | "decline";
+  }>): Promise<import("./model.js").HumanInvitationView>;
   hostRequest(input: Readonly<{
     authorizationHeader: string | undefined;
     talkId: string;
@@ -94,9 +104,13 @@ function mapRepositoryError(error: unknown): never {
     code === "talks.host_forbidden" || code === "talks.blocked_by_host" ? 403 :
     code === "talks.not_found" ? 404 :
     code === "talks.request_not_found" || code === "talks.participant_not_found" ||
-    code === "talks.question_not_found" ? 404 :
+    code === "talks.question_not_found" || code === "talks.invitation_not_found" ||
+    code === "profiles.not_found" ? 404 :
     code === "talks.host_immutable" || code === "talks.not_live" ||
-    code === "talks.ai_commerce_required" || code === "Talk live revision conflict" ? 409 :
+    code === "talks.ai_commerce_required" || code === "talks.cannot_invite_self" ||
+    code === "talks.invitee_unavailable" || code === "talks.already_participant" ||
+    code === "talks.invitation_resolved" || code === "talks.invitation_invalid" ||
+    code === "Talk live revision conflict" ? 409 :
     code === "talks.reaction_rate_limited" || code === "talks.question_rate_limited" ? 429 :
     code.includes("capacity") ? 409 :
     400;
@@ -206,6 +220,31 @@ export function createTalkModerationService(input: Readonly<{
       }));
       if(!result) throw new TalkModerationError("talks.not_found",404);
       return result;
+    },
+    async inviteHuman(request){
+      const viewer=await identity(request.authorizationHeader);
+      const result=await guarded(()=>input.repository.inviteHuman({
+        tenantId:viewer.tenantId,
+        hostUserId:viewer.userId,
+        talkId:bounded(request.talkId,"talk_id"),
+        handle:bounded(request.handle,"profile_handle").toLowerCase(),
+        now:now(),
+      }));
+      if(!result) throw new TalkModerationError("talks.not_found",404);
+      return result;
+    },
+    async respondHumanInvitation(request){
+      const viewer=await identity(request.authorizationHeader);
+      const result=await guarded(()=>input.repository.respondHumanInvitation({
+        tenantId:viewer.tenantId,
+        inviteeUserId:viewer.userId,
+        talkId:bounded(request.talkId,"talk_id"),
+        action:request.action,
+        now:now(),
+      }));
+      if(!result) throw new TalkModerationError("talks.not_found",404);
+      await applyMedia(request.talkId,result.mediaActions);
+      return result.invitation;
     },
     async hostRequest(request){
       const viewer=await identity(request.authorizationHeader);
