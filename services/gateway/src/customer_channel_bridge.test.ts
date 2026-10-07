@@ -145,6 +145,14 @@ describe("Customer channel bridge", () => {
           voiceName: "Bodi",
         }];
       },
+      async readForCharacter() {
+        return {
+          characterId,
+          supportAgent: true,
+          defaultForNewUsers: true,
+          voiceName: "Bodi",
+        };
+      },
     } as unknown as PlatformAgentProfileRepository;
 
     const conversation = {
