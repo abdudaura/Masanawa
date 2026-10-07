@@ -173,8 +173,10 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
   Widget build(BuildContext context) {
     final detail = ref.watch(talkDetailProvider(widget.talkId));
     final participation =
-        ref.watch(talkParticipationProvider(widget.talkId)).valueOrNull ??
-            const TalkParticipationState();
+        ref.watch(talkParticipationProvider(widget.talkId)).maybeWhen(
+              data: (value) => value,
+              orElse: () => const TalkParticipationState(),
+            );
     final fallback = widget.initialTalk;
 
     return detail.when(
