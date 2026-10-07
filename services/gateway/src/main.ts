@@ -195,6 +195,8 @@ import {
   type TalkLibraryAuthorizer,
 } from "./talk_library/service.js";
 import { createPostgresTalkLibraryRepository } from "./talk_library/postgres_repository.js";
+import { createPostgresTalkPushDedupeRepository } from "./talk_notifications/postgres_dedupe_repository.js";
+import { createTalkPushDeliveryRuntime } from "./talk_notifications/runtime.js";
 import {
   createGatewayApp,
   type GatewayAppOptions,
@@ -304,6 +306,7 @@ export interface ServiceDatabaseDependency {
   readonly talkActivity?: ReturnType<typeof createPostgresTalkActivityRepository>;
   readonly talkSearch?: ReturnType<typeof createPostgresTalkSearchRepository>;
   readonly talkLibrary?: ReturnType<typeof createPostgresTalkLibraryRepository>;
+  readonly talkPushDedupe?: ReturnType<typeof createPostgresTalkPushDedupeRepository>;
   close(): Promise<void>;
 }
 
@@ -334,6 +337,7 @@ export interface GatewayServiceRuntime {
   readonly address: string;
   readonly app: ManagedNodeServer;
   readonly pushSender?: MobilePushSender;
+  readonly talkPushDelivery?: ReturnType<typeof createTalkPushDeliveryRuntime>;
   isDraining(): boolean;
   drain(): void;
   shutdown(reason?: ServiceSignal | "manual"): Promise<void>;
@@ -457,6 +461,7 @@ function createDefaultDatabaseDependency(
     talkActivity: createPostgresTalkActivityRepository(database.pool),
     talkSearch: createPostgresTalkSearchRepository(database.pool),
     talkLibrary: createPostgresTalkLibraryRepository(database.pool),
+    talkPushDedupe: createPostgresTalkPushDedupeRepository(database.pool),
     close: database.close,
   });
 }
@@ -1715,6 +1720,11 @@ export async function startGatewayService(
         })
       : undefined);
 
+  const talkPushDelivery = createTalkPushDeliveryRuntime({
+    ...(pushSender ? { sender: pushSender } : {}),
+    ...(database.talkPushDedupe ? { dedupe: database.talkPushDedupe } : {}),
+  });
+
   const composedShellActionExecutor: AgentShellActionExecutor | undefined =
     composedBillingCheckout && composedBillingWallet
       ? Object.freeze({
@@ -2157,6 +2167,7 @@ export async function startGatewayService(
     address: lifecycle.address,
     app,
     ...(pushSender ? { pushSender } : {}),
+    ...(talkPushDelivery ? { talkPushDelivery } : {}),
     isDraining: drain.isDraining,
     drain: drain.beginDraining,
     shutdown: (reason: ServiceSignal | "manual" = "manual") =>
