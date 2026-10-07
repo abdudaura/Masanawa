@@ -107,8 +107,34 @@ describe("Postgres Talk repository", () => {
     expect(calls[1]?.values).toEqual(["tenant_a", "explore", "user_viewer", 50]);
     expect(calls[0]?.text).toContain("talks.participation");
     expect(calls[0]?.text).toContain("talks.follows");
+    expect(calls[0]?.text).toContain("talks.safety_preferences");
+    expect(calls[0]?.text).toContain("sp.viewer_user_id = $3");
+    expect(calls[0]?.text).toContain("(sp.blocked OR sp.muted)");
     expect(calls[0]?.text).toContain("tenant_id = $1");
     expect(calls[0]?.text).toContain("state = 'live'");
+  });
+
+  it("applies viewer safety preferences to direct Talk reads", async () => {
+    let sql = "";
+    const pool: TalkSqlPool = {
+      async query<Row>(text: string) {
+        sql = text;
+        return {
+          rowCount: 1,
+          rows: [row({comment_count: 0})] as unknown as Row[],
+        };
+      },
+    };
+    const repository = createPostgresTalkRepository(pool);
+    await repository.getTalk({
+      tenantId: "tenant_a",
+      talkId: "talk_a",
+      viewerUserId: "user_viewer",
+    });
+    expect(sql).toContain("talks.safety_preferences");
+    expect(sql).toContain("sp.viewer_user_id = $3");
+    expect(sql).toContain("sp.subject_user_id = t.host_user_id");
+    expect(sql).toContain("(sp.blocked OR sp.muted)");
   });
 
   it("returns null when a comment target Talk does not exist", async () => {
@@ -130,5 +156,28 @@ describe("Postgres Talk repository", () => {
         createdAt: "2026-10-07T09:05:00.000Z",
       }),
     ).resolves.toBeNull();
+  });
+
+  it("guards comment writes with viewer block/mute preference", async () => {
+    let sql = "";
+    const pool: TalkSqlPool = {
+      async query<Row>(text: string) {
+        sql = text;
+        return { rowCount: 0, rows: [] as unknown as Row[] };
+      },
+    };
+    const repository = createPostgresTalkRepository(pool);
+    await repository.addComment({
+      tenantId: "tenant_a",
+      talkId: "talk_a",
+      commentId: "comment_a",
+      authorUserId: "user_viewer",
+      authorName: "Viewer",
+      body: "Hello",
+      createdAt: "2026-10-07T09:05:00.000Z",
+    });
+    expect(sql).toContain("talks.safety_preferences");
+    expect(sql).toContain("sp.viewer_user_id = $4");
+    expect(sql).toContain("(sp.blocked OR sp.muted)");
   });
 });
