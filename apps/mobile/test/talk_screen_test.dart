@@ -1160,6 +1160,62 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('listener follows and unfollows the Talk Host from More',
+      (tester) async {
+    final transport = _TalkTransport();
+    final social = _SocialProfiles();
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        social: social,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('talk-more')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('talk-more-follow-host')), findsOneWidget);
+    expect(find.text('Follow Host'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('talk-more-follow-host')));
+    await tester.pumpAndSettle();
+
+    expect(social.following, isTrue);
+    expect(find.text('Following'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('talk-more-follow-host')));
+    await tester.pumpAndSettle();
+
+    expect(social.following, isFalse);
+    expect(find.text('Follow Host'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Host never sees a self-follow action in Talk More',
+      (tester) async {
+    final transport = _TalkTransport();
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        home: const TalkScreen(
+          talkId: 'talk-1',
+          initialTalk: _TalkTransport.talk,
+          isHost: true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('talk-more')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('talk-more-follow-host')), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('listener can send a live question to the Host', (tester) async {
     final transport = _TalkTransport();
     final questions = _QuestionTransport();
