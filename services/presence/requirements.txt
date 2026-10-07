@@ -1,2 +1,4 @@
-livekit-agents[google]~=1.9
+# LiveKit 1.8.5 is the current published stable line compatible with Python 3.11.
+# Do not widen this to ~=1.9 until a 1.9.x release exists on PyPI.
+livekit-agents[google]==1.8.5
 asyncpg~=0.30
