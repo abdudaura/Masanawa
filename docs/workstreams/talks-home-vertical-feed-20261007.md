@@ -32,3 +32,38 @@ It does not own production deployment, shared Commerce/provider code, migrations
 ## Status
 
 Claimed and active. Inspecting current mobile source before edits.
+
+
+## Implementation checkpoint
+
+Implemented on this branch:
+- Talk discovery/domain models in Flutter;
+- authenticated Gateway transport contract for `GET /talks?feed=explore|live`;
+- Talk detail contract `GET /talks/:id`;
+- Talk create contract `POST /talks`;
+- comment contract `POST /talks/:id/comments`;
+- Home with **Explore / Live Talks** tabs;
+- both Home tabs use only one-column vertical Talk cards;
+- Talk listener/replay presentation foundation;
+- public Comments section + composer;
+- Create Talk screen;
+- new root shell **Home · Create · Activity · You**;
+- You hub with Wallet/Bills/Crypto moved out of root navigation;
+- canonical docs updated to the four-tab shell and comments;
+- focused widget tests for vertical discovery, root shell and comments.
+
+## Backend dependency / handoff
+
+This lane deliberately does not own shared Gateway persistence/migrations.
+The mobile contract now expects:
+- `GET /talks?feed=explore|live` -> array of Talk feed items;
+- `POST /talks` with `{ topic, title? }` -> created live Talk;
+- `GET /talks/:id` -> `{ talk, comments }`;
+- `POST /talks/:id/comments` with `{ body }` -> created comment.
+
+A separate backend lane should implement these using the authenticated platform session,
+human-host requirement, durable Talk/comment storage, and live/replay policy.
+
+## Current verification status
+
+Implementation is committed and ready for CI/review. No production deployment from this lane.
