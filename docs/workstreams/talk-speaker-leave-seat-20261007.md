@@ -1,0 +1,28 @@
+# Speaker return-to-Audience — 2026-10-07
+
+- Owner/window: current ChatGPT implementation window
+- Branch: `work/talk-speaker-leave-seat-20261007`
+- Base SHA: `64406eea4e39834ca6003afb442c9c347c20db44`
+- Task: complete the product success path where an admitted human Speaker voluntarily leaves their Seat and remains in the Talk Audience.
+- Exact owned paths:
+  - `services/gateway/src/talk_moderation/model.ts`
+  - `services/gateway/src/talk_moderation/postgres_repository.ts`
+  - `services/gateway/src/talk_moderation/service.ts`
+  - `services/gateway/src/talk_moderation_routes.ts`
+  - focused moderation tests
+  - `apps/mobile/lib/src/talks/talk_participation.dart`
+  - `apps/mobile/lib/src/talks/talk_participation_http_transport.dart`
+  - `apps/mobile/lib/src/screens/talks/talk_screen.dart`
+  - focused mobile Talk tests
+  - this claim file
+- Contract:
+  - only the authenticated user can leave their own human Speaker Seat;
+  - Host cannot leave through this path;
+  - AI Seats cannot use it;
+  - canonical `seat_removed` transition is reused;
+  - durable Seat becomes inactive and participation returns to idle;
+  - connected LiveKit session stays connected, role becomes listener, microphone publish is revoked;
+  - user remains able to listen/comment/react/raise hand again later.
+- Current step: add canonical self-leave repository/service route, then wire Speaker-only mobile control.
+- Last update: 2026-10-07T14:52Z
+- Status: active
