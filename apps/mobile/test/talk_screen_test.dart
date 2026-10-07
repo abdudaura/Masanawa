@@ -2,9 +2,57 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/screens/talks/talk_screen.dart';
+import 'package:masanawa/src/state/talk_ai_seat_state.dart';
 import 'package:masanawa/src/state/talk_state.dart';
+import 'package:masanawa/src/talks/talk_ai_seat.dart';
 import 'package:masanawa/src/talks/talk_models.dart';
 import 'package:masanawa/src/theme/masanawa_theme.dart';
+
+class _SeatTransport implements TalkAiSeatTransport {
+  const _SeatTransport();
+
+  @override
+  Future<List<TalkAiSeatCandidate>> loadCandidates({
+    required String talkId,
+  }) async =>
+      const [
+        TalkAiSeatCandidate(
+          personaId: 'expert-1',
+          displayName: 'Education Expert',
+          kind: TalkAiPersonaKind.expert,
+          seatFeeLabel: '₦300',
+          subtitle: 'Learning · Schools',
+        ),
+      ];
+
+  @override
+  Future<TalkAiSeatQuote> createQuote({
+    required String talkId,
+    required String personaId,
+    required TalkAiSeatMode mode,
+  }) async =>
+      TalkAiSeatQuote(
+        quoteId: 'quote-1',
+        personaId: personaId,
+        displayName: 'Education Expert',
+        kind: TalkAiPersonaKind.expert,
+        mode: mode,
+        totalLabel: '₦300',
+        expiresAt: DateTime(2030, 1, 1, 12, 30),
+        requiresHostApproval: mode == TalkAiSeatMode.sponsor,
+      );
+
+  @override
+  Future<TalkAiSeatRequest> confirmQuote({
+    required String talkId,
+    required String quoteId,
+  }) async =>
+      const TalkAiSeatRequest(
+        requestId: 'request-1',
+        status: TalkAiSeatRequestStatus.pendingHost,
+        message: 'Waiting for the Host.',
+      );
+}
 
 class _TalkTransport implements TalkTransport {
   final List<TalkComment> comments = [
@@ -70,22 +118,33 @@ class _TalkTransport implements TalkTransport {
   }
 }
 
+Widget _app({
+  required TalkTransport talkTransport,
+  Widget? home,
+}) {
+  return ProviderScope(
+    overrides: [
+      talkTransportProvider.overrideWithValue(talkTransport),
+      talkAiSeatTransportProvider.overrideWithValue(
+        const _SeatTransport(),
+      ),
+    ],
+    child: MaterialApp(
+      theme: buildMasanawaTheme(brightness: Brightness.light),
+      home: home ??
+          const TalkScreen(
+            talkId: 'talk-1',
+            initialTalk: _TalkTransport.talk,
+          ),
+    ),
+  );
+}
+
 void main() {
   testWidgets('Talk keeps live controls and comments on one screen',
       (tester) async {
     final transport = _TalkTransport();
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [talkTransportProvider.overrideWithValue(transport)],
-        child: MaterialApp(
-          theme: buildMasanawaTheme(brightness: Brightness.light),
-          home: const TalkScreen(
-            talkId: 'talk-1',
-            initialTalk: _TalkTransport.talk,
-          ),
-        ),
-      ),
-    );
+    await tester.pumpWidget(_app(talkTransport: transport));
     await tester.pumpAndSettle();
 
     expect(find.text('Will AI make education more equal?'), findsOneWidget);
@@ -103,12 +162,9 @@ void main() {
       (tester) async {
     final transport = _TalkTransport();
     await tester.pumpWidget(
-      ProviderScope(
-        overrides: [talkTransportProvider.overrideWithValue(transport)],
-        child: MaterialApp(
-          theme: buildMasanawaTheme(brightness: Brightness.light),
-          home: const TalkScreen(talkId: 'talk-1'),
-        ),
+      _app(
+        talkTransport: transport,
+        home: const TalkScreen(talkId: 'talk-1'),
       ),
     );
     await tester.pumpAndSettle();
@@ -126,5 +182,41 @@ void main() {
     );
     expect(transport.comments.length, 2);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('listener opens Sponsor Seat sheet from Add AI', (tester) async {
+    final transport = _TalkTransport();
+    await tester.pumpWidget(_app(talkTransport: transport));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Add AI'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sponsor a Seat'), findsOneWidget);
+    expect(find.text('Education Expert'), findsWidgets);
+    expect(find.text('Sponsor'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('host opens direct Add AI semantics', (tester) async {
+    final transport = _TalkTransport();
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        home: const TalkScreen(
+          talkId: 'talk-1',
+          initialTalk: _TalkTransport.talk,
+          isHost: true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Add AI'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Add AI'), findsWidgets);
+    expect(find.text('Add'), findsOneWidget);
+    expect(find.text('Sponsor a Seat'), findsNothing);
   });
 }

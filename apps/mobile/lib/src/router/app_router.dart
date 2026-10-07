@@ -102,7 +102,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/talk/create',
         builder: (context, _) => CreateTalkScreen(
           onCreated: (talk) => context.go(
-            '/talk/' + Uri.encodeComponent(talk.id),
+            '/talk/' + Uri.encodeComponent(talk.id) + '?host=1',
             extra: talk,
           ),
         ),
@@ -111,9 +111,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/talk/:id',
         builder: (context, state) {
           final extra = state.extra;
+          final initialTalk = extra is TalkDiscoveryItem ? extra : null;
           return TalkScreen(
             talkId: state.pathParameters['id']!,
-            initialTalk: extra is TalkDiscoveryItem ? extra : null,
+            initialTalk: initialTalk,
+            isHost: state.uri.queryParameters['host'] == '1' ||
+                initialTalk?.viewerIsHost == true,
           );
         },
       ),

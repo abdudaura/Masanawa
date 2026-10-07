@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../state/talk_state.dart';
+import '../../talks/talk_ai_seat.dart';
 import '../../talks/talk_models.dart';
 import '../../theme/masanawa_theme.dart';
+import 'add_ai_seat_sheet.dart';
 
 class TalkScreen extends ConsumerStatefulWidget {
   const TalkScreen({
     super.key,
     required this.talkId,
     this.initialTalk,
+    this.isHost = false,
     this.onAddAi,
     this.onGift,
     this.onRaiseHand,
@@ -17,6 +20,7 @@ class TalkScreen extends ConsumerStatefulWidget {
 
   final String talkId;
   final TalkDiscoveryItem? initialTalk;
+  final bool isHost;
   final VoidCallback? onAddAi;
   final VoidCallback? onGift;
   final VoidCallback? onRaiseHand;
@@ -33,6 +37,46 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
   void dispose() {
     _commentController.dispose();
     super.dispose();
+  }
+
+  Future<void> _openAiSeatSheet() async {
+    final callback = widget.onAddAi;
+    if (callback != null) {
+      callback();
+      return;
+    }
+    final request = await showAddAiSeatSheet(
+      context,
+      talkId: widget.talkId,
+      isHost: widget.isHost,
+    );
+    if (!mounted || request == null) return;
+    ref.invalidate(talkDetailProvider(widget.talkId));
+    final message = switch (request.status) {
+      TalkAiSeatRequestStatus.pendingHost =>
+        request.message.isNotEmpty
+            ? request.message
+            : 'Seat sponsored. Waiting for the Host to accept it.',
+      TalkAiSeatRequestStatus.admitted =>
+        request.message.isNotEmpty
+            ? request.message
+            : 'AI added to the Talk.',
+      TalkAiSeatRequestStatus.declined =>
+        request.message.isNotEmpty
+            ? request.message
+            : 'The Seat request was declined.',
+      TalkAiSeatRequestStatus.expired =>
+        request.message.isNotEmpty
+            ? request.message
+            : 'The Seat request expired.',
+      TalkAiSeatRequestStatus.unknown =>
+        request.message.isNotEmpty
+            ? request.message
+            : 'Seat request submitted.',
+    };
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   Future<void> _postComment() async {
@@ -70,7 +114,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
         controller: _commentController,
         postingComment: _postingComment,
         onPostComment: _postComment,
-        onAddAi: widget.onAddAi,
+        onAddAi: _openAiSeatSheet,
         onGift: widget.onGift,
         onRaiseHand: widget.onRaiseHand,
       ),
@@ -83,7 +127,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             controller: _commentController,
             postingComment: _postingComment,
             onPostComment: _postComment,
-            onAddAi: widget.onAddAi,
+            onAddAi: _openAiSeatSheet,
             onGift: widget.onGift,
             onRaiseHand: widget.onRaiseHand,
           );
@@ -101,7 +145,7 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             controller: _commentController,
             postingComment: _postingComment,
             onPostComment: _postComment,
-            onAddAi: widget.onAddAi,
+            onAddAi: _openAiSeatSheet,
             onGift: widget.onGift,
             onRaiseHand: widget.onRaiseHand,
           );
