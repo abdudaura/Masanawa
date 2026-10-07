@@ -1,11 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../state/talk_host_controls_state.dart';
+import '../../state/talk_live_state.dart';
 import '../../state/talk_participation_state.dart';
 import '../../state/talk_state.dart';
 import '../../talks/talk_ai_seat.dart';
 import '../../talks/talk_host_controls.dart';
+import '../../talks/talk_live.dart';
+import '../../talks/talk_live_audio_session.dart';
 import '../../talks/talk_participation.dart';
 import '../../talks/talk_models.dart';
 import '../../theme/masanawa_theme.dart';
@@ -41,11 +46,105 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
   bool _reacting = false;
   bool _handBusy = false;
   bool _endingTalk = false;
+  TalkLiveAudioController? _liveAudio;
+  StreamSubscription<TalkLiveAudioStatus>? _liveAudioSub;
+  TalkLiveAudioStatus _liveAudioStatus = TalkLiveAudioStatus.idle;
+  TalkLiveRole? _liveAudioRole;
+  bool _liveAudioMuted = false;
+  String? _liveAudioError;
+  bool _liveAudioStartScheduled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialTalk?.isLive == true) {
+      _scheduleLiveAudioStart();
+    }
+  }
 
   @override
   void dispose() {
     _commentController.dispose();
+    unawaited(_liveAudioSub?.cancel());
+    final liveAudio = _liveAudio;
+    _liveAudio = null;
+    if (liveAudio != null) unawaited(liveAudio.close());
     super.dispose();
+  }
+
+  void _scheduleLiveAudioStart() {
+    if (_liveAudio != null || _liveAudioStartScheduled) return;
+    _liveAudioStartScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _liveAudioStartScheduled = false;
+      if (!mounted || _liveAudio != null) return;
+      unawaited(_startLiveAudio());
+    });
+  }
+
+  Future<void> _startLiveAudio() async {
+    if (_liveAudio != null || !mounted) return;
+    final controller =
+        ref.read(talkLiveAudioFactoryProvider)(widget.talkId);
+    _liveAudio = controller;
+    _liveAudioStatus = controller.status;
+    _liveAudioRole = controller.role;
+    _liveAudioMuted = controller.muted;
+    _liveAudioError = controller.errorMessage;
+    _liveAudioSub = controller.states.listen((status) {
+      if (!mounted || !identical(_liveAudio, controller)) return;
+      setState(() {
+        _liveAudioStatus = status;
+        _liveAudioRole = controller.role;
+        _liveAudioMuted = controller.muted;
+        _liveAudioError = controller.errorMessage;
+      });
+    });
+
+    try {
+      await controller.start();
+      if (!mounted || !identical(_liveAudio, controller)) return;
+      setState(() {
+        _liveAudioStatus = controller.status;
+        _liveAudioRole = controller.role;
+        _liveAudioMuted = controller.muted;
+        _liveAudioError = controller.errorMessage;
+      });
+    } catch (_) {
+      if (!mounted || !identical(_liveAudio, controller)) return;
+      setState(() {
+        _liveAudioStatus = TalkLiveAudioStatus.failed;
+        _liveAudioError = 'Live audio is unavailable right now.';
+      });
+    }
+  }
+
+  Future<void> _retryLiveAudio() async {
+    final previous = _liveAudio;
+    _liveAudio = null;
+    await _liveAudioSub?.cancel();
+    _liveAudioSub = null;
+    if (previous != null) await previous.close();
+    if (!mounted) return;
+    setState(() {
+      _liveAudioStatus = TalkLiveAudioStatus.idle;
+      _liveAudioRole = null;
+      _liveAudioMuted = false;
+      _liveAudioError = null;
+    });
+    await _startLiveAudio();
+  }
+
+  Future<void> _toggleLiveMute() async {
+    final controller = _liveAudio;
+    if (controller == null || controller.role != TalkLiveRole.host) return;
+    await controller.setMuted(!controller.muted);
+    if (!mounted || !identical(_liveAudio, controller)) return;
+    setState(() {
+      _liveAudioStatus = controller.status;
+      _liveAudioMuted = controller.muted;
+      _liveAudioError = controller.errorMessage;
+    });
   }
 
   Future<void> _openAiSeatSheet() async {
@@ -235,6 +334,13 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             )
         : const TalkHostControlsView();
     final fallback = widget.initialTalk;
+    final projectedTalk = detail.maybeWhen(
+      data: (value) => value.talk,
+      orElse: () => fallback,
+    );
+    if (projectedTalk?.isLive == true) {
+      _scheduleLiveAudioStart();
+    }
 
     return detail.when(
       data: (value) => _TalkBody(
@@ -244,6 +350,12 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
         postingComment: _postingComment,
         onPostComment: _postComment,
         isHost: widget.isHost,
+        liveAudioStatus: _liveAudioStatus,
+        liveAudioRole: _liveAudioRole,
+        liveAudioMuted: _liveAudioMuted,
+        liveAudioError: _liveAudioError,
+        onRetryLiveAudio: _retryLiveAudio,
+        onToggleLiveMute: _toggleLiveMute,
         hostRequestCount: hostControls.requests.length,
         onHostRequests: _openHostRequests,
         onHostManage: _openHostManage,
@@ -268,6 +380,12 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             postingComment: _postingComment,
             onPostComment: _postComment,
             isHost: widget.isHost,
+            liveAudioStatus: _liveAudioStatus,
+            liveAudioRole: _liveAudioRole,
+            liveAudioMuted: _liveAudioMuted,
+            liveAudioError: _liveAudioError,
+            onRetryLiveAudio: _retryLiveAudio,
+            onToggleLiveMute: _toggleLiveMute,
             hostRequestCount: hostControls.requests.length,
             onHostRequests: _openHostRequests,
             onHostManage: _openHostManage,
@@ -297,6 +415,12 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
             postingComment: _postingComment,
             onPostComment: _postComment,
             isHost: widget.isHost,
+            liveAudioStatus: _liveAudioStatus,
+            liveAudioRole: _liveAudioRole,
+            liveAudioMuted: _liveAudioMuted,
+            liveAudioError: _liveAudioError,
+            onRetryLiveAudio: _retryLiveAudio,
+            onToggleLiveMute: _toggleLiveMute,
             hostRequestCount: hostControls.requests.length,
             onHostRequests: _openHostRequests,
             onHostManage: _openHostManage,
@@ -333,6 +457,12 @@ class _TalkBody extends StatelessWidget {
     this.loadingComments = false,
     this.commentsUnavailable = false,
     this.isHost = false,
+    this.liveAudioStatus = TalkLiveAudioStatus.idle,
+    this.liveAudioRole,
+    this.liveAudioMuted = false,
+    this.liveAudioError,
+    this.onRetryLiveAudio,
+    this.onToggleLiveMute,
     this.hostRequestCount = 0,
     this.onHostRequests,
     this.onHostManage,
@@ -354,6 +484,12 @@ class _TalkBody extends StatelessWidget {
   final bool loadingComments;
   final bool commentsUnavailable;
   final bool isHost;
+  final TalkLiveAudioStatus liveAudioStatus;
+  final TalkLiveRole? liveAudioRole;
+  final bool liveAudioMuted;
+  final String? liveAudioError;
+  final VoidCallback? onRetryLiveAudio;
+  final VoidCallback? onToggleLiveMute;
   final int hostRequestCount;
   final VoidCallback? onHostRequests;
   final VoidCallback? onHostManage;
@@ -394,6 +530,15 @@ class _TalkBody extends StatelessWidget {
                   child: _TalkStage(
                     talk: talk,
                     isHost: isHost && talk.isLive,
+                    liveAudioStatus: talk.isLive
+                        ? liveAudioStatus
+                        : TalkLiveAudioStatus.ended,
+                    liveAudioRole: talk.isLive ? liveAudioRole : null,
+                    liveAudioMuted: liveAudioMuted,
+                    liveAudioError: liveAudioError,
+                    onRetryLiveAudio: talk.isLive ? onRetryLiveAudio : null,
+                    onToggleLiveMute:
+                        talk.isLive ? onToggleLiveMute : null,
                     hostRequestCount: talk.isLive ? hostRequestCount : 0,
                     onHostRequests: onHostRequests,
                     onHostManage: onHostManage,
@@ -496,6 +641,12 @@ class _TalkStage extends StatelessWidget {
   const _TalkStage({
     required this.talk,
     this.isHost = false,
+    this.liveAudioStatus = TalkLiveAudioStatus.idle,
+    this.liveAudioRole,
+    this.liveAudioMuted = false,
+    this.liveAudioError,
+    this.onRetryLiveAudio,
+    this.onToggleLiveMute,
     this.hostRequestCount = 0,
     this.onHostRequests,
     this.onHostManage,
@@ -511,6 +662,12 @@ class _TalkStage extends StatelessWidget {
 
   final TalkDiscoveryItem talk;
   final bool isHost;
+  final TalkLiveAudioStatus liveAudioStatus;
+  final TalkLiveRole? liveAudioRole;
+  final bool liveAudioMuted;
+  final String? liveAudioError;
+  final VoidCallback? onRetryLiveAudio;
+  final VoidCallback? onToggleLiveMute;
   final int hostRequestCount;
   final VoidCallback? onHostRequests;
   final VoidCallback? onHostManage;
@@ -564,6 +721,35 @@ class _TalkStage extends StatelessWidget {
                 talk.listenerCount.toString() + ' listening',
                 style: TextStyle(color: u.textMuted, fontSize: 12.5),
               ),
+              if (talk.isLive) ...[
+                const Spacer(),
+                _LiveAudioStatusChip(
+                  status: liveAudioStatus,
+                  role: liveAudioRole,
+                  muted: liveAudioMuted,
+                  error: liveAudioError,
+                  onRetry: onRetryLiveAudio,
+                ),
+                if (liveAudioRole == TalkLiveRole.host &&
+                    liveAudioStatus != TalkLiveAudioStatus.connecting &&
+                    liveAudioStatus != TalkLiveAudioStatus.ended &&
+                    liveAudioStatus != TalkLiveAudioStatus.failed) ...[
+                  const SizedBox(width: 4),
+                  IconButton(
+                    key: const ValueKey('talk-live-mic-toggle'),
+                    tooltip: liveAudioMuted ? 'Unmute microphone' : 'Mute microphone',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: onToggleLiveMute,
+                    icon: Icon(
+                      liveAudioMuted
+                          ? Icons.mic_off_rounded
+                          : Icons.mic_rounded,
+                      color: liveAudioMuted ? u.textMuted : u.brandStrong,
+                      size: 20,
+                    ),
+                  ),
+                ],
+              ],
             ],
           ),
           const SizedBox(height: 10),
@@ -681,6 +867,94 @@ class _TalkStage extends StatelessWidget {
               ],
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _LiveAudioStatusChip extends StatelessWidget {
+  const _LiveAudioStatusChip({
+    required this.status,
+    required this.role,
+    required this.muted,
+    required this.error,
+    this.onRetry,
+  });
+
+  final TalkLiveAudioStatus status;
+  final TalkLiveRole? role;
+  final bool muted;
+  final String? error;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    final failed = status == TalkLiveAudioStatus.failed;
+    final reconnecting = status == TalkLiveAudioStatus.reconnecting;
+    final label = switch (status) {
+      TalkLiveAudioStatus.idle => 'Audio',
+      TalkLiveAudioStatus.connecting => 'Connecting…',
+      TalkLiveAudioStatus.listening => 'Listening',
+      TalkLiveAudioStatus.publishing => muted ? 'Muted' : 'On mic',
+      TalkLiveAudioStatus.reconnecting => 'Reconnecting…',
+      TalkLiveAudioStatus.ended => 'Ended',
+      TalkLiveAudioStatus.failed => 'Audio unavailable',
+    };
+
+    return Tooltip(
+      message: failed
+          ? (error?.trim().isNotEmpty == true
+              ? error!
+              : 'Live audio is unavailable right now.')
+          : label,
+      child: InkWell(
+        key: const ValueKey('talk-live-audio-status'),
+        onTap: failed ? onRetry : null,
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+          decoration: BoxDecoration(
+            color: failed
+                ? u.emergency.withValues(alpha: .10)
+                : reconnecting
+                    ? u.surfaceMuted
+                    : u.brand.withValues(alpha: .10),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (status == TalkLiveAudioStatus.connecting)
+                const SizedBox(
+                  width: 11,
+                  height: 11,
+                  child: CircularProgressIndicator(strokeWidth: 1.5),
+                )
+              else
+                Icon(
+                  failed
+                      ? Icons.wifi_off_rounded
+                      : reconnecting
+                          ? Icons.sync_rounded
+                          : role == TalkLiveRole.host
+                              ? Icons.graphic_eq_rounded
+                              : Icons.headphones_rounded,
+                  size: 13,
+                  color: failed ? u.emergency : u.brandStrong,
+                ),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  color: failed ? u.emergency : u.textPrimary,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

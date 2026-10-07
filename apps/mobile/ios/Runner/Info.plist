@@ -42,7 +42,7 @@
 	<key>NSCameraUsageDescription</key>
 	<string>Masanawa needs camera access so you can take photos to share in chats.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Masanawa needs microphone access so you can record voice notes in chats.</string>
+	<string>Masanawa needs microphone access so you can speak in live Talks and record voice messages.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Masanawa needs photo library access so you can share photos in chats.</string>
 	<!-- Location intentionally omitted: no shell route uses it (matches Android).
