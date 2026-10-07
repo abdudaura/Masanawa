@@ -53,6 +53,7 @@ interface RequestRow extends Record<string,unknown>{
   kind:"human_speaker"|"sponsored_expert"|"sponsored_twin";
   requester_user_id:string|null;
   persona_id:string|null;
+  profile_handle:string|null;
   display_name:string;
   detail:string|null;
   avatar_url:string|null;
@@ -127,6 +128,7 @@ function seatView(row:SeatRow):HostParticipantView{
     isHost:row.is_host,
     isMuted:row.is_muted,
     ...(row.user_id===null?{}:{userId:row.user_id}),
+    ...(row.profile_handle===null?{}:{profileHandle:row.profile_handle}),
     ...(row.persona_id===null?{}:{personaId:row.persona_id}),
     ...(row.avatar_url===null?{}:{avatarUrl:row.avatar_url}),
   });
@@ -166,10 +168,13 @@ async function controls(
       [tenantId,talkId],
     ),
     pool.query<SeatRow>(
-      `SELECT participant_id,kind,user_id,persona_id,display_name,avatar_url,is_host,is_muted
-         FROM talks.talk_seats
-        WHERE tenant_id=$1 AND talk_id=$2 AND active=true
-        ORDER BY admitted_at ASC,participant_id ASC`,
+      `SELECT s.participant_id,s.kind,s.user_id,s.persona_id,p.handle AS profile_handle,
+              s.display_name,s.avatar_url,s.is_host,s.is_muted
+         FROM talks.talk_seats s
+         LEFT JOIN talks.public_profiles p
+           ON p.tenant_id=s.tenant_id AND p.user_id=s.user_id
+        WHERE s.tenant_id=$1 AND s.talk_id=$2 AND s.active=true
+        ORDER BY s.admitted_at ASC,s.participant_id ASC`,
       [tenantId,talkId],
     ),
   ]);
