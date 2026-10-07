@@ -36,6 +36,7 @@ export interface CustomerChannelResult {
   readonly duplicate: boolean;
   readonly reply: string | null;
   readonly requestContact: boolean;
+  readonly shouldDeliver: boolean;
 }
 
 function instant(offsetMs = 0): string {
@@ -64,6 +65,10 @@ export function createCustomerChannelBridge(input: Readonly<{
   conversation: AgentConversationService;
 }>): Readonly<{
   handle(request: CustomerChannelInbound): Promise<CustomerChannelResult>;
+  delivered(input: Readonly<{
+    channel: CustomerChannel;
+    messageId: string;
+  }>): Promise<void>;
 }> {
   async function chooseCharacter(
     profile: PlatformAuthProfile,
@@ -214,8 +219,12 @@ export function createCustomerChannelBridge(input: Readonly<{
         return Object.freeze({
           handled: true,
           duplicate: true,
-          reply: claim.state === "completed" ? claim.reply : null,
+          reply:
+            claim.state === "completed" || claim.state === "delivered"
+              ? claim.reply
+              : null,
           requestContact: false,
+          shouldDeliver: claim.state === "completed" && claim.reply !== null,
         });
       }
 
@@ -236,6 +245,7 @@ export function createCustomerChannelBridge(input: Readonly<{
             duplicate: false,
             reply,
             requestContact: request.channel === "telegram",
+            shouldDeliver: true,
           });
         }
 
@@ -304,6 +314,7 @@ export function createCustomerChannelBridge(input: Readonly<{
           duplicate: false,
           reply: result.reply,
           requestContact: false,
+          shouldDeliver: true,
         });
       } catch (error) {
         await input.channels.failMessage({
@@ -313,6 +324,14 @@ export function createCustomerChannelBridge(input: Readonly<{
         }).catch(() => undefined);
         throw error;
       }
+    },
+
+    async delivered(delivery) {
+      await input.channels.markDelivered({
+        channel: delivery.channel,
+        messageId: delivery.messageId,
+        deliveredAt: instant(),
+      });
     },
   });
 }
