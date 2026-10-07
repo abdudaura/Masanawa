@@ -78,21 +78,34 @@ describe("Postgres Talk repository", () => {
 
     const live = await repository.listTalks({
       tenantId: "tenant_a",
+      viewerUserId: "viewer_a",
       feed: "live",
       limit: 50,
     });
     const explore = await repository.listTalks({
       tenantId: "tenant_a",
+      viewerUserId: "viewer_a",
       feed: "explore",
       limit: 50,
     });
 
-    expect(live[0]).toMatchObject({ commentCount: 4 });
-    expect(explore[0]).toMatchObject({ commentCount: 4 });
-    expect(calls[0]?.values).toEqual(["tenant_a", "live", 50]);
-    expect(calls[1]?.values).toEqual(["tenant_a", "explore", 50]);
+    expect(live[0]).toMatchObject({
+      commentCount: 4,
+      reactionCount: 0,
+      followedHost: false,
+    });
+    expect(explore[0]).toMatchObject({
+      commentCount: 4,
+      reactionCount: 0,
+      followedHost: false,
+    });
+    expect(calls[0]?.values).toEqual(["tenant_a", "live", 50, "viewer_a"]);
+    expect(calls[1]?.values).toEqual(["tenant_a", "explore", 50, "viewer_a"]);
     expect(calls[0]?.text).toContain("tenant_id = $1");
     expect(calls[0]?.text).toContain("state = 'live'");
+    expect(calls[0]?.text).toContain("talks.participation");
+    expect(calls[0]?.text).toContain("talks.follows");
+    expect(calls[0]?.text).toContain("f.follower_user_id = $4");
   });
 
   it("returns null when a comment target Talk does not exist", async () => {
