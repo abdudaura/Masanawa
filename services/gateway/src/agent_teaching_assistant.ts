@@ -38,6 +38,11 @@ export interface AgentTeachingAssistant {
   }>): Promise<Readonly<{ reply: string; parts: readonly unknown[] }>>;
 }
 
+type TeachingPrepareInput =
+  Parameters<AgentTeachingAssistant["prepare"]>[0];
+type TeachingFinishInput =
+  Parameters<AgentTeachingAssistant["finish"]>[0];
+
 function clean(value: unknown, fallback: string, max: number): string {
   if (typeof value !== "string") return fallback;
   const normalized = value.trim();
@@ -67,7 +72,7 @@ export function createAgentTeachingAssistant(input: Readonly<{
   return Object.freeze({
     systemInstructions: TEACHING_AGENT_SYSTEM_INSTRUCTIONS,
 
-    async prepare(request) {
+    async prepare(request: TeachingPrepareInput) {
       const raw = request.text.trim();
       if (!raw.startsWith(STUDY_PREFIX)) return null;
       const learnerText = raw.slice(STUDY_PREFIX.length).trim();
@@ -95,7 +100,7 @@ export function createAgentTeachingAssistant(input: Readonly<{
       });
     },
 
-    async finish(request) {
+    async finish(request: TeachingFinishInput) {
       const match = STATE_TAG.exec(request.modelReply);
       const visible = request.modelReply.replace(STATE_TAG, "").trim();
       if (!visible) throw new Error("teaching.empty_reply");
