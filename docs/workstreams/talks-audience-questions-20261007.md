@@ -6,7 +6,7 @@
 - Latest main checked: `dbd64c530407fe3bd2b6d3c82a03d552d5c528dc`
 - Task: implement durable audience questions for live Talks, including authenticated submit/list, Host visibility, and native mobile submission.
 - Exact owned paths:
-  - `packages/talks/migrations/0006_talk_questions.sql`
+  - `packages/talks/migrations/0011_talk_questions.sql`
   - `services/gateway/src/talk_moderation/model.ts`
   - `services/gateway/src/talk_moderation/postgres_repository.ts`
   - `services/gateway/src/talk_moderation/service.ts`
@@ -50,6 +50,8 @@ Mobile:
 - compact action labels ellipsize rather than overflow.
 
 ## Integration check
+
+- Migration ordering audited against current `packages/talks/migrations/`: existing files run through `0010_talk_push_dedupe.sql`; audience questions use `0011_talk_questions.sql` to avoid the existing `0006_talk_replay.sql` sequence.
 
 - Latest main checked: `dbd64c530407fe3bd2b6d3c82a03d552d5c528dc`.
 - Main advanced six commits after this branch base, all in Talk notification runtime integration.
