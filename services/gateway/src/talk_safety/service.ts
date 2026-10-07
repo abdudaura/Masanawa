@@ -43,6 +43,16 @@ export interface TalkSafetyService {
     blocked: boolean;
     muted: boolean;
   }>): Promise<Readonly<{ blocked: boolean; muted: boolean }>>;
+  readUserPreference(input: Readonly<{
+    authorizationHeader: string | undefined;
+    userId: string;
+  }>): Promise<Readonly<{ blocked: boolean; muted: boolean }>>;
+  setUserPreference(input: Readonly<{
+    authorizationHeader: string | undefined;
+    userId: string;
+    blocked: boolean;
+    muted: boolean;
+  }>): Promise<Readonly<{ blocked: boolean; muted: boolean }>>;
   readEnforcement(input: Readonly<{
     authorizationHeader: string | undefined;
     targetKind: TalkSafetyTargetKind;
@@ -62,6 +72,13 @@ function text(value:string,name:string,max=256):string{
   if(typeof value!=="string") throw new TypeError(`${name} is invalid`);
   const normalized=value.trim();
   if(!normalized || normalized.length>max) throw new TypeError(`${name} is invalid`);
+  return normalized;
+}
+function userId(value:string):string{
+  const normalized=text(value,"userId",256);
+  if(!/^[A-Za-z0-9][A-Za-z0-9_.:-]{2,255}$/u.test(normalized)) {
+    throw new TypeError("userId is invalid");
+  }
   return normalized;
 }
 function handle(value:string):string{
@@ -130,6 +147,45 @@ export function createTalkSafetyService(input:Readonly<{
       const subjectUserId=await input.repository.resolveProfileUser({
         tenantId:viewer.tenantId,
         handle:handle(request.handle),
+      });
+      if(!subjectUserId) throw Object.assign(new Error("profiles.not_found"),{statusCode:404});
+      const saved=await input.repository.setPreference(
+        normalizeTalkSafetyUserPreference({
+          schemaVersion:1,
+          tenantId:viewer.tenantId,
+          viewerUserId:viewer.userId,
+          subjectUserId,
+          blocked:request.blocked,
+          muted:request.muted,
+          updatedAt:now(),
+        }),
+      );
+      return Object.freeze({blocked:saved.blocked,muted:saved.muted});
+    },
+
+    async readUserPreference(request){
+      const viewer=await customer(request.authorizationHeader);
+      const subjectUserId=await input.repository.resolveProfileUserById({
+        tenantId:viewer.tenantId,
+        userId:userId(request.userId),
+      });
+      if(!subjectUserId) throw Object.assign(new Error("profiles.not_found"),{statusCode:404});
+      const value=await input.repository.readPreference({
+        tenantId:viewer.tenantId,
+        viewerUserId:viewer.userId,
+        subjectUserId,
+      });
+      return Object.freeze({
+        blocked:value?.blocked ?? false,
+        muted:value?.muted ?? false,
+      });
+    },
+
+    async setUserPreference(request){
+      const viewer=await customer(request.authorizationHeader);
+      const subjectUserId=await input.repository.resolveProfileUserById({
+        tenantId:viewer.tenantId,
+        userId:userId(request.userId),
       });
       if(!subjectUserId) throw Object.assign(new Error("profiles.not_found"),{statusCode:404});
       const saved=await input.repository.setPreference(
