@@ -107,6 +107,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final entry = switch (state.uri.queryParameters['entry']) {
             'teach' => AiChatEntryMode.teach,
+            'study' => AiChatEntryMode.study,
             'voice-note' => AiChatEntryMode.liveTalk,
             'live-talk' => AiChatEntryMode.liveTalk,
             'live-voice' => AiChatEntryMode.liveVoice,
