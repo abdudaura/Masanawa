@@ -8,7 +8,8 @@
   - isolated additions to `services/gateway/src/app.ts`
   - isolated additions to `services/gateway/src/main.ts`
   - `services/gateway/src/talk_safety/platform_authority.ts`
-  - focused composition/authority/route tests only as needed
+  - `services/gateway/src/talk_safety/replay_bridge.ts`
+  - focused composition/authority/replay-bridge/route tests only as needed
   - this workstream
 - **Reuses:** merged `talk_safety` policy, repository, service and routes; existing platform customer sessions; existing admin-principal configuration pattern.
 - **Not owned:** safety persistence/enforcement SQL, mobile/admin UI, unrelated Talk domains.
