@@ -15,6 +15,7 @@ import type {
   SkillDistributionRepository,
   SkillGuideRepository,
   SkillRepository,
+  TeachingProgressRepository,
 } from "@masanawa/skills";
 import type {
   CloneSetupRepository,
@@ -57,6 +58,7 @@ import {
   createPostgresCryptoRepository,
   createPostgresPlatformAgentProfileRepository,
   createPostgresSkillGuideRepository,
+  createPostgresTeachingProgressRepository,
   createPostgresSkillDistributionRepository,
   createPostgresSkillRepository,
   createPostgresUserAgentPreferenceRepository,
@@ -174,6 +176,11 @@ import {
   type AgentBillingAssistant,
 } from "./agent_billing_assistant.js";
 import {
+  TEACHING_AGENT_SYSTEM_INSTRUCTIONS,
+  createAgentTeachingAssistant,
+  type AgentTeachingAssistant,
+} from "./agent_teaching_assistant.js";
+import {
   ensureDefaultPlatformAgents,
   type PlatformAgentIdentityProvisioner,
 } from "./platform_agent_bootstrap.js";
@@ -200,6 +207,7 @@ export interface ServiceDatabaseDependency {
   readonly userAgentPreferences?: UserAgentPreferenceRepository;
   readonly skills?: SkillRepository;
   readonly skillGuides?: SkillGuideRepository;
+  readonly teachingProgress?: TeachingProgressRepository;
   readonly skillDistribution?: SkillDistributionRepository;
   readonly personalClones?: PersonalCloneProvisioningRepository;
   readonly cloneSetups?: CloneSetupRepository;
@@ -340,6 +348,7 @@ function createDefaultDatabaseDependency(
     userAgentPreferences: createPostgresUserAgentPreferenceRepository(database.pool),
     skills: createPostgresSkillRepository(database.pool),
     skillGuides: createPostgresSkillGuideRepository(database.pool),
+    teachingProgress: createPostgresTeachingProgressRepository(database.pool),
     skillDistribution: createPostgresSkillDistributionRepository(database.pool),
     personalClones: createPostgresPersonalCloneProvisioningRepository(database.pool),
     cloneSetups: createPostgresCloneSetupRepository(database.pool),
@@ -971,9 +980,12 @@ export async function startGatewayService(
         }),
         skills: database.skills,
         guides: database.skillGuides,
-        ...(env.FLUTTERWAVE_BILLS_ENABLED === "true"
-          ? { systemInstructions: BILLING_AGENT_SYSTEM_INSTRUCTIONS }
-          : {}),
+        systemInstructions: Object.freeze([
+          ...TEACHING_AGENT_SYSTEM_INSTRUCTIONS,
+          ...(env.FLUTTERWAVE_BILLS_ENABLED === "true"
+            ? BILLING_AGENT_SYSTEM_INSTRUCTIONS
+            : []),
+        ]),
       });
     }
 
@@ -1393,6 +1405,13 @@ export async function startGatewayService(
         })
       : undefined);
 
+  const composedTeachingAssistant: AgentTeachingAssistant | undefined =
+    database.teachingProgress
+      ? createAgentTeachingAssistant({
+          repository: database.teachingProgress,
+        })
+      : undefined;
+
   const composedConversation =
     options.appOptions?.agentConversation ??
     (conversationAuthorizer &&
@@ -1408,6 +1427,7 @@ export async function startGatewayService(
           ...(database.mobileShell ? { mobileShell: database.mobileShell } : {}),
           ...(twinConversationObserver ? { twinObserver: twinConversationObserver } : {}),
           ...(composedBillingAssistant ? { billingAssistant: composedBillingAssistant } : {}),
+          ...(composedTeachingAssistant ? { teachingAssistant: composedTeachingAssistant } : {}),
           sessionDurationMs: 24 * 60 * 60 * 1000,
         })
       : undefined);
