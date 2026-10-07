@@ -46,6 +46,32 @@ describe("LiveKit Talk media token issuer", () => {
     expect(credentials.server_url).toBe("wss://live.example.test");
   });
 
+  it("mints Speaker credentials that can publish microphone audio", async () => {
+    const issuer = createLiveKitTalkMediaTokenIssuer({
+      serverUrl: "wss://live.example.test",
+      apiKey: "api-key",
+      apiSecret: "0123456789abcdef0123456789abcdef",
+      now: () => new Date("2026-10-07T10:00:00.000Z"),
+    });
+    const credentials = await issuer.mint({
+      talkId: "talk_123",
+      sessionId: "talk-live_speaker",
+      userId: "user_speaker",
+      role: "speaker",
+      canPublishAudio: true,
+    });
+    const payload = credentials.participant_token.split(".")[1]!;
+    const claims = decodePart(payload);
+    expect(claims.video).toMatchObject({
+      roomJoin: true,
+      room: "talk_123",
+      canPublish: true,
+      canSubscribe: true,
+      canPublishData: false,
+      canPublishSources: ["microphone"],
+    });
+  });
+
   it("mints listener credentials that cannot publish any track", async () => {
     const issuer = createLiveKitTalkMediaTokenIssuer({
       serverUrl: "wss://live.example.test",

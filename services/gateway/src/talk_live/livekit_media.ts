@@ -13,7 +13,7 @@ export interface TalkMediaTokenIssuer {
     talkId: string;
     sessionId: string;
     userId: string;
-    role: "host" | "listener";
+    role: "host" | "speaker" | "listener";
     canPublishAudio: boolean;
   }>): Promise<TalkMediaCredentials>;
 }
@@ -43,7 +43,7 @@ export function createLiveKitTalkMediaTokenIssuer(input: Readonly<{
   if (apiSecret.length < 16) throw new TypeError("LIVEKIT_API_SECRET is too short");
 
   const now = input.now ?? (() => new Date());
-  const ttlSeconds = input.ttlSeconds ?? 300;
+  const ttlSeconds = input.ttlSeconds ?? 30;
   if (!Number.isSafeInteger(ttlSeconds) || ttlSeconds < 30 || ttlSeconds > 900) {
     throw new TypeError("LiveKit token TTL must be between 30 and 900 seconds");
   }
@@ -64,10 +64,10 @@ export function createLiveKitTalkMediaTokenIssuer(input: Readonly<{
         video: {
           roomJoin: true,
           room: roomName,
-          canPublish: request.role === "host" && request.canPublishAudio,
+          canPublish: request.role !== "listener" && request.canPublishAudio,
           canSubscribe: true,
           canPublishData: false,
-          ...(request.role === "host" && request.canPublishAudio
+          ...(request.role !== "listener" && request.canPublishAudio
             ? { canPublishSources: ["microphone"] }
             : {}),
         },

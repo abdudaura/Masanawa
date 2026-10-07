@@ -164,6 +164,9 @@ import {
 } from "./talk_live/service.js";
 import { createPostgresTalkLiveRepository } from "./talk_live/postgres_repository.js";
 import { createLiveKitTalkMediaTokenIssuer } from "./talk_live/livekit_media.js";
+import { createLiveKitTalkMediaAdmin } from "./talk_moderation/livekit_admin.js";
+import { createTalkModerationService, type TalkModerationAuthorizer } from "./talk_moderation/service.js";
+import { createPostgresTalkModerationRepository } from "./talk_moderation/postgres_repository.js";
 import {
   createTalkProfileService,
   type TalkProfileAuthorizer,
@@ -275,6 +278,7 @@ export interface ServiceDatabaseDependency {
   readonly twinEvents?: ReturnType<typeof createPostgresTwinEconomyEventStore>;
   readonly talks?: ReturnType<typeof createPostgresTalkRepository>;
   readonly talkLive?: ReturnType<typeof createPostgresTalkLiveRepository>;
+  readonly talkModeration?: ReturnType<typeof createPostgresTalkModerationRepository>;
   readonly talkProfiles?: ReturnType<typeof createPostgresTalkProfileRepository>;
   readonly talkActivity?: ReturnType<typeof createPostgresTalkActivityRepository>;
   close(): Promise<void>;
@@ -422,6 +426,7 @@ function createDefaultDatabaseDependency(
     twinEvents: createPostgresTwinEconomyEventStore(database.pool),
     talks: createPostgresTalkRepository(database.pool),
     talkLive: createPostgresTalkLiveRepository(database.pool),
+    talkModeration: createPostgresTalkModerationRepository(database.pool),
     talkProfiles: createPostgresTalkProfileRepository(database.pool),
     talkActivity: createPostgresTalkActivityRepository(database.pool),
     close: database.close,
@@ -562,6 +567,7 @@ export async function startGatewayService(
     | undefined;
   let talkAuthorizer: TalkAuthorizer | undefined;
   let talkLiveAuthorizer: TalkLiveAuthorizer | undefined;
+  let talkModerationAuthorizer: TalkModerationAuthorizer | undefined;
   let talkProfileAuthorizer: TalkProfileAuthorizer | undefined;
   let talkActivityAuthorizer: TalkActivityAuthorizer | undefined;
   let billingFinancialAuthorizer:
@@ -700,6 +706,7 @@ export async function startGatewayService(
     billingCustomerAuthorizer = customerSessions;
     talkAuthorizer = customerSessions;
     talkLiveAuthorizer = customerSessions;
+    talkModerationAuthorizer = customerSessions;
     talkProfileAuthorizer = customerSessions;
     talkActivityAuthorizer = customerSessions;
     billingFinancialAuthorizer = createPlatformSessionFinancialAuthorizer({
@@ -1768,6 +1775,14 @@ export async function startGatewayService(
           apiSecret: liveKitApiSecret,
         })
       : undefined;
+  const talkMediaAdmin =
+    liveKitServerUrl && liveKitApiKey && liveKitApiSecret
+      ? createLiveKitTalkMediaAdmin({
+          serverUrl: liveKitServerUrl,
+          apiKey: liveKitApiKey,
+          apiSecret: liveKitApiSecret,
+        })
+      : undefined;
 
   const composedTalkLive =
     options.appOptions?.talkLive ??
@@ -1776,6 +1791,16 @@ export async function startGatewayService(
           repository: database.talkLive,
           authorizer: talkLiveAuthorizer,
           ...(talkMediaTokens ? { mediaTokens: talkMediaTokens } : {}),
+        })
+      : undefined);
+
+  const composedTalkModeration =
+    options.appOptions?.talkModeration ??
+    (database.talkModeration && talkModerationAuthorizer
+      ? createTalkModerationService({
+          repository: database.talkModeration,
+          authorizer: talkModerationAuthorizer,
+          ...(talkMediaAdmin ? { mediaAdmin: talkMediaAdmin } : {}),
         })
       : undefined);
 
@@ -1794,6 +1819,7 @@ export async function startGatewayService(
       ...(options.appOptions ?? {}),
       ...(customerAuth ? { customerAuth } : {}),
       ...(composedTalks ? { talks: composedTalks } : {}),
+      ...(composedTalkModeration ? { talkModeration: composedTalkModeration } : {}),
       ...(composedTalkLive ? { talkLive: composedTalkLive } : {}),
       ...(composedTalkProfiles ? { talkProfiles: composedTalkProfiles } : {}),
       ...(composedTalkActivity ? { talkActivity: composedTalkActivity } : {}),
