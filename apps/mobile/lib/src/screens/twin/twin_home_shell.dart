@@ -73,8 +73,16 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
   }
 
   void _openTalk(TalkDiscoveryItem talk) {
+    final hostQuery = talk.viewerIsHost ? '?host=1' : '';
     context.push(
-      '/talk/' + Uri.encodeComponent(talk.id),
+      '/talk/' + Uri.encodeComponent(talk.id) + hostQuery,
+      extra: talk,
+    );
+  }
+
+  void _openCreatedTalk(TalkDiscoveryItem talk) {
+    context.push(
+      '/talk/' + Uri.encodeComponent(talk.id) + '?host=1',
       extra: talk,
     );
   }
@@ -85,7 +93,7 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
       );
 
   Widget _create() => CreateTalkScreen(
-        onCreated: _openTalk,
+        onCreated: _openCreatedTalk,
       );
 
   Widget _you() => YouScreen(
