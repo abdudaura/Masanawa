@@ -1,5 +1,23 @@
 # Continue Here
 
+## Current improvement sequence — 2026-10-08
+
+The Talk product direction remains locked. The user's latest mobile acceptance exposed
+unavailable audio/personas and inactive participant actions; the current work is to
+complete integration, not redesign the shell or restart merged foundations.
+
+Read the canonical documents below, then **docs/MOBILE-READINESS-PLAN.md** and
+**docs/DEFAULT-AI-PERSONAS.md**. Their 2026-10-08 requirements supersede older dark-theme,
+Nigeria-only wallet, limited-language and blanket no-AI-event-context assumptions.
+Dated workstream reports record implementation history, not full release acceptance.
+
+First implement a WhatsApp-style white default with vibrant green (R01), then resolve
+live audio/persona readiness and participant wiring (R02–R04). Billing recovery/global
+wallet and qualified Billing/Crypto (R05–R08) are equal core priorities. Finish AI event
+awareness, animated gifts, localization, deletion, replay/push and release gates (R09–R16).
+The ledger contains exact evidence, dependencies and acceptance; tasks remain open.
+
+
 ## Canonical product reset — 2026-10-07
 
 Masanawa is now a **human-hosted live AI conversation network**.
@@ -17,6 +35,8 @@ Read these first for any consumer-product work:
 - `docs/CONSUMER-SERVICES.md`
 - `docs/APP-SHELL-CONTRACT.md`
 - `docs/MULTI-WINDOW-WORK.md`
+- `docs/MOBILE-READINESS-PLAN.md`
+- `docs/DEFAULT-AI-PERSONAS.md`
 
 ### Non-negotiable consumer rules
 
@@ -44,6 +64,16 @@ Read these first for any consumer-product work:
 - A private Gwani entry point is globally reachable without creating another top-level tab.
 - Simplicity is a product requirement: prefer one adaptive screen plus sheets/states over
   several nearly identical screens.
+
+
+- Default visual experience is white/light with vibrant WhatsApp-style green; no automatic
+  OS-dark fallback. Keep the approved Masanawa logo and compact familiar controls.
+- Masanawa is global: language, user locale, country and currency are separate concerns.
+  Service availability is exact provider/account/market qualification, not a blanket promise.
+- Every visible action is connected or explains an actual capability restriction; no inert
+  Add Expert, Invite person, Add My Twin, wallet or transaction controls.
+- AI personas receive authorized Talk/stage/event context and never private financial data.
+- Account deletion is a durable in-app and external request workflow, not merely logout.
 
 ### Product language
 
@@ -108,8 +138,9 @@ the current product documents listed above.
 
 ## Immediate product sequence
 
-1. Keep documentation consistent with this reset.
-2. Keep Home discovery single-column and vertical: **never horizontal Talk rails, grids or carousels**.
-3. Implement the approved **Home · Create · Activity · You** shell and Talk experience incrementally.
-4. Build durable Talk persistence/live-audio behind the mobile contracts without deleting reusable
-   Billing, Crypto, Twin identity, voice, channel or agent-runtime foundations.
+Follow R01–R16 in `docs/MOBILE-READINESS-PLAN.md`. Preserve the implemented shell,
+vertical discovery, Talk persistence, audio/AI dispatch, social/safety, commerce and
+provider foundations. A merged feature or registered worker is not end-to-end acceptance.
+Claim one non-overlapping task and record implemented/tested/deployed/device states separately.
+The next concrete implementation is R01 shared light theme; R02 must diagnose the user's
+actual Audio unavailable failure, and R03 must qualify an available default persona.
