@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS talks.replay_media_jobs (
   recording_id text NOT NULL,
   egress_id text NOT NULL,
   object_key text NOT NULL,
-  status text NOT NULL CHECK (status IN ('recording','ready')),
+  status text NOT NULL CHECK (status IN ('recording','ready','aborted')),
   started_at timestamptz NOT NULL,
   completed_at timestamptz NULL,
   checksum_sha256 text NULL CHECK (checksum_sha256 IS NULL OR checksum_sha256 ~ '^[a-f0-9]{64}$'),
