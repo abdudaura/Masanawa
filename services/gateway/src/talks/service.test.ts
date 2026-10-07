@@ -38,6 +38,9 @@ function repository(rows: readonly TalkListRow[]): TalkRepository {
     async getTalk() {
       return null;
     },
+    async updateMetadata() {
+      return null;
+    },
     async listComments() {
       return [];
     },
