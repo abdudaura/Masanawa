@@ -170,11 +170,14 @@ It does not ask:
 
 Primary discovery surfaces:
 
-- **For You** — personalized mix of live Talks and strong replays;
-- **Live** — deliberate browsing of conversations happening now;
+- **Explore** — personalized vertical feed mixing live Talks and strong replays;
+- **Live Talks** — vertical feed restricted to conversations happening now;
 - search across Talks, people, Experts and Twins;
 - creator/persona profiles;
 - shared deep links.
+
+Both Home tabs use full-width Talk cards in one vertical column. Horizontal Talk rails,
+grids and carousels are not part of the product.
 
 Replays use the same Talk identity rather than becoming a separate media product.
 
@@ -182,10 +185,9 @@ Replays use the same Talk identity rather than becoming a separate media product
 
 The primary navigation is intentionally small:
 
-**For You · Live · Create · Activity · You**
+**Home · Create · Activity · You**
 
-- **For You** — personalized listening feed.
-- **Live** — current public Talks, following and topics.
+- **Home** — two tabs: **Explore** and **Live Talks**, both vertical Talk feeds.
 - **Create** — start a human-hosted Talk.
 - **Activity** — invitations, Seat requests, follows, gifts, Talk events and monetization events.
 - **You** — profile, Talks, Twin, wallet/earnings, saved content, services and settings.
