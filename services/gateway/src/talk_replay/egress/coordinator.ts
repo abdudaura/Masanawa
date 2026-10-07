@@ -10,6 +10,9 @@ export interface TalkReplayCoordinator {
   finalize(input:Readonly<{
     tenantId:string;talkId:string;reason:"host_ended"|"host_grace_expired"|"platform_ended";now:string;
   }>):Promise<void>;
+  abort(input:Readonly<{
+    tenantId:string;talkId:string;recordingId:string;
+  }>):Promise<void>;
   playback(input:Readonly<{
     tenantId:string;talkId:string;viewerUserId:string;
   }>):Promise<TalkReplayPlaybackView|null>;
@@ -50,6 +53,19 @@ export function createTalkReplayCoordinator(input:Readonly<{
         try{await input.egress.stop(started.egressId);}catch{}
         throw error;
       }
+    },
+
+    async abort(request){
+      const media=await input.media.current(request);
+      if(!media) return;
+      if(media.status==="recording"){
+        try{await input.egress.stop(media.egressId);}catch{}
+      }
+      try{await input.objects.deleteObject(media.objectKey);}catch{}
+      await input.media.markAborted({
+        tenantId:request.tenantId,talkId:request.talkId,recordingId:request.recordingId,
+        completedAt:new Date().toISOString(),
+      });
     },
 
     async finalize(request){
