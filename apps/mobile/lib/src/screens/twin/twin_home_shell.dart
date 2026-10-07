@@ -73,24 +73,35 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
   }
 
   void _openTalk(TalkDiscoveryItem talk) {
+    final hostQuery = talk.viewerIsHost ? '?host=1' : '';
     context.push(
-      '/talk/' + Uri.encodeComponent(talk.id),
+      '/talk/' + Uri.encodeComponent(talk.id) + hostQuery,
+      extra: talk,
+    );
+  }
+
+  void _openCreatedTalk(TalkDiscoveryItem talk) {
+    context.push(
+      '/talk/' + Uri.encodeComponent(talk.id) + '?host=1',
       extra: talk,
     );
   }
 
   Widget _home() => TalkHomeScreen(
         onOpenTalk: _openTalk,
+        onOpenSearch: () => context.push('/search'),
         onOpenGwani: _openPrivateGwani,
       );
 
   Widget _create() => CreateTalkScreen(
-        onCreated: _openTalk,
+        onCreated: _openCreatedTalk,
       );
 
   Widget _you() => YouScreen(
         onOpenProfile: () => context.push('/profile'),
+        onOpenMyTalks: () => context.push('/my-talks'),
         onOpenMyTwin: () => context.push('/my-twin'),
+        onOpenSaved: () => context.push('/saved-talks'),
         onOpenWallet: () => context.push('/wallet'),
         onOpenBills: () => context.push('/billing'),
         onOpenCrypto: () => context.push('/crypto'),
@@ -101,7 +112,14 @@ class _TwinHomeShellState extends ConsumerState<TwinHomeShell> {
     return switch (index) {
       0 => _home(),
       1 => _create(),
-      2 => const ActivityScreen(),
+      2 => ActivityScreen(
+          onOpenTalk: (talkId) => context.push(
+            '/talk/' + Uri.encodeComponent(talkId),
+          ),
+          onOpenProfile: (handle) => context.push(
+            '/u/' + Uri.encodeComponent(handle),
+          ),
+        ),
       3 => _you(),
       _ => const SizedBox.shrink(),
     };

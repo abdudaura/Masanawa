@@ -58,13 +58,13 @@ class _FeedTransport implements TalkTransport {
       );
 }
 
-Widget _app() => ProviderScope(
+Widget _app({VoidCallback? onOpenSearch}) => ProviderScope(
       overrides: [
         talkTransportProvider.overrideWithValue(const _FeedTransport()),
       ],
       child: MaterialApp(
         theme: buildMasanawaTheme(brightness: Brightness.light),
-        home: const TalkHomeScreen(),
+        home: TalkHomeScreen(onOpenSearch: onOpenSearch),
       ),
     );
 
@@ -103,6 +103,17 @@ void main() {
     final secondTop = tester.getTopLeft(second);
     expect((firstTop.dx - secondTop.dx).abs(), lessThan(1));
     expect(secondTop.dy, greaterThan(firstTop.dy));
+  });
+
+  testWidgets('Home search action opens the global search surface', (tester) async {
+    var opened = false;
+    await tester.pumpWidget(_app(onOpenSearch: () => opened = true));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Search'));
+    await tester.pump();
+
+    expect(opened, isTrue);
   });
 
   testWidgets('Live Talks reuses the same vertical card language', (tester) async {
