@@ -9,9 +9,11 @@ class ExploreScreen extends ConsumerStatefulWidget {
   const ExploreScreen({
     super.key,
     this.onOpenTwin,
+    this.onOpenInternetCafe,
   });
 
   final void Function(TwinDirectoryEntry twin)? onOpenTwin;
+  final VoidCallback? onOpenInternetCafe;
 
   @override
   ConsumerState<ExploreScreen> createState() => _ExploreScreenState();
@@ -83,6 +85,8 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(18, 12, 18, 28),
           children: [
+            _ExploreCafeCard(onTap: widget.onOpenInternetCafe),
+            const SizedBox(height: 14),
             if (_searching) ...[
               TextField(
                 controller: _search,
@@ -180,6 +184,65 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
               ],
             ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ExploreCafeCard extends StatelessWidget {
+  const _ExploreCafeCard({required this.onTap});
+
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.masanawa;
+    return Material(
+      color: u.surfaceCard,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        key: const ValueKey('explore-room-internet-cafe'),
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: u.structuralBorder),
+          ),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 23,
+                backgroundColor: u.brand.withValues(alpha: .10),
+                child: Icon(Icons.language_outlined, color: u.brand),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Internet Cafe',
+                      style: TextStyle(
+                        color: u.textPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      'Data, airtime, electricity, TV, crypto & more with Gwani',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: u.textMuted, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: u.textMuted),
+            ],
+          ),
         ),
       ),
     );
