@@ -194,6 +194,25 @@ async function requestById(
   return result.rows[0] ? requestRecord(result.rows[0]) : null;
 }
 
+async function readViewerState(
+  pool: TalkParticipationSqlPool,
+  input: Readonly<{ tenantId: string; talkId: string; userId: string }>,
+): Promise<TalkParticipationView | null> {
+  const result = await pool.query<ViewerRow>(
+    `SELECT p.reaction, p.hand_status
+       FROM talks.talks t
+       LEFT JOIN talks.participation p
+         ON p.tenant_id = t.tenant_id
+        AND p.talk_id = t.talk_id
+        AND p.user_id = $3
+      WHERE t.tenant_id = $1 AND t.talk_id = $2
+      LIMIT 1`,
+    [input.tenantId, input.talkId, input.userId],
+  );
+  const row = result.rows[0];
+  return row ? viewer(row) : null;
+}
+
 function finalizedActionMatches(
   request: TalkHostRequestRecord,
   action: TalkHostRequestAction,
@@ -209,19 +228,7 @@ export function createPostgresTalkParticipationRepository(
 ): TalkParticipationRepository {
   return Object.freeze({
     async readViewer(input) {
-      const result = await pool.query<ViewerRow>(
-        `SELECT p.reaction, p.hand_status
-           FROM talks.talks t
-           LEFT JOIN talks.participation p
-             ON p.tenant_id = t.tenant_id
-            AND p.talk_id = t.talk_id
-            AND p.user_id = $3
-          WHERE t.tenant_id = $1 AND t.talk_id = $2
-          LIMIT 1`,
-        [input.tenantId, input.talkId, input.userId],
-      );
-      const row = result.rows[0];
-      return row ? viewer(row) : null;
+      return readViewerState(pool, input);
     },
 
     async setReaction(input) {
@@ -255,7 +262,7 @@ export function createPostgresTalkParticipationRepository(
       );
       if (updated.rows[0]) return viewer(updated.rows[0]);
 
-      const existing = await this.readViewer({
+      const existing = await readViewerState(pool, {
         tenantId: input.tenantId,
         talkId: input.talkId,
         userId: input.userId,
@@ -358,7 +365,7 @@ export function createPostgresTalkParticipationRepository(
         return viewer(state.rows[0]);
       }
 
-      const current = await this.readViewer({
+      const current = await readViewerState(pool, {
         tenantId: input.tenantId,
         talkId: input.talkId,
         userId: input.userId,
@@ -426,7 +433,7 @@ export function createPostgresTalkParticipationRepository(
         const decided = await pool.query<RequestRow>(
           `UPDATE talks.seat_requests
               SET status = 'declined',
-                  updated_at = $5
+                  updated_at = $4
             WHERE tenant_id = $1
               AND talk_id = $2
               AND request_id = $3
@@ -438,7 +445,6 @@ export function createPostgresTalkParticipationRepository(
             input.tenantId,
             input.talkId,
             input.requestId,
-            input.hostUserId,
             input.changedAt,
           ],
         );
@@ -494,7 +500,7 @@ export function createPostgresTalkParticipationRepository(
         `WITH accepted AS (
            UPDATE talks.seat_requests
               SET status = 'accepted',
-                  updated_at = $5
+                  updated_at = $4
             WHERE tenant_id = $1
               AND talk_id = $2
               AND request_id = $3
@@ -509,7 +515,7 @@ export function createPostgresTalkParticipationRepository(
              avatar_url, is_muted, state, source_request_id, joined_at, updated_at
            )
            SELECT $1,$2,a.participant_id,a.requester_user_id,a.participant_kind,
-                  a.display_name,a.avatar_url,false,'active',a.request_id,$5,$5
+                  a.display_name,a.avatar_url,false,'active',a.request_id,$4,$4
              FROM accepted a
            ON CONFLICT (tenant_id, talk_id, participant_id) DO UPDATE
              SET user_id = EXCLUDED.user_id,
@@ -532,7 +538,6 @@ export function createPostgresTalkParticipationRepository(
           input.tenantId,
           input.talkId,
           input.requestId,
-          input.hostUserId,
           input.changedAt,
         ],
       );
