@@ -5,7 +5,7 @@ void main() {
   test('Internet Cafe starts with simple reselectable service intents', () {
     expect(
       kCafeSuggestions.map((item) => item.label).toList(),
-      ['Data', 'Airtime', 'Electricity', 'TV'],
+      ['Data', 'Airtime', 'Electricity', 'TV', 'Crypto'],
     );
   });
 
