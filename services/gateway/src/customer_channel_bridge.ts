@@ -112,12 +112,38 @@ export function createCustomerChannelBridge(input: Readonly<{
     }
     if (!phone) return null;
 
-    const profile = await input.sessions.resolveProfile({
+    let profile = await input.sessions.resolveProfile({
       tenantId: input.tenantId as never,
       channel: "sms",
       identifier: phone,
       observedAt: instant(),
     });
+
+    // A direct WhatsApp sender has already proven control of this phone number
+    // to the linked WhatsApp account. Treat WhatsApp as a first-class Masanawa
+    // signup surface instead of forcing the customer to install the mobile app
+    // before Gwani can help them.
+    if (!profile && request.channel === "whatsapp") {
+      try {
+        profile = await input.sessions.createProfile({
+          tenantId: input.tenantId as never,
+          channel: "sms",
+          identifier: phone,
+          name: "WhatsApp customer",
+          locale: "ng",
+          createdAt: instant(),
+        });
+      } catch {
+        // Concurrent first messages may race profile creation. Resolve the
+        // canonical row once more and only fail closed if it still does not exist.
+        profile = await input.sessions.resolveProfile({
+          tenantId: input.tenantId as never,
+          channel: "sms",
+          identifier: phone,
+          observedAt: instant(),
+        });
+      }
+    }
     if (!profile) return null;
     const characterId = await chooseCharacter(profile);
     const link = Object.freeze({
