@@ -120,6 +120,32 @@ const humanSelect = `
    LIMIT 1
 `;
 
+
+const humanSelectByUserId = `
+  SELECT p.tenant_id, p.user_id, p.handle, p.display_name, p.bio, p.avatar_url,
+         p.live_talk_id, p.twin_public_id, p.twin_display_name, p.talks_json,
+         (SELECT count(*)::int FROM talks.follows f
+           WHERE f.tenant_id = p.tenant_id AND f.followed_user_id = p.user_id) AS follower_count,
+         (SELECT count(*)::int FROM talks.follows f
+           WHERE f.tenant_id = p.tenant_id AND f.follower_user_id = p.user_id) AS following_count,
+         EXISTS (
+           SELECT 1 FROM talks.follows f
+            WHERE f.tenant_id = p.tenant_id
+              AND f.follower_user_id = $2
+              AND f.followed_user_id = p.user_id
+         ) AS is_following
+    FROM talks.public_profiles p
+   WHERE p.tenant_id = $1 AND p.user_id = $3
+     AND NOT EXISTS (
+       SELECT 1 FROM talks.safety_enforcement se
+        WHERE se.tenant_id = p.tenant_id
+          AND se.target_kind = 'profile'
+          AND se.target_id = p.handle
+          AND se.visibility IN ('restricted','blocked')
+     )
+   LIMIT 1
+`;
+
 export function createPostgresTalkProfileRepository(
   pool: TalkProfileSqlPool,
 ): TalkProfileRepository {
@@ -136,8 +162,22 @@ export function createPostgresTalkProfileRepository(
     return result.rows[0] ? human(result.rows[0]) : null;
   }
 
+  async function readHumanByUserId(input: {
+    tenantId: string;
+    viewerUserId: string;
+    userId: string;
+  }): Promise<HumanProfileView | null> {
+    const result = await pool.query<HumanRow>(humanSelectByUserId, [
+      input.tenantId,
+      input.viewerUserId,
+      input.userId,
+    ]);
+    return result.rows[0] ? human(result.rows[0]) : null;
+  }
+
   return Object.freeze({
     readHuman,
+    readHumanByUserId,
 
     async setFollowing(input) {
       const target = await pool.query<{ user_id: string }>(
@@ -182,6 +222,51 @@ export function createPostgresTalkProfileRepository(
         tenantId: input.tenantId,
         viewerUserId: input.viewerUserId,
         handle: input.handle,
+      });
+    },
+
+    async setFollowingByUserId(input) {
+      const target = await pool.query<{ user_id: string; handle: string }>(
+        `SELECT p.user_id, p.handle FROM talks.public_profiles p
+          WHERE p.tenant_id = $1 AND p.user_id = $2
+            AND NOT EXISTS (
+              SELECT 1 FROM talks.safety_enforcement se
+               WHERE se.tenant_id = p.tenant_id
+                 AND se.target_kind = 'profile'
+                 AND se.target_id = p.handle
+                 AND se.visibility IN ('restricted','blocked')
+            )
+          LIMIT 1`,
+        [input.tenantId, input.userId],
+      );
+      const targetUserId = target.rows[0]?.user_id;
+      if (!targetUserId) return null;
+      if (targetUserId === input.viewerUserId) {
+        throw new Error("profiles.cannot_follow_self");
+      }
+
+      if (input.following) {
+        await pool.query(
+          `INSERT INTO talks.follows (
+            tenant_id, follower_user_id, followed_user_id, created_at
+          ) VALUES ($1,$2,$3,$4)
+          ON CONFLICT (tenant_id, follower_user_id, followed_user_id) DO NOTHING`,
+          [input.tenantId, input.viewerUserId, targetUserId, input.changedAt],
+        );
+      } else {
+        await pool.query(
+          `DELETE FROM talks.follows
+            WHERE tenant_id = $1
+              AND follower_user_id = $2
+              AND followed_user_id = $3`,
+          [input.tenantId, input.viewerUserId, targetUserId],
+        );
+      }
+
+      return readHumanByUserId({
+        tenantId: input.tenantId,
+        viewerUserId: input.viewerUserId,
+        userId: input.userId,
       });
     },
 
