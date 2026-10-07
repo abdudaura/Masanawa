@@ -17,6 +17,8 @@ import type {
 import { registerAgentShellRoutes } from "./agent_shell_routes.js";
 import { registerBillingRoutes } from "./billing_routes.js";
 import { registerTalkRoutes } from "./talk_routes.js";
+import { registerTalkLiveRoutes } from "./talk_live_routes.js";
+import type { TalkLiveService } from "./talk_live/service.js";
 import { registerTalkProfileRoutes } from "./talk_profile_routes.js";
 import type { TalkProfileService } from "./talk_profiles/service.js";
 import { registerTalkActivityRoutes } from "./talk_activity_routes.js";
@@ -83,6 +85,7 @@ export interface GatewayAppOptions {
   readonly mobilePush?: MobilePushRegistrationService;
   readonly customerAuth?: CustomerAuthService;
   readonly talks?: TalkService;
+  readonly talkLive?: TalkLiveService;
   readonly talkProfiles?: TalkProfileService;
   readonly talkActivity?: TalkActivityService;
   readonly billingCheckout?: BillingCheckoutService;
@@ -1354,6 +1357,9 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
 
   if (options.talks) {
     registerTalkRoutes(app, options.talks);
+  }
+  if (options.talkLive) {
+    registerTalkLiveRoutes(app, options.talkLive);
   }
   if (options.talkProfiles) {
     registerTalkProfileRoutes(app, options.talkProfiles);

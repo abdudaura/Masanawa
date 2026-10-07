@@ -159,6 +159,12 @@ import {
 import { createTalkService, type TalkAuthorizer } from "./talks/service.js";
 import { createPostgresTalkRepository } from "./talks/postgres_repository.js";
 import {
+  createTalkLiveService,
+  type TalkLiveAuthorizer,
+} from "./talk_live/service.js";
+import { createPostgresTalkLiveRepository } from "./talk_live/postgres_repository.js";
+import { createLiveKitTalkMediaTokenIssuer } from "./talk_live/livekit_media.js";
+import {
   createTalkProfileService,
   type TalkProfileAuthorizer,
 } from "./talk_profiles/service.js";
@@ -268,6 +274,7 @@ export interface ServiceDatabaseDependency {
   readonly twinEconomy?: ReturnType<typeof createPostgresTwinRuntimeRepository>;
   readonly twinEvents?: ReturnType<typeof createPostgresTwinEconomyEventStore>;
   readonly talks?: ReturnType<typeof createPostgresTalkRepository>;
+  readonly talkLive?: ReturnType<typeof createPostgresTalkLiveRepository>;
   readonly talkProfiles?: ReturnType<typeof createPostgresTalkProfileRepository>;
   readonly talkActivity?: ReturnType<typeof createPostgresTalkActivityRepository>;
   close(): Promise<void>;
@@ -414,6 +421,7 @@ function createDefaultDatabaseDependency(
     twinEconomy: createPostgresTwinRuntimeRepository(database.pool),
     twinEvents: createPostgresTwinEconomyEventStore(database.pool),
     talks: createPostgresTalkRepository(database.pool),
+    talkLive: createPostgresTalkLiveRepository(database.pool),
     talkProfiles: createPostgresTalkProfileRepository(database.pool),
     talkActivity: createPostgresTalkActivityRepository(database.pool),
     close: database.close,
@@ -553,6 +561,7 @@ export async function startGatewayService(
     | ReturnType<typeof createPlatformCustomerSessionAuthorizer>
     | undefined;
   let talkAuthorizer: TalkAuthorizer | undefined;
+  let talkLiveAuthorizer: TalkLiveAuthorizer | undefined;
   let talkProfileAuthorizer: TalkProfileAuthorizer | undefined;
   let talkActivityAuthorizer: TalkActivityAuthorizer | undefined;
   let billingFinancialAuthorizer:
@@ -690,6 +699,7 @@ export async function startGatewayService(
     });
     billingCustomerAuthorizer = customerSessions;
     talkAuthorizer = customerSessions;
+    talkLiveAuthorizer = customerSessions;
     talkProfileAuthorizer = customerSessions;
     talkActivityAuthorizer = customerSessions;
     billingFinancialAuthorizer = createPlatformSessionFinancialAuthorizer({
@@ -1747,6 +1757,28 @@ export async function startGatewayService(
         })
       : undefined);
 
+  const liveKitServerUrl = env.LIVEKIT_URL?.trim();
+  const liveKitApiKey = env.LIVEKIT_API_KEY?.trim();
+  const liveKitApiSecret = env.LIVEKIT_API_SECRET?.trim();
+  const talkMediaTokens =
+    liveKitServerUrl && liveKitApiKey && liveKitApiSecret
+      ? createLiveKitTalkMediaTokenIssuer({
+          serverUrl: liveKitServerUrl,
+          apiKey: liveKitApiKey,
+          apiSecret: liveKitApiSecret,
+        })
+      : undefined;
+
+  const composedTalkLive =
+    options.appOptions?.talkLive ??
+    (database.talkLive && talkLiveAuthorizer
+      ? createTalkLiveService({
+          repository: database.talkLive,
+          authorizer: talkLiveAuthorizer,
+          ...(talkMediaTokens ? { mediaTokens: talkMediaTokens } : {}),
+        })
+      : undefined);
+
   const composedTalks =
     options.appOptions?.talks ??
     (database.talks && talkAuthorizer
@@ -1762,6 +1794,7 @@ export async function startGatewayService(
       ...(options.appOptions ?? {}),
       ...(customerAuth ? { customerAuth } : {}),
       ...(composedTalks ? { talks: composedTalks } : {}),
+      ...(composedTalkLive ? { talkLive: composedTalkLive } : {}),
       ...(composedTalkProfiles ? { talkProfiles: composedTalkProfiles } : {}),
       ...(composedTalkActivity ? { talkActivity: composedTalkActivity } : {}),
       ...(composedBillingFinancial ? { billingFinancial: composedBillingFinancial } : {}),
