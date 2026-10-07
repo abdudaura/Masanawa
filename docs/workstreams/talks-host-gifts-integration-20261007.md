@@ -47,4 +47,31 @@ Not owned:
 - Mobile shows explicit amount selection + final Send gift action and friendly failures.
 - Wallet projection refreshes after success.
 
-Status: active.
+## Completion
+
+Implemented and reconciled onto current main:
+- authenticated `POST /talks/:talkId/gifts`;
+- request accepts only durable `requestId` and integer `amountCredits`;
+- recipient is resolved exclusively from canonical Talk Host ownership;
+- client-supplied recipient fields are rejected by the HTTP schema;
+- Host self-gifts are rejected;
+- live/reconnecting Talks are giftable;
+- ended Talks are giftable only when replay recording is finalized and publication is published;
+- direct human-Host gift execution reuses canonical Credit balance, rate, circular-value,
+  ledger-plan and idempotency safeguards with `characterId = null`;
+- retrying the same operation cannot double-debit and reports the prior completed receipt;
+- recipient Activity is appended only for first completion and is explicitly non-authoritative;
+- Activity failure cannot turn a completed ledger gift into a financial failure;
+- compact mobile amount sheet offers 50/100/500/1000 Credits and a final **Send gift** action;
+- mobile never supplies the recipient, hides raw transport errors, and refreshes Wallet after success;
+- Hosts do not see an actionable self-Gift control;
+- native replay playback and Talk bookmark behavior from newer main were preserved during semantic merge;
+- focused repository, route, mobile transport, success, failure and replay-safety tests are included.
+
+Reclaimed source PR #360 remains historical only. PR #371 is the canonical integration lane.
+
+Verification note: previous repository-wide GitHub workflow runs have repeatedly failed before
+any job step (`steps=null`). A fresh run is inspected on the final integration head before merge;
+no successful CI execution is claimed unless the runner actually starts application steps.
+
+Status: implementation complete; ready for final CI/merge qualification.
