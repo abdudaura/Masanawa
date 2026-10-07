@@ -15,6 +15,25 @@ export function registerDirectTwinRoutes(
   service: DirectTwinService,
 ): void {
   app.get(
+    "/talks/:talkId/twin-seats/mine",
+    {
+      schema: {
+        params: Type.Object(
+          { talkId: Type.String({ minLength: 1, maxLength: 256 }) },
+          { additionalProperties: false },
+        ),
+      },
+    },
+    async (request) => {
+      const path = request.params as { talkId: string };
+      return service.mine({
+        authorizationHeader: request.headers.authorization,
+        talkId: path.talkId,
+      });
+    },
+  );
+
+  app.get(
     "/talks/:talkId/twin-seats/:seatId/direct",
     { schema: { params } },
     async (request) => {
