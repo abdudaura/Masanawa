@@ -40,7 +40,8 @@ class _TalkScreenState extends ConsumerState<TalkScreen> {
   }
 
   Future<void> _openAiSeatSheet() async {
-    if (widget.onAddAi case final callback?) {
+    final callback = widget.onAddAi;
+    if (callback != null) {
       callback();
       return;
     }
