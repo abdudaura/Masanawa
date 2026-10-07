@@ -83,16 +83,26 @@ class _TalkHostQuestionsSheet extends ConsumerWidget {
   final String talkId;
 
   Future<void> _resolve(
+    BuildContext context,
     WidgetRef ref,
     TalkQuestion question,
     TalkQuestionStatus status,
   ) async {
-    await ref.read(talkQuestionTransportProvider).resolve(
-          talkId: talkId,
-          questionId: question.questionId,
-          status: status,
-        );
-    ref.invalidate(talkHostQuestionsProvider(talkId));
+    try {
+      await ref.read(talkQuestionTransportProvider).resolve(
+            talkId: talkId,
+            questionId: question.questionId,
+            status: status,
+          );
+      ref.invalidate(talkHostQuestionsProvider(talkId));
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Couldn’t update that question. Try again.'),
+        ),
+      );
+    }
   }
 
   @override
@@ -176,6 +186,7 @@ class _TalkHostQuestionsSheet extends ConsumerWidget {
                                 children: [
                                   TextButton(
                                     onPressed: () => _resolve(
+                                      context,
                                       ref,
                                       question,
                                       TalkQuestionStatus.dismissed,
@@ -185,6 +196,7 @@ class _TalkHostQuestionsSheet extends ConsumerWidget {
                                   const SizedBox(width: 4),
                                   FilledButton.tonal(
                                     onPressed: () => _resolve(
+                                      context,
                                       ref,
                                       question,
                                       TalkQuestionStatus.answered,
