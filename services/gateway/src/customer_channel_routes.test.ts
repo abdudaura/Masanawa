@@ -289,4 +289,64 @@ describe("customer channel webhook routes", () => {
     await app.close();
   });
 
+
+  it("renders Telegram Twin choices as tappable @publicId reply buttons", async () => {
+    const app = Fastify();
+    const channelBridge = bridge();
+    channelBridge.handle.mockResolvedValueOnce({
+      duplicate: false,
+      reply: "I found several public Twins. Tell me the name or @ID you want:\n1. Aisha Bello (@aisha-one)\n2. Aisha Musa (@aisha-two)",
+      shouldDeliver: true,
+      requestContact: false,
+    });
+    const fetchMock = vi.fn(async () =>
+      new Response(JSON.stringify({ ok: true, result: {} }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    registerCustomerChannelRoutes(app, {
+      bridge: channelBridge,
+      telegram: {
+        botToken: "bot-token",
+        webhookSecret: "telegram-secret",
+      },
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/channels/telegram/webhook",
+      headers: {
+        "content-type": "application/json",
+        "x-telegram-bot-api-secret-token": "telegram-secret",
+      },
+      payload: {
+        update_id: 4,
+        message: {
+          message_id: 12,
+          from: { id: 123 },
+          chat: { id: 123, type: "private" },
+          text: "talk to Aisha twin",
+        },
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const request = fetchMock.mock.calls[0]![1] as RequestInit;
+    const body = JSON.parse(String(request.body));
+    expect(body.reply_markup).toEqual({
+      keyboard: [[{ text: "@aisha-one" }], [{ text: "@aisha-two" }]],
+      resize_keyboard: true,
+      one_time_keyboard: true,
+    });
+    expect(channelBridge.delivered).toHaveBeenCalledWith({
+      channel: "telegram",
+      messageId: "12",
+    });
+    vi.unstubAllGlobals();
+    await app.close();
+  });
+
 });
