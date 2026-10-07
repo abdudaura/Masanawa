@@ -537,6 +537,17 @@ class _ParticipationTransport implements TalkParticipationTransport {
   TalkParticipationState state = const TalkParticipationState();
   String? reactedWith;
   bool? raised;
+  int leftSeat = 0;
+
+  @override
+  Future<TalkParticipationState> leaveSeat(String talkId) async {
+    leftSeat += 1;
+    state = TalkParticipationState(
+      handStatus: TalkHandStatus.idle,
+      reaction: state.reaction,
+    );
+    return state;
+  }
 
   @override
   Future<TalkParticipationState> load(String talkId) async => state;
@@ -1585,6 +1596,34 @@ void main() {
 
     expect(liveAudio.muted, isTrue);
     expect(find.text('Muted'), findsOneWidget);
+  });
+
+  testWidgets('accepted human Speaker can return to the Audience',
+      (tester) async {
+    final transport = _TalkTransport();
+    final participation = _ParticipationTransport()
+      ..state = const TalkParticipationState(
+        handStatus: TalkHandStatus.accepted,
+        reaction: '👏',
+      );
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        participation: participation,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Leave seat'), findsOneWidget);
+    await tester.tap(find.text('Leave seat'));
+    await tester.pumpAndSettle();
+
+    expect(participation.leftSeat, 1);
+    expect(participation.state.handStatus, TalkHandStatus.idle);
+    expect(find.text('You’re back in the Audience.'), findsOneWidget);
+    expect(find.text('Raise hand'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('Host sees moderation controls instead of Raise Hand',
