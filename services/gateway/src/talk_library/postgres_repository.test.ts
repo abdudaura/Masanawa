@@ -74,6 +74,9 @@ describe("Postgres Talk library repository", () => {
     expect(result).toBe(true);
     expect(calls[0]!.text).toContain("state IN ('live','reconnecting','ended')");
     expect(calls[1]!.text).toContain("INSERT INTO talks.saved_talks");
+    expect(calls[1]!.text).toContain(
+      "ON CONFLICT (tenant_id, user_id, talk_id) DO NOTHING",
+    );
     expect(calls[1]!.values).toEqual([
       "tenant_1",
       "user_1",
