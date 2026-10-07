@@ -171,6 +171,7 @@ import {
 import { createPostgresTalkLiveRepository } from "./talk_live/postgres_repository.js";
 import { createLiveKitTalkMediaTokenIssuer } from "./talk_live/livekit_media.js";
 import { createLiveKitTalkMediaAdmin } from "./talk_moderation/livekit_admin.js";
+import { createLiveKitTalkAiRuntimeDispatcher } from "./talk_ai_worker/livekit_dispatch.js";
 import { createTalkModerationService, type TalkModerationAuthorizer } from "./talk_moderation/service.js";
 import { createPostgresTalkModerationRepository } from "./talk_moderation/postgres_repository.js";
 import { createTalkAiSeatService, type TalkAiSeatAuthorizer } from "./talk_ai_seats/service.js";
@@ -1957,6 +1958,15 @@ export async function startGatewayService(
           apiSecret: liveKitApiSecret,
         })
       : undefined;
+  const talkAiRuntimeDispatcher =
+    liveKitServerUrl && liveKitApiKey && liveKitApiSecret
+      ? createLiveKitTalkAiRuntimeDispatcher({
+          serverUrl: liveKitServerUrl,
+          apiKey: liveKitApiKey,
+          apiSecret: liveKitApiSecret,
+          agentName: env.MASANAWA_TALK_AI_AGENT_NAME ?? "masanawa-talk-ai",
+        })
+      : undefined;
 
   const replayS3Endpoint = env.MASANAWA_TALK_REPLAY_S3_ENDPOINT?.trim();
   const replayS3Region = env.MASANAWA_TALK_REPLAY_S3_REGION?.trim();
@@ -2068,6 +2078,9 @@ export async function startGatewayService(
       ? createTalkAiSeatService({
           repository: database.talkAiSeats,
           authorizer: talkAiSeatAuthorizer,
+          ...(talkAiRuntimeDispatcher
+            ? { runtimeDispatcher: talkAiRuntimeDispatcher }
+            : {}),
           pricing: {
             expertPriceCredits: boundedEnvInteger(
               env.MASANAWA_TALK_EXPERT_SEAT_PRICE_CREDITS,
