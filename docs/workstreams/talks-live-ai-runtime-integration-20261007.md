@@ -23,4 +23,7 @@
 ## External runtime requirements
 Railway Presence service needs the same LiveKit and PostgreSQL credentials as Gateway plus a Google Gemini key. No user laptop changes are required for server runtime composition.
 
-Status: implementation complete; pending repository CI/merge.
+## Verification note
+GitHub Foundation CI is currently failing before any runner is allocated: the workflow job reports `steps: []`, `runner_id: 0`, and no application step executes. The PR remains GitHub-mergeable. This is the same repository Actions infrastructure failure observed on the preceding Talk lanes.
+
+Status: implementation complete; repository CI blocked before runner allocation.
