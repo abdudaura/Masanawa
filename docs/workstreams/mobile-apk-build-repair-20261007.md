@@ -3,7 +3,7 @@
 Owner: current Railway/APK repair window
 Branch: `fix/mobile-apk-build-20261007`
 Base: `bb3f6d204c2e53f21eaf2574311c7c0ef4cbf315`
-Last update: 2026-10-07T22:39:26.182Z
+Last update: 2026-10-07T22:48:35.941Z
 Status: active.
 
 ## Exact owned paths
@@ -87,3 +87,5 @@ APK build dependencies now also include checksum-verified official annotation-jv
 LiveKit credentials configured only on production gateway. Authenticated RoomService ListRooms returned 200. Railway deployment d8cece1b-eaab-433d-ad1a-beb8fbc4e5cf succeeded; logs show Talk Presence enabled and masanawa-talk-ai worker registered (Germany 2). APK compile is completing offline using locally exposed exact cached Maven coordinates; no repository source changes for this build environment repair.
 
 Final build dependency resolution still active: project-plugin configurations require additional legacy AndroidX versions and Kotlin coroutines 1.7.3. Resolve the exact official Maven coordinates with checksum verification and bounded retries for intermittent vendor 502s. Local Maven repository exposes cached artifacts without changes to application manifests or dependencies. LiveKit dashboard also confirms the self-hosted agent with one worker.
+
+All declared AndroidX archive gaps in the restored cache were checksum-verified and filled in a batch. Native plugin compilation is now resolving its final Kotlin coroutines 1.8.1 platform dependencies. Continue bounded packaging attempts and signature verification; do not claim APK completion before the artifact exists. LiveKit worker remains registered and verified.
