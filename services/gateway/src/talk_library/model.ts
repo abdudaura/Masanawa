@@ -11,7 +11,7 @@ export type OwnedTalkDiscoveryItem = TalkDiscoveryItem &
 export interface MyTalksView {
   readonly live: readonly OwnedTalkDiscoveryItem[];
   readonly replays: readonly OwnedTalkDiscoveryItem[];
-  readonly drafts: readonly [];
+  readonly drafts: readonly never[];
 }
 
 export interface TalkSavedState {
