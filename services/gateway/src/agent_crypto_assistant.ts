@@ -246,12 +246,11 @@ export function createAgentCryptoAssistant(input: Readonly<{
     }
 
     if (directive.type === "crypto.routes") {
-      const deposits = await input.financial.listDepositRoutes({ authorizationHeader });
       const routes = directive.operation === "convert"
         ? await input.financial.listConversionRoutes({ authorizationHeader })
         : directive.operation === "withdraw"
-          ? deposits.filter((route) => route.operations.withdraw === true)
-          : deposits;
+          ? await input.financial.listWithdrawalRoutes({ authorizationHeader })
+          : await input.financial.listDepositRoutes({ authorizationHeader });
       if (routes.length === 0) {
         return result(`No qualified ${directive.operation} routes are available right now.`);
       }
