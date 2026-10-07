@@ -81,6 +81,6 @@ Mobile Talk-screen tests:
 ## Status
 
 - Implementation status: complete pending PR/CI evidence.
-- Verification status: focused route/repository/mobile regression tests written; GitHub execution evidence pending.
+- Verification status: focused route/repository/mobile regression tests written. PR #378 Foundation CI and Mobile Build both failed before executing any steps (job step arrays were empty), so GitHub produced no code-test failure signal; mergeability is clean.
 - Deployment status: not deployed.
-- Handoff: open a clean PR, require clean mergeability, inspect CI job-step evidence, then merge if safe.
+- Handoff: PR #378 is mergeable against unchanged main. CI is blocked by the repository runner/startup failure pattern (zero executed steps); static composition, migration sequence, safety, SQL parameter, Riverpod API and focused-test audits are complete.
