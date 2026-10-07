@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:masanawa/src/library/talk_library.dart';
+import 'package:masanawa/src/social/talk_social_profiles.dart';
 import 'package:masanawa/src/screens/talks/talk_screen.dart';
 import 'package:masanawa/src/state/talk_ai_seat_state.dart';
 import 'package:masanawa/src/state/talk_direct_twin_state.dart';
@@ -16,6 +17,7 @@ import 'package:masanawa/src/state/talk_poll_state.dart';
 import 'package:masanawa/src/state/talk_question_state.dart';
 import 'package:masanawa/src/state/talk_replay_playback_state.dart';
 import 'package:masanawa/src/state/talk_safety_state.dart';
+import 'package:masanawa/src/state/talk_social_profile_state.dart';
 import 'package:masanawa/src/state/talk_state.dart';
 import 'package:masanawa/src/talks/talk_ai_seat.dart';
 import 'package:masanawa/src/talks/talk_direct_twin.dart';
@@ -31,6 +33,47 @@ import 'package:masanawa/src/talks/talk_replay_playback.dart';
 import 'package:masanawa/src/talks/talk_safety.dart';
 import 'package:masanawa/src/talks/talk_share.dart';
 import 'package:masanawa/src/theme/masanawa_theme.dart';
+
+class _SocialProfiles implements TalkSocialProfileTransport {
+  bool following = false;
+
+  HumanProfile _profile() => HumanProfile(
+        handle: 'abdullahi',
+        displayName: 'Abdullahi',
+        followerCount: following ? 11 : 10,
+        followingCount: 2,
+        isFollowing: following,
+      );
+
+  @override
+  Future<HumanProfile?> loadHuman(String handle) async => _profile();
+
+  @override
+  Future<HumanProfile?> loadHumanByUserId(String userId) async =>
+      userId == 'host' ? _profile() : null;
+
+  @override
+  Future<HumanProfile> setFollowing({
+    required String handle,
+    required bool following,
+  }) async {
+    this.following = following;
+    return _profile();
+  }
+
+  @override
+  Future<HumanProfile> setFollowingUserId({
+    required String userId,
+    required bool following,
+  }) async {
+    if (userId != 'host') throw StateError('Unknown Host');
+    this.following = following;
+    return _profile();
+  }
+
+  @override
+  Future<PersonaProfile?> loadPersona(String publicId) async => null;
+}
 
 class _SafetyTransport implements TalkSafetyTransport {
   TalkSafetyPreference preference =
@@ -739,6 +782,7 @@ Widget _app({
   _GiftTransport? gift,
   _ShareService? share,
   _SafetyTransport? safety,
+  _SocialProfiles? social,
   _DirectTwinTransport? directTwin,
 }) {
   return ProviderScope(
@@ -770,6 +814,9 @@ Widget _app({
       ),
       talkSafetyTransportProvider.overrideWithValue(
         safety ?? _SafetyTransport(),
+      ),
+      talkSocialProfileTransportProvider.overrideWithValue(
+        social ?? _SocialProfiles(),
       ),
       directTwinTransportProvider.overrideWithValue(
         directTwin ?? _DirectTwinTransport(),
@@ -1110,6 +1157,62 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey('talk-more-edit')), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('listener follows and unfollows the Talk Host from More',
+      (tester) async {
+    final transport = _TalkTransport();
+    final social = _SocialProfiles();
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        social: social,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('talk-more')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('talk-more-follow-host')), findsOneWidget);
+    expect(find.text('Follow Host'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('talk-more-follow-host')));
+    await tester.pumpAndSettle();
+
+    expect(social.following, isTrue);
+    expect(find.text('Following'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('talk-more-follow-host')));
+    await tester.pumpAndSettle();
+
+    expect(social.following, isFalse);
+    expect(find.text('Follow Host'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Host never sees a self-follow action in Talk More',
+      (tester) async {
+    final transport = _TalkTransport();
+
+    await tester.pumpWidget(
+      _app(
+        talkTransport: transport,
+        home: const TalkScreen(
+          talkId: 'talk-1',
+          initialTalk: _TalkTransport.talk,
+          isHost: true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('talk-more')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('talk-more-follow-host')), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
