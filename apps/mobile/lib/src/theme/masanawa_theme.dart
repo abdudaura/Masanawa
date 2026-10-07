@@ -271,8 +271,10 @@ ThemeData buildMasanawaTheme({required Brightness brightness}) {
     ),
     dividerTheme: DividerThemeData(color: masanawa.structuralBorder),
     snackBarTheme: SnackBarThemeData(
-      backgroundColor: masanawa.brandStrong,
-      contentTextStyle: const TextStyle(color: Colors.white),
+      backgroundColor: isDark ? Colors.white : masanawa.textPrimary,
+      contentTextStyle: TextStyle(
+        color: isDark ? Colors.black87 : Colors.white,
+      ),
       behavior: SnackBarBehavior.floating,
     ),
     splashFactory: InkSparkle.splashFactory,
