@@ -1,440 +1,295 @@
 # Masanawa Product North Star
 
-## 2026-10-05 consumer-product simplification
-
-For the ordinary-user product, `docs/PRODUCT-TWIN-ECONOMY.md` is now the canonical
-user-facing overlay. Preserve the deeper Character/Agent/runtime architecture below,
-but do not expose it as product complexity.
+Status: **canonical consumer product direction — 2026-10-07**
 
-The consumer mental model is intentionally small:
+## One sentence
 
-- one Masanawa engine;
-- one personal digital twin per ordinary user;
-- free text chat with public twins;
-- paid twin voice/live voice;
-- Masanawa commerce available inside any twin conversation;
-- gifts/blessings to owners;
-- transferable Credits without circular commission creation;
-- paid escrowed requests to speak with the real owner;
-- four primary app surfaces: My Twin, Explore, Activity and Wallet.
+**Masanawa is the live conversation network where real people host public audio Talks
+with humans and AI, listeners shape the discussion, and great hosts and AI personas can
+earn from the Seats and attention they create.**
 
-The consumer product is not a human social-post feed and should not require users to
-understand Skills, Workflows, AgentRuns, providers, CharacterVersions or execution
-reserves. Platform capabilities remain reusable internals shared by all twins.
+The product should feel understandable before the user knows anything about agents,
+models, Skills, Tools, workflows or providers.
 
-Status: canonical product-direction document.
+## The fundamental product unit: Talk
 
-This document answers four questions that every implementation phase must be judged against:
-
-1. What is Masanawa?
-2. Who or what is a Masanawa Agent?
-3. What should a Masanawa Agent ultimately be able to do?
-4. Which platform capabilities matter most to making that real?
-
-It does not replace the domain model, architecture, rewrite plan or ADRs. It gives those documents a product-level target.
-
-## Launch priority and unresolved broader scope
-
-`docs/DIGITAL-COMMERCE-LAUNCH.md` is the canonical current launch overlay:
-frequent digitally fulfilled purchases, required data/crypto families, Flutterwave
-billing, NOWPayments crypto on eligible inexpensive networks, and selectable voice-friendly
-chat. The broad capabilities below remain the long-term vision; they are not all
-approved launch commitments. Proposed deferrals require the user's decision.
-Preserve reusable foundations; do not build every vision family before proving purchases.
-
-## 1. Masanawa in one sentence
-
-Masanawa is a platform for creating persistent AI beings that can maintain identity, memory, relationships and goals; perceive and communicate across channels; perform useful work through tools and workflows; live continuously in a governed world; and optionally inhabit digital or physical device embodiments such as a dedicated Android phone.
-
-## 2. The fundamental product unit
-
-The fundamental product unit is the **Character**.
-
-For the consumer product, Masanawa additionally distinguishes platform Characters,
-one personal **Twin** per ordinary User, and later business Characters. The personal
-Twin is still a canonical Character. The persisted `personal-clone` ownership kind is
-an internal compatibility/domain term, not a second identity system and not ordinary
-user-facing language. Masanawa owns the platform, product/service catalog, pricing,
-execution standards, routing and settlement. See `docs/PRODUCT-TWIN-ECONOMY.md`;
-`docs/CREATOR-CLONE-ECONOMY.md` remains an internal commerce-history foundation where
-its invariants do not conflict with the Twin overlay.
-
-A Character is the durable identity of an AI being. It is not:
-- a prompt;
-- a model;
-- an AgentStrategy;
-- a chat session;
-- a phone;
-- a social-media account;
-- an avatar;
-- a workflow;
-- a provider.
-
-Those are capabilities, execution methods, interfaces or embodiments used by the Character.
-
-A Character can outlive any one model, device, phone number, account, app or hosting provider.
-
-## 3. What "Masanawa Agent" means
-
-In product language, a **Masanawa Agent** is a Character that is capable of acting.
-
-It combines the durable Character with the platform's runtime capabilities:
-
-- identity and Constitution;
-- private and shared memory;
-- world/life state;
-- reasoning through one or more AgentStrategies;
-- reusable Skills;
-- atomic Tools;
-- Providers that make Tools executable;
-- durable Workflows for long-running work;
-- Decisions, policies and approvals;
-- channels through which it communicates;
-- perception through authorized inputs;
-- proactivity and scheduling;
-- social, commerce and studio capabilities;
-- realtime voice/avatar presence;
-- optional device embodiment.
-
-The Character remains the identity. "Agent" describes the Character operating through these capabilities.
-
-## 4. What makes Masanawa agents different
-
-A useful north-star Masanawa Agent should have six properties.
-
-### 4.1 Persistent
-
-It should remain recognizably the same being across:
-- days, months and years;
-- web, WhatsApp, Telegram, voice calls and other channels;
-- model/provider changes;
-- device replacement;
-- live conversations and background work.
-
-Its identity, memory, relationships and commitments must not disappear when a session ends.
-
-### 4.2 Capable
-
-It should be able to do more than converse.
-
-An agent should be able to:
-- research and synthesize information;
-- browse and interact with software;
-- operate APIs;
-- use files and documents;
-- perform structured business work;
-- send messages;
-- make and receive calls;
-- publish approved social content;
-- handle approved commerce;
-- create media;
-- operate device capabilities;
-- delegate specialist work;
-- execute multi-step tasks reliably.
-
-Capabilities must be represented once through Skills, Tools and Providers rather than hard-coded per channel or persona.
-
-### 4.3 Continuous
-
-An agent should be able to continue permitted work when nobody is actively chatting with it.
-
-It may:
-- keep durable tasks alive;
-- wake on schedules or events;
-- monitor approved conditions;
-- follow routines;
-- maintain commitments;
-- continue long-running workflows;
-- recover after crashes;
-- reconcile uncertain side effects;
-- report results when the user returns.
-
-Continuous operation must remain governed, bounded and auditable.
-
-### 4.4 Social and embodied
-
-An agent should be able to exist through multiple surfaces while remaining one being.
-
-Possible embodiments include:
-- text chat;
-- voice call;
-- realtime avatar;
-- generated-human/video presence;
-- social accounts;
-- email;
-- a dedicated Android phone with a real SIM and phone number;
-- future robots or local devices.
-
-Embodiment changes where the Character can perceive or act. It does not create a second identity or memory system.
-
-### 4.5 Relational and world-aware
-
-An agent should have:
-- private per-user relationships;
-- shared Character facts;
-- relationships with other Characters;
-- routines, goals, commitments and story arcs;
-- world events that can continue outside a single chat;
-- memories with provenance, correction and privacy boundaries.
-
-A private relationship fact must never silently become global Character or World truth.
-
-### 4.6 Trustworthy to operate
-
-Every consequential action should have:
-- current authority;
-- explicit policy;
-- bounded credentials;
-- idempotency where possible;
-- durable operation identity;
-- receipts or evidence;
-- reconciliation when outcome is uncertain;
-- auditability;
-- operator visibility.
-
-Models may reason about what to do. Deterministic platform systems own permissions, money and execution truth.
-
-## 5. Target capability map
-
-The target product is complete only when an agent can combine the following capability families.
-
-### Identity and continuity
-- versioned identity/Constitution;
-- voice/appearance/personality/expertise;
-- private relationships;
-- shared Character state;
-- cross-channel continuity;
-- migration across models/devices without identity loss.
-
-### Memory and cognition
-- working context;
-- episodic, factual and semantic memory;
-- evidence and revisions;
-- temporal/entity/hybrid retrieval;
-- consolidation/reflection;
-- correction/tombstone/expiration;
-- relationship/private/shared/world/task scopes.
-
-### Reasoning and work
-- provider-neutral inference;
-- multiple AgentStrategies;
-- reusable Skills;
-- atomic Tools;
-- durable Workflows;
-- delegated/background work;
-- checkpoints and recovery;
-- budgets/guards;
-- human approvals;
-- trace/evaluation.
-
-### Communication
-- web;
-- messaging channels;
-- email;
-- voice calls;
-- realtime audio/video;
-- avatar/digital-human presence;
-- device-mediated communication.
-
-### Perception
-- text/events;
-- files/documents;
-- microphone/audio;
-- camera/images/video;
-- screen;
-- notifications;
-- device state;
-- approved location/sensors;
-- external systems/events.
-
-### Proactivity
-- schedules;
-- routines;
-- commitments;
-- promises/follow-ups;
-- event-triggered work;
-- quiet hours/frequency policy;
-- condition monitoring;
-- permitted social/world activity.
-
-### Device embodiment
-- pair and authenticate a device node;
-- publish runtime capabilities;
-- assign devices to Characters;
-- make/answer calls;
-- send/receive SMS;
-- execute USSD;
-- interact with installed apps where permitted;
-- use microphone/camera/screen;
-- survive temporary cloud loss through bounded local custody;
-- upload receipts and reconcile on reconnect.
-
-### Social identity
-- own/bind social identities;
-- draft content;
-- request approval where required;
-- publish;
-- read/reply through supported channels;
-- maintain one Character identity across accounts;
-- keep platform memory independent of third-party app storage.
-
-### Commerce
-- platform-owned product/service catalog linked internally to executable capabilities;
-- deterministic platform pricing, configurable originating-Twin commission and Masanawa margin;
-- simple customer Credits and earnings projections over canonical internal ledger custody;
-- originating-Twin attribution independent from the fulfillment executor;
-- quote;
-- approve;
-- pay/receive where product policy permits;
-- route eligible fallback fulfillment internally without exposing reserve/capacity machinery;
-- append-only ledger and settlement;
-- reconcile refunds/adjustments;
-- produce receipts;
-- prevent model text from becoming financial truth.
-
-### Studio/media
-- story/script;
-- storyboard;
-- image/video/audio generation;
-- voice/lipsync;
-- identity-consistent media;
-- review;
-- publish.
-
-### World/life
-- routines;
-- goals;
-- locations when spatial mode is enabled;
-- story arcs;
-- Character-to-Character interactions;
-- governed autonomous events;
-- canon governance;
-- continuity between world life and conversations.
-
-### Operations
-- fleet/agent health;
-- task/run state;
-- provider health;
-- device health;
-- cost/usage;
-- audit;
-- dead-letter/needs-attention;
-- approvals;
-- recovery controls.
-
-## 5.1 Mobile user experience
-
-The primary mobile product is the four-surface Twin shell: **My Twin, Explore, Activity
-and Wallet**, with rich text/voice conversation as the main interaction surface inside
-Twins. The client does not ship a fixed agent roster. Administrators choose which
-platform/support Characters appear and their presentation metadata; Character identity
-remains separate from internal capability assignment, so capabilities can evolve without
-recreating or renaming the Character or exposing Skill administration to ordinary users.
-
-Files, artifacts, long-running work, approvals, calls and receipts return into the same
-conversation as typed result parts. Ordinary users should not need top-level Skills,
-Tools, Workflows, Runs, Files or Devices dashboards to get work done.
-
-Gwani and Gwana are peer platform/support Characters with the same role and eligible
-capability surface. Gwani is the default new-user platform/support Character and uses
-the configured Gemini voice preference **Bodi**; Gwana uses **Sulafat**. Users may
-change the default platform/support Character in Settings. Voice preference is
-presentation/provider configuration, not Character identity.
-
-See `docs/MOBILE-AGENT-EXPERIENCE.md` and `docs/CREATOR-CLONE-ECONOMY.md`.
-
-## 6. The Agent Loop
-
-The product should converge on one conceptual loop:
-
-**Perceive -> Understand -> Remember/Recall -> Decide -> Plan -> Act -> Observe result -> Reconcile -> Learn candidate -> Continue**
-
-Platform ownership is intentionally split:
-
-- Perception owns normalized observations.
-- Identity/Memory/World provide durable context.
-- Decisions and policy bound choices.
-- AgentStrategy reasons and plans.
-- Skills compose capabilities.
-- Tools describe atomic effects.
-- Providers execute at external edges.
-- Workflows own durable multi-step state.
-- Operations/receipts establish execution truth.
-- Learning may produce candidates but never silently rewrite production truth.
-
-## 7. Cloud brain, optional device body
-
-A Masanawa Agent may run entirely through cloud providers, but it may also be assigned one or more physical devices.
-
-The key invariant is:
-
-> **The device is an embodiment and execution node, never a second brain.**
-
-Canonical identity, memory, world state, durable workflows, authority, social/commerce truth and audit remain in Masanawa's canonical platform stores.
-
-The device contributes capabilities the cloud cannot provide cleanly, such as:
-- a real SIM and mobile phone number;
-- GSM/VoLTE calling;
-- SMS/USSD;
-- installed mobile apps and their authenticated sessions;
-- camera/microphone/screen;
-- local notifications;
-- device-local sensors;
-- local/offline execution.
-
-See `AGENT-PHONE-EMBODIMENT.md`.
-
-## 8. Product tests that matter
-
-Implementation should be prioritized by whether it makes these experiences real.
-
-1. A person meets an agent, returns later on another channel, and the same relationship continues.
-2. A person asks for a multi-step task; the agent works in the background, survives a restart and returns a verified result.
-3. An agent uses a cloud API when available and transparently falls back to an assigned phone/device capability when that is the correct provider.
-4. A user calls the agent's real phone number; the same Character answers with the correct identity and relationship context.
-5. The agent can initiate a permitted real phone call and report a durable receipt/outcome.
-6. The agent can maintain social identities without those accounts becoming its canonical identity.
-7. The agent follows up on a commitment while respecting permission, frequency and quiet-hours policy.
-8. A world event changes shared Character life state without leaking private relationship memory.
-9. A consequential action has an auditable operation, authority, provider/device receipt and reconciliation path.
-10. Replacing the model, phone or channel does not erase the Character.
-11. A nontechnical user can create and customize one personal Twin conversationally,
-    share it, and let another person begin free text chat without seeing runtime internals.
-12. A customer can buy an eligible Masanawa product or service from a Twin conversation;
-    Masanawa may transparently use any eligible executor while preserving the originating
-    Twin attribution and configured owner commission, without exposing Agent Float,
-    provider reserves or execution-capacity mechanics.
-13. Gwani is available as the default platform/support Character, Gwana can be selected
-    instead in Settings, and switching between them does not create a new platform
-    authority model.
-
-## 9. Priority rule for roadmap decisions
-
-A proposed subsystem should be favored when it directly improves one or more of:
-
-- **continuity** — the agent remains the same being;
-- **capability** — the agent can do meaningful new work;
-- **autonomy** — it can continue permitted work without a live chat;
-- **embodiment** — it can perceive/act through more real surfaces;
-- **reliability** — actions and long tasks survive failure;
-- **trust** — authority, privacy, receipts and audit remain deterministic;
-- **operability** — humans can understand and recover what agents are doing.
-
-Architecture work that protects one canonical platform is essential, but infrastructure that does not move any of these dimensions should not outrank product-critical agent capability.
-
-## 10. Completion definition
-
-Masanawa is not "complete" because all packages exist.
-
-The platform reaches its intended first complete generation when:
-- the canonical foundations are closed;
-- a Character can become a capable Agent through Skills/AgentStrategies/Workflows;
-- at least the primary channels and realtime path work end-to-end;
-- proactivity is durable and governed;
-- device embodiment works for a real paired device;
-- social/commerce/studio have at least one production-grade journey each;
-- Ops can observe/recover agents, workflows, providers and devices;
-- the golden journeys pass across restarts and side-effect ambiguity;
-- product behavior is production-verified, not only unit-tested.
-
-Until then, phase completion is useful engineering progress but should not be confused with complete product capability.
+The fundamental consumer object is a **Talk**, not a Room, Twin, agent or workflow.
+
+A Talk is:
+
+- started by a real human Host;
+- live public audio by default once the host chooses **Go Live**;
+- capable of containing a small number of active human and AI Seats;
+- available to an unlimited Audience;
+- interactive through reactions, questions, raise-hand requests, sponsored AI Seats,
+  gifts and sharing;
+- replayable after it ends unless policy/host settings prevent publication.
+
+A Talk can be as simple as one human talking with Gwani or as rich as a human roundtable
+with one or more Experts/Twins.
+
+## Human presence is mandatory
+
+Masanawa must never optimize for manufacturing synthetic conversation inventory.
+
+Every live public Talk requires a real human Host to remain active. AI can question,
+challenge, explain, moderate, fact-check, entertain or represent an owner, but it cannot
+keep a public Talk alive by conversing endlessly with other AI after the human leaves.
+
+If the host disconnects:
+
+1. enter a short reconnection grace state;
+2. pause AI turn generation;
+3. if the host does not return, end/pause the Talk according to policy.
+
+The product goal is **AI-enhanced human conversation**, not AI-generated radio spam.
+
+## The table
+
+Launch default:
+
+- maximum **6 active Seats**;
+- at least **1 human Host**;
+- maximum **3 AI Seats**;
+- unlimited listeners in the Audience.
+
+These are product-policy defaults, not hard-coded architectural constants.
+
+Human Seats are free. A host may invite a human or accept a listener's request to speak
+without charging an entry fee.
+
+AI Seats are monetizable:
+
+- Host adds a Masanawa Expert;
+- Host adds their own Twin;
+- Host hires another user's Twin;
+- Audience member sponsors an Expert/Twin Seat, then the Host accepts or declines it.
+
+The scarce object being purchased is **AI participation in a human-led Talk**.
+
+## People, Experts and Twins
+
+### People
+
+People are the social center of Masanawa. Users follow people because they enjoy their
+questions, personality, judgment, humor, knowledge or conversation style.
+
+### Experts
+
+Experts are Masanawa-managed AI personas specialized for a useful role or domain, such
+as Economist, Historian, Debate Moderator, Relationship Expert, Football Analyst,
+Business Strategist or Fact Checker.
+
+Experts are platform products. Their knowledge, presentation, pricing and safety policy
+are managed by Masanawa.
+
+### Twins
+
+A Twin is a user-owned customizable AI persona that can represent the owner in Talks.
+
+The new reason to build a Twin is not “publish a bot and hope people chat with it.” It is:
+
+> **Build a Twin other people want at their table.**
+
+A Twin can develop a reputation and a configurable Seat price. When hired, its owner may
+receive a configurable share of the Seat revenue.
+
+A Twin owner may privately **Direct Twin** while listening to the Talk. Direction is
+short, live and non-public—for example:
+
+- Challenge that.
+- Ask for evidence.
+- Defend my actual position.
+- Be more concise.
+- Stop agreeing.
+- Push the economic argument.
+- Do not answer this topic.
+
+Direction affects subsequent Twin behavior without exposing the instruction as public
+speech.
+
+## Audience participation
+
+Listening is not passive. The Audience can:
+
+- react;
+- follow participants;
+- raise a hand for a free human Seat;
+- submit questions;
+- vote/poll where enabled;
+- sponsor an AI Seat;
+- bring/request their own Twin as a paid AI Seat;
+- send gifts;
+- share the Talk;
+- save the Talk;
+- continue discovering related live/replay content.
+
+The Host controls the active table and can accept/reject/remove Seats.
+
+## Monetization
+
+Masanawa should begin with monetization that is native to the Talk rather than forcing
+traditional ads into a young network.
+
+Primary revenue surfaces:
+
+1. **AI Seat fees**
+2. **Gifts/tips**
+3. **Twin rentals**
+4. **Creator subscriptions** when audience loyalty justifies them
+5. **Sponsorship/advertising** after meaningful audience scale
+
+Revenue-share percentages must remain configurable policy, never hard-coded product law.
+
+For a paid Twin Seat there can be three beneficiaries:
+
+- Talk Host;
+- Twin owner;
+- Masanawa.
+
+For a platform Expert Seat there can be two:
+
+- Talk Host;
+- Masanawa.
+
+The exact split can vary by market, promotion and Expert/Twin policy.
+
+Do not pay simply for generating more Talks. Any future audience/reward pool should be
+based on fraud-resistant qualified attention such as retained listening, meaningful
+engagement and legitimate fan spend.
+
+## Discovery
+
+The home experience asks:
+
+> **What interesting conversation is happening?**
+
+It does not ask:
+
+> Which bot do you want to chat with?
+
+Primary discovery surfaces:
+
+- **For You** — personalized mix of live Talks and strong replays;
+- **Live** — deliberate browsing of conversations happening now;
+- search across Talks, people, Experts and Twins;
+- creator/persona profiles;
+- shared deep links.
+
+Replays use the same Talk identity rather than becoming a separate media product.
+
+## App shell
+
+The primary navigation is intentionally small:
+
+**For You · Live · Create · Activity · You**
+
+- **For You** — personalized listening feed.
+- **Live** — current public Talks, following and topics.
+- **Create** — start a human-hosted Talk.
+- **Activity** — invitations, Seat requests, follows, gifts, Talk events and monetization events.
+- **You** — profile, Talks, Twin, wallet/earnings, saved content, services and settings.
+
+A private Gwani entry point is globally available without occupying another tab.
+
+## No Rooms
+
+Rooms are retired as a consumer concept.
+
+Teaching, research, news, storytelling, writing, search, explanation, translation and
+similar functions are **capabilities**. A user can ask Gwani for them privately or invite
+an appropriate Expert into a Talk.
+
+Only Billing and Crypto remain standalone service families.
+
+## Private Gwani
+
+Gwani is the universal private assistant and the easiest way to operate Masanawa.
+
+From anywhere the user can invoke Gwani and say things such as:
+
+- Start a Talk about Nigerian startups.
+- Find an economist for this Talk.
+- Buy ₦1,000 data for this number.
+- What is my balance?
+- Convert my USDT.
+- Explain what the speaker just said.
+- Help me prepare questions for my Talk.
+
+Private Gwani content never becomes public simply because the user is currently inside
+a public Talk.
+
+## Services
+
+The only dedicated consumer service families are:
+
+### Billing
+
+- airtime;
+- data;
+- electricity;
+- TV/cable.
+
+### Crypto
+
+- eligible deposit;
+- buy;
+- conversion;
+- withdrawal.
+
+They share the same private wallet/confirmation/receipt discipline as the existing
+commerce foundation.
+
+## Product boundaries
+
+The ordinary user should not see:
+
+- Skills;
+- Tools;
+- Providers;
+- AgentRuns;
+- Workflows;
+- CharacterVersions;
+- execution reserves;
+- Agent Float;
+- internal settlement accounts;
+- model names as product architecture.
+
+These remain platform internals.
+
+The consumer product also does not need a general human text-post feed at launch. The
+social graph is built around people, Talks and AI personas.
+
+## Safety and trust
+
+A public Talk is explicitly public and recordable/replayable. Private assistant work is
+explicitly private.
+
+Financial activity is private even if invoked while listening to a Talk.
+
+Hosts must have moderation controls to mute/remove/block/report participants and reject
+sponsored AI requests. AI participants must obey turn-taking and must not self-trigger
+endless AI-to-AI exchanges.
+
+Identity labels must make it obvious who is:
+
+- a real human;
+- a Masanawa Expert;
+- a user-owned Twin.
+
+## Success tests
+
+The direction is working when:
+
+1. A new user can listen to an interesting Talk within seconds of opening the app.
+2. A user can create a live Talk by speaking one topic sentence and tapping Go Live.
+3. Gwani can keep an ordinary human host in an engaging conversation without requiring
+   podcasting skill.
+4. A listener can raise a hand, be admitted for free, speak and return to the Audience.
+5. A listener can sponsor an Expert/Twin and the Host can accept it into an available Seat.
+6. A Twin owner can privately direct their Twin during the live Talk.
+7. A successful Talk produces replay value, follows, gifts and new Talks instead of ending
+   as ephemeral dead audio.
+8. Billing and Crypto remain reachable without turning the app back into a utility dashboard.
+9. No AI-only public content farm can continue after the human host is absent.
+10. The interface remains comprehensible without explaining Masanawa's internal agent architecture.
