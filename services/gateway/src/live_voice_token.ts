@@ -56,6 +56,10 @@ export function createGeminiLiveTokenService(input: {
         profile?.voiceProvider.toLowerCase() === "gemini" && profile.voiceName.trim()
           ? profile.voiceName.trim()
           : voiceName;
+      const twinSetup = request.purpose === "twin-setup";
+      if (twinSetup && profile && !profile.supportAgent) {
+        throw new TypeError("Twin setup live voice requires a support agent");
+      }
 
       const issued = now();
       const expiresAt = new Date(issued.getTime() + 30 * 60 * 1000);
@@ -77,6 +81,8 @@ export function createGeminiLiveTokenService(input: {
               config: {
                 sessionResumption: {},
                 responseModalities: ["AUDIO"],
+                outputAudioTranscription: {},
+                ...(twinSetup ? { inputAudioTranscription: {} } : {}),
                 speechConfig: {
                   voiceConfig: {
                     prebuiltVoiceConfig: { voiceName: selectedVoiceName },
