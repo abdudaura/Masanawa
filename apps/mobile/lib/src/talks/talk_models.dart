@@ -155,6 +155,12 @@ abstract interface class TalkTransport {
     required String topic,
     String? title,
   });
+  Future<TalkDiscoveryItem> updateTalk({
+    required String talkId,
+    String? title,
+    String? topic,
+    String? summary,
+  });
   Future<TalkComment> addComment({
     required String talkId,
     required String body,
