@@ -27,6 +27,7 @@ class _CreateTalkScreenState extends ConsumerState<CreateTalkScreen> {
   final _topic = TextEditingController();
   final _title = TextEditingController();
   bool _creating = false;
+  bool _recordReplay = false;
 
   @override
   void dispose() {
@@ -43,6 +44,7 @@ class _CreateTalkScreenState extends ConsumerState<CreateTalkScreen> {
       final talk = await ref.read(talkTransportProvider).createTalk(
             topic: topic,
             title: _title.text.trim().isEmpty ? null : _title.text.trim(),
+            recordReplay: _recordReplay,
           );
       ref.invalidate(talkFeedProvider(TalkFeedKind.explore));
       ref.invalidate(talkFeedProvider(TalkFeedKind.live));
@@ -128,7 +130,24 @@ class _CreateTalkScreenState extends ConsumerState<CreateTalkScreen> {
               subtitle: 'Bring your Twin into a paid AI Seat',
               onTap: widget.onAddTwin,
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 14),
+            SwitchListTile.adaptive(
+              key: const ValueKey('create-talk-record-replay'),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+              value: _recordReplay,
+              onChanged: _creating
+                  ? null
+                  : (value) => setState(() => _recordReplay = value),
+              title: const Text(
+                'Save a replay',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              subtitle: const Text(
+                'Record this Talk so people can listen after it ends.',
+              ),
+              secondary: const Icon(Icons.replay_circle_filled_outlined),
+            ),
+            const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(13),
               decoration: BoxDecoration(
