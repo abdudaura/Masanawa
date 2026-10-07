@@ -171,7 +171,19 @@ export function createPostgresTalkReplayRepository(
       if(talkRow.host_user_id!==input.hostUserId) throw new Error("talks.host_forbidden");
 
       const existing=await session(pool,input.tenantId,input.talkId);
-      if(existing) return view(existing);
+      if(existing&&existing.recordingState!=="discarded") return view(existing);
+      if(existing?.recordingState==="discarded"){
+        await pool.query(
+          `DELETE FROM talks.replay_media_jobs
+            WHERE tenant_id=$1 AND talk_id=$2 AND recording_id=$3`,
+          [input.tenantId,input.talkId,existing.recordingId],
+        );
+        await pool.query(
+          `DELETE FROM talks.replay_sessions
+            WHERE tenant_id=$1 AND talk_id=$2 AND revision=$3`,
+          [input.tenantId,input.talkId,existing.revision],
+        );
+      }
 
       const created=createTalkReplaySession({
         tenantId:input.tenantId as TenantId,
@@ -213,6 +225,7 @@ export function createPostgresTalkReplayRepository(
       if(talkRow.host_user_id!==input.hostUserId) throw new Error("talks.host_forbidden");
       const current=await session(pool,input.tenantId,input.talkId);
       if(!current) return null;
+      if(input.action==="discard"&&current.recordingState==="discarded") return view(current);
       const command=
         input.action==="publish"
           ? {type:"publish" as const,expectedRevision:current.revision,requesterUserId:input.hostUserId as UserId}
