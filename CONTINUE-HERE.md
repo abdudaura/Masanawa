@@ -40,7 +40,7 @@ Read these first for any consumer-product work:
 - Financial actions are always private, confirmed and server-authorized. They never leak
   into the public Talk transcript/audio simply because the user invokes Gwani.
 - Private assistant conversations and public Talks are explicitly separate modes.
-- The primary mobile shell is **For You · Live · Create · Activity · You**.
+- The primary mobile shell is **Home · Create · Activity · You**. Home contains two tabs: **Explore** and **Live Talks**.
 - A private Gwani entry point is globally reachable without creating another top-level tab.
 - Simplicity is a product requirement: prefer one adaptive screen plus sheets/states over
   several nearly identical screens.
