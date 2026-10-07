@@ -19,6 +19,10 @@ import { registerBillingRoutes } from "./billing_routes.js";
 import { registerTalkRoutes } from "./talk_routes.js";
 import { registerTalkLiveRoutes } from "./talk_live_routes.js";
 import type { TalkLiveService } from "./talk_live/service.js";
+import { registerTalkProfileRoutes } from "./talk_profile_routes.js";
+import type { TalkProfileService } from "./talk_profiles/service.js";
+import { registerTalkActivityRoutes } from "./talk_activity_routes.js";
+import type { TalkActivityService } from "./talk_activity/service.js";
 import type { TalkService } from "./talks/service.js";
 import type { TwinProductionRuntime } from "./twin_production_runtime.js";
 import { registerTwinProfileRoutes } from "./twin_profile_routes.js";
@@ -82,6 +86,8 @@ export interface GatewayAppOptions {
   readonly customerAuth?: CustomerAuthService;
   readonly talks?: TalkService;
   readonly talkLive?: TalkLiveService;
+  readonly talkProfiles?: TalkProfileService;
+  readonly talkActivity?: TalkActivityService;
   readonly billingCheckout?: BillingCheckoutService;
   readonly billingFinancial?: BillingFinancialService;
   readonly billingWallet?: BillingWalletService;
@@ -1354,6 +1360,12 @@ export function createGatewayApp(options: GatewayAppOptions = {}) {
   }
   if (options.talkLive) {
     registerTalkLiveRoutes(app, options.talkLive);
+  }
+  if (options.talkProfiles) {
+    registerTalkProfileRoutes(app, options.talkProfiles);
+  }
+  if (options.talkActivity) {
+    registerTalkActivityRoutes(app, options.talkActivity);
   }
 
   registerBillingRoutes(app, {
