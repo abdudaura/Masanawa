@@ -43,6 +43,14 @@ class GatewayTalkParticipationTransport implements TalkParticipationTransport {
   }
 
   @override
+  Future<TalkParticipationState> leaveSeat(String talkId) async {
+    final response = await api.dio.post<dynamic>(
+      '/talks/' + Uri.encodeComponent(talkId) + '/leave-seat',
+    );
+    return _state(response.data);
+  }
+
+  @override
   Future<TalkParticipationState> setHandRaised({
     required String talkId,
     required bool raised,

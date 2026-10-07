@@ -10,6 +10,7 @@ function repository():TalkModerationRepository{
     async participation(){return {handStatus:hand};},
     async setReaction(input){return {handStatus:hand,reaction:input.reaction};},
     async setRaised(input){hand=input.raised?"raised":"idle";return {handStatus:hand};},
+    async leaveHumanSeat(){hand="idle";return {participation:{handStatus:hand},mediaActions:[]};},
     async submitQuestion(input){return {questionId:input.questionId,authorName:input.displayName,body:input.body,status:"pending",createdAt:input.now};},
     async listQuestions(){return [{questionId:"question_1",authorName:"Listener",body:"What changed?",status:"pending",createdAt:"2026-10-07T10:00:00.000Z"}];},
     async resolveQuestion(){return [];},
@@ -106,6 +107,16 @@ describe("Talk participation and moderation routes",()=>{
     });
     expect(declined.statusCode).toBe(200);
     expect(declined.json()).toMatchObject({status:"declined"});
+  });
+
+  it("lets an authenticated Speaker return to the Audience",async()=>{
+    const response=await app("user_speaker").inject({
+      method:"POST",
+      url:"/talks/talk_1/leave-seat",
+      headers:{authorization:"Bearer ok"},
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({handStatus:"idle"});
   });
 
   it("submits audience questions and exposes a Host-only queue contract",async()=>{

@@ -44,7 +44,7 @@ export interface HostControlsView {
   readonly participants: readonly HostParticipantView[];
 }
 
-export type HumanInvitationStatus = "pending" | "accepted" | "declined";
+export type HumanInvitationStatus = "pending" | "accepted" | "declined" | "left";
 
 export interface HumanInvitationView {
   readonly talkId: string;
@@ -66,6 +66,11 @@ export interface HumanInvitationDecision {
 export type TalkMediaAction =
   | Readonly<{ type: "publish"; identity: string; canPublish: boolean }>
   | Readonly<{ type: "remove"; identity: string }>;
+
+export interface SelfSeatLeaveResult {
+  readonly participation: TalkParticipationView;
+  readonly mediaActions: readonly TalkMediaAction[];
+}
 
 export interface HostMutationResult {
   readonly controls: HostControlsView;
@@ -98,6 +103,12 @@ export interface TalkModerationRepository {
     raised: boolean;
     now: string;
   }>): Promise<TalkParticipationView | null>;
+  leaveHumanSeat(input: Readonly<{
+    tenantId: string;
+    userId: string;
+    talkId: string;
+    now: string;
+  }>): Promise<SelfSeatLeaveResult | null>;
   submitQuestion(input: Readonly<{
     tenantId: string;
     userId: string;

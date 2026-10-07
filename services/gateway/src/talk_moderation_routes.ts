@@ -29,6 +29,16 @@ export function registerTalkModerationRoutes(app:FastifyInstance,service:TalkMod
     return service.raiseHand({authorizationHeader:request.headers.authorization,talkId,raised});
   });
 
+  app.post("/talks/:talkId/leave-seat",{
+    schema:{params:TalkParams},
+  },async request=>{
+    const {talkId}=request.params as {talkId:string};
+    return service.leaveSeat({
+      authorizationHeader:request.headers.authorization,
+      talkId,
+    });
+  });
+
   app.post("/talks/:talkId/questions",{
     schema:{params:TalkParams,body:Type.Object({body:Type.String({minLength:1,maxLength:500})},{additionalProperties:false})},
   },async (request,reply)=>{

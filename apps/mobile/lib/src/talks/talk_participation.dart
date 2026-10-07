@@ -35,4 +35,6 @@ abstract interface class TalkParticipationTransport {
     required String talkId,
     required bool raised,
   });
+
+  Future<TalkParticipationState> leaveSeat(String talkId);
 }
